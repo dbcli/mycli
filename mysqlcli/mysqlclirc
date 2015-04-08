@@ -12,7 +12,7 @@ smart_completion = True
 multi_line = False
 
 # log_file location.
-log_file = ~/.pgcli.log
+log_file = ~/.mysqlcli.log
 
 # Default log level. Possible values: "CRITICAL", "ERROR", "WARNING", "INFO"
 # and "DEBUG".
@@ -31,5 +31,5 @@ table_format = psql
 # colorful, murphy, bw, pastie, paraiso-light, trac, default, fruity
 syntax_style = native
 
-# Enables vi-mode
-vi = False
+# Keybindings: Possible values: emacs, vi
+keybindings = emacs
