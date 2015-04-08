@@ -22,14 +22,14 @@ from .packages.tabulate import tabulate
 from .packages.expanded import expanded_table
 from .packages.pgspecial import (CASE_SENSITIVE_COMMANDS,
         NON_CASE_SENSITIVE_COMMANDS, is_expanded_output)
-import pgcli.packages.pgspecial as pgspecial
+import mysqlcli.packages.pgspecial as pgspecial
 from .pgcompleter import PGCompleter
 from .pgtoolbar import PGToolbar
 from .pgstyle import style_factory
 from .pgexecute import PGExecute
 from .pgbuffer import PGBuffer
 from .config import write_default_config, load_config
-from .key_bindings import pgcli_bindings
+from .key_bindings import mysqlcli_bindings
 from .encodingutils import utf8tounicode
 from .__init__ import __version__
 
@@ -39,14 +39,13 @@ try:
 except ImportError:
     from urllib.parse import urlparse
 from getpass import getuser
-from psycopg2 import OperationalError
 
 from collections import namedtuple
 
 # Query tuples are used for maintaining history
 Query = namedtuple('Query', ['query', 'successful', 'mutating'])
 
-class PGCli(object):
+class MysqlCli(object):
     def __init__(self, force_passwd_prompt=False, never_passwd_prompt=False,
                  pgexecute=None):
 
@@ -54,14 +53,14 @@ class PGCli(object):
         self.never_passwd_prompt = never_passwd_prompt
         self.pgexecute = pgexecute
 
-        from pgcli import __file__ as package_root
+        from mysqlcli import __file__ as package_root
         package_root = os.path.dirname(package_root)
 
-        default_config = os.path.join(package_root, 'pgclirc')
-        write_default_config(default_config, '~/.pgclirc')
+        default_config = os.path.join(package_root, 'mysqlclirc')
+        write_default_config(default_config, '~/.mysqlclirc')
 
         # Load config.
-        c = self.config = load_config('~/.pgclirc', default_config)
+        c = self.config = load_config('~/.mysqlclirc', default_config)
         self.multi_line = c.getboolean('main', 'multi_line')
         self.vi_mode = c.getboolean('main', 'vi')
         pgspecial.TIMING_ENABLED = c.getboolean('main', 'timing')
@@ -100,11 +99,11 @@ class PGCli(object):
 
         handler.setFormatter(formatter)
 
-        root_logger = logging.getLogger('pgcli')
+        root_logger = logging.getLogger('mysqlcli')
         root_logger.addHandler(handler)
         root_logger.setLevel(level_map[log_level.upper()])
 
-        root_logger.debug('Initializing pgcli logging.')
+        root_logger.debug('Initializing mysqlcli logging.')
         root_logger.debug('Log file %r.', log_file)
 
     def connect_uri(self, uri):
@@ -168,18 +167,18 @@ class PGCli(object):
 
         completer = self.completer
         self.refresh_completions()
-        key_binding_manager = pgcli_bindings(self.vi_mode)
+        key_binding_manager = mysqlcli_bindings(self.vi_mode)
         print('Version:', __version__)
-        print('Chat: https://gitter.im/amjith/pgcli')
-        print('Mail: https://groups.google.com/forum/#!forum/pgcli')
-        print('Home: http://pgcli.com')
+        print('Chat: https://gitter.im/amjith/mysqlcli')
+        print('Mail: https://groups.google.com/forum/#!forum/mysqlcli')
+        print('Home: http://mysqlcli.com')
 
         layout = Layout(before_input=DefaultPrompt(prompt),
             menus=[CompletionsMenu(max_height=10)],
             lexer=PostgresLexer,
             bottom_toolbars=[PGToolbar(key_binding_manager)])
         buf = PGBuffer(always_multiline=self.multi_line, completer=completer,
-                history=FileHistory(os.path.expanduser('~/.pgcli-history')))
+                history=FileHistory(os.path.expanduser('~/.mysqlcli-history')))
         cli = CommandLineInterface(style=style_factory(self.syntax_style),
                 layout=layout, buffer=buf,
                 key_bindings_registry=key_binding_manager.registry)
@@ -325,7 +324,7 @@ class PGCli(object):
         help='Force password prompt.')
 @click.option('-w', '--no-password', 'never_prompt', is_flag=True,
         default=False, help='Never prompt for password.')
-@click.option('-v', '--version', is_flag=True, help='Version of pgcli.')
+@click.option('-v', '--version', is_flag=True, help='Version of mysqlcli.')
 @click.option('-d', '--dbname', default='', envvar='PGDATABASE',
         help='database name to connect to.')
 @click.argument('database', default=lambda: None, envvar='PGDATABASE', nargs=1)
@@ -337,24 +336,24 @@ def cli(database, user, host, port, prompt_passwd, never_prompt, dbname,
         print('Version:', __version__)
         sys.exit(0)
 
-    pgcli = PGCli(prompt_passwd, never_prompt)
+    mysqlcli = MysqlCli(prompt_passwd, never_prompt)
 
     # Choose which ever one has a valid value.
     database = database or dbname
     user = username or user
 
     if '://' in database:
-        pgcli.connect_uri(database)
+        mysqlcli.connect_uri(database)
     else:
-        pgcli.connect(database, host, user, port)
+        mysqlcli.connect(database, host, user, port)
 
-    pgcli.logger.debug('Launch Params: \n'
+    mysqlcli.logger.debug('Launch Params: \n'
             '\tdatabase: %r'
             '\tuser: %r'
             '\thost: %r'
             '\tport: %r', database, user, host, port)
 
-    pgcli.run_cli()
+    mysqlcli.run_cli()
 
 def format_output(title, cur, headers, status, table_format):
     output = []
