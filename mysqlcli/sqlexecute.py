@@ -1,70 +1,12 @@
 import logging
-import psycopg2
-import psycopg2.extras
-import psycopg2.extensions as ext
+import pymysql
 import sqlparse
 from .packages import pgspecial
 from .encodingutils import unicode2utf8
 
 _logger = logging.getLogger(__name__)
 
-# Cast all database input to unicode automatically.
-# See http://initd.org/psycopg/docs/usage.html#unicode-handling for more info.
-ext.register_type(ext.UNICODE)
-ext.register_type(ext.UNICODEARRAY)
-ext.register_type(ext.new_type((705,), "UNKNOWN", ext.UNICODE))
-
-# Cast bytea fields to text. By default, this will render as hex strings with
-# Postgres 9+ and as escaped binary in earlier versions.
-ext.register_type(ext.new_type((17,), 'BYTEA_TEXT', psycopg2.STRING))
-
-# When running a query, make pressing CTRL+C raise a KeyboardInterrupt
-# See http://initd.org/psycopg/articles/2014/07/20/cancelling-postgresql-statements-python/
-ext.set_wait_callback(psycopg2.extras.wait_select)
-
-
-def register_json_typecasters(conn, loads_fn):
-    """Set the function for converting JSON data for a connection.
-
-    Use the supplied function to decode JSON data returned from the database
-    via the given connection. The function should accept a single argument of
-    the data as a string encoded in the database's character encoding.
-    psycopg2's default handler for JSON data is json.loads.
-    http://initd.org/psycopg/docs/extras.html#json-adaptation
-
-    This function attempts to register the typecaster for both JSON and JSONB
-    types.
-
-    Returns a set that is a subset of {'json', 'jsonb'} indicating which types
-    (if any) were successfully registered.
-    """
-    available = set()
-
-    for name in ['json', 'jsonb']:
-        try:
-            psycopg2.extras.register_json(conn, loads=loads_fn, name=name)
-            available.add(name)
-        except psycopg2.ProgrammingError:
-            pass
-
-    return available
-
-def register_hstore_typecaster(conn):
-    """
-    Instead of using register_hstore() which converts hstore into a python
-    dict, we query the 'oid' of hstore which will be different for each
-    database and register a type caster that converts it to unicode.
-    http://initd.org/psycopg/docs/extras.html#psycopg2.extras.register_hstore
-    """
-    with conn.cursor() as cur:
-        try:
-            cur.execute("SELECT 'hstore'::regtype::oid")
-            oid = cur.fetchone()[0]
-            ext.register_type(ext.new_type((oid,), "HSTORE", ext.UNICODE))
-        except Exception:
-            pass
-
-class PGExecute(object):
+class SQLExecute(object):
 
     search_path_query = '''
         SELECT * FROM unnest(current_schemas(false))'''
@@ -113,7 +55,6 @@ class PGExecute(object):
         WHERE 	n.nspname NOT IN ('pg_catalog', 'information_schema')
         ORDER BY 1, 2'''
 
-
     databases_query = """SELECT d.datname as "Name",
        pg_catalog.pg_get_userbyid(d.datdba) as "Owner",
        pg_catalog.pg_encoding_to_char(d.encoding) as "Encoding",
@@ -139,25 +80,12 @@ class PGExecute(object):
         password = unicode2utf8(password or self.password)
         host = unicode2utf8(host or self.host)
         port = unicode2utf8(port or self.port)
-        conn = psycopg2.connect(database=db, user=user, password=password,
+        conn = pymysql.connect(database=db, user=user, password=password,
                 host=host, port=port)
         if hasattr(self, 'conn'):
             self.conn.close()
         self.conn = conn
         self.conn.autocommit = True
-        register_json_typecasters(self.conn, self._json_typecaster)
-        register_hstore_typecaster(self.conn)
-
-    def _json_typecaster(self, json_data):
-        """Interpret incoming JSON data as a string.
-
-        The raw data is decoded using the connection's encoding, which defaults
-        to the database's encoding.
-
-        See http://initd.org/psycopg/docs/connection.html#connection.encoding
-        """
-
-        return json_data.decode(self.conn.encoding)
 
     def run(self, statement):
         """Execute the sql in the database and return the results. The results

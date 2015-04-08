@@ -1,6 +1,6 @@
 from prompt_toolkit.buffer import Buffer
 
-class PGBuffer(Buffer):
+class CLIBuffer(Buffer):
     def __init__(self, always_multiline, *args, **kwargs):
         self.always_multiline = always_multiline
         is_multiline = lambda doc: self.always_multiline and not _multiline_exception(doc.text)

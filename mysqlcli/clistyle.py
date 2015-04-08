@@ -10,7 +10,7 @@ def style_factory(name):
     except ClassNotFound:
         style = pygments.styles.get_style_by_name('native')
 
-    class PGStyle(Style):
+    class CLIStyle(Style):
         styles = {
                 Token.Menu.Completions.Completion.Current: 'bg:#00aaaa #000000',
                 Token.Menu.Completions.Completion: 'bg:#008888 #ffffff',
@@ -26,4 +26,4 @@ def style_factory(name):
                 }
         styles.update(style.styles)
 
-    return PGStyle
+    return CLIStyle

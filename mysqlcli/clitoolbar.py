@@ -2,7 +2,7 @@ from prompt_toolkit.layout.toolbars import Toolbar
 from prompt_toolkit.layout.utils import TokenList
 from pygments.token import Token
 
-class PGToolbar(Toolbar):
+class CLIToolbar(Toolbar):
     def __init__(self, key_binding_manager, token=None):
         self.key_binding_manager = key_binding_manager
         token = token or Token.Toolbar.Status

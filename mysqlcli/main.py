@@ -23,11 +23,11 @@ from .packages.expanded import expanded_table
 from .packages.pgspecial import (CASE_SENSITIVE_COMMANDS,
         NON_CASE_SENSITIVE_COMMANDS, is_expanded_output)
 import mysqlcli.packages.pgspecial as pgspecial
-from .pgcompleter import PGCompleter
-from .pgtoolbar import PGToolbar
-from .pgstyle import style_factory
-from .pgexecute import PGExecute
-from .pgbuffer import PGBuffer
+from .sqlcompleter import SQLCompleter
+from .clitoolbar import CLIToolbar
+from .clistyle import style_factory
+from .sqlexecute import SQLExecute
+from .clibuffer import CLIBuffer
 from .config import write_default_config, load_config
 from .key_bindings import mysqlcli_bindings
 from .encodingutils import utf8tounicode
@@ -74,7 +74,7 @@ class MysqlCli(object):
 
         # Initialize completer
         smart_completion = c.getboolean('main', 'smart_completion')
-        completer = PGCompleter(smart_completion)
+        completer = SQLCompleter(smart_completion)
         completer.extend_special_commands(CASE_SENSITIVE_COMMANDS.keys())
         completer.extend_special_commands(NON_CASE_SENSITIVE_COMMANDS.keys())
         self.completer = completer
@@ -141,13 +141,13 @@ class MysqlCli(object):
         # a password (no -w flag), prompt for a passwd and try again.
         try:
             try:
-                pgexecute = PGExecute(database, user, passwd, host, port)
+                pgexecute = SQLExecute(database, user, passwd, host, port)
             except OperationalError as e:
                 if ('no password supplied' in utf8tounicode(e.args[0]) and
                         auto_passwd_prompt):
                     passwd = click.prompt('Password', hide_input=True,
                                           show_default=False, type=str)
-                    pgexecute = PGExecute(database, user, passwd, host, port)
+                    pgexecute = SQLExecute(database, user, passwd, host, port)
                 else:
                     raise e
 
@@ -176,8 +176,8 @@ class MysqlCli(object):
         layout = Layout(before_input=DefaultPrompt(prompt),
             menus=[CompletionsMenu(max_height=10)],
             lexer=PostgresLexer,
-            bottom_toolbars=[PGToolbar(key_binding_manager)])
-        buf = PGBuffer(always_multiline=self.multi_line, completer=completer,
+            bottom_toolbars=[CLIToolbar(key_binding_manager)])
+        buf = CLIBuffer(always_multiline=self.multi_line, completer=completer,
                 history=FileHistory(os.path.expanduser('~/.mysqlcli-history')))
         cli = CommandLineInterface(style=style_factory(self.syntax_style),
                 layout=layout, buffer=buf,
