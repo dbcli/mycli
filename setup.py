@@ -21,7 +21,7 @@ setup(
         packages=find_packages(),
         package_data={'mysql_cli': ['mysql-clirc']},
         description=description,
-        long_description=open('README.rst').read(),
+        long_description=open('README.md').read(),
         install_requires=[
             'click >= 3.2',
             'Pygments >= 2.0',  # Pygments has to be Capitalcased. WTF?
