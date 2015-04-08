@@ -3,7 +3,7 @@ import sys
 import sqlparse
 from sqlparse.sql import Comparison, Identifier
 from .parseutils import last_word, extract_tables, find_prev_keyword
-from .pgspecial import parse_special_command
+from .dbspecial import parse_special_command
 
 PY2 = sys.version_info[0] == 2
 PY3 = sys.version_info[0] == 3
@@ -189,7 +189,7 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
     elif token_v.lower() in ('table', 'view', 'function'):
         # E.g. 'DROP FUNCTION <funcname>', 'ALTER TABLE <tablname>'
         rel_type = token_v.lower()
-        schema = (identifier and identifier.get_parent_name()) or []        
+        schema = (identifier and identifier.get_parent_name()) or []
         if schema:
             return [{'type': rel_type, 'schema': schema}]
         else:
