@@ -1,68 +1,20 @@
 import logging
 import pymysql
 import sqlparse
-from .packages import pgspecial
+from .packages import dbspecial
 from .encodingutils import unicode2utf8
 
 _logger = logging.getLogger(__name__)
 
 class SQLExecute(object):
 
-    search_path_query = '''
-        SELECT * FROM unnest(current_schemas(false))'''
+    databases_query = '''SHOW DATABASES'''
 
-    schemata_query = '''
-        SELECT  nspname
-        FROM    pg_catalog.pg_namespace
-        WHERE   nspname !~ '^pg_'
-                AND nspname <> 'information_schema'
-        ORDER BY 1 '''
+    tables_query = '''SHOW TABLES'''
 
-    tables_query = '''
-        SELECT 	n.nspname schema_name,
-                c.relname table_name
-        FROM 	pg_catalog.pg_class c
-                LEFT JOIN pg_catalog.pg_namespace n
-                    ON n.oid = c.relnamespace
-        WHERE 	c.relkind = ANY(%s)
-                AND n.nspname !~ '^pg_'
-                AND nspname <> 'information_schema'
-        ORDER BY 1,2;'''
+    columns_query = ''' '''
 
-    columns_query = '''
-        SELECT 	nsp.nspname schema_name,
-                cls.relname table_name,
-                att.attname column_name
-        FROM 	pg_catalog.pg_attribute att
-                INNER JOIN pg_catalog.pg_class cls
-                    ON att.attrelid = cls.oid
-                INNER JOIN pg_catalog.pg_namespace nsp
-                    ON cls.relnamespace = nsp.oid
-        WHERE 	cls.relkind = ANY(%s)
-                AND nsp.nspname !~ '^pg_'
-                AND nsp.nspname <> 'information_schema'
-                AND NOT att.attisdropped
-                AND att.attnum  > 0
-        ORDER BY 1, 2, 3'''
-
-    functions_query = '''
-        SELECT 	DISTINCT  --multiple dispatch means possible duplicates
-                n.nspname schema_name,
-                p.proname func_name
-        FROM 	pg_catalog.pg_proc p
-                INNER JOIN pg_catalog.pg_namespace n
-                    ON n.oid = p.pronamespace
-        WHERE 	n.nspname NOT IN ('pg_catalog', 'information_schema')
-        ORDER BY 1, 2'''
-
-    databases_query = """SELECT d.datname as "Name",
-       pg_catalog.pg_get_userbyid(d.datdba) as "Owner",
-       pg_catalog.pg_encoding_to_char(d.encoding) as "Encoding",
-       d.datcollate as "Collate",
-       d.datctype as "Ctype",
-       pg_catalog.array_to_string(d.datacl, E'\n') AS "Access privileges"
-    FROM pg_catalog.pg_database d
-    ORDER BY 1;"""
+    functions_query = ''' '''
 
     def __init__(self, database, user, password, host, port):
         self.dbname = database
@@ -102,10 +54,11 @@ class SQLExecute(object):
             # Remove spaces, eol and semi-colons.
             sql = sql.rstrip(';')
 
-            # Check if the command is a \c or 'use'. This is a special
-            # exception that cannot be offloaded to `pgspecial` lib. Because we
+            # Check if the command is a \u, \r or 'use'. This is a special
+            # exception that cannot be offloaded to `dbspecial` lib. Because we
             # have to change the database connection that we're connected to.
-            if sql.startswith('\c') or sql.lower().startswith('use'):
+            if (sql.startswith('\\r') or sql.startswith('\\u') or
+                    sql.lower().startswith('use')):
                 _logger.debug('Database change command detected.')
                 try:
                     dbname = sql.split()[1]
@@ -119,9 +72,9 @@ class SQLExecute(object):
                         'user "%s"' % (self.dbname, self.user))
             else:
                 try:   # Special command
-                    _logger.debug('Trying a pgspecial command. sql: %r', sql)
+                    _logger.debug('Trying a dbspecial command. sql: %r', sql)
                     cur = self.conn.cursor()
-                    for result in pgspecial.execute(cur, sql):
+                    for result in dbspecial.execute(cur, sql):
                         yield result
                 except KeyError:  # Regular SQL
                     yield self.execute_normal_sql(sql)
@@ -130,10 +83,7 @@ class SQLExecute(object):
         _logger.debug('Regular sql statement. sql: %r', split_sql)
         cur = self.conn.cursor()
         cur.execute(split_sql)
-        try:
-            title = self.conn.notices.pop()
-        except IndexError:
-            title = None
+        title = None
         # cur.description will be None for operations that do not return
         # rows.
         if cur.description:
@@ -142,22 +92,6 @@ class SQLExecute(object):
         else:
             _logger.debug('No rows in result.')
             return (title, None, None, cur.statusmessage)
-
-    def search_path(self):
-        """Returns the current search path as a list of schema names"""
-
-        with self.conn.cursor() as cur:
-            _logger.debug('Search path query. sql: %r', self.search_path_query)
-            cur.execute(self.search_path_query)
-            return [x[0] for x in cur.fetchall()]
-
-    def schemata(self):
-        """Returns a list of schema names in the database"""
-
-        with self.conn.cursor() as cur:
-            _logger.debug('Schemata Query. sql: %r', self.schemata_query)
-            cur.execute(self.schemata_query)
-            return [x[0] for x in cur.fetchall()]
 
     def _relations(self, kinds=('r', 'v', 'm')):
         """Get table or view name metadata

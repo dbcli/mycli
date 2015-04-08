@@ -307,6 +307,3 @@ class SQLCompleter(Completer):
                            for obj in metadata[schema].keys()]
 
         return objects
-
-
-

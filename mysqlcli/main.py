@@ -20,9 +20,9 @@ from pygments.lexers.sql import PostgresLexer
 
 from .packages.tabulate import tabulate
 from .packages.expanded import expanded_table
-from .packages.pgspecial import (CASE_SENSITIVE_COMMANDS,
+from .packages.dbspecial import (CASE_SENSITIVE_COMMANDS,
         NON_CASE_SENSITIVE_COMMANDS, is_expanded_output)
-import mysqlcli.packages.pgspecial as pgspecial
+import mysqlcli.packages.dbspecial as dbspecial
 from .sqlcompleter import SQLCompleter
 from .clitoolbar import CLIToolbar
 from .clistyle import style_factory
@@ -47,11 +47,11 @@ Query = namedtuple('Query', ['query', 'successful', 'mutating'])
 
 class MysqlCli(object):
     def __init__(self, force_passwd_prompt=False, never_passwd_prompt=False,
-                 pgexecute=None):
+                 sqlexecute=None):
 
         self.force_passwd_prompt = force_passwd_prompt
         self.never_passwd_prompt = never_passwd_prompt
-        self.pgexecute = pgexecute
+        self.sqlexecute = sqlexecute
 
         from mysqlcli import __file__ as package_root
         package_root = os.path.dirname(package_root)
@@ -63,7 +63,7 @@ class MysqlCli(object):
         c = self.config = load_config('~/.mysqlclirc', default_config)
         self.multi_line = c.getboolean('main', 'multi_line')
         self.vi_mode = c.getboolean('main', 'vi')
-        pgspecial.TIMING_ENABLED = c.getboolean('main', 'timing')
+        dbspecial.TIMING_ENABLED = c.getboolean('main', 'timing')
         self.table_format = c.get('main', 'table_format')
         self.syntax_style = c.get('main', 'syntax_style')
 
@@ -141,13 +141,13 @@ class MysqlCli(object):
         # a password (no -w flag), prompt for a passwd and try again.
         try:
             try:
-                pgexecute = SQLExecute(database, user, passwd, host, port)
+                sqlexecute = SQLExecute(database, user, passwd, host, port)
             except OperationalError as e:
                 if ('no password supplied' in utf8tounicode(e.args[0]) and
                         auto_passwd_prompt):
                     passwd = click.prompt('Password', hide_input=True,
                                           show_default=False, type=str)
-                    pgexecute = SQLExecute(database, user, passwd, host, port)
+                    sqlexecute = SQLExecute(database, user, passwd, host, port)
                 else:
                     raise e
 
@@ -157,11 +157,11 @@ class MysqlCli(object):
             click.secho(str(e), err=True, fg='red')
             exit(1)
 
-        self.pgexecute = pgexecute
+        self.sqlexecute = sqlexecute
 
     def run_cli(self):
-        pgexecute = self.pgexecute
-        prompt = '%s> ' % pgexecute.dbname
+        sqlexecute = self.sqlexecute
+        prompt = '%s> ' % sqlexecute.dbname
         logger = self.logger
         original_less_opts = self.adjust_less_opts()
 
@@ -188,9 +188,9 @@ class MysqlCli(object):
                 cli.layout.before_input = DefaultPrompt(prompt)
                 document = cli.read_input(on_exit=AbortAction.RAISE_EXCEPTION)
 
-                # The reason we check here instead of inside the pgexecute is
+                # The reason we check here instead of inside the sqlexecute is
                 # because we want to raise the Exit exception which will be
-                # caught by the try/except block that wraps the pgexecute.run()
+                # caught by the try/except block that wraps the sqlexecute.run()
                 # statement.
                 if quit_command(document.text):
                     raise Exit
@@ -204,12 +204,12 @@ class MysqlCli(object):
                     logger.debug('sql: %r', document.text)
                     successful = False
                     # Initialized to [] because res might never get initialized
-                    # if an exception occurs in pgexecute.run(). Which causes
+                    # if an exception occurs in sqlexecute.run(). Which causes
                     # finally clause to fail.
                     res = []
                     start = time()
                     # Run the query.
-                    res = pgexecute.run(document.text)
+                    res = sqlexecute.run(document.text)
                     duration = time() - start
                     successful = True
                     output = []
@@ -235,7 +235,7 @@ class MysqlCli(object):
 
                 except KeyboardInterrupt:
                     # Restart connection to the database
-                    pgexecute.connect()
+                    sqlexecute.connect()
                     logger.debug("cancelled query, sql: %r", document.text)
                     click.secho("cancelled query", err=True, fg='red')
                 except Exception as e:
@@ -244,7 +244,7 @@ class MysqlCli(object):
                     click.secho(str(e), err=True, fg='red')
                 else:
                     click.echo_via_pager('\n'.join(output))
-                    if pgspecial.TIMING_ENABLED:
+                    if dbspecial.TIMING_ENABLED:
                         print('Command Time:', duration)
                         print('Format Time:', total)
                 finally:
@@ -254,20 +254,14 @@ class MysqlCli(object):
 
                 # Refresh the table names and column names if necessary.
                 if need_completion_refresh(document.text):
-                    prompt = '%s> ' % pgexecute.dbname
+                    prompt = '%s> ' % sqlexecute.dbname
                     self.refresh_completions()
-
-                # Refresh search_path to set default schema.
-                if need_search_path_refresh(document.text):
-                    logger.debug('Refreshing search path')
-                    completer.set_search_path(pgexecute.search_path())
-                    logger.debug('Search path: %r', completer.search_path)
 
                 query = Query(document.text, successful, mutating)
                 self.query_history.append(query)
 
         except Exit:
-            print ('GoodBye!')
+            print ('Goodbye!')
         finally:  # Reset the less opts back to original.
             logger.debug('Restoring env var LESS to %r.', original_less_opts)
             os.environ['LESS'] = original_less_opts
@@ -277,36 +271,27 @@ class MysqlCli(object):
         self.logger.debug('Original value for LESS env var: %r', less_opts)
         os.environ['LESS'] = '-RXF'
 
-        #if 'X' not in less_opts:
-            #os.environ['LESS'] += 'X'
-        #if 'F' not in less_opts:
-            #os.environ['LESS'] += 'F'
-
         return less_opts
 
     def refresh_completions(self):
         completer = self.completer
         completer.reset_completions()
 
-        pgexecute = self.pgexecute
-
-        # schemata
-        completer.set_search_path(pgexecute.search_path())
-        completer.extend_schemata(pgexecute.schemata())
+        sqlexecute = self.sqlexecute
 
         # tables
-        completer.extend_relations(pgexecute.tables(), kind='tables')
-        completer.extend_columns(pgexecute.table_columns(), kind='tables')
+        completer.extend_relations(sqlexecute.tables(), kind='tables')
+        completer.extend_columns(sqlexecute.table_columns(), kind='tables')
 
         # views
-        completer.extend_relations(pgexecute.views(), kind='views')
-        completer.extend_columns(pgexecute.view_columns(), kind='views')
+        completer.extend_relations(sqlexecute.views(), kind='views')
+        completer.extend_columns(sqlexecute.view_columns(), kind='views')
 
         # functions
-        completer.extend_functions(pgexecute.functions())
+        completer.extend_functions(sqlexecute.functions())
 
         # databases
-        completer.extend_database_names(pgexecute.databases())
+        completer.extend_database_names(sqlexecute.databases())
 
     def get_completions(self, text, cursor_positition):
         return self.completer.get_completions(
@@ -376,15 +361,10 @@ def need_completion_refresh(queries):
     for query in sqlparse.split(queries):
         try:
             first_token = query.split()[0]
-            return first_token.lower() in ('alter', 'create', 'use', '\\c',
-                    '\\connect', 'drop')
+            return first_token.lower() in ('alter', 'create', 'use', '\\r',
+                    '\\u' '\\connect', 'drop')
         except Exception:
             return False
-
-def need_search_path_refresh(sql):
-    """Determines if the search_path should be refreshed by checking if the
-    sql has 'set search_path'."""
-    return 'set search_path' in sql.lower()
 
 def is_mutating(status):
     """Determines if the statement is mutating based on the status."""
