@@ -1,7 +1,7 @@
 from __future__ import print_function
 import logging
 from prompt_toolkit.completion import Completer, Completion
-from .packages.sqlcompletion import suggest_type
+from .packages.completion_engine import suggest_type
 from .packages.parseutils import last_word
 from re import compile
 
@@ -201,7 +201,8 @@ class PGCompleter(Completer):
 
             elif suggestion['type'] == 'schema':
                 schema_names = self.dbmetadata['tables'].keys()
-                schema_names = self.find_matches(word_before_cursor, schema_names)
+                schema_names = self.find_matches(word_before_cursor,
+                        schema_names)
                 completions.extend(schema_names)
 
             elif suggestion['type'] == 'table':
@@ -269,9 +270,9 @@ class PGCompleter(Completer):
 
             else:
                 # Schema not specified, so traverse the search path looking for
-                # a table or view that matches. Note that in order to get proper
-                # shadowing behavior, we need to check both views and tables for
-                # each schema before checking the next schema
+                # a table or view that matches. Note that in order to get
+                # proper shadowing behavior, we need to check both views and
+                # tables for each schema before checking the next schema
                 for schema in self.search_path:
                     relname = self.escape_name(tbl[1])
 
@@ -298,7 +299,7 @@ class PGCompleter(Completer):
             try:
                 objects = metadata[schema].keys()
             except KeyError:
-                #schema doesn't exist
+                # schema doesn't exist
                 objects = []
         else:
             schemas = self.search_path
