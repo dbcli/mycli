@@ -46,7 +46,6 @@ class SQLCompleter(Completer):
         self.special_commands = []
         self.databases = []
         self.dbmetadata = {'tables': {}, 'views': {}, 'functions': {}}
-        self.search_path = []
 
         self.all_completions = set(self.keywords + self.functions)
 
@@ -81,57 +80,36 @@ class SQLCompleter(Completer):
         self.keywords.extend(additional_keywords)
         self.all_completions.update(additional_keywords)
 
-    def extend_schemata(self, schemata):
-
-        # schemata is a list of schema names
-        schemata = self.escaped_names(schemata)
-        metadata = self.dbmetadata['tables']
-        for schema in schemata:
-            metadata[schema] = {}
-
-        # dbmetadata.values() are the 'tables' and 'functions' dicts
-        for metadata in self.dbmetadata.values():
-            for schema in schemata:
-                metadata[schema] = {}
-
-        self.all_completions.update(schemata)
-
     def extend_relations(self, data, kind):
         """ extend metadata for tables or views
 
-        :param data: list of (schema_name, rel_name) tuples
+        :param data: list of (rel_name,) tuples
         :param kind: either 'tables' or 'views'
         :return:
         """
 
         data = [self.escaped_names(d) for d in data]
 
-        # dbmetadata['tables']['schema_name']['table_name'] should be a list of
+        # dbmetadata['tables']['table_name'] should be a list of
         # column names. Default to an asterisk
         metadata = self.dbmetadata[kind]
-        for schema, relname in data:
-            try:
-                metadata[schema][relname] = ['*']
-            except AttributeError:
-                _logger.error('%r %r listed in unrecognized schema %r',
-                              kind, relname, schema)
-
-        self.all_completions.update(t[1] for t in data)
+        for relname in data:
+            metadata[relname[0]] = ['*']
+            self.all_completions.update(relname[0])
 
     def extend_columns(self, column_data, kind):
         """ extend column metadata
 
-        :param column_data: list of (schema_name, rel_name, column_name) tuples
+        :param column_data: list of (rel_name, column_name) tuples
         :param kind: either 'tables' or 'views'
         :return:
         """
 
         column_data = [self.escaped_names(d) for d in column_data]
         metadata = self.dbmetadata[kind]
-        for schema, relname, column in column_data:
-            metadata[schema][relname].append(column)
-
-        self.all_completions.update(t[2] for t in column_data)
+        for relname, column in column_data:
+            metadata[relname].append(column)
+            self.all_completions.update(column)
 
     def extend_functions(self, func_data):
 
@@ -147,12 +125,8 @@ class SQLCompleter(Completer):
             metadata[schema][func] = None
             self.all_completions.add(func)
 
-    def set_search_path(self, search_path):
-        self.search_path = self.escaped_names(search_path)
-
     def reset_completions(self):
         self.databases = []
-        self.search_path = []
         self.dbmetadata = {'tables': {}, 'views': {}, 'functions': {}}
         self.all_completions = set(self.keywords + self.functions)
 
@@ -189,8 +163,7 @@ class SQLCompleter(Completer):
                 completions.extend(cols)
 
             elif suggestion['type'] == 'function':
-                funcs = self.populate_schema_objects(
-                    suggestion['schema'], 'functions')
+                funcs = self.dbmetadata['functions'].keys()
 
                 if not suggestion['schema']:
                     # also suggest hardcoded functions
@@ -199,21 +172,13 @@ class SQLCompleter(Completer):
                 funcs = self.find_matches(word_before_cursor, funcs)
                 completions.extend(funcs)
 
-            elif suggestion['type'] == 'schema':
-                schema_names = self.dbmetadata['tables'].keys()
-                schema_names = self.find_matches(word_before_cursor,
-                        schema_names)
-                completions.extend(schema_names)
-
             elif suggestion['type'] == 'table':
-                tables = self.populate_schema_objects(
-                    suggestion['schema'], 'tables')
+                tables = self.dbmetadata['tables'].keys()
                 tables = self.find_matches(word_before_cursor, tables)
                 completions.extend(tables)
 
             elif suggestion['type'] == 'view':
-                views = self.populate_schema_objects(
-                    suggestion['schema'], 'views')
+                views = self.dbmetadata['views'].keys()
                 views = self.find_matches(word_before_cursor, views)
                 completions.extend(views)
 
@@ -289,21 +254,3 @@ class SQLCompleter(Completer):
                         pass
 
         return columns
-
-    def populate_schema_objects(self, schema, obj_type):
-        """Returns list of tables or functions for a (optional) schema"""
-
-        metadata = self.dbmetadata[obj_type]
-
-        if schema:
-            try:
-                objects = metadata[schema].keys()
-            except KeyError:
-                # schema doesn't exist
-                objects = []
-        else:
-            schemas = self.search_path
-            objects = [obj for schema in schemas
-                           for obj in metadata[schema].keys()]
-
-        return objects

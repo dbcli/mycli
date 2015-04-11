@@ -12,7 +12,7 @@ class SQLExecute(object):
 
     tables_query = '''SHOW TABLES'''
 
-    columns_query = ''' '''
+    columns_query = '''SHOW COLUMNS FROM %s'''
 
     functions_query = ''' '''
 
@@ -88,65 +88,27 @@ class SQLExecute(object):
         # rows.
         if cur.description:
             headers = [x[0] for x in cur.description]
-            return (title, cur, headers, cur.statusmessage)
+            return (title, cur, headers, None)  # cur.statusmessage)
         else:
             _logger.debug('No rows in result.')
-            return (title, None, None, cur.statusmessage)
-
-    def _relations(self, kinds=('r', 'v', 'm')):
-        """Get table or view name metadata
-
-        :param kinds: list of postgres relkind filters:
-                'r' - table
-                'v' - view
-                'm' - materialized view
-        :return: (schema_name, rel_name) tuples
-        """
-
-        with self.conn.cursor() as cur:
-            sql = cur.mogrify(self.tables_query, [kinds])
-            _logger.debug('Tables Query. sql: %r', sql)
-            cur.execute(sql)
-            for row in cur:
-                yield row
+            return (title, None, None, None)  # cur.statusmessage)
 
     def tables(self):
-        """Yields (schema_name, table_name) tuples"""
-        for row in self._relations(kinds=['r']):
-            yield row
-
-    def views(self):
-        """Yields (schema_name, view_name) tuples.
-
-            Includes both views and and materialized views
-        """
-        for row in self._relations(kinds=['v', 'm']):
-            yield row
-
-    def _columns(self, kinds=('r', 'v', 'm')):
-        """Get column metadata for tables and views
-
-        :param kinds: kinds: list of postgres relkind filters:
-                'r' - table
-                'v' - view
-                'm' - materialized view
-        :return: list of (schema_name, relation_name, column_name) tuples
-        """
+        """Yields table names"""
 
         with self.conn.cursor() as cur:
-            sql = cur.mogrify(self.columns_query, [kinds])
-            _logger.debug('Columns Query. sql: %r', sql)
-            cur.execute(sql)
+            _logger.debug('Tables Query. sql: %r', self.tables_query)
+            cur.execute(self.tables_query)
             for row in cur:
                 yield row
 
-    def table_columns(self):
-        for row in self._columns(kinds=['r']):
-            yield row
-
-    def view_columns(self):
-        for row in self._columns(kinds=['v', 'm']):
-            yield row
+    def columns(self):
+        """Yields column names"""
+        with self.conn.cursor() as cur:
+            _logger.debug('Columns Query. sql: %r', self.columns_query)
+            cur.execute(self.columns_query)
+            for row in cur:
+                yield row
 
     def databases(self):
         with self.conn.cursor() as cur:

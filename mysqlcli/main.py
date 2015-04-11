@@ -38,7 +38,6 @@ try:
     from urlparse import urlparse
 except ImportError:
     from urllib.parse import urlparse
-from getpass import getuser
 
 from collections import namedtuple
 
@@ -62,7 +61,7 @@ class MysqlCli(object):
         # Load config.
         c = self.config = load_config('~/.mysqlclirc', default_config)
         self.multi_line = c.getboolean('main', 'multi_line')
-        self.vi_mode = c.getboolean('main', 'vi')
+        self.key_bindings = c.get('main', 'key_bindings')
         dbspecial.TIMING_ENABLED = c.getboolean('main', 'timing')
         self.table_format = c.get('main', 'table_format')
         self.syntax_style = c.get('main', 'syntax_style')
@@ -115,13 +114,6 @@ class MysqlCli(object):
     def connect(self, database='', host='', user='', port='', passwd=''):
         # Connect to the database.
 
-        if not database:
-            if user:
-                database = user
-            else:
-                # default to current OS username just like psql
-                database = user = getuser()
-
         # Prompt for a password immediately if requested via the -W flag. This
         # avoids wasting time trying to connect to the database and catching a
         # no-password exception.
@@ -142,7 +134,8 @@ class MysqlCli(object):
         try:
             try:
                 sqlexecute = SQLExecute(database, user, passwd, host, port)
-            except OperationalError as e:
+            except Exception as e:
+                print(e)
                 if ('no password supplied' in utf8tounicode(e.args[0]) and
                         auto_passwd_prompt):
                     passwd = click.prompt('Password', hide_input=True,
@@ -167,7 +160,7 @@ class MysqlCli(object):
 
         completer = self.completer
         self.refresh_completions()
-        key_binding_manager = mysqlcli_bindings(self.vi_mode)
+        key_binding_manager = mysqlcli_bindings(self.key_bindings == 'vi')
         print('Version:', __version__)
         print('Chat: https://gitter.im/amjith/mysqlcli')
         print('Mail: https://groups.google.com/forum/#!forum/mysqlcli')
@@ -281,14 +274,14 @@ class MysqlCli(object):
 
         # tables
         completer.extend_relations(sqlexecute.tables(), kind='tables')
-        completer.extend_columns(sqlexecute.table_columns(), kind='tables')
+        #completer.extend_columns(sqlexecute.table_columns(), kind='tables')
 
         # views
-        completer.extend_relations(sqlexecute.views(), kind='views')
-        completer.extend_columns(sqlexecute.view_columns(), kind='views')
+        #completer.extend_relations(sqlexecute.views(), kind='views')
+        #completer.extend_columns(sqlexecute.view_columns(), kind='views')
 
         # functions
-        completer.extend_functions(sqlexecute.functions())
+        #completer.extend_functions(sqlexecute.functions())
 
         # databases
         completer.extend_database_names(sqlexecute.databases())
@@ -301,9 +294,9 @@ class MysqlCli(object):
 # Default host is '' so psycopg2 can default to either localhost or unix socket
 @click.option('-h', '--host', default='', envvar='PGHOST',
         help='Host address of the postgres database.')
-@click.option('-p', '--port', default=5432, help='Port number at which the '
-        'postgres instance is listening.', envvar='PGPORT')
-@click.option('-U', '--user', envvar='PGUSER', help='User name to '
+@click.option('-P', '--port', default=3306, help='Port number at which the '
+        'MySQL instance is listening.', envvar='PGPORT')
+@click.option('-u', '--user', envvar='PGUSER', help='User name to '
         'connect to the postgres database.')
 @click.option('-W', '--password', 'prompt_passwd', is_flag=True, default=False,
         help='Force password prompt.')

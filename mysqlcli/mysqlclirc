@@ -32,4 +32,4 @@ table_format = psql
 syntax_style = native
 
 # Keybindings: Possible values: emacs, vi
-keybindings = emacs
+key_bindings = emacs
