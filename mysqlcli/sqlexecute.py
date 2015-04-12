@@ -16,6 +16,10 @@ class SQLExecute(object):
 
     functions_query = ''' '''
 
+    table_columns_query = '''select TABLE_NAME, COLUMN_NAME from information_schema.columns
+                                    where table_schema = '%s'
+                                    order by table_name,ordinal_position'''
+
     def __init__(self, database, user, password, host, port):
         self.dbname = database
         self.user = user
@@ -102,11 +106,11 @@ class SQLExecute(object):
             for row in cur:
                 yield row
 
-    def columns(self):
+    def table_columns(self):
         """Yields column names"""
         with self.conn.cursor() as cur:
-            _logger.debug('Columns Query. sql: %r', self.columns_query)
-            cur.execute(self.columns_query)
+            _logger.debug('Columns Query. sql: %r', self.table_columns_query)
+            cur.execute(self.table_columns_query % self.dbname)
             for row in cur:
                 yield row
 

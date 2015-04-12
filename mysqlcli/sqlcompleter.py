@@ -50,9 +50,7 @@ class SQLCompleter(Completer):
         self.all_completions = set(self.keywords + self.functions)
 
     def escape_name(self, name):
-        if name and ((not self.name_pattern.match(name))
-                or (name.upper() in self.reserved_words)
-                or (name.upper() in self.functions)):
+        if name and ((not self.name_pattern.match(name))):
             name = '"%s"' % name
 
         return name
@@ -104,7 +102,6 @@ class SQLCompleter(Completer):
         :param kind: either 'tables' or 'views'
         :return:
         """
-
         column_data = [self.escaped_names(d) for d in column_data]
         metadata = self.dbmetadata[kind]
         for relname, column in column_data:
@@ -212,45 +209,22 @@ class SQLCompleter(Completer):
         meta = self.dbmetadata
 
         for tbl in scoped_tbls:
-            if tbl[0]:
-                # A fully qualified schema.relname reference
-                schema = self.escape_name(tbl[0])
-                relname = self.escape_name(tbl[1])
+            relname = self.escape_name(tbl[1])
 
-                # We don't know if schema.relname is a table or view. Since
-                # tables and views cannot share the same name, we can check one
-                # at a time
-                try:
-                    columns.extend(meta['tables'][schema][relname])
+            # We don't know if schema.relname is a table or view. Since
+            # tables and views cannot share the same name, we can check one
+            # at a time
+            try:
+                columns.extend(meta['tables'][relname])
 
-                    # Table exists, so don't bother checking for a view
-                    continue
-                except KeyError:
-                    pass
+                # Table exists, so don't bother checking for a view
+                continue
+            except KeyError:
+                pass
 
-                try:
-                    columns.extend(meta['views'][schema][relname])
-                except KeyError:
-                    pass
-
-            else:
-                # Schema not specified, so traverse the search path looking for
-                # a table or view that matches. Note that in order to get
-                # proper shadowing behavior, we need to check both views and
-                # tables for each schema before checking the next schema
-                for schema in self.search_path:
-                    relname = self.escape_name(tbl[1])
-
-                    try:
-                        columns.extend(meta['tables'][schema][relname])
-                        break
-                    except KeyError:
-                        pass
-
-                    try:
-                        columns.extend(meta['views'][schema][relname])
-                        break
-                    except KeyError:
-                        pass
+            try:
+                columns.extend(meta['views'][relname])
+            except KeyError:
+                pass
 
         return columns

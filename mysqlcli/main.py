@@ -274,7 +274,7 @@ class MysqlCli(object):
 
         # tables
         completer.extend_relations(sqlexecute.tables(), kind='tables')
-        #completer.extend_columns(sqlexecute.table_columns(), kind='tables')
+        completer.extend_columns(sqlexecute.table_columns(), kind='tables')
 
         # views
         #completer.extend_relations(sqlexecute.views(), kind='views')
