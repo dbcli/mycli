@@ -87,46 +87,14 @@ def suggest_type(full_text, text_before_cursor):
 
 def suggest_special(text):
     text = text.lstrip()
-    cmd, _, arg = parse_special_command(text)
+    cmd, arg = parse_special_command(text)
 
     if cmd == text:
         # Trying to complete the special command itself
         return [{'type': 'special'}]
 
-    if cmd == '\\c':
+    if cmd in ('\\u', '\\r'):
         return [{'type': 'database'}]
-
-    if cmd == '\\dn':
-        return [{'type': 'schema'}]
-
-    if arg:
-        # Try to distinguish "\d name" from "\d schema.name"
-        # Note that this will fail to obtain a schema name if wildcards are
-        # used, e.g. "\d schema???.name"
-        parsed = sqlparse.parse(arg)[0].tokens[0]
-        try:
-            schema = parsed.get_parent_name()
-        except AttributeError:
-            schema = None
-    else:
-        schema = None
-
-    if cmd[1:] == 'd':
-        # \d can descibe tables or views
-        if schema:
-            return [{'type': 'table', 'schema': schema},
-                    {'type': 'view', 'schema': schema}]
-        else:
-            return [{'type': 'schema'},
-                    {'type': 'table', 'schema': []},
-                    {'type': 'view', 'schema': []}]
-    elif cmd[1:] in ('dt', 'dv', 'df'):
-        rel_type = {'dt': 'table', 'dv': 'view', 'df': 'function'}[cmd[1:]]
-        if schema:
-            return [{'type': rel_type, 'schema': schema}]
-        else:
-            return [{'type': 'schema'},
-                    {'type': rel_type, 'schema': []}]
 
     return [{'type': 'keyword'}, {'type': 'special'}]
 
@@ -211,7 +179,7 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
             aliases = [t[2] or t[1] for t in tables]
             return [{'type': 'alias', 'aliases': aliases}]
 
-    elif token_v.lower() in ('c', 'use', 'database', 'template'):
+    elif token_v.lower() in ('use', 'database', 'template', 'connect'):
         # "\c <db", "use <db>", "DROP DATABASE <db>",
         # "CREATE DATABASE <newdb> WITH TEMPLATE <db>"
         return [{'type': 'database'}]

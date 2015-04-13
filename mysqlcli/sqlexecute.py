@@ -61,14 +61,20 @@ class SQLExecute(object):
             # Check if the command is a \u, \r or 'use'. This is a special
             # exception that cannot be offloaded to `dbspecial` lib. Because we
             # have to change the database connection that we're connected to.
-            if (sql.startswith('\\r') or sql.startswith('\\u') or
-                    sql.lower().startswith('use')):
+
+            if (sql.startswith('\\u ') or sql.lower().startswith('use ') or
+                    (sql.startswith('\\r ')) or sql.startswith('connect ')):
                 _logger.debug('Database change command detected.')
                 try:
                     dbname = sql.split()[1]
                 except:
-                    _logger.debug('Database name missing.')
-                    raise RuntimeError('Database name missing.')
+                    # Look for a database name only for use and \u otherwise
+                    # it's a reconnect command so use the same database name.
+                    if sql.startswith('\\u ') or sql.lower().startswith('use '):
+                        _logger.debug('Database name missing.')
+                        raise RuntimeError('Database name missing.')
+                    else:
+                        dbname = self.dbname
                 self.connect(database=dbname)
                 self.dbname = dbname
                 _logger.debug('Successfully switched to DB: %r', dbname)
