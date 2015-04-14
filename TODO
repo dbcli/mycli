@@ -1,2 +1,8 @@
 # vi: ft=vimwiki
-* [] Setup a MySql database and test against it.
+ 
+* [ ] Check if views are available in mysql.
+* [ ] Check if there is an equivalent of schema in mysql.
+* [ ] Find out the status of using unicode with pymysql.
+* [ ] Getting columns for all tables seems like a challenge. Find out how to do that in MySQL.
+* [ ] Figure out how to drop all the tables in a database to use in the tests.
+* [ ] Check what's the equivalent of PGHOST, PGUSER, etc.
