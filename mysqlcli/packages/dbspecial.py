@@ -72,7 +72,7 @@ def sql_name_pattern(pattern):
 
     return schema, relname
 
-def show_help(cur, arg, verbose):  # All the parameters are ignored.
+def show_help(*args):  # All the parameters are ignored.
     headers = ['Command', 'Description']
     result = []
 
@@ -84,17 +84,17 @@ def show_help(cur, arg, verbose):  # All the parameters are ignored.
 def change_db(cur, arg, verbose):
     raise NotImplementedError
 
-def quit(cur, arg, verbose):
+def quit(*args):
     raise NotImplementedError
 
-def expanded_output(cur, arg, verbose):
+def expanded_output(*args):
     global use_expanded_output
     use_expanded_output = not use_expanded_output
     message = u"Expanded display is "
     message += u"on." if use_expanded_output else u"off."
     return [(None, None, None, message)]
 
-def toggle_timing(cur, arg, verbose):
+def toggle_timing(*args):
     global TIMING_ENABLED
     TIMING_ENABLED = not TIMING_ENABLED
     message = "Timing is "
@@ -134,7 +134,7 @@ def execute(cur, sql):
     # If the command executor is a function, then call the function with the
     # args. If it's a string, then assume it's an SQL command and run it.
     if callable(command_executor):
-        return command_executor(cur, arg, verbose)
+        return command_executor(cur, arg)
     elif isinstance(command_executor, str):
         cur.execute(command_executor)
         if cur.description:

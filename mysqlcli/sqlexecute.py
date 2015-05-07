@@ -45,7 +45,7 @@ class SQLExecute(object):
 
     def run(self, statement):
         """Execute the sql in the database and return the results. The results
-        are a list of tuples. Each tuple has 3 values (rows, headers, status).
+        are a list of tuples. Each tuple has 4 values (title, rows, headers, status).
         """
 
         # Remove spaces and EOL
