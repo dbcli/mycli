@@ -181,6 +181,8 @@ class MysqlCli(object):
                 cli.layout.before_input = DefaultPrompt(prompt)
                 document = cli.read_input(on_exit=AbortAction.RAISE_EXCEPTION)
 
+                dbspecial.set_expanded_output(False)
+
                 # The reason we check here instead of inside the sqlexecute is
                 # because we want to raise the Exit exception which will be
                 # caught by the try/except block that wraps the sqlexecute.run()
@@ -354,8 +356,9 @@ def need_completion_refresh(queries):
     for query in sqlparse.split(queries):
         try:
             first_token = query.split()[0]
-            return first_token.lower() in ('alter', 'create', 'use', '\\r',
-                    '\\u' '\\connect', 'drop')
+            res = first_token.lower() in ('alter', 'create', 'use', '\\r',
+                    '\\u', '\\connect', 'drop')
+            return res
         except Exception:
             return False
 
