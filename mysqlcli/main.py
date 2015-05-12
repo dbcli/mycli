@@ -21,7 +21,6 @@ from pygments.lexers.sql import PostgresLexer
 from .packages.tabulate import tabulate
 from .packages.expanded import expanded_table
 from .packages.special.main import (COMMANDS, HIDDEN_COMMANDS)
-from .packages.special import is_expanded_output
 import mysqlcli.packages.special as special
 from .sqlcompleter import SQLCompleter
 from .clitoolbar import CLIToolbar
@@ -152,6 +151,32 @@ class MysqlCli(object):
 
         self.sqlexecute = sqlexecute
 
+    def handle_editor_command(self, cli, document):
+        """
+        Editor command is any query that is prefixed or suffixed
+        by a '\e'. The reason for a while loop is because a user
+        might edit a query multiple times.
+        For eg:
+        "select * from \e"<enter> to edit it in vim, then come
+        back to the prompt with the edited query "select * from
+        blah where q = 'abc'\e" to edit it again.
+        :param cli: CommandLineInterface
+        :param document: Document
+        :return: Document
+        """
+        while special.editor_command(document.text):
+            filename = special.get_filename(document.text)
+            sql, message = special.open_external_editor(filename,
+                                                          sql=document.text)
+            if message:
+                # Something went wrong. Raise an exception and bail.
+                raise RuntimeError(message)
+            document = cli.read_input(
+                initial_document=Document(sql, cursor_position=len(sql)),
+                )
+            continue
+        return document
+
     def run_cli(self):
         sqlexecute = self.sqlexecute
         prompt = '%s> ' % sqlexecute.dbname
@@ -189,6 +214,14 @@ class MysqlCli(object):
                 # sqlexecute.run() statement.
                 if quit_command(document.text):
                     raise Exit
+
+                try:
+                    document = self.handle_editor_command(cli, document)
+                except RuntimeError as e:
+                    logger.error("sql: %r, error: %r", document.text, e)
+                    logger.error("traceback: %r", traceback.format_exc())
+                    click.secho(str(e), err=True, fg='red')
+                    continue
 
                 # Keep track of whether or not the query is mutating. In case
                 # of a multi-statement query, the overall query is considered
@@ -341,7 +374,7 @@ def format_output(title, cur, headers, status, table_format):
         output.append(title)
     if cur:
         headers = [utf8tounicode(x) for x in headers]
-        if is_expanded_output():
+        if special.is_expanded_output():
             output.append(expanded_table(cur, headers))
         else:
             output.append(tabulate(cur, headers, tablefmt=table_format,
