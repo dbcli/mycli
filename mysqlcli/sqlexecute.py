@@ -42,6 +42,12 @@ class SQLExecute(object):
             self.conn.close()
         self.conn = conn
         self.conn.autocommit = True
+        # Update them after the connection is made to ensure that it was a
+        # successful connection.
+        self.dbname = db
+        self.user = user
+        self.host = host
+        self.port = port
 
     def run(self, statement):
         """Execute the sql in the database and return the results. The results
@@ -58,33 +64,16 @@ class SQLExecute(object):
             # Remove spaces, eol and semi-colons.
             sql = sql.rstrip(';')
 
-            # Check if the command is a \u, \r or 'use'. This is a special
-            # exception that cannot be offloaded to `dbspecial` lib. Because we
-            # have to change the database connection that we're connected to.
-
-            if (sql.startswith('\\u ') or sql.lower().startswith('use ') or
-                    (sql.startswith('\\r ')) or sql.startswith('connect ')):
-                _logger.debug('Database change command detected.')
-                try:
-                    dbname = sql.split()[1]
-                except:
-                    # Look for a database name only for use and \u otherwise
-                    # it's a reconnect command so use the same database name.
-                    if sql.startswith('\\u ') or sql.lower().startswith('use '):
-                        _logger.debug('Database name missing.')
-                        raise RuntimeError('Database name missing.')
-                    else:
-                        dbname = self.dbname
-                self.connect(database=dbname)
-                self.dbname = dbname
-                _logger.debug('Successfully switched to DB: %r', dbname)
-                yield (None, None, None, 'You are now connected to database "%s" as '
-                        'user "%s"' % (self.dbname, self.user))
+            # \G is treated specially since we have to set the expanded output
+            # and then proceed to execute the sql as normal.
+            if sql.endswith('\\G'):
+                dbspecial.set_expanded_output(True)
+                yield self.execute_normal_sql(sql.rsplit('\\G', 1)[0])
             else:
                 try:   # Special command
                     _logger.debug('Trying a dbspecial command. sql: %r', sql)
                     cur = self.conn.cursor()
-                    for result in dbspecial.execute(cur, sql):
+                    for result in dbspecial.execute(cur, sql, self):
                         yield result
                 except KeyError:  # Regular SQL
                     yield self.execute_normal_sql(sql)

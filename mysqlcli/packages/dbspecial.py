@@ -12,6 +12,11 @@ TableInfo = namedtuple("TableInfo", ['checks', 'relkind', 'hasindex',
 log = logging.getLogger(__name__)
 
 use_expanded_output = False
+
+def set_expanded_output(val):
+    global use_expanded_output
+    use_expanded_output = val
+
 def is_expanded_output():
     return use_expanded_output
 
@@ -19,7 +24,6 @@ TIMING_ENABLED = False
 
 def parse_special_command(sql):
     command, _, arg = sql.partition(' ')
-
     return (command, arg.strip())
 
 def sql_name_pattern(pattern):
@@ -73,7 +77,7 @@ def sql_name_pattern(pattern):
     return schema, relname
 
 def show_help(*args):  # All the parameters are ignored.
-    headers = ['Command', 'Description']
+    headers = ['Command', 'Shortcut', 'Description']
     result = []
 
     for command, value in sorted(CASE_SENSITIVE_COMMANDS.items()):
@@ -81,18 +85,8 @@ def show_help(*args):  # All the parameters are ignored.
             result.append(value[1])
     return [(None, result, headers, None)]
 
-def change_db(cur, arg, verbose):
+def stub(*args):
     raise NotImplementedError
-
-def quit(*args):
-    raise NotImplementedError
-
-def expanded_output(*args):
-    global use_expanded_output
-    use_expanded_output = not use_expanded_output
-    message = u"Expanded display is "
-    message += u"on." if use_expanded_output else u"off."
-    return [(None, None, None, message)]
 
 def toggle_timing(*args):
     global TIMING_ENABLED
@@ -101,22 +95,33 @@ def toggle_timing(*args):
     message += "on." if TIMING_ENABLED else "off."
     return [(None, None, None, message)]
 
+def change_db(cur, arg, db_obj):
+    if arg is None:
+        db_obj.connect()
+    else:
+        db_obj.connect(database=arg)
+
+    yield (None, None, None, 'You are now connected to database "%s" as '
+            'user "%s"' % (db_obj.dbname, db_obj.user))
+
+
 NON_CASE_SENSITIVE_COMMANDS = {
             }
 
 CASE_SENSITIVE_COMMANDS = {
-            '\?': (show_help, ['\?', 'Help on pgcli commands.']),
-            'connect': (change_db, ['connect', '(\\r) Reconnect to the server. Optional arguments are db and host.']),
-            'ego': (expanded_output, ['ego', '(\G) Display results vertically.']),
-            'exit': (quit, ['exit', '(\q) Exit.']),
-            'quit': (quit, ['quit', '(\q) Quit.']),
-            'use': (change_db, ['use', '(\u) Use another database.']),
-            '\l': ('''SHOW DATABASES;''', ['\l', 'List databases.']),
-            '\\timing': (toggle_timing, ['\\timing', 'Toggle timing of commands.']),
-            '\\x': (expanded_output, ['\\x', '(\\x) Toggle expanded output.']),
+            '\?': (show_help, ['\?', '(\?)', 'Show this help.']),
+            'help': (show_help, ['help', '(\?)', 'Show this help.']),
+            '?': (show_help, ['?', '(\?)', 'Show this help.']),
+            'connect': (change_db, ['connect', '(\\r)', 'Reconnect to the server. Optional arguments are db and host.']),
+            '\\G': (stub, ['\\G', '(\\G)', 'Display results vertically.']),
+            'exit': (stub, ['exit', '(\q)', 'Exit.']),
+            'quit': (stub, ['quit', '(\q)', 'Quit.']),
+            'use': (change_db, ['use', '(\u)', 'Use another database.']),
+            '\l': ('''SHOW DATABASES;''', ['\\l', '(\\l)', 'List databases.']),
+            '\\timing': (toggle_timing, ['\\timing', '(\\t)', 'Toggle timing of commands.']),
             }
 
-def execute(cur, sql):
+def execute(cur, sql, db_obj=None):
     """Execute a special command and return the results. If the special command
     is not supported a KeyError will be raised.
     """
@@ -134,14 +139,14 @@ def execute(cur, sql):
     # If the command executor is a function, then call the function with the
     # args. If it's a string, then assume it's an SQL command and run it.
     if callable(command_executor):
-        return command_executor(cur, arg)
+        return command_executor(cur, arg, db_obj)
     elif isinstance(command_executor, str):
         cur.execute(command_executor)
         if cur.description:
             headers = [x[0] for x in cur.description]
-            return [(None, cur, headers, cur.statusmessage)]
+            return [(None, cur, headers, None)]
         else:
-            return [(None, None, None, cur.statusmessage)]
+            return [(None, None, None, None)]
 
 if __name__ == '__main__':
     import pymysql

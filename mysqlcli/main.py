@@ -181,6 +181,8 @@ class MysqlCli(object):
                 cli.layout.before_input = DefaultPrompt(prompt)
                 document = cli.read_input(on_exit=AbortAction.RAISE_EXCEPTION)
 
+                dbspecial.set_expanded_output(False)
+
                 # The reason we check here instead of inside the sqlexecute is
                 # because we want to raise the Exit exception which will be
                 # caught by the try/except block that wraps the sqlexecute.run()
