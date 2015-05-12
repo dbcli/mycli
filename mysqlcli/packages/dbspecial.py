@@ -116,7 +116,7 @@ CASE_SENSITIVE_COMMANDS = {
             '\\G': (stub, ['\\G', '(\\G)', 'Display results vertically.']),
             'exit': (stub, ['exit', '(\q)', 'Exit.']),
             'quit': (stub, ['quit', '(\q)', 'Quit.']),
-            'use': (change_db, ['use', '(\u)', 'Use another database.']),
+            '\\u': (change_db, ['\\u', '(\u)', 'Use another database.']),
             '\l': ('''SHOW DATABASES;''', ['\\l', '(\\l)', 'List databases.']),
             '\\timing': (toggle_timing, ['\\timing', '(\\t)', 'Toggle timing of commands.']),
             }
