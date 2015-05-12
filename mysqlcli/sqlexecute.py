@@ -1,7 +1,7 @@
 import logging
 import pymysql
 import sqlparse
-from .packages import dbspecial
+from .packages import special
 from .encodingutils import unicode2utf8
 
 _logger = logging.getLogger(__name__)
@@ -67,13 +67,13 @@ class SQLExecute(object):
             # \G is treated specially since we have to set the expanded output
             # and then proceed to execute the sql as normal.
             if sql.endswith('\\G'):
-                dbspecial.set_expanded_output(True)
+                special.set_expanded_output(True)
                 yield self.execute_normal_sql(sql.rsplit('\\G', 1)[0])
             else:
                 try:   # Special command
                     _logger.debug('Trying a dbspecial command. sql: %r', sql)
                     cur = self.conn.cursor()
-                    for result in dbspecial.execute(cur, sql, self):
+                    for result in special.execute(cur, sql, self):
                         yield result
                 except KeyError:  # Regular SQL
                     yield self.execute_normal_sql(sql)

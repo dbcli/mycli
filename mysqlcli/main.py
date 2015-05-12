@@ -20,9 +20,9 @@ from pygments.lexers.sql import PostgresLexer
 
 from .packages.tabulate import tabulate
 from .packages.expanded import expanded_table
-from .packages.dbspecial import (CASE_SENSITIVE_COMMANDS,
-        NON_CASE_SENSITIVE_COMMANDS, is_expanded_output)
-import mysqlcli.packages.dbspecial as dbspecial
+from .packages.special.main import (COMMANDS, HIDDEN_COMMANDS)
+from .packages.special import is_expanded_output
+import mysqlcli.packages.special as special
 from .sqlcompleter import SQLCompleter
 from .clitoolbar import CLIToolbar
 from .clistyle import style_factory
@@ -62,7 +62,7 @@ class MysqlCli(object):
         c = self.config = load_config('~/.mysqlclirc', default_config)
         self.multi_line = c.getboolean('main', 'multi_line')
         self.key_bindings = c.get('main', 'key_bindings')
-        dbspecial.TIMING_ENABLED = c.getboolean('main', 'timing')
+        special.set_timing_enabled(c.getboolean('main', 'timing'))
         self.table_format = c.get('main', 'table_format')
         self.syntax_style = c.get('main', 'syntax_style')
 
@@ -74,8 +74,8 @@ class MysqlCli(object):
         # Initialize completer
         smart_completion = c.getboolean('main', 'smart_completion')
         completer = SQLCompleter(smart_completion)
-        completer.extend_special_commands(CASE_SENSITIVE_COMMANDS.keys())
-        completer.extend_special_commands(NON_CASE_SENSITIVE_COMMANDS.keys())
+        completer.extend_special_commands(COMMANDS.keys())
+        completer.extend_special_commands(HIDDEN_COMMANDS.keys())
         self.completer = completer
 
     def initialize_logging(self):
@@ -181,12 +181,12 @@ class MysqlCli(object):
                 cli.layout.before_input = DefaultPrompt(prompt)
                 document = cli.read_input(on_exit=AbortAction.RAISE_EXCEPTION)
 
-                dbspecial.set_expanded_output(False)
+                special.set_expanded_output(False)
 
                 # The reason we check here instead of inside the sqlexecute is
                 # because we want to raise the Exit exception which will be
-                # caught by the try/except block that wraps the sqlexecute.run()
-                # statement.
+                # caught by the try/except block that wraps the
+                # sqlexecute.run() statement.
                 if quit_command(document.text):
                     raise Exit
 
@@ -239,7 +239,7 @@ class MysqlCli(object):
                     click.secho(str(e), err=True, fg='red')
                 else:
                     click.echo_via_pager('\n'.join(output))
-                    if dbspecial.TIMING_ENABLED:
+                    if special.is_timing_enabled():
                         print('Command Time:', duration)
                         print('Format Time:', total)
                 finally:

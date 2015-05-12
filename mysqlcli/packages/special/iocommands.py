@@ -1,14 +1,35 @@
-"""List of special commands supported by MySQL that doesn't touch the
-database."""
-def extract_sql_expanded(sql):
-    if sql.endswith('\\G'):
-        return sql.rsplit('\\G', 1)[0]
-    return sql
+from . import export
 
-expanded_output = False
-def is_expanded_output():
-    return expanded_output
+TIMING_ENABLED = False
+use_expanded_output = False
 
+@export
+def set_timing_enabled(val):
+    global TIMING_ENABLED
+    TIMING_ENABLED = val
+
+def toggle_timing(*args):
+    global TIMING_ENABLED
+    TIMING_ENABLED = not TIMING_ENABLED
+    message = "Timing is "
+    message += "on." if TIMING_ENABLED else "off."
+    return [(None, None, None, message)]
+
+@export
+def is_timing_enabled():
+    return TIMING_ENABLED
+
+@export
 def set_expanded_output(val):
-    global expanded_output
-    expanded_output = val
+    global use_expanded_output
+    use_expanded_output = val
+
+@export
+def is_expanded_output():
+    return use_expanded_output
+
+def quit(*args):
+    raise NotImplementedError
+
+def stub(*args):
+    raise NotImplementedError
