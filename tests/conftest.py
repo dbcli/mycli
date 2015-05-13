@@ -1,5 +1,5 @@
 import pytest
-from utils import (HOST, USER, create_db, db_connection, drop_tables)
+from utils import (HOST, USER, create_db, db_connection)
 import mysqlcli.sqlexecute
 
 
@@ -9,7 +9,6 @@ def connection():
     connection = db_connection('_test_db')
     yield connection
 
-    drop_tables(connection)
     connection.close()
 
 

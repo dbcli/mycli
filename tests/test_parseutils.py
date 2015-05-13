@@ -81,4 +81,3 @@ def test_join_table_schema_qualified():
 def test_join_as_table():
     tables = extract_tables('SELECT * FROM my_table AS m WHERE m.a > 5')
     assert tables == [(None, 'my_table', 'm')]
-

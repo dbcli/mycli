@@ -6,7 +6,7 @@ from mysqlcli.main import format_output
 USER, HOST = 'root', 'localhost'
 
 def db_connection(dbname=None):
-    conn = pymysql.connect(user=USER, host=HOST, dbname=dbname)
+    conn = pymysql.connect(user=USER, host=HOST, database=dbname)
     conn.autocommit = True
     return conn
 
@@ -29,21 +29,11 @@ def create_db(dbname):
         except:
             pass
 
-
-def drop_tables(conn):
-    with conn.cursor() as cur:
-        cur.execute('''
-            DROP SCHEMA public CASCADE;
-            CREATE SCHEMA public;
-            DROP SCHEMA IF EXISTS schema1 CASCADE;
-            DROP SCHEMA IF EXISTS schema2 CASCADE''')
-
-
 def run(executor, sql, join=False):
     " Return string output for the sql to be run "
     result = []
-    for rows, headers, status in executor.run(sql):
-        result.extend(format_output(rows, headers, status, 'psql'))
+    for title, rows, headers, status in executor.run(sql):
+        result.extend(format_output(title, rows, headers, status, 'psql'))
     if join:
         result = '\n'.join(result)
     return result

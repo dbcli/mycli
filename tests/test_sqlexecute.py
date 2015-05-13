@@ -9,43 +9,34 @@ from utils import run, dbtest
 def test_conn(executor):
     run(executor, '''create table test(a text)''')
     run(executor, '''insert into test values('abc')''')
-    assert run(executor, '''select * from test''', join=True) == dedent("""\
+    results = run(executor, '''select * from test''', join=True)
+    assert results == dedent("""\
         +-----+
         | a   |
         |-----|
         | abc |
-        +-----+
-        SELECT 1""")
+        +-----+""")
 
 @dbtest
-def test_bools_are_treated_as_strings(executor):
+def test_bools(executor):
     run(executor, '''create table test(a boolean)''')
     run(executor, '''insert into test values(True)''')
-    assert run(executor, '''select * from test''', join=True) == dedent("""\
-        +------+
-        | a    |
-        |------|
-        | True |
-        +------+
-        SELECT 1""")
+    results = run(executor, '''select * from test''', join=True)
+    assert results == dedent("""\
+        +-----+
+        |   a |
+        |-----|
+        |   1 |
+        +-----+""")
 
 @dbtest
-def test_schemata_table_and_columns_query(executor):
+def test_table_and_columns_query(executor):
     run(executor, "create table a(x text, y text)")
     run(executor, "create table b(z text)")
-    run(executor, "create schema schema1")
-    run(executor, "create table schema1.c (w text)")
-    run(executor, "create schema schema2")
 
-    assert executor.schemata() == ['public', 'schema1', 'schema2']
-    assert executor.tables() == [
-        ('public', 'a'), ('public', 'b'), ('schema1', 'c')]
-
-    assert executor.columns() == [
-        ('public', 'a', 'x'), ('public', 'a', 'y'),
-        ('public', 'b', 'z'), ('schema1', 'c', 'w')]
-
-    assert executor.search_path() == ['public']
+    assert set(executor.tables()) == set([('a',), ('b',)])
+    assert set(executor.table_columns()) == set(
+            [('a', 'x'), ('a', 'y'), ('b', 'z')])
 
 @dbtest
 def test_database_list(executor):
@@ -54,26 +45,18 @@ def test_database_list(executor):
 
 @dbtest
 def test_invalid_syntax(executor):
-    with pytest.raises(psycopg2.ProgrammingError) as excinfo:
+    with pytest.raises(pymysql.ProgrammingError) as excinfo:
         run(executor, 'invalid syntax!')
-    assert 'syntax error at or near "invalid"' in str(excinfo.value)
+    assert 'You have an error in your SQL syntax;' in str(excinfo.value)
 
 @dbtest
 def test_invalid_column_name(executor):
-    with pytest.raises(psycopg2.ProgrammingError) as excinfo:
+    with pytest.raises(pymysql.InternalError) as excinfo:
         run(executor, 'select invalid command')
-    assert 'column "invalid" does not exist' in str(excinfo.value)
-
-@pytest.yield_fixture(params=[True, False])
-def expanded(request, executor):
-    if request.param:
-        run(executor, '\\x')
-    yield request.param
-    if request.param:
-        run(executor, '\\x')
+    assert "Unknown column 'invalid' in 'field list'" in str(excinfo.value)
 
 @dbtest
-def test_unicode_support_in_output(executor, expanded):
+def test_unicode_support_in_output(executor):
     run(executor, "create table unicodechars(t text)")
     run(executor, "insert into unicodechars (t) values ('é')")
 
@@ -81,30 +64,31 @@ def test_unicode_support_in_output(executor, expanded):
     assert u'é' in run(executor, "select * from unicodechars", join=True)
 
 @dbtest
+def test_expanded_output(executor):
+    run(executor, '''create table test(a text)''')
+    run(executor, '''insert into test values('abc')''')
+    results = run(executor, '''select * from test\G''', join=True)
+    assert results == dedent("""\
+        -[ RECORD 0 ]
+        a | abc
+        """)
+
+@dbtest
 def test_multiple_queries_same_line(executor):
     result = run(executor, "select 'foo'; select 'bar'")
-    assert len(result) == 4  # 2 * (output+status)
+    assert len(result) == 2
     assert "foo" in result[0]
-    assert "bar" in result[2]
+    assert "bar" in result[1]
 
 @dbtest
 def test_multiple_queries_same_line_syntaxerror(executor):
-    with pytest.raises(psycopg2.ProgrammingError) as excinfo:
+    with pytest.raises(pymysql.ProgrammingError) as excinfo:
         run(executor, "select 'foo'; invalid syntax")
-    assert 'syntax error at or near "invalid"' in str(excinfo.value)
+    assert 'You have an error in your SQL syntax;' in str(excinfo.value)
 
 @dbtest
 def test_special_command(executor):
     run(executor, '\\?')
-
-
-@dbtest
-def test_bytea_field_support_in_output(executor):
-    run(executor, "create table binarydata(c bytea)")
-    run(executor,
-        "insert into binarydata (c) values (decode('DEADBEEF', 'hex'))")
-
-    assert u'\\xdeadbeef' in run(executor, "select * from binarydata", join=True)
 
 @dbtest
 def test_unicode_support_in_unknown_type(executor):
