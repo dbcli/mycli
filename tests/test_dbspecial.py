@@ -1,5 +1,5 @@
-from mysqlcli.packages.sqlcompletion import suggest_type
-from test_sqlcompletion import sorted_dicts
+from mysqlcli.packages.completion_engine import suggest_type
+from test_completion_engine import sorted_dicts
 
 def test_d_suggests_tables_and_schemas():
     suggestions = suggest_type('\d ', '\d ')
@@ -16,4 +16,3 @@ def test_d_dot_suggests_schema_qualified_tables():
 
     suggestions = suggest_type('\d myschema.xxx', '\d myschema.xxx')
     assert suggestions == [{'type': 'table', 'schema': 'myschema'}]
-
