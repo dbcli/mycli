@@ -7,3 +7,4 @@
 * [ ] Check what's the equivalent of PGHOST, PGUSER, etc.
 * [ ] Copy LEFT JOIN code from pgcli.
 * [ ] Upgrade to prompt_toolkit 0.37
+* [ ] Error from connecting to non-existent db is weird.

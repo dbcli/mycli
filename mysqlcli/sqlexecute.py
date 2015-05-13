@@ -25,7 +25,7 @@ class SQLExecute(object):
         self.user = user
         self.password = password
         self.host = host
-        self.port = port
+        self.port = port or 3306
         self.connect()
 
     def connect(self, database=None, user=None, password=None, host=None,
@@ -41,7 +41,7 @@ class SQLExecute(object):
         if hasattr(self, 'conn'):
             self.conn.close()
         self.conn = conn
-        self.conn.autocommit = True
+        self.conn.autocommit(True)
         # Update them after the connection is made to ensure that it was a
         # successful connection.
         self.dbname = db
@@ -51,7 +51,8 @@ class SQLExecute(object):
 
     def run(self, statement):
         """Execute the sql in the database and return the results. The results
-        are a list of tuples. Each tuple has 4 values (title, rows, headers, status).
+        are a list of tuples. Each tuple has 4 values
+        (title, rows, headers, status).
         """
 
         # Remove spaces and EOL
