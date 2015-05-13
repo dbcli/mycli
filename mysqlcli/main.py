@@ -307,6 +307,10 @@ class MysqlCli(object):
 
         sqlexecute = self.sqlexecute
 
+        # schemata
+        completer.extend_schemata(self.sqlexecute.dbname)
+        completer.set_dbname(self.sqlexecute.dbname)
+
         # tables
         completer.extend_relations(sqlexecute.tables(), kind='tables')
         completer.extend_columns(sqlexecute.table_columns(), kind='tables')

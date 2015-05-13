@@ -5,6 +5,11 @@ from .packages.completion_engine import suggest_type
 from .packages.parseutils import last_word
 from re import compile
 
+try:
+    from collections import Counter
+except ImportError:
+    # python 2.6
+    from .packages.counter import Counter
 
 _logger = logging.getLogger(__name__)
 
@@ -27,13 +32,12 @@ class SQLCompleter(Completer):
             'RAW', 'RENAME', 'RESOURCE', 'REVOKE', 'RIGHT', 'ROW', 'ROWID',
             'ROWNUM', 'ROWS', 'SELECT', 'SESSION', 'SET', 'SHARE', 'SIZE',
             'SMALLINT', 'START', 'SUCCESSFUL', 'SYNONYM', 'SYSDATE', 'TABLE',
-            'TEMPLATE', 'THEN', 'TO', 'TRIGGER', 'UID', 'UNION', 'UNIQUE',
-            'UPDATE', 'USE', 'USER', 'VALIDATE', 'VALUES', 'VARCHAR',
-            'VARCHAR2', 'VIEW', 'WHEN', 'WHENEVER', 'WHERE', 'WITH', ]
+            'TEMPLATE', 'THEN', 'TO', 'TRIGGER', 'TRUNCATE', 'UID', 'UNION',
+            'UNIQUE', 'UPDATE', 'USE', 'USER', 'USING', 'VALIDATE', 'VALUES',
+            'VARCHAR', 'VARCHAR2', 'VIEW', 'WHEN', 'WHENEVER', 'WHERE', 'WITH']
 
-    functions = ['AVG', 'COUNT', 'DISTINCT', 'FIRST', 'FORMAT', 'LAST',
-            'LCASE', 'LEN', 'MAX', 'MIN', 'MID', 'NOW', 'ROUND', 'SUM', 'TOP',
-            'UCASE']
+    functions = ['AVG', 'COUNT', 'FIRST', 'FORMAT', 'LAST', 'LCASE', 'LEN',
+                 'MAX', 'MIN', 'MID', 'NOW', 'ROUND', 'SUM', 'TOP', 'UCASE']
 
     def __init__(self, smart_completion=True):
         super(self.__class__, self).__init__()
@@ -80,22 +84,37 @@ class SQLCompleter(Completer):
         self.keywords.extend(additional_keywords)
         self.all_completions.update(additional_keywords)
 
+    def extend_schemata(self, schema):
+        schema = self.escape_name(schema)
+        metadata = self.dbmetadata['tables']
+        metadata[schema] = {}
+
+        # dbmetadata.values() are the 'tables' and 'functions' dicts
+        for metadata in self.dbmetadata.values():
+            metadata[schema] = {}
+
+        self.all_completions.update(schema)
+
     def extend_relations(self, data, kind):
         """ extend metadata for tables or views
 
-        :param data: list of (rel_name,) tuples
+        :param data: list of (schema_name, rel_name) tuples
         :param kind: either 'tables' or 'views'
         :return:
         """
 
         data = [self.escaped_names(d) for d in data]
 
-        # dbmetadata['tables']['table_name'] should be a list of
+        # dbmetadata['tables']['schema_name']['table_name'] should be a list of
         # column names. Default to an asterisk
         metadata = self.dbmetadata[kind]
         for relname in data:
-            metadata[relname[0]] = ['*']
-            self.all_completions.update(relname[0])
+            try:
+                metadata[self.dbname][relname[0]] = ['*']
+                self.all_completions.update(relname[0])
+            except AttributeError:
+                _logger.error('%r %r listed in unrecognized schema %r',
+                              kind, relname[0], self.dbname)
 
     def extend_columns(self, column_data, kind):
         """ extend column metadata
@@ -107,7 +126,7 @@ class SQLCompleter(Completer):
         column_data = [self.escaped_names(d) for d in column_data]
         metadata = self.dbmetadata[kind]
         for relname, column in column_data:
-            metadata[relname].append(column)
+            metadata[self.dbname][relname].append(column)
             self.all_completions.update(column)
 
     def extend_functions(self, func_data):
@@ -124,8 +143,12 @@ class SQLCompleter(Completer):
             metadata[schema][func] = None
             self.all_completions.add(func)
 
+    def set_dbname(self, dbname):
+        self.dbname = dbname
+
     def reset_completions(self):
         self.databases = []
+        self.dbname = ''
         self.dbmetadata = {'tables': {}, 'views': {}, 'functions': {}}
         self.all_completions = set(self.keywords + self.functions)
 
@@ -177,27 +200,42 @@ class SQLCompleter(Completer):
                 tables = suggestion['tables']
                 _logger.debug("Completion column scope: %r", tables)
                 scoped_cols = self.populate_scoped_cols(tables)
+                if suggestion.get('drop_unique'):
+                    # drop_unique is used for 'tb11 JOIN tbl2 USING (...'
+                    # which should suggest only columns that appear in more than
+                    # one table
+                    scoped_cols = [col for (col, count)
+                                         in Counter(scoped_cols).items()
+                                           if count > 1 and col != '*']
+
                 cols = self.find_matches(word_before_cursor, scoped_cols)
                 completions.extend(cols)
 
             elif suggestion['type'] == 'function':
-                funcs = self.dbmetadata['functions'].keys()
-
-                user_funcs = self.find_matches(word_before_cursor, funcs,
-                                          start_only=True)
+                # suggest user-defined functions using substring matching
+                #funcs = self.dbmetadata['functions'].keys()
+                funcs = self.populate_schema_objects(suggestion['schema'],
+                                                     'functions')
+                user_funcs = self.find_matches(word_before_cursor, funcs)
                 completions.extend(user_funcs)
+
+                # suggest hardcoded functions using startswith matching
                 predefined_funcs = self.find_matches(word_before_cursor,
                                                      self.functions,
                                                      start_only=True)
                 completions.extend(predefined_funcs)
 
             elif suggestion['type'] == 'table':
-                tables = self.dbmetadata['tables'].keys()
+                #tables = self.dbmetadata['tables'].keys()
+                tables = self.populate_schema_objects(suggestion['schema'],
+                                                      'tables')
                 tables = self.find_matches(word_before_cursor, tables)
                 completions.extend(tables)
 
             elif suggestion['type'] == 'view':
-                views = self.dbmetadata['views'].keys()
+                #views = self.dbmetadata['views'].keys()
+                views = self.populate_schema_objects(suggestion['schema'],
+                                                     'views')
                 views = self.find_matches(word_before_cursor, views)
                 completions.extend(views)
 
@@ -225,7 +263,7 @@ class SQLCompleter(Completer):
 
     def populate_scoped_cols(self, scoped_tbls):
         """ Find all columns in a set of scoped_tables
-        :param scoped_tbls: list of (table, alias) tuples
+        :param scoped_tbls: list of (schema, table, alias) tuples
         :return: list of column names
         """
 
@@ -233,13 +271,15 @@ class SQLCompleter(Completer):
         meta = self.dbmetadata
 
         for tbl in scoped_tbls:
+            # A fully qualified schema.relname reference or default_schema
+            schema = (tbl[0] and self.escape_name(tbl[0])) or self.dbname
             relname = self.escape_name(tbl[1])
 
-            # We don't know if relname is a table or view. Since
+            # We don't know if schema.relname is a table or view. Since
             # tables and views cannot share the same name, we can check one
             # at a time
             try:
-                columns.extend(meta['tables'][relname])
+                columns.extend(meta['tables'][schema][relname])
 
                 # Table exists, so don't bother checking for a view
                 continue
@@ -247,8 +287,22 @@ class SQLCompleter(Completer):
                 pass
 
             try:
-                columns.extend(meta['views'][relname])
+                columns.extend(meta['views'][schema][relname])
             except KeyError:
                 pass
 
         return columns
+
+    def populate_schema_objects(self, schema, obj_type):
+        """Returns list of tables or functions for a (optional) schema"""
+
+        metadata = self.dbmetadata[obj_type]
+        schema = schema or self.dbname
+
+        try:
+            objects = metadata[schema].keys()
+        except KeyError:
+            # schema doesn't exist
+            objects = []
+
+        return objects
