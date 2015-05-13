@@ -29,6 +29,7 @@ COMMANDS = {
             '\\timing': (toggle_timing, ['\\timing', '(\\t)', 'Toggle timing of commands.']),
             }
 
+@export
 def parse_special_command(sql):
     command, _, arg = sql.partition(' ')
     return (command, arg.strip())

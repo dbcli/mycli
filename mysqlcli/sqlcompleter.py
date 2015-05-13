@@ -50,7 +50,9 @@ class SQLCompleter(Completer):
         self.all_completions = set(self.keywords + self.functions)
 
     def escape_name(self, name):
-        if name and ((not self.name_pattern.match(name))):
+        if name and ((not self.name_pattern.match(name))
+                or (name.upper() in self.reserved_words)
+                or (name.upper() in self.functions)):
             name = '"%s"' % name
 
         return name
@@ -181,9 +183,13 @@ class SQLCompleter(Completer):
             elif suggestion['type'] == 'function':
                 funcs = self.dbmetadata['functions'].keys()
 
-                funcs = self.find_matches(word_before_cursor, funcs,
+                user_funcs = self.find_matches(word_before_cursor, funcs,
                                           start_only=True)
-                completions.extend(funcs)
+                completions.extend(user_funcs)
+                predefined_funcs = self.find_matches(word_before_cursor,
+                                                     self.functions,
+                                                     start_only=True)
+                completions.extend(predefined_funcs)
 
             elif suggestion['type'] == 'table':
                 tables = self.dbmetadata['tables'].keys()

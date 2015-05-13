@@ -1,9 +1,9 @@
 from __future__ import print_function
 import sys
 import sqlparse
-from sqlparse.sql import Comparison, Identifier
+from sqlparse.sql import Comparison, Identifier, Where
 from .parseutils import last_word, extract_tables, find_prev_keyword
-from .dbspecial import parse_special_command
+from .special import parse_special_command
 
 PY2 = sys.version_info[0] == 2
 PY3 = sys.version_info[0] == 3
@@ -101,34 +101,90 @@ def suggest_special(text):
 
 def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier):
     if isinstance(token, string_types):
-        token_v = token
-    else:
+        token_v = token.lower()
+    elif isinstance(token, Comparison):
         # If 'token' is a Comparison type such as
         # 'select * FROM abc a JOIN def d ON a.id = d.'. Then calling
         # token.value on the comparison type will only return the lhs of the
         # comparison. In this case a.id. So we need to do token.tokens to get
         # both sides of the comparison and pick the last token out of that
         # list.
-        if isinstance(token, Comparison):
-            token_v = token.tokens[-1].value
-        else:
-            token_v = token.value
+        token_v = token.tokens[-1].value.lower()
+    elif isinstance(token, Where):
+        # sqlparse groups all tokens from the where clause into a single token
+        # list. This means that token.value may be something like
+        # 'where foo > 5 and '. We need to look "inside" token.tokens to handle
+        # suggestions in complicated where clauses correctly
+        prev_keyword, text_before_cursor = find_prev_keyword(text_before_cursor)
+        return suggest_based_on_last_token(prev_keyword, text_before_cursor,
+                                           full_text, identifier)
+    else:
+        token_v = token.value.lower()
 
     if not token:
         return [{'type': 'keyword'}, {'type': 'special'}]
-    elif token_v.lower().endswith('('):
+    elif token_v.endswith('('):
         p = sqlparse.parse(text_before_cursor)[0]
-        if p.token_first().value.lower() == 'select':
+
+        if p.tokens and isinstance(p.tokens[-1], Where):
+            # Four possibilities:
+            #  1 - Parenthesized clause like "WHERE foo AND ("
+            #        Suggest columns/functions
+            #  2 - Function call like "WHERE foo("
+            #        Suggest columns/functions
+            #  3 - Subquery expression like "WHERE EXISTS ("
+            #        Suggest keywords, in order to do a subquery
+            #  4 - Subquery OR array comparison like "WHERE foo = ANY("
+            #        Suggest columns/functions AND keywords. (If we wanted to be
+            #        really fancy, we could suggest only array-typed columns)
+
+            column_suggestions = suggest_based_on_last_token('where',
+                                    text_before_cursor, full_text, identifier)
+
+            # Check for a subquery expression (cases 3 & 4)
+            where = p.tokens[-1]
+            prev_tok = where.token_prev(len(where.tokens) - 1)
+
+            if isinstance(prev_tok, Comparison):
+                # e.g. "SELECT foo FROM bar WHERE foo = ANY("
+                prev_tok = prev_tok.tokens[-1]
+
+            prev_tok = prev_tok.value.lower()
+            if prev_tok == 'exists':
+                return [{'type': 'keyword'}]
+            elif prev_tok in ('any', 'some', 'all'):
+                return column_suggestions + [{'type': 'keyword'}]
+            elif prev_tok == 'in':
+                # Technically, we should suggest columns AND keywords, as
+                # per case 4. However, IN is different from ANY, SOME, ALL
+                # in that it can accept a *list* of columns, or a subquery.
+                # But suggesting keywords for , "SELECT * FROM foo WHERE bar IN
+                # (baz, qux, " would be overwhelming. So we special case 'IN'
+                # to not suggest keywords.
+                return column_suggestions
+            else:
+                return column_suggestions
+
+        # Get the token before the parens
+        prev_tok = p.token_prev(len(p.tokens) - 1)
+        if prev_tok and prev_tok.value and prev_tok.value.lower() == 'using':
+            # tbl1 INNER JOIN tbl2 USING (col1, col2)
+            tables = extract_tables(full_text)
+
+            # suggest columns that are present in more than one table
+            return [{'type': 'column', 'tables': tables, 'drop_unique': True}]
+        elif p.token_first().value.lower() == 'select':
             # If the lparen is preceeded by a space chances are we're about to
             # do a sub-select.
             if last_word(text_before_cursor,
                     'all_punctuations').startswith('('):
                 return [{'type': 'keyword'}]
 
+        # We're probably in a function argument list
         return [{'type': 'column', 'tables': extract_tables(full_text)}]
-    elif token_v.lower() in ('set', 'by', 'distinct'):
+    elif token_v in ('set', 'by', 'distinct'):
         return [{'type': 'column', 'tables': extract_tables(full_text)}]
-    elif token_v.lower() in ('select', 'where', 'having'):
+    elif token_v in ('select', 'where', 'having'):
         # Check for a table alias or schema qualification
         parent = (identifier and identifier.get_parent_name()) or []
 
@@ -142,27 +198,33 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
         else:
             return [{'type': 'column', 'tables': extract_tables(full_text)},
                     {'type': 'function', 'schema': []}]
-    elif token_v.lower() in ('copy', 'from', 'update', 'into', 'describe',
-                             'join'):
+    elif (token_v.endswith('join') and token.is_keyword) or (token_v in
+            ('copy', 'from', 'update', 'into', 'describe', 'truncate')):
         schema = (identifier and identifier.get_parent_name()) or []
-        if schema:
-            # If already schema-qualified, suggest only tables/views
-            return [{'type': 'table', 'schema': schema},
-                    {'type': 'view', 'schema': schema}]
-        else:
-            # Suggest schemas OR public tables/views
-            return [{'type': 'schema'},
-                    {'type': 'table', 'schema': []},
-                    {'type': 'view', 'schema': []}]
-    elif token_v.lower() in ('table', 'view', 'function'):
+
+        # Suggest tables from either the currently-selected schema or the
+        # public schema if no schema has been specified
+        suggest = [{'type': 'table', 'schema': schema}]
+
+        if not schema:
+            # Suggest schemas
+            suggest.insert(0, {'type': 'schema'})
+
+        # Only tables can be TRUNCATED, otherwise suggest views
+        if token_v != 'truncate':
+            suggest.append({'type': 'view', 'schema': schema})
+
+        return suggest
+
+    elif token_v in ('table', 'view', 'function'):
         # E.g. 'DROP FUNCTION <funcname>', 'ALTER TABLE <tablname>'
-        rel_type = token_v.lower()
+        rel_type = token_v
         schema = (identifier and identifier.get_parent_name()) or []
         if schema:
             return [{'type': rel_type, 'schema': schema}]
         else:
             return [{'type': 'schema'}, {'type': rel_type, 'schema': []}]
-    elif token_v.lower() == 'on':
+    elif token_v == 'on':
         tables = extract_tables(full_text)  # [(schema, table, alias), ...]
         parent = (identifier and identifier.get_parent_name()) or []
         if parent:
@@ -179,15 +241,17 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
             aliases = [t[2] or t[1] for t in tables]
             return [{'type': 'alias', 'aliases': aliases}]
 
-    elif token_v.lower() in ('use', 'database', 'template', 'connect'):
+    elif token_v in ('use', 'database', 'template', 'connect'):
         # "\c <db", "use <db>", "DROP DATABASE <db>",
         # "CREATE DATABASE <newdb> WITH TEMPLATE <db>"
         return [{'type': 'database'}]
     elif token_v.endswith(',') or token_v == '=':
-        prev_keyword = find_prev_keyword(text_before_cursor)
+        prev_keyword, text_before_cursor = find_prev_keyword(text_before_cursor)
         if prev_keyword:
             return suggest_based_on_last_token(
                 prev_keyword, text_before_cursor, full_text, identifier)
+        else:
+            return []
     else:
         return [{'type': 'keyword'}]
 

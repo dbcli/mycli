@@ -6,3 +6,4 @@
 * [ ] Figure out how to drop all the tables in a database to use in the tests.
 * [ ] Check what's the equivalent of PGHOST, PGUSER, etc.
 * [ ] Copy LEFT JOIN code from pgcli.
+* [ ] Upgrade to prompt_toolkit 0.37
