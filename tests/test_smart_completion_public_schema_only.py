@@ -20,6 +20,8 @@ def completer():
         tables.append((table,))
         columns.extend([(table, col) for col in cols])
 
+    comp.set_dbname('test')
+    comp.extend_schemata('test')
     comp.extend_relations(tables, kind='tables')
     comp.extend_columns(columns, kind='tables')
 
@@ -114,7 +116,6 @@ def test_suggested_column_names_with_table_dot(completer, complete_event):
     """
     text = 'SELECT users. from users'
     position = len('SELECT users.')
-    import pdb; pdb.set_trace()
     result = set(completer.get_completions(
         Document(text=text, cursor_position=position),
         complete_event))

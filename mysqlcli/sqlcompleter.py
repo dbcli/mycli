@@ -213,27 +213,28 @@ class SQLCompleter(Completer):
 
             elif suggestion['type'] == 'function':
                 # suggest user-defined functions using substring matching
-                #funcs = self.dbmetadata['functions'].keys()
                 funcs = self.populate_schema_objects(suggestion['schema'],
                                                      'functions')
                 user_funcs = self.find_matches(word_before_cursor, funcs)
                 completions.extend(user_funcs)
 
-                # suggest hardcoded functions using startswith matching
-                predefined_funcs = self.find_matches(word_before_cursor,
-                                                     self.functions,
-                                                     start_only=True)
-                completions.extend(predefined_funcs)
+                # suggest hardcoded functions using startswith matching only if
+                # there is no schema qualifier. If a schema qualifier is
+                # present it probably denotes a table.
+                # eg: SELECT * FROM users u WHERE u.
+                if not suggestion['schema']:
+                    predefined_funcs = self.find_matches(word_before_cursor,
+                                                         self.functions,
+                                                         start_only=True)
+                    completions.extend(predefined_funcs)
 
             elif suggestion['type'] == 'table':
-                #tables = self.dbmetadata['tables'].keys()
                 tables = self.populate_schema_objects(suggestion['schema'],
                                                       'tables')
                 tables = self.find_matches(word_before_cursor, tables)
                 completions.extend(tables)
 
             elif suggestion['type'] == 'view':
-                #views = self.dbmetadata['views'].keys()
                 views = self.populate_schema_objects(suggestion['schema'],
                                                      'views')
                 views = self.find_matches(word_before_cursor, views)
