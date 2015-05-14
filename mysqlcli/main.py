@@ -134,8 +134,7 @@ class MysqlCli(object):
             try:
                 sqlexecute = SQLExecute(database, user, passwd, host, port)
             except Exception as e:
-                print(e)
-                if ('no password supplied' in utf8tounicode(e.args[0]) and
+                if ('no password supplied' in utf8tounicode(e[1]) and
                         auto_passwd_prompt):
                     passwd = click.prompt('Password', hide_input=True,
                                           show_default=False, type=str)
@@ -179,7 +178,7 @@ class MysqlCli(object):
 
     def run_cli(self):
         sqlexecute = self.sqlexecute
-        prompt = '%s> ' % sqlexecute.dbname
+        prompt = '%s> ' % (sqlexecute.dbname or 'mysql')
         logger = self.logger
         original_less_opts = self.adjust_less_opts()
 
@@ -276,13 +275,16 @@ class MysqlCli(object):
                         print('Command Time:', duration)
                         print('Format Time:', total)
                 finally:
-                    for cur, _, _ in res:
-                        if hasattr(cur, 'close'):
-                            cur.close()
+                    try:
+                        for title, cur, _, _ in res:
+                            if hasattr(cur, 'close'):
+                                cur.close()
+                    except Exception:
+                        pass
 
                 # Refresh the table names and column names if necessary.
                 if need_completion_refresh(document.text):
-                    prompt = '%s> ' % sqlexecute.dbname
+                    prompt = '%s> ' % (sqlexecute.dbname or 'mysql')
                     self.refresh_completions()
 
                 query = Query(document.text, successful, mutating)
@@ -302,10 +304,15 @@ class MysqlCli(object):
         return less_opts
 
     def refresh_completions(self):
+        sqlexecute = self.sqlexecute
+
+        # The dbname could be empty if the user has launched mysqlcli without
+        # providing a database name.
+        if not sqlexecute.dbname:
+            return
+
         completer = self.completer
         completer.reset_completions()
-
-        sqlexecute = self.sqlexecute
 
         # schemata
         completer.extend_schemata(self.sqlexecute.dbname)
@@ -332,11 +339,11 @@ class MysqlCli(object):
 @click.command()
 # Default host is '' so psycopg2 can default to either localhost or unix socket
 @click.option('-h', '--host', default='', envvar='PGHOST',
-        help='Host address of the postgres database.')
+        help='Host address of the database.')
 @click.option('-P', '--port', default=3306, help='Port number at which the '
         'MySQL instance is listening.', envvar='PGPORT')
 @click.option('-u', '--user', envvar='PGUSER', help='User name to '
-        'connect to the postgres database.')
+        'connect to the database.')
 @click.option('-W', '--password', 'prompt_passwd', is_flag=True, default=False,
         help='Force password prompt.')
 @click.option('-w', '--no-password', 'never_prompt', is_flag=True,

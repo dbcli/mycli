@@ -48,10 +48,7 @@ class SQLCompleter(Completer):
         self.name_pattern = compile("^[_a-z][_a-z0-9\$]*$")
 
         self.special_commands = []
-        self.databases = []
-        self.dbmetadata = {'tables': {}, 'views': {}, 'functions': {}}
-
-        self.all_completions = set(self.keywords + self.functions)
+        self.reset_completions()
 
     def escape_name(self, name):
         if name and ((not self.name_pattern.match(name))
