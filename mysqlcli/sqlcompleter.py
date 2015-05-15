@@ -54,7 +54,7 @@ class SQLCompleter(Completer):
         if name and ((not self.name_pattern.match(name))
                 or (name.upper() in self.reserved_words)
                 or (name.upper() in self.functions)):
-            name = '"%s"' % name
+            name = '`%s`' % name
 
         return name
 
@@ -74,7 +74,6 @@ class SQLCompleter(Completer):
         self.special_commands.extend(special_commands)
 
     def extend_database_names(self, databases):
-        databases = self.escaped_names(databases)
         self.databases.extend(databases)
 
     def extend_keywords(self, additional_keywords):
@@ -82,36 +81,41 @@ class SQLCompleter(Completer):
         self.all_completions.update(additional_keywords)
 
     def extend_schemata(self, schema):
-        schema = self.escape_name(schema)
         metadata = self.dbmetadata['tables']
         metadata[schema] = {}
 
         # dbmetadata.values() are the 'tables' and 'functions' dicts
         for metadata in self.dbmetadata.values():
             metadata[schema] = {}
-
         self.all_completions.update(schema)
 
     def extend_relations(self, data, kind):
         """ extend metadata for tables or views
 
-        :param data: list of (schema_name, rel_name) tuples
+        :param data: list of (rel_name, ) tuples
         :param kind: either 'tables' or 'views'
         :return:
         """
 
-        data = [self.escaped_names(d) for d in data]
+        # 'data' is a generator object. It can throw an exception while being
+        # consumed. This could happen if the user has launched the app
+        # specifying a database name. This exception must be handled to prevent
+        # crashing.
+        try:
+            data = [self.escaped_names(d) for d in data]
+        except Exception:
+            data = []
 
-        # dbmetadata['tables']['schema_name']['table_name'] should be a list of
+        # dbmetadata['tables'][$schema_name][$table_name] should be a list of
         # column names. Default to an asterisk
         metadata = self.dbmetadata[kind]
         for relname in data:
             try:
                 metadata[self.dbname][relname[0]] = ['*']
-                self.all_completions.update(relname[0])
             except AttributeError:
                 _logger.error('%r %r listed in unrecognized schema %r',
                               kind, relname[0], self.dbname)
+            self.all_completions.add(relname[0])
 
     def extend_columns(self, column_data, kind):
         """ extend column metadata
@@ -120,11 +124,19 @@ class SQLCompleter(Completer):
         :param kind: either 'tables' or 'views'
         :return:
         """
-        column_data = [self.escaped_names(d) for d in column_data]
+        # 'data' is a generator object. It can throw an exception while being
+        # consumed. This could happen if the user has launched the app
+        # specifying a database name. This exception must be handled to prevent
+        # crashing.
+        try:
+            column_data = [self.escaped_names(d) for d in column_data]
+        except Exception:
+            column_data = []
+
         metadata = self.dbmetadata[kind]
         for relname, column in column_data:
             metadata[self.dbname][relname].append(column)
-            self.all_completions.update(column)
+            self.all_completions.add(column)
 
     def extend_functions(self, func_data):
 
@@ -270,8 +282,10 @@ class SQLCompleter(Completer):
 
         for tbl in scoped_tbls:
             # A fully qualified schema.relname reference or default_schema
-            schema = (tbl[0] and self.escape_name(tbl[0])) or self.dbname
-            relname = self.escape_name(tbl[1])
+            # DO NOT escape schema names.
+            schema = tbl[0] or self.dbname
+            relname = tbl[1]
+            escaped_relname = self.escape_name(tbl[1])
 
             # We don't know if schema.relname is a table or view. Since
             # tables and views cannot share the same name, we can check one
@@ -282,7 +296,12 @@ class SQLCompleter(Completer):
                 # Table exists, so don't bother checking for a view
                 continue
             except KeyError:
-                pass
+                try:
+                    columns.extend(meta['tables'][schema][escaped_relname])
+                    # Table exists, so don't bother checking for a view
+                    continue
+                except KeyError:
+                    pass
 
             try:
                 columns.extend(meta['views'][schema][relname])

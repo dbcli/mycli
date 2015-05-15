@@ -91,5 +91,5 @@ def test_special_command(executor):
     run(executor, '\\?')
 
 @dbtest
-def test_unicode_support_in_unknown_type(executor):
+def test_unicode_support(executor):
     assert u'日本語' in run(executor, "SELECT '日本語' AS japanese;", join=True)

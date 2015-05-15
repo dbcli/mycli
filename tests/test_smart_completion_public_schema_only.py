@@ -1,3 +1,5 @@
+# coding: utf-8
+from __future__ import unicode_literals
 import pytest
 from prompt_toolkit.completion import Completion
 from prompt_toolkit.document import Document
@@ -5,7 +7,8 @@ from prompt_toolkit.document import Document
 metadata = {
                 'users': ['id', 'email', 'first_name', 'last_name'],
                 'orders': ['id', 'ordered_date', 'status'],
-                'select': ['id', 'insert', 'ABC']
+                'select': ['id', 'insert', 'ABC'],
+                '√abc': ['id', 'insert', 'ABC']
             }
 
 @pytest.fixture
@@ -56,7 +59,8 @@ def test_table_completion(completer, complete_event):
     result = completer.get_completions(
         Document(text=text, cursor_position=position), complete_event)
     assert set(result) == set([Completion(text='users', start_position=0),
-                               Completion(text='"select"', start_position=0),
+                               Completion(text='`select`', start_position=0),
+                               Completion(text='`√abc`', start_position=0),
                                Completion(text='orders', start_position=0)])
 
 
@@ -255,11 +259,12 @@ def test_table_names_after_from(completer, complete_event):
     assert set(result) == set([
         Completion(text='users', start_position=0),
         Completion(text='orders', start_position=0),
-        Completion(text='"select"', start_position=0),
+        Completion(text='`√abc`', start_position=0),
+        Completion(text='`select`', start_position=0),
         ])
 
 def test_auto_escaped_col_names(completer, complete_event):
-    text = 'SELECT  from "select"'
+    text = 'SELECT  from `select`'
     position = len('SELECT ')
     result = set(completer.get_completions(
         Document(text=text, cursor_position=position),
@@ -267,6 +272,20 @@ def test_auto_escaped_col_names(completer, complete_event):
     assert set(result) == set([
         Completion(text='*', start_position=0),
         Completion(text='id', start_position=0),
-        Completion(text='"insert"', start_position=0),
-        Completion(text='"ABC"', start_position=0), ] +
+        Completion(text='`insert`', start_position=0),
+        Completion(text='`ABC`', start_position=0), ] +
+        list(map(Completion, completer.functions)))
+
+def test_un_escaped_col_names(completer, complete_event):
+    import pdb; pdb.set_trace()
+    text = 'SELECT  from √abc'
+    position = len('SELECT ')
+    result = set(completer.get_completions(
+        Document(text=text, cursor_position=position),
+        complete_event))
+    assert set(result) == set([
+        Completion(text='*', start_position=0),
+        Completion(text='id', start_position=0),
+        Completion(text='`insert`', start_position=0),
+        Completion(text='`ABC`', start_position=0), ] +
         list(map(Completion, completer.functions)))
