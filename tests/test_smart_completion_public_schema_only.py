@@ -8,7 +8,7 @@ metadata = {
                 'users': ['id', 'email', 'first_name', 'last_name'],
                 'orders': ['id', 'ordered_date', 'status'],
                 'select': ['id', 'insert', 'ABC'],
-                '√abc': ['id', 'insert', 'ABC']
+                'réveillé': ['id', 'insert', 'ABC']
             }
 
 @pytest.fixture
@@ -60,7 +60,7 @@ def test_table_completion(completer, complete_event):
         Document(text=text, cursor_position=position), complete_event)
     assert set(result) == set([Completion(text='users', start_position=0),
                                Completion(text='`select`', start_position=0),
-                               Completion(text='`√abc`', start_position=0),
+                               Completion(text='`réveillé`', start_position=0),
                                Completion(text='orders', start_position=0)])
 
 
@@ -259,7 +259,7 @@ def test_table_names_after_from(completer, complete_event):
     assert set(result) == set([
         Completion(text='users', start_position=0),
         Completion(text='orders', start_position=0),
-        Completion(text='`√abc`', start_position=0),
+        Completion(text='`réveillé`', start_position=0),
         Completion(text='`select`', start_position=0),
         ])
 
@@ -276,9 +276,8 @@ def test_auto_escaped_col_names(completer, complete_event):
         Completion(text='`ABC`', start_position=0), ] +
         list(map(Completion, completer.functions)))
 
-def test_un_escaped_col_names(completer, complete_event):
-    import pdb; pdb.set_trace()
-    text = 'SELECT  from √abc'
+def test_un_escaped_table_names(completer, complete_event):
+    text = 'SELECT  from réveillé'
     position = len('SELECT ')
     result = set(completer.get_completions(
         Document(text=text, cursor_position=position),
