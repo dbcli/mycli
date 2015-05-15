@@ -274,13 +274,6 @@ class MysqlCli(object):
                     if special.is_timing_enabled():
                         print('Command Time:', duration)
                         print('Format Time:', total)
-                finally:
-                    try:
-                        for title, cur, _, _ in res:
-                            if hasattr(cur, 'close'):
-                                cur.close()
-                    except Exception:
-                        pass
 
                 # Refresh the table names and column names if necessary.
                 if need_completion_refresh(document.text):
@@ -306,13 +299,11 @@ class MysqlCli(object):
     def refresh_completions(self):
         sqlexecute = self.sqlexecute
 
-        # The dbname could be empty if the user has launched mysqlcli without
-        # providing a database name.
-        if not sqlexecute.dbname:
-            return
-
         completer = self.completer
         completer.reset_completions()
+
+        # databases
+        completer.extend_database_names(sqlexecute.databases())
 
         # schemata
         completer.extend_schemata(self.sqlexecute.dbname)
@@ -328,9 +319,6 @@ class MysqlCli(object):
 
         # functions
         #completer.extend_functions(sqlexecute.functions())
-
-        # databases
-        completer.extend_database_names(sqlexecute.databases())
 
     def get_completions(self, text, cursor_positition):
         return self.completer.get_completions(
