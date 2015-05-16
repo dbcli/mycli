@@ -10,20 +10,21 @@ from time import time
 
 import click
 import sqlparse
-from prompt_toolkit import CommandLineInterface, AbortAction, Exit
+from prompt_toolkit import CommandLineInterface, AbortAction
+from prompt_toolkit.shortcuts import create_default_layout, create_eventloop
 from prompt_toolkit.document import Document
-from prompt_toolkit.layout import Layout
-from prompt_toolkit.layout.prompt import DefaultPrompt
-from prompt_toolkit.layout.menus import CompletionsMenu
+from prompt_toolkit.filters import Always
+from prompt_toolkit.layout.processors import HighlightMatchingBracketProcessor
 from prompt_toolkit.history import FileHistory
 from pygments.lexers.sql import PostgresLexer
+from pygments.token import Token
 
 from .packages.tabulate import tabulate
 from .packages.expanded import expanded_table
 from .packages.special.main import (COMMANDS, HIDDEN_COMMANDS)
 import mysqlcli.packages.special as special
 from .sqlcompleter import SQLCompleter
-from .clitoolbar import CLIToolbar
+from .clitoolbar import create_toolbar_tokens_func
 from .clistyle import style_factory
 from .sqlexecute import SQLExecute
 from .clibuffer import CLIBuffer
@@ -37,6 +38,7 @@ try:
     from urlparse import urlparse
 except ImportError:
     from urllib.parse import urlparse
+from pymysql import OperationalError
 
 from collections import namedtuple
 
@@ -178,7 +180,6 @@ class MysqlCli(object):
 
     def run_cli(self):
         sqlexecute = self.sqlexecute
-        prompt = '%s> ' % (sqlexecute.dbname or 'mysql')
         logger = self.logger
         original_less_opts = self.adjust_less_opts()
 
@@ -190,20 +191,29 @@ class MysqlCli(object):
         print('Mail: https://groups.google.com/forum/#!forum/mysqlcli')
         print('Home: http://mysqlcli.com')
 
-        layout = Layout(before_input=DefaultPrompt(prompt),
-            menus=[CompletionsMenu(max_height=10)],
-            lexer=PostgresLexer,
-            bottom_toolbars=[CLIToolbar(key_binding_manager)])
+        def prompt_tokens(cli):
+            return [(Token.Prompt, '%s> ' % (sqlexecute.dbname or 'mysql'))]
+
+        get_toolbar_tokens = create_toolbar_tokens_func(key_binding_manager)
+        layout = create_default_layout(lexer=PostgresLexer,
+                                       reserve_space_for_menu=True,
+                                       get_prompt_tokens=prompt_tokens,
+                                       get_bottom_toolbar_tokens=get_toolbar_tokens,
+                                       extra_input_processors=[
+                                           HighlightMatchingBracketProcessor(),
+                                       ])
         buf = CLIBuffer(always_multiline=self.multi_line, completer=completer,
-                history=FileHistory(os.path.expanduser('~/.mysqlcli-history')))
-        cli = CommandLineInterface(style=style_factory(self.syntax_style),
+                history=FileHistory(os.path.expanduser('~/.mysqlcli-history')),
+                complete_while_typing=Always())
+        cli = CommandLineInterface(create_eventloop(),
+                style=style_factory(self.syntax_style),
                 layout=layout, buffer=buf,
-                key_bindings_registry=key_binding_manager.registry)
+                key_bindings_registry=key_binding_manager.registry,
+                on_exit=AbortAction.RAISE_EXCEPTION)
 
         try:
             while True:
-                cli.layout.before_input = DefaultPrompt(prompt)
-                document = cli.read_input(on_exit=AbortAction.RAISE_EXCEPTION)
+                document = cli.read_input()
 
                 special.set_expanded_output(False)
 
@@ -212,7 +222,7 @@ class MysqlCli(object):
                 # caught by the try/except block that wraps the
                 # sqlexecute.run() statement.
                 if quit_command(document.text):
-                    raise Exit
+                    raise EOFError
 
                 try:
                     document = self.handle_editor_command(cli, document)
@@ -265,6 +275,23 @@ class MysqlCli(object):
                     sqlexecute.connect()
                     logger.debug("cancelled query, sql: %r", document.text)
                     click.secho("cancelled query", err=True, fg='red')
+                except NotImplementedError:
+                    click.secho('Not Yet Implemented.', fg="yellow")
+                except OperationalError as e:
+                    reconnect = True
+                    if ('server closed the connection' in e.args[0]):
+                        reconnect = click.prompt('Connection reset. Reconnect (Y/n)',
+                                show_default=False, type=bool, default=True)
+                        if reconnect:
+                            try:
+                                sqlexecute.connect()
+                                click.secho('Reconnected!\nTry the command again.', fg='green')
+                            except OperationalError as e:
+                                click.secho(str(e), err=True, fg='red')
+                    else:
+                        logger.error("sql: %r, error: %r", document.text, e)
+                        logger.error("traceback: %r", traceback.format_exc())
+                        click.secho(str(e), err=True, fg='red')
                 except Exception as e:
                     logger.error("sql: %r, error: %r", document.text, e)
                     logger.error("traceback: %r", traceback.format_exc())
@@ -277,13 +304,12 @@ class MysqlCli(object):
 
                 # Refresh the table names and column names if necessary.
                 if need_completion_refresh(document.text):
-                    prompt = '%s> ' % (sqlexecute.dbname or 'mysql')
                     self.refresh_completions()
 
                 query = Query(document.text, successful, mutating)
                 self.query_history.append(query)
 
-        except Exit:
+        except EOFError:
             print ('Goodbye!')
         finally:  # Reset the less opts back to original.
             logger.debug('Restoring env var LESS to %r.', original_less_opts)

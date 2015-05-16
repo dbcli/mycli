@@ -36,12 +36,34 @@ def mysqlcli_bindings(vi_mode=False):
         _logger.debug('Detected F4 key.')
         key_binding_manager.enable_vi_mode = not key_binding_manager.enable_vi_mode
 
-    @key_binding_manager.registry.add_binding(Keys.ControlSpace)
+    @key_binding_manager.registry.add_binding(Keys.Tab)
     def _(event):
         """
         Force autocompletion at cursor.
         """
+        _logger.debug('Detected <Tab> key.')
+        b = event.cli.current_buffer
+        if b.complete_state:
+            b.complete_next()
+        else:
+            event.cli.start_completion(select_first=True)
+
+    @key_binding_manager.registry.add_binding(Keys.ControlSpace)
+    def _(event):
+        """
+        Initialize autocompletion at cursor.
+
+        If the autocompletion menu is not showing, display it with the
+        appropriate completions for the context.
+
+        If the menu is showing, select the next completion.
+        """
         _logger.debug('Detected <C-Space> key.')
-        event.cli.current_buffer.complete_next()
+
+        b = event.cli.current_buffer
+        if b.complete_state:
+            b.complete_next()
+        else:
+            event.cli.start_completion(select_first=False)
 
     return key_binding_manager

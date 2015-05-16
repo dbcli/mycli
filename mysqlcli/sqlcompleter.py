@@ -1,4 +1,5 @@
 from __future__ import print_function
+from __future__ import unicode_literals
 import logging
 from prompt_toolkit.completion import Completer, Completion
 from .packages.completion_engine import suggest_type

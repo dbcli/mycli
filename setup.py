@@ -26,7 +26,7 @@ setup(
             'click >= 3.2',
             'Pygments >= 2.0',  # Pygments has to be Capitalcased. WTF?
             'jedi == 0.8.1',    # Temporary fix for installation woes.
-            'prompt_toolkit==0.26',
+            'prompt_toolkit==0.37',
             'pymysql',
             'sqlparse == 0.1.14',
             ],

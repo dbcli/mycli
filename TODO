@@ -1,10 +1,6 @@
 # vi: ft=vimwiki
  
 * [ ] Check if views are available in mysql.
-* [ ] Check if there is an equivalent of schema in mysql.
-* [ ] Find out the status of using unicode with pymysql.
-* [ ] Figure out how to drop all the tables in a database to use in the tests.
 * [ ] Check what's the equivalent of PGHOST, PGUSER, etc.
-* [ ] Copy LEFT JOIN code from pgcli.
 * [ ] Upgrade to prompt_toolkit 0.37
-* [ ] Error from connecting to non-existent db is weird.
+* [ ] Check password functionality.
