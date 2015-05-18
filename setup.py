@@ -35,6 +35,7 @@ setup(
             mysql-cli=mysqlcli.main:cli
             mysql_cli=mysqlcli.main:cli
             mysqlcli=mysqlcli.main:cli
+            mycli=mysqlcli.main:cli
         ''',
         classifiers=[
             'Intended Audience :: Developers',
