@@ -279,7 +279,7 @@ class MysqlCli(object):
                     click.secho('Not Yet Implemented.', fg="yellow")
                 except OperationalError as e:
                     reconnect = True
-                    if ('server closed the connection' in e.args[0]):
+                    if ('server closed the connection' in e.args[1]):
                         reconnect = click.prompt('Connection reset. Reconnect (Y/n)',
                                 show_default=False, type=bool, default=True)
                         if reconnect:
