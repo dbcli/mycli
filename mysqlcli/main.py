@@ -46,11 +46,9 @@ from collections import namedtuple
 Query = namedtuple('Query', ['query', 'successful', 'mutating'])
 
 class MysqlCli(object):
-    def __init__(self, force_passwd_prompt=False, never_passwd_prompt=False,
-                 sqlexecute=None):
+    def __init__(self, force_passwd_prompt=False, sqlexecute=None):
 
         self.force_passwd_prompt = force_passwd_prompt
-        self.never_passwd_prompt = never_passwd_prompt
         self.sqlexecute = sqlexecute
 
         from mysqlcli import __file__ as package_root
@@ -115,35 +113,17 @@ class MysqlCli(object):
     def connect(self, database='', host='', user='', port='', passwd=''):
         # Connect to the database.
 
-        # Prompt for a password immediately if requested via the -W flag. This
+        # Prompt for a password immediately if requested via the -p flag. This
         # avoids wasting time trying to connect to the database and catching a
         # no-password exception.
         # If we successfully parsed a password from a URI, there's no need to
-        # prompt for it, even with the -W flag
+        # prompt for it, even with the -p flag
         if self.force_passwd_prompt and not passwd:
             passwd = click.prompt('Password', hide_input=True,
                                   show_default=False, type=str)
 
-        # Prompt for a password after 1st attempt to connect without a password
-        # fails. Don't prompt if the -w flag is supplied
-        auto_passwd_prompt = not passwd and not self.never_passwd_prompt
-
-        # Attempt to connect to the database.
-        # Note that passwd may be empty on the first attempt. If connection
-        # fails because of a missing password, but we're allowed to prompt for
-        # a password (no -w flag), prompt for a passwd and try again.
         try:
-            try:
-                sqlexecute = SQLExecute(database, user, passwd, host, port)
-            except Exception as e:
-                if ('no password supplied' in utf8tounicode(e[1]) and
-                        auto_passwd_prompt):
-                    passwd = click.prompt('Password', hide_input=True,
-                                          show_default=False, type=str)
-                    sqlexecute = SQLExecute(database, user, passwd, host, port)
-                else:
-                    raise e
-
+            sqlexecute = SQLExecute(database, user, passwd, host, port)
         except Exception as e:  # Connecting to a database could fail.
             self.logger.debug('Database connection failed: %r.', e)
             self.logger.error("traceback: %r", traceback.format_exc())
@@ -356,29 +336,24 @@ class MysqlCli(object):
         help='Host address of the database.')
 @click.option('-P', '--port', default=3306, help='Port number at which the '
         'MySQL instance is listening.', envvar='PGPORT')
-@click.option('-u', '--user', envvar='PGUSER', help='User name to '
+@click.option('-u', '--user', envvar='USER', help='User name to '
         'connect to the database.')
-@click.option('-W', '--password', 'prompt_passwd', is_flag=True, default=False,
+@click.option('-p', '--password', 'prompt_passwd', is_flag=True, default=False,
         help='Force password prompt.')
-@click.option('-w', '--no-password', 'never_prompt', is_flag=True,
-        default=False, help='Never prompt for password.')
 @click.option('-v', '--version', is_flag=True, help='Version of mysqlcli.')
-@click.option('-d', '--dbname', default='', envvar='PGDATABASE',
-        help='database name to connect to.')
+@click.option('-D', '--database', 'dbname', default='', envvar='PGDATABASE',
+        help='Database to use.')
 @click.argument('database', default=lambda: None, envvar='PGDATABASE', nargs=1)
-@click.argument('username', default=lambda: None, envvar='PGUSER', nargs=1)
-def cli(database, user, host, port, prompt_passwd, never_prompt, dbname,
-        username, version):
+def cli(database, user, host, port, prompt_passwd, dbname, version):
 
     if version:
         print('Version:', __version__)
         sys.exit(0)
 
-    mysqlcli = MysqlCli(prompt_passwd, never_prompt)
+    mysqlcli = MysqlCli(prompt_passwd)
 
     # Choose which ever one has a valid value.
     database = database or dbname
-    user = username or user
 
     if '://' in database:
         mysqlcli.connect_uri(database)
