@@ -9,7 +9,11 @@ If you're familiar with `pip` then you can simply do:
 
     $ pip install mycli
 
-If you're not familiar with `pip`, here are some steps to get `pip` setup. https://pip.pypa.io/en/stable/quickstart.html
+If you're not familiar with `pip`, here are some quickstart guides. 
+
+https://pip.pypa.io/en/stable/installing.html
+https://pip.pypa.io/en/stable/quickstart.html
+
 
 ## Configuration
 
