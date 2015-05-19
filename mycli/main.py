@@ -212,6 +212,15 @@ class MyCli(object):
                     click.secho(str(e), err=True, fg='red')
                     continue
 
+                destroy = confirm_destructive_query(document.text)
+                if destroy is None:
+                    pass  # Query was not destructive. Nothing to do here.
+                elif destroy == True:
+                    click.secho('Your call!')
+                else:
+                    click.secho('Wise choice!')
+                    continue
+
                 # Keep track of whether or not the query is mutating. In case
                 # of a multi-statement query, the overall query is considered
                 # mutating if any one of the component statements is mutating
@@ -244,7 +253,6 @@ class MyCli(object):
                         end = time()
                         total += end - start
                         mutating = mutating or is_mutating(status)
-
                 except KeyboardInterrupt:
                     # Restart connection to the database
                     sqlexecute.connect()
@@ -403,6 +411,25 @@ def is_select(status):
     if not status:
         return False
     return status.split(None, 1)[0].lower() == 'select'
+
+def confirm_destructive_query(queries):
+    """Checks if the query is destructive and prompts the user to confirm.
+    Returns:
+    None if the query is non-destructive.
+    True if the query is destructive and the user wants to proceed.
+    False if the query is destructive and the user doesn't want to proceed.
+    """
+    destructive = set(['drop'])
+    import pdb; pdb.set_trace()
+    for query in sqlparse.split(queries):
+        try:
+            first_token = query.split()[0]
+            if first_token.lower() in destructive:
+                destroy = click.prompt("You're about to run a destructive command. \n Do you want to proceed? (y/n)",
+                         type=bool)
+                return destroy
+        except Exception:
+            return False
 
 def quit_command(sql):
     return (sql.strip().lower() == 'exit'
