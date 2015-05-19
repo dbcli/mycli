@@ -420,12 +420,11 @@ def confirm_destructive_query(queries):
     False if the query is destructive and the user doesn't want to proceed.
     """
     destructive = set(['drop'])
-    import pdb; pdb.set_trace()
     for query in sqlparse.split(queries):
         try:
             first_token = query.split()[0]
             if first_token.lower() in destructive:
-                destroy = click.prompt("You're about to run a destructive command. \n Do you want to proceed? (y/n)",
+                destroy = click.prompt("You're about to run a destructive command. \nDo you want to proceed? (y/n)",
                          type=bool)
                 return destroy
         except Exception:
