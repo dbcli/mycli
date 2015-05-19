@@ -5,9 +5,11 @@ A command line client for MySQL that can do auto-completion and syntax highlight
 
 I plan to create DEB, RPM and Brew packages in the future.
 
-If you're familiar with `pip` then you can simply do:
+Right now, one can use `pip` (Python Package Manager) to install directly from the repo. 
 
-    $ pip install mycli
+    $ pip install -U -e git+https://github.com/dbcli/mycli.git#egg=mycli
+
+That will install the `mycli` package from the source. 
 
 If you're not familiar with `pip`, here are some quickstart guides. 
 
