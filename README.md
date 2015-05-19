@@ -16,14 +16,28 @@ https://pip.pypa.io/en/stable/installing.html
 https://pip.pypa.io/en/stable/quickstart.html
 
 
+## Usage
+
+```
+$ mycli --help
+Usage: mycli [OPTIONS] [DATABASE]
+
+Options:
+  -h, --host TEXT      Host address of the database.
+  -P, --port INTEGER   Port number at which the MySQL instance is listening.
+  -u, --user TEXT      User name to connect to the database.
+  -p, --password       Force password prompt.
+  -v, --version        Version of mycli.
+  -D, --database TEXT  Database to use.
+  --help               Show this message and exit.
+```
+
 ## Configuration
 
-The config file is located at ~/.pgclirc
+The config file is located at ~/.myclirc
 
 ## Compatibility
 
-Tests have been run on OS X and Linux. I use it every day on OS X.
+Tests have been run on OS X and Linux.
 
-I HAVE NOT TESTED THIS IN WINDOWS. But all the libraries used in this app are Windows compatible. So it should work without any modifications. If you're unable to run it on Windows, please file a bug. I will try my best to fix it.
-
-
+NOT TESTED THIS IN WINDOWS. But all the libraries used in this app are Windows compatible. So it should work without any modifications. If you're unable to run it on Windows, please file a bug. I will try my best to fix it.
