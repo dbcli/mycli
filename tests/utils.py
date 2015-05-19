@@ -1,12 +1,14 @@
 import pytest
 import pymysql
 from mycli.main import format_output
+from os import getenv
 
 # TODO: should this be somehow be divined from environment?
 USER, HOST = 'root', 'localhost'
+PASSWORD = getenv('PASSWORD')
 
 def db_connection(dbname=None):
-    conn = pymysql.connect(user=USER, host=HOST, database=dbname)
+    conn = pymysql.connect(user=USER, host=HOST, database=dbname, password=PASSWORD)
     conn.autocommit = True
     return conn
 
@@ -19,7 +21,6 @@ except:
 dbtest = pytest.mark.skipif(
     not CAN_CONNECT_TO_DB,
     reason="Need a mysql instance at localhost accessible by user 'root'")
-
 
 def create_db(dbname):
     with db_connection().cursor() as cur:
