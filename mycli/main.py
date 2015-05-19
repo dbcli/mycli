@@ -167,7 +167,7 @@ class MyCli(object):
         self.refresh_completions()
         key_binding_manager = mycli_bindings(self.key_bindings == 'vi')
         print('Version:', __version__)
-        print('Chat: https://gitter.im/amjith/mycli')
+        print('Chat: https://gitter.im/dbcli/mycli')
         print('Mail: https://groups.google.com/forum/#!forum/mycli')
         print('Home: http://mycli.net')
 
@@ -220,12 +220,7 @@ class MyCli(object):
                 try:
                     logger.debug('sql: %r', document.text)
                     successful = False
-                    # Initialized to [] because res might never get initialized
-                    # if an exception occurs in sqlexecute.run(). Which causes
-                    # finally clause to fail.
-                    res = []
                     start = time()
-                    # Run the query.
                     res = sqlexecute.run(document.text)
                     duration = time() - start
                     successful = True
