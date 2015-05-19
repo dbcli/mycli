@@ -12,6 +12,7 @@ If you're familiar with `pip` then you can simply do:
 If you're not familiar with `pip`, here are some quickstart guides. 
 
 https://pip.pypa.io/en/stable/installing.html
+
 https://pip.pypa.io/en/stable/quickstart.html
 
 
