@@ -1,4 +1,4 @@
-from mysqlcli.packages.expanded import expanded_table
+from mycli.packages.expanded import expanded_table
 
 def test_expanded_table_renders():
     input = [("hello", 123), ("world", 456)]

@@ -1,4 +1,4 @@
-from mysqlcli.packages.completion_engine import suggest_type
+from mycli.packages.completion_engine import suggest_type
 import pytest
 
 def sorted_dicts(dicts):

@@ -1,4 +1,4 @@
-from .main import MysqlCli
+from .main import MyCli
 import sql.parse
 import sql.connection
 import logging
@@ -7,44 +7,44 @@ _logger = logging.getLogger(__name__)
 
 def load_ipython_extension(ipython):
 
-    # This is called via the ipython command '%load_ext mysqlcli.magic'.
+    # This is called via the ipython command '%load_ext mycli.magic'.
 
     # First, load the sql magic if it isn't already loaded.
     if not ipython.find_line_magic('sql'):
         ipython.run_line_magic('load_ext', 'sql')
 
     # Register our own magic.
-    ipython.register_magic_function(mysqlcli_line_magic, 'line', 'mysqlcli')
+    ipython.register_magic_function(mycli_line_magic, 'line', 'mycli')
 
-def mysqlcli_line_magic(line):
-    _logger.debug('mysqlcli magic called: %r', line)
+def mycli_line_magic(line):
+    _logger.debug('mycli magic called: %r', line)
     parsed = sql.parse.parse(line, {})
     conn = sql.connection.Connection.get(parsed['connection'])
 
     try:
-        # A corresponding mysqlcli object already exists
-        mysqlcli = conn._mysqlcli
-        _logger.debug('Reusing existing mysqlcli')
+        # A corresponding mycli object already exists
+        mycli = conn._mycli
+        _logger.debug('Reusing existing mycli')
     except AttributeError:
-        mysqlcli = MysqlCli()
+        mycli = MyCli()
         u = conn.session.engine.url
-        _logger.debug('New mysqlcli: %r', str(u))
+        _logger.debug('New mycli: %r', str(u))
 
-        mysqlcli.connect(u.database, u.host, u.username, u.port, u.password)
-        conn._mysqlcli = mysqlcli
+        mycli.connect(u.database, u.host, u.username, u.port, u.password)
+        conn._mycli = mycli
 
     # For convenience, print the connection alias
     print('Connected: {}'.format(conn.name))
 
     try:
-        mysqlcli.run_cli()
+        mycli.run_cli()
     except SystemExit:
         pass
 
-    if not mysqlcli.query_history:
+    if not mycli.query_history:
         return
 
-    q = mysqlcli.query_history[-1]
+    q = mycli.query_history[-1]
     if q.mutating:
         _logger.debug('Mutating query detected -- ignoring')
         return

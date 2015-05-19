@@ -9,11 +9,11 @@ def load_config(filename, default_filename=None):
     filename = expanduser(filename)
     parser = ConfigParser()
 
-    # Read in the defaults from mysqlclirc.
+    # Read in the defaults from myclirc.
     if default_filename:
         parser.read(default_filename)
 
-    # Read the actual config file from ~/.mysqlclirc and overlay on top of the
+    # Read the actual config file from ~/.myclirc and overlay on top of the
     # defaults.
     parser.read(filename)
     return parser

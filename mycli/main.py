@@ -22,14 +22,14 @@ from pygments.token import Token
 from .packages.tabulate import tabulate
 from .packages.expanded import expanded_table
 from .packages.special.main import (COMMANDS, HIDDEN_COMMANDS)
-import mysqlcli.packages.special as special
+import mycli.packages.special as special
 from .sqlcompleter import SQLCompleter
 from .clitoolbar import create_toolbar_tokens_func
 from .clistyle import style_factory
 from .sqlexecute import SQLExecute
 from .clibuffer import CLIBuffer
 from .config import write_default_config, load_config
-from .key_bindings import mysqlcli_bindings
+from .key_bindings import mycli_bindings
 from .encodingutils import utf8tounicode
 from .__init__ import __version__
 
@@ -45,20 +45,20 @@ from collections import namedtuple
 # Query tuples are used for maintaining history
 Query = namedtuple('Query', ['query', 'successful', 'mutating'])
 
-class MysqlCli(object):
+class MyCli(object):
     def __init__(self, force_passwd_prompt=False, sqlexecute=None):
 
         self.force_passwd_prompt = force_passwd_prompt
         self.sqlexecute = sqlexecute
 
-        from mysqlcli import __file__ as package_root
+        from mycli import __file__ as package_root
         package_root = os.path.dirname(package_root)
 
-        default_config = os.path.join(package_root, 'mysqlclirc')
-        write_default_config(default_config, '~/.mysqlclirc')
+        default_config = os.path.join(package_root, 'myclirc')
+        write_default_config(default_config, '~/.myclirc')
 
         # Load config.
-        c = self.config = load_config('~/.mysqlclirc', default_config)
+        c = self.config = load_config('~/.myclirc', default_config)
         self.multi_line = c.getboolean('main', 'multi_line')
         self.key_bindings = c.get('main', 'key_bindings')
         special.set_timing_enabled(c.getboolean('main', 'timing'))
@@ -97,11 +97,11 @@ class MysqlCli(object):
 
         handler.setFormatter(formatter)
 
-        root_logger = logging.getLogger('mysqlcli')
+        root_logger = logging.getLogger('mycli')
         root_logger.addHandler(handler)
         root_logger.setLevel(level_map[log_level.upper()])
 
-        root_logger.debug('Initializing mysqlcli logging.')
+        root_logger.debug('Initializing mycli logging.')
         root_logger.debug('Log file %r.', log_file)
 
     def connect_uri(self, uri):
@@ -165,11 +165,11 @@ class MysqlCli(object):
 
         completer = self.completer
         self.refresh_completions()
-        key_binding_manager = mysqlcli_bindings(self.key_bindings == 'vi')
+        key_binding_manager = mycli_bindings(self.key_bindings == 'vi')
         print('Version:', __version__)
-        print('Chat: https://gitter.im/amjith/mysqlcli')
-        print('Mail: https://groups.google.com/forum/#!forum/mysqlcli')
-        print('Home: http://mysqlcli.com')
+        print('Chat: https://gitter.im/amjith/mycli')
+        print('Mail: https://groups.google.com/forum/#!forum/mycli')
+        print('Home: http://mycli.net')
 
         def prompt_tokens(cli):
             return [(Token.Prompt, '%s> ' % (sqlexecute.dbname or 'mysql'))]
@@ -183,7 +183,7 @@ class MysqlCli(object):
                                            HighlightMatchingBracketProcessor(),
                                        ])
         buf = CLIBuffer(always_multiline=self.multi_line, completer=completer,
-                history=FileHistory(os.path.expanduser('~/.mysqlcli-history')),
+                history=FileHistory(os.path.expanduser('~/.mycli-history')),
                 complete_while_typing=Always())
         cli = CommandLineInterface(create_eventloop(),
                 style=style_factory(self.syntax_style),
@@ -340,7 +340,7 @@ class MysqlCli(object):
         'connect to the database.')
 @click.option('-p', '--password', 'prompt_passwd', is_flag=True, default=False,
         help='Force password prompt.')
-@click.option('-v', '--version', is_flag=True, help='Version of mysqlcli.')
+@click.option('-v', '--version', is_flag=True, help='Version of mycli.')
 @click.option('-D', '--database', 'dbname', default='', envvar='PGDATABASE',
         help='Database to use.')
 @click.argument('database', default=lambda: None, envvar='PGDATABASE', nargs=1)
@@ -350,23 +350,23 @@ def cli(database, user, host, port, prompt_passwd, dbname, version):
         print('Version:', __version__)
         sys.exit(0)
 
-    mysqlcli = MysqlCli(prompt_passwd)
+    mycli = MyCli(prompt_passwd)
 
     # Choose which ever one has a valid value.
     database = database or dbname
 
     if '://' in database:
-        mysqlcli.connect_uri(database)
+        mycli.connect_uri(database)
     else:
-        mysqlcli.connect(database, host, user, port)
+        mycli.connect(database, host, user, port)
 
-    mysqlcli.logger.debug('Launch Params: \n'
+    mycli.logger.debug('Launch Params: \n'
             '\tdatabase: %r'
             '\tuser: %r'
             '\thost: %r'
             '\tport: %r', database, user, host, port)
 
-    mysqlcli.run_cli()
+    mycli.run_cli()
 
 def format_output(title, cur, headers, status, table_format):
     output = []

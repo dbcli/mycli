@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 _version_re = re.compile(r'__version__\s+=\s+(.*)')
 
-with open('mysqlcli/__init__.py', 'rb') as f:
+with open('mycli/__init__.py', 'rb') as f:
     version = str(ast.literal_eval(_version_re.search(
         f.read().decode('utf-8')).group(1)))
 
@@ -12,14 +12,14 @@ description = 'CLI for MySQL Database. With auto-completion and syntax highlight
 
 
 setup(
-        name='mysqlcli',
+        name='mycli',
         author='Amjith Ramanujam',
         author_email='amjith[dot]r[at]gmail.com',
         version=version,
         license='LICENSE.txt',
-        url='http://mysqlcli.com',
+        url='http://mycli.com',
         packages=find_packages(),
-        package_data={'mysqlcli': ['mysqlclirc']},
+        package_data={'mycli': ['myclirc']},
         description=description,
         long_description=open('README.md').read(),
         install_requires=[
@@ -32,10 +32,7 @@ setup(
             ],
         entry_points='''
             [console_scripts]
-            mysql-cli=mysqlcli.main:cli
-            mysql_cli=mysqlcli.main:cli
-            mysqlcli=mysqlcli.main:cli
-            mycli=mysqlcli.main:cli
+            mycli=mycli.main:cli
         ''',
         classifiers=[
             'Intended Audience :: Developers',

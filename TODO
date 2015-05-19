@@ -1,14 +1,14 @@
 # vi: ft=vimwiki
  
-* [ ] Check password functionality.
 * [ ] Check if views are available in mysql.
-* [ ] Check what's the equivalent of PGHOST, PGUSER, etc.
 * [ ] Update README with installation instructions.
 * [ ] Write a brief note about config file.
 * [ ] Create waffle.io page.
 * [ ] Setup gitter.
 * [ ] Setup a landing page for mycli.net.
-* [ ] Rename everything to mycli in code and pypi.
 * [ ] Send out invites to backers, pgcli contributors.
 * [ ] Write a blog post on personal blog about the experience of kickstarter.
 * [ ] Add a confirmation for `drop table` and `drop database`
+* [ ] Add github issues for known problems.
+* [ ] Provide RPM and DEB packages.
+* [ ] Create a brew tap for mycli.

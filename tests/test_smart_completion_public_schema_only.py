@@ -14,7 +14,7 @@ metadata = {
 @pytest.fixture
 def completer():
 
-    import mysqlcli.sqlcompleter as sqlcompleter
+    import mycli.sqlcompleter as sqlcompleter
     comp = sqlcompleter.SQLCompleter(smart_completion=True)
 
     tables, columns = [], []

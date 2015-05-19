@@ -1,6 +1,6 @@
 import pytest
 from utils import (HOST, USER, create_db, db_connection)
-import mysqlcli.sqlexecute
+import mycli.sqlexecute
 
 
 @pytest.yield_fixture(scope="function")
@@ -20,5 +20,5 @@ def cursor(connection):
 
 @pytest.fixture
 def executor(connection):
-    return mysqlcli.sqlexecute.SQLExecute(database='_test_db', user=USER,
+    return mycli.sqlexecute.SQLExecute(database='_test_db', user=USER,
             host=HOST, password=None, port=None)

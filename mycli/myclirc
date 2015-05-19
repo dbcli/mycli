@@ -12,7 +12,7 @@ smart_completion = True
 multi_line = False
 
 # log_file location.
-log_file = ~/.mysqlcli.log
+log_file = ~/.mycli.log
 
 # Default log level. Possible values: "CRITICAL", "ERROR", "WARNING", "INFO"
 # and "DEBUG".

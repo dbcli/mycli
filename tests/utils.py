@@ -1,6 +1,6 @@
 import pytest
 import pymysql
-from mysqlcli.main import format_output
+from mycli.main import format_output
 
 # TODO: should this be somehow be divined from environment?
 USER, HOST = 'root', 'localhost'

@@ -1,5 +1,5 @@
 import pytest
-from mysqlcli.packages.parseutils import extract_tables
+from mycli.packages.parseutils import extract_tables
 
 
 def test_empty_string():

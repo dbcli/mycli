@@ -4,9 +4,9 @@ from prompt_toolkit.key_binding.manager import KeyBindingManager
 
 _logger = logging.getLogger(__name__)
 
-def mysqlcli_bindings(vi_mode=False):
+def mycli_bindings(vi_mode=False):
     """
-    Custom key bindings for mysqlcli.
+    Custom key bindings for mycli.
     """
     key_binding_manager = KeyBindingManager(enable_vi_mode=vi_mode)
 
