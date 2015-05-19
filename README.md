@@ -38,6 +38,8 @@ Options:
 
 The config file is located at ~/.myclirc
 
+The app ships with sane defaults. But if you're unsatisfied with the current behavior take a look at the configs. 
+
 ## Compatibility
 
 Tests have been run on OS X and Linux.
