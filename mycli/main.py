@@ -353,7 +353,7 @@ class MyCli(object):
 @click.option('-p', '--password', 'prompt_passwd', is_flag=True, default=False,
         help='Force password prompt.')
 @click.option('--pass', 'password', envvar='MYCLI_PASSWORD', type=str,
-        help='Password to connect to the databse')
+        help='Password to connect to the database')
 @click.option('-v', '--version', is_flag=True, help='Version of mycli.')
 @click.option('-D', '--database', 'dbname', default='', envvar='PGDATABASE',
         help='Database to use.')
