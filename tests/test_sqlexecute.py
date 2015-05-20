@@ -15,7 +15,8 @@ def test_conn(executor):
         | a   |
         |-----|
         | abc |
-        +-----+""")
+        +-----+
+        1 row in set""")
 
 @dbtest
 def test_bools(executor):
@@ -27,7 +28,8 @@ def test_bools(executor):
         |   a |
         |-----|
         |   1 |
-        +-----+""")
+        +-----+
+        1 row in set""")
 
 @dbtest
 def test_table_and_columns_query(executor):
@@ -71,14 +73,16 @@ def test_expanded_output(executor):
     assert results == dedent("""\
         -[ RECORD 0 ]
         a | abc
-        """)
+        
+        1 row in set"""
+        )
 
 @dbtest
 def test_multiple_queries_same_line(executor):
     result = run(executor, "select 'foo'; select 'bar'")
-    assert len(result) == 2
+    assert len(result) == 4  # 2 for the results and 2 more for status messages.
     assert "foo" in result[0]
-    assert "bar" in result[1]
+    assert "bar" in result[2]
 
 @dbtest
 def test_multiple_queries_same_line_syntaxerror(executor):
