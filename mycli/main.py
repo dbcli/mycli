@@ -403,7 +403,8 @@ def is_mutating(status):
     if not status:
         return False
 
-    mutating = set(['insert', 'update', 'delete', 'alter', 'create', 'drop'])
+    mutating = set(['insert', 'update', 'delete', 'alter', 'create', 'drop',
+                    'replace', 'truncate', 'load'])
     return status.split(None, 1)[0].lower() in mutating
 
 def is_select(status):
