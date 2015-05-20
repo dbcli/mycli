@@ -16,7 +16,7 @@ from prompt_toolkit.document import Document
 from prompt_toolkit.filters import Always
 from prompt_toolkit.layout.processors import HighlightMatchingBracketProcessor
 from prompt_toolkit.history import FileHistory
-from pygments.lexers.sql import PostgresLexer
+from pygments.lexers.sql import MySqlLexer
 from pygments.token import Token
 
 from .packages.tabulate import tabulate
@@ -175,7 +175,7 @@ class MyCli(object):
             return [(Token.Prompt, '%s> ' % (sqlexecute.dbname or 'mysql'))]
 
         get_toolbar_tokens = create_toolbar_tokens_func(key_binding_manager)
-        layout = create_default_layout(lexer=PostgresLexer,
+        layout = create_default_layout(lexer=MySqlLexer,
                                        reserve_space_for_menu=True,
                                        get_prompt_tokens=prompt_tokens,
                                        get_bottom_toolbar_tokens=get_toolbar_tokens,
