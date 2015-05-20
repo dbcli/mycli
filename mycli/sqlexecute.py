@@ -81,16 +81,29 @@ class SQLExecute(object):
     def execute_normal_sql(self, split_sql):
         _logger.debug('Regular sql statement. sql: %r', split_sql)
         cur = self.conn.cursor()
-        cur.execute(split_sql)
+        num_rows = cur.execute(split_sql)
         title = None
+        if num_rows == 1:
+            status = '%d row in set' % num_rows
+        else:
+            status = '%d rows in set' % num_rows
+        with self.conn.cursor() as temp_cursor:
+            temp_cursor.execute('SELECT row_count()')
+            n = temp_cursor.fetchone()[0]
+            if n < 0:
+                pass
+            elif n == 1:
+                status = 'Query OK, %d row affected' % n
+            else:
+                status = 'Query OK, %d rows affected' % n
         # cur.description will be None for operations that do not return
         # rows.
         if cur.description:
             headers = [x[0] for x in cur.description]
-            return (title, cur, headers, None)  # cur.statusmessage)
+            return (title, cur, headers, status)  # cur.statusmessage)
         else:
             _logger.debug('No rows in result.')
-            return (title, None, None, None)  # cur.statusmessage)
+            return (title, None, None, status)  # cur.statusmessage)
 
     def tables(self):
         """Yields table names"""
