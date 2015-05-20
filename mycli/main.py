@@ -352,11 +352,12 @@ class MyCli(object):
         'connect to the database.')
 @click.option('-p', '--password', 'prompt_passwd', is_flag=True, default=False,
         help='Force password prompt.')
+@click.option('--pass', 'password', envvar='MYCLI_PASSWORD', type=str, help='Password to connecto the databse')
 @click.option('-v', '--version', is_flag=True, help='Version of mycli.')
 @click.option('-D', '--database', 'dbname', default='', envvar='PGDATABASE',
         help='Database to use.')
 @click.argument('database', default=lambda: None, envvar='PGDATABASE', nargs=1)
-def cli(database, user, host, port, prompt_passwd, dbname, version):
+def cli(database, user, host, port, password, prompt_passwd, dbname, version):
 
     if version:
         print('Version:', __version__)
@@ -370,7 +371,7 @@ def cli(database, user, host, port, prompt_passwd, dbname, version):
     if '://' in database:
         mycli.connect_uri(database)
     else:
-        mycli.connect(database, host, user, port)
+        mycli.connect(database, host, user, port, password)
 
     mycli.logger.debug('Launch Params: \n'
             '\tdatabase: %r'
