@@ -14,7 +14,7 @@ class SQLExecute(object):
 
     columns_query = '''SHOW COLUMNS FROM %s'''
 
-    functions_query = ''' '''
+    functions_query = '''SELECT ROUTINE_SCHEMA,ROUTINE_NAME FROM INFORMATION_SCHEMA.ROUTINES WHERE ROUTINE_TYPE="FUNCTION"'''
 
     table_columns_query = '''select TABLE_NAME, COLUMN_NAME from information_schema.columns
                                     where table_schema = '%s'
