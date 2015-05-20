@@ -271,7 +271,7 @@ class MyCli(object):
                     click.secho('Not Yet Implemented.', fg="yellow")
                 except OperationalError as e:
                     reconnect = True
-                    if ('server closed the connection' in e.args[1]):
+                    if ('Lost connection' in e.args[1]) or ('server has gone away' in e.args[1]):
                         reconnect = click.prompt('Connection reset. Reconnect (Y/n)',
                                 show_default=False, type=bool, default=True)
                         if reconnect:
