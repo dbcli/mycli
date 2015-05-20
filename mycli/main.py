@@ -323,7 +323,8 @@ class MyCli(object):
         # databases
         completer.extend_database_names(sqlexecute.databases())
 
-        # schemata
+        # schemata - In MySQL Schema is the same as database. But for mycli
+        # schemata will be the name of the current database.
         completer.extend_schemata(self.sqlexecute.dbname)
         completer.set_dbname(self.sqlexecute.dbname)
 
@@ -336,7 +337,7 @@ class MyCli(object):
         #completer.extend_columns(sqlexecute.view_columns(), kind='views')
 
         # functions
-        #completer.extend_functions(sqlexecute.functions())
+        completer.extend_functions(sqlexecute.functions())
 
     def get_completions(self, text, cursor_positition):
         return self.completer.get_completions(
