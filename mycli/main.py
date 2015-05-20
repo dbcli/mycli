@@ -123,7 +123,16 @@ class MyCli(object):
                                   show_default=False, type=str)
 
         try:
-            sqlexecute = SQLExecute(database, user, passwd, host, port)
+            try:
+                sqlexecute = SQLExecute(database, user, passwd, host, port)
+            except OperationalError as e:
+                if (('Access denied for user' in e.args[1]) and
+                        ('using password: NO' in e.args[1])):
+                    passwd = click.prompt('Password', hide_input=True,
+                                          show_default=False, type=str)
+                    sqlexecute = SQLExecute(database, user, passwd, host, port)
+                else:
+                    raise e
         except Exception as e:  # Connecting to a database could fail.
             self.logger.debug('Database connection failed: %r.', e)
             self.logger.error("traceback: %r", traceback.format_exc())
