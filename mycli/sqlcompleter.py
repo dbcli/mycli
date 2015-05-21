@@ -101,7 +101,7 @@ class SQLCompleter(Completer):
         """
 
         # 'data' is a generator object. It can throw an exception while being
-        # consumed. This could happen if the user has launched the app
+        # consumed. This could happen if the user has launched the app without
         # specifying a database name. This exception must be handled to prevent
         # crashing.
         try:
@@ -127,10 +127,10 @@ class SQLCompleter(Completer):
         :param kind: either 'tables' or 'views'
         :return:
         """
-        # 'data' is a generator object. It can throw an exception while being
-        # consumed. This could happen if the user has launched the app
-        # specifying a database name. This exception must be handled to prevent
-        # crashing.
+        # 'column_data' is a generator object. It can throw an exception while
+        # being consumed. This could happen if the user has launched the app
+        # without specifying a database name. This exception must be handled to
+        # prevent crashing.
         try:
             column_data = [self.escaped_names(d) for d in column_data]
         except Exception:
@@ -142,18 +142,22 @@ class SQLCompleter(Completer):
             self.all_completions.add(column)
 
     def extend_functions(self, func_data):
+        # 'func_data' is a generator object. It can throw an exception while
+        # being consumed. This could happen if the user has launched the app
+        # without specifying a database name. This exception must be handled to
+        # prevent crashing.
+        try:
+            func_data = [self.escaped_names(d) for d in func_data]
+        except Exception:
+            func_data = []
 
-        # func_data is an iterator of (schema_name, function_name)
-
-        # dbmetadata['functions']['schema_name']['function_name'] should return
-        # function metadata -- right now we're not storing any further metadata
-        # so just default to None as a placeholder
+        # dbmetadata['functions'][$schema_name][$function_name] should return
+        # function metadata.
         metadata = self.dbmetadata['functions']
 
-        for f in func_data:
-            schema, func = self.escaped_names(f)
-            metadata[schema][func] = None
-            self.all_completions.add(func)
+        for func in func_data:
+            metadata[self.dbname][func[0]] = None
+            self.all_completions.add(func[0])
 
     def set_dbname(self, dbname):
         self.dbname = dbname

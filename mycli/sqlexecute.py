@@ -14,7 +14,8 @@ class SQLExecute(object):
 
     columns_query = '''SHOW COLUMNS FROM %s'''
 
-    functions_query = '''SELECT ROUTINE_SCHEMA,ROUTINE_NAME FROM INFORMATION_SCHEMA.ROUTINES WHERE ROUTINE_TYPE="FUNCTION"'''
+    functions_query = '''SELECT ROUTINE_NAME FROM INFORMATION_SCHEMA.ROUTINES
+    WHERE ROUTINE_TYPE="FUNCTION" AND ROUTINE_SCHEMA = "%s"'''
 
     table_columns_query = '''select TABLE_NAME, COLUMN_NAME from information_schema.columns
                                     where table_schema = '%s'
@@ -133,6 +134,6 @@ class SQLExecute(object):
 
         with self.conn.cursor() as cur:
             _logger.debug('Functions Query. sql: %r', self.functions_query)
-            cur.execute(self.functions_query)
+            cur.execute(self.functions_query % self.dbname)
             for row in cur:
                 yield row
