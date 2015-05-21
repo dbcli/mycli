@@ -16,28 +16,31 @@ _logger = logging.getLogger(__name__)
 
 class SQLCompleter(Completer):
     keywords = ['ACCESS', 'ADD', 'ALL', 'ALTER TABLE', 'AND', 'ANY', 'AS',
-    'ASC', 'AUDIT', 'BETWEEN', 'BY', 'CASE', 'CHAR', 'CHECK', 'CLUSTER',
-    'COLUMN', 'COMMENT', 'COMPRESS', 'CONNECT', 'COPY', 'CREATE', 'CURRENT',
-    'DATABASE', 'DATE', 'DECIMAL', 'DEFAULT', 'DELETE FROM', 'DELIMITER',
-    'DESC', 'DESCRIBE', 'DISTINCT', 'DROP', 'ELSE', 'ENCODING', 'ESCAPE',
-    'EXCLUSIVE', 'EXISTS', 'EXTENSION', 'FILE', 'FLOAT', 'FOR', 'FORMAT',
-    'FORCE_QUOTE', 'FORCE_NOT_NULL', 'FREEZE', 'FROM', 'FULL', 'FUNCTION',
-    'GRANT', 'GROUP BY', 'HAVING', 'HEADER', 'IDENTIFIED', 'IMMEDIATE', 'IN',
-    'INCREMENT', 'INDEX', 'INITIAL', 'INSERT INTO', 'INTEGER', 'INTERSECT',
-    'INTO', 'IS', 'JOIN', 'LEFT', 'LEVEL', 'LIKE', 'LIMIT', 'LOCK', 'LONG',
-    'MAXEXTENTS', 'MINUS', 'MLSLABEL', 'MODE', 'MODIFY', 'NOAUDIT',
-    'NOCOMPRESS', 'NOT', 'NOWAIT', 'NULL', 'NUMBER', 'OIDS', 'OF', 'OFFLINE',
-    'ON', 'ONLINE', 'OPTION', 'OR', 'ORDER BY', 'OUTER', 'OWNER', 'PCTFREE',
-    'PRIMARY', 'PRIOR', 'PRIVILEGES', 'QUOTE', 'RAW', 'RENAME', 'RESOURCE',
-    'REVOKE', 'RIGHT', 'ROW', 'ROWID', 'ROWNUM', 'ROWS', 'SELECT', 'SESSION',
-    'SET', 'SHARE', 'SHOW', 'SIZE', 'SMALLINT', 'START', 'SUCCESSFUL',
-    'SYNONYM', 'SYSDATE', 'TABLE', 'TEMPLATE', 'THEN', 'TO', 'TRIGGER',
-    'TRUNCATE', 'UID', 'UNION', 'UNIQUE', 'UPDATE', 'USE', 'USER', 'USING',
-    'VALIDATE', 'VALUES', 'VARCHAR', 'VARCHAR2', 'VIEW', 'WHEN', 'WHENEVER',
-    'WHERE', 'WITH']
+            'ASC', 'AUDIT', 'BETWEEN', 'BY', 'CASE', 'CHAR', 'CHECK',
+            'CLUSTER', 'COLUMN', 'COMMENT', 'COMPRESS', 'CONNECT', 'COPY',
+            'CREATE', 'CURRENT', 'DATABASE', 'DATE', 'DECIMAL', 'DEFAULT',
+            'DELETE FROM', 'DELIMITER', 'DESC', 'DESCRIBE', 'DISTINCT', 'DROP',
+            'ELSE', 'ENCODING', 'ESCAPE', 'EXCLUSIVE', 'EXISTS', 'EXTENSION',
+            'FILE', 'FLOAT', 'FOR', 'FORMAT', 'FORCE_QUOTE', 'FORCE_NOT_NULL',
+            'FREEZE', 'FROM', 'FULL', 'FUNCTION', 'GRANT', 'GROUP BY',
+            'HAVING', 'HEADER', 'IDENTIFIED', 'IMMEDIATE', 'IN', 'INCREMENT',
+            'INDEX', 'INITIAL', 'INSERT INTO', 'INTEGER', 'INTERSECT', 'INTO',
+            'INTERVAL', 'IS', 'JOIN', 'LEFT', 'LEVEL', 'LIKE', 'LIMIT', 'LOCK',
+            'LONG', 'MAXEXTENTS', 'MINUS', 'MLSLABEL', 'MODE', 'MODIFY',
+            'NOAUDIT', 'NOCOMPRESS', 'NOT', 'NOWAIT', 'NULL', 'NUMBER', 'OIDS',
+            'OF', 'OFFLINE', 'ON', 'ONLINE', 'OPTION', 'OR', 'ORDER BY',
+            'OUTER', 'OWNER', 'PCTFREE', 'PRIMARY', 'PRIOR', 'PRIVILEGES',
+            'PROCESSLIST', 'QUOTE', 'RAW', 'RENAME', 'RESOURCE', 'REVOKE',
+            'RIGHT', 'ROW', 'ROWID', 'ROWNUM', 'ROWS', 'SELECT', 'SESSION',
+            'SET', 'SHARE', 'SHOW', 'SIZE', 'SMALLINT', 'START', 'SUCCESSFUL',
+            'SYNONYM', 'SYSDATE', 'TABLE', 'TEMPLATE', 'THEN', 'TO', 'TRIGGER',
+            'TRUNCATE', 'UID', 'UNION', 'UNIQUE', 'UPDATE', 'USE', 'USER',
+            'USING', 'VALIDATE', 'VALUES', 'VARCHAR', 'VARCHAR2', 'VIEW',
+            'WHEN', 'WHENEVER', 'WHERE', 'WITH']
 
-    functions = ['AVG', 'COUNT', 'FIRST', 'FORMAT', 'LAST', 'LCASE', 'LEN',
-                 'MAX', 'MIN', 'MID', 'NOW', 'ROUND', 'SUM', 'TOP', 'UCASE']
+    functions = ['AVG', 'COUNT', 'DISTINCT', 'FIRST', 'FORMAT', 'LAST',
+            'LCASE', 'LEN', 'MAX', 'MIN', 'MID', 'NOW', 'ROUND', 'SUM', 'TOP',
+            'UCASE']
 
     def __init__(self, smart_completion=True):
         super(self.__class__, self).__init__()
