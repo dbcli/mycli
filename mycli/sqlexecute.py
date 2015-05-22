@@ -21,23 +21,32 @@ class SQLExecute(object):
                                     where table_schema = '%s'
                                     order by table_name,ordinal_position'''
 
-    def __init__(self, database, user, password, host, port):
+    def __init__(self, database, user, password, host, port, socket):
         self.dbname = database
         self.user = user
         self.password = password
         self.host = host
         self.port = port or 3306
+        self.socket = socket
         self.connect()
 
     def connect(self, database=None, user=None, password=None, host=None,
-            port=None):
+            port=None, socket=None):
         db = (database or self.dbname)
         user = (user or self.user)
         password = (password or self.password)
         host = (host or self.host)
         port = (port or self.port)
+        socket = (socket or self.socket)
+        _logger.debug('Connection DB Params: \n'
+            '\tdatabase: %r'
+            '\tuser: %r'
+            '\thost: %r'
+            '\tport: %r'
+            '\tsocket: %r', database, user, host, port, socket)
         conn = pymysql.connect(database=db, user=user, password=password,
-                host=host, port=port, use_unicode=True, charset='utf8')
+                host=host, port=port, unix_socket=socket,
+                use_unicode=True, charset='utf8')
         if hasattr(self, 'conn'):
             self.conn.close()
         self.conn = conn

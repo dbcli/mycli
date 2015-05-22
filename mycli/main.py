@@ -110,7 +110,7 @@ class MyCli(object):
         self.connect(database, uri.hostname, uri.username,
                      uri.port, uri.password)
 
-    def connect(self, database='', host='', user='', port='', passwd=''):
+    def connect(self, database='', host='', user='', port='', passwd='', socket=''):
         # Connect to the database.
 
         # Prompt for a password immediately if requested via the -p flag. This
@@ -124,13 +124,13 @@ class MyCli(object):
 
         try:
             try:
-                sqlexecute = SQLExecute(database, user, passwd, host, port)
+                sqlexecute = SQLExecute(database, user, passwd, host, port, socket)
             except OperationalError as e:
                 if (('Access denied for user' in e.args[1]) and
                         ('using password: NO' in e.args[1])):
                     passwd = click.prompt('Password', hide_input=True,
                                           show_default=False, type=str)
-                    sqlexecute = SQLExecute(database, user, passwd, host, port)
+                    sqlexecute = SQLExecute(database, user, passwd, host, port, socket)
                 else:
                     raise e
         except Exception as e:  # Connecting to a database could fail.
@@ -345,12 +345,13 @@ class MyCli(object):
 
 @click.command()
 # Default host is '' so psycopg2 can default to either localhost or unix socket
-@click.option('-h', '--host', default='', envvar='PGHOST',
-        help='Host address of the database.')
+@click.option('-h', '--host', default='localhost', help='Host address of the database.')
 @click.option('-P', '--port', default=3306, help='Port number at which the '
-        'MySQL instance is listening.', envvar='PGPORT')
+        'Port number to use for connection. Honors: $MYSQL_TCP_PORT',
+        envvar='MYSQL_TCP_PORT')
 @click.option('-u', '--user', envvar='USER', help='User name to '
         'connect to the database.')
+@click.option('-S', '--socket', help='The socket file to use for connection.')
 @click.option('-p', '--password', 'prompt_passwd', is_flag=True, default=False,
         help='Force password prompt.')
 @click.option('--pass', 'password', envvar='MYCLI_PASSWORD', type=str,
@@ -359,7 +360,7 @@ class MyCli(object):
 @click.option('-D', '--database', 'dbname', default='', envvar='PGDATABASE',
         help='Database to use.')
 @click.argument('database', default=lambda: None, envvar='PGDATABASE', nargs=1)
-def cli(database, user, host, port, password, prompt_passwd, dbname, version):
+def cli(database, user, host, port, socket, password, prompt_passwd, dbname, version):
 
     if version:
         print('Version:', __version__)
@@ -373,7 +374,7 @@ def cli(database, user, host, port, password, prompt_passwd, dbname, version):
     if '://' in database:
         mycli.connect_uri(database)
     else:
-        mycli.connect(database, host, user, port, password)
+        mycli.connect(database, host, user, port, password, socket)
 
     mycli.logger.debug('Launch Params: \n'
             '\tdatabase: %r'
