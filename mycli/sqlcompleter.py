@@ -42,6 +42,8 @@ class SQLCompleter(Completer):
             'LCASE', 'LEN', 'MAX', 'MIN', 'MID', 'NOW', 'ROUND', 'SUM', 'TOP',
             'UCASE']
 
+    show_items = ['TABLES', 'DATABASES', 'COLUMNS', 'PROCESSLIST']
+
     def __init__(self, smart_completion=True):
         super(self.__class__, self).__init__()
         self.smart_completion = smart_completion
@@ -269,6 +271,11 @@ class SQLCompleter(Completer):
                 keywords = self.find_matches(word_before_cursor, self.keywords,
                                              start_only=True)
                 completions.extend(keywords)
+
+            elif suggestion['type'] == 'show':
+                show_items = self.find_matches(word_before_cursor, self.show_items,
+                                               start_only=False)
+                completions.extend(show_items)
 
             elif suggestion['type'] == 'special':
                 special = self.find_matches(word_before_cursor,

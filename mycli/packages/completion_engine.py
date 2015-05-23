@@ -179,11 +179,15 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
             if last_word(text_before_cursor,
                     'all_punctuations').startswith('('):
                 return [{'type': 'keyword'}]
+        elif p.token_first().value.lower() == 'show':
+            return [{'type': 'show'}]
 
         # We're probably in a function argument list
         return [{'type': 'column', 'tables': extract_tables(full_text)}]
     elif token_v in ('set', 'by', 'distinct'):
         return [{'type': 'column', 'tables': extract_tables(full_text)}]
+    elif token_v in ('show'):
+        return [{'type': 'show'}]
     elif token_v in ('select', 'where', 'having'):
         # Check for a table alias or schema qualification
         parent = (identifier and identifier.get_parent_name()) or []
