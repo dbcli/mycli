@@ -291,8 +291,8 @@ class MyCli(object):
                 else:
                     click.echo_via_pager('\n'.join(output))
                     if special.is_timing_enabled():
-                        print('Command Time:', duration)
-                        print('Format Time:', total)
+                        print('Command Time: %0.03fs' % duration)
+                        print('Format Time: %0.03fs' % total)
 
                 # Refresh the table names and column names if necessary.
                 if need_completion_refresh(document.text):
