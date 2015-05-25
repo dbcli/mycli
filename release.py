@@ -52,12 +52,12 @@ if __name__ == '__main__':
     if DEBUG:
         subprocess.check_output = lambda x: x
 
-    ver = version('mysql_cli/__init__.py')
+    ver = version('mycli/__init__.py')
     print('Releasing Version:', ver)
     choice = raw_input('Are you sure? (y/N)')
     if choice.lower() != 'y':
         sys.exit(1)
-    commit_for_release('mysql_cli/__init__.py', ver)
+    commit_for_release('mycli/__init__.py', ver)
     create_git_tag('v%s' % ver)
     register_with_pypi()
     create_source_tarball()
