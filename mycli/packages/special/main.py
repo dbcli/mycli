@@ -14,12 +14,13 @@ def show_help(*args):  # All the parameters are ignored.
     return [(None, result, headers, None)]
 
 HIDDEN_COMMANDS = {
+            '\\t': (toggle_timing, ['\\timing', '(\\t)', 'Toggle timing of commands.']),
+            '?': (show_help, ['?', '(\\?)', 'Show this help.']),
             }
 
 COMMANDS = {
             '\\?': (show_help, ['\\?', '(\\?)', 'Show this help.']),
             'help': (show_help, ['help', '(\\?)', 'Show this help.']),
-            '?': (show_help, ['?', '(\\?)', 'Show this help.']),
             'connect': (change_db, ['connect', '(\\r)', 'Reconnect to the server. Optional arguments are db and host.']),
             '\\G': (stub, ['\\G', '(\\G)', 'Display results vertically.']),
             'exit': (stub, ['exit', '(\\q)', 'Exit.']),
