@@ -27,6 +27,7 @@ COMMANDS = {
             'quit': (stub, ['quit', '(\\q)', 'Quit.']),
             '\\u': (change_db, ['\\u', '(\\u)', 'Use another database.']),
             '\\l': ('''SHOW DATABASES;''', ['\\l', '(\\l)', 'List databases.']),
+            '\\dt': ('''SHOW TABLES;''', ['\\dt', '(\\dt)', 'List tables.']),
             '\\timing': (toggle_timing, ['\\timing', '(\\t)', 'Toggle timing of commands.']),
             }
 
