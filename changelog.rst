@@ -1,9 +1,0 @@
-Current
-=======
-
-Features:
----------
-
-Bug Fixes:
-----------
-
