@@ -223,7 +223,7 @@ class MyCli(object):
                 destroy = confirm_destructive_query(document.text)
                 if destroy is None:
                     pass  # Query was not destructive. Nothing to do here.
-                elif destroy == True:
+                elif destroy is True:
                     click.secho('Your call!')
                 else:
                     click.secho('Wise choice!')
