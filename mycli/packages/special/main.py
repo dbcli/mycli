@@ -16,6 +16,7 @@ def show_help(*args):  # All the parameters are ignored.
 HIDDEN_COMMANDS = {
             '\\t': (toggle_timing, ['\\timing', '(\\t)', 'Toggle timing of commands.']),
             '?': (show_help, ['?', '(\\?)', 'Show this help.']),
+            'use': (change_db, ['use', '(\\u)', 'Reconnect to the server. Optional arguments are db and host.']),
             }
 
 COMMANDS = {
