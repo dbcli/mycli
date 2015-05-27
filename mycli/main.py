@@ -269,16 +269,21 @@ class MyCli(object):
                 except NotImplementedError:
                     click.secho('Not Yet Implemented.', fg="yellow")
                 except OperationalError as e:
+                    logger.debug("Exception: %r", e)
                     reconnect = True
-                    if ('Lost connection' in e.args[1]) or ('server has gone away' in e.args[1]):
+                    if (e.args[0] in (2003, 2006, 2013)):
                         reconnect = click.prompt('Connection reset. Reconnect (Y/n)',
                                 show_default=False, type=bool, default=True)
                         if reconnect:
+                            logger.debug('Attempting to reconnect.')
                             try:
                                 sqlexecute.connect()
+                                logger.debug('Reconnected successfully.')
                                 click.secho('Reconnected!\nTry the command again.', fg='green')
                             except OperationalError as e:
+                                logger.debug('Reconnect failed. e: %r', e)
                                 click.secho(str(e), err=True, fg='red')
+                                continue
                     else:
                         logger.error("sql: %r, error: %r", document.text, e)
                         logger.error("traceback: %r", traceback.format_exc())
