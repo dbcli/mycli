@@ -176,7 +176,7 @@ class MyCli(object):
         key_binding_manager = mycli_bindings(self.key_bindings == 'vi')
         print('Version:', __version__)
         print('Chat: https://gitter.im/dbcli/mycli')
-        print('Mail: https://groups.google.com/forum/#!forum/mycli')
+        print('Mail: https://groups.google.com/forum/#!forum/mycli-users')
         print('Home: http://mycli.net')
 
         def prompt_tokens(cli):
