@@ -283,7 +283,9 @@ class MyCli(object):
                             except OperationalError as e:
                                 logger.debug('Reconnect failed. e: %r', e)
                                 click.secho(str(e), err=True, fg='red')
-                                continue
+                                continue  # If reconnection failed, don't proceed further.
+                        else:  # If user chooses not to reconnect, don't proceed further.
+                            continue
                     else:
                         logger.error("sql: %r, error: %r", document.text, e)
                         logger.error("traceback: %r", traceback.format_exc())
