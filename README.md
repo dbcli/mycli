@@ -32,6 +32,7 @@ Options:
   -v, --version        Version of mycli.
   -D, --database TEXT  Database to use.
   --help               Show this message and exit.
+  --pass TEXT          User password to connect to the database.
 ```
 
 ## Configuration
