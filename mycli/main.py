@@ -18,6 +18,7 @@ from prompt_toolkit.layout.processors import HighlightMatchingBracketProcessor
 from prompt_toolkit.history import FileHistory
 from pygments.lexers.sql import MySqlLexer
 from pygments.token import Token
+from configobj import ConfigObj
 
 from .packages.tabulate import tabulate
 from .packages.expanded import expanded_table
@@ -107,10 +108,51 @@ class MyCli(object):
     def connect_uri(self, uri):
         uri = urlparse(uri)
         database = uri.path[1:]  # ignore the leading fwd slash
-        self.connect(database, uri.hostname, uri.username,
-                     uri.port, uri.password)
+        self.connect(database, uri.username, uri.password,
+                     uri.hostname, uri.port)
 
-    def connect(self, database='', host='', user='', port='', passwd='', socket=''):
+    def read_my_cnf_files(self, files):
+        """Reads a list of config files and merges them. The last one will win.
+        Returns: user, host, port, socket, password, charset. None for missing
+        values.
+        """
+        cnf = ConfigObj()
+        for file in files:
+            try:
+                cnf.merge(ConfigObj(os.path.expanduser(file),
+                    interpolation=False))
+            except Exception:
+                self.logger.error('Error parsing %r. Skipping over this file.',
+                        file)
+                pass
+
+        def get(key):
+            try:
+                return cnf['client'][key]
+            except KeyError:
+                return None
+
+        return (get('database'), get('user'), get('password'), get('host'),
+                get('port'), get('socket'), get('default-character-set'),)
+
+    def connect(self, database='', user='', passwd='', host='', port='',
+            socket='', charset=''):
+
+        cnf_files = ['/etc/my.cnf', '/etc/mysql/my.cnf',
+                '/usr/local/etc/my.cnf', '~/.my.cnf']
+        c_database, c_user, c_password, c_host, c_port, c_socket, c_charset = \
+                                            self.read_my_cnf_files(cnf_files)
+
+        # Fall back to config values only if user did not specify a value.
+
+        database = database or c_database
+        user = user or c_user
+        host = host or c_host
+        port = port or c_port
+        socket = socket or c_socket
+        passwd = passwd or c_password
+        charset = charset or c_charset
+
         # Connect to the database.
 
         # Prompt for a password immediately if requested via the -p flag. This
@@ -124,13 +166,14 @@ class MyCli(object):
 
         try:
             try:
-                sqlexecute = SQLExecute(database, user, passwd, host, port, socket)
+                sqlexecute = SQLExecute(database, user, passwd, host, port,
+                        socket, charset)
             except OperationalError as e:
-                if (('Access denied for user' in e.args[1]) and
-                        ('using password: NO' in e.args[1])):
+                if ('Access denied for user' in e.args[1]):
                     passwd = click.prompt('Password', hide_input=True,
                                           show_default=False, type=str)
-                    sqlexecute = SQLExecute(database, user, passwd, host, port, socket)
+                    sqlexecute = SQLExecute(database, user, passwd, host, port,
+                            socket, charset)
                 else:
                     raise e
         except Exception as e:  # Connecting to a database could fail.
@@ -353,7 +396,7 @@ class MyCli(object):
 # Default host is '' so psycopg2 can default to either localhost or unix socket
 @click.option('-h', '--host', default='localhost', help='Host address of the database.')
 @click.option('-P', '--port', default=3306, help='Port number at which the '
-        'Port number to use for connection. Honors: $MYSQL_TCP_PORT',
+        'Port number to use for connection. Honors $MYSQL_TCP_PORT',
         envvar='MYSQL_TCP_PORT')
 @click.option('-u', '--user', envvar='USER', help='User name to '
         'connect to the database.')
@@ -380,7 +423,7 @@ def cli(database, user, host, port, socket, password, prompt_passwd, dbname, ver
     if '://' in database:
         mycli.connect_uri(database)
     else:
-        mycli.connect(database, host, user, port, password, socket)
+        mycli.connect(database, user, password, host, port, socket)
 
     mycli.logger.debug('Launch Params: \n'
             '\tdatabase: %r'
