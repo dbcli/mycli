@@ -29,6 +29,7 @@ setup(
             'PyMySQL',
             'sqlparse == 0.1.14',
             'six >= 1.8',
+            'configobj >= 5.0.6',
             ],
         entry_points='''
             [console_scripts]

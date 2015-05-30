@@ -59,11 +59,11 @@ class MyCli(object):
 
         # Load config.
         c = self.config = load_config('~/.myclirc', default_config)
-        self.multi_line = c.getboolean('main', 'multi_line')
-        self.key_bindings = c.get('main', 'key_bindings')
-        special.set_timing_enabled(c.getboolean('main', 'timing'))
-        self.table_format = c.get('main', 'table_format')
-        self.syntax_style = c.get('main', 'syntax_style')
+        self.multi_line = c['main'].as_bool('multi_line')
+        self.key_bindings = c['main']['key_bindings']
+        special.set_timing_enabled(c['main'].as_bool('timing'))
+        self.table_format = c['main']['table_format']
+        self.syntax_style = c['main']['syntax_style']
 
         self.logger = logging.getLogger(__name__)
         self.initialize_logging()
@@ -71,7 +71,7 @@ class MyCli(object):
         self.query_history = []
 
         # Initialize completer
-        smart_completion = c.getboolean('main', 'smart_completion')
+        smart_completion = c['main'].as_bool('smart_completion')
         completer = SQLCompleter(smart_completion)
         completer.extend_special_commands(COMMANDS.keys())
         completer.extend_special_commands(HIDDEN_COMMANDS.keys())
@@ -79,8 +79,8 @@ class MyCli(object):
 
     def initialize_logging(self):
 
-        log_file = self.config.get('main', 'log_file')
-        log_level = self.config.get('main', 'log_level')
+        log_file = self.config['main']['log_file']
+        log_level = self.config['main']['log_level']
 
         level_map = {'CRITICAL': logging.CRITICAL,
                      'ERROR': logging.ERROR,
