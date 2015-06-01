@@ -24,6 +24,7 @@ COMMANDS = {
             '\\?': (show_help, ['\\?', '(\\?)', 'Show this help.']),
             'help': (show_help, ['help', '(\\?)', 'Show this help.']),
             'connect': (change_db, ['connect', '(\\r)', 'Reconnect to the server. Optional arguments are db and host.']),
+            '\\e': (stub, ['\\e', '(\\e)', 'Edit command with editor.']),
             '\\G': (stub, ['\\G', '(\\G)', 'Display results vertically.']),
             'exit': (stub, ['exit', '(\\q)', 'Exit.']),
             'quit': (stub, ['quit', '(\\q)', 'Quit.']),
