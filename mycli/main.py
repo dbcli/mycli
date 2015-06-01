@@ -406,9 +406,8 @@ class MyCli(object):
 @click.option('--pass', 'password', envvar='MYCLI_PASSWORD', type=str,
         help='Password to connect to the database')
 @click.option('-v', '--version', is_flag=True, help='Version of mycli.')
-@click.option('-D', '--database', 'dbname', default='', envvar='PGDATABASE',
-        help='Database to use.')
-@click.argument('database', default=lambda: None, envvar='PGDATABASE', nargs=1)
+@click.option('-D', '--database', 'dbname', default='', help='Database to use.')
+@click.argument('database', default=lambda: None, nargs=1)
 def cli(database, user, host, port, socket, password, prompt_passwd, dbname, version):
 
     if version:
