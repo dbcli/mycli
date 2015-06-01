@@ -86,6 +86,8 @@ class SQLCompleter(Completer):
         self.all_completions.update(additional_keywords)
 
     def extend_schemata(self, schema):
+        if schema is None:
+            return
         metadata = self.dbmetadata['tables']
         metadata[schema] = {}
 
