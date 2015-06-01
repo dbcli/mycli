@@ -108,8 +108,8 @@ class MyCli(object):
     def connect_uri(self, uri):
         uri = urlparse(uri)
         database = uri.path[1:]  # ignore the leading fwd slash
-        self.connect(database, uri.username, uri.password,
-                     uri.hostname, uri.port)
+        self.connect(database, uri.username, uri.password, uri.hostname,
+                uri.port)
 
     def read_my_cnf_files(self, files):
         """Reads a list of config files and merges them. The last one will win.
@@ -146,12 +146,12 @@ class MyCli(object):
         # Fall back to config values only if user did not specify a value.
 
         database = database or c_database
-        user = user or c_user
-        host = host or c_host
-        port = port or c_port
+        user = user or c_user or os.getenv('USER')
+        host = host or c_host or 'localhost'
+        port = port or c_port or os.getenv('MYSQL_TCP_PORT') or '3306'
         socket = socket or c_socket
         passwd = passwd or c_password
-        charset = charset or c_charset
+        charset = charset or c_charset or 'utf8'
 
         # Connect to the database.
 
@@ -394,21 +394,20 @@ class MyCli(object):
 
 @click.command()
 # Default host is '' so psycopg2 can default to either localhost or unix socket
-@click.option('-h', '--host', default='localhost', help='Host address of the database.')
-@click.option('-P', '--port', default=3306, help='Port number at which the '
-        'Port number to use for connection. Honors $MYSQL_TCP_PORT',
-        envvar='MYSQL_TCP_PORT')
-@click.option('-u', '--user', envvar='USER', help='User name to '
-        'connect to the database.')
+@click.option('-h', '--host', help='Host address of the database.')
+@click.option('-P', '--port', help='Port number at which the '
+        'Port number to use for connection. Honors $MYSQL_TCP_PORT')
+@click.option('-u', '--user', help='User name to connect to the database.')
 @click.option('-S', '--socket', help='The socket file to use for connection.')
 @click.option('-p', '--password', 'prompt_passwd', is_flag=True, default=False,
         help='Force password prompt.')
 @click.option('--pass', 'password', envvar='MYCLI_PASSWORD', type=str,
         help='Password to connect to the database')
 @click.option('-v', '--version', is_flag=True, help='Version of mycli.')
-@click.option('-D', '--database', 'dbname', default='', help='Database to use.')
-@click.argument('database', default=lambda: None, nargs=1)
-def cli(database, user, host, port, socket, password, prompt_passwd, dbname, version):
+@click.option('-D', '--database', 'dbname', help='Database to use.')
+@click.argument('database', default='', nargs=1)
+def cli(database, user, host, port, socket, password, prompt_passwd, dbname,
+        version):
 
     if version:
         print('Version:', __version__)
@@ -419,7 +418,7 @@ def cli(database, user, host, port, socket, password, prompt_passwd, dbname, ver
     # Choose which ever one has a valid value.
     database = database or dbname
 
-    if '://' in database:
+    if database and '://' in database:
         mycli.connect_uri(database)
     else:
         mycli.connect(database, user, password, host, port, socket)

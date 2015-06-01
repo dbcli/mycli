@@ -2,7 +2,6 @@ import logging
 import pymysql
 import sqlparse
 from .packages import special
-from .encodingutils import unicode2utf8
 
 _logger = logging.getLogger(__name__)
 
@@ -26,9 +25,9 @@ class SQLExecute(object):
         self.user = user
         self.password = password
         self.host = host
-        self.port = port or 3306
+        self.port = port
         self.socket = socket
-        self.charset = charset or 'utf8'
+        self.charset = charset
         self.connect()
 
     def connect(self, database=None, user=None, password=None, host=None,
