@@ -148,7 +148,7 @@ class MyCli(object):
         database = database or c_database
         user = user or c_user or os.getenv('USER')
         host = host or c_host or 'localhost'
-        port = port or c_port or os.getenv('MYSQL_TCP_PORT') or '3306'
+        port = int(port or c_port or os.getenv('MYSQL_TCP_PORT') or 3306)
         socket = socket or c_socket
         passwd = passwd or c_password
         charset = charset or c_charset or 'utf8'
