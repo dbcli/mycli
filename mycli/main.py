@@ -10,11 +10,13 @@ from time import time
 
 import click
 import sqlparse
-from prompt_toolkit import CommandLineInterface, AbortAction
+from prompt_toolkit import CommandLineInterface, Application, AbortAction
+from prompt_toolkit.enums import DEFAULT_BUFFER
 from prompt_toolkit.shortcuts import create_default_layout, create_eventloop
 from prompt_toolkit.document import Document
-from prompt_toolkit.filters import Always
-from prompt_toolkit.layout.processors import HighlightMatchingBracketProcessor
+from prompt_toolkit.filters import Always, HasFocus, IsDone
+from prompt_toolkit.layout.processors import (HighlightMatchingBracketProcessor,
+                                              ConditionalProcessor)
 from prompt_toolkit.history import FileHistory
 from pygments.lexers.sql import MySqlLexer
 from pygments.token import Token
@@ -205,7 +207,7 @@ class MyCli(object):
                 # Something went wrong. Raise an exception and bail.
                 raise RuntimeError(message)
             cli.current_buffer.document = Document(sql, cursor_position=len(sql))
-            document = cli.read_input(False)
+            document = cli.run(False)
             continue
         return document
 
@@ -216,7 +218,14 @@ class MyCli(object):
 
         completer = self.completer
         self.refresh_completions()
-        key_binding_manager = mycli_bindings(self.key_bindings == 'vi')
+
+        def set_key_bindings(value):
+            if value not in ('emacs', 'vi'):
+                value = 'emacs'
+            self.key_bindings = value
+
+        key_binding_manager = mycli_bindings(get_key_bindings=lambda: self.key_bindings,
+                                             set_key_bindings=set_key_bindings)
         print('Version:', __version__)
         print('Chat: https://gitter.im/dbcli/mycli')
         print('Mail: https://groups.google.com/forum/#!forum/mycli-users')
@@ -225,26 +234,29 @@ class MyCli(object):
         def prompt_tokens(cli):
             return [(Token.Prompt, '%s> ' % (sqlexecute.dbname or 'mysql'))]
 
-        get_toolbar_tokens = create_toolbar_tokens_func(key_binding_manager)
+        get_toolbar_tokens = create_toolbar_tokens_func(lambda: self.key_bindings)
         layout = create_default_layout(lexer=MySqlLexer,
                                        reserve_space_for_menu=True,
                                        get_prompt_tokens=prompt_tokens,
                                        get_bottom_toolbar_tokens=get_toolbar_tokens,
                                        extra_input_processors=[
-                                           HighlightMatchingBracketProcessor(),
+                                           ConditionalProcessor(
+                                               processor=HighlightMatchingBracketProcessor(chars='[](){}'),
+                                               filter=HasFocus(DEFAULT_BUFFER) & ~IsDone()),
                                        ])
         buf = CLIBuffer(always_multiline=self.multi_line, completer=completer,
                 history=FileHistory(os.path.expanduser('~/.mycli-history')),
                 complete_while_typing=Always())
-        cli = CommandLineInterface(create_eventloop(),
-                style=style_factory(self.syntax_style),
-                layout=layout, buffer=buf,
-                key_bindings_registry=key_binding_manager.registry,
-                on_exit=AbortAction.RAISE_EXCEPTION)
+
+        application = Application(style=style_factory(self.syntax_style),
+                                  layout=layout, buffer=buf,
+                                  key_bindings_registry=key_binding_manager.registry,
+                                  on_exit=AbortAction.RAISE_EXCEPTION)
+        cli = CommandLineInterface(application=application, eventloop=create_eventloop())
 
         try:
             while True:
-                document = cli.read_input()
+                document = cli.run()
 
                 special.set_expanded_output(False)
 

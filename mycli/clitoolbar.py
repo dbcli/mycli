@@ -1,9 +1,11 @@
 from pygments.token import Token
 
-def create_toolbar_tokens_func(key_binding_manager, token=None):
+def create_toolbar_tokens_func(get_key_bindings, token=None):
     """
     Return a function that generates the toolbar tokens.
     """
+    assert callable(get_key_bindings)
+
     token = token or Token.Toolbar
 
     def get_toolbar_tokens(cli):
@@ -24,7 +26,7 @@ def create_toolbar_tokens_func(key_binding_manager, token=None):
             result.append((token,
                 ' (Semi-colon [;] will end the line)'))
 
-        if key_binding_manager.enable_vi_mode:
+        if get_key_bindings() == 'vi':
             result.append((token.On, '[F4] Vi-mode'))
         else:
             result.append((token.On, '[F4] Emacs-mode'))
