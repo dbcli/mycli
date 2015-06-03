@@ -4,8 +4,7 @@ import logging
 from prompt_toolkit.completion import Completer, Completion
 from .packages.completion_engine import suggest_type
 from .packages.parseutils import last_word
-from re import compile
-from fuzzywuzzy import process, fuzz
+from re import compile, escape
 
 try:
     from collections import Counter
@@ -173,6 +172,8 @@ class SQLCompleter(Completer):
         self.dbmetadata = {'tables': {}, 'views': {}, 'functions': {}}
         self.all_completions = set(self.keywords + self.functions)
 
+
+
     @staticmethod
     def find_matches(text, collection, start_only=False, fuzzy=True):
         """Find completion matches for the given text.
@@ -192,10 +193,15 @@ class SQLCompleter(Completer):
 
         text = last_word(text, include='most_punctuations').lower()
 
+        def fuzzy_match(text, collection):
+            r = compile(''.join([escape(c) + r'.*' for c in text]))
+            for item in sorted(collection):
+                if r.search(item):
+                    yield item
+
         if fuzzy:
-            for i in process.extractBests(
-                    text, collection, scorer=fuzz.partial_ratio):
-                yield Completion(i[0], -len(text))
+            for i in fuzzy_match(text, collection):
+                yield Completion(i, -len(text))
         else:
             for item in sorted(collection):
                 match_end_limit = len(text) if start_only else None
