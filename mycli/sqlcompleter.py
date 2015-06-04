@@ -193,22 +193,22 @@ class SQLCompleter(Completer):
 
         text = last_word(text, include='most_punctuations').lower()
 
-        def fuzzy_match(text, collection):
-            r = compile(''.join([escape(c) + r'.*' for c in text]))
-            for item in sorted(collection):
-                if r.search(item):
-                    yield item
+        completions = []
 
         if fuzzy:
-            for i in fuzzy_match(text, collection):
-                yield Completion(i, -len(text))
-        else:
+            pat = compile(''.join([escape(c) + r'.*' for c in text]))
             for item in sorted(collection):
-                match_end_limit = len(text) if start_only else None
+                r = pat.search(item)
+                if r:
+                    completions.append((r.start(), item))
+        else:
+            match_end_limit = len(text) if start_only else None
+            for item in sorted(collection):
                 match_point = item.lower().find(text, 0, match_end_limit)
-
                 if match_point >= 0:
-                    yield Completion(item, -len(text))
+                    completions.append((match_point, item))
+
+        return (Completion(y, -len(text)) for x, y in sorted(completions))
 
     def get_completions(self, document, complete_event, smart_completion=None):
         word_before_cursor = document.get_word_before_cursor(WORD=True)
