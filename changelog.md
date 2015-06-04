@@ -4,9 +4,18 @@ Current:
 Features:
 ---------
 
+* Upgrade prompt_toolkit to 0.38. This improves the performance of pasting long queries. 
+* Add support for reading my.cnf files.
+* Add editor command \e.
+* Replace ConfigParser with ConfigObj.
+* Add \dt to show all tables.
 
 Bug Fixes:
 ----------
+
+* Fix a bug with reconnect failure.
+* Fix the issue with `use` command not changing the prompt.
+* Fix the issue where `\\r` shortcut was not recognized.
 
 
 2015/05/24
