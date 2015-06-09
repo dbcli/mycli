@@ -1,4 +1,4 @@
-Current:
+2015/06/07:
 ==========
 
 Features:
@@ -9,6 +9,8 @@ Features:
 * Add editor command \e.
 * Replace ConfigParser with ConfigObj.
 * Add \dt to show all tables.
+* Add fuzzy completion for table names and column names.
+* Automatically reconnect when connection is lost to the database.
 
 Bug Fixes:
 ----------
