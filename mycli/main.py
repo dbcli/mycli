@@ -49,7 +49,7 @@ from collections import namedtuple
 Query = namedtuple('Query', ['query', 'successful', 'mutating'])
 
 class MyCli(object):
-    def __init__(self, force_passwd_prompt=False, sqlexecute=None, prompt='\\u@\\h:\\d> '):
+    def __init__(self, force_passwd_prompt=False, sqlexecute=None, prompt='mycli> '):
 
         self.force_passwd_prompt = force_passwd_prompt
         self.sqlexecute = sqlexecute
@@ -426,7 +426,7 @@ class MyCli(object):
         help='Password to connect to the database')
 @click.option('-v', '--version', is_flag=True, help='Version of mycli.')
 @click.option('-D', '--database', 'dbname', help='Database to use.')
-@click.option('-R', '--prompt', 'prompt', help='Prompt format (Default: "\\u@\\h:\\d> ")')
+@click.option('-R', '--prompt', 'prompt', help='Prompt format (Default: "\\u@\\h:\\d> ")', default='\\u@\\h:\\d> ')
 @click.argument('database', default='', nargs=1)
 def cli(database, user, host, port, socket, password, prompt_passwd, dbname,
         version, prompt):
@@ -435,10 +435,7 @@ def cli(database, user, host, port, socket, password, prompt_passwd, dbname,
         print('Version:', __version__)
         sys.exit(0)
 
-    if prompt:
-        mycli = MyCli(prompt_passwd, None, prompt)
-    else:
-        mycli = MyCli(prompt_passwd)
+    mycli = MyCli(prompt_passwd, prompt=prompt)
 
     # Choose which ever one has a valid value.
     database = database or dbname
