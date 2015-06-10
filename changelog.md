@@ -1,5 +1,20 @@
+2015/06/10:
+===========
+
+Features:
+---------
+
+* Customizable prompt. (Thanks [Steve Robbins](https://github.com/steverobbins))
+* Make `\G` formatting to behave more like mysql.
+   
+Bug Fixes:
+----------
+
+* Formatting issue in \G for really long column values.
+
+
 2015/06/07:
-==========
+===========
 
 Features:
 ---------
