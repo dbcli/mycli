@@ -49,7 +49,7 @@ from collections import namedtuple
 Query = namedtuple('Query', ['query', 'successful', 'mutating'])
 
 class MyCli(object):
-    def __init__(self, force_passwd_prompt=False, sqlexecute=None):
+    def __init__(self, force_passwd_prompt=False, sqlexecute=None, prompt='\\u@\\h:\\d> '):
 
         self.force_passwd_prompt = force_passwd_prompt
         self.sqlexecute = sqlexecute
@@ -59,6 +59,8 @@ class MyCli(object):
 
         default_config = os.path.join(package_root, 'myclirc')
         write_default_config(default_config, '~/.myclirc')
+
+        self.prompt_format = prompt
 
         # Load config.
         c = self.config = load_config('~/.myclirc', default_config)
@@ -232,7 +234,7 @@ class MyCli(object):
         print('Home: http://mycli.net')
 
         def prompt_tokens(cli):
-            return [(Token.Prompt, self.get_prompt())]
+            return [(Token.Prompt, self.get_prompt(self.prompt_format))]
 
         get_toolbar_tokens = create_toolbar_tokens_func(lambda: self.key_bindings)
         layout = create_default_layout(lexer=MySqlLexer,
@@ -404,12 +406,12 @@ class MyCli(object):
         return self.completer.get_completions(
             Document(text=text, cursor_position=cursor_positition), None)
 
-    def get_prompt(self):
+    def get_prompt(self, string):
         sqlexecute = self.sqlexecute
-        prompt = '%s@%s' % (sqlexecute.user, sqlexecute.host)
-        if sqlexecute.dbname:
-            prompt += ':%s' % sqlexecute.dbname
-        return prompt + '> '
+        string = string.replace('\\u', sqlexecute.user or '(none)')
+        string = string.replace('\\h', sqlexecute.host or '(none)')
+        string = string.replace('\\d', sqlexecute.dbname or '(none)')
+        return string
 
 @click.command()
 # Default host is '' so psycopg2 can default to either localhost or unix socket
@@ -424,15 +426,19 @@ class MyCli(object):
         help='Password to connect to the database')
 @click.option('-v', '--version', is_flag=True, help='Version of mycli.')
 @click.option('-D', '--database', 'dbname', help='Database to use.')
+@click.option('-R', '--prompt', 'prompt', help='Prompt format (Default: "\\u@\\h:\\d> ")')
 @click.argument('database', default='', nargs=1)
 def cli(database, user, host, port, socket, password, prompt_passwd, dbname,
-        version):
+        version, prompt):
 
     if version:
         print('Version:', __version__)
         sys.exit(0)
 
-    mycli = MyCli(prompt_passwd)
+    if prompt:
+        mycli = MyCli(prompt_passwd, None, prompt)
+    else:
+        mycli = MyCli(prompt_passwd)
 
     # Choose which ever one has a valid value.
     database = database or dbname
