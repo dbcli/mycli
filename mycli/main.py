@@ -232,8 +232,7 @@ class MyCli(object):
         print('Home: http://mycli.net')
 
         def prompt_tokens(cli):
-            return [(Token.Prompt, '%s> ' %
-                (sqlexecute.dbname or sqlexecute.server_type()[0]))]
+            return [(Token.Prompt, self.get_prompt())]
 
         get_toolbar_tokens = create_toolbar_tokens_func(lambda: self.key_bindings)
         layout = create_default_layout(lexer=MySqlLexer,
@@ -404,6 +403,13 @@ class MyCli(object):
     def get_completions(self, text, cursor_positition):
         return self.completer.get_completions(
             Document(text=text, cursor_position=cursor_positition), None)
+
+    def get_prompt(self):
+        sqlexecute = self.sqlexecute
+        prompt = '%s@%s' % (sqlexecute.user, sqlexecute.host)
+        if sqlexecute.dbname:
+            prompt += ':%s' % sqlexecute.dbname
+        return prompt + '> '
 
 @click.command()
 # Default host is '' so psycopg2 can default to either localhost or unix socket
