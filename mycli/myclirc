@@ -33,3 +33,10 @@ syntax_style = default
 
 # Keybindings: Possible values: emacs, vi
 key_bindings = emacs
+
+# MySQL prompt
+# \t - Product type (Percona, MySQL, Mariadb)
+# \u - Username
+# \h - Hostname of the server
+# \d - Database name
+prompt = '\t \u@\h:\d>'

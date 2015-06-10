@@ -49,7 +49,7 @@ from collections import namedtuple
 Query = namedtuple('Query', ['query', 'successful', 'mutating'])
 
 class MyCli(object):
-    def __init__(self, force_passwd_prompt=False, sqlexecute=None, prompt='mycli> '):
+    def __init__(self, force_passwd_prompt=False, sqlexecute=None, prompt=None):
 
         self.force_passwd_prompt = force_passwd_prompt
         self.sqlexecute = sqlexecute
@@ -60,8 +60,6 @@ class MyCli(object):
         default_config = os.path.join(package_root, 'myclirc')
         write_default_config(default_config, '~/.myclirc')
 
-        self.prompt_format = prompt
-
         # Load config.
         c = self.config = load_config('~/.myclirc', default_config)
         self.multi_line = c['main'].as_bool('multi_line')
@@ -69,6 +67,7 @@ class MyCli(object):
         special.set_timing_enabled(c['main'].as_bool('timing'))
         self.table_format = c['main']['table_format']
         self.syntax_style = c['main']['syntax_style']
+        self.prompt_format = prompt or c['main']['prompt'] or '\\t \\u@\\h:\\d>'
 
         self.logger = logging.getLogger(__name__)
         self.initialize_logging()
@@ -427,7 +426,7 @@ class MyCli(object):
         help='Password to connect to the database')
 @click.option('-v', '--version', is_flag=True, help='Version of mycli.')
 @click.option('-D', '--database', 'dbname', help='Database to use.')
-@click.option('-R', '--prompt', 'prompt', help='Prompt format (Default: "\\t \\u@\\h:\\d> ")', default='\\t \\u@\\h:\\d> ')
+@click.option('-R', '--prompt', 'prompt', help='Prompt format (Default: "\\t \\u@\\h:\\d> ")')
 @click.argument('database', default='', nargs=1)
 def cli(database, user, host, port, socket, password, prompt_passwd, dbname,
         version, prompt):
