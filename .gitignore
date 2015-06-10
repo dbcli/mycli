@@ -1,3 +1,6 @@
 /build
 /dist
 /mycli.egg-info
+/src
+
+*.pyc
