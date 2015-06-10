@@ -32,13 +32,16 @@ Usage: mycli [OPTIONS] [DATABASE]
 
 Options:
   -h, --host TEXT      Host address of the database.
-  -P, --port INTEGER   Port number at which the MySQL instance is listening.
+  -P, --port TEXT      Port number at which the Port number to use for
+                       connection. Honors $MYSQL_TCP_PORT
   -u, --user TEXT      User name to connect to the database.
+  -S, --socket TEXT    The socket file to use for connection.
   -p, --password       Force password prompt.
+  --pass TEXT          Password to connect to the database
   -v, --version        Version of mycli.
   -D, --database TEXT  Database to use.
+  -R, --prompt TEXT    Prompt format (Default: "\t \u@\h:\d> ")
   --help               Show this message and exit.
-  --pass TEXT          User password to connect to the database.
 ```
 
 ## Configuration
