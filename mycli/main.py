@@ -411,6 +411,7 @@ class MyCli(object):
         string = string.replace('\\u', sqlexecute.user or '(none)')
         string = string.replace('\\h', sqlexecute.host or '(none)')
         string = string.replace('\\d', sqlexecute.dbname or '(none)')
+        string = string.replace('\\t', sqlexecute.server_type()[0] or 'mycli')
         return string
 
 @click.command()
@@ -426,7 +427,7 @@ class MyCli(object):
         help='Password to connect to the database')
 @click.option('-v', '--version', is_flag=True, help='Version of mycli.')
 @click.option('-D', '--database', 'dbname', help='Database to use.')
-@click.option('-R', '--prompt', 'prompt', help='Prompt format (Default: "\\u@\\h:\\d> ")', default='\\u@\\h:\\d> ')
+@click.option('-R', '--prompt', 'prompt', help='Prompt format (Default: "\\t \\u@\\h:\\d> ")', default='\\t \\u@\\h:\\d> ')
 @click.argument('database', default='', nargs=1)
 def cli(database, user, host, port, socket, password, prompt_passwd, dbname,
         version, prompt):

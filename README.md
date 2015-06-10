@@ -40,7 +40,7 @@ Options:
   --pass TEXT          Password to connect to the database
   -v, --version        Version of mycli.
   -D, --database TEXT  Database to use.
-  -R, --prompt TEXT    Prompt format (Default: "\u@\h:\d> ")
+  -R, --prompt TEXT    Prompt format (Default: "\t \u@\h:\d> ")
   --help               Show this message and exit.
 ```
 
