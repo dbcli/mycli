@@ -13,6 +13,10 @@ class SQLExecute(object):
 
     columns_query = '''SHOW COLUMNS FROM %s'''
 
+    version_query = '''SELECT @@VERSION'''
+
+    version_comment_query = '''SELECT @@VERSION_COMMENT'''
+
     functions_query = '''SELECT ROUTINE_NAME FROM INFORMATION_SCHEMA.ROUTINES
     WHERE ROUTINE_TYPE="FUNCTION" AND ROUTINE_SCHEMA = "%s"'''
 
@@ -149,3 +153,21 @@ class SQLExecute(object):
             cur.execute(self.functions_query % self.dbname)
             for row in cur:
                 yield row
+
+    def server_type(self):
+        with self.conn.cursor() as cur:
+            _logger.debug('Version Query. sql: %r', self.version_query)
+            cur.execute(self.version_query)
+            version = cur.fetchone()[0]
+            _logger.debug('Version Comment. sql: %r', self.version_comment_query)
+            cur.execute(self.version_comment_query)
+            version_comment = cur.fetchone()[0].lower()
+
+        if 'mariadb' in version_comment:
+            product_type = 'mariadb'
+        elif 'percona' in version_comment:
+            product_type = 'percona'
+        else:
+            product_type = 'mysql'
+
+        return (product_type, version)

@@ -232,7 +232,8 @@ class MyCli(object):
         print('Home: http://mycli.net')
 
         def prompt_tokens(cli):
-            return [(Token.Prompt, '%s> ' % (sqlexecute.dbname or 'mysql'))]
+            return [(Token.Prompt, '%s> ' %
+                (sqlexecute.dbname or sqlexecute.server_type()[0]))]
 
         get_toolbar_tokens = create_toolbar_tokens_func(lambda: self.key_bindings)
         layout = create_default_layout(lexer=MySqlLexer,
