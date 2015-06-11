@@ -32,6 +32,7 @@ class SQLExecute(object):
         self.port = port
         self.socket = socket
         self.charset = charset
+        self._server_type = None
         self.connect()
 
     def connect(self, database=None, user=None, password=None, host=None,
@@ -155,6 +156,8 @@ class SQLExecute(object):
                 yield row
 
     def server_type(self):
+        if self._server_type:
+            return self._server_type
         with self.conn.cursor() as cur:
             _logger.debug('Version Query. sql: %r', self.version_query)
             cur.execute(self.version_query)
@@ -170,4 +173,5 @@ class SQLExecute(object):
         else:
             product_type = 'mysql'
 
-        return (product_type, version)
+        self._server_type = (product_type, version)
+        return self._server_type
