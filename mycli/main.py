@@ -49,6 +49,9 @@ from collections import namedtuple
 Query = namedtuple('Query', ['query', 'successful', 'mutating'])
 
 class MyCli(object):
+
+    default_prompt = '\\t \\u@\\h:\\d> '
+
     def __init__(self, force_passwd_prompt=False, sqlexecute=None, prompt=None):
 
         self.force_passwd_prompt = force_passwd_prompt
@@ -67,7 +70,8 @@ class MyCli(object):
         special.set_timing_enabled(c['main'].as_bool('timing'))
         self.table_format = c['main']['table_format']
         self.syntax_style = c['main']['syntax_style']
-        self.prompt_format = prompt or c['main']['prompt'] or '\\t \\u@\\h:\\d>'
+        self.prompt_format = prompt or c['main']['prompt'] or \
+                             self.default_prompt
 
         self.logger = logging.getLogger(__name__)
         self.initialize_logging()
@@ -426,7 +430,9 @@ class MyCli(object):
         help='Password to connect to the database')
 @click.option('-v', '--version', is_flag=True, help='Version of mycli.')
 @click.option('-D', '--database', 'dbname', help='Database to use.')
-@click.option('-R', '--prompt', 'prompt', help='Prompt format (Default: "\\t \\u@\\h:\\d> ")')
+@click.option('-R', '--prompt', 'prompt',
+              help='Prompt format (Default: "{0}")'.format(
+                  MyCli.default_prompt))
 @click.argument('database', default='', nargs=1)
 def cli(database, user, host, port, socket, password, prompt_passwd, dbname,
         version, prompt):
