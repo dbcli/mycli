@@ -24,7 +24,7 @@ from configobj import ConfigObj
 
 from .packages.tabulate import tabulate
 from .packages.expanded import expanded_table
-from .packages.special.main import (COMMANDS, HIDDEN_COMMANDS)
+from .packages.special.main import (COMMANDS, NO_QUERY)
 import mycli.packages.special as special
 from .sqlcompleter import SQLCompleter
 from .clitoolbar import create_toolbar_tokens_func
@@ -82,8 +82,26 @@ class MyCli(object):
         smart_completion = c['main'].as_bool('smart_completion')
         completer = SQLCompleter(smart_completion)
         completer.extend_special_commands(COMMANDS.keys())
-        completer.extend_special_commands(HIDDEN_COMMANDS.keys())
         self.completer = completer
+        self.register_special_commands()
+
+    def register_special_commands(self):
+        special.register_special_command(self.change_db, 'use',
+                '\\u', 'Change to a new database.', aliases=('\\u',))
+        special.register_special_command(self.change_db, 'connect',
+                '\\r', 'Reconnect to the database. Optional database argument.',
+                aliases=('\\r', ))
+        special.register_special_command(self.refresh_completions, 'rehash',
+                '\\#', 'Refresh auto-completions.', arg_type=NO_QUERY, aliases=('\\#',))
+
+    def change_db(self, arg, **_):
+        if arg is None:
+            self.sqlexecute.connect()
+        else:
+            self.sqlexecute.connect(database=arg)
+
+        yield (None, None, None, 'You are now connected to database "%s" as '
+                'user "%s"' % (self.sqlexecute.dbname, self.sqlexecute.user))
 
     def initialize_logging(self):
 
@@ -404,6 +422,8 @@ class MyCli(object):
 
         # functions
         completer.extend_functions(sqlexecute.functions())
+
+        return [(None, None, None, 'Auto-completion refreshed.')]
 
     def get_completions(self, text, cursor_positition):
         return self.completer.get_completions(

@@ -1,4 +1,3 @@
-from __future__ import print_function
 import re
 import logging
 from codecs import open
@@ -6,6 +5,7 @@ from codecs import open
 import click
 
 from . import export
+from .main import special_command, NO_QUERY
 
 TIMING_ENABLED = False
 use_expanded_output = False
@@ -15,7 +15,8 @@ def set_timing_enabled(val):
     global TIMING_ENABLED
     TIMING_ENABLED = val
 
-def toggle_timing(*args):
+@special_command('\\timing', '\\t', 'Toggle timing of commands.', arg_type=NO_QUERY, aliases=('\\t', ))
+def toggle_timing():
     global TIMING_ENABLED
     TIMING_ENABLED = not TIMING_ENABLED
     message = "Timing is "

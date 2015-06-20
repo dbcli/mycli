@@ -1,38 +1,19 @@
-import sys
+import logging
+from collections import namedtuple
+
 from . import export
-from .iocommands import toggle_timing, stub
-from .dbcommands import change_db
 
-@export
-def show_help(*args):  # All the parameters are ignored.
-    headers = ['Command', 'Shortcut', 'Description']
-    result = []
+log = logging.getLogger(__name__)
 
-    for command, value in sorted(COMMANDS.items()):
-        if value[1]:
-            result.append(value[1])
-    return [(None, result, headers, None)]
+NO_QUERY = 0
+PARSED_QUERY = 1
+RAW_QUERY = 2
 
-HIDDEN_COMMANDS = {
-            '\\t': (toggle_timing, ['\\timing', '(\\t)', 'Toggle timing of commands.']),
-            '?': (show_help, ['?', '(\\?)', 'Show this help.']),
-            'use': (change_db, ['use', '(\\u)', 'Reconnect to the server. Optional arguments are db and host.']),
-            '\\r': (change_db, ['\\connect', '(\\r)', 'Reconnect to the server. Optional arguments are db and host.']),
-            }
+SpecialCommand = namedtuple('SpecialCommand',
+        ['handler', 'command', 'shortcut', 'description', 'arg_type', 'hidden',
+            'case_sensitive'])
 
-COMMANDS = {
-            '\\?': (show_help, ['\\?', '(\\?)', 'Show this help.']),
-            'help': (show_help, ['help', '(\\?)', 'Show this help.']),
-            'connect': (change_db, ['connect', '(\\r)', 'Reconnect to the server. Optional arguments are db and host.']),
-            '\\e': (stub, ['\\e', '(\\e)', 'Edit command with editor.']),
-            '\\G': (stub, ['\\G', '(\\G)', 'Display results vertically.']),
-            'exit': (stub, ['exit', '(\\q)', 'Exit.']),
-            'quit': (stub, ['quit', '(\\q)', 'Quit.']),
-            '\\u': (change_db, ['\\u', '(\\u)', 'Use another database.']),
-            '\\l': ('''SHOW DATABASES;''', ['\\l', '(\\l)', 'List databases.']),
-            '\\dt': ('''SHOW TABLES;''', ['\\dt', '(\\dt)', 'List tables.']),
-            '\\timing': (toggle_timing, ['\\timing', '(\\t)', 'Toggle timing of commands.']),
-            }
+COMMANDS = {}
 
 @export
 def parse_special_command(sql):
@@ -40,35 +21,61 @@ def parse_special_command(sql):
     return (command, arg.strip())
 
 @export
-def execute(cur, sql, db_obj=None):
+def special_command(command, shortcut, description, arg_type=PARSED_QUERY,
+        hidden=False, case_sensitive=False, aliases=()):
+    def wrapper(wrapped):
+        register_special_command(wrapped, command, shortcut, description,
+                arg_type, hidden, case_sensitive, aliases)
+        return wrapped
+    return wrapper
+
+@export
+def register_special_command(handler, command, shortcut, description,
+        arg_type=PARSED_QUERY, hidden=False, case_sensitive=False, aliases=()):
+    cmd = command.lower() if not case_sensitive else command
+    COMMANDS[cmd] = SpecialCommand(handler, command, shortcut, description,
+                                   arg_type, hidden, case_sensitive)
+    for alias in aliases:
+        cmd = alias.lower() if not case_sensitive else alias
+        COMMANDS[cmd] = SpecialCommand(handler, command, shortcut, description,
+                                       arg_type, case_sensitive=case_sensitive,
+                                       hidden=True)
+
+@export
+def execute(cur, sql):
     """Execute a special command and return the results. If the special command
     is not supported a KeyError will be raised.
     """
     command, arg = parse_special_command(sql)
 
-    # Look up the command in the case-sensitive dict, if it's not there look in
-    # non-case-sensitive dict. If not there either, throw a KeyError exception.
     try:
-        command_executor = COMMANDS[command.lower()][0]
+        special_cmd = COMMANDS[command]
     except KeyError:
-        command_executor = HIDDEN_COMMANDS[command.lower()][0]
+        special_cmd = COMMANDS[command.lower()]
+        if special_cmd.case_sensitive:
+            raise KeyError('Command not found: %s' % command)
 
-    # If the command executor is a function, then call the function with the
-    # args. If it's a string, then assume it's an SQL command and run it.
-    if callable(command_executor):
-        return command_executor(cur, arg, db_obj)
-    elif isinstance(command_executor, str):
-        cur.execute(command_executor)
-        if cur.description:
-            headers = [x[0] for x in cur.description]
-            return [(None, cur, headers, None)]
-        else:
-            return [(None, None, None, None)]
+    if special_cmd.arg_type == NO_QUERY:
+        return special_cmd.handler()
+    elif special_cmd.arg_type == PARSED_QUERY:
+        return special_cmd.handler(cur=cur, arg=arg)
+    elif special_cmd.arg_type == RAW_QUERY:
+        return special_cmd.handler(cur=cur, query=sql)
 
-if __name__ == '__main__':
-    import pymysql
-    con = pymysql.connect(database='misago_testforum')
-    cur = con.cursor()
-    table = sys.argv[1]
-    for rows, headers, status in execute(cur, '\\l'):
-        print((rows, headers, status))
+@special_command('help', '\\?', 'Show this help.', arg_type=NO_QUERY, aliases=('\\?', '?'))
+def show_help():  # All the parameters are ignored.
+    headers = ['Command', 'Shortcut', 'Description']
+    result = []
+
+    for _, value in sorted(COMMANDS.items()):
+        if not value.hidden:
+            result.append((value.command, value.shortcut, value.description))
+    return [(None, result, headers, None)]
+
+#COMMANDS = {
+            #'\\e': (stub, ['\\e', '(\\e)', 'Edit command with editor.']),
+            #'\\G': (stub, ['\\G', '(\\G)', 'Display results vertically.']),
+            #'exit': (stub, ['exit', '(\\q)', 'Exit.']),
+            #'quit': (stub, ['quit', '(\\q)', 'Quit.']),
+            #'\\u': (change_db, ['\\u', '(\\u)', 'Use another database.']),
+            #}
