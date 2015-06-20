@@ -30,13 +30,13 @@ class SQLCompleter(Completer):
             'NOAUDIT', 'NOCOMPRESS', 'NOT', 'NOWAIT', 'NULL', 'NUMBER', 'OIDS',
             'OF', 'OFFLINE', 'ON', 'ONLINE', 'OPTION', 'OR', 'ORDER BY',
             'OUTER', 'OWNER', 'PCTFREE', 'PRIMARY', 'PRIOR', 'PRIVILEGES',
-            'PROCESSLIST', 'QUOTE', 'RAW', 'RENAME', 'RESOURCE', 'REVOKE',
-            'RIGHT', 'ROW', 'ROWID', 'ROWNUM', 'ROWS', 'SELECT', 'SESSION',
-            'SET', 'SHARE', 'SHOW', 'SIZE', 'SMALLINT', 'START', 'SUCCESSFUL',
-            'SYNONYM', 'SYSDATE', 'TABLE', 'TEMPLATE', 'THEN', 'TO', 'TRIGGER',
-            'TRUNCATE', 'UID', 'UNION', 'UNIQUE', 'UPDATE', 'USE', 'USER',
-            'USING', 'VALIDATE', 'VALUES', 'VARCHAR', 'VARCHAR2', 'VIEW',
-            'WHEN', 'WHENEVER', 'WHERE', 'WITH']
+            'PROCESSLIST', 'QUOTE', 'RAW', 'RENAME', 'REPAIR', 'RESOURCE',
+            'REVOKE', 'RIGHT', 'ROW', 'ROWID', 'ROWNUM', 'ROWS', 'SELECT',
+            'SESSION', 'SET', 'SHARE', 'SHOW', 'SIZE', 'SMALLINT', 'START',
+            'SUCCESSFUL', 'SYNONYM', 'SYSDATE', 'TABLE', 'TEMPLATE', 'THEN',
+            'TO', 'TRIGGER', 'TRUNCATE', 'UID', 'UNION', 'UNIQUE', 'UPDATE',
+            'USE', 'USER', 'USING', 'VALIDATE', 'VALUES', 'VARCHAR',
+            'VARCHAR2', 'VIEW', 'WHEN', 'WHENEVER', 'WHERE', 'WITH']
 
     functions = ['AVG', 'COUNT', 'DISTINCT', 'FIRST', 'FORMAT', 'LAST',
             'LCASE', 'LEN', 'MAX', 'MIN', 'MID', 'NOW', 'ROUND', 'SUM', 'TOP',
