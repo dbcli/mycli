@@ -72,10 +72,9 @@ def show_help():  # All the parameters are ignored.
             result.append((value.command, value.shortcut, value.description))
     return [(None, result, headers, None)]
 
-#COMMANDS = {
-            #'\\e': (stub, ['\\e', '(\\e)', 'Edit command with editor.']),
-            #'\\G': (stub, ['\\G', '(\\G)', 'Display results vertically.']),
-            #'exit': (stub, ['exit', '(\\q)', 'Exit.']),
-            #'quit': (stub, ['quit', '(\\q)', 'Quit.']),
-            #'\\u': (change_db, ['\\u', '(\\u)', 'Use another database.']),
-            #}
+@special_command('exit', '\\q', 'Exit.', arg_type=NO_QUERY, aliases=('\\q', ))
+@special_command('quit', '\\q', 'Quit.', arg_type=NO_QUERY)
+@special_command('\\e', '\\e', 'Edit command with editor. (uses $EDITOR)', arg_type=NO_QUERY, case_sensitive=True)
+@special_command('\\G', '\\G', 'Display results vertically.', arg_type=NO_QUERY, case_sensitive=True)
+def stub():
+    raise NotImplementedError

@@ -15,7 +15,7 @@ def set_timing_enabled(val):
     global TIMING_ENABLED
     TIMING_ENABLED = val
 
-@special_command('\\timing', '\\t', 'Toggle timing of commands.', arg_type=NO_QUERY, aliases=('\\t', ))
+@special_command('\\timing', '\\t', 'Toggle timing of commands.', arg_type=NO_QUERY, aliases=('\\t', ), case_sensitive=True)
 def toggle_timing():
     global TIMING_ENABLED
     TIMING_ENABLED = not TIMING_ENABLED
