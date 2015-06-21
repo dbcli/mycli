@@ -5,7 +5,8 @@ from codecs import open
 import click
 
 from . import export
-from .main import special_command, NO_QUERY
+from .main import special_command, NO_QUERY, PARSED_QUERY
+from .favoritequeries import favoritequeries
 
 TIMING_ENABLED = False
 use_expanded_output = False
@@ -102,3 +103,52 @@ def open_external_editor(filename=None, sql=''):
         query = sql
 
     return (query, message)
+
+@special_command('\\f', '\\f [name]', 'List or execute favorite queries.', arg_type=PARSED_QUERY, case_sensitive=True)
+def execute_favorite_query(cur, arg):
+    """Returns (title, rows, headers, status)"""
+    if arg == '':
+        return list_favorite_queries()
+
+    query = favoritequeries.get(arg)
+    title = '> %s' % (query)
+    if query is None:
+        message = "No favorite query: %s" % (arg)
+        return [(None, None, None, message)]
+    cur.execute(query)
+    if cur.description:
+        headers = [x[0] for x in cur.description]
+        return [(title, cur, headers, None)]
+    else:
+        return [(title, None, None, None)]
+
+def list_favorite_queries():
+    """List of all favorite queries.
+    Returns (title, rows, headers, status)"""
+
+    headers = ["Name", "Query"]
+    rows = [(r, favoritequeries.get(r)) for r in favoritequeries.list()]
+
+    status = ''
+    if not rows:
+        status = 'No favorite queries.'
+    return [('', rows, headers, status)]
+
+@special_command('\\fs', '\\fs name query', 'Save a query as favorite.', arg_type=PARSED_QUERY, case_sensitive=True)
+def save_favorite_query(arg, **_):
+    """Save a new favorite query.
+    Returns (title, rows, headers, status)"""
+    if ' ' not in arg:
+        return [(None, None, None, "Invalid argument.")]
+    name, query = arg.split(' ', 1)
+    favoritequeries.save(name, query)
+    return [(None, None, None, "Saved.")]
+
+@special_command('\\fd', '\\fd [name]', 'Delete a query from favorite.', arg_type=PARSED_QUERY, case_sensitive=True)
+def delete_favorite_query(arg, **_):
+    """Delete an existing favorite query.
+    """
+    if len(arg) == 0:
+        return [(None, None, None, "Invalid argument.")]
+    favoritequeries.delete(arg)
+    return [(None, None, None, "Deleted.")]
