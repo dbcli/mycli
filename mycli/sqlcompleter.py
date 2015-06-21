@@ -4,6 +4,7 @@ import logging
 from prompt_toolkit.completion import Completer, Completion
 from .packages.completion_engine import suggest_type
 from .packages.parseutils import last_word
+from .packages.special.favoritequeries import favoritequeries
 from re import compile, escape
 
 try:
@@ -301,6 +302,10 @@ class SQLCompleter(Completer):
                                             start_only=True,
                                             fuzzy=False)
                 completions.extend(special)
+            elif suggestion['type'] == 'favoritequery':
+                queries = self.find_matches(word_before_cursor, favoritequeries.list(),
+                                            start_only=False, fuzzy=True)
+                completions.extend(queries)
 
         return completions
 

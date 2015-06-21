@@ -96,8 +96,10 @@ def suggest_special(text):
     if cmd in ('\\u', '\\r'):
         return [{'type': 'database'}]
 
-    return [{'type': 'keyword'}, {'type': 'special'}]
+    if cmd in ['\\f', '\\fs', '\\fd']:
+        return [{'type': 'favoritequery'}]
 
+    return [{'type': 'keyword'}, {'type': 'special'}]
 
 def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier):
     if isinstance(token, string_types):
