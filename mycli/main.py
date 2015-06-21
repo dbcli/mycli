@@ -18,7 +18,6 @@ from prompt_toolkit.filters import Always, HasFocus, IsDone
 from prompt_toolkit.layout.processors import (HighlightMatchingBracketProcessor,
                                               ConditionalProcessor)
 from prompt_toolkit.history import FileHistory
-from pygments.lexers.sql import MySqlLexer
 from pygments.token import Token
 from configobj import ConfigObj
 
@@ -34,6 +33,7 @@ from .clibuffer import CLIBuffer
 from .config import write_default_config, load_config
 from .key_bindings import mycli_bindings
 from .encodingutils import utf8tounicode
+from .lexer import MyCliLexer
 from .__init__ import __version__
 
 
@@ -258,7 +258,7 @@ class MyCli(object):
             return [(Token.Prompt, self.get_prompt(self.prompt_format))]
 
         get_toolbar_tokens = create_toolbar_tokens_func(lambda: self.key_bindings)
-        layout = create_default_layout(lexer=MySqlLexer,
+        layout = create_default_layout(lexer=MyCliLexer,
                                        reserve_space_for_menu=True,
                                        get_prompt_tokens=prompt_tokens,
                                        get_bottom_toolbar_tokens=get_toolbar_tokens,
