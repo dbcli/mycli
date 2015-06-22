@@ -7,6 +7,7 @@ import sys
 import traceback
 import logging
 from time import time
+from datetime import datetime
 
 import click
 import sqlparse
@@ -52,10 +53,11 @@ class MyCli(object):
 
     default_prompt = '\\t \\u@\\h:\\d> '
 
-    def __init__(self, force_passwd_prompt=False, sqlexecute=None, prompt=None):
+    def __init__(self, force_passwd_prompt=False, sqlexecute=None, prompt=None, logfile=None):
 
         self.force_passwd_prompt = force_passwd_prompt
         self.sqlexecute = sqlexecute
+        self.logfile = logfile
 
         from mycli import __file__ as package_root
         package_root = os.path.dirname(package_root)
@@ -204,7 +206,7 @@ class MyCli(object):
         except Exception as e:  # Connecting to a database could fail.
             self.logger.debug('Database connection failed: %r.', e)
             self.logger.error("traceback: %r", traceback.format_exc())
-            click.secho(str(e), err=True, fg='red')
+            self.output(str(e), err=True, fg='red')
             exit(1)
 
         self.sqlexecute = sqlexecute
@@ -295,16 +297,16 @@ class MyCli(object):
                 except RuntimeError as e:
                     logger.error("sql: %r, error: %r", document.text, e)
                     logger.error("traceback: %r", traceback.format_exc())
-                    click.secho(str(e), err=True, fg='red')
+                    self.output(str(e), err=True, fg='red')
                     continue
 
                 destroy = confirm_destructive_query(document.text)
                 if destroy is None:
                     pass  # Query was not destructive. Nothing to do here.
                 elif destroy is True:
-                    click.secho('Your call!')
+                    self.output('Your call!')
                 else:
-                    click.secho('Wise choice!')
+                    self.output('Wise choice!')
                     continue
 
                 # Keep track of whether or not the query is mutating. In case
@@ -314,6 +316,10 @@ class MyCli(object):
 
                 try:
                     logger.debug('sql: %r', document.text)
+                    if self.logfile:
+                        self.logfile.write('\n# %s\n' % datetime.now())
+                        self.logfile.write(document.text)
+                        self.logfile.write('\n')
                     successful = False
                     start = time()
                     res = sqlexecute.run(document.text)
@@ -329,10 +335,10 @@ class MyCli(object):
                         threshold = 1000
                         if (is_select(status) and
                                 cur and cur.rowcount > threshold):
-                            click.secho('The result set has more than %s rows.'
+                            self.output('The result set has more than %s rows.'
                                     % threshold, fg='red')
                             if not click.confirm('Do you want to continue?'):
-                                click.secho("Aborted!", err=True, fg='red')
+                                self.output("Aborted!", err=True, fg='red')
                                 break
                         output.extend(format_output(title, cur, headers,
                             status, self.table_format))
@@ -343,9 +349,9 @@ class MyCli(object):
                     # Restart connection to the database
                     sqlexecute.connect()
                     logger.debug("cancelled query, sql: %r", document.text)
-                    click.secho("cancelled query", err=True, fg='red')
+                    self.output("cancelled query", err=True, fg='red')
                 except NotImplementedError:
-                    click.secho('Not Yet Implemented.', fg="yellow")
+                    self.output('Not Yet Implemented.', fg="yellow")
                 except OperationalError as e:
                     logger.debug("Exception: %r", e)
                     reconnect = True
@@ -357,26 +363,26 @@ class MyCli(object):
                             try:
                                 sqlexecute.connect()
                                 logger.debug('Reconnected successfully.')
-                                click.secho('Reconnected!\nTry the command again.', fg='green')
+                                self.output('Reconnected!\nTry the command again.', fg='green')
                             except OperationalError as e:
                                 logger.debug('Reconnect failed. e: %r', e)
-                                click.secho(str(e), err=True, fg='red')
+                                self.output(str(e), err=True, fg='red')
                                 continue  # If reconnection failed, don't proceed further.
                         else:  # If user chooses not to reconnect, don't proceed further.
                             continue
                     else:
                         logger.error("sql: %r, error: %r", document.text, e)
                         logger.error("traceback: %r", traceback.format_exc())
-                        click.secho(str(e), err=True, fg='red')
+                        self.output(str(e), err=True, fg='red')
                 except Exception as e:
                     logger.error("sql: %r, error: %r", document.text, e)
                     logger.error("traceback: %r", traceback.format_exc())
-                    click.secho(str(e), err=True, fg='red')
+                    self.output(str(e), err=True, fg='red')
                 else:
-                    click.echo_via_pager('\n'.join(output))
+                    self.output_via_pager('\n'.join(output))
                     if special.is_timing_enabled():
-                        print('Command Time: %0.03fs' % duration)
-                        print('Format Time: %0.03fs' % total)
+                        self.output('Command Time: %0.03fs' % duration)
+                        self.output('Format Time: %0.03fs' % total)
 
                 # Refresh the table names and column names if necessary.
                 if need_completion_refresh(document.text):
@@ -386,10 +392,22 @@ class MyCli(object):
                 self.query_history.append(query)
 
         except EOFError:
-            print ('Goodbye!')
+            self.output('Goodbye!')
         finally:  # Reset the less opts back to original.
             logger.debug('Restoring env var LESS to %r.', original_less_opts)
             os.environ['LESS'] = original_less_opts
+
+    def output(self, text, **kwargs):
+        if self.logfile:
+            self.logfile.write(text)
+            self.logfile.write('\n')
+        click.secho(text, **kwargs)
+
+    def output_via_pager(self, text):
+        if self.logfile:
+            self.logfile.write(text)
+            self.logfile.write('\n')
+        click.echo_via_pager(text)
 
     def adjust_less_opts(self):
         less_opts = os.environ.get('LESS', '')
@@ -453,15 +471,16 @@ class MyCli(object):
 @click.option('-R', '--prompt', 'prompt',
               help='Prompt format (Default: "{0}")'.format(
                   MyCli.default_prompt))
+@click.option('-l', '--logfile', type=click.File(mode='a', encoding='utf-8'), help='Timestamp and log every query and it\'s results to a file.')
 @click.argument('database', default='', nargs=1)
 def cli(database, user, host, port, socket, password, prompt_passwd, dbname,
-        version, prompt):
+        version, prompt, logfile):
 
     if version:
         print('Version:', __version__)
         sys.exit(0)
 
-    mycli = MyCli(prompt_passwd, prompt=prompt)
+    mycli = MyCli(prompt_passwd, prompt=prompt, logfile=logfile)
 
     # Choose which ever one has a valid value.
     database = database or dbname
