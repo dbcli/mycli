@@ -1,36 +1,36 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-class NamedQueries(object):
+class FavoriteQueries(object):
 
-    section_name = 'named_queries'
+    section_name = 'favorite_queries'
 
     usage = '''
-Named Queries are a way to save frequently used queries
-with a short name. Think of them as favorites.
+Favorite Queries are a way to save frequently used queries
+with a short name.
 Examples:
 
-    # Save a new named query.
-    > \\ns simple select * from abc where a is not Null;
+    # Save a new favorite query.
+    > \\fs simple select * from abc where a is not Null;
 
-    # List all named queries.
-    > \\n
+    # List all favorite queries.
+    > \\f
     ╒════════╤═══════════════════════════════════════╕
     │ Name   │ Query                                 │
     ╞════════╪═══════════════════════════════════════╡
     │ simple │ SELECT * FROM abc where a is not NULL │
     ╘════════╧═══════════════════════════════════════╛
 
-    # Run a named query.
-    > \\n simple
+    # Run a favorite query.
+    > \\f simple
     ╒════════╤════════╕
     │ a      │ b      │
     ╞════════╪════════╡
     │ 日本語 │ 日本語 │
     ╘════════╧════════╛
 
-    # Delete a named query.
-    > \\nd simple
+    # Delete a favorite query.
+    > \\fd simple
     simple: Deleted
 '''
 
@@ -58,4 +58,4 @@ Examples:
         return '%s: Deleted' % name
 
 from ...config import load_config
-namedqueries = NamedQueries(load_config('~/.myclirc'))
+favoritequeries = FavoriteQueries(load_config('~/.myclirc'))
