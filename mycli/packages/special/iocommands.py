@@ -6,7 +6,7 @@ import click
 
 from . import export
 from .main import special_command, NO_QUERY, PARSED_QUERY
-from .favoritequeries import favoritequeries
+from .namedqueries import namedqueries
 
 TIMING_ENABLED = False
 use_expanded_output = False
@@ -104,16 +104,16 @@ def open_external_editor(filename=None, sql=''):
 
     return (query, message)
 
-@special_command('\\f', '\\f [name]', 'List or execute favorite queries.', arg_type=PARSED_QUERY, case_sensitive=True)
-def execute_favorite_query(cur, arg):
+@special_command('\\n', '\\n [name]', 'List or execute named queries.', arg_type=PARSED_QUERY, case_sensitive=True)
+def execute_named_query(cur, arg):
     """Returns (title, rows, headers, status)"""
     if arg == '':
-        return list_favorite_queries()
+        return list_named_queries()
 
-    query = favoritequeries.get(arg)
+    query = namedqueries.get(arg)
     title = '> %s' % (query)
     if query is None:
-        message = "No favorite query: %s" % (arg)
+        message = "No named query: %s" % (arg)
         return [(None, None, None, message)]
     cur.execute(query)
     if cur.description:
@@ -122,33 +122,47 @@ def execute_favorite_query(cur, arg):
     else:
         return [(title, None, None, None)]
 
-def list_favorite_queries():
-    """List of all favorite queries.
+def list_named_queries():
+    """List of all named queries.
     Returns (title, rows, headers, status)"""
 
     headers = ["Name", "Query"]
-    rows = [(r, favoritequeries.get(r)) for r in favoritequeries.list()]
+    rows = [(r, namedqueries.get(r)) for r in namedqueries.list()]
 
-    status = ''
     if not rows:
-        status = 'No favorite queries.'
+        status = '\nNo named queries found.' + namedqueries.usage
+    else:
+        status = ''
     return [('', rows, headers, status)]
 
-@special_command('\\fs', '\\fs name query', 'Save a query as favorite.', arg_type=PARSED_QUERY, case_sensitive=True)
-def save_favorite_query(arg, **_):
-    """Save a new favorite query.
+@special_command('\\ns', '\\ns name query', 'Save a named query.')
+def save_named_query(arg, **_):
+    """Save a new named query.
     Returns (title, rows, headers, status)"""
-    if ' ' not in arg:
-        return [(None, None, None, "Invalid argument.")]
-    name, query = arg.split(' ', 1)
-    favoritequeries.save(name, query)
+
+    usage = 'Syntax: \\ns name query.\n\n' + namedqueries.usage
+    if not arg:
+        return [(None, None, None, usage)]
+
+    name, _, query = arg.partition(' ')
+
+    # If either name or query is missing then print the usage and complain.
+    if (not name) or (not query):
+        return [(None, None, None,
+            usage + 'Err: Both name and query are required.')]
+
+    namedqueries.save(name, query)
     return [(None, None, None, "Saved.")]
 
-@special_command('\\fd', '\\fd [name]', 'Delete a query from favorite.', arg_type=PARSED_QUERY, case_sensitive=True)
-def delete_favorite_query(arg, **_):
-    """Delete an existing favorite query.
+@special_command('\\nd', '\\nd [name]', 'Delete a named query.')
+def delete_named_query(arg, **_):
+    """Delete an existing named query.
     """
-    if len(arg) == 0:
-        return [(None, None, None, "Invalid argument.")]
-    favoritequeries.delete(arg)
-    return [(None, None, None, "Deleted.")]
+    usage = 'Syntax: \\nd name.\n\n' + namedqueries.usage
+    if not arg:
+        return [(None, None, None, usage)]
+
+    status = namedqueries.delete(arg)
+
+    return [(None, None, None, status)]
+

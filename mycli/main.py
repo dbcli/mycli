@@ -399,7 +399,7 @@ class MyCli(object):
 
     def output(self, text, **kwargs):
         if self.logfile:
-            self.logfile.write(text)
+            self.logfile.write(utf8tounicode(text))
             self.logfile.write('\n')
         click.secho(text, **kwargs)
 

@@ -16,6 +16,10 @@ SpecialCommand = namedtuple('SpecialCommand',
 COMMANDS = {}
 
 @export
+class CommandNotFound(Exception):
+    pass
+
+@export
 def parse_special_command(sql):
     command, _, arg = sql.partition(' ')
     return (command, arg.strip())
@@ -48,12 +52,15 @@ def execute(cur, sql):
     """
     command, arg = parse_special_command(sql)
 
+    if (command not in COMMANDS) and (command.lower() not in COMMANDS):
+        raise CommandNotFound
+
     try:
         special_cmd = COMMANDS[command]
     except KeyError:
         special_cmd = COMMANDS[command.lower()]
         if special_cmd.case_sensitive:
-            raise KeyError('Command not found: %s' % command)
+            raise CommandNotFound('Command not found: %s' % command)
 
     if special_cmd.arg_type == NO_QUERY:
         return special_cmd.handler()
