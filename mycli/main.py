@@ -458,8 +458,8 @@ class MyCli(object):
 @click.command()
 # Default host is '' so psycopg2 can default to either localhost or unix socket
 @click.option('-h', '--host', help='Host address of the database.')
-@click.option('-P', '--port', help='Port number at which the '
-        'Port number to use for connection. Honors $MYSQL_TCP_PORT')
+@click.option('-P', '--port', help='Port number to use for connection. Honors '
+        '$MYSQL_TCP_PORT')
 @click.option('-u', '--user', help='User name to connect to the database.')
 @click.option('-S', '--socket', help='The socket file to use for connection.')
 @click.option('-p', '--password', 'prompt_passwd', is_flag=True, default=False,
