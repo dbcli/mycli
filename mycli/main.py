@@ -20,7 +20,7 @@ from prompt_toolkit.layout.processors import (HighlightMatchingBracketProcessor,
                                               ConditionalProcessor)
 from prompt_toolkit.history import FileHistory
 from pygments.token import Token
-from configobj import ConfigObj
+from configobj import ConfigObj, ConfigObjError
 
 from .packages.tabulate import tabulate
 from .packages.expanded import expanded_table
@@ -148,9 +148,11 @@ class MyCli(object):
             try:
                 cnf.merge(ConfigObj(os.path.expanduser(file),
                     interpolation=False))
-            except Exception:
-                self.logger.error('Error parsing %r. Skipping over this file.',
+            except ConfigObjError as e:
+                self.logger.error('Error parsing %r.',
                         file)
+                self.logger.error('Recovering partially parsed config values.')
+                cnf.merge(e.config)
                 pass
 
         def get(key):
