@@ -1,5 +1,5 @@
 import pytest
-from utils import (HOST, USER, PASSWORD, create_db, db_connection)
+from utils import (HOST, USER, PASSWORD, PORT, CHARSET, create_db, db_connection)
 import mycli.sqlexecute
 
 
@@ -20,5 +20,6 @@ def cursor(connection):
 
 @pytest.fixture
 def executor(connection):
-    return mycli.sqlexecute.SQLExecute(database='_test_db', user=USER,
-            host=HOST, password=PASSWORD, port=None)
+    return mycli.sqlexecute.SQLExecute(
+        database='_test_db', user=USER,
+        host=HOST, password=PASSWORD, port=PORT, socket=None, charset=CHARSET)

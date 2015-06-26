@@ -70,12 +70,21 @@ def test_expanded_output(executor):
     run(executor, '''create table test(a text)''')
     run(executor, '''insert into test values('abc')''')
     results = run(executor, '''select * from test\G''', join=True)
-    assert results == dedent("""\
+
+    expected_results = set([
+        dedent("""\
         -[ RECORD 0 ]
         a | abc
-        
-        1 row in set"""
-        )
+
+        1 row in set"""),
+        dedent("""\
+        ***************************[ 1. row ]***************************
+        a | abc
+
+        1 row in set"""),
+    ])
+
+    assert results in expected_results
 
 @dbtest
 def test_multiple_queries_same_line(executor):
@@ -92,7 +101,8 @@ def test_multiple_queries_same_line_syntaxerror(executor):
 
 @dbtest
 def test_special_command(executor):
-    run(executor, '\\?')
+    results = run(executor, '\\?')
+    print results
 
 @dbtest
 def test_unicode_support(executor):

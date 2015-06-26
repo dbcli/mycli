@@ -4,11 +4,12 @@ from mycli.main import format_output
 from os import getenv
 
 # TODO: should this be somehow be divined from environment?
-USER, HOST = 'root', 'localhost'
+USER, HOST, PORT, CHARSET = 'root', 'localhost', 3306, 'utf8'
 PASSWORD = getenv('PASSWORD')
 
 def db_connection(dbname=None):
-    conn = pymysql.connect(user=USER, host=HOST, database=dbname, password=PASSWORD)
+    conn = pymysql.connect(user=USER, host=HOST, port=PORT, database=dbname, password=PASSWORD,
+                           charset=CHARSET)
     conn.autocommit = True
     return conn
 
