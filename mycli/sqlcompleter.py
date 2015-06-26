@@ -43,7 +43,16 @@ class SQLCompleter(Completer):
             'LCASE', 'LEN', 'MAX', 'MIN', 'MID', 'NOW', 'ROUND', 'SUM', 'TOP',
             'UCASE']
 
-    show_items = ['TABLES', 'DATABASES', 'COLUMNS', 'PROCESSLIST']
+    show_items = ['AUTHORS', 'CHARACTER SET', 'COLLATION', 'COLUMNS FROM',
+            'CONTRIBUTORS', 'CREATE DATABASE', 'CREATE EVENT',
+            'CREATE PROCEDURE', 'CREATE TABLE', 'CREATE TRIGGER',
+            'CREATE VIEW', 'DATABASES', 'ENGINE', 'FULL', 'STORAGE', 'ENGINES',
+            'ERORS', 'EVENTS', 'FUNCTION CODE', 'FUNCTION STATUS',
+            'GRANTS FOR', 'INDEX FROM', 'INNODB STATUS', 'OPEN TABLES',
+            'PLUGINS', 'PROCEDURE CODE', 'PROCEDURE STATUS', 'PRIVILEGES',
+            'PROCESSLIST', 'PROFILE', 'PROFILES', 'GLOBAL', 'SESSION',
+            'STATUS', 'TABLE STATUS', 'TABLES', 'TRIGGERS', 'VARIABLES',
+            'WARNINGS']
 
     def __init__(self, smart_completion=True):
         super(self.__class__, self).__init__()
