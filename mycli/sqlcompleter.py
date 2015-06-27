@@ -43,16 +43,7 @@ class SQLCompleter(Completer):
             'LCASE', 'LEN', 'MAX', 'MIN', 'MID', 'NOW', 'ROUND', 'SUM', 'TOP',
             'UCASE']
 
-    show_items = ['AUTHORS', 'CHARACTER SET', 'COLLATION', 'COLUMNS FROM',
-            'CONTRIBUTORS', 'CREATE DATABASE', 'CREATE EVENT',
-            'CREATE PROCEDURE', 'CREATE TABLE', 'CREATE TRIGGER',
-            'CREATE VIEW', 'DATABASES', 'ENGINE', 'FULL', 'STORAGE', 'ENGINES',
-            'ERRORS', 'EVENTS', 'FUNCTION CODE', 'FUNCTION STATUS',
-            'GRANTS FOR', 'INDEX FROM', 'INNODB STATUS', 'OPEN TABLES',
-            'PLUGINS', 'PROCEDURE CODE', 'PROCEDURE STATUS', 'PRIVILEGES',
-            'PROCESSLIST', 'PROFILE', 'PROFILES', 'GLOBAL', 'SESSION',
-            'STATUS', 'TABLE STATUS', 'TABLES', 'TRIGGERS', 'VARIABLES',
-            'WARNINGS']
+    show_items = []
 
     def __init__(self, smart_completion=True):
         super(self.__class__, self).__init__()
@@ -94,6 +85,11 @@ class SQLCompleter(Completer):
     def extend_keywords(self, additional_keywords):
         self.keywords.extend(additional_keywords)
         self.all_completions.update(additional_keywords)
+
+    def extend_show_items(self, show_items):
+        for show_item in show_items:
+            self.show_items.append(show_item)
+            self.all_completions.update(show_item)
 
     def extend_schemata(self, schema):
         if schema is None:

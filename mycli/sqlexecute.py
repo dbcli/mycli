@@ -17,6 +17,8 @@ class SQLExecute(object):
 
     version_comment_query = '''SELECT @@VERSION_COMMENT'''
 
+    show_candidates_query = '''SELECT name from mysql.help_topic WHERE name like "SHOW %"'''
+
     functions_query = '''SELECT ROUTINE_NAME FROM INFORMATION_SCHEMA.ROUTINES
     WHERE ROUTINE_TYPE="FUNCTION" AND ROUTINE_SCHEMA = "%s"'''
 
@@ -154,6 +156,13 @@ class SQLExecute(object):
             cur.execute(self.functions_query % self.dbname)
             for row in cur:
                 yield row
+
+    def show_candidates(self):
+        with self.conn.cursor() as cur:
+            _logger.debug('Show Query. sql: %r', self.show_candidates_query)
+            cur.execute(self.show_candidates_query)
+            for row in cur:
+                yield row[0].split(None, 1)[-1]
 
     def server_type(self):
         if self._server_type:
