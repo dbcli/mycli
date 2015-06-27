@@ -45,6 +45,8 @@ class SQLCompleter(Completer):
 
     show_items = []
 
+    users = []
+
     def __init__(self, smart_completion=True):
         super(self.__class__, self).__init__()
         self.smart_completion = smart_completion
@@ -90,6 +92,11 @@ class SQLCompleter(Completer):
         for show_item in show_items:
             self.show_items.append(show_item)
             self.all_completions.update(show_item)
+
+    def extend_users(self, users):
+        for user in users:
+            self.users.extend(user)
+            self.all_completions.update(user)
 
     def extend_schemata(self, schema):
         if schema is None:
@@ -300,6 +307,12 @@ class SQLCompleter(Completer):
                                                start_only=True,
                                                fuzzy=False)
                 completions.extend(show_items)
+
+            elif suggestion['type'] == 'user':
+                users = self.find_matches(word_before_cursor, self.users,
+                                               start_only=False,
+                                               fuzzy=True)
+                completions.extend(users)
 
             elif suggestion['type'] == 'special':
                 special = self.find_matches(word_before_cursor,

@@ -19,6 +19,8 @@ class SQLExecute(object):
 
     show_candidates_query = '''SELECT name from mysql.help_topic WHERE name like "SHOW %"'''
 
+    users_query = '''SELECT user from mysql.user'''
+
     functions_query = '''SELECT ROUTINE_NAME FROM INFORMATION_SCHEMA.ROUTINES
     WHERE ROUTINE_TYPE="FUNCTION" AND ROUTINE_SCHEMA = "%s"'''
 
@@ -163,6 +165,13 @@ class SQLExecute(object):
             cur.execute(self.show_candidates_query)
             for row in cur:
                 yield row[0].split(None, 1)[-1]
+
+    def users(self):
+        with self.conn.cursor() as cur:
+            _logger.debug('Users Query. sql: %r', self.users_query)
+            cur.execute(self.users_query)
+            for row in cur:
+                yield row
 
     def server_type(self):
         if self._server_type:

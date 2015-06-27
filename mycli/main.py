@@ -439,6 +439,9 @@ class MyCli(object):
         # show candidates
         completer.extend_show_items(sqlexecute.show_candidates())
 
+        # users
+        completer.extend_users(sqlexecute.users())
+
         # views
         #completer.extend_relations(sqlexecute.views(), kind='views')
         #completer.extend_columns(sqlexecute.view_columns(), kind='views')

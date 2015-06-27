@@ -190,6 +190,8 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
         return [{'type': 'column', 'tables': extract_tables(full_text)}]
     elif token_v in ('show'):
         return [{'type': 'show'}]
+    elif token_v in ('user'):
+        return [{'type': 'user'}]
     elif token_v in ('select', 'where', 'having'):
         # Check for a table alias or schema qualification
         parent = (identifier and identifier.get_parent_name()) or []
