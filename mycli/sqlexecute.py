@@ -78,7 +78,14 @@ class SQLExecute(object):
             yield (None, None, None, None)
 
         # Split the sql into separate queries and run each one.
-        for sql in sqlparse.split(statement):
+        # Unless it's saving a favorite query, in which case we
+        # want to save them all together.
+        if statement.startswith('\\fs'):
+            components = [statement]
+        else:
+            components = sqlparse.split(statement)
+
+        for sql in components:
             # Remove spaces, eol and semi-colons.
             sql = sql.rstrip(';')
 

@@ -1,6 +1,6 @@
 import pytest
 import pymysql
-from mycli.main import format_output
+from mycli.main import format_output, special
 from os import getenv
 
 # TODO: should this be somehow be divined from environment?
@@ -39,3 +39,7 @@ def run(executor, sql, join=False):
     if join:
         result = '\n'.join(result)
     return result
+
+def set_expanded_output(is_expanded):
+    """ Pass-through for the tests """
+    return special.set_expanded_output(is_expanded)
