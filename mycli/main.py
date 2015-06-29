@@ -175,10 +175,13 @@ class MyCli(object):
         # Fall back to config values only if user did not specify a value.
 
         database = database or c_database
+        if port or host:
+            socket = ''
+        else:
+            socket = socket or c_socket
         user = user or c_user or os.getenv('USER')
         host = host or c_host or 'localhost'
         port = int(port or c_port or os.getenv('MYSQL_TCP_PORT') or 3306)
-        socket = socket or c_socket
         passwd = passwd or c_password
         charset = charset or c_charset or 'utf8'
 
