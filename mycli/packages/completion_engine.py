@@ -190,7 +190,7 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
         return [{'type': 'column', 'tables': extract_tables(full_text)}]
     elif token_v in ('show'):
         return [{'type': 'show'}]
-    elif token_v in ('user'):
+    elif token_v in ('user', 'to', 'for'):
         return [{'type': 'user'}]
     elif token_v in ('select', 'where', 'having'):
         # Check for a table alias or schema qualification
@@ -247,7 +247,14 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
             # ON <suggestion>
             # Use table alias if there is one, otherwise the table name
             aliases = [t[2] or t[1] for t in tables]
-            return [{'type': 'alias', 'aliases': aliases}]
+            suggest = [{'type': 'alias', 'aliases': aliases}]
+
+            # The lists of 'aliases' could be empty if we're trying to complete
+            # a GRANT query. eg: GRANT SELECT, INSERT ON <tab>
+            # In that case we just suggest all tables.
+            if not aliases:
+                suggest.append({'type': 'table', 'schema': parent})
+            return suggest
 
     elif token_v in ('use', 'database', 'template', 'connect'):
         # "\c <db", "use <db>", "DROP DATABASE <db>",

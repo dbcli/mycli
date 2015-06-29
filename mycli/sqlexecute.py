@@ -19,7 +19,8 @@ class SQLExecute(object):
 
     show_candidates_query = '''SELECT name from mysql.help_topic WHERE name like "SHOW %"'''
 
-    users_query = '''SELECT user from mysql.user'''
+    users_query = '''SELECT CONCAT("'", user, "'@'",host,"'") FROM mysql.user'''
+
 
     functions_query = '''SELECT ROUTINE_NAME FROM INFORMATION_SCHEMA.ROUTINES
     WHERE ROUTINE_TYPE="FUNCTION" AND ROUTINE_SCHEMA = "%s"'''
