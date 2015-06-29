@@ -1,3 +1,4 @@
+import os
 import re
 import logging
 from codecs import open
@@ -15,6 +16,19 @@ use_expanded_output = False
 def set_timing_enabled(val):
     global TIMING_ENABLED
     TIMING_ENABLED = val
+
+@special_command('pager', '\\P', 'Set PAGER. Print the query results via PAGER', arg_type=PARSED_QUERY, aliases=('\\P', ), case_sensitive=True)
+def set_pager(arg, **_):
+    if not arg:
+        pager = os.getenv('PAGER')
+        if not pager:
+            msg = 'No default pager. Using stdout.'
+        else:
+            msg = "Current PAGER is set to: '%s'" % pager
+        return [(None, None, None, msg)]
+
+    os.environ['PAGER'] = arg
+    return [(None, None, None, "PAGER set to '%s'" % arg)]
 
 @special_command('\\timing', '\\t', 'Toggle timing of commands.', arg_type=NO_QUERY, aliases=('\\t', ), case_sensitive=True)
 def toggle_timing():
