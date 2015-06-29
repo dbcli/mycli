@@ -56,7 +56,8 @@ class SQLExecute(object):
             '\tsocket: %r', database, user, host, port, socket)
         conn = pymysql.connect(database=db, user=user, password=password,
                 host=host, port=port, unix_socket=socket,
-                use_unicode=True, charset=charset, autocommit=True)
+                use_unicode=True, charset=charset, autocommit=True,
+                client_flag=pymysql.constants.CLIENT.INTERACTIVE)
         if hasattr(self, 'conn'):
             self.conn.close()
         self.conn = conn
