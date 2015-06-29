@@ -160,3 +160,32 @@ def test_special_command(executor):
 @dbtest
 def test_unicode_support(executor):
     assert u'日本語' in run(executor, "SELECT '日本語' AS japanese;", join=True)
+
+@dbtest
+def test_favorite_query_multiline_statement(executor):
+    set_expanded_output(False)
+    run(executor, "create table test(a text)")
+    run(executor, "insert into test values('abc')")
+    run(executor, "insert into test values('def')")
+
+    results = run(executor, "\\fs test-ad select * from test where a like 'a%';\n"
+                            "select * from test where a like 'd%'")
+    assert results == ['Saved.']
+
+    results = run(executor, "\\f test-ad", join=True)
+    assert results == dedent("""\
+           > select * from test where a like 'a%'
+           +-----+
+           | a   |
+           |-----|
+           | abc |
+           +-----+
+           > select * from test where a like 'd%'
+           +-----+
+           | a   |
+           |-----|
+           | def |
+           +-----+""")
+
+    results = run(executor, "\\fd test-ad")
+    assert results == ['test-ad: Deleted']
