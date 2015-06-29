@@ -90,7 +90,7 @@ class SQLCompleter(Completer):
 
     def extend_show_items(self, show_items):
         for show_item in show_items:
-            self.show_items.append(show_item)
+            self.show_items.extend(show_item)
             self.all_completions.update(show_item)
 
     def extend_users(self, users):

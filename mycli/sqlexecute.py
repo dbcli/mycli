@@ -164,16 +164,26 @@ class SQLExecute(object):
     def show_candidates(self):
         with self.conn.cursor() as cur:
             _logger.debug('Show Query. sql: %r', self.show_candidates_query)
-            cur.execute(self.show_candidates_query)
-            for row in cur:
-                yield row[0].split(None, 1)[-1]
+            try:
+                cur.execute(self.show_candidates_query)
+            except pymysql.OperationalError as e:
+                _logger.error('No show completions due to %r', e)
+                yield ''
+            else:
+                for row in cur:
+                    yield (row[0].split(None, 1)[-1], )
 
     def users(self):
         with self.conn.cursor() as cur:
             _logger.debug('Users Query. sql: %r', self.users_query)
-            cur.execute(self.users_query)
-            for row in cur:
-                yield row
+            try:
+                cur.execute(self.users_query)
+            except pymysql.OperationalError as e:
+                _logger.error('No user completions due to %r', e)
+                yield ''
+            else:
+                for row in cur:
+                    yield row
 
     def server_type(self):
         if self._server_type:
