@@ -80,11 +80,12 @@ class MyCli(object):
 
         self.query_history = []
 
-        # Initialize completer
+        # Initialize completer.
         smart_completion = c['main'].as_bool('smart_completion')
         completer = SQLCompleter(smart_completion)
-        completer.extend_special_commands(COMMANDS.keys())
         self.completer = completer
+
+        # Register custom special commands.
         self.register_special_commands()
 
     def register_special_commands(self):
@@ -93,7 +94,7 @@ class MyCli(object):
         special.register_special_command(self.change_db, 'connect',
                 '\\r', 'Reconnect to the database. Optional database argument.',
                 aliases=('\\r', ))
-        special.register_special_command(self.refresh_completions, 'rehash',
+        special.register_special_command(self.refresh_dynamic_completions, 'rehash',
                 '\\#', 'Refresh auto-completions.', arg_type=NO_QUERY, aliases=('\\#',))
 
     def change_db(self, arg, **_):
@@ -247,8 +248,8 @@ class MyCli(object):
         original_less_opts = self.adjust_less_opts()
         original_pager = os.environ.get('PAGER', '')
 
+        self.initialize_completions()
         completer = self.completer
-        self.refresh_completions()
 
         def set_key_bindings(value):
             if value not in ('emacs', 'vi'):
@@ -392,7 +393,7 @@ class MyCli(object):
 
                 # Refresh the table names and column names if necessary.
                 if need_completion_refresh(document.text):
-                    self.refresh_completions()
+                    self.refresh_dynamic_completions()
 
                 query = Query(document.text, successful, mutating)
                 self.query_history.append(query)
@@ -423,7 +424,18 @@ class MyCli(object):
 
         return less_opts
 
-    def refresh_completions(self):
+    def initialize_completions(self):
+        completer = self.completer
+
+        # special_commands
+        completer.extend_special_commands(COMMANDS.keys())
+
+        # Items to complete after the SHOW command.
+        completer.extend_show_items(self.sqlexecute.show_candidates())
+
+        return self.refresh_dynamic_completions()
+
+    def refresh_dynamic_completions(self):
         sqlexecute = self.sqlexecute
 
         completer = self.completer
@@ -440,9 +452,6 @@ class MyCli(object):
         # tables
         completer.extend_relations(sqlexecute.tables(), kind='tables')
         completer.extend_columns(sqlexecute.table_columns(), kind='tables')
-
-        # show candidates
-        completer.extend_show_items(sqlexecute.show_candidates())
 
         # users
         completer.extend_users(sqlexecute.users())
