@@ -246,7 +246,6 @@ class MyCli(object):
         sqlexecute = self.sqlexecute
         logger = self.logger
         original_less_opts = self.adjust_less_opts()
-        original_pager = os.environ.get('PAGER', '')
 
         self.initialize_completions()
         completer = self.completer
@@ -403,7 +402,7 @@ class MyCli(object):
         finally:  # Reset the less opts back to original.
             logger.debug('Restoring env var LESS to %r.', original_less_opts)
             os.environ['LESS'] = original_less_opts
-            os.environ['PAGER'] = original_pager
+            os.environ['PAGER'] = special.get_original_pager()
 
     def output(self, text, **kwargs):
         if self.logfile:
