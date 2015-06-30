@@ -4,6 +4,7 @@ import logging
 from codecs import open
 
 import click
+import sqlparse
 
 from . import export
 from .main import special_command, NO_QUERY, PARSED_QUERY
@@ -129,19 +130,23 @@ def open_external_editor(filename=None, sql=''):
 def execute_favorite_query(cur, arg):
     """Returns (title, rows, headers, status)"""
     if arg == '':
-        return list_favorite_queries()
+        for result in list_favorite_queries():
+            yield result
 
     query = favoritequeries.get(arg)
-    title = '> %s' % (query)
     if query is None:
         message = "No favorite query: %s" % (arg)
-        return [(None, None, None, message)]
-    cur.execute(query)
-    if cur.description:
-        headers = [x[0] for x in cur.description]
-        return [(title, cur, headers, None)]
+        yield (None, None, None, message)
     else:
-        return [(title, None, None, None)]
+        for sql in sqlparse.split(query):
+            sql = sql.rstrip(';')
+            title = '> %s' % (sql)
+            cur.execute(sql)
+            if cur.description:
+                headers = [x[0] for x in cur.description]
+                yield (title, cur, headers, None)
+            else:
+                yield (title, None, None, None)
 
 def list_favorite_queries():
     """List of all favorite queries.

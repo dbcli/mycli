@@ -569,6 +569,7 @@ def confirm_destructive_query(queries):
     False if the query is destructive and the user doesn't want to proceed.
     """
     destructive = set(['drop'])
+    queries = queries.strip()
     for query in sqlparse.split(queries):
         try:
             first_token = query.split()[0]
