@@ -568,7 +568,7 @@ def confirm_destructive_query(queries):
     True if the query is destructive and the user wants to proceed.
     False if the query is destructive and the user doesn't want to proceed.
     """
-    destructive = set(['drop'])
+    destructive = set(['drop', 'shutdown'])
     queries = queries.strip()
     for query in sqlparse.split(queries):
         try:
