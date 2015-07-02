@@ -17,7 +17,7 @@ setup(
         author_email='amjith[dot]r[at]gmail.com',
         version=version,
         license='LICENSE.txt',
-        url='http://mycli.com',
+        url='http://mycli.net',
         packages=find_packages(),
         package_data={'mycli': ['myclirc']},
         description=description,
