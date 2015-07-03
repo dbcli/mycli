@@ -480,19 +480,20 @@ class MyCli(object):
 # Default host is '' so psycopg2 can default to either localhost or unix socket
 @click.option('-h', '--host', help='Host address of the database.')
 @click.option('-P', '--port', help='Port number to use for connection. Honors '
-        '$MYSQL_TCP_PORT')
+              '$MYSQL_TCP_PORT')
 @click.option('-u', '--user', help='User name to connect to the database.')
 @click.option('-S', '--socket', help='The socket file to use for connection.')
 @click.option('-p', '--password', 'prompt_passwd', is_flag=True, default=False,
         help='Force password prompt.')
 @click.option('--pass', 'password', envvar='MYCLI_PASSWORD', type=str,
-        help='Password to connect to the database')
+              help='Password to connect to the database')
 @click.option('-v', '--version', is_flag=True, help='Version of mycli.')
 @click.option('-D', '--database', 'dbname', help='Database to use.')
 @click.option('-R', '--prompt', 'prompt',
               help='Prompt format (Default: "{0}")'.format(
                   MyCli.default_prompt))
-@click.option('-l', '--logfile', type=click.File(mode='a', encoding='utf-8'), help='Timestamp and log every query and it\'s results to a file.')
+@click.option('-l', '--logfile', type=click.File(mode='a', encoding='utf-8'),
+              help='Log every query and its results to a file.')
 @click.argument('database', default='', nargs=1)
 def cli(database, user, host, port, socket, password, prompt_passwd, dbname,
         version, prompt, logfile):
