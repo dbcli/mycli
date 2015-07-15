@@ -8,6 +8,7 @@ import traceback
 import logging
 from time import time
 from datetime import datetime
+from random import choice
 
 import click
 import sqlparse
@@ -255,12 +256,18 @@ class MyCli(object):
                 value = 'emacs'
             self.key_bindings = value
 
+        from mycli import __file__ as package_root
+        package_root = os.path.dirname(package_root)
+        author_file = os.path.join(package_root, 'AUTHORS')
+        sponsor_file = os.path.join(package_root, 'SPONSORS')
+
         key_binding_manager = mycli_bindings(get_key_bindings=lambda: self.key_bindings,
                                              set_key_bindings=set_key_bindings)
         print('Version:', __version__)
         print('Chat: https://gitter.im/dbcli/mycli')
         print('Mail: https://groups.google.com/forum/#!forum/mycli-users')
         print('Home: http://mycli.net')
+        print('Thanks to the contributor -', thanks_picker([author_file, sponsor_file]))
 
         def prompt_tokens(cli):
             return [(Token.Prompt, self.get_prompt(self.prompt_format))]
@@ -477,7 +484,6 @@ class MyCli(object):
         return string
 
 @click.command()
-# Default host is '' so psycopg2 can default to either localhost or unix socket
 @click.option('-h', '--host', help='Host address of the database.')
 @click.option('-P', '--port', help='Port number to use for connection. Honors '
               '$MYSQL_TCP_PORT')
@@ -575,7 +581,7 @@ def confirm_destructive_query(queries):
         try:
             first_token = query.split()[0]
             if first_token.lower() in destructive:
-                destroy = click.prompt("You're about to run a destructive command. \nDo you want to proceed? (y/n)",
+                destroy = click.prompt("You're about to run a destructive command.\nDo you want to proceed? (y/n)",
                          type=bool)
                 return destroy
         except Exception:
@@ -586,6 +592,14 @@ def quit_command(sql):
             or sql.strip().lower() == 'quit'
             or sql.strip() == '\q'
             or sql.strip() == ':q')
+
+def thanks_picker(files=()):
+    for filename in files:
+        with open(filename) as f:
+            contents = f.readlines()
+
+    return choice([x.split('*')[1].strip() for x in contents if x.startswith('*')])
+
 
 if __name__ == "__main__":
     cli()
