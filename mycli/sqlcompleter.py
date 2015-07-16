@@ -186,7 +186,6 @@ class SQLCompleter(Completer):
         self.all_completions = set(self.keywords + self.functions)
 
 
-
     @staticmethod
     def find_matches(text, collection, start_only=False, fuzzy=True):
         """Find completion matches for the given text.
@@ -209,7 +208,7 @@ class SQLCompleter(Completer):
         completions = []
 
         if fuzzy:
-            regex = '.*'.join(map(escape, text))
+            regex = '.*?'.join(map(escape, text))
             pat = compile('(%s)' % regex)
             for item in sorted(collection):
                 r = pat.search(item)
