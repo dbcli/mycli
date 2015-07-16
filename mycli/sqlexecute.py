@@ -11,8 +11,6 @@ class SQLExecute(object):
 
     tables_query = '''SHOW TABLES'''
 
-    columns_query = '''SHOW COLUMNS FROM %s'''
-
     version_query = '''SELECT @@VERSION'''
 
     version_comment_query = '''SELECT @@VERSION_COMMENT'''
