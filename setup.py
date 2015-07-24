@@ -19,7 +19,7 @@ setup(
         license='LICENSE.txt',
         url='http://mycli.net',
         packages=find_packages(),
-        package_data={'mycli': ['myclirc']},
+        package_data={'mycli': ['myclirc', '../AUTHORS', '../SPONSORS']},
         description=description,
         long_description=open('README.md').read(),
         install_requires=[
