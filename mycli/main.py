@@ -50,6 +50,8 @@ from collections import namedtuple
 # Query tuples are used for maintaining history
 Query = namedtuple('Query', ['query', 'successful', 'mutating'])
 
+PACKAGE_ROOT = os.path.dirname(__file__)
+
 class MyCli(object):
 
     default_prompt = '\\t \\u@\\h:\\d> '
@@ -60,10 +62,7 @@ class MyCli(object):
         self.sqlexecute = sqlexecute
         self.logfile = logfile
 
-        from mycli import __file__ as package_root
-        package_root = os.path.dirname(package_root)
-
-        default_config = os.path.join(package_root, 'myclirc')
+        default_config = os.path.join(PACKAGE_ROOT, 'myclirc')
         write_default_config(default_config, '~/.myclirc')
 
         # Load config.
@@ -256,10 +255,9 @@ class MyCli(object):
                 value = 'emacs'
             self.key_bindings = value
 
-        from mycli import __file__ as package_root
-        package_root = os.path.dirname(package_root)
-        author_file = os.path.join(package_root, 'AUTHORS')
-        sponsor_file = os.path.join(package_root, 'SPONSORS')
+        project_root = os.path.dirname(PACKAGE_ROOT)
+        author_file = os.path.join(project_root, 'AUTHORS')
+        sponsor_file = os.path.join(project_root, 'SPONSORS')
 
         key_binding_manager = mycli_bindings(get_key_bindings=lambda: self.key_bindings,
                                              set_key_bindings=set_key_bindings)
