@@ -423,7 +423,7 @@ class MyCli(object):
     def adjust_less_opts(self):
         less_opts = os.environ.get('LESS', '')
         self.logger.debug('Original value for LESS env var: %r', less_opts)
-        os.environ['LESS'] = '-RXF'
+        os.environ['LESS'] = '-SRXF'
 
         return less_opts
 
