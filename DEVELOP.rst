@@ -61,3 +61,12 @@ we've linked the mycli installation with the working copy. So any changes made
 to the code is immediately available in the installed version of mycli. This
 makes it easy to change something in the code, launch mycli and check the
 effects of your change. 
+
+Building DEB package from scratch
+--------------------
+
+First pip install `make-deb`. Then run make-deb. It will create a debian folder
+after asking a few questions like maintainer name, email etc.
+
+$ vagrant up
+
