@@ -145,13 +145,12 @@ class MyCli(object):
         values.
         """
         cnf = ConfigObj()
-        for file in files:
+        for _file in files:
             try:
-                cnf.merge(ConfigObj(os.path.expanduser(file),
+                cnf.merge(ConfigObj(os.path.expanduser(_file),
                     interpolation=False))
             except ConfigObjError as e:
-                self.logger.error('Error parsing %r.',
-                        file)
+                self.logger.error('Error parsing %r.', _file)
                 self.logger.error('Recovering partially parsed config values.')
                 cnf.merge(e.config)
                 pass
