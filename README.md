@@ -1,56 +1,148 @@
 # mycli
 A command line client for MySQL that can do auto-completion and syntax highlighting.
 
-## Installation
+Postgres Equivalent: http://pgcli.com
 
-I plan to create DEB, RPM and Brew packages in the future.
+Quick Start
+-----------
 
-Right now, one can use `pip` (Python Package Manager) to install directly from the repo.
+If you already know how to install python packages, then you can install it via pip:
 
-###OSX:
----
-    $ pip install -U -e git+https://github.com/dbcli/mycli.git#egg=mycli
+You might need sudo on linux.
 
-###Linux:
----
-    $ sudo pip install -U -e git+https://github.com/dbcli/mycli.git#egg=mycli
+```
+    $ pip install mycli
+
+    or
+
+    $ brew install mycli  # Only on OS X
+```
+
+Check the detailed instructions for debian packages or getting started with pip.
+
+### Usage
+
+    $ mycli --help
+    Usage: mycli [OPTIONS] [DATABASE]
+
+    Options:
+      -h, --host TEXT         Host address of the database.
+      -P, --port TEXT         Port number to use for connection. Honors
+                              $MYSQL_TCP_PORT
+      -u, --user TEXT         User name to connect to the database.
+      -S, --socket TEXT       The socket file to use for connection.
+      -p, --password          Force password prompt.
+      --pass TEXT             Password to connect to the database
+      -v, --version           Version of mycli.
+      -D, --database TEXT     Database to use.
+      -R, --prompt TEXT       Prompt format (Default: "\t \u@\h:\d> ")
+      -l, --logfile FILENAME  Log every query and its results to a file.
+      --help                  Show this message and exit.
+
+### Examples
+
+    $ mycli local_database
+
+    $ mycli -h localhost -u root app_db
+
+    $ mycli mysql://amjith@localhost:3306/django_poll
+
+Features
+--------
+
+This tool `mycli` is written using [prompt_toolkit](https://github.com/jonathanslenders/python-prompt-toolkit://github.com/jonathanslenders/python-prompt-toolkit/).
+
+* Auto-completion as you type for SQL keywords as well as tables and
+  columns in the database.
+* Syntax highlighting using Pygments.
+* Smart-completion (enabled by default) will suggest context-sensitive
+  completion.
+
+    - `SELECT * FROM <tab>` will only show table names. 
+    - `SELECT * FROM users WHERE <tab>` will only show column names. 
+
+* Config file is automatically created at ``~/.myclirc`` at first launch.
+* Pretty prints tabular data.
+
+Contributions:
+--------------
+
+If you're interested in contributing to this project, first of all I would like
+to extend my heartfelt gratitude. I've written a small doc to describe how to
+get this running in a development setup.
+
+https://github.com/dbcli/mycli/blob/master/DEVELOP.rst
+
+Please feel free to reach out to me if you need help. 
+My email: amjith.r@gmail.com, Twitter: `@amjithr <http://twitter.com/amjithr>`_
+
+### Debian/Ubuntu Package:
+
+The debian package for `mycli` is hosted on packagecloud.io.
+
+Add the gpg key for packagecloud for package verification.
+
+```
+    $ curl https://packagecloud.io/gpg.key | apt-key add -
+```
     
-That will install the `mycli` package from the source. 
-
-If you're not familiar with `pip`, here are some quickstart guides. 
-
-https://pip.pypa.io/en/stable/installing.html
-
-https://pip.pypa.io/en/stable/quickstart.html
-
-
-## Usage
+Install a package called apt-transport-https to make it possible for apt to fetch packages over https.
 
 ```
-$ mycli --help
-Usage: mycli [OPTIONS] [DATABASE]
-
-Options:
-  -h, --host TEXT      Host address of the database.
-  -P, --port TEXT      Port number at which the Port number to use for
-                       connection. Honors $MYSQL_TCP_PORT
-  -u, --user TEXT      User name to connect to the database.
-  -S, --socket TEXT    The socket file to use for connection.
-  -p, --password       Force password prompt.
-  --pass TEXT          Password to connect to the database
-  -v, --version        Version of mycli.
-  -D, --database TEXT  Database to use.
-  -R, --prompt TEXT    Prompt format (Default: "\t \u@\h:\d> ")
-  --help               Show this message and exit.
+    $ apt-get install -y apt-transport-https
 ```
 
-## Configuration
+Add the mycli package repo to the apt source.
 
-The config file is located at ~/.myclirc
+```
+    $ echo "deb https://packagecloud.io/amjith/mycli/ubuntu/ trusty main" | sudo tee -a /etc/apt/sources.list
+```
 
-The app ships with sane defaults. But if you're unsatisfied with the current behavior take a look at the configs. 
+Update and apt sources and install mycli.
 
-## Compatibility
+```
+    $ sudo apt-get update
+    $ sudo apt-get install pgcli
+```
+
+Now `mycli` can be updagraded easily by using ``sudo apt-get upgrade mycli``.
+
+### RHEL, Centos, Fedora:
+
+I haven't built an RPM package for mycli yet. So please use `pip` to install `mycli`. You can install pip on your using 
+
+```
+    $ sudo yum install python-pip
+```
+
+Once that is installed, you can install mycli as follows:
+
+```
+    $ sudo pip install mycli
+```
+
+### Thanks:
+
+This project was funded through kickstarter. My thanks to the [backers](http://mycli.net/sponsors) who supported the project. 
+
+A special thanks to [Jonathan Slenders](https://twitter.com/jonathan_s) for
+creating [Python Prompt Toolkit](http://github.com/jonathanslenders/python-prompt-toolkit), 
+which is quite literally the backbone library, that made this app possible.
+Jonathan has also provided valuable feedback and support during the development
+of this app.
+
+This app includes the awesome [tabulate](https://pypi.python.org/pypi/tabulate)
+library for pretty printing the output of tables. The reason for vendoring this
+library rather than listing it as a dependency in setup.py, is because I had to
+make a change to the table format which is merged back into the original repo,
+but not yet released in PyPI.
+
+[Click](http://click.pocoo.org/3/) is used for command line option parsing
+and printing error messages.
+
+Thanks to PyMysql for a pure python adapter to MySQL database. 
+
+### Compatibility
 
 Tests have been run on OS X and Linux.
 
