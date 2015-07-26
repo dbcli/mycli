@@ -57,6 +57,9 @@ if __name__ == '__main__':
     if DEBUG:
         subprocess.check_output = lambda x: x
 
+    choice = raw_input('Have you created the debian package? (y/N)')
+    if choice.lower() != 'y':
+        sys.exit(1)
     ver = version('mycli/__init__.py')
     print('Releasing Version:', ver)
     choice = raw_input('Are you sure? (y/N)')
