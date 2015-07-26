@@ -17,9 +17,11 @@ You might need sudo on linux.
 
 ```
     $ pip install mycli
+```
 
-    or
+or
 
+```
     $ brew install mycli  # Only on OS X
 ```
 
@@ -55,7 +57,7 @@ Check the [detailed install instructions](#Detailed-Install-Instructions) for de
 Features
 --------
 
-This tool `mycli` is written using [prompt_toolkit](https://github.com/jonathanslenders/python-prompt-toolkit://github.com/jonathanslenders/python-prompt-toolkit/).
+`mycli` is written using [prompt_toolkit](https://github.com/jonathanslenders/python-prompt-toolkit://github.com/jonathanslenders/python-prompt-toolkit/).
 
 * Auto-completion as you type for SQL keywords as well as tables and
   columns in the database.
@@ -87,7 +89,7 @@ Twitter: [@amjithr](http://twitter.com/amjithr)
 
 ### Debian/Ubuntu Package:
 
-The debian package for `mycli` is hosted on [packagecloud.io](https://packagecloud.io/).
+The debian package for `mycli` is hosted on [packagecloud.io](https://packagecloud.io/amjith/mycli).
 
 Add the gpg key for packagecloud for package verification.
 
