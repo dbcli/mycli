@@ -1,8 +1,8 @@
 # mycli
 A command line client for MySQL that can do auto-completion and syntax highlighting.
 
-![CompletionGif](screenshots/main.gif)
 ![Completion](screenshots/tables.png)
+![CompletionGif](screenshots/main.gif)
 
 Postgres Equivalent: [http://pgcli.com](http://pgcli.com)
 
