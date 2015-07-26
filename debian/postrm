@@ -2,3 +2,4 @@
 
 echo "Removing symlink to mycli"
 rm /usr/local/bin/mycli
+
