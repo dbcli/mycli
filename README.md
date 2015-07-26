@@ -18,7 +18,7 @@ You might need sudo on linux.
     $ brew install mycli  # Only on OS X
 ```
 
-Check the detailed instructions (bottom of this page) for debian packages or getting started with pip.
+Check the [detailed install instructions](#Detailed-Install-Instructions) for debian packages or getting started with pip.
 
 ### Usage
 
@@ -55,8 +55,7 @@ This tool `mycli` is written using [prompt_toolkit](https://github.com/jonathans
 * Auto-completion as you type for SQL keywords as well as tables and
   columns in the database.
 * Syntax highlighting using Pygments.
-* Smart-completion (enabled by default) will suggest context-sensitive
-  completion.
+* Smart-completion (enabled by default) will suggest context-sensitive completion.
 
     - `SELECT * FROM <tab>` will only show table names. 
     - `SELECT * FROM users WHERE <tab>` will only show column names. 
@@ -74,7 +73,12 @@ get this running in a development setup.
 https://github.com/dbcli/mycli/blob/master/DEVELOP.rst
 
 Please feel free to reach out to me if you need help. 
-My email: amjith.r@gmail.com, Twitter: `@amjithr <http://twitter.com/amjithr>`_
+
+My email: amjith.r@gmail.com 
+
+Twitter: [@amjithr](http://twitter.com/amjithr)
+
+## Detailed Install Instructions:
 
 ### Debian/Ubuntu Package:
 
@@ -83,19 +87,19 @@ The debian package for `mycli` is hosted on [packagecloud.io](https://packageclo
 Add the gpg key for packagecloud for package verification.
 
 ```
-    $ curl https://packagecloud.io/gpg.key | apt-key add -
+    curl https://packagecloud.io/gpg.key | apt-key add -
 ```
     
 Install a package called apt-transport-https to make it possible for apt to fetch packages over https.
 
 ```
-    $ apt-get install -y apt-transport-https
+    apt-get install -y apt-transport-https
 ```
 
 Add the mycli package repo to the apt source.
 
 ```
-    $ echo "deb https://packagecloud.io/amjith/mycli/ubuntu/ trusty main" | sudo tee -a /etc/apt/sources.list
+    echo "deb https://packagecloud.io/amjith/mycli/ubuntu/ trusty main" | sudo tee -a /etc/apt/sources.list
 ```
 
 Update and apt sources and install mycli.
