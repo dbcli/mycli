@@ -1,7 +1,7 @@
 # mycli
 A command line client for MySQL that can do auto-completion and syntax highlighting.
 
-Postgres Equivalent: http://pgcli.com
+Postgres Equivalent: [http://pgcli.com](http://pgcli.com)
 
 Quick Start
 -----------
@@ -18,7 +18,7 @@ You might need sudo on linux.
     $ brew install mycli  # Only on OS X
 ```
 
-Check the detailed instructions for debian packages or getting started with pip.
+Check the detailed instructions (bottom of this page) for debian packages or getting started with pip.
 
 ### Usage
 
@@ -78,7 +78,7 @@ My email: amjith.r@gmail.com, Twitter: `@amjithr <http://twitter.com/amjithr>`_
 
 ### Debian/Ubuntu Package:
 
-The debian package for `mycli` is hosted on packagecloud.io.
+The debian package for `mycli` is hosted on [packagecloud.io](https://packagecloud.io/).
 
 Add the gpg key for packagecloud for package verification.
 
@@ -102,14 +102,14 @@ Update and apt sources and install mycli.
 
 ```
     $ sudo apt-get update
-    $ sudo apt-get install pgcli
+    $ sudo apt-get install mycli
 ```
 
 Now `mycli` can be updagraded easily by using ``sudo apt-get upgrade mycli``.
 
 ### RHEL, Centos, Fedora:
 
-I haven't built an RPM package for mycli yet. So please use `pip` to install `mycli`. You can install pip on your using 
+I haven't built an RPM package for mycli yet. So please use `pip` to install `mycli`. You can install pip on your system using:
 
 ```
     $ sudo yum install python-pip
@@ -131,16 +131,13 @@ which is quite literally the backbone library, that made this app possible.
 Jonathan has also provided valuable feedback and support during the development
 of this app.
 
-This app includes the awesome [tabulate](https://pypi.python.org/pypi/tabulate)
-library for pretty printing the output of tables. The reason for vendoring this
-library rather than listing it as a dependency in setup.py, is because I had to
-make a change to the table format which is merged back into the original repo,
-but not yet released in PyPI.
-
 [Click](http://click.pocoo.org/3/) is used for command line option parsing
 and printing error messages.
 
-Thanks to PyMysql for a pure python adapter to MySQL database. 
+Thanks to [PyMysql](http://www.pymysql.org/) for a pure python adapter to MySQL database. 
+
+[Tabulate](https://pypi.python.org/pypi/tabulate) library is used for pretty printing the output of tables. 
+
 
 ### Compatibility
 
