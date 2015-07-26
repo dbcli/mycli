@@ -1,6 +1,6 @@
 mycli (1.0.0) unstable; urgency=low
 
-  * aaed3f3 Update the release script.
+  * 500411c Add a create_deb.sh script.
 
 
- -- Amjith <amjith>  Sun, 26 Jul 2015 00:42:13 +0000
+ -- Amjith Ramanujam <amjith.r@gmail.com>  Sun, 26 Jul 2015 00:56:51 +0000
