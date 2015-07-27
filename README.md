@@ -116,7 +116,7 @@ Update and apt sources and install mycli.
     $ sudo apt-get install mycli
 ```
 
-Now `mycli` can be updagraded easily by using ``sudo apt-get upgrade mycli``.
+Now `mycli` can be upgraded easily by using ``sudo apt-get upgrade mycli``.
 
 ### RHEL, Centos, Fedora:
 
