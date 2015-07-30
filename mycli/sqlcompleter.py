@@ -211,7 +211,7 @@ class SQLCompleter(Completer):
             regex = '.*?'.join(map(escape, text))
             pat = compile('(%s)' % regex)
             for item in sorted(collection):
-                r = pat.search(item)
+                r = pat.search(item.lower())
                 if r:
                     completions.append((len(r.group()), r.start(), item))
         else:
