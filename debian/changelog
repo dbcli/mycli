@@ -1,6 +1,6 @@
-mycli (1.0.0) unstable; urgency=low
+mycli (1.0.1) unstable; urgency=low
 
-  * 500411c Add a create_deb.sh script.
+  * 0a4e27b Add counter for python 2.6
 
 
- -- Amjith Ramanujam <amjith.r@gmail.com>  Sun, 26 Jul 2015 00:56:51 +0000
+ -- Amjith Ramanujam <amjith.r@gmail.com>  Wed, 29 Jul 2015 23:59:24 +0000
