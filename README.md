@@ -16,13 +16,13 @@ If you already know how to install python packages, then you can install it via 
 You might need sudo on linux.
 
 ```
-    $ pip install mycli
+$ pip install mycli
 ```
 
 or
 
 ```
-    $ brew install mycli  # Only on OS X
+$ brew install mycli  # Only on OS X
 ```
 
 Check the [detailed install instructions](#Detailed-Install-Instructions) for debian packages or getting started with pip.
@@ -94,26 +94,26 @@ The debian package for `mycli` is hosted on [packagecloud.io](https://packageclo
 Add the gpg key for packagecloud for package verification.
 
 ```
-    curl https://packagecloud.io/gpg.key | apt-key add -
+curl https://packagecloud.io/gpg.key | apt-key add -
 ```
     
 Install a package called apt-transport-https to make it possible for apt to fetch packages over https.
 
 ```
-    apt-get install -y apt-transport-https
+apt-get install -y apt-transport-https
 ```
 
 Add the mycli package repo to the apt source.
 
 ```
-    echo "deb https://packagecloud.io/amjith/mycli/ubuntu/ trusty main" | sudo tee -a /etc/apt/sources.list
+echo "deb https://packagecloud.io/amjith/mycli/ubuntu/ trusty main" | sudo tee -a /etc/apt/sources.list
 ```
 
 Update and apt sources and install mycli.
 
 ```
-    $ sudo apt-get update
-    $ sudo apt-get install mycli
+$ sudo apt-get update
+$ sudo apt-get install mycli
 ```
 
 Now `mycli` can be upgraded easily by using ``sudo apt-get upgrade mycli``.
@@ -123,13 +123,13 @@ Now `mycli` can be upgraded easily by using ``sudo apt-get upgrade mycli``.
 I haven't built an RPM package for mycli yet. So please use `pip` to install `mycli`. You can install pip on your system using:
 
 ```
-    $ sudo yum install python-pip
+$ sudo yum install python-pip
 ```
 
 Once that is installed, you can install mycli as follows:
 
 ```
-    $ sudo pip install mycli
+$ sudo pip install mycli
 ```
 
 ### Thanks:
