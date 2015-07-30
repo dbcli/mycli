@@ -57,7 +57,7 @@ Check the [detailed install instructions](#Detailed-Install-Instructions) for de
 Features
 --------
 
-`mycli` is written using [prompt_toolkit](https://github.com/jonathanslenders/python-prompt-toolkit://github.com/jonathanslenders/python-prompt-toolkit/).
+`mycli` is written using [prompt_toolkit](https://github.com/jonathanslenders/python-prompt-toolkit/).
 
 * Auto-completion as you type for SQL keywords as well as tables and
   columns in the database.
