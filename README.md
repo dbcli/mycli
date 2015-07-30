@@ -1,5 +1,3 @@
-# WIP - NOT YET READY
-
 # mycli
 A command line client for MySQL that can do auto-completion and syntax highlighting.
 
