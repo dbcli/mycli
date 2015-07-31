@@ -23,6 +23,7 @@ def expanded_table(rows, headers):
             max_row_len = row_len
 
         for header, value in zip(padded_headers, row):
+            if value is None: value = '<null>'
             row_result.append(u"%s %s" % (header, value))
 
         results.append('\n'.join(row_result))
