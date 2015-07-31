@@ -478,6 +478,7 @@ class MyCli(object):
         string = string.replace('\\h', sqlexecute.host or '(none)')
         string = string.replace('\\d', sqlexecute.dbname or '(none)')
         string = string.replace('\\t', sqlexecute.server_type()[0] or 'mycli')
+        string = string.replace('\\n', "\n")
         return string
 
 @click.command()
