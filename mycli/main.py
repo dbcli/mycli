@@ -181,7 +181,7 @@ class MyCli(object):
             socket = socket or c_socket
         user = user or c_user or os.getenv('USER')
         host = host or c_host or 'localhost'
-        port = int(port or c_port or os.getenv('MYSQL_TCP_PORT') or 3306)
+        port = int(port or c_port or 3306)
         passwd = passwd or c_password
         charset = charset or c_charset or 'utf8'
 
@@ -481,14 +481,14 @@ class MyCli(object):
         return string
 
 @click.command()
-@click.option('-h', '--host', help='Host address of the database.')
-@click.option('-P', '--port', help='Port number to use for connection. Honors '
+@click.option('-h', '--host', envvar='MYSQL_HOST', help='Host address of the database.')
+@click.option('-P', '--port', envvar='MYSQL_TCP_PORT', help='Port number to use for connection. Honors '
               '$MYSQL_TCP_PORT')
 @click.option('-u', '--user', help='User name to connect to the database.')
-@click.option('-S', '--socket', help='The socket file to use for connection.')
+@click.option('-S', '--socket', envvar='MYSQL_UNIX_PORT', help='The socket file to use for connection.')
 @click.option('-p', '--password', 'prompt_passwd', is_flag=True, default=False,
         help='Force password prompt.')
-@click.option('--pass', 'password', envvar='MYCLI_PASSWORD', type=str,
+@click.option('--pass', 'password', envvar='MYSQL_PWD', type=str,
               help='Password to connect to the database')
 @click.option('-v', '--version', is_flag=True, help='Version of mycli.')
 @click.option('-D', '--database', 'dbname', help='Database to use.')
