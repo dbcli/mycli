@@ -25,7 +25,7 @@ setup(
         install_requires=[
             'click >= 4.1',
             'Pygments >= 2.0',  # Pygments has to be Capitalcased. WTF?
-            'prompt_toolkit==0.38',
+            'prompt_toolkit==0.42',
             'PyMySQL >= 0.6.6',
             'sqlparse == 0.1.14',
             'six >= 1.8',
