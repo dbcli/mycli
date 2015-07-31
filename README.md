@@ -109,7 +109,7 @@ Add the mycli package repo to the apt source.
 echo "deb https://packagecloud.io/amjith/mycli/ubuntu/ trusty main" | sudo tee -a /etc/apt/sources.list
 ```
 
-Update and apt sources and install mycli.
+Update the apt sources and install mycli.
 
 ```
 $ sudo apt-get update
@@ -154,4 +154,4 @@ Thanks to [PyMysql](http://www.pymysql.org/) for a pure python adapter to MySQL 
 
 Tests have been run on OS X and Linux.
 
-NOT TESTED THIS IN WINDOWS. But all the libraries used in this app are Windows compatible. So it should work without any modifications. If you're unable to run it on Windows, please file a bug. I will try my best to fix it.
+THIS HAS NOT BEEN TESTED IN WINDOWS, but the libraries used in this app are Windows compatible. This means it should work without any modifications. If you're unable to run it on Windows, please file a bug. I will try my best to fix it.
