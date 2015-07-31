@@ -22,7 +22,7 @@ $ pip install mycli
 or
 
 ```
-$ brew install mycli  # Only on OS X
+$ brew update && brew install mycli  # Only on OS X
 ```
 
 Check the [detailed install instructions](#Detailed-Install-Instructions) for debian packages or getting started with pip.
