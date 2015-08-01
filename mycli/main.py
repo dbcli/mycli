@@ -56,6 +56,14 @@ class MyCli(object):
 
     default_prompt = '\\t \\u@\\h:\\d> '
 
+    # In order of being loaded. Files lower in list override earlier ones.
+    cnf_files = [
+        '/etc/my.cnf',
+        '/etc/mysql/my.cnf',
+        '/usr/local/etc/my.cnf',
+        '~/.my.cnf'
+    ]
+
     def __init__(self, force_passwd_prompt=False, sqlexecute=None, prompt=None, logfile=None):
 
         self.force_passwd_prompt = force_passwd_prompt
@@ -139,10 +147,12 @@ class MyCli(object):
         self.connect(database, uri.username, uri.password, uri.hostname,
                 uri.port)
 
-    def read_my_cnf_files(self, files):
-        """Reads a list of config files and merges them. The last one will win.
-        Returns: user, host, port, socket, password, charset. None for missing
-        values.
+    def read_my_cnf_files(self, files, keys):
+        """
+        Reads a list of config files and merges them. The last one will win.
+        :param files: list of files to read
+        :param keys: list of keys to retrieve
+        :returns: tuple, with None for missing keys.
         """
         cnf = ConfigObj()
         for _file in files:
@@ -161,16 +171,17 @@ class MyCli(object):
             except KeyError:
                 return None
 
-        return (get('database'), get('user'), get('password'), get('host'),
-                get('port'), get('socket'), get('default-character-set'),)
+        return tuple([get(_) for _ in keys])
 
     def connect(self, database='', user='', passwd='', host='', port='',
             socket='', charset=''):
 
-        cnf_files = ['/etc/my.cnf', '/etc/mysql/my.cnf',
-                '/usr/local/etc/my.cnf', '~/.my.cnf']
+        cnf_keys = ['database', 'user', 'password', 'host', 'port', 'socket',
+                    'default-character-set']
+
         c_database, c_user, c_password, c_host, c_port, c_socket, c_charset = \
-                                            self.read_my_cnf_files(cnf_files)
+                                            self.read_my_cnf_files(
+                                                self.cnf_files, cnf_keys)
 
         # Fall back to config values only if user did not specify a value.
 
@@ -245,6 +256,7 @@ class MyCli(object):
         sqlexecute = self.sqlexecute
         logger = self.logger
         original_less_opts = self.adjust_less_opts()
+        self.set_pager_from_config()
 
         self.initialize_completions()
         completer = self.completer
@@ -426,6 +438,11 @@ class MyCli(object):
         os.environ['LESS'] = '-SRXF'
 
         return less_opts
+
+    def set_pager_from_config(self):
+        pager_setting, = self.read_my_cnf_files(self.cnf_files, ['pager'])
+        if pager_setting:
+            special.set_pager(pager_setting)
 
     def initialize_completions(self):
         completer = self.completer
