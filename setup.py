@@ -28,7 +28,7 @@ setup(
             'prompt_toolkit==0.42',
             'PyMySQL >= 0.6.6',
             'sqlparse == 0.1.14',
-            'six >= 1.8',
+            'six >= 1.9',
             'configobj >= 5.0.6',
             ],
         entry_points='''
