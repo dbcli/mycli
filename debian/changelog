@@ -1,12 +1,6 @@
-mycli (1.1.0) unstable; urgency=low
+mycli (1.1.1) unstable; urgency=low
 
-  * Fuzzy completion is now case-insensitive. (Thanks: [bjarnagin](https://github.com/bjarnagin))
-  * Added new-line (`\n`) to the list of special characters to use in prompt. (Thanks: [brewneaux](https://github.com/brewneaux))
-  * Honor the `pager` setting in my.cnf files. (Thanks: [Iryna Cherniavska](http://github.com/j-bennet))
-  * Fix a crashing bug in completion engine for cross joins.
-  * Make `<null>` value consistent between tabular and vertical output.
-  * Changed pymysql version to be greater than 0.6.6.
-  * Upgrade prompt_toolkit version to 0.42. (Thanks: [Yasuhiro Matsumoto](https://github.com/mattn))
-  * Removed the explicit dependency on six.
+  * Fix a crash in Py 2.6 due to dict comprehension.
 
- -- Amjith Ramanujam <amjith.r@gmail.com>  Sat, 01 Aug 2015 22:14:58 +0000
+
+ -- Amjith Ramanujam <amjith.r@gmail.com>  Sun, 02 Aug 2015 08:14:12 +0000
