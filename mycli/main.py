@@ -171,7 +171,7 @@ class MyCli(object):
             except KeyError:
                 return None
 
-        return {x: get(x) for x in keys}
+        return dict([(x, get(x)) for x in keys])
 
     def connect(self, database='', user='', passwd='', host='', port='',
             socket='', charset=''):

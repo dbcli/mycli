@@ -1,3 +1,12 @@
+1.1.1:
+======
+
+Bug Fixes:
+----------
+
+* Change dictonary comprehension used in mycnf reader to list comprehension to make it compatible with Python 2.6.
+
+
 1.1.0:
 ======
 
