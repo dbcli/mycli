@@ -1,3 +1,25 @@
+1.1.0:
+======
+
+Features:
+---------
+
+* Fuzzy completion is now case-insensitive. (Thanks: [bjarnagin](https://github.com/bjarnagin))
+* Added new-line (`\n`) to the list of special characters to use in prompt. (Thanks: [brewneaux](https://github.com/brewneaux))
+
+Bug Fixes:
+----------
+
+* Fix a crashing bug in completion engine for cross joins.
+* Make `<null>` value consistent between tabular and vertical output.
+
+Internal Changes:
+-----------------
+
+* Changed pymysql version to be greater than 0.6.6.
+* Upgrade prompt_toolkit version to 0.42. (Thanks: [Yasuhiro Matsumoto](https://github.com/mattn))
+* Removed the explicit dependency on six.
+
 2015/06/10:
 ===========
 
