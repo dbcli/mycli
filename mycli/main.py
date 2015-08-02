@@ -443,9 +443,9 @@ class MyCli(object):
         return less_opts
 
     def set_pager_from_config(self):
-        pager_setting, = self.read_my_cnf_files(self.cnf_files, ['pager'])
-        if pager_setting:
-            special.set_pager(pager_setting)
+        cnf = self.read_my_cnf_files(self.cnf_files, ['pager'])
+        if cnf['pager']:
+            special.set_pager(cnf['pager'])
 
     def initialize_completions(self):
         completer = self.completer
