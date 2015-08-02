@@ -39,4 +39,5 @@ key_bindings = emacs
 # \u - Username
 # \h - Hostname of the server
 # \d - Database name
+# \n - Newline
 prompt = '\t \u@\h:\d> '
