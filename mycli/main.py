@@ -80,6 +80,7 @@ class MyCli(object):
         special.set_timing_enabled(c['main'].as_bool('timing'))
         self.table_format = c['main']['table_format']
         self.syntax_style = c['main']['syntax_style']
+        self.wider_completion_menu = c['main']['wider_completion_menu']
         self.prompt_format = prompt or c['main']['prompt'] or \
                              self.default_prompt
 
@@ -289,6 +290,7 @@ class MyCli(object):
                                        reserve_space_for_menu=True,
                                        get_prompt_tokens=prompt_tokens,
                                        get_bottom_toolbar_tokens=get_toolbar_tokens,
+                                       display_completions_in_columns=self.wider_completion_menu,
                                        extra_input_processors=[
                                            ConditionalProcessor(
                                                processor=HighlightMatchingBracketProcessor(chars='[](){}'),
