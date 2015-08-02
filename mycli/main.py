@@ -171,30 +171,33 @@ class MyCli(object):
             except KeyError:
                 return None
 
-        return tuple([get(_) for _ in keys])
+        return {x: get(x) for x in keys}
 
     def connect(self, database='', user='', passwd='', host='', port='',
             socket='', charset=''):
 
-        cnf_keys = ['database', 'user', 'password', 'host', 'port', 'socket',
-                    'default-character-set']
+        cnf = {'database': None,
+               'user': None,
+               'password': None,
+               'host': None,
+               'port': None,
+               'socket': None,
+               'default-character-set': None}
 
-        c_database, c_user, c_password, c_host, c_port, c_socket, c_charset = \
-                                            self.read_my_cnf_files(
-                                                self.cnf_files, cnf_keys)
+        cnf = self.read_my_cnf_files(self.cnf_files, cnf.keys())
 
         # Fall back to config values only if user did not specify a value.
 
-        database = database or c_database
+        database = database or cnf['database']
         if port or host:
             socket = ''
         else:
-            socket = socket or c_socket
-        user = user or c_user or os.getenv('USER')
-        host = host or c_host or 'localhost'
-        port = int(port or c_port or 3306)
-        passwd = passwd or c_password
-        charset = charset or c_charset or 'utf8'
+            socket = socket or cnf['socket']
+        user = user or cnf['user'] or os.getenv('USER')
+        host = host or cnf['host'] or 'localhost'
+        port = int(port or cnf['port'] or 3306)
+        passwd = passwd or cnf['password']
+        charset = charset or cnf['default-character-set'] or 'utf8'
 
         # Connect to the database.
 
