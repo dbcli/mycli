@@ -566,7 +566,7 @@ def need_completion_refresh(queries):
         try:
             first_token = query.split()[0]
             res = first_token.lower() in ('alter', 'create', 'use', '\\r',
-                    '\\u', '\\connect', 'drop')
+                    '\\u', 'connect', 'drop')
             return res
         except Exception:
             return False
