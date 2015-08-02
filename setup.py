@@ -17,11 +17,11 @@ setup(
         author_email='amjith[dot]r[at]gmail.com',
         version=version,
         license='LICENSE.txt',
-        url='mycli.net',
+        url='http://mycli.net',
         packages=find_packages(),
         package_data={'mycli': ['myclirc', '../AUTHORS', '../SPONSORS']},
         description=description,
-        long_description=open('README.md').read(),
+        long_description=description,
         install_requires=[
             'click >= 4.1',
             'Pygments >= 2.0',  # Pygments has to be Capitalcased. WTF?
