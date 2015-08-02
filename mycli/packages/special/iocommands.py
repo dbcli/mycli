@@ -23,6 +23,7 @@ def set_timing_enabled(val):
 def get_original_pager():
     return ORIGINAL_PAGER
 
+@export
 @special_command('pager', '\\P [command]', 'Set PAGER. Print the query results via PAGER', arg_type=PARSED_QUERY, aliases=('\\P', ), case_sensitive=True)
 def set_pager(arg, **_):
     if not arg:
