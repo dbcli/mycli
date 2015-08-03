@@ -3,10 +3,10 @@ from mycli.packages.expanded import expanded_table
 def test_expanded_table_renders():
     input = [("hello", 123), ("world", 456)]
 
-    expected = """-[ RECORD 0 ]
+    expected = """***************************[ 1. row ]***************************
 name | hello
 age  | 123
--[ RECORD 1 ]
+***************************[ 2. row ]***************************
 name | world
 age  | 456
 """
