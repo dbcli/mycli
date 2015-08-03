@@ -1,6 +1,9 @@
-mycli (1.1.1) unstable; urgency=low
+mycli (1.2.0) unstable; urgency=low
 
-  * Fix a crash in Py 2.6 due to dict comprehension.
+  * Add support for wider completion menus in the config file.
+  * Prevent Ctrl-C from quitting mycli while the pager is active. 
+  * Refresh auto-completions after the database is changed via a CONNECT command.
+  * Upgrade prompt_toolkit dependency version to 0.45.
+  * Added Travis CI to run the tests automatically.
 
-
- -- Amjith Ramanujam <amjith.r@gmail.com>  Sun, 02 Aug 2015 08:14:12 +0000
+ -- Amjith Ramanujam <amjith.r@gmail.com>  Sun, 02 Aug 2015 21:26:56 +0000
