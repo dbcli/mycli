@@ -406,7 +406,10 @@ class MyCli(object):
                     logger.error("traceback: %r", traceback.format_exc())
                     self.output(str(e), err=True, fg='red')
                 else:
-                    self.output_via_pager('\n'.join(output))
+                    try:
+                        self.output_via_pager('\n'.join(output))
+                    except KeyboardInterrupt:
+                        pass
                     if special.is_timing_enabled():
                         self.output('Command Time: %0.03fs' % duration)
                         self.output('Format Time: %0.03fs' % total)
