@@ -1,3 +1,25 @@
+1.2.0:
+======
+
+Features:
+---------
+
+* Add support for wider completion menus in the config file.
+
+  Add `wider_completion_menu = True` in the config file (~/.myclirc) to enable this feature.
+
+Bug Fixes:
+---------
+
+* Prevent Ctrl-C from quitting mycli while the pager is active. 
+* Refresh auto-completions after the database is changed via a CONNECT command.
+
+Internal Changes:
+-----------------
+
+* Upgrade prompt_toolkit dependency version to 0.45.
+* Added Travis CI to run the tests automatically.
+
 1.1.1:
 ======
 
