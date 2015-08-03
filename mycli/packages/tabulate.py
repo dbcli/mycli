@@ -648,6 +648,8 @@ def _normalize_tabular_data(tabular_data, headers):
 
     return rows, headers
 
+def get_allowed_table_formats():
+    return _table_formats.keys()
 
 def tabulate(tabular_data, headers=[], tablefmt="simple",
              floatfmt="g", numalign="decimal", stralign="left",

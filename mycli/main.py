@@ -23,7 +23,7 @@ from prompt_toolkit.history import FileHistory
 from pygments.token import Token
 from configobj import ConfigObj, ConfigObjError
 
-from .packages.tabulate import tabulate
+from .packages.tabulate import tabulate, get_allowed_table_formats
 from .packages.expanded import expanded_table
 from .packages.special.main import (COMMANDS, NO_QUERY)
 import mycli.packages.special as special
@@ -37,7 +37,6 @@ from .key_bindings import mycli_bindings
 from .encodingutils import utf8tounicode
 from .lexer import MyCliLexer
 from .__init__ import __version__
-
 
 try:
     from urlparse import urlparse
@@ -96,7 +95,19 @@ class MyCli(object):
                 aliases=('\\r', ))
         special.register_special_command(self.refresh_dynamic_completions, 'rehash',
                 '\\#', 'Refresh auto-completions.', arg_type=NO_QUERY, aliases=('\\#',))
+        special.register_special_command(self.change_table_format, 'tabletype', '\\x',
+                'Change Table Type.', aliases=('\\T',)) 
 
+    def change_table_format(self, arg, **_):
+        if not arg in get_allowed_table_formats():
+            msg = "Table type %s not yet implemented.  Allowed types:" % arg            
+            for table_type in get_allowed_table_formats():
+                msg += "\n\t%s" % table_type
+            yield (None, None, None, msg)
+        else: 
+            self.table_format = arg
+            yield (None, None, None, "Changed table Type to %s" % self.table_format)
+        
     def change_db(self, arg, **_):
         if arg is None:
             self.sqlexecute.connect()
@@ -465,6 +476,10 @@ class MyCli(object):
 
         # functions
         completer.extend_functions(sqlexecute.functions())
+
+        # table formats
+        completer.extend_table_formats(get_allowed_table_formats())
+
 
         return [(None, None, None, 'Auto-completion refreshed.')]
 
