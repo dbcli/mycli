@@ -80,7 +80,7 @@ class MyCli(object):
         special.set_timing_enabled(c['main'].as_bool('timing'))
         self.table_format = c['main']['table_format']
         self.syntax_style = c['main']['syntax_style']
-        self.wider_completion_menu = c['main']['wider_completion_menu']
+        self.wider_completion_menu = c['main'].as_bool('wider_completion_menu')
         self.prompt_format = prompt or c['main']['prompt'] or \
                              self.default_prompt
 
