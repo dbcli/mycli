@@ -55,6 +55,7 @@ PACKAGE_ROOT = os.path.dirname(__file__)
 class MyCli(object):
 
     default_prompt = '\\t \\u@\\h:\\d> '
+    defaults_suffix = None
 
     # In order of being loaded. Files lower in list override earlier ones.
     cnf_files = [
@@ -64,8 +65,6 @@ class MyCli(object):
         '~/.my.cnf'
     ]
 
-    defaults_suffix = None
-
     def __init__(self, force_passwd_prompt=False, sqlexecute=None, prompt=None, logfile=None, defaults_suffix=None):
         self.force_passwd_prompt = force_passwd_prompt
         self.sqlexecute = sqlexecute
@@ -74,8 +73,6 @@ class MyCli(object):
 
         default_config = os.path.join(PACKAGE_ROOT, 'myclirc')
         write_default_config(default_config, '~/.myclirc')
-        prompt_cnf = self.read_my_cnf_files(
-            self.cnf_files, ['prompt'])['prompt']
 
         # Load config.
         c = self.config = load_config('~/.myclirc', default_config)
@@ -85,12 +82,14 @@ class MyCli(object):
         self.table_format = c['main']['table_format']
         self.syntax_style = c['main']['syntax_style']
         self.wider_completion_menu = c['main'].as_bool('wider_completion_menu')
-        self.prompt_format = prompt or c['main']['prompt'] or \
-                             prompt_cnf or \
-                             self.default_prompt
 
         self.logger = logging.getLogger(__name__)
         self.initialize_logging()
+
+        prompt_cnf = self.read_my_cnf_files(
+            self.cnf_files, ['prompt'])['prompt']
+        self.prompt_format = prompt or prompt_cnf or c['main']['prompt'] or \
+                             self.default_prompt
 
         self.query_history = []
 
