@@ -64,14 +64,18 @@ class MyCli(object):
         '~/.my.cnf'
     ]
 
-    def __init__(self, force_passwd_prompt=False, sqlexecute=None, prompt=None, logfile=None):
+    defaults_suffix = None
 
+    def __init__(self, force_passwd_prompt=False, sqlexecute=None, prompt=None, logfile=None, defaults_suffix=None):
         self.force_passwd_prompt = force_passwd_prompt
         self.sqlexecute = sqlexecute
         self.logfile = logfile
+        self.defaults_suffix = defaults_suffix
 
         default_config = os.path.join(PACKAGE_ROOT, 'myclirc')
         write_default_config(default_config, '~/.myclirc')
+        prompt_cnf = self.read_my_cnf_files(
+            self.cnf_files, ['prompt'])['prompt']
 
         # Load config.
         c = self.config = load_config('~/.myclirc', default_config)
@@ -82,6 +86,7 @@ class MyCli(object):
         self.syntax_style = c['main']['syntax_style']
         self.wider_completion_menu = c['main'].as_bool('wider_completion_menu')
         self.prompt_format = prompt or c['main']['prompt'] or \
+                             prompt_cnf or \
                              self.default_prompt
 
         self.logger = logging.getLogger(__name__)
@@ -166,11 +171,16 @@ class MyCli(object):
                 cnf.merge(e.config)
                 pass
 
+        sections = ['client']
+        if self.defaults_suffix:
+            sections.append('client{0}'.format(self.defaults_suffix))
+
         def get(key):
-            try:
-                return cnf['client'][key]
-            except KeyError:
-                return None
+            result = None
+            for sect in sections:
+                if sect in cnf and key in cnf[sect]:
+                    result = cnf[sect][key]
+            return result
 
         return dict([(x, get(x)) for x in keys])
 
@@ -523,15 +533,18 @@ class MyCli(object):
                   MyCli.default_prompt))
 @click.option('-l', '--logfile', type=click.File(mode='a', encoding='utf-8'),
               help='Log every query and its results to a file.')
+@click.option('--defaults-group-suffix', type=str,
+              help='Read config group with the specified suffix.')
 @click.argument('database', default='', nargs=1)
 def cli(database, user, host, port, socket, password, prompt_passwd, dbname,
-        version, prompt, logfile):
+        version, prompt, logfile, defaults_group_suffix):
 
     if version:
         print('Version:', __version__)
         sys.exit(0)
 
-    mycli = MyCli(prompt_passwd, prompt=prompt, logfile=logfile)
+    mycli = MyCli(prompt_passwd, prompt=prompt, logfile=logfile,
+                  defaults_suffix=defaults_group_suffix)
 
     # Choose which ever one has a valid value.
     database = database or dbname
