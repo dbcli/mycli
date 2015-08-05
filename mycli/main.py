@@ -23,7 +23,7 @@ from prompt_toolkit.history import FileHistory
 from pygments.token import Token
 from configobj import ConfigObj, ConfigObjError
 
-from .packages.tabulate import tabulate, get_allowed_table_formats
+from .packages.tabulate import tabulate, table_formats
 from .packages.expanded import expanded_table
 from .packages.special.main import (COMMANDS, NO_QUERY)
 import mycli.packages.special as special
@@ -108,9 +108,9 @@ class MyCli(object):
                 '\\T', 'Change Table Type.', aliases=('\\T',), case_sensitive=True)
 
     def change_table_format(self, arg, **_):
-        if not arg in get_allowed_table_formats():
+        if not arg in table_formats():
             msg = "Table type %s not yet implemented.  Allowed types:" % arg
-            for table_type in get_allowed_table_formats():
+            for table_type in table_formats():
                 msg += "\n\t%s" % table_type
             yield (None, None, None, msg)
         else:
