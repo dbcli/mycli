@@ -104,19 +104,19 @@ class MyCli(object):
                 aliases=('\\r', ))
         special.register_special_command(self.refresh_dynamic_completions, 'rehash',
                 '\\#', 'Refresh auto-completions.', arg_type=NO_QUERY, aliases=('\\#',))
-        special.register_special_command(self.change_table_format, 'tableformat', 
-                '\\T', 'Change Table Type.', aliases=('\\T',)) 
+        special.register_special_command(self.change_table_format, 'tableformat',
+                '\\T', 'Change Table Type.', aliases=('\\T',), case_sensitive=True)
 
     def change_table_format(self, arg, **_):
         if not arg in get_allowed_table_formats():
-            msg = "Table type %s not yet implemented.  Allowed types:" % arg            
+            msg = "Table type %s not yet implemented.  Allowed types:" % arg
             for table_type in get_allowed_table_formats():
                 msg += "\n\t%s" % table_type
             yield (None, None, None, msg)
-        else: 
+        else:
             self.table_format = arg
             yield (None, None, None, "Changed table Type to %s" % self.table_format)
-        
+
     def change_db(self, arg, **_):
         if arg is None:
             self.sqlexecute.connect()
