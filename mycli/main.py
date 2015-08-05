@@ -104,8 +104,8 @@ class MyCli(object):
                 aliases=('\\r', ))
         special.register_special_command(self.refresh_dynamic_completions, 'rehash',
                 '\\#', 'Refresh auto-completions.', arg_type=NO_QUERY, aliases=('\\#',))
-        special.register_special_command(self.change_table_format, 'tabletype', '\\T',
-                'Change Table Type.', aliases=('\\T')) 
+        special.register_special_command(self.change_table_format, 'tableformat', 
+                '\\T', 'Change Table Type.', aliases=('\\T',)) 
 
     def change_table_format(self, arg, **_):
         if not arg in get_allowed_table_formats():
@@ -501,11 +501,6 @@ class MyCli(object):
 
         # functions
         completer.extend_functions(sqlexecute.functions())
-
-        # table formats
-        completer.extend_table_formats(get_allowed_table_formats())
-
-
         return [(None, None, None, 'Auto-completion refreshed.')]
 
     def get_completions(self, text, cursor_positition):

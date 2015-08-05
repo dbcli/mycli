@@ -6,6 +6,7 @@ from .packages.completion_engine import suggest_type
 from .packages.parseutils import last_word
 from .packages.special.favoritequeries import favoritequeries
 from re import compile, escape
+from .packages.tabulate import get_allowed_table_formats
 
 try:
     from collections import Counter
@@ -56,6 +57,7 @@ class SQLCompleter(Completer):
         self.name_pattern = compile("^[_a-z][_a-z0-9\$]*$")
 
         self.special_commands = []
+        self.table_formats = get_allowed_table_formats()
         self.reset_completions()
 
     def escape_name(self, name):
@@ -323,6 +325,9 @@ class SQLCompleter(Completer):
                 queries = self.find_matches(word_before_cursor, favoritequeries.list(),
                                             start_only=False, fuzzy=True)
                 completions.extend(queries)
+            elif suggestion['type'] == 'table_format':
+                formats = self.find_matches(word_before_cursor, self.table_formats, start_only=True, fuzzy=False)
+                completions.extend(formats)
 
         return completions
 
