@@ -31,12 +31,18 @@ table_format = psql
 # colorful, murphy, bw, pastie, paraiso-light, trac, default, fruity
 syntax_style = default
 
-# Keybindings: Possible values: emacs, vi
+# Keybindings: Possible values: emacs, vi.
+# Emacs mode: Ctrl-A is home, Ctrl-E is end. All emacs keybindings are available in the REPL.
+# When Vi mode is enabled you can use modal editing features offered by Vi in the REPL.
 key_bindings = emacs
+
+# Enabling this option will show the suggestions in a wider menu. Thus more items are suggested. 
+wider_completion_menu = False
 
 # MySQL prompt
 # \t - Product type (Percona, MySQL, Mariadb)
 # \u - Username
 # \h - Hostname of the server
 # \d - Database name
+# \n - Newline
 prompt = '\t \u@\h:\d> '

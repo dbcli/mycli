@@ -1,6 +1,9 @@
-mycli (1.0.1) unstable; urgency=low
+mycli (1.2.0) unstable; urgency=low
 
-  * 0a4e27b Add counter for python 2.6
+  * Add support for wider completion menus in the config file.
+  * Prevent Ctrl-C from quitting mycli while the pager is active. 
+  * Refresh auto-completions after the database is changed via a CONNECT command.
+  * Upgrade prompt_toolkit dependency version to 0.45.
+  * Added Travis CI to run the tests automatically.
 
-
- -- Amjith Ramanujam <amjith.r@gmail.com>  Wed, 29 Jul 2015 23:59:24 +0000
+ -- Amjith Ramanujam <amjith.r@gmail.com>  Sun, 02 Aug 2015 21:26:56 +0000

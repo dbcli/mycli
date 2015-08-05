@@ -384,3 +384,11 @@ def test_handle_pre_completion_comma_gracefully(text):
     suggestions = suggest_type(text, text)
 
     assert iter(suggestions)
+
+def test_cross_join():
+    text = 'select * from v1 cross join v2 JOIN v1.id, '
+    suggestions = suggest_type(text, text)
+    assert sorted_dicts(suggestions) == sorted_dicts([
+         {'type': 'table', 'schema': []},
+         {'type': 'view', 'schema': []},
+         {'type': 'schema'}])

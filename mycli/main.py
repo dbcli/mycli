@@ -55,6 +55,14 @@ class MyCli(object):
 
     default_prompt = '\\t \\u@\\h:\\d> '
 
+    # In order of being loaded. Files lower in list override earlier ones.
+    cnf_files = [
+        '/etc/my.cnf',
+        '/etc/mysql/my.cnf',
+        '/usr/local/etc/my.cnf',
+        '~/.my.cnf'
+    ]
+
     def __init__(self, force_passwd_prompt=False, sqlexecute=None, prompt=None, logfile=None):
 
         self.force_passwd_prompt = force_passwd_prompt
@@ -71,6 +79,7 @@ class MyCli(object):
         special.set_timing_enabled(c['main'].as_bool('timing'))
         self.table_format = c['main']['table_format']
         self.syntax_style = c['main']['syntax_style']
+        self.wider_completion_menu = c['main'].as_bool('wider_completion_menu')
         self.prompt_format = prompt or c['main']['prompt'] or \
                              self.default_prompt
 
@@ -150,10 +159,12 @@ class MyCli(object):
         self.connect(database, uri.username, uri.password, uri.hostname,
                 uri.port)
 
-    def read_my_cnf_files(self, files):
-        """Reads a list of config files and merges them. The last one will win.
-        Returns: user, host, port, socket, password, charset. None for missing
-        values.
+    def read_my_cnf_files(self, files, keys):
+        """
+        Reads a list of config files and merges them. The last one will win.
+        :param files: list of files to read
+        :param keys: list of keys to retrieve
+        :returns: tuple, with None for missing keys.
         """
         cnf = ConfigObj()
         for _file in files:
@@ -172,29 +183,33 @@ class MyCli(object):
             except KeyError:
                 return None
 
-        return (get('database'), get('user'), get('password'), get('host'),
-                get('port'), get('socket'), get('default-character-set'),)
+        return dict([(x, get(x)) for x in keys])
 
     def connect(self, database='', user='', passwd='', host='', port='',
             socket='', charset=''):
 
-        cnf_files = ['/etc/my.cnf', '/etc/mysql/my.cnf',
-                '/usr/local/etc/my.cnf', '~/.my.cnf']
-        c_database, c_user, c_password, c_host, c_port, c_socket, c_charset = \
-                                            self.read_my_cnf_files(cnf_files)
+        cnf = {'database': None,
+               'user': None,
+               'password': None,
+               'host': None,
+               'port': None,
+               'socket': None,
+               'default-character-set': None}
+
+        cnf = self.read_my_cnf_files(self.cnf_files, cnf.keys())
 
         # Fall back to config values only if user did not specify a value.
 
-        database = database or c_database
+        database = database or cnf['database']
         if port or host:
             socket = ''
         else:
-            socket = socket or c_socket
-        user = user or c_user or os.getenv('USER')
-        host = host or c_host or 'localhost'
-        port = int(port or c_port or 3306)
-        passwd = passwd or c_password
-        charset = charset or c_charset or 'utf8'
+            socket = socket or cnf['socket']
+        user = user or cnf['user'] or os.getenv('USER')
+        host = host or cnf['host'] or 'localhost'
+        port = int(port or cnf['port'] or 3306)
+        passwd = passwd or cnf['password']
+        charset = charset or cnf['default-character-set'] or 'utf8'
 
         # Connect to the database.
 
@@ -256,6 +271,7 @@ class MyCli(object):
         sqlexecute = self.sqlexecute
         logger = self.logger
         original_less_opts = self.adjust_less_opts()
+        self.set_pager_from_config()
 
         self.initialize_completions()
         completer = self.completer
@@ -285,6 +301,7 @@ class MyCli(object):
                                        reserve_space_for_menu=True,
                                        get_prompt_tokens=prompt_tokens,
                                        get_bottom_toolbar_tokens=get_toolbar_tokens,
+                                       display_completions_in_columns=self.wider_completion_menu,
                                        extra_input_processors=[
                                            ConditionalProcessor(
                                                processor=HighlightMatchingBracketProcessor(chars='[](){}'),
@@ -400,7 +417,10 @@ class MyCli(object):
                     logger.error("traceback: %r", traceback.format_exc())
                     self.output(str(e), err=True, fg='red')
                 else:
-                    self.output_via_pager('\n'.join(output))
+                    try:
+                        self.output_via_pager('\n'.join(output))
+                    except KeyboardInterrupt:
+                        pass
                     if special.is_timing_enabled():
                         self.output('Command Time: %0.03fs' % duration)
                         self.output('Format Time: %0.03fs' % total)
@@ -437,6 +457,11 @@ class MyCli(object):
         os.environ['LESS'] = '-SRXF'
 
         return less_opts
+
+    def set_pager_from_config(self):
+        cnf = self.read_my_cnf_files(self.cnf_files, ['pager'])
+        if cnf['pager']:
+            special.set_pager(cnf['pager'])
 
     def initialize_completions(self):
         completer = self.completer
@@ -493,6 +518,7 @@ class MyCli(object):
         string = string.replace('\\h', sqlexecute.host or '(none)')
         string = string.replace('\\d', sqlexecute.dbname or '(none)')
         string = string.replace('\\t', sqlexecute.server_type()[0] or 'mycli')
+        string = string.replace('\\n', "\n")
         return string
 
 @click.command()
@@ -560,7 +586,7 @@ def need_completion_refresh(queries):
         try:
             first_token = query.split()[0]
             res = first_token.lower() in ('alter', 'create', 'use', '\\r',
-                    '\\u', '\\connect', 'drop')
+                    '\\u', 'connect', 'drop')
             return res
         except Exception:
             return False
