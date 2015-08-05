@@ -96,6 +96,9 @@ def suggest_special(text):
     if cmd in ('\\u', '\\r'):
         return [{'type': 'database'}]
 
+    if cmd in ('\\T'):
+        return [{'type': 'table_format'}]
+
     if cmd in ['\\f', '\\fs', '\\fd']:
         return [{'type': 'favoritequery'}]
 
@@ -260,6 +263,8 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
         # "\c <db", "use <db>", "DROP DATABASE <db>",
         # "CREATE DATABASE <newdb> WITH TEMPLATE <db>"
         return [{'type': 'database'}]
+    elif token_v == 'tableformat':
+        return [{'type': 'table_format'}]
     elif token_v.endswith(',') or token_v == '=':
         prev_keyword, text_before_cursor = find_prev_keyword(text_before_cursor)
         if prev_keyword:
