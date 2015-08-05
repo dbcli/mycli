@@ -104,8 +104,8 @@ class MyCli(object):
                 aliases=('\\r', ))
         special.register_special_command(self.refresh_dynamic_completions, 'rehash',
                 '\\#', 'Refresh auto-completions.', arg_type=NO_QUERY, aliases=('\\#',))
-        special.register_special_command(self.change_table_format, 'tabletype', '\\x',
-                'Change Table Type.', aliases=('\\T',)) 
+        special.register_special_command(self.change_table_format, 'tabletype', '\\T',
+                'Change Table Type.', aliases=('\\T')) 
 
     def change_table_format(self, arg, **_):
         if not arg in get_allowed_table_formats():
