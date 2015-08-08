@@ -531,8 +531,10 @@ class MyCli(object):
               '$MYSQL_TCP_PORT')
 @click.option('-u', '--user', help='User name to connect to the database.')
 @click.option('-S', '--socket', envvar='MYSQL_UNIX_PORT', help='The socket file to use for connection.')
-@click.option('-p', '--password', 'prompt_passwd', is_flag=True, default=False,
+@click.option('-p', 'prompt_passwd', is_flag=True, default=False,
         help='Force password prompt.')
+@click.option('--password', 'password', envvar='MYSQL_PWD', type=str,
+              help='Password to connect to the database')
 @click.option('--pass', 'password', envvar='MYSQL_PWD', type=str,
               help='Password to connect to the database')
 @click.option('-v', '--version', is_flag=True, help='Version of mycli.')
