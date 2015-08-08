@@ -64,11 +64,13 @@ class MyCli(object):
         '~/.my.cnf'
     ]
 
-    def __init__(self, force_passwd_prompt=False, sqlexecute=None, prompt=None, logfile=None, defaults_suffix=None):
+    def __init__(self, force_passwd_prompt=False, sqlexecute=None, prompt=None,
+            logfile=None, defaults_suffix=None, defaults_file=None):
         self.force_passwd_prompt = force_passwd_prompt
         self.sqlexecute = sqlexecute
         self.logfile = logfile
         self.defaults_suffix = defaults_suffix
+        self.defaults_file = defaults_file
 
         default_config = os.path.join(PACKAGE_ROOT, 'myclirc')
         write_default_config(default_config, '~/.myclirc')
@@ -85,8 +87,8 @@ class MyCli(object):
         self.logger = logging.getLogger(__name__)
         self.initialize_logging()
 
-        prompt_cnf = self.read_my_cnf_files(
-            self.cnf_files, ['prompt'])['prompt']
+        prompt_cnf = self.read_my_cnf_files(defaults_file
+                or self.cnf_files, ['prompt'])['prompt']
         self.prompt_format = prompt or prompt_cnf or c['main']['prompt'] or \
                              self.default_prompt
 
@@ -205,7 +207,7 @@ class MyCli(object):
                'socket': None,
                'default-character-set': None}
 
-        cnf = self.read_my_cnf_files(self.cnf_files, cnf.keys())
+        cnf = self.read_my_cnf_files(self.defaults_file or self.cnf_files, cnf.keys())
 
         # Fall back to config values only if user did not specify a value.
 
@@ -546,16 +548,19 @@ class MyCli(object):
               help='Log every query and its results to a file.')
 @click.option('--defaults-group-suffix', type=str,
               help='Read config group with the specified suffix.')
+@click.option('--defaults-file', type=str,
+              help='Only read default options from the given file')
 @click.argument('database', default='', nargs=1)
 def cli(database, user, host, port, socket, password, prompt_passwd, dbname,
-        version, prompt, logfile, defaults_group_suffix):
+        version, prompt, logfile, defaults_group_suffix, defaults_file):
 
     if version:
         print('Version:', __version__)
         sys.exit(0)
 
     mycli = MyCli(prompt_passwd, prompt=prompt, logfile=logfile,
-                  defaults_suffix=defaults_group_suffix)
+                  defaults_suffix=defaults_group_suffix,
+                  defaults_file=defaults_file)
 
     # Choose which ever one has a valid value.
     database = database or dbname
