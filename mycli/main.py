@@ -310,6 +310,7 @@ class MyCli(object):
         get_toolbar_tokens = create_toolbar_tokens_func(lambda: self.key_bindings)
         layout = create_default_layout(lexer=MyCliLexer,
                                        reserve_space_for_menu=True,
+                                       multiline=True,
                                        get_prompt_tokens=prompt_tokens,
                                        get_bottom_toolbar_tokens=get_toolbar_tokens,
                                        display_completions_in_columns=self.wider_completion_menu,
@@ -325,7 +326,8 @@ class MyCli(object):
         application = Application(style=style_factory(self.syntax_style),
                                   layout=layout, buffer=buf,
                                   key_bindings_registry=key_binding_manager.registry,
-                                  on_exit=AbortAction.RAISE_EXCEPTION)
+                                  on_exit=AbortAction.RAISE_EXCEPTION,
+                                  ignore_case=True)
         cli = CommandLineInterface(application=application, eventloop=create_eventloop())
 
         try:
