@@ -70,7 +70,13 @@ class MyCli(object):
         self.sqlexecute = sqlexecute
         self.logfile = logfile
         self.defaults_suffix = defaults_suffix
-        self.defaults_file = defaults_file
+
+        # self.cnf_files is a class variable that stores the list of mysql
+        # config files to read in at launch.
+        # If defaults_file is specified then override the class variable with
+        # defaults_file.
+        if defaults_file:
+            self.cnf_files = [defaults_file]
 
         default_config = os.path.join(PACKAGE_ROOT, 'myclirc')
         write_default_config(default_config, '~/.myclirc')
@@ -87,8 +93,7 @@ class MyCli(object):
         self.logger = logging.getLogger(__name__)
         self.initialize_logging()
 
-        prompt_cnf = self.read_my_cnf_files(defaults_file
-                or self.cnf_files, ['prompt'])['prompt']
+        prompt_cnf = self.read_my_cnf_files(self.cnf_files, ['prompt'])['prompt']
         self.prompt_format = prompt or prompt_cnf or c['main']['prompt'] or \
                              self.default_prompt
 
@@ -207,7 +212,7 @@ class MyCli(object):
                'socket': None,
                'default-character-set': None}
 
-        cnf = self.read_my_cnf_files(self.defaults_file or self.cnf_files, cnf.keys())
+        cnf = self.read_my_cnf_files(self.cnf_files, cnf.keys())
 
         # Fall back to config values only if user did not specify a value.
 
@@ -548,12 +553,11 @@ class MyCli(object):
               help='Log every query and its results to a file.')
 @click.option('--defaults-group-suffix', type=str,
               help='Read config group with the specified suffix.')
-@click.option('--defaults-file', type=str,
+@click.option('--defaults-file', type=click.Path(),
               help='Only read default options from the given file')
 @click.argument('database', default='', nargs=1)
 def cli(database, user, host, port, socket, password, prompt_passwd, dbname,
         version, prompt, logfile, defaults_group_suffix, defaults_file):
-
     if version:
         print('Version:', __version__)
         sys.exit(0)
