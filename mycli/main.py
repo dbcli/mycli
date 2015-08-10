@@ -64,9 +64,8 @@ class MyCli(object):
         '~/.my.cnf'
     ]
 
-    def __init__(self, force_passwd_prompt=False, sqlexecute=None, prompt=None,
+    def __init__(self, sqlexecute=None, prompt=None,
             logfile=None, defaults_suffix=None, defaults_file=None):
-        self.force_passwd_prompt = force_passwd_prompt
         self.sqlexecute = sqlexecute
         self.logfile = logfile
         self.defaults_suffix = defaults_suffix
@@ -228,15 +227,6 @@ class MyCli(object):
         charset = charset or cnf['default-character-set'] or 'utf8'
 
         # Connect to the database.
-
-        # Prompt for a password immediately if requested via the -p flag. This
-        # avoids wasting time trying to connect to the database and catching a
-        # no-password exception.
-        # If we successfully parsed a password from a URI, there's no need to
-        # prompt for it, even with the -p flag
-        if self.force_passwd_prompt and not passwd:
-            passwd = click.prompt('Password', hide_input=True,
-                                  show_default=False, type=str)
 
         try:
             try:
@@ -538,9 +528,7 @@ class MyCli(object):
               '$MYSQL_TCP_PORT')
 @click.option('-u', '--user', help='User name to connect to the database.')
 @click.option('-S', '--socket', envvar='MYSQL_UNIX_PORT', help='The socket file to use for connection.')
-@click.option('-p', 'prompt_passwd', is_flag=True, default=False,
-        help='Force password prompt.')
-@click.option('--password', 'password', envvar='MYSQL_PWD', type=str,
+@click.option('-p', '--password', 'password', envvar='MYSQL_PWD', type=str,
               help='Password to connect to the database')
 @click.option('--pass', 'password', envvar='MYSQL_PWD', type=str,
               help='Password to connect to the database')
@@ -556,13 +544,13 @@ class MyCli(object):
 @click.option('--defaults-file', type=click.Path(),
               help='Only read default options from the given file')
 @click.argument('database', default='', nargs=1)
-def cli(database, user, host, port, socket, password, prompt_passwd, dbname,
+def cli(database, user, host, port, socket, password, dbname,
         version, prompt, logfile, defaults_group_suffix, defaults_file):
     if version:
         print('Version:', __version__)
         sys.exit(0)
 
-    mycli = MyCli(prompt_passwd, prompt=prompt, logfile=logfile,
+    mycli = MyCli(prompt=prompt, logfile=logfile,
                   defaults_suffix=defaults_group_suffix,
                   defaults_file=defaults_file)
 
