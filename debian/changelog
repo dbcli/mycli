@@ -1,9 +1,8 @@
-mycli (1.2.0) unstable; urgency=low
+mycli (1.3.0) unstable; urgency=low
 
-  * Add support for wider completion menus in the config file.
-  * Prevent Ctrl-C from quitting mycli while the pager is active. 
-  * Refresh auto-completions after the database is changed via a CONNECT command.
-  * Upgrade prompt_toolkit dependency version to 0.45.
-  * Added Travis CI to run the tests automatically.
+  * Add a new special command (\T) to change the table format on the fly. (Thanks: [Jonathan Bruno](https://github.com/brewneaux))
+  * Add `--defaults-group-suffix` to the command line. This lets the user specify a group to use in the my.cnf files. (Thanks: [Iryna Cherniavska](http://github.com/j-bennet))
+  * Add `--defaults-file` option to the command line. This allows specifying a `my.cnf` to use at launch. This also makes it play nice with mysql sandbox.
+  * Make `-p` and `--password` take the password in commandline. This makes mycli a drop in replacement for mysql. 
 
- -- Amjith Ramanujam <amjith.r@gmail.com>  Sun, 02 Aug 2015 21:26:56 +0000
+ -- Amjith Ramanujam <amjith.r@gmail.com>  Sun, 09 Aug 2015 22:25:38 +0000
