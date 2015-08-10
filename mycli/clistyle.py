@@ -17,17 +17,32 @@ def style_factory(name):
         styles.update(style.styles)
         styles.update(default_style_extensions)
         styles.update({
+            # Completion menus.
             Token.Menu.Completions.Completion.Current: 'bg:#00aaaa #000000',
             Token.Menu.Completions.Completion: 'bg:#008888 #ffffff',
+            Token.Menu.Completions.MultiColumnMeta: 'bg:#aaffff #000000',
             Token.Menu.Completions.ProgressButton: 'bg:#003333',
             Token.Menu.Completions.ProgressBar: 'bg:#00aaaa',
+
+            # Selected text.
             Token.SelectedText: '#ffffff bg:#6666aa',
-            Token.IncrementalSearchMatch: '#ffffff bg:#4444aa',
-            Token.IncrementalSearchMatch.Current: '#ffffff bg:#44aa44',
+
+            # Search matches. (reverse-i-search)
+            Token.SearchMatch: '#ffffff bg:#4444aa',
+            Token.SearchMatch.Current: '#ffffff bg:#44aa44',
+
+            # The bottom toolbar.
             Token.Toolbar: 'bg:#440044 #ffffff',
             Token.Toolbar: 'bg:#222222 #aaaaaa',
             Token.Toolbar.Off: 'bg:#222222 #888888',
             Token.Toolbar.On: 'bg:#222222 #ffffff',
+
+            # Search/arg/system toolbars.
+            Token.Toolbar.Search: 'noinherit bold',
+            Token.Toolbar.Search.Text: 'nobold',
+            Token.Toolbar.System: 'noinherit bold',
+            Token.Toolbar.Arg: 'noinherit bold',
+            Token.Toolbar.Arg.Text: 'nobold',
         })
 
     return CLIStyle
