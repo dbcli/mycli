@@ -1,3 +1,40 @@
+1.3.0:
+======
+
+Features:
+---------
+* Add a new special command (\T) to change the table format on the fly. (Thanks: [Jonathan Bruno](https://github.com/brewneaux))
+  eg: 
+  ```
+  mycli> \T tsv
+  ```
+* Add `--defaults-group-suffix` to the command line. This lets the user specify
+  a group to use in the my.cnf files. (Thanks: [Iryna Cherniavska](http://github.com/j-bennet))
+
+  In the my.cnf file a user can specify credentials for different databases and
+  invoke mycli with the group name to use the appropriate credentials.
+  eg:
+  ```
+  # my.cnf
+  [client]
+  user   = 'root'
+  socket = '/tmp/mysql.sock'
+  pager = 'less -RXSF'
+  database = 'account'
+
+  [clientamjith]
+  user     = 'amjith'
+  database  = 'user_management'
+  
+  $ mycli --defaults-group-suffix=amjith   # uses the [clientamjith] section in my.cnf
+  ```
+
+* Add `--defaults-file` option to the command line. This allows specifying a
+  `my.cnf` to use at launch. This also makes it play nice with mysql sandbox.
+
+* Make `-p` and `--password` take the password in commandline. This makes mycli
+  a drop in replacement for mysql. 
+
 1.2.0:
 ======
 
