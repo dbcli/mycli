@@ -193,7 +193,13 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
         return [{'type': 'column', 'tables': extract_tables(full_text)}]
     elif token_v in ('show'):
         return [{'type': 'show'}]
-    elif token_v in ('user', 'to', 'for'):
+    elif token_v in ('to',):
+        p = sqlparse.parse(text_before_cursor)[0]
+        if p.token_first().value.lower() == 'change':
+            return [{'type': 'change'}]
+        else:
+            return [{'type': 'user'}]
+    elif token_v in ('user', 'for'):
         return [{'type': 'user'}]
     elif token_v in ('select', 'where', 'having'):
         # Check for a table alias or schema qualification

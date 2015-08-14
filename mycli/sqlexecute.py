@@ -19,7 +19,6 @@ class SQLExecute(object):
 
     users_query = '''SELECT CONCAT("'", user, "'@'",host,"'") FROM mysql.user'''
 
-
     functions_query = '''SELECT ROUTINE_NAME FROM INFORMATION_SCHEMA.ROUTINES
     WHERE ROUTINE_TYPE="FUNCTION" AND ROUTINE_SCHEMA = "%s"'''
 
