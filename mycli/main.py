@@ -83,6 +83,7 @@ class MyCli(object):
         # Load config.
         c = self.config = load_config('~/.myclirc', default_config)
         self.multi_line = c['main'].as_bool('multi_line')
+        self.destructive_warning = c['main'].as_bool('destructive_warning')
         self.key_bindings = c['main']['key_bindings']
         special.set_timing_enabled(c['main'].as_bool('timing'))
         self.table_format = c['main']['table_format']
@@ -346,15 +347,15 @@ class MyCli(object):
                     logger.error("traceback: %r", traceback.format_exc())
                     self.output(str(e), err=True, fg='red')
                     continue
-
-                destroy = confirm_destructive_query(document.text)
-                if destroy is None:
-                    pass  # Query was not destructive. Nothing to do here.
-                elif destroy is True:
-                    self.output('Your call!')
-                else:
-                    self.output('Wise choice!')
-                    continue
+                if self.destructive_warning:
+                    destroy = confirm_destructive_query(document.text)
+                    if destroy is None:
+                        pass  # Query was not destructive. Nothing to do here.
+                    elif destroy is True:
+                        self.output('Your call!')
+                    else:
+                        self.output('Wise choice!')
+                        continue
 
                 # Keep track of whether or not the query is mutating. In case
                 # of a multi-statement query, the overall query is considered
