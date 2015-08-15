@@ -9,6 +9,7 @@ from decimal import Decimal
 from platform import python_version_tuple
 from wcwidth import wcswidth
 import re
+import codecs
 
 
 if python_version_tuple()[0] < "3":
@@ -519,6 +520,8 @@ def _format(val, valtype, floatfmt, missingval=""):
     elif valtype is _binary_type:
         try:
             return _text_type(val, "ascii")
+        except UnicodeDecodeError:
+            return _text_type('0x' + (codecs.getencoder('hex_codec')(val)[0]).decode('ascii'))
         except TypeError:
             return _text_type(val)
     elif valtype is float:
@@ -886,21 +889,21 @@ def tabulate(tabular_data, headers=[], tablefmt="simple",
         tabular_data = []
     list_of_lists, headers = _normalize_tabular_data(tabular_data, headers)
 
-    # optimization: look for ANSI control codes once,
-    # enable smart width functions only if a control code is found
-    plain_text = '\n'.join(['\t'.join(map(_text_type, headers))] + \
-                            ['\t'.join(map(_text_type, row)) for row in list_of_lists])
-    has_invisible = re.search(_invisible_codes, plain_text)
-    if has_invisible:
-        width_fn = _visible_width
-    else:
-        width_fn = wcswidth
-
     # format rows and columns, convert numeric values to strings
     cols = list(zip(*list_of_lists))
     coltypes = list(map(_column_type, cols))
     cols = [[_format(v, ct, floatfmt, missingval) for v in c]
              for c,ct in zip(cols, coltypes)]
+
+    # optimization: look for ANSI control codes once,
+    # enable smart width functions only if a control code is found
+    plain_text = '\n'.join(['\t'.join(map(_text_type, headers))] + \
+                            ['\t'.join(map(_text_type, row)) for row in cols])
+    has_invisible = re.search(_invisible_codes, plain_text)
+    if has_invisible:
+        width_fn = _visible_width
+    else:
+        width_fn = wcswidth
 
     # align columns
     aligns = [numalign if ct in [int,float] else stralign for ct in coltypes]

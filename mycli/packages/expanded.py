@@ -1,4 +1,5 @@
 from .tabulate import _text_type
+import codecs
 
 def pad(field, total, char=u" "):
     return field + (char * (total - len(field)))
@@ -7,6 +8,16 @@ def get_separator(num, header_len, data_len):
 
     sep = u"***************************[ %d. row ]***************************\n" % (num + 1)
     return sep
+
+def format_field(value):
+    # Returns the field as a text type, otherwise will hexify the string
+    try:
+        if isinstance(value, bytes):
+            return _text_type(value, "ascii")
+        else:
+            return _text_type(value)
+    except UnicodeDecodeError:
+        return _text_type('0x' + (codecs.getencoder('hex_codec')(value)[0]).decode('ascii'))
 
 def expanded_table(rows, headers):
     header_len = max([len(x) for x in headers])
@@ -17,7 +28,8 @@ def expanded_table(rows, headers):
     header_len += 2
 
     for row in rows:
-        row_len = max([len(_text_type(x)) for x in row])
+        row = [format_field(x) for x in row]
+        row_len = max([len(x) for x in row])
         row_result = []
         if row_len > max_row_len:
             max_row_len = row_len
