@@ -12,7 +12,8 @@ smart_completion = True
 multi_line = False
 
 # Destructive warning mode will alert you before executing a sql statement
-# that may cause harm to the database.
+# that may cause harm to the database such as "drop table", "drop database"
+# or "shutdown".
 destructive_warning = True
 
 # log_file location.
