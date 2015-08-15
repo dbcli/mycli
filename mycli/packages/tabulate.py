@@ -9,7 +9,7 @@ from decimal import Decimal
 from platform import python_version_tuple
 from wcwidth import wcswidth
 import re
-import codecs
+import binascii
 
 
 if python_version_tuple()[0] < "3":
@@ -521,7 +521,7 @@ def _format(val, valtype, floatfmt, missingval=""):
         try:
             return _text_type(val, "ascii")
         except UnicodeDecodeError:
-            return _text_type('0x' + (codecs.getencoder('hex_codec')(val)[0]).decode('ascii'))
+            return _text_type('0x' + binascii.hexlify(val).decode('ascii'))
         except TypeError:
             return _text_type(val)
     elif valtype is float:

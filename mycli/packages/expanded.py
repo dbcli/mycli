@@ -1,5 +1,5 @@
 from .tabulate import _text_type
-import codecs
+import binascii
 
 def pad(field, total, char=u" "):
     return field + (char * (total - len(field)))
@@ -17,7 +17,7 @@ def format_field(value):
         else:
             return _text_type(value)
     except UnicodeDecodeError:
-        return _text_type('0x' + (codecs.getencoder('hex_codec')(value)[0]).decode('ascii'))
+        return _text_type('0x' + binascii.hexlify(value).decode('ascii'))
 
 def expanded_table(rows, headers):
     header_len = max([len(x) for x in headers])
