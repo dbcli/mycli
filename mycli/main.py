@@ -9,6 +9,7 @@ import logging
 from time import time
 from datetime import datetime
 from random import choice
+from codecs import open
 
 import click
 import sqlparse
@@ -118,6 +119,8 @@ class MyCli(object):
                 '\\#', 'Refresh auto-completions.', arg_type=NO_QUERY, aliases=('\\#',))
         special.register_special_command(self.change_table_format, 'tableformat',
                 '\\T', 'Change Table Type.', aliases=('\\T',), case_sensitive=True)
+        special.register_special_command(self.execute_from_file, 'source', '\\. filename',
+                              'Execute commands from file.', aliases=('\\.',))
 
     def change_table_format(self, arg, **_):
         if not arg in table_formats():
@@ -137,6 +140,18 @@ class MyCli(object):
 
         yield (None, None, None, 'You are now connected to database "%s" as '
                 'user "%s"' % (self.sqlexecute.dbname, self.sqlexecute.user))
+
+    def execute_from_file(self, arg, **_):
+        if not arg:
+            message = 'Missing required argument, filename.'
+            return [(None, None, None, message)]
+        try:
+            with open(os.path.expanduser(arg), encoding='utf-8') as f:
+                query = f.read()
+        except IOError as e:
+            return [(None, None, None, str(e))]
+
+        return self.sqlexecute.run(query)
 
     def initialize_logging(self):
 
