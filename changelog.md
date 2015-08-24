@@ -1,3 +1,37 @@
+1.4.0:
+======
+
+Features:
+---------
+
+* Add `source` command. This allows running sql statement from a file. 
+
+  eg: 
+  ```
+  mycli> source filename.sql
+  ```
+
+* Added a config option to make the warning before destructive commands optional. (Thanks: [Daniel West](https://github.com/danieljwest))
+
+  In the config file ~/.myclirc set `destructive_warning = False` which will
+  disable the warning before running `DROP` commands.
+
+* Add completion support for CHANGE TO and other master/slave commands. This is
+  still preliminary and it will be enhanced in the future. 
+
+* Add custom styles to color the menus and toolbars. 
+
+* Upgrade prompt_toolkit to 0.46. (Thanks: [Jonathan Slenders](https://github.com/jonathanslenders)) 
+
+  Multi-line queries are automatically indented. 
+
+Bug Fixes:
+----------
+
+* Fix keyword completion after the `WHERE` clause.
+* Add `\g` and `\G` as valid query terminators. Previously in multi-line mode
+  ending a query with a `\G` wouldn't run the query. This is now fixed.
+
 1.3.0:
 ======
 
