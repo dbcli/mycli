@@ -7,6 +7,8 @@ A command line client for MySQL that can do auto-completion and syntax highlight
 
 HomePage: [http://mycli.net](http://mycli.net)
 
+Debian Packages via [PackageCloud.io](https://packagecloud.io/amjith/mycli). 
+
 ![Completion](screenshots/tables.png)
 ![CompletionGif](screenshots/main.gif)
 
