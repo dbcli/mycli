@@ -81,6 +81,8 @@ def test_select_suggests_cols_and_funcs():
     'COPY ',
     'UPDATE ',
     'DESCRIBE ',
+    'DESC ',
+    'EXPLAIN ',
     'SELECT * FROM foo JOIN ',
 ])
 def test_expression_suggests_tables_views_and_schemas(expression):
@@ -96,6 +98,8 @@ def test_expression_suggests_tables_views_and_schemas(expression):
     'COPY sch.',
     'UPDATE sch.',
     'DESCRIBE sch.',
+    'DESC sch.',
+    'EXPLAIN sch.',
     'SELECT * FROM foo JOIN sch.',
 ])
 def test_expression_suggests_qualified_tables_views_and_schemas(expression):
