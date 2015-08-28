@@ -207,7 +207,8 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
                     {'type': 'function', 'schema': []},
                     {'type': 'keyword'}]
     elif (token_v.endswith('join') and token.is_keyword) or (token_v in
-            ('copy', 'from', 'update', 'into', 'describe', 'truncate')):
+            ('copy', 'from', 'update', 'into', 'describe', 'truncate',
+                'desc', 'explain')):
         schema = (identifier and identifier.get_parent_name()) or []
 
         # Suggest tables from either the currently-selected schema or the
