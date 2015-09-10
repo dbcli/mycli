@@ -51,7 +51,8 @@ class SQLExecute(object):
             '\tuser: %r'
             '\thost: %r'
             '\tport: %r'
-            '\tsocket: %r', database, user, host, port, socket)
+            '\tsocket: %r'
+            '\tcharset: %r', database, user, host, port, socket, charset)
         conn = pymysql.connect(database=db, user=user, password=password,
                 host=host, port=port, unix_socket=socket,
                 use_unicode=True, charset=charset, autocommit=True,
