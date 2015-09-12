@@ -38,6 +38,8 @@ from .encodingutils import utf8tounicode
 from .lexer import MyCliLexer
 from .__init__ import __version__
 
+click.disable_unicode_literals_warning = True
+
 try:
     from urlparse import urlparse
 except ImportError:
