@@ -8,7 +8,7 @@ def test_u_suggests_databases():
 
 
 def test_describe_table():
-    suggestions = suggest_type('\\d', '\\d ')
+    suggestions = suggest_type('\\dt', '\\dt ')
     assert sorted_dicts(suggestions) == sorted_dicts([
         {'type': 'table', 'schema': []},
         {'type': 'view', 'schema': []},
