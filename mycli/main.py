@@ -208,12 +208,12 @@ class MyCli(object):
 
         sections = ['client']
         if self.defaults_suffix:
-            sections.append('client{0}'.format(self.defaults_suffix))
+            sections.extend([sect + self.defaults_suffix for sect in sections])
 
         def get(key):
             result = None
-            for sect in sections:
-                if sect in cnf and key in cnf[sect]:
+            for sect in cnf:
+                if sect in sections and key in cnf[sect]:
                     result = cnf[sect][key]
             return result
 
