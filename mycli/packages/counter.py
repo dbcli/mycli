@@ -1,3 +1,4 @@
+from __future__ import print_function
 from operator import itemgetter
 from heapq import nlargest
 from itertools import repeat, ifilter
@@ -186,4 +187,4 @@ class Counter(dict):
 
 if __name__ == '__main__':
     import doctest
-    print doctest.testmod()
+    print(doctest.testmod())
