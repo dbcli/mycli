@@ -3,7 +3,7 @@ from .main import special_command, RAW_QUERY, PARSED_QUERY
 
 log = logging.getLogger(__name__)
 
-@special_command('\\dt', '\\dt', 'List or describe tables.', arg_type=PARSED_QUERY, case_sensitive=True)
+@special_command('\\dt', '\\dt [table]', 'List or describe tables.', arg_type=PARSED_QUERY, case_sensitive=True)
 def list_tables(cur, arg=None, arg_type=PARSED_QUERY):
     if arg:
         query = 'SHOW FIELDS FROM {0}'.format(arg)
