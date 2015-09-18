@@ -28,20 +28,23 @@ def get_mylogin_cnf_path():
     """Return the path to the .mylogin.cnf file or None if doesn't exist."""
     app_data = os.getenv('APPDATA')
     if app_data is None:
-        mylogin_config_dir = os.path.expanduser('~')
+        mylogin_cnf_dir = os.path.expanduser('~')
     else:
-        mylogin_config_dir = os.path.join(app_data, 'MySQL')
+        mylogin_cnf_dir = os.path.join(app_data, 'MySQL')
 
-    mylogin_config_dir = os.path.abspath(mylogin_config_dir)
-    mylogin_config_path = os.path.join(mylogin_config_dir, '.mylogin.cnf')
+    mylogin_cnf_dir = os.path.abspath(mylogin_cnf_dir)
+    mylogin_cnf_path = os.path.join(mylogin_cnf_dir, '.mylogin.cnf')
 
-    return mylogin_config_path if exists(mylogin_config_path) else None
+    if exists(mylogin_cnf_path):
+        logger.debug("Found login path file at '{0}'".format(mylogin_cnf_path))
+        return mylogin_cnf_path
+    return None
 
 def open_mylogin_cnf(name):
     """Open a readable version of .mylogin.cnf.
 
     Returns the file contents as a TextIOWrapper object.
-    
+
     :param str name: The pathname of the file to be opened.
     :return: the login path file or None
     """
@@ -50,11 +53,11 @@ def open_mylogin_cnf(name):
         with open(name, 'rb') as f:
             plaintext = read_and_decrypt_mylogin_cnf(f)
     except (OSError, IOError):
-        logger.error("Error: Unable to open '{0}'".format(name))
+        logger.error('Unable to open login path file.')
         return None
 
     if not isinstance(plaintext, BytesIO):
-        logger.error("Error: Unable to decrypt '{0}'".format(name))
+        logger.error('Unable to decrypt login path file.')
         return None
 
     return TextIOWrapper(plaintext)
@@ -71,7 +74,7 @@ def read_and_decrypt_mylogin_cnf(f):
 
     :param f: an I/O object opened in binary mode
     :return: the decrypted login path file
-    :rtype: io.BytesIO
+    :rtype: io.BytesIO or None
     """
 
     # Number of bytes used to store the length of ciphertext.
@@ -80,7 +83,12 @@ def read_and_decrypt_mylogin_cnf(f):
     LOGIN_KEY_LEN = 20
 
     # Move past the unused buffer.
-    f.seek(4)
+    buf = f.read(4)
+
+    if not buf or len(buf) != 4:
+        # File is blank or incomplete.
+        logger.error('Login path file is blank or incomplete.')
+        return None
 
     # Read the login key.
     key = f.read(LOGIN_KEY_LEN)
@@ -88,7 +96,12 @@ def read_and_decrypt_mylogin_cnf(f):
     # Generate the real key.
     rkey = [0] * 16
     for i in range(LOGIN_KEY_LEN):
-        rkey[i % 16] ^= ord(key[i:i+1])
+        try:
+            rkey[i % 16] ^= ord(key[i:i+1])
+        except TypeError:
+            # ord() was unable to get the value of the byte.
+            logger.error('Unable to generate login path AES key.')
+            return None
     rkey = struct.pack('16B', *rkey)
 
     # Create a cipher object using the key.
@@ -106,11 +119,29 @@ def read_and_decrypt_mylogin_cnf(f):
 
         # Read cipher_len bytes from the file and decrypt.
         cipher = f.read(cipher_len)
-        plain = aes_cipher.decrypt(cipher)
+        pplain = aes_cipher.decrypt(cipher)
 
-        # Get rid of pad
-        plain = plain[:-ord(plain[-1:])]
+        try:
+            # Determine pad length.
+            pad_len = ord(pplain[-1:])
+        except TypeError:
+            # ord() was unable to get the value of the byte.
+            logger.warning('Unable to remove pad.')
+            continue
+
+        if pad_len > len(pplain) or len(set(pplain[-pad_len:])) != 1:
+            # Pad length should be less than or equal to the length of the
+            # plaintext. The pad should have a single unqiue byte.
+            logger.warning('Invalid pad found in login path file.')
+            continue
+
+        # Get rid of pad.
+        plain = pplain[:-pad_len]
         plaintext.write(plain)
+
+    if plaintext.tell() == 0:
+        logger.error('No data successfully decrypted from login path file.')
+        return None
 
     plaintext.seek(0)
     return plaintext
