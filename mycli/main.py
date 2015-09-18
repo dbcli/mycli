@@ -117,7 +117,6 @@ class MyCli(object):
         # Load .mylogin.cnf if it exists.
         mylogin_cnf_path = get_mylogin_cnf_path()
         if mylogin_cnf_path:
-            self.logger.debug("Found login path file: '{0}'".format(mylogin_cnf_path))
             mylogin_cnf = open_mylogin_cnf(mylogin_cnf_path)
 
         if mylogin_cnf_path and mylogin_cnf:
