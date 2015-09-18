@@ -122,6 +122,9 @@ class MyCli(object):
         if mylogin_cnf_path and mylogin_cnf:
             # .mylogin.cnf gets read last, even if defaults_file is specified.
             self.cnf_files.append(mylogin_cnf)
+        elif mylogin_cnf_path and not mylogin_cnf:
+            # There was an error reading the login path file.
+            print('Error: Unable to read login path file.')
 
     def register_special_commands(self):
         special.register_special_command(self.change_db, 'use',
