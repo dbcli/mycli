@@ -57,7 +57,7 @@ def open_mylogin_cnf(name):
         return None
 
     if not isinstance(plaintext, BytesIO):
-        logger.error('Unable to decrypt login path file.')
+        logger.error('Unable to read login path file.')
         return None
 
     return TextIOWrapper(plaintext)
@@ -86,7 +86,6 @@ def read_and_decrypt_mylogin_cnf(f):
     buf = f.read(4)
 
     if not buf or len(buf) != 4:
-        # File is blank or incomplete.
         logger.error('Login path file is blank or incomplete.')
         return None
 
