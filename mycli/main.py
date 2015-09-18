@@ -9,7 +9,7 @@ import logging
 from time import time
 from datetime import datetime
 from random import choice
-from codecs import open
+from io import open
 
 import click
 import sqlparse
