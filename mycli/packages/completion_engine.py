@@ -102,6 +102,13 @@ def suggest_special(text):
     if cmd in ['\\f', '\\fs', '\\fd']:
         return [{'type': 'favoritequery'}]
 
+    if cmd in ['\\dt']:
+        return [
+            {'type': 'table', 'schema': []},
+            {'type': 'view', 'schema': []},
+            {'type': 'schema'},
+        ]
+
     return [{'type': 'keyword'}, {'type': 'special'}]
 
 def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier):
