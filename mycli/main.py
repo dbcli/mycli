@@ -34,7 +34,7 @@ from .clistyle import style_factory
 from .sqlexecute import SQLExecute
 from .clibuffer import CLIBuffer
 from .config import (write_default_config, load_config, get_mylogin_cnf_path,
-                     get_mylogin_cnf_plaintext)
+                     open_mylogin_cnf)
 from .key_bindings import mycli_bindings
 from .encodingutils import utf8tounicode
 from .lexer import MyCliLexer
@@ -117,8 +117,9 @@ class MyCli(object):
         # Load .mylogin.cnf if it exists.
         mylogin_cnf_path = get_mylogin_cnf_path()
         if mylogin_cnf_path:
-            mylogin_cnf = get_mylogin_cnf_plaintext(mylogin_cnf_path)
+            mylogin_cnf = open_mylogin_cnf(mylogin_cnf_path)
 
+        if mylogin_cnf_path and mylogin_cnf:
             # .mylogin.cnf gets read last, even if defaults_file is specified.
             self.cnf_files.append(mylogin_cnf)
 
