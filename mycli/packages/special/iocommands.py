@@ -1,7 +1,7 @@
 import os
 import re
 import logging
-from codecs import open
+from io import open
 
 import click
 import sqlparse
