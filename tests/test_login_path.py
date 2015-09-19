@@ -1,8 +1,11 @@
 """Unit tests for mycli.config login path decryption."""
 from io import BytesIO, TextIOWrapper
+import os
 import struct
 
 from mycli.config import open_mylogin_cnf, read_and_decrypt_mylogin_cnf
+
+LOGIN_PATH_FILE = os.path.join(os.path.dirname(__file__), 'mylogin.cnf')
 
 
 def open_bmylogin_cnf(name):
@@ -15,7 +18,7 @@ def open_bmylogin_cnf(name):
 
 def test_read_mylogin_cnf():
     """Tests that a login path file can be read and decrypted."""
-    mylogin_cnf = open_mylogin_cnf('./mylogin.cnf')
+    mylogin_cnf = open_mylogin_cnf(LOGIN_PATH_FILE)
 
     assert isinstance(mylogin_cnf, TextIOWrapper)
 
@@ -32,7 +35,7 @@ def test_decrypt_blank_mylogin_cnf():
 
 def test_corrupted_login_key():
     """Test that a corrupted login path key is handled correctly."""
-    buf = open_bmylogin_cnf('./mylogin.cnf')
+    buf = open_bmylogin_cnf(LOGIN_PATH_FILE)
 
     # Skip past the unused bytes
     buf.seek(4)
@@ -48,7 +51,7 @@ def test_corrupted_login_key():
 
 def test_corrupted_pad():
     """Tests that a login path file with a corrupted pad is partially read."""
-    buf = open_bmylogin_cnf('./mylogin.cnf')
+    buf = open_bmylogin_cnf(LOGIN_PATH_FILE)
 
     # Skip past the login key
     buf.seek(24)
