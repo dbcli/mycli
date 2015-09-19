@@ -5,7 +5,8 @@ import struct
 
 from mycli.config import open_mylogin_cnf, read_and_decrypt_mylogin_cnf
 
-LOGIN_PATH_FILE = os.path.join(os.path.dirname(__file__), 'mylogin.cnf')
+LOGIN_PATH_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                               'mylogin.cnf'))
 
 
 def open_bmylogin_cnf(name):
