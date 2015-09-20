@@ -29,6 +29,7 @@ setup(
             'PyMySQL >= 0.6.6',
             'sqlparse >= 0.1.16',
             'configobj >= 5.0.6',
+            'pycrypto >= 2.6.1',
             ],
         entry_points='''
             [console_scripts]

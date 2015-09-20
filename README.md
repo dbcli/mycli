@@ -39,18 +39,21 @@ Check the [detailed install instructions](#Detailed-Install-Instructions) for de
     Usage: mycli [OPTIONS] [DATABASE]
 
     Options:
-      -h, --host TEXT         Host address of the database.
-      -P, --port TEXT         Port number to use for connection. Honors
-                              $MYSQL_TCP_PORT
-      -u, --user TEXT         User name to connect to the database.
-      -S, --socket TEXT       The socket file to use for connection.
-      -p, --password          Force password prompt.
-      --pass TEXT             Password to connect to the database
-      -v, --version           Version of mycli.
-      -D, --database TEXT     Database to use.
-      -R, --prompt TEXT       Prompt format (Default: "\t \u@\h:\d> ")
-      -l, --logfile FILENAME  Log every query and its results to a file.
-      --help                  Show this message and exit.
+      -h, --host TEXT               Host address of the database.
+      -P, --port TEXT               Port number to use for connection. Honors
+                                    $MYSQL_TCP_PORT
+      -u, --user TEXT               User name to connect to the database.
+      -S, --socket TEXT             The socket file to use for connection.
+      -p, --password                Force password prompt.
+      --pass TEXT                   Password to connect to the database
+      -v, --version                 Version of mycli.
+      -D, --database TEXT     	    Database to use.
+      -R, --prompt TEXT             Prompt format (Default: "\t \u@\h:\d> ")
+      -l, --logfile FILENAME        Log every query and its results to a file.
+      --defaults-group-suffix TEXT  Read config group with the specified suffix.
+      --defaults-file PATH          Only read default options from the given file
+      --login-path TEXT             Read this path from the login file.
+      --help                        Show this message and exit.
 
 ### Examples
 

@@ -33,7 +33,8 @@ from .clitoolbar import create_toolbar_tokens_func
 from .clistyle import style_factory
 from .sqlexecute import SQLExecute
 from .clibuffer import CLIBuffer
-from .config import write_default_config, load_config
+from .config import (write_default_config, load_config, get_mylogin_cnf_path,
+                     open_mylogin_cnf)
 from .key_bindings import mycli_bindings
 from .encodingutils import utf8tounicode
 from .lexer import MyCliLexer
@@ -64,14 +65,16 @@ class MyCli(object):
         '/etc/my.cnf',
         '/etc/mysql/my.cnf',
         '/usr/local/etc/my.cnf',
-        '~/.my.cnf'
+        os.path.expanduser('~/.my.cnf')
     ]
 
     def __init__(self, sqlexecute=None, prompt=None,
-            logfile=None, defaults_suffix=None, defaults_file=None):
+            logfile=None, defaults_suffix=None, defaults_file=None,
+            login_path=None):
         self.sqlexecute = sqlexecute
         self.logfile = logfile
         self.defaults_suffix = defaults_suffix
+        self.login_path = login_path
 
         # self.cnf_files is a class variable that stores the list of mysql
         # config files to read in at launch.
@@ -110,6 +113,18 @@ class MyCli(object):
 
         # Register custom special commands.
         self.register_special_commands()
+
+        # Load .mylogin.cnf if it exists.
+        mylogin_cnf_path = get_mylogin_cnf_path()
+        if mylogin_cnf_path:
+            mylogin_cnf = open_mylogin_cnf(mylogin_cnf_path)
+
+        if mylogin_cnf_path and mylogin_cnf:
+            # .mylogin.cnf gets read last, even if defaults_file is specified.
+            self.cnf_files.append(mylogin_cnf)
+        elif mylogin_cnf_path and not mylogin_cnf:
+            # There was an error reading the login path file.
+            print('Error: Unable to read login path file.')
 
     def register_special_commands(self):
         special.register_special_command(self.change_db, 'use',
@@ -198,8 +213,7 @@ class MyCli(object):
         cnf = ConfigObj()
         for _file in files:
             try:
-                cnf.merge(ConfigObj(os.path.expanduser(_file),
-                    interpolation=False))
+                cnf.merge(ConfigObj(_file, interpolation=False))
             except ConfigObjError as e:
                 self.logger.error('Error parsing %r.', _file)
                 self.logger.error('Recovering partially parsed config values.')
@@ -207,13 +221,16 @@ class MyCli(object):
                 pass
 
         sections = ['client']
+        if self.login_path and self.login_path != 'client':
+            sections.append(self.login_path)
+
         if self.defaults_suffix:
-            sections.append('client{0}'.format(self.defaults_suffix))
+            sections.extend([sect + self.defaults_suffix for sect in sections])
 
         def get(key):
             result = None
-            for sect in sections:
-                if sect in cnf and key in cnf[sect]:
+            for sect in cnf:
+                if sect in sections and key in cnf[sect]:
                     result = cnf[sect][key]
             return result
 
@@ -564,16 +581,19 @@ class MyCli(object):
               help='Read config group with the specified suffix.')
 @click.option('--defaults-file', type=click.Path(),
               help='Only read default options from the given file')
+@click.option('--login-path', type=str,
+              help='Read this path from the login file.')
 @click.argument('database', default='', nargs=1)
 def cli(database, user, host, port, socket, password, dbname,
-        version, prompt, logfile, defaults_group_suffix, defaults_file):
+        version, prompt, logfile, defaults_group_suffix, defaults_file,
+        login_path):
     if version:
         print('Version:', __version__)
         sys.exit(0)
 
     mycli = MyCli(prompt=prompt, logfile=logfile,
                   defaults_suffix=defaults_group_suffix,
-                  defaults_file=defaults_file)
+                  defaults_file=defaults_file, login_path=login_path)
 
     # Choose which ever one has a valid value.
     database = database or dbname
