@@ -38,8 +38,14 @@ if pymysql.VERSION[1] == 6 and pymysql.VERSION[2] < 3:
     def connect(*args, **kwargs):
         """Makes connect() use our custom Connection class.
 
+        PyMySQL < 0.6.3 uses the *passwd* argument instead of *password*. This
+        function renames that keyword or assigns it the default value of '',
+        which is the same default value PyMySQL gives it.
+
         See pymysql.connections.Connection.__init__() for more information
         about calling this function.
         """
+
+        kwargs['passwd'] = kwargs.pop('password', '')
 
         return Connection(*args, **kwargs)
