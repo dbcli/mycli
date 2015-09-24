@@ -12,7 +12,7 @@ connect = pymysql.connect
 
 if pymysql.VERSION[1] == 6 and pymysql.VERSION[2] < 5:
     class Cursor(pymysql.cursors.Cursor):
-        """Makes pre-0.6.5 Cursor a context manager."""
+        """Makes Cursor a context manager in PyMySQL < 0.6.5."""
 
         def __enter__(self):
             return self
@@ -24,7 +24,7 @@ if pymysql.VERSION[1] == 6 and pymysql.VERSION[2] < 5:
 
 if pymysql.VERSION[1] == 6 and pymysql.VERSION[2] < 3:
     class Connection(pymysql.connections.Connection):
-        """Adds error handling to pre-0.6.3 Connection."""
+        """Adds error handling to Connection in PyMySQL < 0.6.3."""
 
         def __del__(self):
             if self.socket:
