@@ -1,0 +1,45 @@
+"""Connection and cursor wrappers around PyMySQL.
+
+This module effectively backports PyMySQL functionality and error handling
+so that mycli will support Debian's python-pymysql version (0.6.2).
+"""
+
+import pymysql
+
+Cursor = pymysql.cursors.Cursor
+connect = pymysql.connect
+
+
+if pymysql.VERSION[1] == 6 and pymysql.VERSION[2] < 5:
+    class Cursor(pymysql.cursors.Cursor):
+        """Makes pre-0.6.5 Cursor a context manager."""
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc_info):
+            del exc_info
+            self.close()
+
+
+if pymysql.VERSION[1] == 6 and pymysql.VERSION[2] < 3:
+    class Connection(pymysql.connections.Connection):
+        """Adds error handling to pre-0.6.3 Connection."""
+
+        def __del__(self):
+            if self.socket:
+                try:
+                    self.socket.close()
+                except:
+                    pass
+            self.socket = None
+            self._rfile = None
+
+    def connect(*args, **kwargs):
+        """Makes connect() use our custom Connection class.
+
+        See pymysql.connections.Connection.__init__() for more information
+        about calling this function.
+        """
+
+        return Connection(*args, **kwargs)
