@@ -16,8 +16,10 @@ import sqlparse
 from prompt_toolkit import CommandLineInterface, Application, AbortAction
 from prompt_toolkit.enums import DEFAULT_BUFFER
 from prompt_toolkit.shortcuts import create_default_layout, create_eventloop
+from prompt_toolkit.buffer import AcceptAction
 from prompt_toolkit.document import Document
 from prompt_toolkit.filters import Always, HasFocus, IsDone
+from prompt_toolkit.layout.lexers import PygmentsLexer
 from prompt_toolkit.layout.processors import (HighlightMatchingBracketProcessor,
                                               ConditionalProcessor)
 from prompt_toolkit.history import FileHistory
@@ -339,7 +341,7 @@ class MyCli(object):
             return [(Token.Prompt, self.get_prompt(self.prompt_format))]
 
         get_toolbar_tokens = create_toolbar_tokens_func(lambda: self.key_bindings)
-        layout = create_default_layout(lexer=MyCliLexer,
+        layout = create_default_layout(lexer=PygmentsLexer(MyCliLexer),
                                        reserve_space_for_menu=True,
                                        multiline=True,
                                        get_prompt_tokens=prompt_tokens,
@@ -352,12 +354,15 @@ class MyCli(object):
                                        ])
         buf = CLIBuffer(always_multiline=self.multi_line, completer=completer,
                 history=FileHistory(os.path.expanduser('~/.mycli-history')),
-                complete_while_typing=Always())
+                complete_while_typing=Always(),
+                accept_action=AcceptAction.RETURN_DOCUMENT)
 
         application = Application(style=style_factory(self.syntax_style, self.cli_style),
                                   layout=layout, buffer=buf,
                                   key_bindings_registry=key_binding_manager.registry,
                                   on_exit=AbortAction.RAISE_EXCEPTION,
+                                  on_abort=AbortAction.RETRY,
+                                  mouse_support=False,
                                   ignore_case=True)
         cli = CommandLineInterface(application=application, eventloop=create_eventloop())
 
