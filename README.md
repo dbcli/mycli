@@ -1,6 +1,8 @@
 # mycli
 
-![BuildStatus](https://travis-ci.org/dbcli/mycli.svg?branch=master)
+[![Build Status](https://travis-ci.org/dbcli/mycli.svg?branch=master)](https://travis-ci.org/dbcli/mycli)
+[![PyPI](https://img.shields.io/pypi/v/mycli.svg?style=plastic)](https://pypi.python.org/pypi/mycli)
+[![PyPI](https://img.shields.io/pypi/dm/mycli.svg?style=plastic)](https://pypi.python.org/pypi/mycli)
 [![Join the chat at https://gitter.im/dbcli/mycli](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/dbcli/mycli?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 A command line client for MySQL that can do auto-completion and syntax highlighting.
