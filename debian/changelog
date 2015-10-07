@@ -1,9 +1,11 @@
-mycli (1.2.0) unstable; urgency=low
+mycli (1.4.0) unstable; urgency=low
 
-  * Add support for wider completion menus in the config file.
-  * Prevent Ctrl-C from quitting mycli while the pager is active. 
-  * Refresh auto-completions after the database is changed via a CONNECT command.
-  * Upgrade prompt_toolkit dependency version to 0.45.
-  * Added Travis CI to run the tests automatically.
+  * Add `source` command. This allows running sql statement from a file. 
+  * Added a config option to make the warning before destructive commands optional. (Thanks: [Daniel West](https://github.com/danieljwest))
+  * Add completion support for CHANGE TO and other master/slave commands. This is still preliminary and it will be enhanced in the future. 
+  * Add custom styles to color the menus and toolbars. 
+  * Upgrade prompt_toolkit to 0.46. (Thanks: [Jonathan Slenders](https://github.com/jonathanslenders)) 
+  * Fix keyword completion after the `WHERE` clause.
+  * Add `\g` and `\G` as valid query terminators. Previously in multi-line mode ending a query with a `\G` wouldn't run the query. This is now fixed.
 
- -- Amjith Ramanujam <amjith.r@gmail.com>  Sun, 02 Aug 2015 21:26:56 +0000
+ -- Amjith Ramanujam <amjith.r@gmail.com>  Sun, 23 Aug 2015 20:14:45 +0000

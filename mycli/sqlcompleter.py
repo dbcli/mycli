@@ -18,33 +18,44 @@ _logger = logging.getLogger(__name__)
 
 class SQLCompleter(Completer):
     keywords = ['ACCESS', 'ADD', 'ALL', 'ALTER TABLE', 'AND', 'ANY', 'AS',
-            'ASC', 'AUDIT', 'BETWEEN', 'BY', 'CASE', 'CHAR', 'CHECK',
-            'CLUSTER', 'COLUMN', 'COMMENT', 'COMPRESS', 'CONNECT', 'COPY',
-            'CREATE', 'CURRENT', 'DATABASE', 'DATE', 'DECIMAL', 'DEFAULT',
-            'DELETE FROM', 'DELIMITER', 'DESC', 'DESCRIBE', 'DISTINCT', 'DROP',
-            'ELSE', 'ENCODING', 'ESCAPE', 'EXCLUSIVE', 'EXISTS', 'EXTENSION',
+            'ASC', 'AUDIT', 'BEFORE', 'BEGIN', 'BETWEEN', 'BINARY', 'BY',
+            'CASE', 'CHANGE MASTER TO', 'CHAR', 'CHECK', 'CLUSTER', 'COLUMN',
+            'COMMENT', 'COMPRESS', 'COMMIT', 'CONNECT', 'COPY', 'CREATE',
+            'CURRENT', 'DATABASE', 'DATE', 'DECIMAL', 'DEFAULT', 'DELETE FROM',
+            'DELIMITER', 'DESC', 'DESCRIBE', 'DISTINCT', 'DROP', 'ELSE',
+            'ENCODING', 'END', 'ESCAPE', 'EXCLUSIVE', 'EXISTS', 'EXTENSION',
             'FILE', 'FLOAT', 'FOR', 'FORMAT', 'FORCE_QUOTE', 'FORCE_NOT_NULL',
             'FREEZE', 'FROM', 'FULL', 'FUNCTION', 'GRANT', 'GROUP BY',
-            'HAVING', 'HEADER', 'IDENTIFIED', 'IMMEDIATE', 'IN', 'INCREMENT',
-            'INDEX', 'INITIAL', 'INSERT INTO', 'INTEGER', 'INTERSECT', 'INTO',
-            'INTERVAL', 'IS', 'JOIN', 'LEFT', 'LEVEL', 'LIKE', 'LIMIT', 'LOCK',
-            'LONG', 'MAXEXTENTS', 'MINUS', 'MLSLABEL', 'MODE', 'MODIFY',
-            'NOAUDIT', 'NOCOMPRESS', 'NOT', 'NOWAIT', 'NULL', 'NUMBER', 'OIDS',
-            'OF', 'OFFLINE', 'ON', 'ONLINE', 'OPTION', 'OR', 'ORDER BY',
-            'OUTER', 'OWNER', 'PCTFREE', 'PRIMARY', 'PRIOR', 'PRIVILEGES',
-            'PROCESSLIST', 'QUOTE', 'RAW', 'RENAME', 'REPAIR', 'RESOURCE',
-            'REVOKE', 'RIGHT', 'ROW', 'ROWID', 'ROWNUM', 'ROWS', 'SELECT',
-            'SESSION', 'SET', 'SHARE', 'SHOW', 'SIZE', 'SMALLINT', 'START',
-            'SUCCESSFUL', 'SYNONYM', 'SYSDATE', 'TABLE', 'TEMPLATE', 'THEN',
-            'TO', 'TRIGGER', 'TRUNCATE', 'UID', 'UNION', 'UNIQUE', 'UPDATE',
-            'USE', 'USER', 'USING', 'VALIDATE', 'VALUES', 'VARCHAR',
-            'VARCHAR2', 'VIEW', 'WHEN', 'WHENEVER', 'WHERE', 'WITH']
+            'HAVING', 'HEADER', 'HOST', 'IDENTIFIED', 'IMMEDIATE', 'IN',
+            'INCREMENT', 'INDEX', 'INITIAL', 'INSERT INTO', 'INTEGER',
+            'INTERSECT', 'INTO', 'INTERVAL', 'IS', 'JOIN', 'LEFT', 'LEVEL',
+            'LIKE', 'LIMIT', 'LOCK', 'LOG', 'LOGS', 'LONG', 'MASTER', 'MINUS',
+            'MODE', 'MODIFY', 'NOAUDIT', 'NOCOMPRESS', 'NOT', 'NOWAIT', 'NULL',
+            'NUMBER', 'OIDS', 'OF', 'OFFLINE', 'ON', 'ONLINE', 'OPTION', 'OR',
+            'ORDER BY', 'OUTER', 'OWNER', 'PASSWORD', 'PCTFREE', 'PORT',
+            'PRIMARY', 'PRIOR', 'PRIVILEGES', 'PROCESSLIST', 'PURGE', 'QUOTE',
+            'RAW', 'RENAME', 'REPAIR', 'RESOURCE', 'RESET', 'REVOKE', 'RIGHT',
+            'ROLLBACK', 'ROW', 'ROWID', 'ROWNUM', 'ROWS', 'SELECT', 'SESSION',
+            'SET', 'SHARE', 'SHOW', 'SIZE', 'SLAVE', 'SLAVES', 'SMALLINT',
+            'START', 'STOP', 'SUCCESSFUL', 'SYNONYM', 'SYSDATE', 'TABLE',
+            'TEMPLATE', 'THEN', 'TO', 'TRANSACTION', 'TRIGGER', 'TRUNCATE',
+            'UID', 'UNION', 'UNIQUE', 'UPDATE', 'USE', 'USER', 'USING',
+            'VALIDATE', 'VALUES', 'VARCHAR', 'VARCHAR2', 'VIEW', 'WHEN',
+            'WHENEVER', 'WHERE', 'WITH']
 
     functions = ['AVG', 'COUNT', 'DISTINCT', 'FIRST', 'FORMAT', 'LAST',
             'LCASE', 'LEN', 'MAX', 'MIN', 'MID', 'NOW', 'ROUND', 'SUM', 'TOP',
             'UCASE']
 
     show_items = []
+
+    change_items = ['MASTER_BIND', 'MASTER_HOST', 'MASTER_USER',
+            'MASTER_PASSWORD', 'MASTER_PORT', 'MASTER_CONNECT_RETRY',
+            'MASTER_HEARTBEAT_PERIOD', 'MASTER_LOG_FILE', 'MASTER_LOG_POS',
+            'RELAY_LOG_FILE', 'RELAY_LOG_POS', 'MASTER_SSL', 'MASTER_SSL_CA',
+            'MASTER_SSL_CAPATH', 'MASTER_SSL_CERT', 'MASTER_SSL_KEY',
+            'MASTER_SSL_CIPHER', 'MASTER_SSL_VERIFY_SERVER_CERT',
+            'IGNORE_SERVER_IDS']
 
     users = []
 
@@ -94,6 +105,11 @@ class SQLCompleter(Completer):
         for show_item in show_items:
             self.show_items.extend(show_item)
             self.all_completions.update(show_item)
+
+    def extend_change_items(self, change_items):
+        for change_item in change_items:
+            self.change_items.extend(change_item)
+            self.all_completions.update(change_item)
 
     def extend_users(self, users):
         for user in users:
@@ -304,11 +320,18 @@ class SQLCompleter(Completer):
                 completions.extend(keywords)
 
             elif suggestion['type'] == 'show':
-                show_items = self.find_matches(word_before_cursor, self.show_items,
-                                               start_only=True,
-                                               fuzzy=False)
+                show_items = self.find_matches(word_before_cursor,
+                                               self.show_items,
+                                               start_only=False,
+                                               fuzzy=True)
                 completions.extend(show_items)
 
+            elif suggestion['type'] == 'change':
+                change_items = self.find_matches(word_before_cursor,
+                                                 self.change_items,
+                                                 start_only=False,
+                                                 fuzzy=True)
+                completions.extend(change_items)
             elif suggestion['type'] == 'user':
                 users = self.find_matches(word_before_cursor, self.users,
                                                start_only=False,
@@ -322,11 +345,14 @@ class SQLCompleter(Completer):
                                             fuzzy=False)
                 completions.extend(special)
             elif suggestion['type'] == 'favoritequery':
-                queries = self.find_matches(word_before_cursor, favoritequeries.list(),
+                queries = self.find_matches(word_before_cursor,
+                                            favoritequeries.list(),
                                             start_only=False, fuzzy=True)
                 completions.extend(queries)
             elif suggestion['type'] == 'table_format':
-                formats = self.find_matches(word_before_cursor, self.table_formats, start_only=True, fuzzy=False)
+                formats = self.find_matches(word_before_cursor,
+                                            self.table_formats,
+                                            start_only=True, fuzzy=False)
                 completions.extend(formats)
 
         return completions

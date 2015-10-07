@@ -5,8 +5,12 @@ python:
   - "3.3"
   - "3.4"
 
+env:
+  - PYMYSQL_VERSION=0.6.6
+  - PYMYSQL_VERSION=0.6.2
+
 install:
-  - pip install . pytest mock codecov
+  - pip install PyMySQL==$PYMYSQL_VERSION . pytest mock codecov
 
 script:
   - coverage run --source mycli -m py.test

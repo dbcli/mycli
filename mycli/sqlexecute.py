@@ -1,7 +1,7 @@
 import logging
 import pymysql
 import sqlparse
-from .packages import special
+from .packages import connection, special
 
 _logger = logging.getLogger(__name__)
 
@@ -18,7 +18,6 @@ class SQLExecute(object):
     show_candidates_query = '''SELECT name from mysql.help_topic WHERE name like "SHOW %"'''
 
     users_query = '''SELECT CONCAT("'", user, "'@'",host,"'") FROM mysql.user'''
-
 
     functions_query = '''SELECT ROUTINE_NAME FROM INFORMATION_SCHEMA.ROUTINES
     WHERE ROUTINE_TYPE="FUNCTION" AND ROUTINE_SCHEMA = "%s"'''
@@ -52,11 +51,13 @@ class SQLExecute(object):
             '\tuser: %r'
             '\thost: %r'
             '\tport: %r'
-            '\tsocket: %r', database, user, host, port, socket)
-        conn = pymysql.connect(database=db, user=user, password=password,
+            '\tsocket: %r'
+            '\tcharset: %r', database, user, host, port, socket, charset)
+        conn = connection.connect(database=db, user=user, password=password,
                 host=host, port=port, unix_socket=socket,
                 use_unicode=True, charset=charset, autocommit=True,
-                client_flag=pymysql.constants.CLIENT.INTERACTIVE)
+                client_flag=pymysql.constants.CLIENT.INTERACTIVE,
+                cursorclass=connection.Cursor)
         if hasattr(self, 'conn'):
             self.conn.close()
         self.conn = conn

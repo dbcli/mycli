@@ -21,14 +21,15 @@ setup(
         packages=find_packages(),
         package_data={'mycli': ['myclirc', '../AUTHORS', '../SPONSORS']},
         description=description,
-        long_description=open('README.md').read(),
+        long_description=description,
         install_requires=[
             'click >= 4.1',
             'Pygments >= 2.0',  # Pygments has to be Capitalcased. WTF?
-            'prompt_toolkit==0.45',
+            'prompt_toolkit==0.46',
             'PyMySQL >= 0.6.7',
-            'sqlparse == 0.1.14',
+            'sqlparse >= 0.1.16',
             'configobj >= 5.0.6',
+            'pycrypto >= 2.6.1',
             ],
         entry_points='''
             [console_scripts]

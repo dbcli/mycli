@@ -37,7 +37,7 @@ def test_function_name_completion(completer, complete_event):
         complete_event))
     assert result == set([
         Completion(text='MAX', start_position=-2),
-        Completion(text='MAXEXTENTS', start_position=-2)])
+        Completion(text='MASTER', start_position=-2)])
 
 def test_column_name_completion(completer, complete_event):
     text = 'SELECT  FROM users'

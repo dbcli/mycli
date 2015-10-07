@@ -102,6 +102,13 @@ def suggest_special(text):
     if cmd in ['\\f', '\\fs', '\\fd']:
         return [{'type': 'favoritequery'}]
 
+    if cmd in ['\\dt']:
+        return [
+            {'type': 'table', 'schema': []},
+            {'type': 'view', 'schema': []},
+            {'type': 'schema'},
+        ]
+
     return [{'type': 'keyword'}, {'type': 'special'}]
 
 def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier):
@@ -157,16 +164,6 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
             prev_tok = prev_tok.value.lower()
             if prev_tok == 'exists':
                 return [{'type': 'keyword'}]
-            elif prev_tok in ('any', 'some', 'all'):
-                return column_suggestions + [{'type': 'keyword'}]
-            elif prev_tok == 'in':
-                # Technically, we should suggest columns AND keywords, as
-                # per case 4. However, IN is different from ANY, SOME, ALL
-                # in that it can accept a *list* of columns, or a subquery.
-                # But suggesting keywords for , "SELECT * FROM foo WHERE bar IN
-                # (baz, qux, " would be overwhelming. So we special case 'IN'
-                # to not suggest keywords.
-                return column_suggestions
             else:
                 return column_suggestions
 
@@ -193,7 +190,13 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
         return [{'type': 'column', 'tables': extract_tables(full_text)}]
     elif token_v in ('show'):
         return [{'type': 'show'}]
-    elif token_v in ('user', 'to', 'for'):
+    elif token_v in ('to',):
+        p = sqlparse.parse(text_before_cursor)[0]
+        if p.token_first().value.lower() == 'change':
+            return [{'type': 'change'}]
+        else:
+            return [{'type': 'user'}]
+    elif token_v in ('user', 'for'):
         return [{'type': 'user'}]
     elif token_v in ('select', 'where', 'having'):
         # Check for a table alias or schema qualification
@@ -208,9 +211,11 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
                     {'type': 'function', 'schema': parent}]
         else:
             return [{'type': 'column', 'tables': extract_tables(full_text)},
-                    {'type': 'function', 'schema': []}]
+                    {'type': 'function', 'schema': []},
+                    {'type': 'keyword'}]
     elif (token_v.endswith('join') and token.is_keyword) or (token_v in
-            ('copy', 'from', 'update', 'into', 'describe', 'truncate')):
+            ('copy', 'from', 'update', 'into', 'describe', 'truncate',
+                'desc', 'explain')):
         schema = (identifier and identifier.get_parent_name()) or []
 
         # Suggest tables from either the currently-selected schema or the

@@ -69,7 +69,9 @@ def test_function_name_completion(completer, complete_event):
     position = len('SELECT MA')
     result = completer.get_completions(
         Document(text=text, cursor_position=position), complete_event)
-    assert set(result) == set([Completion(text='MAX', start_position=-2)])
+    assert set(result) == set([Completion(text='MAX', start_position=-2),
+                               Completion(text='MASTER', start_position=-2),
+                               ])
 
 def test_suggested_column_names(completer, complete_event):
     """
@@ -89,7 +91,8 @@ def test_suggested_column_names(completer, complete_event):
         Completion(text='email', start_position=0),
         Completion(text='first_name', start_position=0),
         Completion(text='last_name', start_position=0)] +
-        list(map(Completion, completer.functions)))
+        list(map(Completion, completer.functions)) +
+        list(map(Completion, completer.keywords)))
 
 def test_suggested_column_names_in_function(completer, complete_event):
     """
@@ -168,7 +171,8 @@ def test_suggested_multiple_column_names(completer, complete_event):
         Completion(text='email', start_position=0),
         Completion(text='first_name', start_position=0),
         Completion(text='last_name', start_position=0)] +
-        list(map(Completion, completer.functions)))
+        list(map(Completion, completer.functions)) +
+        list(map(Completion, completer.keywords)))
 
 def test_suggested_multiple_column_names_with_alias(completer, complete_event):
     """
@@ -274,7 +278,8 @@ def test_auto_escaped_col_names(completer, complete_event):
         Completion(text='id', start_position=0),
         Completion(text='`insert`', start_position=0),
         Completion(text='`ABC`', start_position=0), ] +
-        list(map(Completion, completer.functions)))
+        list(map(Completion, completer.functions)) +
+        list(map(Completion, completer.keywords)))
 
 def test_un_escaped_table_names(completer, complete_event):
     text = 'SELECT  from réveillé'
@@ -287,4 +292,5 @@ def test_un_escaped_table_names(completer, complete_event):
         Completion(text='id', start_position=0),
         Completion(text='`insert`', start_position=0),
         Completion(text='`ABC`', start_position=0), ] +
-        list(map(Completion, completer.functions)))
+        list(map(Completion, completer.functions)) +
+        list(map(Completion, completer.keywords)))

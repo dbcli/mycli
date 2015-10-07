@@ -1,11 +1,14 @@
 # mycli
 
-![BuildStatus](https://travis-ci.org/dbcli/mycli.svg?branch=master)
+[![Build Status](https://travis-ci.org/dbcli/mycli.svg?branch=master)](https://travis-ci.org/dbcli/mycli)
+[![PyPI](https://img.shields.io/pypi/v/mycli.svg?style=plastic)](https://pypi.python.org/pypi/mycli)
 [![Join the chat at https://gitter.im/dbcli/mycli](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/dbcli/mycli?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 A command line client for MySQL that can do auto-completion and syntax highlighting.
 
 HomePage: [http://mycli.net](http://mycli.net)
+
+Debian Packages via [PackageCloud.io](https://packagecloud.io/amjith/mycli). 
 
 ![Completion](screenshots/tables.png)
 ![CompletionGif](screenshots/main.gif)
@@ -37,18 +40,21 @@ Check the [detailed install instructions](#Detailed-Install-Instructions) for de
     Usage: mycli [OPTIONS] [DATABASE]
 
     Options:
-      -h, --host TEXT         Host address of the database.
-      -P, --port TEXT         Port number to use for connection. Honors
-                              $MYSQL_TCP_PORT
-      -u, --user TEXT         User name to connect to the database.
-      -S, --socket TEXT       The socket file to use for connection.
-      -p, --password          Force password prompt.
-      --pass TEXT             Password to connect to the database
-      -v, --version           Version of mycli.
-      -D, --database TEXT     Database to use.
-      -R, --prompt TEXT       Prompt format (Default: "\t \u@\h:\d> ")
-      -l, --logfile FILENAME  Log every query and its results to a file.
-      --help                  Show this message and exit.
+      -h, --host TEXT               Host address of the database.
+      -P, --port TEXT               Port number to use for connection. Honors
+                                    $MYSQL_TCP_PORT
+      -u, --user TEXT               User name to connect to the database.
+      -S, --socket TEXT             The socket file to use for connection.
+      -p, --password                Force password prompt.
+      --pass TEXT                   Password to connect to the database
+      -v, --version                 Version of mycli.
+      -D, --database TEXT     	    Database to use.
+      -R, --prompt TEXT             Prompt format (Default: "\t \u@\h:\d> ")
+      -l, --logfile FILENAME        Log every query and its results to a file.
+      --defaults-group-suffix TEXT  Read config group with the specified suffix.
+      --defaults-file PATH          Only read default options from the given file
+      --login-path TEXT             Read this path from the login file.
+      --help                        Show this message and exit.
 
 ### Examples
 

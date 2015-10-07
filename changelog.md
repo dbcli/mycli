@@ -1,3 +1,74 @@
+1.4.0:
+======
+
+Features:
+---------
+
+* Add `source` command. This allows running sql statement from a file. 
+
+  eg: 
+  ```
+  mycli> source filename.sql
+  ```
+
+* Added a config option to make the warning before destructive commands optional. (Thanks: [Daniel West](https://github.com/danieljwest))
+
+  In the config file ~/.myclirc set `destructive_warning = False` which will
+  disable the warning before running `DROP` commands.
+
+* Add completion support for CHANGE TO and other master/slave commands. This is
+  still preliminary and it will be enhanced in the future. 
+
+* Add custom styles to color the menus and toolbars. 
+
+* Upgrade prompt_toolkit to 0.46. (Thanks: [Jonathan Slenders](https://github.com/jonathanslenders)) 
+
+  Multi-line queries are automatically indented. 
+
+Bug Fixes:
+----------
+
+* Fix keyword completion after the `WHERE` clause.
+* Add `\g` and `\G` as valid query terminators. Previously in multi-line mode
+  ending a query with a `\G` wouldn't run the query. This is now fixed.
+
+1.3.0:
+======
+
+Features:
+---------
+* Add a new special command (\T) to change the table format on the fly. (Thanks: [Jonathan Bruno](https://github.com/brewneaux))
+  eg: 
+  ```
+  mycli> \T tsv
+  ```
+* Add `--defaults-group-suffix` to the command line. This lets the user specify
+  a group to use in the my.cnf files. (Thanks: [Iryna Cherniavska](http://github.com/j-bennet))
+
+  In the my.cnf file a user can specify credentials for different databases and
+  invoke mycli with the group name to use the appropriate credentials.
+  eg:
+  ```
+  # my.cnf
+  [client]
+  user   = 'root'
+  socket = '/tmp/mysql.sock'
+  pager = 'less -RXSF'
+  database = 'account'
+
+  [clientamjith]
+  user     = 'amjith'
+  database  = 'user_management'
+  
+  $ mycli --defaults-group-suffix=amjith   # uses the [clientamjith] section in my.cnf
+  ```
+
+* Add `--defaults-file` option to the command line. This allows specifying a
+  `my.cnf` to use at launch. This also makes it play nice with mysql sandbox.
+
+* Make `-p` and `--password` take the password in commandline. This makes mycli
+  a drop in replacement for mysql. 
+
 1.2.0:
 ======
 

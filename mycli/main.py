@@ -9,6 +9,7 @@ import logging
 from time import time
 from datetime import datetime
 from random import choice
+from io import open
 
 import click
 import sqlparse
@@ -32,11 +33,14 @@ from .clitoolbar import create_toolbar_tokens_func
 from .clistyle import style_factory
 from .sqlexecute import SQLExecute
 from .clibuffer import CLIBuffer
-from .config import write_default_config, load_config
+from .config import (write_default_config, load_config, get_mylogin_cnf_path,
+                     open_mylogin_cnf)
 from .key_bindings import mycli_bindings
 from .encodingutils import utf8tounicode
 from .lexer import MyCliLexer
 from .__init__ import __version__
+
+click.disable_unicode_literals_warning = True
 
 try:
     from urlparse import urlparse
@@ -61,14 +65,23 @@ class MyCli(object):
         '/etc/my.cnf',
         '/etc/mysql/my.cnf',
         '/usr/local/etc/my.cnf',
-        '~/.my.cnf'
+        os.path.expanduser('~/.my.cnf')
     ]
 
-    def __init__(self, force_passwd_prompt=False, sqlexecute=None, prompt=None, logfile=None, defaults_suffix=None):
-        self.force_passwd_prompt = force_passwd_prompt
+    def __init__(self, sqlexecute=None, prompt=None,
+            logfile=None, defaults_suffix=None, defaults_file=None,
+            login_path=None):
         self.sqlexecute = sqlexecute
         self.logfile = logfile
         self.defaults_suffix = defaults_suffix
+        self.login_path = login_path
+
+        # self.cnf_files is a class variable that stores the list of mysql
+        # config files to read in at launch.
+        # If defaults_file is specified then override the class variable with
+        # defaults_file.
+        if defaults_file:
+            self.cnf_files = [defaults_file]
 
         default_config = os.path.join(PACKAGE_ROOT, 'myclirc')
         write_default_config(default_config, '~/.myclirc')
@@ -76,17 +89,18 @@ class MyCli(object):
         # Load config.
         c = self.config = load_config('~/.myclirc', default_config)
         self.multi_line = c['main'].as_bool('multi_line')
+        self.destructive_warning = c['main'].as_bool('destructive_warning')
         self.key_bindings = c['main']['key_bindings']
         special.set_timing_enabled(c['main'].as_bool('timing'))
         self.table_format = c['main']['table_format']
         self.syntax_style = c['main']['syntax_style']
+        self.cli_style = c['colors']
         self.wider_completion_menu = c['main'].as_bool('wider_completion_menu')
 
         self.logger = logging.getLogger(__name__)
         self.initialize_logging()
 
-        prompt_cnf = self.read_my_cnf_files(
-            self.cnf_files, ['prompt'])['prompt']
+        prompt_cnf = self.read_my_cnf_files(self.cnf_files, ['prompt'])['prompt']
         self.prompt_format = prompt or prompt_cnf or c['main']['prompt'] or \
                              self.default_prompt
 
@@ -100,6 +114,18 @@ class MyCli(object):
         # Register custom special commands.
         self.register_special_commands()
 
+        # Load .mylogin.cnf if it exists.
+        mylogin_cnf_path = get_mylogin_cnf_path()
+        if mylogin_cnf_path:
+            mylogin_cnf = open_mylogin_cnf(mylogin_cnf_path)
+
+        if mylogin_cnf_path and mylogin_cnf:
+            # .mylogin.cnf gets read last, even if defaults_file is specified.
+            self.cnf_files.append(mylogin_cnf)
+        elif mylogin_cnf_path and not mylogin_cnf:
+            # There was an error reading the login path file.
+            print('Error: Unable to read login path file.')
+
     def register_special_commands(self):
         special.register_special_command(self.change_db, 'use',
                 '\\u', 'Change to a new database.', aliases=('\\u',))
@@ -110,6 +136,8 @@ class MyCli(object):
                 '\\#', 'Refresh auto-completions.', arg_type=NO_QUERY, aliases=('\\#',))
         special.register_special_command(self.change_table_format, 'tableformat',
                 '\\T', 'Change Table Type.', aliases=('\\T',), case_sensitive=True)
+        special.register_special_command(self.execute_from_file, 'source', '\\. filename',
+                              'Execute commands from file.', aliases=('\\.',))
 
     def change_table_format(self, arg, **_):
         if not arg in table_formats():
@@ -129,6 +157,18 @@ class MyCli(object):
 
         yield (None, None, None, 'You are now connected to database "%s" as '
                 'user "%s"' % (self.sqlexecute.dbname, self.sqlexecute.user))
+
+    def execute_from_file(self, arg, **_):
+        if not arg:
+            message = 'Missing required argument, filename.'
+            return [(None, None, None, message)]
+        try:
+            with open(os.path.expanduser(arg), encoding='utf-8') as f:
+                query = f.read()
+        except IOError as e:
+            return [(None, None, None, str(e))]
+
+        return self.sqlexecute.run(query)
 
     def initialize_logging(self):
 
@@ -173,8 +213,7 @@ class MyCli(object):
         cnf = ConfigObj()
         for _file in files:
             try:
-                cnf.merge(ConfigObj(os.path.expanduser(_file),
-                    interpolation=False))
+                cnf.merge(ConfigObj(_file, interpolation=False))
             except ConfigObjError as e:
                 self.logger.error('Error parsing %r.', _file)
                 self.logger.error('Recovering partially parsed config values.')
@@ -182,13 +221,16 @@ class MyCli(object):
                 pass
 
         sections = ['client']
+        if self.login_path and self.login_path != 'client':
+            sections.append(self.login_path)
+
         if self.defaults_suffix:
-            sections.append('client{0}'.format(self.defaults_suffix))
+            sections.extend([sect + self.defaults_suffix for sect in sections])
 
         def get(key):
             result = None
-            for sect in sections:
-                if sect in cnf and key in cnf[sect]:
+            for sect in cnf:
+                if sect in sections and key in cnf[sect]:
                     result = cnf[sect][key]
             return result
 
@@ -221,15 +263,6 @@ class MyCli(object):
         charset = charset or cnf['default-character-set'] or 'utf8'
 
         # Connect to the database.
-
-        # Prompt for a password immediately if requested via the -p flag. This
-        # avoids wasting time trying to connect to the database and catching a
-        # no-password exception.
-        # If we successfully parsed a password from a URI, there's no need to
-        # prompt for it, even with the -p flag
-        if self.force_passwd_prompt and not passwd:
-            passwd = click.prompt('Password', hide_input=True,
-                                  show_default=False, type=str)
 
         try:
             try:
@@ -308,6 +341,7 @@ class MyCli(object):
         get_toolbar_tokens = create_toolbar_tokens_func(lambda: self.key_bindings)
         layout = create_default_layout(lexer=MyCliLexer,
                                        reserve_space_for_menu=True,
+                                       multiline=True,
                                        get_prompt_tokens=prompt_tokens,
                                        get_bottom_toolbar_tokens=get_toolbar_tokens,
                                        display_completions_in_columns=self.wider_completion_menu,
@@ -320,10 +354,11 @@ class MyCli(object):
                 history=FileHistory(os.path.expanduser('~/.mycli-history')),
                 complete_while_typing=Always())
 
-        application = Application(style=style_factory(self.syntax_style),
+        application = Application(style=style_factory(self.syntax_style, self.cli_style),
                                   layout=layout, buffer=buf,
                                   key_bindings_registry=key_binding_manager.registry,
-                                  on_exit=AbortAction.RAISE_EXCEPTION)
+                                  on_exit=AbortAction.RAISE_EXCEPTION,
+                                  ignore_case=True)
         cli = CommandLineInterface(application=application, eventloop=create_eventloop())
 
         try:
@@ -346,15 +381,15 @@ class MyCli(object):
                     logger.error("traceback: %r", traceback.format_exc())
                     self.output(str(e), err=True, fg='red')
                     continue
-
-                destroy = confirm_destructive_query(document.text)
-                if destroy is None:
-                    pass  # Query was not destructive. Nothing to do here.
-                elif destroy is True:
-                    self.output('Your call!')
-                else:
-                    self.output('Wise choice!')
-                    continue
+                if self.destructive_warning:
+                    destroy = confirm_destructive_query(document.text)
+                    if destroy is None:
+                        pass  # Query was not destructive. Nothing to do here.
+                    elif destroy is True:
+                        self.output('Your call!')
+                    else:
+                        self.output('Wise choice!')
+                        continue
 
                 # Keep track of whether or not the query is mutating. In case
                 # of a multi-statement query, the overall query is considered
@@ -531,8 +566,8 @@ class MyCli(object):
               '$MYSQL_TCP_PORT')
 @click.option('-u', '--user', help='User name to connect to the database.')
 @click.option('-S', '--socket', envvar='MYSQL_UNIX_PORT', help='The socket file to use for connection.')
-@click.option('-p', '--password', 'prompt_passwd', is_flag=True, default=False,
-        help='Force password prompt.')
+@click.option('-p', '--password', 'password', envvar='MYSQL_PWD', type=str,
+              help='Password to connect to the database')
 @click.option('--pass', 'password', envvar='MYSQL_PWD', type=str,
               help='Password to connect to the database')
 @click.option('-v', '--version', is_flag=True, help='Version of mycli.')
@@ -544,16 +579,21 @@ class MyCli(object):
               help='Log every query and its results to a file.')
 @click.option('--defaults-group-suffix', type=str,
               help='Read config group with the specified suffix.')
+@click.option('--defaults-file', type=click.Path(),
+              help='Only read default options from the given file')
+@click.option('--login-path', type=str,
+              help='Read this path from the login file.')
 @click.argument('database', default='', nargs=1)
-def cli(database, user, host, port, socket, password, prompt_passwd, dbname,
-        version, prompt, logfile, defaults_group_suffix):
-
+def cli(database, user, host, port, socket, password, dbname,
+        version, prompt, logfile, defaults_group_suffix, defaults_file,
+        login_path):
     if version:
         print('Version:', __version__)
         sys.exit(0)
 
-    mycli = MyCli(prompt_passwd, prompt=prompt, logfile=logfile,
-                  defaults_suffix=defaults_group_suffix)
+    mycli = MyCli(prompt=prompt, logfile=logfile,
+                  defaults_suffix=defaults_group_suffix,
+                  defaults_file=defaults_file, login_path=login_path)
 
     # Choose which ever one has a valid value.
     database = database or dbname
@@ -620,7 +660,7 @@ def confirm_destructive_query(queries):
     True if the query is destructive and the user wants to proceed.
     False if the query is destructive and the user doesn't want to proceed.
     """
-    destructive = set(['drop', 'shutdown'])
+    destructive = set(['drop', 'shutdown', 'delete', 'truncate'])
     queries = queries.strip()
     for query in sqlparse.split(queries):
         try:

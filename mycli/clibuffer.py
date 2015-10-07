@@ -25,6 +25,8 @@ def _multiline_exception(text):
 
     return (text.startswith('\\') or   # Special Command
             text.endswith(';') or      # Ended with a semi-colon
+            text.endswith('\\g') or    # Ended with \g
+            text.endswith('\\G') or    # Ended with \G
             (text == 'exit') or        # Exit doesn't need semi-colon
             (text == 'quit') or        # Quit doesn't need semi-colon
             (text == ':q') or          # To all the vim fans out there
