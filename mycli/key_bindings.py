@@ -1,7 +1,7 @@
 import logging
 from prompt_toolkit.keys import Keys
 from prompt_toolkit.key_binding.manager import KeyBindingManager
-from prompt_toolkit.filters import Condition
+from prompt_toolkit.filters import Condition, HasCompletions
 
 _logger = logging.getLogger(__name__)
 
@@ -75,8 +75,7 @@ def mycli_bindings(get_key_bindings, set_key_bindings):
         else:
             event.cli.start_completion(select_first=False)
 
-
-    @key_binding_manager.registry.add_binding(Keys.ControlJ)
+    @key_binding_manager.registry.add_binding(Keys.ControlJ, filter=HasCompletions())
     def _(event):
         """
         This sould only be activated if the config 'use_enter_key_as_tab'
@@ -84,10 +83,8 @@ def mycli_bindings(get_key_bindings, set_key_bindings):
         key, for example: C-M.
         """
         _logger.debug('Detected <C-J> key.')
+        event.current_buffer.complete_state = None
         b = event.cli.current_buffer
-        if b.complete_state:
-            b.complete_next()
-        else:
-            event.cli.start_completion(select_first=True)
+        b.complete_state = None
 
     return key_binding_manager
