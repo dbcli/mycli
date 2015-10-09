@@ -75,4 +75,19 @@ def mycli_bindings(get_key_bindings, set_key_bindings):
         else:
             event.cli.start_completion(select_first=False)
 
+
+    @key_binding_manager.registry.add_binding(Keys.ControlJ)
+    def _(event):
+        """
+        This sould only be activated if the config 'use_enter_key_as_tab'
+        is activated. The enter key's behaviour should be attributed to another
+        key, for example: C-M.
+        """
+        _logger.debug('Detected <C-J> key.')
+        b = event.cli.current_buffer
+        if b.complete_state:
+            b.complete_next()
+        else:
+            event.cli.start_completion(select_first=True)
+
     return key_binding_manager

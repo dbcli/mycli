@@ -44,6 +44,9 @@ key_bindings = emacs
 # Enabling this option will show the suggestions in a wider menu. Thus more items are suggested. 
 wider_completion_menu = False
 
+# Enabling this option will make the `enter key` behave like the `tab key`. Default: False.
+use_enter_key_as_tab = False
+
 # MySQL prompt
 # \t - Product type (Percona, MySQL, Mariadb)
 # \u - Username
