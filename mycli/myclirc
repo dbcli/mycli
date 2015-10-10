@@ -41,7 +41,7 @@ syntax_style = default
 # When Vi mode is enabled you can use modal editing features offered by Vi in the REPL.
 key_bindings = emacs
 
-# Enabling this option will show the suggestions in a wider menu. Thus more items are suggested. 
+# Enabling this option will show the suggestions in a wider menu. Thus more items are suggested.
 wider_completion_menu = False
 
 # MySQL prompt
@@ -52,7 +52,7 @@ wider_completion_menu = False
 # \n - Newline
 prompt = '\t \u@\h:\d> '
 
-# Custom colors for the completion menu, toolbar, etc. 
+# Custom colors for the completion menu, toolbar, etc.
 [colors]
 # Completion menus.
 Token.Menu.Completions.Completion.Current = 'bg:#00aaaa #000000'
