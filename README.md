@@ -32,7 +32,7 @@ or
 $ brew update && brew install mycli  # Only on OS X
 ```
 
-Check the [detailed install instructions](#Detailed-Install-Instructions) for debian packages or getting started with pip.
+Check the [detailed install instructions](#detailed-install-instructions) for debian packages or getting started with pip.
 
 ### Usage
 
