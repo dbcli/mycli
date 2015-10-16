@@ -6,6 +6,7 @@ import os
 import sys
 import traceback
 import logging
+import subprocess
 from time import time
 from datetime import datetime
 from random import choice
@@ -169,6 +170,12 @@ class MyCli(object):
             return [(None, None, None, str(e))]
 
         return self.sqlexecute.run(query)
+
+    def execute_system_command(self, arg, **_):
+          if not arg:
+              message = 'Missing required argument: command.'
+              yield(None, None, None, message)
+          yield(None, None, None, subprocess.call(arg, shell=True))
 
     def initialize_logging(self):
 
