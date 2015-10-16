@@ -214,5 +214,5 @@ def execute_system_command(arg, **_):
         else:
             output = subprocess.check_output(arg, stderr=subprocess.STDOUT, shell=True)
         return [(None, None, None, output)]
-    except subprocess.CalledProcessError, e:
+    except subprocess.CalledProcessError as e:
         return [(None, None, None, e.output)]

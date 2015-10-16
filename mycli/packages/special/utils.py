@@ -14,7 +14,7 @@ def handle_cd_command(arg):
     try:
         os.chdir(directory)
         output = subprocess.check_output('pwd', stderr=subprocess.STDOUT, shell=True)
-    except OSError, e:
+    except OSError as e:
         output, error = e.strerror, True
 
     # formatting a nice output
