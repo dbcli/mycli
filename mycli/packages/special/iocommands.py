@@ -10,6 +10,7 @@ import sqlparse
 from . import export
 from .main import special_command, NO_QUERY, PARSED_QUERY
 from .favoritequeries import favoritequeries
+from .utils import handle_cd_command
 
 TIMING_ENABLED = False
 use_expanded_output = False
@@ -199,7 +200,20 @@ def execute_system_command(arg, **_):
     """
     Execute a system command.
     """
-    usage = "Syntax: system command.\n\n "
+    usage = "Syntax: system [command].\n"
+
     if not arg:
       return [(None, None, None, usage)]
-    return [(None, None, None, subprocess.call(arg, shell=True))]
+
+    CD_CMD = 'cd'
+    output = ''
+
+    try:
+        command = arg.strip()
+        if command.startswith(CD_CMD):
+            output = handle_cd_command(arg)
+        else:
+            output = subprocess.check_output(arg, stderr=subprocess.STDOUT, shell=True)
+        return [(None, None, None, output)]
+    except subprocess.CalledProcessError, e:
+        return [(None, None, None, e.output)]
