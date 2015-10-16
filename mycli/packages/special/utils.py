@@ -1,19 +1,26 @@
 import os
+import subprocess
 
 def handle_cd_command(arg):
     """Handles a `cd` shell command by calling python's os.chdir."""
     CD_CMD = 'cd'
     command = arg.strip()
     directory = ''
+    error = False
 
-    if command == CD_CMD:
-        # Treat `cd` as a change to the root directory.
-        # os.path.expanduser does this in a cross platform manner.
-        directory = os.path.expanduser('~')
-    else:
-        tokens = arg.split(CD_CMD + ' ')
-        directory = tokens[-1]
+    tokens = arg.split(CD_CMD + ' ')
+    directory = tokens[-1]
+
     try:
         os.chdir(directory)
+        output = subprocess.check_output('pwd', stderr=subprocess.STDOUT, shell=True)
     except OSError, e:
-        output = e.strerror
+        output, error = e.strerror, True
+
+    # formatting a nice output
+    if error:
+        output = "Error: {}".format(output)
+    else:
+        output = "Current directory: {}".format(output)
+
+    return output
