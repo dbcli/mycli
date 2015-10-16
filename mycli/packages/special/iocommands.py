@@ -205,13 +205,12 @@ def execute_system_command(arg, **_):
     if not arg:
       return [(None, None, None, usage)]
 
-    CD_CMD = 'cd'
     output = ''
 
     try:
         command = arg.strip()
-        if command.startswith(CD_CMD):
-            output = handle_cd_command(arg)
+        if command.startswith('cd'):
+            output  = handle_cd_command(arg)
         else:
             output = subprocess.check_output(arg, stderr=subprocess.STDOUT, shell=True)
         return [(None, None, None, output)]
