@@ -405,7 +405,6 @@ class MyCli(object):
                     successful = False
                     start = time()
                     res = sqlexecute.run(document.text)
-                    duration = time() - start
                     successful = True
                     output = []
                     total = 0
@@ -413,7 +412,6 @@ class MyCli(object):
                         logger.debug("headers: %r", headers)
                         logger.debug("rows: %r", cur)
                         logger.debug("status: %r", status)
-                        start = time()
                         threshold = 1000
                         if (is_select(status) and
                                 cur and cur.rowcount > threshold):
@@ -466,8 +464,7 @@ class MyCli(object):
                     except KeyboardInterrupt:
                         pass
                     if special.is_timing_enabled():
-                        self.output('Command Time: %0.03fs' % duration)
-                        self.output('Format Time: %0.03fs' % total)
+                        self.output('Time: %0.03fs' % total)
 
                 # Refresh the table names and column names if necessary.
                 if need_completion_refresh(document.text):
