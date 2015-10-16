@@ -1,6 +1,7 @@
 import os
 import re
 import logging
+import subprocess
 from io import open
 
 import click
@@ -193,3 +194,12 @@ def delete_favorite_query(arg, **_):
 
     return [(None, None, None, status)]
 
+@special_command('system', 'system [command]', 'Execute a system commmand.')
+def execute_system_command(arg, **_):
+    """
+    Execute a system command.
+    """
+    usage = "Syntax: system command.\n\n "
+    if not arg:
+      return [(None, None, None, usage)]
+    return [(None, None, None, subprocess.call(arg, shell=True))]

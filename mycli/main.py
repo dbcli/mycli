@@ -6,7 +6,6 @@ import os
 import sys
 import traceback
 import logging
-import subprocess
 from time import time
 from datetime import datetime
 from random import choice
@@ -139,8 +138,6 @@ class MyCli(object):
                 '\\T', 'Change Table Type.', aliases=('\\T',), case_sensitive=True)
         special.register_special_command(self.execute_from_file, 'source', '\\. filename',
                               'Execute commands from file.', aliases=('\\.',))
-        special.register_special_command(self.execute_system_command, 'system',
-                    '\\s', 'Execute a system command.', aliases=('\\s',))
 
     def change_table_format(self, arg, **_):
         if not arg in table_formats():
@@ -172,12 +169,6 @@ class MyCli(object):
             return [(None, None, None, str(e))]
 
         return self.sqlexecute.run(query)
-
-    def execute_system_command(self, arg, **_):
-          if not arg:
-              message = 'Missing required argument: command.'
-              yield(None, None, None, message)
-          yield(None, None, None, subprocess.call(arg, shell=True))
 
     def initialize_logging(self):
 
