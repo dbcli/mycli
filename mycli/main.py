@@ -139,6 +139,8 @@ class MyCli(object):
                 '\\T', 'Change Table Type.', aliases=('\\T',), case_sensitive=True)
         special.register_special_command(self.execute_from_file, 'source', '\\. filename',
                               'Execute commands from file.', aliases=('\\.',))
+        special.register_special_command(self.execute_system_command, 'system',
+                    '\\s', 'Execute a system command.', aliases=('\\s',))
 
     def change_table_format(self, arg, **_):
         if not arg in table_formats():
