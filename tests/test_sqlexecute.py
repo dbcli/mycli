@@ -32,6 +32,30 @@ def test_bools(executor):
         1 row in set""")
 
 @dbtest
+def test_binary(executor):
+    run(executor, '''create table bt(geom linestring NOT NULL)''')
+    run(executor, '''INSERT INTO bt VALUES (GeomFromText('LINESTRING(116.37604 39.73979,116.375 39.73965)'));''')
+    results = run(executor, '''select * from bt''', join=True)
+    assert results == dedent("""\
+        +----------------------------------------------------------------------------------------------+
+        | geom                                                                                         |
+        |----------------------------------------------------------------------------------------------|
+        | 0x00000000010200000002000000397f130a11185d4034f44f70b1de43400000000000185d40423ee8d9acde4340 |
+        +----------------------------------------------------------------------------------------------+
+        1 row in set""")
+
+@dbtest
+def test_binary_expanded(executor):
+    run(executor, '''create table bt(geom linestring NOT NULL)''')
+    run(executor, '''INSERT INTO bt VALUES (GeomFromText('LINESTRING(116.37604 39.73979,116.375 39.73965)'));''')
+    results = run(executor, '''select * from bt\G''', join=True)
+    assert results == dedent("""\
+        ***************************[ 1. row ]***************************
+        geom | 0x00000000010200000002000000397f130a11185d4034f44f70b1de43400000000000185d40423ee8d9acde4340
+
+        1 row in set""")
+
+@dbtest
 def test_table_and_columns_query(executor):
     run(executor, "create table a(x text, y text)")
     run(executor, "create table b(z text)")
