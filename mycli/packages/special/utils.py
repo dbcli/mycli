@@ -4,7 +4,6 @@ import subprocess
 def handle_cd_command(arg):
     """Handles a `cd` shell command by calling python's os.chdir."""
     CD_CMD = 'cd'
-    command = arg.strip()
     directory = ''
     error = False
 
