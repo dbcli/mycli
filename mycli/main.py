@@ -425,6 +425,13 @@ class MyCli(object):
                         end = time()
                         total += end - start
                         mutating = mutating or is_mutating(status)
+                except UnicodeDecodeError:
+                    import pymysql
+                    ver = pymysql.__version__.split('.')
+                    if ver < ('0', '6', '7'):
+                        message = ('You are running an older version of pymysql.\n'
+                                'Please upgrade to 0.6.7 or above to view binary data.')
+                        self.output(message)
                 except KeyboardInterrupt:
                     # Restart connection to the database
                     sqlexecute.connect()
