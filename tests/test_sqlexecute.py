@@ -2,6 +2,7 @@
 
 import pytest
 import pymysql
+import os
 from textwrap import dedent
 from utils import run, dbtest, set_expanded_output
 
@@ -156,6 +157,35 @@ def test_special_command(executor):
     expected_line = u'| help      | \\?               | Show this help.                              |\n'
     assert len(results) == 1
     assert expected_line in results[0]
+
+@dbtest
+def test_cd_command_without_a_folder_name(executor):
+    results = run(executor, 'system cd')
+    expected_line = 'No folder name was provided.'
+    assert len(results) == 1
+    assert expected_line in results[0]
+
+@dbtest
+def test_system_command_not_found(executor):
+    results = run(executor, 'system xyz')
+    assert len(results) == 1
+    expected_line = 'OSError:'
+    assert expected_line in results[0]
+
+@dbtest
+def test_system_command_output(executor):
+    test_file_path = os.path.join(os.path.abspath('.'), 'tests/test.txt')
+    results = run(executor, 'system cat {0}'.format(test_file_path))
+    assert len(results) == 1
+    expected_line = u'mycli rocks!\n'
+    result_str = results[0].decode('utf-8') # python3 returns a bytes-string
+    assert expected_line == result_str
+
+@dbtest
+def test_cd_command_current_dir(executor):
+    tests_path = os.path.join(os.path.abspath('.'), 'tests')
+    results = run(executor, 'system cd {0}'.format(tests_path))
+    assert os.getcwd() == tests_path
 
 @dbtest
 def test_unicode_support(executor):
