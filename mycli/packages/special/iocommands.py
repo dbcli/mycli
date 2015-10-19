@@ -205,14 +205,18 @@ def execute_system_command(arg, **_):
     if not arg:
       return [(None, None, None, usage)]
 
-    output = ''
-
     try:
         command = arg.strip()
         if command.startswith('cd'):
-            output  = handle_cd_command(arg)
-        else:
-            output = subprocess.check_output(arg, stderr=subprocess.STDOUT, shell=True)
-        return [(None, None, None, output)]
-    except subprocess.CalledProcessError as e:
-        return [(None, None, None, e.output)]
+            result, error_message = handle_cd_command(arg)
+            if not result:
+                return [(None, None, None, error_message)]
+
+        args = arg.split(' ')
+        process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output, error = process.communicate()
+        response = output if not error else error
+
+        return [(None, None, None, response)]
+    except OSError as e:
+        return [(None, None, None, 'OSError: %s' % e.strerror)]
