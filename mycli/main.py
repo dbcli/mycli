@@ -635,9 +635,9 @@ def need_completion_refresh(queries):
     for query in sqlparse.split(queries):
         try:
             first_token = query.split()[0]
-            res = first_token.lower() in ('alter', 'create', 'use', '\\r',
-                    '\\u', 'connect', 'drop')
-            return res
+            if first_token.lower() in ('alter', 'create', 'use', '\\r',
+                    '\\u', 'connect', 'drop'):
+                return True
         except Exception:
             return False
 
@@ -649,7 +649,8 @@ def need_completion_reset(queries):
     for query in sqlparse.split(queries):
         try:
             first_token = query.split()[0]
-            return first_token.lower() in ('use', '\\u')
+            if first_token.lower() in ('use', '\\u'):
+                return True
         except Exception:
             return False
 
