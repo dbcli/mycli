@@ -208,9 +208,10 @@ def execute_system_command(arg, **_):
     try:
         command = arg.strip()
         if command.startswith('cd'):
-            result, error_message = handle_cd_command(arg)
-            if not result:
+            ok, error_message = handle_cd_command(arg)
+            if not ok:
                 return [(None, None, None, error_message)]
+            return [(None, None, None, '')]
 
         args = arg.split(' ')
         process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
