@@ -6,6 +6,7 @@ import os
 import sys
 import traceback
 import logging
+import threading
 from time import time
 from datetime import datetime
 from random import choice
@@ -33,6 +34,7 @@ from .clitoolbar import create_toolbar_tokens_func
 from .clistyle import style_factory
 from .sqlexecute import SQLExecute
 from .clibuffer import CLIBuffer
+from .completion_refresher import CompletionRefresher
 from .config import (write_default_config, load_config, get_mylogin_cnf_path,
                      open_mylogin_cnf)
 from .key_bindings import mycli_bindings
@@ -97,6 +99,8 @@ class MyCli(object):
         self.cli_style = c['colors']
         self.wider_completion_menu = c['main'].as_bool('wider_completion_menu')
 
+        self.completion_refresher = CompletionRefresher()
+
         self.logger = logging.getLogger(__name__)
         self.initialize_logging()
 
@@ -108,8 +112,8 @@ class MyCli(object):
 
         # Initialize completer.
         smart_completion = c['main'].as_bool('smart_completion')
-        completer = SQLCompleter(smart_completion)
-        self.completer = completer
+        self.completer = SQLCompleter(smart_completion)
+        self._completer_lock = threading.Lock()
 
         # Register custom special commands.
         self.register_special_commands()
@@ -126,13 +130,15 @@ class MyCli(object):
             # There was an error reading the login path file.
             print('Error: Unable to read login path file.')
 
+        self.cli = None
+
     def register_special_commands(self):
         special.register_special_command(self.change_db, 'use',
                 '\\u', 'Change to a new database.', aliases=('\\u',))
         special.register_special_command(self.change_db, 'connect',
                 '\\r', 'Reconnect to the database. Optional database argument.',
                 aliases=('\\r', ))
-        special.register_special_command(self.refresh_dynamic_completions, 'rehash',
+        special.register_special_command(self.refresh_completions, 'rehash',
                 '\\#', 'Refresh auto-completions.', arg_type=NO_QUERY, aliases=('\\#',))
         special.register_special_command(self.change_table_format, 'tableformat',
                 '\\T', 'Change Table Type.', aliases=('\\T',), case_sensitive=True)
@@ -315,8 +321,7 @@ class MyCli(object):
         original_less_opts = self.adjust_less_opts()
         self.set_pager_from_config()
 
-        self.initialize_completions()
-        completer = self.completer
+        self.refresh_completions()
 
         def set_key_bindings(value):
             if value not in ('emacs', 'vi'):
@@ -338,7 +343,9 @@ class MyCli(object):
         def prompt_tokens(cli):
             return [(Token.Prompt, self.get_prompt(self.prompt_format))]
 
-        get_toolbar_tokens = create_toolbar_tokens_func(lambda: self.key_bindings)
+        get_toolbar_tokens = create_toolbar_tokens_func(lambda: self.key_bindings,
+                                                        self.completion_refresher.is_refreshing)
+
         layout = create_default_layout(lexer=MyCliLexer,
                                        reserve_space_for_menu=True,
                                        multiline=True,
@@ -350,20 +357,22 @@ class MyCli(object):
                                                processor=HighlightMatchingBracketProcessor(chars='[](){}'),
                                                filter=HasFocus(DEFAULT_BUFFER) & ~IsDone()),
                                        ])
-        buf = CLIBuffer(always_multiline=self.multi_line, completer=completer,
-                history=FileHistory(os.path.expanduser('~/.mycli-history')),
-                complete_while_typing=Always())
+        with self._completer_lock:
+            buf = CLIBuffer(always_multiline=self.multi_line, completer=self.completer,
+                    history=FileHistory(os.path.expanduser('~/.mycli-history')),
+                    complete_while_typing=Always())
 
-        application = Application(style=style_factory(self.syntax_style, self.cli_style),
-                                  layout=layout, buffer=buf,
-                                  key_bindings_registry=key_binding_manager.registry,
-                                  on_exit=AbortAction.RAISE_EXCEPTION,
-                                  ignore_case=True)
-        cli = CommandLineInterface(application=application, eventloop=create_eventloop())
+            application = Application(style=style_factory(self.syntax_style, self.cli_style),
+                                      layout=layout, buffer=buf,
+                                      key_bindings_registry=key_binding_manager.registry,
+                                      on_exit=AbortAction.RAISE_EXCEPTION,
+                                      ignore_case=True)
+            self.cli = CommandLineInterface(application=application,
+                                       eventloop=create_eventloop())
 
         try:
             while True:
-                document = cli.run()
+                document = self.cli.run()
 
                 special.set_expanded_output(False)
 
@@ -375,7 +384,7 @@ class MyCli(object):
                     raise EOFError
 
                 try:
-                    document = self.handle_editor_command(cli, document)
+                    document = self.handle_editor_command(self.cli, document)
                 except RuntimeError as e:
                     logger.error("sql: %r, error: %r", document.text, e)
                     logger.error("traceback: %r", traceback.format_exc())
@@ -475,7 +484,7 @@ class MyCli(object):
 
                 # Refresh the table names and column names if necessary.
                 if need_completion_refresh(document.text):
-                    self.refresh_dynamic_completions()
+                    self.refresh_completions(reset=need_completion_reset(document.text))
 
                 query = Query(document.text, successful, mutating)
                 self.query_history.append(query)
@@ -511,49 +520,39 @@ class MyCli(object):
         if cnf['pager']:
             special.set_pager(cnf['pager'])
 
-    def initialize_completions(self):
-        completer = self.completer
+    def refresh_completions(self, reset=False):
+        if reset:
+            with self._completer_lock:
+                self.completer.reset_completions()
+        self.completion_refresher.refresh(self.sqlexecute,
+                                          self._on_completions_refreshed)
 
-        # special_commands
-        completer.extend_special_commands(COMMANDS.keys())
+        return [(None, None, None,
+                'Auto-completion refresh started in the background.')]
 
-        # Items to complete after the SHOW command.
-        completer.extend_show_items(self.sqlexecute.show_candidates())
+    def _on_completions_refreshed(self, new_completer):
+        self._swap_completer_objects(new_completer)
 
-        return self.refresh_dynamic_completions()
+        if self.cli:
+            # After refreshing, redraw the CLI to clear the statusbar
+            # "Refreshing completions..." indicator
+            self.cli.request_redraw()
 
-    def refresh_dynamic_completions(self):
-        sqlexecute = self.sqlexecute
-
-        completer = self.completer
-        completer.reset_completions()
-
-        # databases
-        completer.extend_database_names(sqlexecute.databases())
-
-        # schemata - In MySQL Schema is the same as database. But for mycli
-        # schemata will be the name of the current database.
-        completer.extend_schemata(self.sqlexecute.dbname)
-        completer.set_dbname(self.sqlexecute.dbname)
-
-        # tables
-        completer.extend_relations(sqlexecute.tables(), kind='tables')
-        completer.extend_columns(sqlexecute.table_columns(), kind='tables')
-
-        # users
-        completer.extend_users(sqlexecute.users())
-
-        # views
-        #completer.extend_relations(sqlexecute.views(), kind='views')
-        #completer.extend_columns(sqlexecute.view_columns(), kind='views')
-
-        # functions
-        completer.extend_functions(sqlexecute.functions())
-        return [(None, None, None, 'Auto-completion refreshed.')]
+    def _swap_completer_objects(self, new_completer):
+        """Swap the completer object in cli with the newly created completer.
+        """
+        with self._completer_lock:
+            self.completer = new_completer
+            # When mycli is first launched we call refresh_completions before
+            # instantiating the cli object. So it is necessary to check if cli
+            # exists before trying the replace the completer object in cli.
+            if self.cli:
+                self.cli.current_buffer.completer = new_completer
 
     def get_completions(self, text, cursor_positition):
-        return self.completer.get_completions(
-            Document(text=text, cursor_position=cursor_positition), None)
+        with self._completer_lock:
+            return self.completer.get_completions(
+                Document(text=text, cursor_position=cursor_positition), None)
 
     def get_prompt(self, string):
         sqlexecute = self.sqlexecute
@@ -641,6 +640,19 @@ def need_completion_refresh(queries):
             return res
         except Exception:
             return False
+
+def need_completion_reset(queries):
+    """Determines if the statement is a database switch such as 'use' or '\\u'.
+    When a database is changed the existing completions must be reset before we
+    start the completion refresh for the new database.
+    """
+    for query in sqlparse.split(queries):
+        try:
+            first_token = query.split()[0]
+            return first_token.lower() in ('use', '\\u')
+        except Exception:
+            return False
+
 
 def is_mutating(status):
     """Determines if the statement is mutating based on the status."""

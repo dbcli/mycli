@@ -150,7 +150,7 @@ class SQLCompleter(Completer):
         for relname in data:
             try:
                 metadata[self.dbname][relname[0]] = ['*']
-            except AttributeError:
+            except KeyError:
                 _logger.error('%r %r listed in unrecognized schema %r',
                               kind, relname[0], self.dbname)
             self.all_completions.add(relname[0])
