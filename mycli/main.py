@@ -170,6 +170,17 @@ class MyCli(object):
 
         return self.sqlexecute.run(query)
 
+    def change_prompt_format(self, arg, **_):
+        """
+        Change the prompt format.
+        """
+        if not arg:
+            message = 'Missing required argument, format.'
+            return [(None, None, None, message)]
+
+        self.prompt_format = self.get_prompt(arg)
+        return [(None, None, None, "Changed prompt format to %s" % arg)]
+
     def initialize_logging(self):
 
         log_file = self.config['main']['log_file']
