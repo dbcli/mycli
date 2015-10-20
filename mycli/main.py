@@ -482,9 +482,10 @@ class MyCli(object):
                     if special.is_timing_enabled():
                         self.output('Time: %0.03fs' % total)
 
-                # Refresh the table names and column names if necessary.
-                if need_completion_refresh(document.text):
-                    self.refresh_completions(reset=need_completion_reset(document.text))
+                    # Refresh the table names and column names if necessary.
+                    if need_completion_refresh(document.text):
+                        self.refresh_completions(
+                                reset=need_completion_reset(document.text))
 
                 query = Query(document.text, successful, mutating)
                 self.query_history.append(query)
