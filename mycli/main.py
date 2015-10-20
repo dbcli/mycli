@@ -131,7 +131,7 @@ class MyCli(object):
                 '\\u', 'Change to a new database.', aliases=('\\u',))
         special.register_special_command(self.change_db, 'connect',
                 '\\r', 'Reconnect to the database. Optional database argument.',
-                aliases=('\\r', ))
+                aliases=('\\r', ), case_sensitive=True)
         special.register_special_command(self.refresh_dynamic_completions, 'rehash',
                 '\\#', 'Refresh auto-completions.', arg_type=NO_QUERY, aliases=('\\#',))
         special.register_special_command(self.change_table_format, 'tableformat',
