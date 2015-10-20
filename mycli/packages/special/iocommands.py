@@ -1,6 +1,7 @@
 import os
 import re
 import logging
+import subprocess
 from io import open
 
 import click
@@ -9,6 +10,7 @@ import sqlparse
 from . import export
 from .main import special_command, NO_QUERY, PARSED_QUERY
 from .favoritequeries import favoritequeries
+from .utils import handle_cd_command
 
 TIMING_ENABLED = False
 use_expanded_output = False
@@ -193,3 +195,29 @@ def delete_favorite_query(arg, **_):
 
     return [(None, None, None, status)]
 
+@special_command('system', 'system [command]', 'Execute a system commmand.')
+def execute_system_command(arg, **_):
+    """
+    Execute a system command.
+    """
+    usage = "Syntax: system [command].\n"
+
+    if not arg:
+      return [(None, None, None, usage)]
+
+    try:
+        command = arg.strip()
+        if command.startswith('cd'):
+            ok, error_message = handle_cd_command(arg)
+            if not ok:
+                return [(None, None, None, error_message)]
+            return [(None, None, None, '')]
+
+        args = arg.split(' ')
+        process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output, error = process.communicate()
+        response = output if not error else error
+
+        return [(None, None, None, response)]
+    except OSError as e:
+        return [(None, None, None, 'OSError: %s' % e.strerror)]
