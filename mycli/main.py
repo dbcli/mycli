@@ -131,13 +131,15 @@ class MyCli(object):
                 '\\u', 'Change to a new database.', aliases=('\\u',))
         special.register_special_command(self.change_db, 'connect',
                 '\\r', 'Reconnect to the database. Optional database argument.',
-                aliases=('\\r', ))
+                aliases=('\\r', ), case_sensitive=True)
         special.register_special_command(self.refresh_dynamic_completions, 'rehash',
                 '\\#', 'Refresh auto-completions.', arg_type=NO_QUERY, aliases=('\\#',))
         special.register_special_command(self.change_table_format, 'tableformat',
                 '\\T', 'Change Table Type.', aliases=('\\T',), case_sensitive=True)
         special.register_special_command(self.execute_from_file, 'source', '\\. filename',
                               'Execute commands from file.', aliases=('\\.',))
+        special.register_special_command(self.change_prompt_format, 'prompt',
+                '\\R', 'Change prompt format.', aliases=('\\R',), case_sensitive=True)
 
     def change_table_format(self, arg, **_):
         if not arg in table_formats():
@@ -169,6 +171,17 @@ class MyCli(object):
             return [(None, None, None, str(e))]
 
         return self.sqlexecute.run(query)
+
+    def change_prompt_format(self, arg, **_):
+        """
+        Change the prompt format.
+        """
+        if not arg:
+            message = 'Missing required argument, format.'
+            return [(None, None, None, message)]
+
+        self.prompt_format = self.get_prompt(arg)
+        return [(None, None, None, "Changed prompt format to %s" % arg)]
 
     def initialize_logging(self):
 
