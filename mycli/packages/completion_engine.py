@@ -270,7 +270,7 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
         return [{'type': 'database'}]
     elif token_v == 'tableformat':
         return [{'type': 'table_format'}]
-    elif token_v.endswith(',') or token_v == '=':
+    elif token_v.endswith(',') or token_v in ['=', 'and', 'or']:
         prev_keyword, text_before_cursor = find_prev_keyword(text_before_cursor)
         if prev_keyword:
             return suggest_based_on_last_token(
