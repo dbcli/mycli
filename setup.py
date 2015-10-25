@@ -29,8 +29,10 @@ setup(
             'PyMySQL >= 0.6.2',
             'sqlparse >= 0.1.16',
             'configobj >= 5.0.6',
-            'pycrypto >= 2.6.1',
             ],
+        extras_require={
+            'parse_mylogin_cnf': ['pycrypto >= 2.6.1']
+        },
         entry_points='''
             [console_scripts]
             mycli=mycli.main:cli
