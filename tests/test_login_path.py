@@ -1,9 +1,15 @@
 """Unit tests for mycli.config login path decryption."""
 from io import BytesIO, TextIOWrapper
 import os
+import pip
 import struct
+import pytest
 
-from mycli.config import open_mylogin_cnf, read_and_decrypt_mylogin_cnf
+from mycli.config import open_mylogin_cnf, read_and_decrypt_mylogin_cnf, \
+    CryptoError
+
+with_pycrypto = ['pycrypto' in set([package.project_name for package in
+                                    pip.get_installed_distributions()])]
 
 LOGIN_PATH_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                'mylogin.cnf'))
@@ -17,6 +23,13 @@ def open_bmylogin_cnf(name):
     return buf
 
 
+@pytest.mark.skipif(with_pycrypto, reason='requires pycrypto missing')
+def test_read_mylogin_cnf_without_crypto():
+    with pytest.raises(CryptoError):
+        mylogin_cnf = open_mylogin_cnf(LOGIN_PATH_FILE)
+
+
+@pytest.mark.skipif(not with_pycrypto, reason='requires pycrypto')
 def test_read_mylogin_cnf():
     """Tests that a login path file can be read and decrypted."""
     mylogin_cnf = open_mylogin_cnf(LOGIN_PATH_FILE)
@@ -28,12 +41,14 @@ def test_read_mylogin_cnf():
         assert word in contents
 
 
+@pytest.mark.skipif(not with_pycrypto, reason='requires pycrypto')
 def test_decrypt_blank_mylogin_cnf():
     """Test that a blank login path file is handled correctly."""
     mylogin_cnf = read_and_decrypt_mylogin_cnf(BytesIO())
     assert mylogin_cnf is None
 
 
+@pytest.mark.skipif(not with_pycrypto, reason='requires pycrypto')
 def test_corrupted_login_key():
     """Test that a corrupted login path key is handled correctly."""
     buf = open_bmylogin_cnf(LOGIN_PATH_FILE)
@@ -50,6 +65,7 @@ def test_corrupted_login_key():
     assert mylogin_cnf is None
 
 
+@pytest.mark.skipif(not with_pycrypto, reason='requires pycrypto')
 def test_corrupted_pad():
     """Tests that a login path file with a corrupted pad is partially read."""
     buf = open_bmylogin_cnf(LOGIN_PATH_FILE)

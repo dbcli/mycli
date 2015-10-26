@@ -5,7 +5,17 @@ import os
 from os.path import expanduser, exists
 import struct
 from configobj import ConfigObj
-from Crypto.Cipher import AES
+try:
+    from Crypto.Cipher import AES
+except ImportError:
+    AES = None
+
+
+class CryptoError(Exception):
+    """
+    Exception to signal about pycrypto not available.
+    """
+    pass
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +86,8 @@ def read_and_decrypt_mylogin_cnf(f):
     :return: the decrypted login path file
     :rtype: io.BytesIO or None
     """
+    if AES is None:
+        raise CryptoError('pycrypto is not available.')
 
     # Number of bytes used to store the length of ciphertext.
     MAX_CIPHER_STORE_LEN = 4
