@@ -88,6 +88,7 @@ class MyCli(object):
         default_config = os.path.join(PACKAGE_ROOT, 'myclirc')
         write_default_config(default_config, '~/.myclirc')
 
+
         # Load config.
         c = self.config = load_config('~/.myclirc', default_config)
         self.multi_line = c['main'].as_bool('multi_line')
@@ -98,6 +99,10 @@ class MyCli(object):
         self.syntax_style = c['main']['syntax_style']
         self.cli_style = c['colors']
         self.wider_completion_menu = c['main'].as_bool('wider_completion_menu')
+
+        # audit log
+        if self.auditlog is None:
+            self.auditlog = open(os.path.expanduser(c['main']['audit_log']), 'a')
 
         self.completion_refresher = CompletionRefresher()
 
