@@ -71,10 +71,10 @@ class MyCli(object):
     ]
 
     def __init__(self, sqlexecute=None, prompt=None,
-            logfile=None, defaults_suffix=None, defaults_file=None,
+            auditlog=None, defaults_suffix=None, defaults_file=None,
             login_path=None):
         self.sqlexecute = sqlexecute
-        self.logfile = logfile
+        self.auditlog = auditlog
         self.defaults_suffix = defaults_suffix
         self.login_path = login_path
 
@@ -423,10 +423,10 @@ class MyCli(object):
 
                 try:
                     logger.debug('sql: %r', document.text)
-                    if self.logfile:
-                        self.logfile.write('\n# %s\n' % datetime.now())
-                        self.logfile.write(document.text)
-                        self.logfile.write('\n')
+                    if self.auditlog:
+                        self.auditlog.write('\n# %s\n' % datetime.now())
+                        self.auditlog.write(document.text)
+                        self.auditlog.write('\n')
                     successful = False
                     start = time()
                     res = sqlexecute.run(document.text)
@@ -516,15 +516,15 @@ class MyCli(object):
             os.environ['PAGER'] = special.get_original_pager()
 
     def output(self, text, **kwargs):
-        if self.logfile:
-            self.logfile.write(utf8tounicode(text))
-            self.logfile.write('\n')
+        if self.auditlog:
+            self.auditlog.write(utf8tounicode(text))
+            self.auditlog.write('\n')
         click.secho(text, **kwargs)
 
     def output_via_pager(self, text):
-        if self.logfile:
-            self.logfile.write(text)
-            self.logfile.write('\n')
+        if self.auditlog:
+            self.auditlog.write(text)
+            self.auditlog.write('\n')
         click.echo_via_pager(text)
 
     def adjust_less_opts(self):
@@ -597,7 +597,7 @@ class MyCli(object):
 @click.option('-R', '--prompt', 'prompt',
               help='Prompt format (Default: "{0}")'.format(
                   MyCli.default_prompt))
-@click.option('-l', '--logfile', type=click.File(mode='a', encoding='utf-8'),
+@click.option('-a', '--auditlog', type=click.File(mode='a', encoding='utf-8'),
               help='Log every query and its results to a file.')
 @click.option('--defaults-group-suffix', type=str,
               help='Read config group with the specified suffix.')
@@ -607,13 +607,13 @@ class MyCli(object):
               help='Read this path from the login file.')
 @click.argument('database', default='', nargs=1)
 def cli(database, user, host, port, socket, password, dbname,
-        version, prompt, logfile, defaults_group_suffix, defaults_file,
+        version, prompt, auditlog, defaults_group_suffix, defaults_file,
         login_path):
     if version:
         print('Version:', __version__)
         sys.exit(0)
 
-    mycli = MyCli(prompt=prompt, logfile=logfile,
+    mycli = MyCli(prompt=prompt, auditlog=auditlog,
                   defaults_suffix=defaults_group_suffix,
                   defaults_file=defaults_file, login_path=login_path)
 
