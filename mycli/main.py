@@ -101,8 +101,8 @@ class MyCli(object):
         self.wider_completion_menu = c['main'].as_bool('wider_completion_menu')
 
         # audit log
-        if self.auditlog is None:
-            self.auditlog = open(os.path.expanduser(c['main']['audit_log']), 'a')
+        if self.logfile is None:
+            self.logfile = open(os.path.expanduser(c['main']['audit_log']), 'a')
 
         self.completion_refresher = CompletionRefresher()
 
