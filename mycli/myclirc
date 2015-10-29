@@ -23,6 +23,9 @@ log_file = ~/.mycli.log
 # and "DEBUG".
 log_level = INFO
 
+# Log every query and its results to a file.
+audit_log = ~/.mycli-audit.log
+
 # Timing of sql statments and table rendering.
 timing = True
 
