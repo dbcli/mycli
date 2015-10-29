@@ -1,4 +1,4 @@
-from pgcli.packages.tabulate import tabulate
+from mycli.packages.tabulate import tabulate
 from textwrap import dedent
 
 
