@@ -102,7 +102,10 @@ class MyCli(object):
 
         # audit log
         if self.logfile is None and 'audit_log' in c['main']:
-            self.logfile = open(os.path.expanduser(c['main']['audit_log']), 'a')
+            try:
+                self.logfile = open(os.path.expanduser(c['main']['audit_log']), 'a')
+            except (IOError, OSError) as e:
+                self.logfile = False
 
         self.completion_refresher = CompletionRefresher()
 
