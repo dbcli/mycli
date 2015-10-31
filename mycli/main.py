@@ -105,6 +105,7 @@ class MyCli(object):
             try:
                 self.logfile = open(os.path.expanduser(c['main']['audit_log']), 'a')
             except (IOError, OSError) as e:
+                self.output('Error: Unable to open the audit log file.', err=True, fg='red')
                 self.logfile = False
 
         self.completion_refresher = CompletionRefresher()
