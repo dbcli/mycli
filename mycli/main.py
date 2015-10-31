@@ -432,12 +432,14 @@ class MyCli(object):
 
                 try:
                     logger.debug('sql: %r', document.text)
-                    if self.logfile is not False:
+
+                    if self.logfile:
                         self.logfile.write('\n# %s\n' % datetime.now())
                         self.logfile.write(document.text)
                         self.logfile.write('\n')
-                    else:
-                        self.output("Error: Unable to load the audit log file.", err=True, fg='red')
+                    elif self.logfile is False:
+                        self.output("Error: Unable to write to the audit log file.", err=True, fg='red')
+
                     successful = False
                     start = time()
                     res = sqlexecute.run(document.text)
