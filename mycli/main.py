@@ -437,8 +437,6 @@ class MyCli(object):
                         self.logfile.write('\n# %s\n' % datetime.now())
                         self.logfile.write(document.text)
                         self.logfile.write('\n')
-                    elif self.logfile is False:
-                        self.output("Error: Unable to write to the audit log file.", err=True, fg='red')
 
                     successful = False
                     start = time()
@@ -517,7 +515,9 @@ class MyCli(object):
                     if need_completion_refresh(document.text):
                         self.refresh_completions(
                                 reset=need_completion_reset(document.text))
-
+                finally:
+                    if self.logfile is False:
+                        self.output("Warning: This query was not logged.", err=True, fg='red')
                 query = Query(document.text, successful, mutating)
                 self.query_history.append(query)
 
