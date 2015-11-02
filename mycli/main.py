@@ -102,7 +102,11 @@ class MyCli(object):
 
         # audit log
         if self.logfile is None and 'audit_log' in c['main']:
-            self.logfile = open(os.path.expanduser(c['main']['audit_log']), 'a')
+            try:
+                self.logfile = open(os.path.expanduser(c['main']['audit_log']), 'a')
+            except (IOError, OSError) as e:
+                self.output('Error: Unable to open the audit log file. Your queries will not be logged.', err=True, fg='red')
+                self.logfile = False
 
         self.completion_refresher = CompletionRefresher()
 
@@ -428,10 +432,12 @@ class MyCli(object):
 
                 try:
                     logger.debug('sql: %r', document.text)
+
                     if self.logfile:
                         self.logfile.write('\n# %s\n' % datetime.now())
                         self.logfile.write(document.text)
                         self.logfile.write('\n')
+
                     successful = False
                     start = time()
                     res = sqlexecute.run(document.text)
@@ -509,7 +515,9 @@ class MyCli(object):
                     if need_completion_refresh(document.text):
                         self.refresh_completions(
                                 reset=need_completion_reset(document.text))
-
+                finally:
+                    if self.logfile is False:
+                        self.output("Warning: This query was not logged.", err=True, fg='red')
                 query = Query(document.text, successful, mutating)
                 self.query_history.append(query)
 
