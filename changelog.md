@@ -37,9 +37,10 @@ Features:
 Bug Fixes:
 ----------
 
-* Fix the removal of whitespace from table output. (Thanks: [Amjith Ramanujam]).
+* Fix the removal of whitespace from table output.
 * Add ability to make suggestions for compound join clauses. (Thanks: [Matheus Rosa]).
 * Fix the incorrect reporting of command time.
+* Add type validation for port argument. (Thanks [Matheus Rosa])
 
 Internal Changes:
 -----------------
