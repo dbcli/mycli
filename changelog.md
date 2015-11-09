@@ -29,7 +29,7 @@ Features:
   Geometric fields stored in a database will be displayed as hexed strings.
 * Treat enter key as tab when the suggestion menu is open. (Thanks: [Matheus Rosa])
 * Add "delete" and "truncate" as destructive commands. (Thanks: [Martijn Engler]).
-* Change \dt syntax to add an optional table name. (Thanks: [shoma]).
+* Change \dt syntax to add an optional table name. (Thanks: [Shoma Suzuki]).
   `\dt [tablename]` will describe the columns in a table.
 * Add TRANSACTION related keywords.
 * Treat DESC and EXPLAIN as DESCRIBE. (Thanks: [spacewander]).
