@@ -289,7 +289,7 @@ class MyCli(object):
             socket = socket or cnf['socket']
         user = user or cnf['user'] or os.getenv('USER')
         host = host or cnf['host'] or 'localhost'
-        port = int(port or cnf['port'] or 3306)
+        port = port or cnf['port'] or 3306
         passwd = passwd or cnf['password']
         charset = charset or cnf['default-character-set'] or 'utf8'
 
@@ -597,7 +597,7 @@ class MyCli(object):
 
 @click.command()
 @click.option('-h', '--host', envvar='MYSQL_HOST', help='Host address of the database.')
-@click.option('-P', '--port', envvar='MYSQL_TCP_PORT', help='Port number to use for connection. Honors '
+@click.option('-P', '--port', envvar='MYSQL_TCP_PORT', type=int, help='Port number to use for connection. Honors '
               '$MYSQL_TCP_PORT')
 @click.option('-u', '--user', help='User name to connect to the database.')
 @click.option('-S', '--socket', envvar='MYSQL_UNIX_PORT', help='The socket file to use for connection.')
