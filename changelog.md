@@ -1,3 +1,11 @@
+1.5.1:
+======
+
+Bug Fixes:
+----------
+
+* Cast the value of port read from my.cnf to int. 
+
 1.5.0:
 ======
 
