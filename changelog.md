@@ -1,3 +1,11 @@
+1.5.2:
+======
+
+Bug Fixes:
+----------
+
+* Protect against port number being None when no port is specified in command line.
+
 1.5.1:
 ======
 
