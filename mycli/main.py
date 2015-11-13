@@ -289,7 +289,7 @@ class MyCli(object):
             socket = socket or cnf['socket']
         user = user or cnf['user'] or os.getenv('USER')
         host = host or cnf['host'] or 'localhost'
-        port = int(port or cnf['port']) or 3306
+        port = int(port or cnf['port'] or 3306)
         passwd = passwd or cnf['password']
         charset = charset or cnf['default-character-set'] or 'utf8'
 
