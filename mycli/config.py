@@ -27,7 +27,8 @@ def read_config_file(f):
     try:
         config = ConfigObj(f, interpolation=False)
     except ConfigObjError as e:
-        print("Error parsing config file '{0}'.".format(f), file=sys.stderr)
+        print("Error parsing line {0} of config file '{1}'.".format(
+              e.line_number, f), file=sys.stderr)
         print('Recovering partially parsed config values.', file=sys.stderr)
         return e.config
     except (IOError, OSError) as e:
