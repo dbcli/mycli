@@ -35,8 +35,8 @@ from .clistyle import style_factory
 from .sqlexecute import SQLExecute
 from .clibuffer import CLIBuffer
 from .completion_refresher import CompletionRefresher
-from .config import (write_default_config, load_config, get_mylogin_cnf_path,
-                     open_mylogin_cnf, CryptoError)
+from .config import (write_default_config, get_mylogin_cnf_path,
+                     open_mylogin_cnf, CryptoError, read_config_files)
 from .key_bindings import mycli_bindings
 from .encodingutils import utf8tounicode
 from .lexer import MyCliLexer
@@ -70,6 +70,14 @@ class MyCli(object):
         os.path.expanduser('~/.my.cnf')
     ]
 
+    system_config_files = [
+		'/etc/myclirc',
+    ]
+
+    default_config_file = os.path.join(PACKAGE_ROOT, 'myclirc')
+    user_config_file = os.path.expanduser('~/.myclirc')
+
+
     def __init__(self, sqlexecute=None, prompt=None,
             logfile=None, defaults_suffix=None, defaults_file=None,
             login_path=None):
@@ -85,12 +93,10 @@ class MyCli(object):
         if defaults_file:
             self.cnf_files = [defaults_file]
 
-        default_config = os.path.join(PACKAGE_ROOT, 'myclirc')
-        write_default_config(default_config, '~/.myclirc')
-
-
         # Load config.
-        c = self.config = load_config('~/.myclirc', default_config)
+        c = self.config = ConfigObj(self.default_config_file)
+        read_config_files(self.system_config_files, base_config=c)
+        read_config_files(self.user_config_file, base_config=c)
         self.multi_line = c['main'].as_bool('multi_line')
         self.destructive_warning = c['main'].as_bool('destructive_warning')
         self.key_bindings = c['main']['key_bindings']
@@ -99,6 +105,10 @@ class MyCli(object):
         self.syntax_style = c['main']['syntax_style']
         self.cli_style = c['colors']
         self.wider_completion_menu = c['main'].as_bool('wider_completion_menu')
+
+        # Write user config if system config wasn't the last config loaded.
+        if c.filename not in self.system_config_files:
+            write_default_config(self.default_config_file, self.user_config_file)
 
         # audit log
         if self.logfile is None and 'audit_log' in c['main']:

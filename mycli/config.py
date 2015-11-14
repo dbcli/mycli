@@ -2,9 +2,9 @@ import shutil
 from io import BytesIO, TextIOWrapper
 import logging
 import os
-from os.path import expanduser, exists
+from os.path import exists
 import struct
-from configobj import ConfigObj
+from configobj import ConfigObj, ConfigObjError
 try:
     from Crypto.Cipher import AES
 except ImportError:
@@ -19,16 +19,33 @@ class CryptoError(Exception):
 
 logger = logging.getLogger(__name__)
 
-def load_config(usr_cfg, def_cfg=None):
-    cfg = ConfigObj()
-    cfg.merge(ConfigObj(def_cfg, interpolation=False))
-    cfg.merge(ConfigObj(expanduser(usr_cfg), interpolation=False))
-    cfg.filename = expanduser(usr_cfg)
+def read_config_files(files, base_config=None):
+    """Read and merge a string or list of config files.
 
-    return cfg
+    If a file is read successfully, the config object takes on that
+    filename.
+    """
+
+    config = base_config or ConfigObj()
+    files = [files] if isinstance(files, str) else files
+
+    for _file in files:
+        try:
+            _config = ConfigObj(_file, interpolation=False)
+            if bool(_config) is True:
+                config.filename = _file
+            config.merge(_config)
+        except ConfigObjError as e:
+            logger.error("Error parsing config file '{0}'.".format(_file))
+            logger.error('Recovering partially parsed config values.')
+            config.merge(e.config)
+        except (IOError, PermissionError) as e:
+            logger.warning("You don't have permission to read config "
+                           "file' {0}'.".format(e.filename))
+
+    return config
 
 def write_default_config(source, destination, overwrite=False):
-    destination = expanduser(destination)
     if not overwrite and exists(destination):
         return
 
