@@ -1,9 +1,11 @@
+from __future__ import print_function
 import shutil
 from io import BytesIO, TextIOWrapper
 import logging
 import os
 from os.path import exists
 import struct
+import sys
 from configobj import ConfigObj, ConfigObjError
 try:
     from Crypto.Cipher import AES
@@ -25,12 +27,12 @@ def read_config_file(f):
     try:
         config = ConfigObj(f, interpolation=False)
     except ConfigObjError as e:
-        logger.error("Error parsing config file '{0}'.".format(f))
-        logger.error('Recovering partially parsed config values.')
+        print("Error parsing config file '{0}'.".format(f), file=sys.stderr)
+        print('Recovering partially parsed config values.', file=sys.stderr)
         return e.config
     except (IOError, OSError) as e:
-        logger.warning("You don't have permission to read config "
-                       "file '{0}'.".format(e.filename))
+        print("You don't have permission to read config file "
+              "'{0}'.".format(e.filename), file=sys.stderr)
         return None
 
     return config
