@@ -95,9 +95,9 @@ class MyCli(object):
             self.cnf_files = [defaults_file]
 
         # Load config.
-        c = self.config = read_config_file(self.default_config_file)
-        read_config_files(self.system_config_files, base_config=c)
-        read_config_file(self.user_config_file, base_config=c)
+        config_files = ([self.default_config_file] + self.system_config_files +
+                        [self.user_config_file])
+        c = self.config = read_config_files(config_files)
         self.multi_line = c['main'].as_bool('multi_line')
         self.destructive_warning = c['main'].as_bool('destructive_warning')
         self.key_bindings = c['main']['key_bindings']

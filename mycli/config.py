@@ -19,36 +19,32 @@ class CryptoError(Exception):
 
 logger = logging.getLogger(__name__)
 
-def read_config_file(f, base_config=None):
-    """Read and merge a config file.
+def read_config_file(f):
+    """Read a config file."""
 
-    If the file is read successfully, the config object takes
-    on that filename.
-    """
-
-    config = ConfigObj() if base_config is None else base_config
     try:
-        _config = ConfigObj(f, interpolation=False)
-        config.merge(_config)
-        if bool(_config) is True:
-            config.filename = f
+        config = ConfigObj(f, interpolation=False)
     except ConfigObjError as e:
         logger.error("Error parsing config file '{0}'.".format(f))
         logger.error('Recovering partially parsed config values.')
-        config.merge(e.config)
-    except (IOError, PermissionError) as e:
+        return e.config
+    except (IOError, OSError) as e:
         logger.warning("You don't have permission to read config "
                        "file '{0}'.".format(e.filename))
+        return None
 
     return config
 
-def read_config_files(files, base_config=None):
+def read_config_files(files):
     """Read and merge a list of config files."""
 
-    config = ConfigObj() if base_config is None else base_config
+    config = ConfigObj()
 
     for _file in files:
-        read_config_file(_file, base_config=config)
+        _config = read_config_file(_file)
+        if bool(_config) is True:
+            config.merge(_config)
+            config.filename = _file
 
     return config
 
