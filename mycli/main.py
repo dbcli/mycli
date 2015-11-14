@@ -251,15 +251,7 @@ class MyCli(object):
         :param keys: list of keys to retrieve
         :returns: tuple, with None for missing keys.
         """
-        cnf = ConfigObj()
-        for _file in files:
-            try:
-                cnf.merge(ConfigObj(_file, interpolation=False))
-            except ConfigObjError as e:
-                self.logger.error('Error parsing %r.', _file)
-                self.logger.error('Recovering partially parsed config values.')
-                cnf.merge(e.config)
-                pass
+        cnf = read_config_files(files)
 
         sections = ['client']
         if self.login_path and self.login_path != 'client':
