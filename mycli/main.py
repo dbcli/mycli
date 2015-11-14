@@ -289,7 +289,14 @@ class MyCli(object):
             socket = socket or cnf['socket']
         user = user or cnf['user'] or os.getenv('USER')
         host = host or cnf['host'] or 'localhost'
-        port = int(port or cnf['port'] or 3306)
+        port = port or cnf['port'] or 3306
+        try:
+            port = int(port)
+        except ValueError as e:
+            self.output("Error: Invalid port number: '{0}'.".format(port),
+                        err=True, fg='red')
+            exit(1)
+
         passwd = passwd or cnf['password']
         charset = charset or cnf['default-character-set'] or 'utf8'
 
