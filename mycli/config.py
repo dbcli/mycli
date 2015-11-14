@@ -19,29 +19,36 @@ class CryptoError(Exception):
 
 logger = logging.getLogger(__name__)
 
-def read_config_files(files, base_config=None):
-    """Read and merge a string or list of config files.
+def read_config_file(f, base_config=None):
+    """Read and merge a config file.
 
-    If a file is read successfully, the config object takes on that
-    filename.
+    If the file is read successfully, the config object takes
+    on that filename.
     """
 
-    config = base_config or ConfigObj()
-    files = [files] if isinstance(files, str) else files
+    config = ConfigObj() if base_config is None else base_config
+    try:
+        _config = ConfigObj(f, interpolation=False)
+        config.merge(_config)
+        if bool(_config) is True:
+            config.filename = f
+    except ConfigObjError as e:
+        logger.error("Error parsing config file '{0}'.".format(f))
+        logger.error('Recovering partially parsed config values.')
+        config.merge(e.config)
+    except (IOError, PermissionError) as e:
+        logger.warning("You don't have permission to read config "
+                       "file '{0}'.".format(e.filename))
+
+    return config
+
+def read_config_files(files, base_config=None):
+    """Read and merge a list of config files."""
+
+    config = ConfigObj() if base_config is None else base_config
 
     for _file in files:
-        try:
-            _config = ConfigObj(_file, interpolation=False)
-            if bool(_config) is True:
-                config.filename = _file
-            config.merge(_config)
-        except ConfigObjError as e:
-            logger.error("Error parsing config file '{0}'.".format(_file))
-            logger.error('Recovering partially parsed config values.')
-            config.merge(e.config)
-        except (IOError, PermissionError) as e:
-            logger.warning("You don't have permission to read config "
-                           "file' {0}'.".format(e.filename))
+        read_config_file(_file, base_config=config)
 
     return config
 

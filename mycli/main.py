@@ -36,7 +36,8 @@ from .sqlexecute import SQLExecute
 from .clibuffer import CLIBuffer
 from .completion_refresher import CompletionRefresher
 from .config import (write_default_config, get_mylogin_cnf_path,
-                     open_mylogin_cnf, CryptoError, read_config_files)
+                     open_mylogin_cnf, CryptoError, read_config_file,
+                     read_config_files)
 from .key_bindings import mycli_bindings
 from .encodingutils import utf8tounicode
 from .lexer import MyCliLexer
@@ -96,7 +97,7 @@ class MyCli(object):
         # Load config.
         c = self.config = ConfigObj(self.default_config_file)
         read_config_files(self.system_config_files, base_config=c)
-        read_config_files(self.user_config_file, base_config=c)
+        read_config_file(self.user_config_file, base_config=c)
         self.multi_line = c['main'].as_bool('multi_line')
         self.destructive_warning = c['main'].as_bool('destructive_warning')
         self.key_bindings = c['main']['key_bindings']

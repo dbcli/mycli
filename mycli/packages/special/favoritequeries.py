@@ -58,5 +58,5 @@ Examples:
         self.config.write()
         return '%s: Deleted' % name
 
-from ...config import read_config_files
-favoritequeries = FavoriteQueries(read_config_files(expanduser('~/.myclirc')))
+from ...config import read_config_file
+favoritequeries = FavoriteQueries(read_config_file(expanduser('~/.myclirc')))
