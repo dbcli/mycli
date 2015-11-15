@@ -2,7 +2,7 @@ Source: mycli
 Section: python
 Priority: extra
 Maintainer: Amjith Ramanujam <amjith.r@gmail.com>
-Build-Depends: debhelper (>= 9), python, dh-virtualenv (>= 0.7)
+Build-Depends: debhelper (>= 9), python, dh-virtualenv (>= 0.7), python-setuptools, python-dev
 Standards-Version: 3.9.5
 
 Package: mycli
