@@ -21,19 +21,27 @@ class CryptoError(Exception):
 
 logger = logging.getLogger(__name__)
 
+def log(logger, level, message):
+    """Logs message to stderr if logging isn't initialized."""
+
+    if logger.parent.name != 'root':
+        logger.log(level, message)
+    else:
+        print(message, file=sys.stderr)
+
 def read_config_file(f):
     """Read a config file."""
 
     try:
         config = ConfigObj(f, interpolation=False)
     except ConfigObjError as e:
-        print("Error parsing line {0} of config file '{1}'.".format(
-              e.line_number, f), file=sys.stderr)
-        print('Recovering partially parsed config values.', file=sys.stderr)
+        log(logger, logging.ERROR, "Unable to parse line {0} of config file "
+            "'{1}'.".format(e.line_number, f))
+        log(logger, logging.ERROR, "Using successfully parsed config values.")
         return e.config
     except (IOError, OSError) as e:
-        print("You don't have permission to read config file "
-              "'{0}'.".format(e.filename), file=sys.stderr)
+        log(logger, logging.WARNING, "You don't have permission to read "
+            "config file '{0}'.".format(e.filename))
         return None
 
     return config
