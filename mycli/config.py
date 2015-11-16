@@ -1,10 +1,16 @@
+from __future__ import print_function
 import shutil
 from io import BytesIO, TextIOWrapper
 import logging
 import os
-from os.path import expanduser, exists
+from os.path import exists
 import struct
-from configobj import ConfigObj
+import sys
+from configobj import ConfigObj, ConfigObjError
+try:
+    basestring
+except NameError:
+    basestring = str
 try:
     from Crypto.Cipher import AES
 except ImportError:
@@ -19,16 +25,49 @@ class CryptoError(Exception):
 
 logger = logging.getLogger(__name__)
 
-def load_config(usr_cfg, def_cfg=None):
-    cfg = ConfigObj()
-    cfg.merge(ConfigObj(def_cfg, interpolation=False))
-    cfg.merge(ConfigObj(expanduser(usr_cfg), interpolation=False))
-    cfg.filename = expanduser(usr_cfg)
+def log(logger, level, message):
+    """Logs message to stderr if logging isn't initialized."""
 
-    return cfg
+    if logger.parent.name != 'root':
+        logger.log(level, message)
+    else:
+        print(message, file=sys.stderr)
+
+def read_config_file(f):
+    """Read a config file."""
+
+    if isinstance(f, basestring):
+        f = os.path.expanduser(f)
+
+    try:
+        config = ConfigObj(f, interpolation=False)
+    except ConfigObjError as e:
+        log(logger, logging.ERROR, "Unable to parse line {0} of config file "
+            "'{1}'.".format(e.line_number, f))
+        log(logger, logging.ERROR, "Using successfully parsed config values.")
+        return e.config
+    except (IOError, OSError) as e:
+        log(logger, logging.WARNING, "You don't have permission to read "
+            "config file '{0}'.".format(e.filename))
+        return None
+
+    return config
+
+def read_config_files(files):
+    """Read and merge a list of config files."""
+
+    config = ConfigObj()
+
+    for _file in files:
+        _config = read_config_file(_file)
+        if bool(_config) is True:
+            config.merge(_config)
+            config.filename = _config.filename
+
+    return config
 
 def write_default_config(source, destination, overwrite=False):
-    destination = expanduser(destination)
+    destination = os.path.expanduser(destination)
     if not overwrite and exists(destination):
         return
 

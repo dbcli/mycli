@@ -35,8 +35,9 @@ from .clistyle import style_factory
 from .sqlexecute import SQLExecute
 from .clibuffer import CLIBuffer
 from .completion_refresher import CompletionRefresher
-from .config import (write_default_config, load_config, get_mylogin_cnf_path,
-                     open_mylogin_cnf, CryptoError)
+from .config import (write_default_config, get_mylogin_cnf_path,
+                     open_mylogin_cnf, CryptoError, read_config_file,
+                     read_config_files)
 from .key_bindings import mycli_bindings
 from .encodingutils import utf8tounicode
 from .lexer import MyCliLexer
@@ -67,8 +68,16 @@ class MyCli(object):
         '/etc/my.cnf',
         '/etc/mysql/my.cnf',
         '/usr/local/etc/my.cnf',
-        os.path.expanduser('~/.my.cnf')
+        '~/.my.cnf'
     ]
+
+    system_config_files = [
+		'/etc/myclirc',
+    ]
+
+    default_config_file = os.path.join(PACKAGE_ROOT, 'myclirc')
+    user_config_file = '~/.myclirc'
+
 
     def __init__(self, sqlexecute=None, prompt=None,
             logfile=None, defaults_suffix=None, defaults_file=None,
@@ -85,12 +94,10 @@ class MyCli(object):
         if defaults_file:
             self.cnf_files = [defaults_file]
 
-        default_config = os.path.join(PACKAGE_ROOT, 'myclirc')
-        write_default_config(default_config, '~/.myclirc')
-
-
         # Load config.
-        c = self.config = load_config('~/.myclirc', default_config)
+        config_files = ([self.default_config_file] + self.system_config_files +
+                        [self.user_config_file])
+        c = self.config = read_config_files(config_files)
         self.multi_line = c['main'].as_bool('multi_line')
         self.destructive_warning = c['main'].as_bool('destructive_warning')
         self.key_bindings = c['main']['key_bindings']
@@ -99,6 +106,10 @@ class MyCli(object):
         self.syntax_style = c['main']['syntax_style']
         self.cli_style = c['colors']
         self.wider_completion_menu = c['main'].as_bool('wider_completion_menu')
+
+        # Write user config if system config wasn't the last config loaded.
+        if c.filename not in self.system_config_files:
+            write_default_config(self.default_config_file, self.user_config_file)
 
         # audit log
         if self.logfile is None and 'audit_log' in c['main']:
@@ -241,15 +252,7 @@ class MyCli(object):
         :param keys: list of keys to retrieve
         :returns: tuple, with None for missing keys.
         """
-        cnf = ConfigObj()
-        for _file in files:
-            try:
-                cnf.merge(ConfigObj(_file, interpolation=False))
-            except ConfigObjError as e:
-                self.logger.error('Error parsing %r.', _file)
-                self.logger.error('Recovering partially parsed config values.')
-                cnf.merge(e.config)
-                pass
+        cnf = read_config_files(files)
 
         sections = ['client']
         if self.login_path and self.login_path != 'client':
