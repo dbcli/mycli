@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from os.path import expanduser
 
 class FavoriteQueries(object):
 
@@ -59,4 +58,4 @@ Examples:
         return '%s: Deleted' % name
 
 from ...config import read_config_file
-favoritequeries = FavoriteQueries(read_config_file(expanduser('~/.myclirc')))
+favoritequeries = FavoriteQueries(read_config_file('~/.myclirc'))

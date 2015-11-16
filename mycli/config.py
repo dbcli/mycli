@@ -8,6 +8,10 @@ import struct
 import sys
 from configobj import ConfigObj, ConfigObjError
 try:
+    basestring
+except NameError:
+    basestring = str
+try:
     from Crypto.Cipher import AES
 except ImportError:
     AES = None
@@ -32,6 +36,9 @@ def log(logger, level, message):
 def read_config_file(f):
     """Read a config file."""
 
+    if isinstance(f, basestring):
+        f = os.path.expanduser(f)
+
     try:
         config = ConfigObj(f, interpolation=False)
     except ConfigObjError as e:
@@ -55,11 +62,12 @@ def read_config_files(files):
         _config = read_config_file(_file)
         if bool(_config) is True:
             config.merge(_config)
-            config.filename = _file
+            config.filename = _config.filename
 
     return config
 
 def write_default_config(source, destination, overwrite=False):
+    destination = os.path.expanduser(destination)
     if not overwrite and exists(destination):
         return
 

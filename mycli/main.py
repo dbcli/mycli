@@ -68,7 +68,7 @@ class MyCli(object):
         '/etc/my.cnf',
         '/etc/mysql/my.cnf',
         '/usr/local/etc/my.cnf',
-        os.path.expanduser('~/.my.cnf')
+        '~/.my.cnf'
     ]
 
     system_config_files = [
@@ -76,7 +76,7 @@ class MyCli(object):
     ]
 
     default_config_file = os.path.join(PACKAGE_ROOT, 'myclirc')
-    user_config_file = os.path.expanduser('~/.myclirc')
+    user_config_file = '~/.myclirc'
 
 
     def __init__(self, sqlexecute=None, prompt=None,
