@@ -35,7 +35,7 @@ def run(executor, sql, join=False):
     " Return string output for the sql to be run "
     result = []
     for title, rows, headers, status in executor.run(sql):
-        result.extend(format_output(title, rows, headers, status, 'psql'))
+        result.extend(format_output(title, rows, headers, status, 'psql', special.is_expanded_output()))
     if join:
         result = '\n'.join(result)
     return result
