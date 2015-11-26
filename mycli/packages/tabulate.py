@@ -881,6 +881,8 @@ def tabulate(tabular_data, headers=[], tablefmt="simple",
      eggs & 451      \\\\
     \\bottomrule
     \end{tabular}
+
+    Also returns a tuple of the raw rows pulled from tabular_data
     """
     if tabular_data is None:
         tabular_data = []
@@ -923,7 +925,7 @@ def tabulate(tabular_data, headers=[], tablefmt="simple",
     if not isinstance(tablefmt, TableFormat):
         tablefmt = _table_formats.get(tablefmt, _table_formats["simple"])
 
-    return _format_table(tablefmt, headers, rows, minwidths, aligns)
+    return _format_table(tablefmt, headers, rows, minwidths, aligns), rows
 
 
 def _build_simple_row(padded_cells, rowfmt):
