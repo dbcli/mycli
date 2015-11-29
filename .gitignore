@@ -4,4 +4,6 @@
 /mycli.egg-info
 /src
 
+.vagrant
 *.pyc
+*.deb

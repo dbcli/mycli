@@ -13,7 +13,7 @@ Vagrant.configure(2) do |config|
     sudo echo "deb http://ppa.launchpad.net/spotify-jyrki/dh-virtualenv/ubuntu trusty main" >> /etc/apt/sources.list
     sudo echo "deb-src http://ppa.launchpad.net/spotify-jyrki/dh-virtualenv/ubuntu trusty main" >> /etc/apt/sources.list
     sudo apt-get update
-    sudo apt-get install -y --force-yes python-virtualenv dh-virtualenv debhelper build-essential
+    sudo apt-get install -y --force-yes python-virtualenv dh-virtualenv debhelper build-essential python-setuptools python-dev
     echo "-> Cleaning up old workspace"
     rm -rf build
     mkdir -p build
