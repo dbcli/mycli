@@ -53,6 +53,9 @@ Check the [detailed install instructions](#detailed-install-instructions) for de
       -l, --logfile FILENAME        Log every query and its results to a file.
       --defaults-group-suffix TEXT  Read config group with the specified suffix.
       --defaults-file PATH          Only read default options from the given file
+      --auto-vertical-output        Automatically switch to vertical output mode
+                                    if the result is wider than the terminal
+                                    width.
       --login-path TEXT             Read this path from the login file.
       --help                        Show this message and exit.
 
