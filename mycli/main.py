@@ -81,11 +81,12 @@ class MyCli(object):
 
     def __init__(self, sqlexecute=None, prompt=None,
             logfile=None, defaults_suffix=None, defaults_file=None,
-            login_path=None):
+            login_path=None, auto_vertical_output=False):
         self.sqlexecute = sqlexecute
         self.logfile = logfile
         self.defaults_suffix = defaults_suffix
         self.login_path = login_path
+        self.auto_vertical_output = auto_vertical_output
 
         # self.cnf_files is a class variable that stores the list of mysql
         # config files to read in at launch.
@@ -466,8 +467,17 @@ class MyCli(object):
                             if not click.confirm('Do you want to continue?'):
                                 self.output("Aborted!", err=True, fg='red')
                                 break
-                        output.extend(format_output(title, cur, headers,
-                            status, self.table_format))
+
+                        if self.auto_vertical_output:
+                            max_width = self.cli.output.get_size().columns
+                        else:
+                            max_width = None
+
+                        formatted = format_output(title, cur, headers,
+                            status, self.table_format,
+                            special.is_expanded_output(), max_width)
+
+                        output.extend(formatted)
                         end = time()
                         total += end - start
                         mutating = mutating or is_mutating(status)
@@ -626,19 +636,22 @@ class MyCli(object):
               help='Read config group with the specified suffix.')
 @click.option('--defaults-file', type=click.Path(),
               help='Only read default options from the given file')
+@click.option('--auto-vertical-output', is_flag=True,
+              help='Automatically switch to vertical output mode if the result is wider than the terminal width.')
 @click.option('--login-path', type=str,
               help='Read this path from the login file.')
 @click.argument('database', default='', nargs=1)
 def cli(database, user, host, port, socket, password, dbname,
         version, prompt, logfile, defaults_group_suffix, defaults_file,
-        login_path):
+        login_path, auto_vertical_output):
     if version:
         print('Version:', __version__)
         sys.exit(0)
 
     mycli = MyCli(prompt=prompt, logfile=logfile,
                   defaults_suffix=defaults_group_suffix,
-                  defaults_file=defaults_file, login_path=login_path)
+                  defaults_file=defaults_file, login_path=login_path,
+                  auto_vertical_output=auto_vertical_output)
 
     # Choose which ever one has a valid value.
     database = database or dbname
@@ -656,20 +669,34 @@ def cli(database, user, host, port, socket, password, dbname,
 
     mycli.run_cli()
 
-def format_output(title, cur, headers, status, table_format):
+def format_output(title, cur, headers, status, table_format, expanded=False, max_width=None):
     output = []
     if title:  # Only print the title if it's not None.
         output.append(title)
     if cur:
         headers = [utf8tounicode(x) for x in headers]
-        if special.is_expanded_output():
+        if expanded:
             output.append(expanded_table(cur, headers))
         else:
-            output.append(tabulate(cur, headers, tablefmt=table_format,
-                missingval='<null>'))
+            rows = list(cur)
+            tabulated, frows = tabulate(rows, headers, tablefmt=table_format,
+                missingval='<null>')
+            if (max_width and rows and
+                    content_exceeds_width(frows[0], max_width) and
+                    headers):
+                output.append(expanded_table(rows, headers))
+            else:
+                output.append(tabulated)
     if status:  # Only print the status if it's not None.
         output.append(status)
     return output
+
+def content_exceeds_width(row, width):
+    # Account for 3 characters between each column
+    separator_space = (len(row)*3)
+    # Add 2 columns for a bit of buffer
+    line_len = sum([len(str(x)) for x in row]) + separator_space + 2
+    return line_len > width
 
 def need_completion_refresh(queries):
     """Determines if the completion needs a refresh by checking if the sql

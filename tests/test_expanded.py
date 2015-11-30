@@ -11,4 +11,3 @@ name | world
 age  | 456
 """
     assert expected == expanded_table(input, ["name", "age"])
-
