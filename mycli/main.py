@@ -678,10 +678,11 @@ def format_output(title, cur, headers, status, table_format, expanded=False, max
         if expanded:
             output.append(expanded_table(cur, headers))
         else:
-            tabulated, rows = tabulate(cur, headers, tablefmt=table_format,
+            rows = list(cur)
+            tabulated, frows = tabulate(rows, headers, tablefmt=table_format,
                 missingval='<null>')
             if (max_width and rows and
-                    content_exceeds_width(rows[0], max_width) and
+                    content_exceeds_width(frows[0], max_width) and
                     headers):
                 output.append(expanded_table(rows, headers))
             else:
