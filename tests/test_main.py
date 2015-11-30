@@ -17,5 +17,5 @@ def test_format_output_auto_expand():
     expanded_results = format_output('Title', [('abc', 'def')],
                                      ['head1', 'head2'], 'test status', 'psql',
                                      max_width=1)
-    expanded = ['Title', u'***************************[ 1. row ]***************************\nhead1 | abc    \nhead2 | def    \n', 'test status']
+    expanded = ['Title', u'***************************[ 1. row ]***************************\nhead1 | abc\nhead2 | def\n', 'test status']
     assert expanded_results == expanded
