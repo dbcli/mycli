@@ -617,7 +617,6 @@ class MyCli(object):
 
 @click.command()
 @click.option('-h', '--host', envvar='MYSQL_HOST', help='Host address of the database.')
-@click.option('--auto-vertical-output', is_flag=True, help='Automatically switch to vertical output mode if the result is wider than the terminal width.')
 @click.option('-P', '--port', envvar='MYSQL_TCP_PORT', type=int, help='Port number to use for connection. Honors '
               '$MYSQL_TCP_PORT')
 @click.option('-u', '--user', help='User name to connect to the database.')
@@ -637,6 +636,8 @@ class MyCli(object):
               help='Read config group with the specified suffix.')
 @click.option('--defaults-file', type=click.Path(),
               help='Only read default options from the given file')
+@click.option('--auto-vertical-output', is_flag=True,
+              help='Automatically switch to vertical output mode if the result is wider than the terminal width.')
 @click.option('--login-path', type=str,
               help='Read this path from the login file.')
 @click.argument('database', default='', nargs=1)
