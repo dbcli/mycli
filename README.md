@@ -53,6 +53,9 @@ Check the [detailed install instructions](#detailed-install-instructions) for de
       -l, --logfile FILENAME        Log every query and its results to a file.
       --defaults-group-suffix TEXT  Read config group with the specified suffix.
       --defaults-file PATH          Only read default options from the given file
+      --auto-vertical-output        Automatically switch to vertical output mode
+                                    if the result is wider than the terminal
+                                    width.
       --login-path TEXT             Read this path from the login file.
       --help                        Show this message and exit.
 
@@ -69,7 +72,7 @@ Features
 
 `mycli` is written using [prompt_toolkit](https://github.com/jonathanslenders/python-prompt-toolkit/).
 
-* Auto-completion as you type for SQL keywords as well as tables and
+* Auto-completion as you type for SQL keywords as well as tables, views and
   columns in the database.
 * Syntax highlighting using Pygments.
 * Smart-completion (enabled by default) will suggest context-sensitive completion.
@@ -77,7 +80,16 @@ Features
     - `SELECT * FROM <tab>` will only show table names. 
     - `SELECT * FROM users WHERE <tab>` will only show column names. 
 
+* Support for multiline queries.
+
+* Favorite queries. Save a query using `\fs alias query` and execute it with `\f alias` whenever you need.
+
+* Timing of sql statments and table rendering.
+
 * Config file is automatically created at ``~/.myclirc`` at first launch.
+
+* Log every query and its results to a file (disabled by default).
+
 * Pretty prints tabular data.
 
 Contributions:
