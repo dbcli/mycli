@@ -176,6 +176,36 @@ def test_favorite_query_multiple_statement(executor):
     assert results == ['test-ad: Deleted']
 
 @dbtest
+def test_favorite_query_expanded_output(executor):
+    set_expanded_output(False)
+    run(executor, '''create table test(a text)''')
+    run(executor, '''insert into test values('abc')''')
+
+    results = run(executor, "\\fs test-ae select * from test")
+    assert results == ['Saved.']
+
+    results = run(executor, "\\f test-ae \G", join=True)
+
+    expected_results = set([
+        dedent("""\
+        > select * from test
+        -[ RECORD 0 ]
+        a | abc
+        """),
+        dedent("""\
+        > select * from test
+        ***************************[ 1. row ]***************************
+        a | abc
+        """),
+    ])
+    set_expanded_output(False)
+
+    assert results in expected_results
+
+    results = run(executor, "\\fd test-ae")
+    assert results == ['test-ae: Deleted']
+
+@dbtest
 def test_special_command(executor):
     results = run(executor, '\\?')
     expected_line = u'| help      | \\?               | Show this help.                              |\n'

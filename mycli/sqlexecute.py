@@ -98,15 +98,14 @@ class SQLExecute(object):
             # and then proceed to execute the sql as normal.
             if sql.endswith('\\G'):
                 special.set_expanded_output(True)
-                yield self.execute_normal_sql(sql.rsplit('\\G', 1)[0])
-            else:
-                try:   # Special command
-                    _logger.debug('Trying a dbspecial command. sql: %r', sql)
-                    cur = self.conn.cursor()
-                    for result in special.execute(cur, sql):
-                        yield result
-                except special.CommandNotFound:  # Regular SQL
-                    yield self.execute_normal_sql(sql)
+                sql = sql[:-2].strip()
+            try:   # Special command
+                _logger.debug('Trying a dbspecial command. sql: %r', sql)
+                cur = self.conn.cursor()
+                for result in special.execute(cur, sql):
+                    yield result
+            except special.CommandNotFound:  # Regular SQL
+                yield self.execute_normal_sql(sql)
 
     def execute_normal_sql(self, split_sql):
         _logger.debug('Regular sql statement. sql: %r', split_sql)
