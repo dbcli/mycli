@@ -94,8 +94,7 @@ class SQLExecute(object):
             # Remove spaces, eol and semi-colons.
             sql = sql.rstrip(';')
 
-            # \G is treated specially since we have to set the expanded output
-            # and then proceed to execute the sql as normal.
+            # \G is treated specially since we have to set the expanded output.
             if sql.endswith('\\G'):
                 special.set_expanded_output(True)
                 sql = sql[:-2].strip()
