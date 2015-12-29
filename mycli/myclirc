@@ -35,9 +35,11 @@ timing = True
 # Recommended: psql, fancy_grid and grid.
 table_format = psql
 
-# Syntax Style. Possible values: manni, igor, xcode, vim, autumn, vs, rrt,
-# native, perldoc, borland, tango, emacs, friendly, monokai, paraiso-dark,
-# colorful, murphy, bw, pastie, paraiso-light, trac, default, fruity
+# Syntax coloring style. Possible values (many support the "-dark" suffix):
+# manni, igor, xcode, vim, autumn, vs, rrt, native, perldoc, borland, tango, emacs,
+# friendly, monokai, paraiso, colorful, murphy, bw, pastie, paraiso-light, trac,
+# default, fruity.
+# Screenshots at http://mycli.net/syntax
 syntax_style = default
 
 # Keybindings: Possible values: emacs, vi.
