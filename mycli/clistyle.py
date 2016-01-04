@@ -1,7 +1,7 @@
 from pygments.token import string_to_tokentype
 from pygments.style import Style
 from pygments.util import ClassNotFound
-from prompt_toolkit.styles import default_style_extensions
+from prompt_toolkit.styles import default_style_extensions, PygmentsStyle
 import pygments.styles
 
 
@@ -19,4 +19,4 @@ def style_factory(name, cli_style):
         custom_styles = dict([(string_to_tokentype(x), y) for x, y in cli_style.items()])
         styles.update(custom_styles)
 
-    return CLIStyle
+    return PygmentsStyle(CLIStyle)
