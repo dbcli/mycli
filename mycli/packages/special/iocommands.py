@@ -54,16 +54,12 @@ def set_pager(arg, **_):
 
     return [(None, None, None, msg)]
 
+@export
 @special_command('nopager', '\\n', 'Disable pager, print to stdout.',
-        arg_type=NO_QUERY, aliases=('\\n', ), case_sensitive=True)
+                 arg_type=NO_QUERY, aliases=('\\n', ), case_sensitive=True)
 def disable_pager():
     set_pager_enabled(False)
     return [(None, None, None, 'Pager disabled.')]
-
-@export
-def is_pager_enabled():
-    return PAGER_ENABLED
-
 
 @special_command('\\timing', '\\t', 'Toggle timing of commands.', arg_type=NO_QUERY, aliases=('\\t', ), case_sensitive=True)
 def toggle_timing():
