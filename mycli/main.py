@@ -525,7 +525,10 @@ class MyCli(object):
                     self.output(str(e), err=True, fg='red')
                 else:
                     try:
-                        self.output_via_pager('\n'.join(output))
+                        if special.is_pager_enabled():
+                            self.output_via_pager('\n'.join(output))
+                        else:
+                            self.output('\n'.join(output))
                     except KeyboardInterrupt:
                         pass
                     if special.is_timing_enabled():
@@ -568,9 +571,11 @@ class MyCli(object):
         return less_opts
 
     def set_pager_from_config(self):
-        cnf = self.read_my_cnf_files(self.cnf_files, ['pager'])
+        cnf = self.read_my_cnf_files(self.cnf_files, ['pager', 'skip-pager'])
         if cnf['pager']:
             special.set_pager(cnf['pager'])
+        if cnf['skip-pager']:
+            special.disable_pager()
 
     def refresh_completions(self, reset=False):
         if reset:

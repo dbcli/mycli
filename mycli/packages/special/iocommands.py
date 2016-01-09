@@ -15,11 +15,21 @@ from .utils import handle_cd_command
 TIMING_ENABLED = False
 use_expanded_output = False
 ORIGINAL_PAGER = os.environ.get('PAGER', '')
+PAGER_ENABLED = True
 
 @export
 def set_timing_enabled(val):
     global TIMING_ENABLED
     TIMING_ENABLED = val
+
+@export
+def set_pager_enabled(val):
+    global PAGER_ENABLED
+    PAGER_ENABLED = val
+
+@export
+def is_pager_enabled():
+    return PAGER_ENABLED
 
 @export
 def get_original_pager():
@@ -32,14 +42,28 @@ def set_pager(arg, **_):
         if not ORIGINAL_PAGER:
             os.environ.pop('PAGER', None)
             msg = 'Reset pager.'
+            set_pager_enabled(False)
         else:
             os.environ['PAGER'] = ORIGINAL_PAGER
             msg = 'Reset pager back to default. Default: %s' % ORIGINAL_PAGER
+            set_pager_enabled(True)
     else:
         os.environ['PAGER'] = arg
         msg = 'PAGER set to %s.' % arg
+        set_pager_enabled(True)
 
     return [(None, None, None, msg)]
+
+@special_command('nopager', '\\n', 'Disable pager, print to stdout.',
+        arg_type=NO_QUERY, aliases=('\\n', ), case_sensitive=True)
+def disable_pager():
+    set_pager_enabled(False)
+    return [(None, None, None, 'Pager disabled.')]
+
+@export
+def is_pager_enabled():
+    return PAGER_ENABLED
+
 
 @special_command('\\timing', '\\t', 'Toggle timing of commands.', arg_type=NO_QUERY, aliases=('\\t', ), case_sensitive=True)
 def toggle_timing():
