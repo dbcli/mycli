@@ -15,8 +15,9 @@ from io import open
 import click
 import sqlparse
 from prompt_toolkit import CommandLineInterface, Application, AbortAction
+from prompt_toolkit.interface import AcceptAction
 from prompt_toolkit.enums import DEFAULT_BUFFER
-from prompt_toolkit.shortcuts import create_default_layout, create_eventloop
+from prompt_toolkit.shortcuts import create_prompt_layout, create_eventloop
 from prompt_toolkit.document import Document
 from prompt_toolkit.filters import Always, HasFocus, IsDone
 from prompt_toolkit.layout.processors import (HighlightMatchingBracketProcessor,
@@ -237,6 +238,8 @@ class MyCli(object):
         root_logger.addHandler(handler)
         root_logger.setLevel(level_map[log_level.upper()])
 
+        logging.captureWarnings(True)
+
         root_logger.debug('Initializing mycli logging.')
         root_logger.debug('Log file %r.', log_file)
 
@@ -382,26 +385,26 @@ class MyCli(object):
         get_toolbar_tokens = create_toolbar_tokens_func(lambda: self.key_bindings,
                                                         self.completion_refresher.is_refreshing)
 
-        layout = create_default_layout(lexer=MyCliLexer,
-                                       reserve_space_for_menu=True,
-                                       multiline=True,
-                                       get_prompt_tokens=prompt_tokens,
-                                       get_bottom_toolbar_tokens=get_toolbar_tokens,
-                                       display_completions_in_columns=self.wider_completion_menu,
-                                       extra_input_processors=[
-                                           ConditionalProcessor(
-                                               processor=HighlightMatchingBracketProcessor(chars='[](){}'),
-                                               filter=HasFocus(DEFAULT_BUFFER) & ~IsDone()),
-                                       ])
+        layout = create_prompt_layout(lexer=MyCliLexer,
+                                      multiline=True,
+                                      get_prompt_tokens=prompt_tokens,
+                                      get_bottom_toolbar_tokens=get_toolbar_tokens,
+                                      display_completions_in_columns=self.wider_completion_menu,
+                                      extra_input_processors=[
+                                          ConditionalProcessor(
+                                              processor=HighlightMatchingBracketProcessor(chars='[](){}'),
+                                              filter=HasFocus(DEFAULT_BUFFER) & ~IsDone()),
+                                      ])
         with self._completer_lock:
             buf = CLIBuffer(always_multiline=self.multi_line, completer=self.completer,
                     history=FileHistory(os.path.expanduser('~/.mycli-history')),
-                    complete_while_typing=Always())
+                    complete_while_typing=Always(), accept_action=AcceptAction.RETURN_DOCUMENT)
 
             application = Application(style=style_factory(self.syntax_style, self.cli_style),
                                       layout=layout, buffer=buf,
                                       key_bindings_registry=key_binding_manager.registry,
                                       on_exit=AbortAction.RAISE_EXCEPTION,
+                                      on_abort=AbortAction.RETRY,
                                       ignore_case=True)
             self.cli = CommandLineInterface(application=application,
                                        eventloop=create_eventloop())

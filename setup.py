@@ -14,7 +14,7 @@ description = 'CLI for MySQL Database. With auto-completion and syntax highlight
 install_requirements = [
     'click >= 4.1',
     'Pygments >= 2.0',  # Pygments has to be Capitalcased. WTF?
-    'prompt_toolkit==0.46',
+    'prompt_toolkit==0.57',
     'PyMySQL >= 0.6.2',
     'sqlparse >= 0.1.16',
     'configobj >= 5.0.6',

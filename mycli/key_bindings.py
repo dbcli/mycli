@@ -17,6 +17,7 @@ def mycli_bindings(get_key_bindings, set_key_bindings):
     key_binding_manager = KeyBindingManager(
             enable_open_in_editor=True,
             enable_system_bindings=True,
+            enable_abort_and_exit_bindings=True,
             enable_vi_mode=Condition(lambda cli: get_key_bindings() == 'vi'))
 
     @key_binding_manager.registry.add_binding(Keys.F2)
