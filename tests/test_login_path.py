@@ -96,7 +96,8 @@ def test_corrupted_pad():
 
 def test_get_mylogin_cnf_path():
     """Tests that the path for .mylogin.cnf is detected."""
-    del os.environ['MYSQL_TEST_LOGIN_FILE']
+    if 'MYSQL_TEST_LOGIN_FILE' in os.environ:
+        del os.environ['MYSQL_TEST_LOGIN_FILE']
     is_windows = sys.platform == 'win32'
 
     login_cnf_path = get_mylogin_cnf_path()
