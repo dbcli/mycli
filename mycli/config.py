@@ -74,7 +74,7 @@ def write_default_config(source, destination, overwrite=False):
     shutil.copyfile(source, destination)
 
 def get_mylogin_cnf_path():
-    """Return the path to the .mylogin.cnf file or None if doesn't exist."""
+    """Return the path to the login path file or None if it doesn't exist."""
     mylogin_cnf_path = os.getenv('MYSQL_TEST_LOGIN_FILE')
 
     if mylogin_cnf_path is None:
