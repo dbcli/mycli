@@ -75,14 +75,14 @@ def write_default_config(source, destination, overwrite=False):
 
 def get_mylogin_cnf_path():
     """Return the path to the .mylogin.cnf file or None if doesn't exist."""
-    app_data = os.getenv('APPDATA')
-    if app_data is None:
-        mylogin_cnf_dir = os.path.expanduser('~')
-    else:
-        mylogin_cnf_dir = os.path.join(app_data, 'MySQL')
+    mylogin_cnf_path = os.getenv('MYSQL_TEST_LOGIN_FILE')
 
-    mylogin_cnf_dir = os.path.abspath(mylogin_cnf_dir)
-    mylogin_cnf_path = os.path.join(mylogin_cnf_dir, '.mylogin.cnf')
+    if mylogin_cnf_path is None:
+        app_data = os.getenv('APPDATA')
+        default_dir = os.path.join(app_data, 'MySQL') if app_data else '~'
+        mylogin_cnf_path = os.path.join(default_dir, '.mylogin.cnf')
+
+    mylogin_cnf_path = os.path.expanduser(mylogin_cnf_path)
 
     if exists(mylogin_cnf_path):
         logger.debug("Found login path file at '{0}'".format(mylogin_cnf_path))
