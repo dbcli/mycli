@@ -122,7 +122,7 @@ def test_alternate_get_mylogin_cnf_path():
     if 'MYSQL_TEST_LOGIN_FILE' in os.environ:
         original_env = os.environ.pop('MYSQL_TEST_LOGIN_FILE')
 
-    temp_fh, temp_path = tempfile.mkstemp()
+    temp_path = tempfile.mkstemp()[1]
     os.environ['MYSQL_TEST_LOGIN_FILE'] = temp_path
 
     login_cnf_path = get_mylogin_cnf_path()
