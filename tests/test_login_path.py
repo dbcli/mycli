@@ -96,11 +96,15 @@ def test_corrupted_pad():
 
 def test_get_mylogin_cnf_path():
     """Tests that the path for .mylogin.cnf is detected."""
+    original_env = None
     if 'MYSQL_TEST_LOGIN_FILE' in os.environ:
-        del os.environ['MYSQL_TEST_LOGIN_FILE']
+        original_env = os.environ.pop('MYSQL_TEST_LOGIN_FILE')
     is_windows = sys.platform == 'win32'
 
     login_cnf_path = get_mylogin_cnf_path()
+
+    if original_env is not None:
+        os.environ['MYSQL_TEST_LOGIN_FILE'] = original_env
 
     if login_cnf_path is not None:
         assert login_cnf_path.endswith('.mylogin.cnf')
@@ -114,9 +118,16 @@ def test_get_mylogin_cnf_path():
 
 def test_alternate_get_mylogin_cnf_path():
     """Tests that the alternate path for .mylogin.cnf is detected."""
+    original_env = None
+    if 'MYSQL_TEST_LOGIN_FILE' in os.environ:
+        original_env = os.environ.pop('MYSQL_TEST_LOGIN_FILE')
+
     temp_fh, temp_path = tempfile.mkstemp()
     os.environ['MYSQL_TEST_LOGIN_FILE'] = temp_path
 
     login_cnf_path = get_mylogin_cnf_path()
+
+    if original_env is not None:
+        os.environ['MYSQL_TEST_LOGIN_FILE'] = original_env
 
     assert temp_path == login_cnf_path
