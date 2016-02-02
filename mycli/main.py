@@ -38,7 +38,7 @@ from .clibuffer import CLIBuffer
 from .completion_refresher import CompletionRefresher
 from .config import (write_default_config, get_mylogin_cnf_path,
                      open_mylogin_cnf, CryptoError, read_config_file,
-                     read_config_files)
+                     read_config_files, str_to_bool)
 from .key_bindings import mycli_bindings
 from .encodingutils import utf8tounicode
 from .lexer import MyCliLexer
@@ -243,11 +243,11 @@ class MyCli(object):
         root_logger.debug('Initializing mycli logging.')
         root_logger.debug('Log file %r.', log_file)
 
-    def connect_uri(self, uri):
+    def connect_uri(self, uri, local_infile=None):
         uri = urlparse(uri)
         database = uri.path[1:]  # ignore the leading fwd slash
         self.connect(database, uri.username, uri.password, uri.hostname,
-                uri.port)
+                uri.port, local_infile=local_infile)
 
     def read_my_cnf_files(self, files, keys):
         """
@@ -275,7 +275,7 @@ class MyCli(object):
         return dict([(x, get(x)) for x in keys])
 
     def connect(self, database='', user='', passwd='', host='', port='',
-            socket='', charset=''):
+            socket='', charset='', local_infile=''):
 
         cnf = {'database': None,
                'user': None,
@@ -283,7 +283,8 @@ class MyCli(object):
                'host': None,
                'port': None,
                'socket': None,
-               'default-character-set': None}
+               'default-character-set': None,
+               'local-infile': None}
 
         cnf = self.read_my_cnf_files(self.cnf_files, cnf.keys())
 
@@ -307,18 +308,26 @@ class MyCli(object):
         passwd = passwd or cnf['password']
         charset = charset or cnf['default-character-set'] or 'utf8'
 
+        # Favor whichever local_infile option is set.
+        for local_infile_option in (local_infile, cnf['local-infile'], False):
+            try:
+                local_infile = str_to_bool(local_infile_option)
+                break
+            except (TypeError, ValueError):
+                pass
+
         # Connect to the database.
 
         try:
             try:
                 sqlexecute = SQLExecute(database, user, passwd, host, port,
-                        socket, charset)
+                        socket, charset, local_infile)
             except OperationalError as e:
                 if ('Access denied for user' in e.args[1]):
                     passwd = click.prompt('Password', hide_input=True,
                                           show_default=False, type=str)
                     sqlexecute = SQLExecute(database, user, passwd, host, port,
-                            socket, charset)
+                            socket, charset, local_infile)
                 else:
                     raise e
         except Exception as e:  # Connecting to a database could fail.
@@ -646,12 +655,14 @@ class MyCli(object):
               help='Only read default options from the given file')
 @click.option('--auto-vertical-output', is_flag=True,
               help='Automatically switch to vertical output mode if the result is wider than the terminal width.')
+@click.option('--local-infile', type=bool,
+              help='Enable/disable LOAD DATA LOCAL INFILE.')
 @click.option('--login-path', type=str,
               help='Read this path from the login file.')
 @click.argument('database', default='', nargs=1)
 def cli(database, user, host, port, socket, password, dbname,
         version, prompt, logfile, defaults_group_suffix, defaults_file,
-        login_path, auto_vertical_output):
+        login_path, auto_vertical_output, local_infile):
     if version:
         print('Version:', __version__)
         sys.exit(0)
@@ -665,9 +676,10 @@ def cli(database, user, host, port, socket, password, dbname,
     database = database or dbname
 
     if database and '://' in database:
-        mycli.connect_uri(database)
+        mycli.connect_uri(database, local_infile)
     else:
-        mycli.connect(database, user, password, host, port, socket)
+        mycli.connect(database, user, password, host, port, socket,
+                      local_infile=local_infile)
 
     mycli.logger.debug('Launch Params: \n'
             '\tdatabase: %r'
