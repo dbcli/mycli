@@ -284,7 +284,8 @@ class MyCli(object):
                'port': None,
                'socket': None,
                'default-character-set': None,
-               'local-infile': None}
+               'local-infile': None,
+               'loose-local-infile': None}
 
         cnf = self.read_my_cnf_files(self.cnf_files, cnf.keys())
 
@@ -309,7 +310,8 @@ class MyCli(object):
         charset = charset or cnf['default-character-set'] or 'utf8'
 
         # Favor whichever local_infile option is set.
-        for local_infile_option in (local_infile, cnf['local-infile'], False):
+        for local_infile_option in (local_infile, cnf['local-infile'], 
+                                    cnf['loose-local-infile'], False):
             try:
                 local_infile = str_to_bool(local_infile_option)
                 break
