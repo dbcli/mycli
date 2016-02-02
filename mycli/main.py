@@ -368,8 +368,7 @@ class MyCli(object):
     def run_cli(self):
         sqlexecute = self.sqlexecute
         logger = self.logger
-        original_less_opts = self.adjust_less_opts()
-        self.set_pager_from_config()
+        self.configure_pager()
 
         self.refresh_completions()
 
@@ -560,10 +559,6 @@ class MyCli(object):
 
         except EOFError:
             self.output('Goodbye!')
-        finally:  # Reset the less opts back to original.
-            logger.debug('Restoring env var LESS to %r.', original_less_opts)
-            os.environ['LESS'] = original_less_opts
-            os.environ['PAGER'] = special.get_original_pager()
 
     def output(self, text, **kwargs):
         if self.logfile:
@@ -577,14 +572,10 @@ class MyCli(object):
             self.logfile.write('\n')
         click.echo_via_pager(text)
 
-    def adjust_less_opts(self):
-        less_opts = os.environ.get('LESS', '')
-        self.logger.debug('Original value for LESS env var: %r', less_opts)
+    def configure_pager(self):
+        # Provide sane defaults for less.
         os.environ['LESS'] = '-SRXF'
 
-        return less_opts
-
-    def set_pager_from_config(self):
         cnf = self.read_my_cnf_files(self.cnf_files, ['pager', 'skip-pager'])
         if cnf['pager']:
             special.set_pager(cnf['pager'])
