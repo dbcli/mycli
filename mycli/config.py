@@ -195,3 +195,20 @@ def read_and_decrypt_mylogin_cnf(f):
 
     plaintext.seek(0)
     return plaintext
+
+def str_to_bool(s):
+    """Convert a string value to it's corresponding boolean value."""
+    if isinstance(s, bool):
+        return s
+    elif not isinstance(s, basestring):
+        raise TypeError('argument must be a string')
+
+    true_values = ('true', 'on', '1')
+    false_values = ('false', 'off', '0')
+
+    if s.lower() in true_values:
+        return True
+    elif s.lower() in false_values:
+        return False
+    else:
+        raise ValueError('not a recognized boolean value: %s'.format(s))

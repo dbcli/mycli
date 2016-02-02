@@ -1,4 +1,4 @@
-"""Unit tests for mycli.config login path decryption."""
+"""Unit tests for the mycli.config module."""
 from io import BytesIO, TextIOWrapper
 import os
 import pip
@@ -8,7 +8,8 @@ import tempfile
 import pytest
 
 from mycli.config import (CryptoError, get_mylogin_cnf_path,
-                          open_mylogin_cnf, read_and_decrypt_mylogin_cnf)
+                          open_mylogin_cnf, read_and_decrypt_mylogin_cnf,
+                          str_to_bool)
 
 with_pycrypto = ['pycrypto' in set([package.project_name for package in
                                     pip.get_installed_distributions()])]
@@ -131,3 +132,24 @@ def test_alternate_get_mylogin_cnf_path():
         os.environ['MYSQL_TEST_LOGIN_FILE'] = original_env
 
     assert temp_path == login_cnf_path
+
+
+def test_str_to_bool():
+    """Tests that str_to_bool function converts values correctly."""
+
+    assert str_to_bool(False) is False
+    assert str_to_bool(True) is True
+    assert str_to_bool('False') is False
+    assert str_to_bool('True') is True
+    assert str_to_bool('TRUE') is True
+    assert str_to_bool('1') is True
+    assert str_to_bool('0') is False
+    assert str_to_bool('on') is True
+    assert str_to_bool('off') is False
+    assert str_to_bool('off') is False
+
+    with pytest.raises(ValueError):
+        str_to_bool('foo')
+
+    with pytest.raises(TypeError):
+        str_to_bool(None)
