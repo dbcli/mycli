@@ -197,7 +197,7 @@ def read_and_decrypt_mylogin_cnf(f):
     return plaintext
 
 def str_to_bool(s):
-    """Convert a string value to it's corresponding boolean value."""
+    """Convert a string value to its corresponding boolean value."""
     if isinstance(s, bool):
         return s
     elif not isinstance(s, basestring):
