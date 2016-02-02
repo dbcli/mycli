@@ -9,7 +9,8 @@ PASSWORD = getenv('PASSWORD')
 
 def db_connection(dbname=None):
     conn = connection.connect(user=USER, host=HOST, port=PORT, database=dbname, password=PASSWORD,
-                              charset=CHARSET, cursorclass=connection.Cursor)
+                              charset=CHARSET, cursorclass=connection.Cursor,
+                              local_infile=False)
     conn.autocommit = True
     return conn
 
