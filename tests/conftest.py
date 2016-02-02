@@ -22,4 +22,5 @@ def cursor(connection):
 def executor(connection):
     return mycli.sqlexecute.SQLExecute(
         database='_test_db', user=USER,
-        host=HOST, password=PASSWORD, port=PORT, socket=None, charset=CHARSET)
+        host=HOST, password=PASSWORD, port=PORT, socket=None, charset=CHARSET,
+        local_infile=False)
