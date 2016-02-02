@@ -14,7 +14,6 @@ from .utils import handle_cd_command
 
 TIMING_ENABLED = False
 use_expanded_output = False
-ORIGINAL_PAGER = os.environ.get('PAGER', '')
 PAGER_ENABLED = True
 
 @export
@@ -32,24 +31,18 @@ def is_pager_enabled():
     return PAGER_ENABLED
 
 @export
-def get_original_pager():
-    return ORIGINAL_PAGER
-
-@export
 @special_command('pager', '\\P [command]', 'Set PAGER. Print the query results via PAGER', arg_type=PARSED_QUERY, aliases=('\\P', ), case_sensitive=True)
 def set_pager(arg, **_):
-    if not arg:
-        if not ORIGINAL_PAGER:
-            os.environ.pop('PAGER', None)
-            msg = 'Reset pager.'
-            set_pager_enabled(False)
-        else:
-            os.environ['PAGER'] = ORIGINAL_PAGER
-            msg = 'Reset pager back to default. Default: %s' % ORIGINAL_PAGER
-            set_pager_enabled(True)
-    else:
+    if arg:
         os.environ['PAGER'] = arg
         msg = 'PAGER set to %s.' % arg
+        set_pager_enabled(True)
+    else:
+        if 'PAGER' in os.environ:
+            msg = 'PAGER set to %s.' % os.environ['PAGER']
+        else:
+            # This uses click's default per echo_via_pager.
+            msg = 'Pager enabled.'
         set_pager_enabled(True)
 
     return [(None, None, None, msg)]
