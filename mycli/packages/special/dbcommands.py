@@ -115,7 +115,7 @@ def status(cur, **_):
     # Print the current server statistics.
     stats = []
     stats.append('Connections: {0}'.format(status['Threads_connected']))
-    stats.append('Questions: {0}'.format(status['Queries']))
+    stats.append('Queries: {0}'.format(status['Queries']))
     stats.append('Slow queries: {0}'.format(status['Slow_queries']))
     stats.append('Opens: {0}'.format(status['Opened_tables']))
     stats.append('Flush tables: {0}'.format(status['Flush_commands']))
