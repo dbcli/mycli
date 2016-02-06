@@ -53,8 +53,8 @@ def status(cur, **_):
     implementation = platform.python_implementation()
     version = platform.python_version()
     header = []
-    header.append('mycli {},'.format(__version__))
-    header.append('running on {} {}'.format(implementation, version))
+    header.append('mycli {0},'.format(__version__))
+    header.append('running on {0} {1}'.format(implementation, version))
     print(' '.join(header) + '\n')
 
     # Build the output that will be displayed as a table.
@@ -81,14 +81,14 @@ def status(cur, **_):
         pager = 'stdout'
     output.append(('Current pager:', pager))
 
-    output.append(('Server version:', '{} {}'.format(
+    output.append(('Server version:', '{0} {1}'.format(
         variables['version'], variables['version_comment'])))
     output.append(('Protocol version:', variables['protocol_version']))
 
     if 'unix' in cur.connection.host_info.lower():
         host_info = cur.connection.host_info
     else:
-        host_info = '{} via TCP/IP'.format(cur.connection.host)
+        host_info = '{0} via TCP/IP'.format(cur.connection.host)
 
     output.append(('Connection:', host_info))
 
@@ -114,12 +114,12 @@ def status(cur, **_):
 
     # Print the current server statistics.
     stats = []
-    stats.append('Connections: {}'.format(status['Threads_connected']))
-    stats.append('Questions: {}'.format(status['Queries']))
-    stats.append('Slow queries: {}'.format(status['Slow_queries']))
-    stats.append('Opens: {}'.format(status['Opened_tables']))
-    stats.append('Flush tables: {}'.format(status['Flush_commands']))
-    stats.append('Open tables: {}'.format(status['Open_tables']))
+    stats.append('Connections: {0}'.format(status['Threads_connected']))
+    stats.append('Questions: {0}'.format(status['Queries']))
+    stats.append('Slow queries: {0}'.format(status['Slow_queries']))
+    stats.append('Opens: {0}'.format(status['Opened_tables']))
+    stats.append('Flush tables: {0}'.format(status['Flush_commands']))
+    stats.append('Open tables: {0}'.format(status['Open_tables']))
     queries_per_second = int(status['Queries']) / int(status['Uptime'])
     stats.append('Queries per second avg: {:.3f}'.format(queries_per_second))
     stats = '  '.join(stats)
