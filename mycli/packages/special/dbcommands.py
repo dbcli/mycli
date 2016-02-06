@@ -64,7 +64,7 @@ def format_uptime(uptime_in_seconds):
     return uptime
 
 @special_command('status', '\\s', 'Get status information from the server.',
-                 arg_type=RAW_QUERY, case_sensitive=True)
+                 arg_type=RAW_QUERY, aliases=('\\s', ), case_sensitive=True)
 def status(cur, **_):
     query = 'SHOW GLOBAL STATUS;'
     log.debug(query)
