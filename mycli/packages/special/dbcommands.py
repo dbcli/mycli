@@ -4,6 +4,7 @@ import platform
 from mycli import __version__
 from mycli.packages.tabulate import tabulate
 from mycli.packages.special import iocommands
+from mycli.packages.special.utils import format_uptime
 from .main import special_command, RAW_QUERY, PARSED_QUERY
 
 log = logging.getLogger(__name__)
@@ -32,36 +33,6 @@ def list_databases(cur, **_):
         return [(None, cur, headers, '')]
     else:
         return [(None, None, None, '')]
-
-def format_uptime(uptime_in_seconds):
-    """Format number of seconds into human-readable string.
-
-    :param uptime_in_seconds: The server uptime in seconds.
-    :returns: A human-readable string representing the uptime.
-
-    >>> uptime = format_uptime('56892')
-    >>> print(uptime)
-    15 hours 48 min 12 sec
-    """
-
-    m, s = divmod(int(uptime_in_seconds), 60)
-    h, m = divmod(m, 60)
-    d, h = divmod(h, 24)
-
-    uptime_values = []
-
-    for value, unit in ((d, 'days'), (h, 'hours'), (m, 'min'), (s, 'sec')):
-        if value == 0 and not uptime_values:
-            # Don't include a value/unit if the unit isn't applicable to
-            # the uptime. E.g. don't do 0 days 0 hours 1 min 30 sec.
-            continue
-        elif value == 1 and unit.endswith('s'):
-            # Remove the "s" if the unit is singular.
-            unit = unit[:-1]
-        uptime_values.append('{} {}'.format(value, unit))
-
-    uptime = ' '.join(uptime_values)
-    return uptime
 
 @special_command('status', '\\s', 'Get status information from the server.',
                  arg_type=RAW_QUERY, aliases=('\\s', ), case_sensitive=True)
