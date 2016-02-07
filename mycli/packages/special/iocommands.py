@@ -232,6 +232,7 @@ def execute_system_command(arg, **_):
         output, error = process.communicate()
         response = output if not error else error
 
+        # Python 3 returns bytes. This needs to be decoded to a string.
         if isinstance(response, bytes):
             encoding = locale.getpreferredencoding(False)
             response = response.decode(encoding)

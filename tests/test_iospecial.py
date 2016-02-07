@@ -7,6 +7,7 @@ except NameError:
 
 
 def test_system_command():
+    """Tests that the system command always returns a string."""
     cmd = 'ls'
     response = execute_system_command(cmd)
 
