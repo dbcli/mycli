@@ -27,7 +27,7 @@ class SQLExecute(object):
                                     order by table_name,ordinal_position'''
 
     def __init__(self, database, user, password, host, port, socket, charset,
-                 local_infile, ssl):
+                 local_infile, ssl=False):
         self.dbname = database
         self.user = user
         self.password = password
