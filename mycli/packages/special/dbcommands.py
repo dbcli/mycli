@@ -2,7 +2,6 @@ import logging
 import os
 import platform
 from mycli import __version__
-from mycli.packages.tabulate import tabulate
 from mycli.packages.special import iocommands
 from mycli.packages.special.utils import format_uptime
 from .main import special_command, RAW_QUERY, PARSED_QUERY
@@ -47,19 +46,22 @@ def status(cur, **_):
     cur.execute(query)
     variables = dict(cur.fetchall())
 
-    print('--------------')
+    # Create output buffers.
+    title = []
+    output = []
+    footer = []
+
+    title.append('--------------')
 
     # Output the mycli client information.
     implementation = platform.python_implementation()
     version = platform.python_version()
-    header = []
-    header.append('mycli {0},'.format(__version__))
-    header.append('running on {0} {1}'.format(implementation, version))
-    print(' '.join(header) + '\n')
+    client_info = []
+    client_info.append('mycli {0},'.format(__version__))
+    client_info.append('running on {0} {1}'.format(implementation, version))
+    title.append(' '.join(client_info) + '\n')
 
     # Build the output that will be displayed as a table.
-    output = []
-
     output.append(('Connection id:', cur.connection.thread_id()))
 
     query = 'SELECT DATABASE(), USER();'
@@ -109,9 +111,6 @@ def status(cur, **_):
 
     output.append(('Uptime:', format_uptime(status['Uptime'])))
 
-    # Print the buffered output in two columns.
-    print(tabulate(output, tablefmt='plain')[0])
-
     # Print the current server statistics.
     stats = []
     stats.append('Connections: {0}'.format(status['Threads_connected']))
@@ -123,7 +122,7 @@ def status(cur, **_):
     queries_per_second = int(status['Queries']) / int(status['Uptime'])
     stats.append('Queries per second avg: {:.3f}'.format(queries_per_second))
     stats = '  '.join(stats)
-    print('\n' + stats)
+    footer.append('\n' + stats)
 
-    print('--------------')
-    return [(None, None, None, '')]
+    footer.append('--------------')
+    return [('\n'.join(title), output, '', '\n'.join(footer))]
