@@ -310,7 +310,7 @@ class MyCli(object):
         charset = charset or cnf['default-character-set'] or 'utf8'
 
         # Favor whichever local_infile option is set.
-        for local_infile_option in (local_infile, cnf['local-infile'], 
+        for local_infile_option in (local_infile, cnf['local-infile'],
                                     cnf['loose-local-infile'], False):
             try:
                 local_infile = str_to_bool(local_infile_option)
@@ -574,7 +574,7 @@ class MyCli(object):
 
     def configure_pager(self):
         # Provide sane defaults for less.
-        os.environ['LESS'] = '-SRXF'
+        os.environ['LESS'] = '-RXF'
 
         cnf = self.read_my_cnf_files(self.cnf_files, ['pager', 'skip-pager'])
         if cnf['pager']:
