@@ -232,8 +232,7 @@ def test_system_command_output(executor):
     results = run(executor, 'system cat {0}'.format(test_file_path))
     assert len(results) == 1
     expected_line = u'mycli rocks!\n'
-    result_str = results[0].decode('utf-8') # python3 returns a bytes-string
-    assert expected_line == result_str
+    assert expected_line == results[0]
 
 @dbtest
 def test_cd_command_current_dir(executor):

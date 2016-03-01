@@ -16,46 +16,49 @@ except ImportError:
 
 _logger = logging.getLogger(__name__)
 
+
 class SQLCompleter(Completer):
     keywords = ['ACCESS', 'ADD', 'ALL', 'ALTER TABLE', 'AND', 'ANY', 'AS',
-            'ASC', 'AUDIT', 'BEFORE', 'BEGIN', 'BETWEEN', 'BINARY', 'BY',
-            'CASE', 'CHANGE MASTER TO', 'CHAR', 'CHECK', 'CLUSTER', 'COLUMN',
-            'COMMENT', 'COMPRESS', 'COMMIT', 'CONNECT', 'COPY', 'CREATE',
-            'CURRENT', 'DATABASE', 'DATE', 'DECIMAL', 'DEFAULT', 'DELETE FROM',
-            'DELIMITER', 'DESC', 'DESCRIBE', 'DISTINCT', 'DROP', 'ELSE',
-            'ENCODING', 'END', 'ESCAPE', 'EXCLUSIVE', 'EXISTS', 'EXTENSION',
-            'FILE', 'FLOAT', 'FOR', 'FORMAT', 'FORCE_QUOTE', 'FORCE_NOT_NULL',
-            'FREEZE', 'FROM', 'FULL', 'FUNCTION', 'GRANT', 'GROUP BY',
-            'HAVING', 'HEADER', 'HOST', 'IDENTIFIED', 'IMMEDIATE', 'IN',
-            'INCREMENT', 'INDEX', 'INITIAL', 'INSERT INTO', 'INTEGER',
-            'INTERSECT', 'INTO', 'INTERVAL', 'IS', 'JOIN', 'LEFT', 'LEVEL',
-            'LIKE', 'LIMIT', 'LOCK', 'LOG', 'LOGS', 'LONG', 'MASTER', 'MINUS',
-            'MODE', 'MODIFY', 'NOAUDIT', 'NOCOMPRESS', 'NOT', 'NOWAIT', 'NULL',
-            'NUMBER', 'OIDS', 'OF', 'OFFLINE', 'ON', 'ONLINE', 'OPTION', 'OR',
-            'ORDER BY', 'OUTER', 'OWNER', 'PASSWORD', 'PCTFREE', 'PORT',
-            'PRIMARY', 'PRIOR', 'PRIVILEGES', 'PROCESSLIST', 'PURGE', 'QUOTE',
-            'RAW', 'RENAME', 'REPAIR', 'RESOURCE', 'RESET', 'REVOKE', 'RIGHT',
-            'ROLLBACK', 'ROW', 'ROWID', 'ROWNUM', 'ROWS', 'SELECT', 'SESSION',
-            'SET', 'SHARE', 'SHOW', 'SIZE', 'SLAVE', 'SLAVES', 'SMALLINT',
-            'START', 'STOP', 'SUCCESSFUL', 'SYNONYM', 'SYSDATE', 'TABLE',
-            'TEMPLATE', 'THEN', 'TO', 'TRANSACTION', 'TRIGGER', 'TRUNCATE',
-            'UID', 'UNION', 'UNIQUE', 'UPDATE', 'USE', 'USER', 'USING',
-            'VALIDATE', 'VALUES', 'VARCHAR', 'VARCHAR2', 'VIEW', 'WHEN',
-            'WHENEVER', 'WHERE', 'WITH']
+                'ASC', 'AUDIT', 'BEFORE', 'BEGIN', 'BETWEEN', 'BINARY', 'BY',
+                'CASE', 'CHANGE MASTER TO', 'CHAR', 'CHECK', 'CLUSTER',
+                'COLUMN', 'COMMENT', 'COMPRESS', 'COMMIT', 'CONNECT', 'COPY',
+                'CREATE', 'CURRENT', 'DATABASE', 'DATE', 'DECIMAL', 'DEFAULT',
+                'DELETE FROM', 'DELIMITER', 'DESC', 'DESCRIBE', 'DISTINCT',
+                'DROP', 'ELSE', 'ENCODING', 'END', 'ESCAPE', 'EXCLUSIVE',
+                'EXISTS', 'EXTENSION', 'FILE', 'FLOAT', 'FOR', 'FORMAT',
+                'FORCE_QUOTE', 'FORCE_NOT_NULL', 'FREEZE', 'FROM', 'FULL',
+                'FUNCTION', 'GRANT', 'GROUP BY', 'HAVING', 'HEADER', 'HOST',
+                'IDENTIFIED', 'IMMEDIATE', 'IN', 'INCREMENT', 'INDEX',
+                'INITIAL', 'INSERT INTO', 'INTEGER', 'INTERSECT', 'INTO',
+                'INTERVAL', 'IS', 'JOIN', 'LEFT', 'LEVEL', 'LIKE', 'LIMIT',
+                'LOCK', 'LOG', 'LOGS', 'LONG', 'MASTER', 'MINUS', 'MODE',
+                'MODIFY', 'NOAUDIT', 'NOCOMPRESS', 'NOT', 'NOWAIT', 'NULL',
+                'NUMBER', 'OIDS', 'OF', 'OFFLINE', 'OFFSET', 'ON', 'ONLINE',
+                'OPTION', 'OR', 'ORDER BY', 'OUTER', 'OWNER', 'PASSWORD',
+                'PCTFREE', 'PORT', 'PRIMARY', 'PRIOR', 'PRIVILEGES',
+                'PROCESSLIST', 'PURGE', 'QUOTE', 'RAW', 'RENAME', 'REPAIR',
+                'RESOURCE', 'RESET', 'REVOKE', 'RIGHT', 'ROLLBACK', 'ROW',
+                'ROWID', 'ROWNUM', 'ROWS', 'SELECT', 'SESSION', 'SET', 'SHARE',
+                'SHOW', 'SIZE', 'SLAVE', 'SLAVES', 'SMALLINT', 'START', 'STOP',
+                'SUCCESSFUL', 'SYNONYM', 'SYSDATE', 'TABLE', 'TEMPLATE',
+                'THEN', 'TO', 'TRANSACTION', 'TRIGGER', 'TRUNCATE', 'UID',
+                'UNION', 'UNIQUE', 'UPDATE', 'USE', 'USER', 'USING',
+                'VALIDATE', 'VALUES', 'VARCHAR', 'VARCHAR2', 'VIEW', 'WHEN',
+                'WHENEVER', 'WHERE', 'WITH']
 
     functions = ['AVG', 'COUNT', 'DISTINCT', 'FIRST', 'FORMAT', 'LAST',
-            'LCASE', 'LEN', 'MAX', 'MIN', 'MID', 'NOW', 'ROUND', 'SUM', 'TOP',
-            'UCASE']
+                 'LCASE', 'LEN', 'MAX', 'MIN', 'MID', 'NOW', 'ROUND', 'SUM',
+                 'TOP', 'UCASE']
 
     show_items = []
 
     change_items = ['MASTER_BIND', 'MASTER_HOST', 'MASTER_USER',
-            'MASTER_PASSWORD', 'MASTER_PORT', 'MASTER_CONNECT_RETRY',
-            'MASTER_HEARTBEAT_PERIOD', 'MASTER_LOG_FILE', 'MASTER_LOG_POS',
-            'RELAY_LOG_FILE', 'RELAY_LOG_POS', 'MASTER_SSL', 'MASTER_SSL_CA',
-            'MASTER_SSL_CAPATH', 'MASTER_SSL_CERT', 'MASTER_SSL_KEY',
-            'MASTER_SSL_CIPHER', 'MASTER_SSL_VERIFY_SERVER_CERT',
-            'IGNORE_SERVER_IDS']
+                    'MASTER_PASSWORD', 'MASTER_PORT', 'MASTER_CONNECT_RETRY',
+                    'MASTER_HEARTBEAT_PERIOD', 'MASTER_LOG_FILE',
+                    'MASTER_LOG_POS', 'RELAY_LOG_FILE', 'RELAY_LOG_POS',
+                    'MASTER_SSL', 'MASTER_SSL_CA', 'MASTER_SSL_CAPATH',
+                    'MASTER_SSL_CERT', 'MASTER_SSL_KEY', 'MASTER_SSL_CIPHER',
+                    'MASTER_SSL_VERIFY_SERVER_CERT', 'IGNORE_SERVER_IDS']
 
     users = []
 
@@ -75,12 +78,12 @@ class SQLCompleter(Completer):
         if name and ((not self.name_pattern.match(name))
                 or (name.upper() in self.reserved_words)
                 or (name.upper() in self.functions)):
-            name = '`%s`' % name
+                    name = '`%s`' % name
 
         return name
 
     def unescape_name(self, name):
-        """ Unquote a string."""
+        """Unquote a string."""
         if name and name[0] == '"' and name[-1] == '"':
             name = name[1:-1]
 
@@ -128,13 +131,12 @@ class SQLCompleter(Completer):
         self.all_completions.update(schema)
 
     def extend_relations(self, data, kind):
-        """ extend metadata for tables or views
+        """Extend metadata for tables or views
 
         :param data: list of (rel_name, ) tuples
         :param kind: either 'tables' or 'views'
         :return:
         """
-
         # 'data' is a generator object. It can throw an exception while being
         # consumed. This could happen if the user has launched the app without
         # specifying a database name. This exception must be handled to prevent
@@ -156,7 +158,7 @@ class SQLCompleter(Completer):
             self.all_completions.add(relname[0])
 
     def extend_columns(self, column_data, kind):
-        """ extend column metadata
+        """Extend column metadata
 
         :param column_data: list of (rel_name, column_name) tuples
         :param kind: either 'tables' or 'views'
@@ -203,7 +205,6 @@ class SQLCompleter(Completer):
         self.dbmetadata = {'tables': {}, 'views': {}, 'functions': {}}
         self.all_completions = set(self.keywords + self.functions)
 
-
     @staticmethod
     def find_matches(text, collection, start_only=False, fuzzy=True):
         """Find completion matches for the given text.
@@ -218,9 +219,7 @@ class SQLCompleter(Completer):
 
         yields prompt_toolkit Completion instances for any matches found
         in the collection of available completions.
-
         """
-
         text = last_word(text, include='most_punctuations').lower()
 
         completions = []
@@ -267,9 +266,10 @@ class SQLCompleter(Completer):
                     # drop_unique is used for 'tb11 JOIN tbl2 USING (...'
                     # which should suggest only columns that appear in more than
                     # one table
-                    scoped_cols = [col for (col, count)
-                                         in Counter(scoped_cols).items()
-                                           if count > 1 and col != '*']
+                    scoped_cols = [
+                        col for (col, count) in Counter(scoped_cols).items()
+                        if count > 1 and col != '*'
+                    ]
 
                 cols = self.find_matches(word_before_cursor, scoped_cols)
                 completions.extend(cols)
@@ -334,8 +334,8 @@ class SQLCompleter(Completer):
                 completions.extend(change_items)
             elif suggestion['type'] == 'user':
                 users = self.find_matches(word_before_cursor, self.users,
-                                               start_only=False,
-                                               fuzzy=True)
+                                          start_only=False,
+                                          fuzzy=True)
                 completions.extend(users)
 
             elif suggestion['type'] == 'special':
@@ -358,11 +358,10 @@ class SQLCompleter(Completer):
         return completions
 
     def populate_scoped_cols(self, scoped_tbls):
-        """ Find all columns in a set of scoped_tables
+        """Find all columns in a set of scoped_tables
         :param scoped_tbls: list of (schema, table, alias) tuples
         :return: list of column names
         """
-
         columns = []
         meta = self.dbmetadata
 
@@ -398,7 +397,6 @@ class SQLCompleter(Completer):
 
     def populate_schema_objects(self, schema, obj_type):
         """Returns list of tables or functions for a (optional) schema"""
-
         metadata = self.dbmetadata[obj_type]
         schema = schema or self.dbname
 

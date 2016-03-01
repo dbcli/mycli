@@ -1,5 +1,6 @@
 import os
 import re
+import locale
 import logging
 import subprocess
 from io import open
@@ -230,6 +231,11 @@ def execute_system_command(arg, **_):
         process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         output, error = process.communicate()
         response = output if not error else error
+
+        # Python 3 returns bytes. This needs to be decoded to a string.
+        if isinstance(response, bytes):
+            encoding = locale.getpreferredencoding(False)
+            response = response.decode(encoding)
 
         return [(None, None, None, response)]
     except OSError as e:
