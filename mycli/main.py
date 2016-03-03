@@ -721,9 +721,9 @@ def cli(database, user, host, port, socket, password, dbname,
     database = database or dbname
 
     ssl = {
-            'ca': os.path.expanduser(ssl_ca),
-            'cert': os.path.expanduser(ssl_cert),
-            'key': os.path.expanduser(ssl_key),
+            'ca': ssl_ca and os.path.expanduser(ssl_ca),
+            'cert': ssl_cert and os.path.expanduser(ssl_cert),
+            'key': ssl_key and os.path.expanduser(ssl_key),
             'capath': ssl_capath,
             'cipher': ssl_cipher,
             'check_hostname': ssl_verify_server_cert,
