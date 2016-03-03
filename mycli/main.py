@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 from __future__ import print_function
 
 import os
+import os.path
 import sys
 import traceback
 import logging
@@ -719,14 +720,23 @@ def cli(database, user, host, port, socket, password, dbname,
     # Choose which ever one has a valid value.
     database = database or dbname
 
-    ssl = {
+    ssl_paths = {
         'ca': ssl_ca,
-        'capath': ssl_capath,
         'cert': ssl_cert,
         'key': ssl_key,
+    }
+    ssl_params = {
+        'capath': ssl_capath,
         'cipher': ssl_cipher,
         'check_hostname': ssl_verify_server_cert,
     }
+    for p in ssl_paths:
+        if p:
+            ssl_paths[p] = os.path.expanduser(p)
+    ssl = {}
+    ssl.update(ssl_paths)
+    ssl.update(ssl_params)
+    # remove empty ssl options
     ssl = dict((k, v) for (k, v) in ssl.items() if v is not None)
     if database and '://' in database:
         mycli.connect_uri(database, local_infile, ssl)
