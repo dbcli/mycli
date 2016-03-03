@@ -720,22 +720,15 @@ def cli(database, user, host, port, socket, password, dbname,
     # Choose which ever one has a valid value.
     database = database or dbname
 
-    ssl_paths = {
-        'ca': ssl_ca,
-        'cert': ssl_cert,
-        'key': ssl_key,
-    }
-    ssl_params = {
-        'capath': ssl_capath,
-        'cipher': ssl_cipher,
-        'check_hostname': ssl_verify_server_cert,
-    }
-    for p in ssl_paths:
-        if p:
-            ssl_paths[p] = os.path.expanduser(p)
-    ssl = {}
-    ssl.update(ssl_paths)
-    ssl.update(ssl_params)
+    ssl = {
+            'ca': os.path.expanduser(ssl_ca),
+            'cert': os.path.expanduser(ssl_cert),
+            'key': os.path.expanduser(ssl_key),
+            'capath': ssl_capath,
+            'cipher': ssl_cipher,
+            'check_hostname': ssl_verify_server_cert,
+            }
+
     # remove empty ssl options
     ssl = dict((k, v) for (k, v) in ssl.items() if v is not None)
     if database and '://' in database:
