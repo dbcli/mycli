@@ -27,7 +27,7 @@ class SQLExecute(object):
                                     order by table_name,ordinal_position'''
 
     def __init__(self, database, user, password, host, port, socket, charset,
-                 local_infile):
+                 local_infile, ssl=False):
         self.dbname = database
         self.user = user
         self.password = password
@@ -36,11 +36,12 @@ class SQLExecute(object):
         self.socket = socket
         self.charset = charset
         self.local_infile = local_infile
+        self.ssl = ssl
         self._server_type = None
         self.connect()
 
     def connect(self, database=None, user=None, password=None, host=None,
-            port=None, socket=None, charset=None, local_infile=None):
+            port=None, socket=None, charset=None, local_infile=None, ssl=None):
         db = (database or self.dbname)
         user = (user or self.user)
         password = (password or self.password)
@@ -49,6 +50,7 @@ class SQLExecute(object):
         socket = (socket or self.socket)
         charset = (charset or self.charset)
         local_infile = (local_infile or self.local_infile)
+        ssl = (ssl or self.ssl)
         _logger.debug('Connection DB Params: \n'
             '\tdatabase: %r'
             '\tuser: %r'
@@ -56,13 +58,16 @@ class SQLExecute(object):
             '\tport: %r'
             '\tsocket: %r'
             '\tcharset: %r'
-            '\tlocal_infile: %r',
-            database, user, host, port, socket, charset, local_infile)
+            '\tlocal_infile: %r'
+            '\tssl: %r',
+            database, user, host, port, socket, charset, local_infile, ssl)
+
         conn = connection.connect(database=db, user=user, password=password,
                 host=host, port=port, unix_socket=socket,
                 use_unicode=True, charset=charset, autocommit=True,
                 client_flag=pymysql.constants.CLIENT.INTERACTIVE,
-                cursorclass=connection.Cursor, local_infile=local_infile)
+                cursorclass=connection.Cursor, local_infile=local_infile,
+                ssl=ssl)
         if hasattr(self, 'conn'):
             self.conn.close()
         self.conn = conn
@@ -75,6 +80,7 @@ class SQLExecute(object):
         self.port = port
         self.socket = socket
         self.charset = charset
+        self.ssl = ssl
 
     def run(self, statement):
         """Execute the sql in the database and return the results. The results

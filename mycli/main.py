@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 from __future__ import print_function
 
 import os
+import os.path
 import sys
 import traceback
 import logging
@@ -243,11 +244,11 @@ class MyCli(object):
         root_logger.debug('Initializing mycli logging.')
         root_logger.debug('Log file %r.', log_file)
 
-    def connect_uri(self, uri, local_infile=None):
+    def connect_uri(self, uri, local_infile=None, ssl=None):
         uri = urlparse(uri)
         database = uri.path[1:]  # ignore the leading fwd slash
         self.connect(database, uri.username, uri.password, uri.hostname,
-                uri.port, local_infile=local_infile)
+                uri.port, local_infile=local_infile, ssl=ssl)
 
     def read_my_cnf_files(self, files, keys):
         """
@@ -274,8 +275,31 @@ class MyCli(object):
 
         return dict([(x, get(x)) for x in keys])
 
+    def merge_ssl_with_cnf(self, ssl, cnf):
+        """Merge SSL configuration dict with cnf dict"""
+
+        merged = {}
+        merged.update(ssl)
+        prefix = 'ssl-'
+        for k, v in cnf.items():
+            # skip unrelated options
+            if not k.startswith(prefix):
+                continue
+            if v is None:
+                continue
+            # special case because PyMySQL argument is significantly different
+            # from commandline
+            if k == 'ssl-verify-server-cert':
+                merged['check_hostname'] = v
+            else:
+                # use argument name just strip "ssl-" prefix
+                arg = k[len(prefix):]
+                merged[arg] = v
+
+        return merged
+
     def connect(self, database='', user='', passwd='', host='', port='',
-            socket='', charset='', local_infile=''):
+            socket='', charset='', local_infile='', ssl=''):
 
         cnf = {'database': None,
                'user': None,
@@ -285,7 +309,13 @@ class MyCli(object):
                'socket': None,
                'default-character-set': None,
                'local-infile': None,
-               'loose-local-infile': None}
+               'loose-local-infile': None,
+               'ssl-ca': None,
+               'ssl-cert': None,
+               'ssl-key': None,
+               'ssl-cipher': None,
+               'ssl-verify-serer-cert': None,
+        }
 
         cnf = self.read_my_cnf_files(self.cnf_files, cnf.keys())
 
@@ -299,6 +329,8 @@ class MyCli(object):
         user = user or cnf['user'] or os.getenv('USER')
         host = host or cnf['host'] or 'localhost'
         port = port or cnf['port'] or 3306
+        ssl = ssl or {}
+
         try:
             port = int(port)
         except ValueError as e:
@@ -318,18 +350,23 @@ class MyCli(object):
             except (TypeError, ValueError):
                 pass
 
+        ssl = self.merge_ssl_with_cnf(ssl, cnf)
+        # prune lone check_hostname=False
+        if not any(v for v in ssl.values()):
+            ssl = None
+
         # Connect to the database.
 
         try:
             try:
                 sqlexecute = SQLExecute(database, user, passwd, host, port,
-                        socket, charset, local_infile)
+                        socket, charset, local_infile, ssl)
             except OperationalError as e:
                 if ('Access denied for user' in e.args[1]):
                     passwd = click.prompt('Password', hide_input=True,
                                           show_default=False, type=str)
                     sqlexecute = SQLExecute(database, user, passwd, host, port,
-                            socket, charset, local_infile)
+                            socket, charset, local_infile, ssl)
                 else:
                     raise e
         except Exception as e:  # Connecting to a database could fail.
@@ -635,6 +672,20 @@ class MyCli(object):
               help='Password to connect to the database')
 @click.option('--pass', 'password', envvar='MYSQL_PWD', type=str,
               help='Password to connect to the database')
+@click.option('--ssl-ca', help='CA file in PEM format',
+              type=click.Path(exists=True))
+@click.option('--ssl-capath', help='CA directory')
+@click.option('--ssl-cert', help='X509 cert in PEM format',
+              type=click.Path(exists=True))
+@click.option('--ssl-key', help='X509 key in PEM format',
+              type=click.Path(exists=True))
+@click.option('--ssl-cipher', help='SSL cipher to use')
+@click.option('--ssl-verify-server-cert', is_flag=True,
+              help=('Verify server\'s "Common Name" in its cert against '
+                    'hostname used when connecting. This option is disabled '
+                    'by default'))
+# as of 2016-02-15 revocation list is not supported by underling PyMySQL
+# library (--ssl-crl and --ssl-crlpath options in vanilla mysql client)
 @click.option('-v', '--version', is_flag=True, help='Version of mycli.')
 @click.option('-D', '--database', 'dbname', help='Database to use.')
 @click.option('-R', '--prompt', 'prompt',
@@ -655,7 +706,8 @@ class MyCli(object):
 @click.argument('database', default='', nargs=1)
 def cli(database, user, host, port, socket, password, dbname,
         version, prompt, logfile, defaults_group_suffix, defaults_file,
-        login_path, auto_vertical_output, local_infile):
+        login_path, auto_vertical_output, local_infile, ssl_ca, ssl_capath,
+        ssl_cert, ssl_key, ssl_cipher, ssl_verify_server_cert):
     if version:
         print('Version:', __version__)
         sys.exit(0)
@@ -668,11 +720,29 @@ def cli(database, user, host, port, socket, password, dbname,
     # Choose which ever one has a valid value.
     database = database or dbname
 
+    ssl_paths = {
+        'ca': ssl_ca,
+        'cert': ssl_cert,
+        'key': ssl_key,
+    }
+    ssl_params = {
+        'capath': ssl_capath,
+        'cipher': ssl_cipher,
+        'check_hostname': ssl_verify_server_cert,
+    }
+    for p in ssl_paths:
+        if p:
+            ssl_paths[p] = os.path.expanduser(p)
+    ssl = {}
+    ssl.update(ssl_paths)
+    ssl.update(ssl_params)
+    # remove empty ssl options
+    ssl = dict((k, v) for (k, v) in ssl.items() if v is not None)
     if database and '://' in database:
-        mycli.connect_uri(database, local_infile)
+        mycli.connect_uri(database, local_infile, ssl)
     else:
         mycli.connect(database, user, password, host, port, socket,
-                      local_infile=local_infile)
+                      local_infile=local_infile, ssl=ssl)
 
     mycli.logger.debug('Launch Params: \n'
             '\tdatabase: %r'
