@@ -128,10 +128,10 @@ class SQLExecute(object):
         # SELECT or SHOW.
         if cur.description is not None:
             headers = [x[0] for x in cur.description]
-            status = '{} row{} in set'
+            status = '{0} row{1} in set'
         else:
             _logger.debug('No rows in result.')
-            status = 'Query OK, {} row{} affected'
+            status = 'Query OK, {0} row{1} affected'
         status = status.format(num_rows, '' if num_rows == 1 else 's')
 
         return (title, cur if cur.description else None, headers, status)
