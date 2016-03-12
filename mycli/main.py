@@ -533,7 +533,7 @@ class MyCli(object):
                         mutating = mutating or is_mutating(status)
                 except UnicodeDecodeError as e:
                     import pymysql
-                    if pymysql.VERSION < ('0', '6', '7'):
+                    if pymysql.VERSION < (0, 6, 7):
                         message = ('You are running an older version of pymysql.\n'
                                 'Please upgrade to 0.6.7 or above to view binary data.\n'
                                 'Try \'pip install -U pymysql\'.')
