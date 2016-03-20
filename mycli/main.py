@@ -429,12 +429,16 @@ class MyCli(object):
         def prompt_tokens(cli):
             return [(Token.Prompt, self.get_prompt(self.prompt_format))]
 
+        def get_continuation_tokens(cli, width):
+            return [(Token.Continuation, ' ' * (width - 3) + '-> ')]
+
         get_toolbar_tokens = create_toolbar_tokens_func(lambda: self.key_bindings,
                                                         self.completion_refresher.is_refreshing)
 
         layout = create_prompt_layout(lexer=MyCliLexer,
                                       multiline=True,
                                       get_prompt_tokens=prompt_tokens,
+                                      get_continuation_tokens=get_continuation_tokens,
                                       get_bottom_toolbar_tokens=get_toolbar_tokens,
                                       display_completions_in_columns=self.wider_completion_menu,
                                       extra_input_processors=[
