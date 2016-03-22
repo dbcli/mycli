@@ -213,7 +213,7 @@ def test_favorite_query_expanded_output(executor):
 @dbtest
 def test_special_command(executor):
     results = run(executor, '\\?')
-    expected_line = u'| help      | \\?               | Show this help.                              |\n'
+    expected_line = u'| help        | \\?               | Show this help.                                        |\n'
     assert len(results) == 1
     assert expected_line in results[0]
 
