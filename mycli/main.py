@@ -239,7 +239,11 @@ class MyCli(object):
         root_logger.addHandler(handler)
         root_logger.setLevel(level_map[log_level.upper()])
 
-        logging.captureWarnings(True)
+        # Only capture warnings on Python 2.7 and later.
+        try:
+            logging.captureWarnings(True)
+        except AttributeError:
+            pass
 
         root_logger.debug('Initializing mycli logging.')
         root_logger.debug('Log file %r.', log_file)
