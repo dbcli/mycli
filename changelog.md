@@ -4,13 +4,15 @@
 Features:
 ---------
 
-* Change continutation prompt for multi-line mode to match default mysql. 
+* Change continuation prompt for multi-line mode to match default mysql. 
 * Add `status` command to match mysql's `status` command. (Thanks: [Thomas Roten]).
 * Add SSL support for `mycli`. (Thanks: [Artem Bezsmertnyi]).
 * Add auto-completion and highlight support for OFFSET keyword. (Thanks: [Matheus Rosa]).
 * Add support for `MYSQL_TEST_LOGIN_FILE` env variable to specify alternate login file. (Thanks: [Thomas Roten]).
 * Add support for `--auto-vertical-output` to automatically switch to vertical output if the output doesn't fit in the table format.
 * Add support for system-wide config. Now /etc/myclirc will be honored. (Thanks: [Thomas Roten]).
+* Add support for `nopager` and `\n` to turn off the pager. (Thanks: [Thomas Roten]).
+* Add support for `--local-infile` command-line option. (Thanks: [Thomas Roten]).
 
 Bug Fixes:
 ----------
