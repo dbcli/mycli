@@ -8,7 +8,7 @@ A command line client for MySQL that can do auto-completion and syntax highlight
 
 HomePage: [http://mycli.net](http://mycli.net)
 
-Debian Packages via [PackageCloud.io](https://packagecloud.io/amjith/mycli). 
+Debian Packages via [PackageCloud.io](https://packagecloud.io/amjith/mycli).
 
 ![Completion](screenshots/tables.png)
 ![CompletionGif](screenshots/main.gif)
@@ -76,20 +76,13 @@ Features
   columns in the database.
 * Syntax highlighting using Pygments.
 * Smart-completion (enabled by default) will suggest context-sensitive completion.
-
-    - `SELECT * FROM <tab>` will only show table names. 
-    - `SELECT * FROM users WHERE <tab>` will only show column names. 
-
+    - `SELECT * FROM <tab>` will only show table names.
+    - `SELECT * FROM users WHERE <tab>` will only show column names.
 * Support for multiline queries.
-
 * Favorite queries. Save a query using `\fs alias query` and execute it with `\f alias` whenever you need.
-
 * Timing of sql statments and table rendering.
-
 * Config file is automatically created at ``~/.myclirc`` at first launch.
-
 * Log every query and its results to a file (disabled by default).
-
 * Pretty prints tabular data.
 
 Contributions:
@@ -101,9 +94,9 @@ get this running in a development setup.
 
 https://github.com/dbcli/mycli/blob/master/DEVELOP.rst
 
-Please feel free to reach out to me if you need help. 
+Please feel free to reach out to me if you need help.
 
-My email: amjith.r@gmail.com 
+My email: amjith.r@gmail.com
 
 Twitter: [@amjithr](http://twitter.com/amjithr)
 
@@ -118,7 +111,7 @@ Add the gpg key for packagecloud for package verification.
 ```
 curl https://packagecloud.io/gpg.key | apt-key add -
 ```
-    
+
 Install a package called apt-transport-https to make it possible for apt to fetch packages over https.
 
 ```
@@ -156,10 +149,10 @@ $ sudo pip install mycli
 
 ### Thanks:
 
-This project was funded through kickstarter. My thanks to the [backers](http://mycli.net/sponsors) who supported the project. 
+This project was funded through kickstarter. My thanks to the [backers](http://mycli.net/sponsors) who supported the project.
 
 A special thanks to [Jonathan Slenders](https://twitter.com/jonathan_s) for
-creating [Python Prompt Toolkit](http://github.com/jonathanslenders/python-prompt-toolkit), 
+creating [Python Prompt Toolkit](http://github.com/jonathanslenders/python-prompt-toolkit),
 which is quite literally the backbone library, that made this app possible.
 Jonathan has also provided valuable feedback and support during the development
 of this app.
@@ -167,9 +160,9 @@ of this app.
 [Click](http://click.pocoo.org/3/) is used for command line option parsing
 and printing error messages.
 
-Thanks to [PyMysql](http://www.pymysql.org/) for a pure python adapter to MySQL database. 
+Thanks to [PyMysql](http://www.pymysql.org/) for a pure python adapter to MySQL database.
 
-[Tabulate](https://pypi.python.org/pypi/tabulate) library is used for pretty printing the output of tables. 
+[Tabulate](https://pypi.python.org/pypi/tabulate) library is used for pretty printing the output of tables.
 
 
 ### Compatibility
