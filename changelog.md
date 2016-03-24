@@ -1,3 +1,37 @@
+1.6.0:
+======
+
+Features:
+---------
+
+* Change continuation prompt for multi-line mode to match default mysql. 
+* Add `status` command to match mysql's `status` command. (Thanks: [Thomas Roten]).
+* Add SSL support for `mycli`. (Thanks: [Artem Bezsmertnyi]).
+* Add auto-completion and highlight support for OFFSET keyword. (Thanks: [Matheus Rosa]).
+* Add support for `MYSQL_TEST_LOGIN_FILE` env variable to specify alternate login file. (Thanks: [Thomas Roten]).
+* Add support for `--auto-vertical-output` to automatically switch to vertical output if the output doesn't fit in the table format.
+* Add support for system-wide config. Now /etc/myclirc will be honored. (Thanks: [Thomas Roten]).
+* Add support for `nopager` and `\n` to turn off the pager. (Thanks: [Thomas Roten]).
+* Add support for `--local-infile` command-line option. (Thanks: [Thomas Roten]).
+
+Bug Fixes:
+----------
+
+* Remove -S from `less` option which was clobbering the scroll back in history. (Thanks: [Thomas Roten]).
+* Make system command work with Python 3. (Thanks: [Thomas Roten]).
+* Support \G terminator for \f queries. (Thanks: [Terseus]).
+
+Internal Changes:
+-----------------
+
+* Upgrade prompt_toolkit to 0.60.
+* Add Python 3.5 to test environments. (Thanks: [Thomas Roten]).
+* Remove license meta-data. (Thanks: [Thomas Roten]).
+* Skip binary tests if PyMySQL version does not support it. (Thanks: [Thomas Roten]).
+* Refactor pager handling. (Thanks: [Thomas Roten])
+* Capture warnings to log file. (Thanks: [Mikhail Borisov]).
+* Make `syntax_style` a tiny bit more intuitive. (Thanks: [Phil Cohen]).
+
 1.5.2:
 ======
 
@@ -252,3 +286,10 @@ Bug Fixes:
 [Shoma Suzuki]: https://github.com/shoma
 [spacewander]: https://github.com/spacewander
 [Thomas Roten]: https://github.com/tsroten
+[Artem Bezsmertnyi]: https://github.com/mrdeathless 
+[Mikhail Borisov]: https://github.com/borman
+[Casper Langemeijer]: Casper Langemeijer
+[Lennart Weller]: https://github.com/lhw
+[Phil Cohen]: https://github.com/phlipper
+[Terseus]: https://github.com/Terseus
+[William GARCIA]: https://github.com/willgarcia
