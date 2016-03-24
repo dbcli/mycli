@@ -84,6 +84,7 @@ Features
 * Config file is automatically created at ``~/.myclirc`` at first launch.
 * Log every query and its results to a file (disabled by default).
 * Pretty prints tabular data.
+* Support for SSL connections
 
 Contributions:
 --------------
