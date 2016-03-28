@@ -16,7 +16,7 @@ install_requirements = [
     'Pygments >= 2.0',  # Pygments has to be Capitalcased. WTF?
     'prompt_toolkit==0.60',
     'PyMySQL >= 0.6.2',
-    'sqlparse >= 0.1.16',
+    'sqlparse >= 0.1.19',
     'configobj >= 5.0.6',
 ]
 
