@@ -1,7 +1,8 @@
+import click
 from click.testing import CliRunner
 
-from mycli.main import (cli, format_output, is_destructive, query_starts_with,
-                        queries_start_with)
+from mycli.main import (cli, confirm_destructive_query, format_output,
+                        is_destructive, query_starts_with, queries_start_with)
 from utils import USER, HOST, PORT, PASSWORD, dbtest, run
 
 CLI_ARGS = ['--user', USER, '--host', HOST, '--port', PORT,
@@ -97,3 +98,10 @@ def test_is_destructive(executor):
         'drop database foo;'
     )
     assert is_destructive(sql) is True
+
+def test_confirm_destructive_query_notty(executor):
+    stdin = click.get_text_stream('stdin')
+    assert stdin.isatty() is False
+
+    sql = 'drop database foo;'
+    assert confirm_destructive_query(sql) is None
