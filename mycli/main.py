@@ -49,6 +49,7 @@ click.disable_unicode_literals_warning = True
 
 try:
     from urlparse import urlparse
+    FileNotFoundError = OSError
 except ImportError:
     from urllib.parse import urlparse
 from pymysql import OperationalError
