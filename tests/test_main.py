@@ -1,6 +1,7 @@
 from click.testing import CliRunner
 
-from mycli.main import cli, format_output
+from mycli.main import (cli, format_output, is_destructive, query_starts_with,
+                        queries_start_with)
 from utils import USER, HOST, PORT, PASSWORD, dbtest, run
 
 CLI_ARGS = ['--user', USER, '--host', HOST, '--port', PORT,
@@ -67,3 +68,32 @@ def test_batch_mode_table(executor):
 
     assert result.exit_code == 0
     assert expected in result.output
+
+def test_query_starts_with(executor):
+    query = 'USE test;'
+    assert query_starts_with(query, ('use', )) is True
+
+    query = 'DROP DATABASE test;'
+    assert query_starts_with(query, ('use', )) is False
+
+def test_query_starts_with_comment(executor):
+    query = '# comment\nUSE test;'
+    assert query_starts_with(query, ('use', )) is True
+
+def test_queries_start_with(executor):
+    sql = (
+        '# comment\n'
+        'show databases;'
+        'use foo;'
+    )
+    assert queries_start_with(sql, ('show', 'select')) is True
+    assert queries_start_with(sql, ('use', 'drop')) is True
+    assert queries_start_with(sql, ('delete', 'update')) is False
+
+def test_is_destructive(executor):
+    sql = (
+        'use test;\n'
+        'show databases;\n'
+        'drop database foo;'
+    )
+    assert is_destructive(sql) is True

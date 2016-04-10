@@ -841,24 +841,34 @@ def is_select(status):
         return False
     return status.split(None, 1)[0].lower() == 'select'
 
+def query_starts_with(query, prefixes):
+    """Check if the query starts with any item from *prefixes*."""
+    prefixes = [prefix.lower() for prefix in prefixes]
+    formatted_sql = sqlparse.format(query.lower(), strip_comments=True)
+    return formatted_sql.split()[0] in prefixes
+
+def queries_start_with(queries, prefixes):
+    """Check if any queries start with any item from *prefixes*."""
+    for query in sqlparse.split(queries):
+        if query and query_starts_with(query, prefixes) is True:
+            return True
+    return False
+
+def is_destructive(queries):
+    keywords = ('drop', 'shutdown', 'delete', 'truncate')
+    return queries_start_with(queries, keywords)
+
 def confirm_destructive_query(queries):
-    """Checks if the query is destructive and prompts the user to confirm.
+    """Check if the query is destructive and prompts the user to confirm.
     Returns:
     None if the query is non-destructive.
     True if the query is destructive and the user wants to proceed.
     False if the query is destructive and the user doesn't want to proceed.
     """
-    destructive = set(['drop', 'shutdown', 'delete', 'truncate'])
-    queries = queries.strip()
-    for query in sqlparse.split(queries):
-        try:
-            first_token = query.split()[0]
-            if first_token.lower() in destructive:
-                destroy = click.prompt("You're about to run a destructive command.\nDo you want to proceed? (y/n)",
-                         type=bool)
-                return destroy
-        except Exception:
-            return False
+    prompt_text = ("You're about to run a destructive command.\n"
+                   "Do you want to proceed? (y/n)")
+    if is_destructive(queries):
+        return click.prompt(prompt_text, type=bool)
 
 def quit_command(sql):
     return (sql.strip().lower() == 'exit'
