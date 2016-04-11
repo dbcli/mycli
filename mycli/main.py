@@ -202,7 +202,6 @@ class MyCli(object):
                 query = f.read()
         except IOError as e:
             return [(None, None, None, str(e))]
-
         return self.sqlexecute.run(query)
 
     def change_prompt_format(self, arg, **_):
@@ -757,25 +756,24 @@ def cli(database, user, host, port, socket, password, dbname,
 
     if sys.stdin.isatty():
         mycli.run_cli()
+    else:
+        stdin = click.get_text_stream('stdin')
+        stdin_text = stdin.read()
 
-    stdin = click.get_text_stream('stdin')
-    stdin_text = stdin.read()
+        try:
+            sys.stdin = open('/dev/tty')
+        except FileNotFoundError:
+            mycli.logger.warning('Unable to open TTY as stdin.')
 
-    try:
-        sys.stdin = open('/dev/tty')
-    except FileNotFoundError:
-        mycli.logger.warning('Unable to open TTY as stdin.')
-
-    if confirm_destructive_query(stdin_text) is False:
-        exit(0)
-    results = mycli.sqlexecute.run(stdin_text)
-    for result in results:
-        title, cur, headers, status = result
-        table_format = mycli.table_format if table else None
-        output = format_output(title, cur, headers, None, table_format)
-        for line in output:
-            click.echo(line)
-    exit(0)
+        if confirm_destructive_query(stdin_text) is False:
+            exit(0)
+        results = mycli.sqlexecute.run(stdin_text)
+        for result in results:
+            title, cur, headers, status = result
+            table_format = mycli.table_format if table else None
+            output = format_output(title, cur, headers, None, table_format)
+            for line in output:
+                click.echo(line)
 
 def format_output(title, cur, headers, status, table_format, expanded=False, max_width=None):
     output = []
