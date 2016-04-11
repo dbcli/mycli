@@ -202,6 +202,12 @@ class MyCli(object):
                 query = f.read()
         except IOError as e:
             return [(None, None, None, str(e))]
+
+        if (self.destructive_warning and
+            confirm_destructive_query(query) is False):
+            message = 'Wise choice. Command execution stopped.'
+            return [(None, None, None, message)]
+
         return self.sqlexecute.run(query)
 
     def change_prompt_format(self, arg, **_):
