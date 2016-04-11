@@ -204,7 +204,7 @@ class MyCli(object):
             return [(None, None, None, str(e))]
 
         if (self.destructive_warning and
-            confirm_destructive_query(query) is False):
+                confirm_destructive_query(query) is False):
             message = 'Wise choice. Command execution stopped.'
             return [(None, None, None, message)]
 
@@ -771,7 +771,8 @@ def cli(database, user, host, port, socket, password, dbname,
         except FileNotFoundError:
             mycli.logger.warning('Unable to open TTY as stdin.')
 
-        if confirm_destructive_query(stdin_text) is False:
+        if (mycli.destructive_warning and
+                confirm_destructive_query(stdin_text) is False):
             exit(0)
         results = mycli.sqlexecute.run(stdin_text)
         for result in results:
