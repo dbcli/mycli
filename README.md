@@ -47,6 +47,14 @@ Check the [detailed install instructions](#detailed-install-instructions) for de
       -S, --socket TEXT             The socket file to use for connection.
       -p, --password                Force password prompt.
       --pass TEXT                   Password to connect to the database
+      --ssl-ca PATH                 CA file in PEM format
+      --ssl-capath TEXT             CA directory
+      --ssl-cert PATH               X509 cert in PEM format
+      --ssl-key PATH                X509 key in PEM format
+      --ssl-cipher TEXT             SSL cipher to use
+      --ssl-verify-server-cert      Verify server's "Common Name" in its cert
+                                    against hostname used when connecting. This
+                                    option is disabled by default
       -v, --version                 Version of mycli.
       -D, --database TEXT     	    Database to use.
       -R, --prompt TEXT             Prompt format (Default: "\t \u@\h:\d> ")
@@ -56,6 +64,9 @@ Check the [detailed install instructions](#detailed-install-instructions) for de
       --auto-vertical-output        Automatically switch to vertical output mode
                                     if the result is wider than the terminal
                                     width.
+      -t, --table                   Display batch output in table format.
+      --warn / --no-warn            Warn before running a destructive query.
+      --local-infile BOOLEAN        Enable/disable LOAD DATA LOCAL INFILE.
       --login-path TEXT             Read this path from the login file.
       --help                        Show this message and exit.
 
