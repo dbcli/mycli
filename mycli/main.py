@@ -777,13 +777,17 @@ def cli(database, user, host, port, socket, password, dbname,
         if (mycli.destructive_warning and
                 confirm_destructive_query(stdin_text) is False):
             exit(0)
-        results = mycli.sqlexecute.run(stdin_text)
-        for result in results:
-            title, cur, headers, status = result
-            table_format = mycli.table_format if table else None
-            output = format_output(title, cur, headers, None, table_format)
-            for line in output:
-                click.echo(line)
+        try:
+            results = mycli.sqlexecute.run(stdin_text)
+            for result in results:
+                title, cur, headers, status = result
+                table_format = mycli.table_format if table else None
+                output = format_output(title, cur, headers, None, table_format)
+                for line in output:
+                    click.echo(line)
+        except Exception as e:
+            click.secho(str(e), err=True, fg='red')
+            exit(1)
 
 def format_output(title, cur, headers, status, table_format, expanded=False, max_width=None):
     output = []
