@@ -49,6 +49,7 @@ click.disable_unicode_literals_warning = True
 
 try:
     from urlparse import urlparse
+    FileNotFoundError = OSError
 except ImportError:
     from urllib.parse import urlparse
 from pymysql import OperationalError
@@ -83,7 +84,7 @@ class MyCli(object):
 
     def __init__(self, sqlexecute=None, prompt=None,
             logfile=None, defaults_suffix=None, defaults_file=None,
-            login_path=None, auto_vertical_output=False):
+            login_path=None, auto_vertical_output=False, warn=None):
         self.sqlexecute = sqlexecute
         self.logfile = logfile
         self.defaults_suffix = defaults_suffix
@@ -102,13 +103,14 @@ class MyCli(object):
                         [self.user_config_file])
         c = self.config = read_config_files(config_files)
         self.multi_line = c['main'].as_bool('multi_line')
-        self.destructive_warning = c['main'].as_bool('destructive_warning')
         self.key_bindings = c['main']['key_bindings']
         special.set_timing_enabled(c['main'].as_bool('timing'))
         self.table_format = c['main']['table_format']
         self.syntax_style = c['main']['syntax_style']
         self.cli_style = c['colors']
         self.wider_completion_menu = c['main'].as_bool('wider_completion_menu')
+        c_dest_warning = c['main'].as_bool('destructive_warning')
+        self.destructive_warning = c_dest_warning if warn is None else warn
 
         # Write user config if system config wasn't the last config loaded.
         if c.filename not in self.system_config_files:
@@ -202,6 +204,11 @@ class MyCli(object):
         except IOError as e:
             return [(None, None, None, str(e))]
 
+        if (self.destructive_warning and
+                confirm_destructive_query(query) is False):
+            message = 'Wise choice. Command execution stopped.'
+            return [(None, None, None, message)]
+
         return self.sqlexecute.run(query)
 
     def change_prompt_format(self, arg, **_):
@@ -239,7 +246,11 @@ class MyCli(object):
         root_logger.addHandler(handler)
         root_logger.setLevel(level_map[log_level.upper()])
 
-        logging.captureWarnings(True)
+        # Only capture warnings on Python 2.7 and later.
+        try:
+            logging.captureWarnings(True)
+        except AttributeError:
+            pass
 
         root_logger.debug('Initializing mycli logging.')
         root_logger.debug('Log file %r.', log_file)
@@ -703,6 +714,10 @@ class MyCli(object):
               help='Only read default options from the given file')
 @click.option('--auto-vertical-output', is_flag=True,
               help='Automatically switch to vertical output mode if the result is wider than the terminal width.')
+@click.option('-t', '--table', is_flag=True,
+              help='Display batch output in table format.')
+@click.option('--warn/--no-warn', default=None,
+              help='Warn before running a destructive query.')
 @click.option('--local-infile', type=bool,
               help='Enable/disable LOAD DATA LOCAL INFILE.')
 @click.option('--login-path', type=str,
@@ -711,7 +726,8 @@ class MyCli(object):
 def cli(database, user, host, port, socket, password, dbname,
         version, prompt, logfile, defaults_group_suffix, defaults_file,
         login_path, auto_vertical_output, local_infile, ssl_ca, ssl_capath,
-        ssl_cert, ssl_key, ssl_cipher, ssl_verify_server_cert):
+        ssl_cert, ssl_key, ssl_cipher, ssl_verify_server_cert, table, warn):
+
     if version:
         print('Version:', __version__)
         sys.exit(0)
@@ -719,7 +735,7 @@ def cli(database, user, host, port, socket, password, dbname,
     mycli = MyCli(prompt=prompt, logfile=logfile,
                   defaults_suffix=defaults_group_suffix,
                   defaults_file=defaults_file, login_path=login_path,
-                  auto_vertical_output=auto_vertical_output)
+                  auto_vertical_output=auto_vertical_output, warn=warn)
 
     # Choose which ever one has a valid value.
     database = database or dbname
@@ -747,7 +763,31 @@ def cli(database, user, host, port, socket, password, dbname,
             '\thost: %r'
             '\tport: %r', database, user, host, port)
 
-    mycli.run_cli()
+    if sys.stdin.isatty():
+        mycli.run_cli()
+    else:
+        stdin = click.get_text_stream('stdin')
+        stdin_text = stdin.read()
+
+        try:
+            sys.stdin = open('/dev/tty')
+        except FileNotFoundError:
+            mycli.logger.warning('Unable to open TTY as stdin.')
+
+        if (mycli.destructive_warning and
+                confirm_destructive_query(stdin_text) is False):
+            exit(0)
+        try:
+            results = mycli.sqlexecute.run(stdin_text)
+            for result in results:
+                title, cur, headers, status = result
+                table_format = mycli.table_format if table else None
+                output = format_output(title, cur, headers, None, table_format)
+                for line in output:
+                    click.echo(line)
+        except Exception as e:
+            click.secho(str(e), err=True, fg='red')
+            exit(1)
 
 def format_output(title, cur, headers, status, table_format, expanded=False, max_width=None):
     output = []
@@ -757,7 +797,7 @@ def format_output(title, cur, headers, status, table_format, expanded=False, max
         headers = [utf8tounicode(x) for x in headers]
         if expanded:
             output.append(expanded_table(cur, headers))
-        else:
+        elif table_format is not None:
             rows = list(cur)
             tabulated, frows = tabulate(rows, headers, tablefmt=table_format,
                 missingval='<null>')
@@ -767,6 +807,10 @@ def format_output(title, cur, headers, status, table_format, expanded=False, max
                 output.append(expanded_table(rows, headers))
             else:
                 output.append(tabulated)
+        else:
+            output.append('\t'.join(headers))
+            for row in cur:
+                output.append('\t'.join([str(r) for r in row]))
     if status:  # Only print the status if it's not None.
         output.append(status)
     return output
@@ -819,24 +863,34 @@ def is_select(status):
         return False
     return status.split(None, 1)[0].lower() == 'select'
 
+def query_starts_with(query, prefixes):
+    """Check if the query starts with any item from *prefixes*."""
+    prefixes = [prefix.lower() for prefix in prefixes]
+    formatted_sql = sqlparse.format(query.lower(), strip_comments=True)
+    return formatted_sql.split()[0] in prefixes
+
+def queries_start_with(queries, prefixes):
+    """Check if any queries start with any item from *prefixes*."""
+    for query in sqlparse.split(queries):
+        if query and query_starts_with(query, prefixes) is True:
+            return True
+    return False
+
+def is_destructive(queries):
+    keywords = ('drop', 'shutdown', 'delete', 'truncate')
+    return queries_start_with(queries, keywords)
+
 def confirm_destructive_query(queries):
-    """Checks if the query is destructive and prompts the user to confirm.
+    """Check if the query is destructive and prompts the user to confirm.
     Returns:
-    None if the query is non-destructive.
+    None if the query is non-destructive or we can't prompt the user.
     True if the query is destructive and the user wants to proceed.
     False if the query is destructive and the user doesn't want to proceed.
     """
-    destructive = set(['drop', 'shutdown', 'delete', 'truncate'])
-    queries = queries.strip()
-    for query in sqlparse.split(queries):
-        try:
-            first_token = query.split()[0]
-            if first_token.lower() in destructive:
-                destroy = click.prompt("You're about to run a destructive command.\nDo you want to proceed? (y/n)",
-                         type=bool)
-                return destroy
-        except Exception:
-            return False
+    prompt_text = ("You're about to run a destructive command.\n"
+                   "Do you want to proceed? (y/n)")
+    if is_destructive(queries) and sys.stdin.isatty():
+        return click.prompt(prompt_text, type=bool)
 
 def quit_command(sql):
     return (sql.strip().lower() == 'exit'
