@@ -17,7 +17,7 @@ import click
 import sqlparse
 from prompt_toolkit import CommandLineInterface, Application, AbortAction
 from prompt_toolkit.interface import AcceptAction
-from prompt_toolkit.enums import DEFAULT_BUFFER
+from prompt_toolkit.enums import DEFAULT_BUFFER, EditingMode
 from prompt_toolkit.shortcuts import create_prompt_layout, create_eventloop
 from prompt_toolkit.document import Document
 from prompt_toolkit.filters import Always, HasFocus, IsDone
@@ -420,17 +420,12 @@ class MyCli(object):
 
         self.refresh_completions()
 
-        def set_key_bindings(value):
-            if value not in ('emacs', 'vi'):
-                value = 'emacs'
-            self.key_bindings = value
-
         project_root = os.path.dirname(PACKAGE_ROOT)
         author_file = os.path.join(project_root, 'AUTHORS')
         sponsor_file = os.path.join(project_root, 'SPONSORS')
 
-        key_binding_manager = mycli_bindings(get_key_bindings=lambda: self.key_bindings,
-                                             set_key_bindings=set_key_bindings)
+        key_binding_manager = mycli_bindings()
+
         print('Version:', __version__)
         print('Chat: https://gitter.im/dbcli/mycli')
         print('Mail: https://groups.google.com/forum/#!forum/mycli-users')
@@ -443,8 +438,7 @@ class MyCli(object):
         def get_continuation_tokens(cli, width):
             return [(Token.Continuation, ' ' * (width - 3) + '-> ')]
 
-        get_toolbar_tokens = create_toolbar_tokens_func(lambda: self.key_bindings,
-                                                        self.completion_refresher.is_refreshing)
+        get_toolbar_tokens = create_toolbar_tokens_func(self.completion_refresher.is_refreshing)
 
         layout = create_prompt_layout(lexer=MyCliLexer,
                                       multiline=True,
@@ -462,18 +456,24 @@ class MyCli(object):
                     history=FileHistory(os.path.expanduser('~/.mycli-history')),
                     complete_while_typing=Always(), accept_action=AcceptAction.RETURN_DOCUMENT)
 
+            if self.key_bindings == 'vi':
+                editing_mode = EditingMode.VI
+            else:
+                editing_mode = EditingMode.EMACS
+
             application = Application(style=style_factory(self.syntax_style, self.cli_style),
                                       layout=layout, buffer=buf,
                                       key_bindings_registry=key_binding_manager.registry,
                                       on_exit=AbortAction.RAISE_EXCEPTION,
                                       on_abort=AbortAction.RETRY,
+                                      editing_mode=editing_mode,
                                       ignore_case=True)
             self.cli = CommandLineInterface(application=application,
                                        eventloop=create_eventloop())
 
         try:
             while True:
-                document = self.cli.run()
+                document = self.cli.run(reset_current_buffer=True)
 
                 special.set_expanded_output(False)
 

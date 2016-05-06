@@ -1,12 +1,10 @@
 from pygments.token import Token
-from prompt_toolkit.enums import DEFAULT_BUFFER
+from prompt_toolkit.enums import DEFAULT_BUFFER, EditingMode
 
-def create_toolbar_tokens_func(get_key_bindings, get_is_refreshing):
+def create_toolbar_tokens_func(get_is_refreshing):
     """
     Return a function that generates the toolbar tokens.
     """
-    assert callable(get_key_bindings)
-
     token = Token.Toolbar
 
     def get_toolbar_tokens(cli):
@@ -27,7 +25,7 @@ def create_toolbar_tokens_func(get_key_bindings, get_is_refreshing):
             result.append((token,
                 ' (Semi-colon [;] will end the line)'))
 
-        if get_key_bindings() == 'vi':
+        if cli.editing_mode == EditingMode.VI:
             result.append((token.On, '[F4] Vi-mode'))
         else:
             result.append((token.On, '[F4] Emacs-mode'))

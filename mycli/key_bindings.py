@@ -1,4 +1,5 @@
 import logging
+from prompt_toolkit.enums import EditingMode
 from prompt_toolkit.keys import Keys
 from prompt_toolkit.key_binding.manager import KeyBindingManager
 from prompt_toolkit.filters import Condition
@@ -7,19 +8,15 @@ from .filters import HasSelectedCompletion
 _logger = logging.getLogger(__name__)
 
 
-def mycli_bindings(get_key_bindings, set_key_bindings):
+def mycli_bindings():
     """
     Custom key bindings for mycli.
     """
-    assert callable(get_key_bindings)
-    assert callable(set_key_bindings)
-
     key_binding_manager = KeyBindingManager(
             enable_open_in_editor=True,
             enable_system_bindings=True,
             enable_search=True,
-            enable_abort_and_exit_bindings=True,
-            enable_vi_mode=Condition(lambda cli: get_key_bindings() == 'vi'))
+            enable_abort_and_exit_bindings=True)
 
     @key_binding_manager.registry.add_binding(Keys.F2)
     def _(event):
@@ -45,10 +42,10 @@ def mycli_bindings(get_key_bindings, set_key_bindings):
         Toggle between Vi and Emacs mode.
         """
         _logger.debug('Detected F4 key.')
-        if get_key_bindings() == 'vi':
-            set_key_bindings('emacs')
+        if event.cli.editing_mode == EditingMode.VI:
+            event.cli.editing_mode = EditingMode.EMACS
         else:
-            set_key_bindings('vi')
+            event.cli.editing_mode = EditingMode.VI
 
     @key_binding_manager.registry.add_binding(Keys.Tab)
     def _(event):
