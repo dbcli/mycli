@@ -15,6 +15,11 @@ Bug Fixes:
 
 * Enable history search via <C-r>. (Thanks: [Amjith Ramanujam]).
 
+Internal Changes:
+-----------------
+
+* Upgrade prompt_toolkit to 1.0.0. (Thanks: [Jonathan Slenders])
+
 1.6.0:
 ======
 
@@ -140,7 +145,7 @@ Features:
 
 * Add custom styles to color the menus and toolbars. 
 
-* Upgrade prompt_toolkit to 0.46. (Thanks: [Jonathan Slenders](https://github.com/jonathanslenders)) 
+* Upgrade prompt_toolkit to 0.46. (Thanks: [Jonathan Slenders]) 
 
   Multi-line queries are automatically indented. 
 
@@ -310,3 +315,4 @@ Bug Fixes:
 [Phil Cohen]: https://github.com/phlipper
 [Terseus]: https://github.com/Terseus
 [William GARCIA]: https://github.com/willgarcia
+[Jonathan Slenders]: https://github.com/jonathanslenders
