@@ -1,3 +1,20 @@
+1.7.0:
+======
+
+Features:
+---------
+
+* Add stdin batch mode. (Thanks: [Thomas Roten]).
+* Add warn/no-warn command-line options. (Thanks: [Thomas Roten]).
+* Upgrade sqlparse dependency to 0.1.19. (Thanks: [Amjith Ramanujam]).
+* Update features list in README.md. (Thanks: [Matheus Rosa]).
+* Remove extra \n in features list in README.md. (Thanks: [Matheus Rosa]).
+
+Bug Fixes:
+----------
+
+* Enable history search via <C-r>. (Thanks: [Amjith Ramanujam]).
+
 1.6.0:
 ======
 
