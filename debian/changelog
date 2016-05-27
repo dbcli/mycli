@@ -1,3 +1,39 @@
+mycli (1.7.0) unstable; urgency=medium
+
+  * Add stdin batch mode. (Thanks: Thomas Roten).
+  * Add warn/no-warn command-line options. (Thanks: Thomas Roten).
+  * Upgrade sqlparse dependency to 0.1.19. (Thanks: [Amjith Ramanujam]).
+  * Update features list in README.md. (Thanks: Matheus Rosa).
+  * Remove extra \n in features list in README.md. (Thanks: Matheus Rosa).
+  * Enable history search via . (Thanks: [Amjith Ramanujam]).
+  * Upgrade prompt_toolkit to 1.0.0. (Thanks: Jonathan Slenders)
+
+ -- Casper Langemeijer <casper@procurios.nl>  Fri, 27 May 2016 12:03:31 +0200
+
+mycli (1.6.0) unstable; urgency=medium
+
+  * Change continuation prompt for multi-line mode to match default mysql.
+  * Add status command to match mysql's status command. (Thanks: Thomas Roten).
+  * Add SSL support for mycli. (Thanks: Artem Bezsmertnyi).
+  * Add auto-completion and highlight support for OFFSET keyword. (Thanks: Matheus Rosa).
+  * Add support for MYSQL_TEST_LOGIN_FILE env variable to specify alternate login file. (Thanks: Thomas Roten).
+  * Add support for --auto-vertical-output to automatically switch to vertical output if the output doesn't fit in the table format.
+  * Add support for system-wide config. Now /etc/myclirc will be honored. (Thanks: Thomas Roten).
+  * Add support for nopager and \n to turn off the pager. (Thanks: Thomas Roten).
+  * Add support for --local-infile command-line option. (Thanks: Thomas Roten).
+  * Remove -S from less option which was clobbering the scroll back in history. (Thanks: Thomas Roten).
+  * Make system command work with Python 3. (Thanks: Thomas Roten).
+  * Support \G terminator for \f queries. (Thanks: Terseus).
+  * Upgrade prompt_toolkit to 0.60.
+  * Add Python 3.5 to test environments. (Thanks: Thomas Roten).
+  * Remove license meta-data. (Thanks: Thomas Roten).
+  * Skip binary tests if PyMySQL version does not support it. (Thanks: Thomas Roten).
+  * Refactor pager handling. (Thanks: Thomas Roten)
+  * Capture warnings to log file. (Thanks: Mikhail Borisov).
+  * Make syntax_style a tiny bit more intuitive. (Thanks: Phil Cohen).
+
+ -- Casper Langemeijer <casper@procurios.nl>  Fri, 27 May 2016 12:03:31 +0200
+
 mycli (1.5.2) unstable; urgency=low
 
   * Protect against port number being None when no port is specified in command line.
