@@ -107,7 +107,7 @@ class MyCli(object):
         special.set_timing_enabled(c['main'].as_bool('timing'))
         self.table_format = c['main']['table_format']
         self.syntax_style = c['main']['syntax_style']
-        self.skip_intro = c['main'].as_bool('skip_intro')
+        self.less_chatty = c['main'].as_bool('less_chatty')
         self.cli_style = c['colors']
         self.wider_completion_menu = c['main'].as_bool('wider_completion_menu')
         c_dest_warning = c['main'].as_bool('destructive_warning')
@@ -427,7 +427,7 @@ class MyCli(object):
 
         key_binding_manager = mycli_bindings()
 
-        if not self.skip_intro:
+        if not self.less_chatty:
             print('Version:', __version__)
             print('Chat: https://gitter.im/dbcli/mycli')
             print('Mail: https://groups.google.com/forum/#!forum/mycli-users')
@@ -612,7 +612,8 @@ class MyCli(object):
                 self.query_history.append(query)
 
         except EOFError:
-            self.output('Goodbye!')
+            if not self.less_chatty:
+                self.output('Goodbye!')
 
     def output(self, text, **kwargs):
         if self.logfile:

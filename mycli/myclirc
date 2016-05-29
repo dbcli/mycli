@@ -58,8 +58,8 @@ wider_completion_menu = False
 # \n - Newline
 prompt = '\t \u@\h:\d> '
 
-# Skip intro info on startup.
-skip_intro = False
+# Skip intro info on startup and outro info on exit
+less_chatty = False
 
 # Custom colors for the completion menu, toolbar, etc.
 [colors]
