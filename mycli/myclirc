@@ -58,6 +58,9 @@ wider_completion_menu = False
 # \n - Newline
 prompt = '\t \u@\h:\d> '
 
+# Skip intro info on startup.
+skip_intro = False
+
 # Custom colors for the completion menu, toolbar, etc.
 [colors]
 # Completion menus.
