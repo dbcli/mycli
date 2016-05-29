@@ -61,6 +61,11 @@ Query = namedtuple('Query', ['query', 'successful', 'mutating'])
 
 PACKAGE_ROOT = os.path.dirname(__file__)
 
+# no-op logging handler
+class NullHandler(logging.Handler):
+    def emit(self, record):
+        pass
+
 class MyCli(object):
 
     default_prompt = '\\t \\u@\\h:\\d> '
@@ -235,7 +240,13 @@ class MyCli(object):
                      'DEBUG': logging.DEBUG
                      }
 
-        handler = logging.FileHandler(os.path.expanduser(log_file))
+        # Disable logging if value is NONE by switching to a no-op handler
+        # Set log level to a high value so it doesn't even waste cycles getting called.
+        if log_level.upper() == "NONE":
+            handler = NullHandler()
+            log_level = "CRITICAL"
+        else:
+            handler = logging.FileHandler(os.path.expanduser(log_file))
 
         formatter = logging.Formatter(
             '%(asctime)s (%(process)d/%(threadName)s) '
