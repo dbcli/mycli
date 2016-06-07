@@ -12,6 +12,8 @@ from time import time
 from datetime import datetime
 from random import choice
 from io import open
+import csv
+from StringIO import StringIO
 
 import click
 import sqlparse
@@ -811,9 +813,16 @@ def format_output(title, cur, headers, status, table_format, expanded=False, max
             for row in cur:
                 output.append('\t'.join([str(r) for r in row]))
         elif table_format == 'csv':  # Special magic format
-            output.append(','.join(headers))  # Use actual csv lib, eventually
+            sio = StringIO()  # csv module is designed to write to files, only
+            csv_writer = csv.writer(sio)  # NB: adds \r\n to lines
+            csv_writer.writerow(headers)
+            output.append(sio.getvalue())
+            sio.truncate(0)  # Otherwise it will keep appending
             for row in cur:
-                output.append(','.join([str(r) for r in row]))
+                csv_writer.writerow(row)
+                output.append(sio.getvalue())
+                sio.truncate(0)
+            sio.close()
         else:
             rows = list(cur)
             tabulated, frows = tabulate(rows, headers, tablefmt=table_format,
