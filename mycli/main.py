@@ -61,6 +61,11 @@ Query = namedtuple('Query', ['query', 'successful', 'mutating'])
 
 PACKAGE_ROOT = os.path.dirname(__file__)
 
+# no-op logging handler
+class NullHandler(logging.Handler):
+    def emit(self, record):
+        pass
+
 class MyCli(object):
 
     default_prompt = '\\t \\u@\\h:\\d> '
@@ -107,6 +112,7 @@ class MyCli(object):
         special.set_timing_enabled(c['main'].as_bool('timing'))
         self.table_format = c['main']['table_format']
         self.syntax_style = c['main']['syntax_style']
+        self.less_chatty = c['main'].as_bool('less_chatty')
         self.cli_style = c['colors']
         self.wider_completion_menu = c['main'].as_bool('wider_completion_menu')
         c_dest_warning = c['main'].as_bool('destructive_warning')
@@ -234,7 +240,13 @@ class MyCli(object):
                      'DEBUG': logging.DEBUG
                      }
 
-        handler = logging.FileHandler(os.path.expanduser(log_file))
+        # Disable logging if value is NONE by switching to a no-op handler
+        # Set log level to a high value so it doesn't even waste cycles getting called.
+        if log_level.upper() == "NONE":
+            handler = NullHandler()
+            log_level = "CRITICAL"
+        else:
+            handler = logging.FileHandler(os.path.expanduser(log_file))
 
         formatter = logging.Formatter(
             '%(asctime)s (%(process)d/%(threadName)s) '
@@ -426,11 +438,12 @@ class MyCli(object):
 
         key_binding_manager = mycli_bindings()
 
-        print('Version:', __version__)
-        print('Chat: https://gitter.im/dbcli/mycli')
-        print('Mail: https://groups.google.com/forum/#!forum/mycli-users')
-        print('Home: http://mycli.net')
-        print('Thanks to the contributor -', thanks_picker([author_file, sponsor_file]))
+        if not self.less_chatty:
+            print('Version:', __version__)
+            print('Chat: https://gitter.im/dbcli/mycli')
+            print('Mail: https://groups.google.com/forum/#!forum/mycli-users')
+            print('Home: http://mycli.net')
+            print('Thanks to the contributor -', thanks_picker([author_file, sponsor_file]))
 
         def prompt_tokens(cli):
             return [(Token.Prompt, self.get_prompt(self.prompt_format))]
@@ -453,7 +466,7 @@ class MyCli(object):
                                       ])
         with self._completer_lock:
             buf = CLIBuffer(always_multiline=self.multi_line, completer=self.completer,
-                    history=FileHistory(os.path.expanduser('~/.mycli-history')),
+                    history=FileHistory(os.path.expanduser(os.environ.get('MYCLI_HISTFILE', '~/.mycli-history'))),
                     complete_while_typing=Always(), accept_action=AcceptAction.RETURN_DOCUMENT)
 
             if self.key_bindings == 'vi':
@@ -610,7 +623,8 @@ class MyCli(object):
                 self.query_history.append(query)
 
         except EOFError:
-            self.output('Goodbye!')
+            if not self.less_chatty:
+                self.output('Goodbye!')
 
     def output(self, text, **kwargs):
         if self.logfile:

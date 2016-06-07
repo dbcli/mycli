@@ -20,7 +20,7 @@ destructive_warning = True
 log_file = ~/.mycli.log
 
 # Default log level. Possible values: "CRITICAL", "ERROR", "WARNING", "INFO"
-# and "DEBUG".
+# and "DEBUG". "NONE" disables logging.
 log_level = INFO
 
 # Log every query and its results to a file. Enable this by uncommenting the
@@ -57,6 +57,9 @@ wider_completion_menu = False
 # \d - Database name
 # \n - Newline
 prompt = '\t \u@\h:\d> '
+
+# Skip intro info on startup and outro info on exit
+less_chatty = False
 
 # Custom colors for the completion menu, toolbar, etc.
 [colors]
