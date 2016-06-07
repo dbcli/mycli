@@ -795,7 +795,10 @@ def cli(database, user, host, port, socket, password, dbname,
                     table_format = None
                 output = format_output(title, cur, headers, None, table_format)
                 for line in output:  # WARNING: buffers results in RAM, twice
-                    click.echo(line)
+                    if table_format == 'csv':
+                        click.echo(line, nl=False)  # csv appends DOS newlines
+                    else:
+                        click.echo(line)
         except Exception as e:
             click.secho(str(e), err=True, fg='red')
             exit(1)
