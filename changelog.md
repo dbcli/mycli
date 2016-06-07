@@ -1,3 +1,12 @@
+1.7.1apb1:
+======
+
+Features:
+---------
+
+* Update to 1.7.1 from GitHib
+* Add CSV mode for stdin batch mode
+
 1.7.0:
 ======
 
