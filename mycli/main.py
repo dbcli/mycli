@@ -138,6 +138,7 @@ class MyCli(object):
         prompt_cnf = self.read_my_cnf_files(self.cnf_files, ['prompt'])['prompt']
         self.prompt_format = prompt or prompt_cnf or c['main']['prompt'] or \
                              self.default_prompt
+        self.prompt_continuation_format = c['main']['prompt_continuation']
 
         self.query_history = []
 
@@ -449,7 +450,8 @@ class MyCli(object):
             return [(Token.Prompt, self.get_prompt(self.prompt_format))]
 
         def get_continuation_tokens(cli, width):
-            return [(Token.Continuation, ' ' * (width - 3) + '-> ')]
+            continuation_prompt = self.get_prompt(self.prompt_continuation_format)
+            return [(Token.Continuation, ' ' * (width - len(continuation_prompt)) + continuation_prompt)]
 
         get_toolbar_tokens = create_toolbar_tokens_func(self.completion_refresher.is_refreshing)
 

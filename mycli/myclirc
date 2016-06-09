@@ -57,6 +57,7 @@ wider_completion_menu = False
 # \d - Database name
 # \n - Newline
 prompt = '\t \u@\h:\d> '
+prompt_continuation = '-> '
 
 # Skip intro info on startup and outro info on exit
 less_chatty = False
