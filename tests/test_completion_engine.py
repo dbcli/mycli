@@ -67,6 +67,16 @@ def test_lparen_suggests_cols():
     assert suggestion == [
         {'type': 'column', 'tables': [(None, 'tbl', None)]}]
 
+def test_operand_inside_function_suggests_cols1():
+    suggestion = suggest_type('SELECT MAX(col1 +  FROM tbl', 'SELECT MAX(col1 + ')
+    assert suggestion == [
+        {'type': 'column', 'tables': [(None, 'tbl', None)]}]
+
+def test_operand_inside_function_suggests_cols2():
+    suggestion = suggest_type('SELECT MAX(col1 + col2 +  FROM tbl', 'SELECT MAX(col1 + col2 + ')
+    assert suggestion == [
+        {'type': 'column', 'tables': [(None, 'tbl', None)]}]
+
 def test_select_suggests_cols_and_funcs():
     suggestions = suggest_type('SELECT ', 'SELECT ')
     assert sorted_dicts(suggestions) == sorted_dicts([
