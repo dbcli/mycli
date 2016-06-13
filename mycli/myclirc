@@ -62,6 +62,9 @@ prompt_continuation = '-> '
 # Skip intro info on startup and outro info on exit
 less_chatty = False
 
+# Use alias from --login-path instead of host name in prompt
+login_path_as_host = False
+
 # Custom colors for the completion menu, toolbar, etc.
 [colors]
 # Completion menus.
