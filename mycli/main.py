@@ -80,7 +80,7 @@ class MyCli(object):
     ]
 
     system_config_files = [
-		'/etc/myclirc',
+        '/etc/myclirc',
     ]
 
     default_config_file = os.path.join(PACKAGE_ROOT, 'myclirc')
@@ -117,6 +117,7 @@ class MyCli(object):
         self.wider_completion_menu = c['main'].as_bool('wider_completion_menu')
         c_dest_warning = c['main'].as_bool('destructive_warning')
         self.destructive_warning = c_dest_warning if warn is None else warn
+        self.login_path_as_host = c['main'].as_bool('login_path_as_host')
 
         # Write user config if system config wasn't the last config loaded.
         if c.filename not in self.system_config_files:
@@ -686,8 +687,9 @@ class MyCli(object):
 
     def get_prompt(self, string):
         sqlexecute = self.sqlexecute
+        host = self.login_path if self.login_path and self.login_path_as_host else sqlexecute.host
         string = string.replace('\\u', sqlexecute.user or '(none)')
-        string = string.replace('\\h', sqlexecute.host or '(none)')
+        string = string.replace('\\h', host or '(none)')
         string = string.replace('\\d', sqlexecute.dbname or '(none)')
         string = string.replace('\\t', sqlexecute.server_type()[0] or 'mycli')
         string = string.replace('\\n', "\n")
