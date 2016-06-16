@@ -12,6 +12,8 @@ from time import time
 from datetime import datetime
 from random import choice
 from io import open
+import csv
+from StringIO import StringIO
 
 import click
 import sqlparse
@@ -734,6 +736,8 @@ class MyCli(object):
               help='Automatically switch to vertical output mode if the result is wider than the terminal width.')
 @click.option('-t', '--table', is_flag=True,
               help='Display batch output in table format.')
+@click.option('--csv', is_flag=True,
+              help='Display batch output in CSV format.')
 @click.option('--warn/--no-warn', default=None,
               help='Warn before running a destructive query.')
 @click.option('--local-infile', type=bool,
@@ -744,7 +748,8 @@ class MyCli(object):
 def cli(database, user, host, port, socket, password, dbname,
         version, prompt, logfile, defaults_group_suffix, defaults_file,
         login_path, auto_vertical_output, local_infile, ssl_ca, ssl_capath,
-        ssl_cert, ssl_key, ssl_cipher, ssl_verify_server_cert, table, warn):
+        ssl_cert, ssl_key, ssl_cipher, ssl_verify_server_cert, table, csv,
+        warn):
 
     if version:
         print('Version:', __version__)
@@ -799,10 +804,19 @@ def cli(database, user, host, port, socket, password, dbname,
             results = mycli.sqlexecute.run(stdin_text)
             for result in results:
                 title, cur, headers, status = result
-                table_format = mycli.table_format if table else None
+                #table_format = mycli.table_format if table else None
+                if csv:  # Implies --table
+                    table_format = 'csv'
+                elif table:
+                    table_format = mycli.table_format
+                else:
+                    table_format = None
                 output = format_output(title, cur, headers, None, table_format)
-                for line in output:
-                    click.echo(line)
+                for line in output:  # WARNING: buffers results in RAM, twice
+                    if table_format == 'csv':
+                        click.echo(line, nl=False)  # csv appends DOS newlines
+                    else:
+                        click.echo(line)
         except Exception as e:
             click.secho(str(e), err=True, fg='red')
             exit(1)
@@ -815,7 +829,22 @@ def format_output(title, cur, headers, status, table_format, expanded=False, max
         headers = [utf8tounicode(x) for x in headers]
         if expanded:
             output.append(expanded_table(cur, headers))
-        elif table_format is not None:
+        elif table_format is None:
+            output.append('\t'.join(headers))
+            for row in cur:
+                output.append('\t'.join([str(r) for r in row]))
+        elif table_format == 'csv':  # Special magic format
+            sio = StringIO()  # csv module is designed to write to files, only
+            csv_writer = csv.writer(sio)  # NB: adds \r\n to lines
+            csv_writer.writerow(headers)
+            output.append(sio.getvalue())
+            sio.truncate(0)  # Otherwise it will keep appending
+            for row in cur:
+                csv_writer.writerow(row)
+                output.append(sio.getvalue())
+                sio.truncate(0)
+            sio.close()
+        else:
             rows = list(cur)
             tabulated, frows = tabulate(rows, headers, tablefmt=table_format,
                 missingval='<null>')
@@ -825,10 +854,6 @@ def format_output(title, cur, headers, status, table_format, expanded=False, max
                 output.append(expanded_table(rows, headers))
             else:
                 output.append(tabulated)
-        else:
-            output.append('\t'.join(headers))
-            for row in cur:
-                output.append('\t'.join([str(r) for r in row]))
     if status:  # Only print the status if it's not None.
         output.append(status)
     return output
