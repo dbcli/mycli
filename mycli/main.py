@@ -695,6 +695,16 @@ class MyCli(object):
         string = string.replace('\\n', "\n")
         return string
 
+    def run_query(self, query, table_format=None):
+        """Runs query"""
+        results = self.sqlexecute.run(query)
+        for result in results:
+            title, cur, headers, status = result
+            table_format = self.table_format if table_format else None
+            output = format_output(title, cur, headers, None, table_format)
+            for line in output:
+                click.echo(line)
+
 @click.command()
 @click.option('-h', '--host', envvar='MYSQL_HOST', help='Host address of the database.')
 @click.option('-P', '--port', envvar='MYSQL_TCP_PORT', type=int, help='Port number to use for connection. Honors '
@@ -740,11 +750,13 @@ class MyCli(object):
               help='Enable/disable LOAD DATA LOCAL INFILE.')
 @click.option('--login-path', type=str,
               help='Read this path from the login file.')
+@click.option('--execute', type=str, help='Execute query to the database.')
 @click.argument('database', default='', nargs=1)
 def cli(database, user, host, port, socket, password, dbname,
         version, prompt, logfile, defaults_group_suffix, defaults_file,
         login_path, auto_vertical_output, local_infile, ssl_ca, ssl_capath,
-        ssl_cert, ssl_key, ssl_cipher, ssl_verify_server_cert, table, warn):
+        ssl_cert, ssl_key, ssl_cipher, ssl_verify_server_cert, table, warn,
+        execute):
 
     if version:
         print('Version:', __version__)
@@ -781,6 +793,15 @@ def cli(database, user, host, port, socket, password, dbname,
             '\thost: %r'
             '\tport: %r', database, user, host, port)
 
+    #  --execute argument
+    if execute:
+        try:
+            mycli.run_query(execute, table_format=table)
+            exit(0)
+        except Exception as e:
+            click.secho(str(e), err=True, fg='red')
+            exit(1)
+
     if sys.stdin.isatty():
         mycli.run_cli()
     else:
@@ -796,16 +817,11 @@ def cli(database, user, host, port, socket, password, dbname,
                 confirm_destructive_query(stdin_text) is False):
             exit(0)
         try:
-            results = mycli.sqlexecute.run(stdin_text)
-            for result in results:
-                title, cur, headers, status = result
-                table_format = mycli.table_format if table else None
-                output = format_output(title, cur, headers, None, table_format)
-                for line in output:
-                    click.echo(line)
+            mycli.run_query(stdin_text, table_format=table)
         except Exception as e:
             click.secho(str(e), err=True, fg='red')
             exit(1)
+
 
 def format_output(title, cur, headers, status, table_format, expanded=False, max_width=None):
     output = []
@@ -818,7 +834,7 @@ def format_output(title, cur, headers, status, table_format, expanded=False, max
         elif table_format is not None:
             rows = list(cur)
             tabulated, frows = tabulate(rows, headers, tablefmt=table_format,
-                missingval='<null>')
+                                        missingval='<null>')
             if (max_width and rows and
                     content_exceeds_width(frows[0], max_width) and
                     headers):
