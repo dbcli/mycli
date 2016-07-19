@@ -34,6 +34,18 @@ def test_format_output_no_table():
     assert results == expected
 
 @dbtest
+def test_execute_arg(executor):
+    run(executor, 'create table test (a text)')
+    run(executor, 'insert into test values("abc")')
+
+    sql = 'select * from test;'
+    runner = CliRunner()
+    result = runner.invoke(cli, args=CLI_ARGS + ['--execute', sql])
+
+    assert result.exit_code == 0
+    assert 'abc' in result.output
+
+@dbtest
 def test_batch_mode(executor):
     run(executor, '''create table test(a text)''')
     run(executor, '''insert into test values('abc'), ('def'), ('ghi')''')
