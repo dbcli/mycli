@@ -750,7 +750,8 @@ class MyCli(object):
               help='Enable/disable LOAD DATA LOCAL INFILE.')
 @click.option('--login-path', type=str,
               help='Read this path from the login file.')
-@click.option('--execute', type=str, help='Execute query to the database.')
+@click.option('-e', '--execute',  type=str,
+              help='Execute query to the database.')
 @click.argument('database', default='', nargs=1)
 def cli(database, user, host, port, socket, password, dbname,
         version, prompt, logfile, defaults_group_suffix, defaults_file,
