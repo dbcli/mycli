@@ -2,6 +2,9 @@ import logging
 import pymysql
 import sqlparse
 from .packages import connection, special
+from pymysql.constants import FIELD_TYPE
+from pymysql.converters import (convert_mysql_timestamp, convert_datetime,
+        convert_timedelta, convert_date)
 
 _logger = logging.getLogger(__name__)
 
@@ -61,13 +64,19 @@ class SQLExecute(object):
             '\tlocal_infile: %r'
             '\tssl: %r',
             database, user, host, port, socket, charset, local_infile, ssl)
+        conv = {
+                FIELD_TYPE.TIMESTAMP: lambda obj: (convert_mysql_timestamp(obj) or '0000-00-00 00:00:00'),
+                FIELD_TYPE.DATETIME: lambda obj: (convert_datetime(obj) or '0000-00-00 00:00:00'),
+                FIELD_TYPE.TIME: lambda obj: (convert_timedelta(obj) or '00:00:00'),
+                FIELD_TYPE.DATE: lambda obj: (convert_date(obj) or '0000-00-00'),
+                }
 
         conn = connection.connect(database=db, user=user, password=password,
                 host=host, port=port, unix_socket=socket,
                 use_unicode=True, charset=charset, autocommit=True,
                 client_flag=pymysql.constants.CLIENT.INTERACTIVE,
                 cursorclass=connection.Cursor, local_infile=local_infile,
-                ssl=ssl)
+                conv=conv, ssl=ssl)
         if hasattr(self, 'conn'):
             self.conn.close()
         self.conn = conn
