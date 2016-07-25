@@ -40,10 +40,16 @@ def test_execute_arg(executor):
 
     sql = 'select * from test;'
     runner = CliRunner()
+    result = runner.invoke(cli, args=CLI_ARGS + ['-e', sql])
+
+    assert result.exit_code == 0
+    assert 'abc' in result.output
+
     result = runner.invoke(cli, args=CLI_ARGS + ['--execute', sql])
 
     assert result.exit_code == 0
     assert 'abc' in result.output
+
 
 @dbtest
 def test_batch_mode(executor):
