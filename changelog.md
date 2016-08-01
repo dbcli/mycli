@@ -1,3 +1,22 @@
+1.8.0:
+======
+
+Features:
+---------
+
+* Add support for --execute/-e commandline arg. (Thanks: [Matheus Rosa]).
+* Add `less_chatty` config option to skip the intro messages. (Thanks: [Scrappy Soft]).
+* Support MYCLI_HISTFILE environment variable to specify where to write the history file. (Thanks: [Scrappy Soft]).
+* Add `prompt_continuation` config option to allow configuring the continuation prompt for multi-line queries. (Thanks: [Scrappy Soft]).
+* Display login-path instead of host in prompt. (Thanks: [Irina Truong]).
+
+Bug Fixes:
+----------
+
+* Pin sqlparse to version 0.1.19 since the new version is breaking completion. (Thanks: [Amjith Ramanujam]).
+* Remove unsupported keywords. (Thanks: [Matheus Rosa]).
+* Fix completion suggestion inside functions with operands. (Thanks: [Irina Truong]).
+
 1.7.0:
 ======
 
@@ -316,3 +335,5 @@ Bug Fixes:
 [Terseus]: https://github.com/Terseus
 [William GARCIA]: https://github.com/willgarcia
 [Jonathan Slenders]: https://github.com/jonathanslenders
+[Casper Langemeijer]: https://github.com/langemeijer
+[Scrappy Soft]: https://github.com/scrappysoft
