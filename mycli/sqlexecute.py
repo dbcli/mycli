@@ -65,10 +65,10 @@ class SQLExecute(object):
             '\tssl: %r',
             database, user, host, port, socket, charset, local_infile, ssl)
         conv = {
-                FIELD_TYPE.TIMESTAMP: lambda obj: (convert_mysql_timestamp(obj) or '0000-00-00 00:00:00'),
-                FIELD_TYPE.DATETIME: lambda obj: (convert_datetime(obj) or '0000-00-00 00:00:00'),
-                FIELD_TYPE.TIME: lambda obj: (convert_timedelta(obj) or '00:00:00'),
-                FIELD_TYPE.DATE: lambda obj: (convert_date(obj) or '0000-00-00'),
+                FIELD_TYPE.TIMESTAMP: lambda obj: (convert_mysql_timestamp(obj) or obj),
+                FIELD_TYPE.DATETIME: lambda obj: (convert_datetime(obj) or obj),
+                FIELD_TYPE.TIME: lambda obj: (convert_timedelta(obj) or obj),
+                FIELD_TYPE.DATE: lambda obj: (convert_date(obj) or obj),
                 }
 
         conn = connection.connect(database=db, user=user, password=password,
