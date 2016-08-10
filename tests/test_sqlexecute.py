@@ -277,3 +277,55 @@ def test_favorite_query_multiline_statement(executor):
 
     results = run(executor, "\\fd test-ad")
     assert results == ['test-ad: Deleted']
+
+@dbtest
+def test_timestamp_null(executor):
+    run(executor, '''create table ts_null(a timestamp)''')
+    run(executor, '''insert into ts_null values(0)''')
+    results = run(executor, '''select * from ts_null''', join=True)
+    assert results == dedent("""\
+        +---------------------+
+        | a                   |
+        |---------------------|
+        | 0000-00-00 00:00:00 |
+        +---------------------+
+        1 row in set""")
+
+@dbtest
+def test_datetime_null(executor):
+    run(executor, '''create table dt_null(a datetime)''')
+    run(executor, '''insert into dt_null values(0)''')
+    results = run(executor, '''select * from dt_null''', join=True)
+    assert results == dedent("""\
+        +---------------------+
+        | a                   |
+        |---------------------|
+        | 0000-00-00 00:00:00 |
+        +---------------------+
+        1 row in set""")
+
+@dbtest
+def test_date_null(executor):
+    run(executor, '''create table date_null(a date)''')
+    run(executor, '''insert into date_null values(0)''')
+    results = run(executor, '''select * from date_null''', join=True)
+    assert results == dedent("""\
+        +------------+
+        | a          |
+        |------------|
+        | 0000-00-00 |
+        +------------+
+        1 row in set""")
+
+@dbtest
+def test_time_null(executor):
+    run(executor, '''create table time_null(a time)''')
+    run(executor, '''insert into time_null values(0)''')
+    results = run(executor, '''select * from time_null''', join=True)
+    assert results == dedent("""\
+        +----------+
+        | a        |
+        |----------|
+        | 00:00:00 |
+        +----------+
+        1 row in set""")
