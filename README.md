@@ -8,8 +8,6 @@ A command line client for MySQL that can do auto-completion and syntax highlight
 
 HomePage: [http://mycli.net](http://mycli.net)
 
-Debian Packages via [PackageCloud.io](https://packagecloud.io/amjith/mycli).
-
 ![Completion](screenshots/tables.png)
 ![CompletionGif](screenshots/main.gif)
 
@@ -32,7 +30,11 @@ or
 $ brew update && brew install mycli  # Only on OS X
 ```
 
-Check the [detailed install instructions](#detailed-install-instructions) for debian packages or getting started with pip.
+or
+
+```
+$ sudo apt-get install mycli # Only on debian or ubuntu
+```
 
 ### Usage
 
@@ -113,37 +115,6 @@ My email: amjith.r@gmail.com
 Twitter: [@amjithr](http://twitter.com/amjithr)
 
 ## Detailed Install Instructions:
-
-### Debian/Ubuntu Package:
-
-The debian package for `mycli` is hosted on [packagecloud.io](https://packagecloud.io/amjith/mycli).
-
-Add the gpg key for packagecloud for package verification.
-
-```
-curl https://packagecloud.io/gpg.key | apt-key add -
-```
-
-Install a package called apt-transport-https to make it possible for apt to fetch packages over https.
-
-```
-apt-get install -y apt-transport-https
-```
-
-Add the mycli package repo to the apt source.
-
-```
-echo "deb https://packagecloud.io/amjith/mycli/ubuntu/ trusty main" | sudo tee -a /etc/apt/sources.list
-```
-
-Update the apt sources and install mycli.
-
-```
-$ sudo apt-get update
-$ sudo apt-get install mycli
-```
-
-Now `mycli` can be upgraded easily by using ``sudo apt-get upgrade mycli``.
 
 ### RHEL, Centos, Fedora:
 
