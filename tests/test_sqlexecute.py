@@ -90,10 +90,10 @@ def test_invalid_column_name(executor):
 @dbtest
 def test_unicode_support_in_output(executor):
     run(executor, "create table unicodechars(t text)")
-    run(executor, "insert into unicodechars (t) values ('é')")
+    run(executor, u"insert into unicodechars (t) values ('é')")
 
     # See issue #24, this raises an exception without proper handling
-    assert u'é' in run(executor, "select * from unicodechars", join=True)
+    assert u'é' in run(executor, u"select * from unicodechars", join=True)
 
 @dbtest
 def test_expanded_output(executor):
@@ -247,7 +247,7 @@ def test_cd_command_current_dir(executor):
 
 @dbtest
 def test_unicode_support(executor):
-    assert u'日本語' in run(executor, "SELECT '日本語' AS japanese;", join=True)
+    assert u'日本語' in run(executor, u"SELECT '日本語' AS japanese;", join=True)
 
 @dbtest
 def test_favorite_query_multiline_statement(executor):

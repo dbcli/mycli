@@ -2,6 +2,7 @@ from __future__ import print_function
 import sys
 import sqlparse
 from sqlparse.sql import Comparison, Identifier, Where
+from sqlparse.compat import text_type
 from .parseutils import last_word, extract_tables, find_prev_keyword
 from .special import parse_special_command
 
@@ -56,7 +57,7 @@ def suggest_type(full_text, text_before_cursor):
         stmt_start, stmt_end = 0, 0
 
         for statement in parsed:
-            stmt_len = len(statement.to_unicode())
+            stmt_len = len(text_type(statement))
             stmt_start, stmt_end = stmt_end, stmt_end + stmt_len
 
             if stmt_end >= current_pos:
@@ -79,7 +80,7 @@ def suggest_type(full_text, text_before_cursor):
         if tok1 and tok1.value == '\\':
             return suggest_special(text_before_cursor)
 
-    last_token = statement and statement.token_prev(len(statement.tokens)) or ''
+    last_token = statement and statement.token_prev(len(statement.tokens))[1] or ''
 
     return suggest_based_on_last_token(last_token, text_before_cursor,
                                        full_text, identifier)
@@ -157,7 +158,7 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
 
             # Check for a subquery expression (cases 3 & 4)
             where = p.tokens[-1]
-            prev_tok = where.token_prev(len(where.tokens) - 1)
+            idx, prev_tok = where.token_prev(len(where.tokens) - 1)
 
             if isinstance(prev_tok, Comparison):
                 # e.g. "SELECT foo FROM bar WHERE foo = ANY("
@@ -170,7 +171,7 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
                 return column_suggestions
 
         # Get the token before the parens
-        prev_tok = p.token_prev(len(p.tokens) - 1)
+        idx, prev_tok = p.token_prev(len(p.tokens) - 1)
         if prev_tok and prev_tok.value and prev_tok.value.lower() == 'using':
             # tbl1 INNER JOIN tbl2 USING (col1, col2)
             tables = extract_tables(full_text)
