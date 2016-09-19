@@ -442,3 +442,11 @@ def test_cross_join():
          {'type': 'table', 'schema': []},
          {'type': 'view', 'schema': []},
          {'type': 'schema'}])
+
+@pytest.mark.parametrize('expression', [
+    'SELECT 1 AS ',
+    'SELECT 1 FROM tabl AS ',
+])
+def test_after_as(expression):
+    suggestions = suggest_type(expression, expression)
+    assert set(suggestions) == set()
