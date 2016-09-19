@@ -23,7 +23,7 @@ class SQLCompleter(Completer):
                 'CASE', 'CHAR', 'CHECK', 'COLUMN', 'COMMENT', 'COMMIT',
                 'CHANGE MASTER TO', 'CREATE', 'CURRENT', 'DATABASE', 'DATE',
                 'DECIMAL', 'DEFAULT', 'DELETE FROM', 'DELIMITER', 'DESC',
-                'DESCRIBE', 'DISTINCT', 'DROP', 'ELSE', 'END', 'ESCAPE', 'EXISTS',
+                'DESCRIBE', 'DROP', 'ELSE', 'END', 'ESCAPE', 'EXISTS',
                 'FILE', 'FLOAT', 'FOR', 'FORMAT', 'FROM', 'FULL', 'FUNCTION', 'GRANT',
                 'GROUP BY', 'HAVING', 'HOST', 'IDENTIFIED', 'IN', 'INCREMENT', 'INDEX',
                 'INSERT INTO', 'INTEGER', 'INTO', 'INTERVAL', 'IS', 'JOIN', 'LEFT',
