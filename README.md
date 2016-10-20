@@ -153,3 +153,22 @@ Thanks to [PyMysql](http://www.pymysql.org/) for a pure python adapter to MySQL 
 Tests have been run on OS X and Linux.
 
 THIS HAS NOT BEEN TESTED IN WINDOWS, but the libraries used in this app are Windows compatible. This means it should work without any modifications. If you're unable to run it on Windows, please file a bug. I will try my best to fix it.
+
+### Use with pager (mysql workaround)
+As described [here](https://github.com/dbcli/mycli/issues/281), " we only read the [client] section of my.cnf not the [mysql] section".
+
+So, if you want to use a pager, your .my.cnf file should looks like this:
+
+```
+[mysql]
+pager  = mypager
+[client]
+pager  = mypager
+```
+
+instead of just this :
+
+```
+[mysql]
+pager  = mypager
+```
