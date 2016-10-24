@@ -1,3 +1,18 @@
+1.8.1:
+======
+
+Bug Fixes:
+----------
+* Remove duplicate listing of DISTINCT keyword. (Thanks: [Amjith Ramanujam]).
+* Add an try/except for AS keyword crash. (Thanks: [Amjith Ramanujam]).
+* Support python-sqlparse 0.2. (Thanks: [Dick Marinus]).
+* Fallback to the raw object for invalid time values. (Thanks: [Amjith Ramanujam]).
+* Reset the show items when completion is refreshed. (Thanks: [Amjith Ramanujam]).
+
+Internal Changes:
+-----------------
+* Make the dependency of sqlparse slightly more liberal. (Thanks: [Amjith Ramanujam]).
+
 1.8.0:
 ======
 
@@ -337,3 +352,4 @@ Bug Fixes:
 [Jonathan Slenders]: https://github.com/jonathanslenders
 [Casper Langemeijer]: https://github.com/langemeijer
 [Scrappy Soft]: https://github.com/scrappysoft
+[Dick Marinus]: https://github.com/meeuw
