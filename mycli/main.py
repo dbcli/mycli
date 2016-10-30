@@ -829,16 +829,17 @@ def cli(database, user, host, port, socket, password, dbname,
         try:
             results = mycli.sqlexecute.run(stdin_text)
             table_format = None
+            new_line = True
 
             if csv:
                 table_format = 'csv'
                 new_line = False
             elif table:
-                new_line = True
+                table_format = mycli.table_format
 
             for result in results:
                 title, cur, headers, status = result
-                output = format_output(title, cur, headers, status, table_format)
+                output = format_output(title, cur, headers, None, table_format)
                 for line in output:
                     click.echo(line, nl=new_line)
 
@@ -855,7 +856,7 @@ def format_output(title, cur, headers, status, table_format, expanded=False, max
         headers = [utf8tounicode(x) for x in headers]
         if expanded:
             output.append(expanded_table(cur, headers))
-        if table_format is None:
+        elif table_format is None:
             output.append('\t'.join(headers))
             for row in cur:
                 output.append('\t'.join([str(r) for r in row]))
