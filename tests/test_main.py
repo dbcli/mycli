@@ -88,6 +88,21 @@ def test_batch_mode_table(executor):
     assert result.exit_code == 0
     assert expected in result.output
 
+@dbtest
+def test_batch_mode_csv(executor):
+    run(executor, '''create table test(a text, b text)''')
+    run(executor, '''insert into test (a, b) values('abc', 'def'), ('ghi', 'jkl')''')
+
+    sql = 'select * from test;'
+
+    runner = CliRunner()
+    result = runner.invoke(cli, args=CLI_ARGS + ['--csv'], input=sql)
+
+    expected = 'a,b\nabc,def\nghi,jkl\n\n'
+
+    assert result.exit_code == 0
+    assert expected in result.output
+
 def test_query_starts_with(executor):
     query = 'USE test;'
     assert query_starts_with(query, ('use', )) is True
