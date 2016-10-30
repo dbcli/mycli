@@ -6,6 +6,7 @@ import os
 import os.path
 import sys
 import traceback
+import socket
 import logging
 import threading
 from time import time
@@ -693,6 +694,9 @@ class MyCli(object):
         string = string.replace('\\d', sqlexecute.dbname or '(none)')
         string = string.replace('\\t', sqlexecute.server_type()[0] or 'mycli')
         string = string.replace('\\n', "\n")
+        string = string.replace('\\D', datetime.now().strftime('%a %b %d %H:%M:%S %Y'))
+        string = string.replace('\\p', socket.gethostbyname(socket.gethostname()))
+        string = string.replace('\\_', ' ')
         return string
 
     def run_query(self, query, table_format=None):
