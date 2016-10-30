@@ -867,11 +867,10 @@ def format_output(title, cur, headers, status, table_format, expanded=False, max
             output.append(content.getvalue())
             content.truncate(0)
             for row in cur:
-                row = ['null' if val is None else val.encode('utf-8') for val in row]
+                row = ['null' if val is None else str(val) for val in row]
                 writer.writerow(row)
                 output.append(content.getvalue())
                 content.truncate(0)
-            output.append('\n')
             content.close()
         else:
             rows = list(cur)
