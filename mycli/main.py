@@ -848,12 +848,10 @@ def format_output(title, cur, headers, status, table_format, expanded=False, max
         output.append(title)
     if cur:
         headers = [utf8tounicode(x) for x in headers]
+        table_format = 'tsv' if table_format is None else table_format
+
         if expanded:
             output.append(expanded_table(cur, headers))
-        elif table_format is None:
-            output.append('\t'.join(headers))
-            for row in cur:
-                output.append('\t'.join([str(r) for r in row]))
         elif table_format == 'csv':
             content = StringIO()
             writer = csv.writer(content)
