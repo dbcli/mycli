@@ -16,7 +16,7 @@ from io import open
 
 # support StringIO for Python 2 and 3
 try:
-    from StringIO import StringIO
+    from cStringIO import StringIO
 except ImportError:
     from io import StringIO
 
