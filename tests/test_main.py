@@ -99,10 +99,9 @@ def test_batch_mode_csv(executor):
     result = runner.invoke(cli, args=CLI_ARGS + ['--csv'], input=sql)
 
     expected = 'a,b\nabc,def\nghi,jkl\n'
-    result_output = result.output.replace('\x00', '') # python 3
 
     assert result.exit_code == 0
-    assert expected in result_output
+    assert expected in result.output
 
 def test_query_starts_with(executor):
     query = 'USE test;'

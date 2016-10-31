@@ -864,13 +864,12 @@ def format_output(title, cur, headers, status, table_format, expanded=False, max
             content = StringIO()
             writer = csv.writer(content)
             writer.writerow(headers)
-            output.append(content.getvalue())
-            content.truncate(0)
+
             for row in cur:
                 row = ['null' if val is None else str(val) for val in row]
                 writer.writerow(row)
-                output.append(content.getvalue())
-                content.truncate(0)
+
+            output.append(content.getvalue())
             content.close()
         else:
             rows = list(cur)
