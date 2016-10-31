@@ -702,15 +702,14 @@ class MyCli(object):
         string = string.replace('\\n', "\n")
         return string
 
-    def run_query(self, query, table_format=None):
+    def run_query(self, query, table_format=None, new_line=True):
         """Runs query"""
         results = self.sqlexecute.run(query)
         for result in results:
             title, cur, headers, status = result
-            table_format = self.table_format if table_format else None
             output = format_output(title, cur, headers, None, table_format)
             for line in output:
-                click.echo(line)
+                click.echo(line, nl=new_line)
 
 @click.command()
 @click.option('-h', '--host', envvar='MYSQL_HOST', help='Host address of the database.')
@@ -827,7 +826,6 @@ def cli(database, user, host, port, socket, password, dbname,
                 confirm_destructive_query(stdin_text) is False):
             exit(0)
         try:
-            results = mycli.sqlexecute.run(stdin_text)
             table_format = None
             new_line = True
 
@@ -837,12 +835,8 @@ def cli(database, user, host, port, socket, password, dbname,
             elif table:
                 table_format = mycli.table_format
 
-            for result in results:
-                title, cur, headers, status = result
-                output = format_output(title, cur, headers, None, table_format)
-                for line in output:
-                    click.echo(line, nl=new_line)
-
+            mycli.run_query(stdin_text, table_format=table_format, new_line=new_line)
+            exit(0)
         except Exception as e:
             click.secho(str(e), err=True, fg='red')
             exit(1)
