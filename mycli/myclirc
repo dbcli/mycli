@@ -65,6 +65,10 @@ less_chatty = False
 # Use alias from --login-path instead of host name in prompt
 login_path_as_host = False
 
+# Cause result sets to be displayed vertically if they are too wide for the current window,
+# and using normal tabular format otherwise. (This applies to statements terminated by ; or \G.) 
+auto_vertical_output = False
+
 # Custom colors for the completion menu, toolbar, etc.
 [colors]
 # Completion menus.

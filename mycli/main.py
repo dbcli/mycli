@@ -94,7 +94,6 @@ class MyCli(object):
         self.logfile = logfile
         self.defaults_suffix = defaults_suffix
         self.login_path = login_path
-        self.auto_vertical_output = auto_vertical_output
 
         # self.cnf_files is a class variable that stores the list of mysql
         # config files to read in at launch.
@@ -118,6 +117,10 @@ class MyCli(object):
         c_dest_warning = c['main'].as_bool('destructive_warning')
         self.destructive_warning = c_dest_warning if warn is None else warn
         self.login_path_as_host = c['main'].as_bool('login_path_as_host')
+
+        # read from cli argument or user config file
+        self.auto_vertical_output = auto_vertical_output or \
+                                c['main'].as_bool('auto_vertical_output')
 
         # Write user config if system config wasn't the last config loaded.
         if c.filename not in self.system_config_files:
