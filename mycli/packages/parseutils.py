@@ -1,7 +1,7 @@
 from __future__ import print_function
 import re
 import sqlparse
-from sqlparse.sql import IdentifierList, Identifier, Function
+from sqlparse.sql import IdentifierList, Identifier, Function, Token
 from sqlparse.tokens import Keyword, DML, Punctuation
 
 cleanup_regex = {
@@ -64,7 +64,10 @@ def last_word(text, include='alphanum_underscore'):
 # This code is borrowed from sqlparse example script.
 # <url>
 def is_subselect(parsed):
-    if not parsed.is_group():
+    if isinstance(parsed, sqlparse.sql.Token):
+        if not parsed.is_group:
+            return False
+    if not parsed.is_group:
         return False
     for item in parsed.tokens:
         if item.ttype is DML and item.value.upper() in ('SELECT', 'INSERT',

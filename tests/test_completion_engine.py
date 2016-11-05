@@ -449,4 +449,4 @@ def test_cross_join():
 ])
 def test_after_as(expression):
     suggestions = suggest_type(expression, expression)
-    assert set(suggestions) == set()
+    assert suggestions == [{'type':'keyword'}]
