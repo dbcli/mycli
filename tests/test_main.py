@@ -51,6 +51,38 @@ def test_execute_arg(executor):
     assert result.exit_code == 0
     assert 'abc' in result.output
 
+    expected = 'a\nabc\n'
+
+    assert result.output == expected
+
+
+@dbtest
+def test_execute_arg_with_table(executor):
+    run(executor, 'create table test (a text)')
+    run(executor, 'insert into test values("abc")')
+
+    sql = 'select * from test;'
+    runner = CliRunner()
+    result = runner.invoke(cli, args=CLI_ARGS + ['-e', sql] + ['--table'])
+    expected = '+-----+\n| a   |\n|-----|\n| abc |\n+-----+\n'
+
+    assert result.exit_code == 0
+    assert result.output == expected
+
+
+@dbtest
+def test_execute_arg_with_csv(executor):
+    run(executor, 'create table test (a text)')
+    run(executor, 'insert into test values("abc")')
+
+    sql = 'select * from test;'
+    runner = CliRunner()
+    result = runner.invoke(cli, args=CLI_ARGS + ['-e', sql] + ['--csv'])
+    expected = 'a\nabc\n\n'
+
+    assert result.exit_code == 0
+    assert result.output == expected
+
 
 @dbtest
 def test_batch_mode(executor):

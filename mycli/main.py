@@ -805,7 +805,12 @@ def cli(database, user, host, port, socket, password, dbname,
     #  --execute argument
     if execute:
         try:
-            mycli.run_query(execute, table_format=table)
+            table_format = None
+            if table:
+                table_format = mycli.table_format
+            elif csv:
+                table_format = 'csv'
+            mycli.run_query(execute, table_format=table_format)
             exit(0)
         except Exception as e:
             click.secho(str(e), err=True, fg='red')
