@@ -53,7 +53,7 @@ def test_execute_arg(executor):
 
     expected = 'a\nabc\n'
 
-    assert result.output == expected
+    assert expected in result.output
 
 
 @dbtest
@@ -67,7 +67,7 @@ def test_execute_arg_with_table(executor):
     expected = '+-----+\n| a   |\n|-----|\n| abc |\n+-----+\n'
 
     assert result.exit_code == 0
-    assert result.output == expected
+    assert expected in result.output
 
 
 @dbtest
@@ -81,7 +81,7 @@ def test_execute_arg_with_csv(executor):
     expected = 'a\nabc\n\n'
 
     assert result.exit_code == 0
-    assert result.output == expected
+    assert expected in result.output
 
 
 @dbtest
