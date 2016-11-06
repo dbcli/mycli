@@ -197,6 +197,9 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
         return [{'type': 'column', 'tables': extract_tables(full_text)}]
     elif token_v in ('set', 'by', 'distinct'):
         return [{'type': 'column', 'tables': extract_tables(full_text)}]
+    elif token_v == 'as':
+        # Don't suggest anything for an alias
+        return []
     elif token_v in ('show'):
         return [{'type': 'show'}]
     elif token_v in ('to',):
