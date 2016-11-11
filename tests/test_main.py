@@ -30,7 +30,8 @@ def test_format_output_auto_expand():
 def test_format_output_no_table():
     results = format_output('Title', [('abc', 'def')], ['head1', 'head2'],
                             'test status', None)
-    expected = ['Title', 'head1\thead2', 'abc\tdef', 'test status']
+
+    expected = ['Title', u'head1  \thead2\nabc    \tdef', 'test status']
     assert results == expected
 
 @dbtest
@@ -50,6 +51,38 @@ def test_execute_arg(executor):
     assert result.exit_code == 0
     assert 'abc' in result.output
 
+    expected = 'a\nabc\n'
+
+    assert expected in result.output
+
+
+@dbtest
+def test_execute_arg_with_table(executor):
+    run(executor, 'create table test (a text)')
+    run(executor, 'insert into test values("abc")')
+
+    sql = 'select * from test;'
+    runner = CliRunner()
+    result = runner.invoke(cli, args=CLI_ARGS + ['-e', sql] + ['--table'])
+    expected = '+-----+\n| a   |\n|-----|\n| abc |\n+-----+\n'
+
+    assert result.exit_code == 0
+    assert expected in result.output
+
+
+@dbtest
+def test_execute_arg_with_csv(executor):
+    run(executor, 'create table test (a text)')
+    run(executor, 'insert into test values("abc")')
+
+    sql = 'select * from test;'
+    runner = CliRunner()
+    result = runner.invoke(cli, args=CLI_ARGS + ['-e', sql] + ['--csv'])
+    expected = 'a\nabc\n\n'
+
+    assert result.exit_code == 0
+    assert expected in result.output
+
 
 @dbtest
 def test_batch_mode(executor):
@@ -65,7 +98,7 @@ def test_batch_mode(executor):
     result = runner.invoke(cli, args=CLI_ARGS, input=sql)
 
     assert result.exit_code == 0
-    assert 'count(*)\n3\na\nabc' in result.output
+    assert '  count(*)\n         3\na\nabc\n' in result.output
 
 @dbtest
 def test_batch_mode_table(executor):
@@ -84,6 +117,21 @@ def test_batch_mode_table(executor):
         '|   count(*) |\n|------------|\n|          3 |\n+------------+\n'
         '+-----+\n| a   |\n|-----|\n| abc |\n+-----+'
     )
+
+    assert result.exit_code == 0
+    assert expected in result.output
+
+@dbtest
+def test_batch_mode_csv(executor):
+    run(executor, '''create table test(a text, b text)''')
+    run(executor, '''insert into test (a, b) values('abc', 'def'), ('ghi', 'jkl')''')
+
+    sql = 'select * from test;'
+
+    runner = CliRunner()
+    result = runner.invoke(cli, args=CLI_ARGS + ['--csv'], input=sql)
+
+    expected = 'a,b\nabc,def\nghi,jkl\n'
 
     assert result.exit_code == 0
     assert expected in result.output
