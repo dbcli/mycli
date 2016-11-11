@@ -30,7 +30,7 @@ class SQLCompleter(Completer):
                 'LEVEL', 'LIKE', 'LIMIT', 'LOCK', 'LOGS', 'LONG', 'MASTER', 'MODE',
                 'MODIFY', 'NOT', 'NULL', 'NUMBER', 'OFFSET', 'ON', 'OPTION', 'OR',
                 'ORDER BY', 'OUTER', 'OWNER', 'PASSWORD', 'PORT', 'PRIMARY',
-                'PRIVILEGES', 'PROCESSLIST', 'PURGE', 'RENAME', 'REPAIR', 'RESET',
+                'PRIVILEGES', 'PROCESSLIST', 'PURGE', 'REGEXP', 'RENAME', 'REPAIR', 'RESET',
                 'REVOKE', 'RIGHT', 'ROLLBACK','ROW', 'ROWS', 'SELECT', 'SESSION', 'SET',
                 'SHARE', 'SHOW', 'SLAVE', 'SMALLINT', 'START', 'STOP', 'TABLE', 'THEN',
                 'TO', 'TRANSACTION', 'TRIGGER', 'TRUNCATE', 'UNION', 'UNIQUE', 'UPDATE',
