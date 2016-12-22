@@ -465,6 +465,142 @@ class MyCli(object):
             continuation_prompt = self.get_prompt(self.prompt_continuation_format)
             return [(Token.Continuation, ' ' * (width - len(continuation_prompt)) + continuation_prompt)]
 
+        def one_iteration(document=None):
+            if document is None:
+                document = self.cli.run(reset_current_buffer=True)
+
+                special.set_expanded_output(False)
+
+                # The reason we check here instead of inside the sqlexecute is
+                # because we want to raise the Exit exception which will be
+                # caught by the try/except block that wraps the
+                # sqlexecute.run() statement.
+                if quit_command(document.text):
+                    raise EOFError
+
+                try:
+                    document = self.handle_editor_command(self.cli, document)
+                except RuntimeError as e:
+                    logger.error("sql: %r, error: %r", document.text, e)
+                    logger.error("traceback: %r", traceback.format_exc())
+                    self.output(str(e), err=True, fg='red')
+                    return
+
+            if self.destructive_warning:
+                destroy = confirm_destructive_query(document.text)
+                if destroy is None:
+                    pass  # Query was not destructive. Nothing to do here.
+                elif destroy is True:
+                    self.output('Your call!')
+                else:
+                    self.output('Wise choice!')
+                    return
+
+            # Keep track of whether or not the query is mutating. In case
+            # of a multi-statement query, the overall query is considered
+            # mutating if any one of the component statements is mutating
+            mutating = False
+
+            try:
+                logger.debug('sql: %r', document.text)
+
+                if self.logfile:
+                    self.logfile.write('\n# %s\n' % datetime.now())
+                    self.logfile.write(document.text)
+                    self.logfile.write('\n')
+
+                successful = False
+                start = time()
+                res = sqlexecute.run(document.text)
+                successful = True
+                output = []
+                total = 0
+                for title, cur, headers, status in res:
+                    logger.debug("headers: %r", headers)
+                    logger.debug("rows: %r", cur)
+                    logger.debug("status: %r", status)
+                    threshold = 1000
+                    if (is_select(status) and
+                            cur and cur.rowcount > threshold):
+                        self.output('The result set has more than %s rows.'
+                                % threshold, fg='red')
+                        if not click.confirm('Do you want to continue?'):
+                            self.output("Aborted!", err=True, fg='red')
+                            break
+
+                    if self.auto_vertical_output:
+                        max_width = self.cli.output.get_size().columns
+                    else:
+                        max_width = None
+
+                    formatted = format_output(title, cur, headers,
+                        status, self.table_format,
+                        special.is_expanded_output(), max_width)
+
+                    output.extend(formatted)
+                    end = time()
+                    total += end - start
+                    mutating = mutating or is_mutating(status)
+            except UnicodeDecodeError as e:
+                import pymysql
+                if pymysql.VERSION < (0, 6, 7):
+                    message = ('You are running an older version of pymysql.\n'
+                            'Please upgrade to 0.6.7 or above to view binary data.\n'
+                            'Try \'pip install -U pymysql\'.')
+                    self.output(message)
+                else:
+                    raise e
+            except KeyboardInterrupt:
+                # Restart connection to the database
+                sqlexecute.connect()
+                logger.debug("cancelled query, sql: %r", document.text)
+                self.output("cancelled query", err=True, fg='red')
+            except NotImplementedError:
+                self.output('Not Yet Implemented.', fg="yellow")
+            except OperationalError as e:
+                logger.debug("Exception: %r", e)
+                if (e.args[0] in (2003, 2006, 2013)):
+                    logger.debug('Attempting to reconnect.')
+                    self.output('Reconnecting...', fg='yellow')
+                    try:
+                        sqlexecute.connect()
+                        logger.debug('Reconnected successfully.')
+                        one_iteration(document)
+                        return  # OK to just return, cuz the recursion call runs to the end.
+                    except OperationalError as e:
+                        logger.debug('Reconnect failed. e: %r', e)
+                        self.output(str(e), err=True, fg='red')
+                        return  # If reconnection failed, don't proceed further.
+                else:
+                    logger.error("sql: %r, error: %r", document.text, e)
+                    logger.error("traceback: %r", traceback.format_exc())
+                    self.output(str(e), err=True, fg='red')
+            except Exception as e:
+                logger.error("sql: %r, error: %r", document.text, e)
+                logger.error("traceback: %r", traceback.format_exc())
+                self.output(str(e), err=True, fg='red')
+            else:
+                try:
+                    if special.is_pager_enabled():
+                        self.output_via_pager('\n'.join(output))
+                    else:
+                        self.output('\n'.join(output))
+                except KeyboardInterrupt:
+                    pass
+                if special.is_timing_enabled():
+                    self.output('Time: %0.03fs' % total)
+
+                # Refresh the table names and column names if necessary.
+                if need_completion_refresh(document.text):
+                    self.refresh_completions(
+                            reset=need_completion_reset(document.text))
+            finally:
+                if self.logfile is False:
+                    self.output("Warning: This query was not logged.", err=True, fg='red')
+            query = Query(document.text, successful, mutating)
+            self.query_history.append(query)
+
+
         get_toolbar_tokens = create_toolbar_tokens_func(self.completion_refresher.is_refreshing)
 
         layout = create_prompt_layout(lexer=MyCliLexer,
@@ -500,142 +636,7 @@ class MyCli(object):
 
         try:
             while True:
-                document = self.cli.run(reset_current_buffer=True)
-
-                special.set_expanded_output(False)
-
-                # The reason we check here instead of inside the sqlexecute is
-                # because we want to raise the Exit exception which will be
-                # caught by the try/except block that wraps the
-                # sqlexecute.run() statement.
-                if quit_command(document.text):
-                    raise EOFError
-
-                try:
-                    document = self.handle_editor_command(self.cli, document)
-                except RuntimeError as e:
-                    logger.error("sql: %r, error: %r", document.text, e)
-                    logger.error("traceback: %r", traceback.format_exc())
-                    self.output(str(e), err=True, fg='red')
-                    continue
-                if self.destructive_warning:
-                    destroy = confirm_destructive_query(document.text)
-                    if destroy is None:
-                        pass  # Query was not destructive. Nothing to do here.
-                    elif destroy is True:
-                        self.output('Your call!')
-                    else:
-                        self.output('Wise choice!')
-                        continue
-
-                # Keep track of whether or not the query is mutating. In case
-                # of a multi-statement query, the overall query is considered
-                # mutating if any one of the component statements is mutating
-                mutating = False
-
-                try:
-                    logger.debug('sql: %r', document.text)
-
-                    if self.logfile:
-                        self.logfile.write('\n# %s\n' % datetime.now())
-                        self.logfile.write(document.text)
-                        self.logfile.write('\n')
-
-                    successful = False
-                    start = time()
-                    res = sqlexecute.run(document.text)
-                    successful = True
-                    output = []
-                    total = 0
-                    for title, cur, headers, status in res:
-                        logger.debug("headers: %r", headers)
-                        logger.debug("rows: %r", cur)
-                        logger.debug("status: %r", status)
-                        threshold = 1000
-                        if (is_select(status) and
-                                cur and cur.rowcount > threshold):
-                            self.output('The result set has more than %s rows.'
-                                    % threshold, fg='red')
-                            if not click.confirm('Do you want to continue?'):
-                                self.output("Aborted!", err=True, fg='red')
-                                break
-
-                        if self.auto_vertical_output:
-                            max_width = self.cli.output.get_size().columns
-                        else:
-                            max_width = None
-
-                        formatted = format_output(title, cur, headers,
-                            status, self.table_format,
-                            special.is_expanded_output(), max_width)
-
-                        output.extend(formatted)
-                        end = time()
-                        total += end - start
-                        mutating = mutating or is_mutating(status)
-                except UnicodeDecodeError as e:
-                    import pymysql
-                    if pymysql.VERSION < (0, 6, 7):
-                        message = ('You are running an older version of pymysql.\n'
-                                'Please upgrade to 0.6.7 or above to view binary data.\n'
-                                'Try \'pip install -U pymysql\'.')
-                        self.output(message)
-                    else:
-                        raise e
-                except KeyboardInterrupt:
-                    # Restart connection to the database
-                    sqlexecute.connect()
-                    logger.debug("cancelled query, sql: %r", document.text)
-                    self.output("cancelled query", err=True, fg='red')
-                except NotImplementedError:
-                    self.output('Not Yet Implemented.', fg="yellow")
-                except OperationalError as e:
-                    logger.debug("Exception: %r", e)
-                    reconnect = True
-                    if (e.args[0] in (2003, 2006, 2013)):
-                        reconnect = click.prompt('Connection reset. Reconnect (Y/n)',
-                                show_default=False, type=bool, default=True)
-                        if reconnect:
-                            logger.debug('Attempting to reconnect.')
-                            try:
-                                sqlexecute.connect()
-                                logger.debug('Reconnected successfully.')
-                                self.output('Reconnected!\nTry the command again.', fg='green')
-                            except OperationalError as e:
-                                logger.debug('Reconnect failed. e: %r', e)
-                                self.output(str(e), err=True, fg='red')
-                                continue  # If reconnection failed, don't proceed further.
-                        else:  # If user chooses not to reconnect, don't proceed further.
-                            continue
-                    else:
-                        logger.error("sql: %r, error: %r", document.text, e)
-                        logger.error("traceback: %r", traceback.format_exc())
-                        self.output(str(e), err=True, fg='red')
-                except Exception as e:
-                    logger.error("sql: %r, error: %r", document.text, e)
-                    logger.error("traceback: %r", traceback.format_exc())
-                    self.output(str(e), err=True, fg='red')
-                else:
-                    try:
-                        if special.is_pager_enabled():
-                            self.output_via_pager('\n'.join(output))
-                        else:
-                            self.output('\n'.join(output))
-                    except KeyboardInterrupt:
-                        pass
-                    if special.is_timing_enabled():
-                        self.output('Time: %0.03fs' % total)
-
-                    # Refresh the table names and column names if necessary.
-                    if need_completion_refresh(document.text):
-                        self.refresh_completions(
-                                reset=need_completion_reset(document.text))
-                finally:
-                    if self.logfile is False:
-                        self.output("Warning: This query was not logged.", err=True, fg='red')
-                query = Query(document.text, successful, mutating)
-                self.query_history.append(query)
-
+                one_iteration()
         except EOFError:
             if not self.less_chatty:
                 self.output('Goodbye!')
