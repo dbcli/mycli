@@ -142,7 +142,6 @@ class MyCli(object):
                 self.output('Error: Unable to open the audit log file. Your queries will not be logged.', err=True, fg='red')
                 self.logfile = False
 
-        self.completion_refresher = CompletionRefresher()
 
         self.logger = logging.getLogger(__name__)
         self.initialize_logging()
@@ -158,6 +157,7 @@ class MyCli(object):
         smart_completion = c['main'].as_bool('smart_completion')
         self.completer = SQLCompleter(smart_completion)
         self._completer_lock = threading.Lock()
+        self.completion_refresher = CompletionRefresher(smart_completion)
 
         # Register custom special commands.
         self.register_special_commands()

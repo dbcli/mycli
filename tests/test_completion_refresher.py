@@ -6,7 +6,7 @@ from mock import Mock, patch
 @pytest.fixture
 def refresher():
     from mycli.completion_refresher import CompletionRefresher
-    return CompletionRefresher()
+    return CompletionRefresher(True)
 
 
 def test_ctor(refresher):
