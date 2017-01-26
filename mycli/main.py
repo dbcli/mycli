@@ -155,8 +155,8 @@ class MyCli(object):
         self.query_history = []
 
         # Initialize completer.
-        smart_completion = c['main'].as_bool('smart_completion')
-        self.completer = SQLCompleter(smart_completion)
+        self.smart_completion = c['main'].as_bool('smart_completion')
+        self.completer = SQLCompleter(self.smart_completion)
         self._completer_lock = threading.Lock()
 
         # Register custom special commands.
@@ -443,7 +443,8 @@ class MyCli(object):
         logger = self.logger
         self.configure_pager()
 
-        self.refresh_completions()
+        if self.smart_completion:
+            self.refresh_completions()
 
         project_root = os.path.dirname(PACKAGE_ROOT)
         author_file = os.path.join(project_root, 'AUTHORS')
