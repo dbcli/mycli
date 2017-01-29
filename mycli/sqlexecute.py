@@ -41,6 +41,7 @@ class SQLExecute(object):
         self.local_infile = local_infile
         self.ssl = ssl
         self._server_type = None
+        self.connection_id = None
         self.connect()
 
     def connect(self, database=None, user=None, password=None, host=None,
@@ -90,6 +91,8 @@ class SQLExecute(object):
         self.socket = socket
         self.charset = charset
         self.ssl = ssl
+        # retrieve connection id
+        self.reset_connection_id()
 
     def run(self, statement):
         """Execute the sql in the database and return the results. The results
@@ -221,3 +224,16 @@ class SQLExecute(object):
 
         self._server_type = (product_type, version)
         return self._server_type
+
+    def get_connection_id(self):
+        if not self.connection_id:
+            self.reset_connection_id()
+        return self.connection_id
+
+    def reset_connection_id(self):
+        # Remember current connection id
+        _logger.debug('Get current connection id')
+        res = self.run('select connection_id()')
+        for title, cur, headers, status in res:
+            self.connection_id = list(cur)[0][0]
+        _logger.debug('Current connection id: %s', self.connection_id)
