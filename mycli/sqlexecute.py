@@ -235,5 +235,5 @@ class SQLExecute(object):
         _logger.debug('Get current connection id')
         res = self.run('select connection_id()')
         for title, cur, headers, status in res:
-            self.connection_id = list(cur)[0][0]
+            self.connection_id = cur.fetchone()[0]
         _logger.debug('Current connection id: %s', self.connection_id)
