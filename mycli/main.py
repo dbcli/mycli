@@ -552,9 +552,16 @@ class MyCli(object):
                 else:
                     raise e
             except KeyboardInterrupt:
+                # get last connection id
+                connection_id_to_kill = sqlexecute.connection_id
+                logger.debug("connection id to kill: %r", connection_id_to_kill)
                 # Restart connection to the database
                 sqlexecute.connect()
-                logger.debug("cancelled query, sql: %r", document.text)
+                for title, cur, headers, status in sqlexecute.run('kill %s' % connection_id_to_kill):
+                    status_str = str(status).lower()
+                    if status_str.find('ok') > -1:
+                        logger.debug("cancelled query, connection id: %r, sql: %r",
+                                     connection_id_to_kill, document.text)
                 self.output("cancelled query", err=True, fg='red')
             except NotImplementedError:
                 self.output('Not Yet Implemented.', fg="yellow")
