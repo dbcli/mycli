@@ -114,6 +114,7 @@ class MyCli(object):
         config_files = ([self.default_config_file] + self.system_config_files +
                         [self.user_config_file])
         c = self.config = read_config_files(config_files)
+        self.expanded = c['main'].as_bool('expanded')
         self.multi_line = c['main'].as_bool('multi_line')
         self.key_bindings = c['main']['key_bindings']
         special.set_timing_enabled(c['main'].as_bool('timing'))
@@ -534,9 +535,10 @@ class MyCli(object):
                     else:
                         max_width = None
 
+                    is_expanded = special.is_expanded_output() or self.expanded
                     formatted = format_output(title, cur, headers,
                         status, self.table_format,
-                        special.is_expanded_output(), max_width)
+                        is_expanded, max_width)
 
                     output.extend(formatted)
                     end = time()
