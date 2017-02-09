@@ -557,12 +557,15 @@ class MyCli(object):
                 logger.debug("connection id to kill: %r", connection_id_to_kill)
                 # Restart connection to the database
                 sqlexecute.connect()
-                for title, cur, headers, status in sqlexecute.run('kill %s' % connection_id_to_kill):
-                    status_str = str(status).lower()
-                    if status_str.find('ok') > -1:
-                        logger.debug("cancelled query, connection id: %r, sql: %r",
-                                     connection_id_to_kill, document.text)
-                self.output("cancelled query", err=True, fg='red')
+                try:
+                    for title, cur, headers, status in sqlexecute.run('kill %s' % connection_id_to_kill):
+                        status_str = str(status).lower()
+                        if status_str.find('ok') > -1:
+                            logger.debug("cancelled query, connection id: %r, sql: %r",
+                                         connection_id_to_kill, document.text)
+                            self.output("cancelled query", err=True, fg='red')
+                except Exception as e:
+                    self.output('Encountered error while cancelling query: %s' % str(e), err=True, fg='red')
             except NotImplementedError:
                 self.output('Not Yet Implemented.', fg="yellow")
             except OperationalError as e:
