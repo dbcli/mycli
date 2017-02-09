@@ -565,7 +565,7 @@ class MyCli(object):
                                          connection_id_to_kill, document.text)
                             self.output("cancelled query", err=True, fg='red')
                 except Exception as e:
-                    self.output("cancel query with error: %r" % e, err=True, fg='red')
+                    self.output('Encountered error while cancelling query: %s' % str(e), err=True, fg='red')
             except NotImplementedError:
                 self.output('Not Yet Implemented.', fg="yellow")
             except OperationalError as e:
