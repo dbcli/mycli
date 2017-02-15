@@ -23,6 +23,7 @@ except ImportError:
 
 import click
 import sqlparse
+import getpass
 from prompt_toolkit import CommandLineInterface, Application, AbortAction
 from prompt_toolkit.interface import AcceptAction
 from prompt_toolkit.enums import DEFAULT_BUFFER, EditingMode
@@ -376,6 +377,9 @@ class MyCli(object):
 
         passwd = passwd or cnf['password']
         charset = charset or cnf['default-character-set'] or 'utf8'
+
+        if passwd is None:
+            passwd = getpass.getpass()
 
         # Favor whichever local_infile option is set.
         for local_infile_option in (local_infile, cnf['local-infile'],
