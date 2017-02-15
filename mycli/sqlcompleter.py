@@ -192,6 +192,7 @@ class SQLCompleter(Completer):
 
     def reset_completions(self):
         self.databases = []
+        self.users = []
         self.show_items = []
         self.dbname = ''
         self.dbmetadata = {'tables': {}, 'views': {}, 'functions': {}}
