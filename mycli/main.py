@@ -378,9 +378,6 @@ class MyCli(object):
         passwd = passwd or cnf['password']
         charset = charset or cnf['default-character-set'] or 'utf8'
 
-        if passwd is None:
-            passwd = getpass.getpass()
-
         # Favor whichever local_infile option is set.
         for local_infile_option in (local_infile, cnf['local-infile'],
                                     cnf['loose-local-infile'], False):
@@ -742,6 +739,8 @@ class MyCli(object):
 @click.option('-S', '--socket', envvar='MYSQL_UNIX_PORT', help='The socket file to use for connection.')
 @click.option('-p', '--password', 'password', envvar='MYSQL_PWD', type=str,
               help='Password to connect to the database')
+@click.option('--password-prompt', 'password_prompt', is_flag=True,
+              help='Force a prompt for password and ignore the --password value if provided')
 @click.option('--pass', 'password', envvar='MYSQL_PWD', type=str,
               help='Password to connect to the database')
 @click.option('--ssl-ca', help='CA file in PEM format',
@@ -788,7 +787,7 @@ def cli(database, user, host, port, socket, password, dbname,
         version, prompt, logfile, defaults_group_suffix, defaults_file,
         login_path, auto_vertical_output, local_infile, ssl_ca, ssl_capath,
         ssl_cert, ssl_key, ssl_cipher, ssl_verify_server_cert, table, csv,
-        warn, execute):
+        warn, password_prompt, execute):
 
     if version:
         print('Version:', __version__)
@@ -816,6 +815,8 @@ def cli(database, user, host, port, socket, password, dbname,
     if database and '://' in database:
         mycli.connect_uri(database, local_infile, ssl)
     else:
+        if password_prompt:
+            password = getpass.getpass()
         mycli.connect(database, user, password, host, port, socket,
                       local_infile=local_infile, ssl=ssl)
 
