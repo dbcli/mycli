@@ -12,3 +12,11 @@ def test_dont_strip_leading_whitespace():
         |---------|
         |     abc |
         +---------+ ''').strip()
+def test_dont_add_whitespace():
+    data = [[3, 4]]
+    headers = ['1', '2']
+    tbl, _ = tabulate(data, headers, tablefmt='tsv')
+    assert tbl == dedent('''
+        1\t2
+        3\t4
+        ''').strip()
