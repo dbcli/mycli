@@ -174,7 +174,7 @@ class MyCli(object):
                     # There was an error reading the login path file.
                     print('Error: Unable to read login path file.')
             except CryptoError:
-                click.secho('Warning: .mylogin.cnf was not read: pycrypto '
+                click.secho('Warning: .mylogin.cnf was not read: pycrypto(dome) '
                             'module is not available.')
 
         self.cli = None
