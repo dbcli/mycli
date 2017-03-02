@@ -665,8 +665,9 @@ class MyCli(object):
         click.echo_via_pager(text)
 
     def configure_pager(self):
-        # Provide sane defaults for less.
-        os.environ['LESS'] = '-RXF'
+        # Provide sane defaults for less if they are empty.
+        if not os.environ.get('LESS'):
+            os.environ['LESS'] = '-RXF'
 
         cnf = self.read_my_cnf_files(self.cnf_files, ['pager', 'skip-pager'])
         if cnf['pager']:
