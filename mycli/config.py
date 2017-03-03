@@ -19,7 +19,7 @@ except ImportError:
 
 class CryptoError(Exception):
     """
-    Exception to signal about pycrypto not available.
+    Exception to signal about pycrypto(dome) not available.
     """
     pass
 
@@ -126,7 +126,7 @@ def read_and_decrypt_mylogin_cnf(f):
     :rtype: io.BytesIO or None
     """
     if AES is None:
-        raise CryptoError('pycrypto is not available.')
+        raise CryptoError('pycrypto(dome) is not available.')
 
     # Number of bytes used to store the length of ciphertext.
     MAX_CIPHER_STORE_LEN = 4

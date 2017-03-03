@@ -18,13 +18,8 @@ install_requirements = [
     'PyMySQL >= 0.6.2',
     'sqlparse>=0.2.2,<0.3.0',
     'configobj >= 5.0.6',
+    'pycryptodome',
 ]
-
-# pycrypto is a hard package to install on Windows, so we make it an optional
-# dependency. When it's installed, we can read mylogin.cnf, when it is not
-# available, we skip reading mylogin.cnf and print a warning message.
-if platform.system() != 'Windows':
-    install_requirements.append('pycrypto >= 2.6.1')
 
 setup(
         name='mycli',
