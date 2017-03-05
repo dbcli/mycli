@@ -7,12 +7,7 @@ from .packages.parseutils import last_word
 from .packages.special.favoritequeries import favoritequeries
 from re import compile, escape
 from .packages.tabulate import table_formats
-
-try:
-    from collections import Counter
-except ImportError:
-    # python 2.6
-    from .packages.counter import Counter
+from collections import Counter
 
 _logger = logging.getLogger(__name__)
 
