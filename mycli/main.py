@@ -271,11 +271,7 @@ class MyCli(object):
         root_logger.addHandler(handler)
         root_logger.setLevel(level_map[log_level.upper()])
 
-        # Only capture warnings on Python 2.7 and later.
-        try:
-            logging.captureWarnings(True)
-        except AttributeError:
-            pass
+        logging.captureWarnings(True)
 
         root_logger.debug('Initializing mycli logging.')
         root_logger.debug('Log file %r.', log_file)
@@ -309,7 +305,7 @@ class MyCli(object):
                     result = cnf[sect][key]
             return result
 
-        return dict([(x, get(x)) for x in keys])
+        return {x: get(x) for x in keys}
 
     def merge_ssl_with_cnf(self, ssl, cnf):
         """Merge SSL configuration dict with cnf dict"""
@@ -809,7 +805,7 @@ def cli(database, user, host, port, socket, password, dbname,
             }
 
     # remove empty ssl options
-    ssl = dict((k, v) for (k, v) in ssl.items() if v is not None)
+    ssl = {k: v for k, v in ssl.items() if v is not None}
     if database and '://' in database:
         mycli.connect_uri(database, local_infile, ssl)
     else:

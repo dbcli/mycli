@@ -13,7 +13,7 @@ def style_factory(name, cli_style):
     styles = {}
     styles.update(style.styles)
     styles.update(default_style_extensions)
-    custom_styles = dict([(string_to_tokentype(x), y) for x, y in cli_style.items()])
+    custom_styles = {string_to_tokentype(x): y for x, y in cli_style.items()}
     styles.update(custom_styles)
 
     return style_from_dict(styles)

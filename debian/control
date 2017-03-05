@@ -7,7 +7,7 @@ Standards-Version: 3.9.5
 
 Package: mycli
 Architecture: any
-Pre-Depends: dpkg (>= 1.16.1), python2.7-minimal | python2.6-minimal, ${misc:Pre-Depends}
+Pre-Depends: dpkg (>= 1.16.1), python2.7-minimal, ${misc:Pre-Depends}
 Depends: ${python:Depends}, ${misc:Depends}
 Description: CLI for MySQL Database. With auto-completion and syntax highlighting.
  CLI for MySQL Database. With auto-completion and syntax highlighting.

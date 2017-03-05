@@ -1,9 +1,6 @@
 import threading
 from .packages.special.main import COMMANDS
-try:
-    from collections import OrderedDict
-except ImportError:
-    from .packages.ordereddict import OrderedDict
+from collections import OrderedDict
 
 from .sqlcompleter import SQLCompleter
 from .sqlexecute import SQLExecute
