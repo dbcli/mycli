@@ -592,6 +592,7 @@ class MyCli(object):
                 self.output(str(e), err=True, fg='red')
             else:
                 try:
+                    special.write_tee(output)
                     if special.is_pager_enabled():
                         self.output_via_pager('\n'.join(output))
                     else:
@@ -649,6 +650,7 @@ class MyCli(object):
             while True:
                 one_iteration()
         except EOFError:
+            special.close_tee()
             if not self.less_chatty:
                 self.output('Goodbye!')
 
