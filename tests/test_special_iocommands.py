@@ -38,18 +38,18 @@ def test_editor_command():
     mycli.packages.special.open_external_editor(r'select 1') == "select 1"
 
 def test_tee_command():
-    mycli.packages.special.write_tee([u"hello world"]) # write without file set
+    mycli.packages.special.write_tee(u"hello world") # write without file set
     with tempfile.NamedTemporaryFile() as f:
         mycli.packages.special.execute(None, u"tee "+f.name)
-        mycli.packages.special.write_tee([u"hello world"])
+        mycli.packages.special.write_tee(u"hello world")
         assert f.read() == b"hello world\n"
 
         mycli.packages.special.execute(None, u"tee -o "+f.name)
-        mycli.packages.special.write_tee([u"hello world"])
+        mycli.packages.special.write_tee(u"hello world")
         f.seek(0)
         assert f.read() == b"hello world\n"
 
         mycli.packages.special.execute(None, u"notee")
-        mycli.packages.special.write_tee([u"hello world"])
+        mycli.packages.special.write_tee(u"hello world")
         f.seek(0)
         assert f.read() == b"hello world\n"

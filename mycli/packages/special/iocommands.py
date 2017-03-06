@@ -270,7 +270,6 @@ def no_tee(arg, **_):
 def write_tee(output):
     global tee_file
     if tee_file:
-        for buf in output:
-            tee_file.write(buf)
-            tee_file.write(u"\n")
+        tee_file.write(output)
+        tee_file.write(u"\n")
         tee_file.flush()
