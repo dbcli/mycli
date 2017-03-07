@@ -501,6 +501,7 @@ class MyCli(object):
             try:
                 logger.debug('sql: %r', document.text)
 
+                special.write_tee(self.get_prompt(self.prompt_format) + document.text)
                 if self.logfile:
                     self.logfile.write('\n# %s\n' % datetime.now())
                     self.logfile.write(document.text)
@@ -588,6 +589,7 @@ class MyCli(object):
                 self.output(str(e), err=True, fg='red')
             else:
                 try:
+                    special.write_tee('\n'.join(output))
                     if special.is_pager_enabled():
                         self.output_via_pager('\n'.join(output))
                     else:
@@ -645,10 +647,12 @@ class MyCli(object):
             while True:
                 one_iteration()
         except EOFError:
+            special.close_tee()
             if not self.less_chatty:
                 self.output('Goodbye!')
 
     def output(self, text, **kwargs):
+        special.write_tee(text)
         if self.logfile:
             self.logfile.write(utf8tounicode(text))
             self.logfile.write('\n')

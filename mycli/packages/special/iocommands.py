@@ -16,6 +16,7 @@ from .utils import handle_cd_command
 TIMING_ENABLED = False
 use_expanded_output = False
 PAGER_ENABLED = True
+tee_file = None
 
 @export
 def set_timing_enabled(val):
@@ -240,3 +241,44 @@ def execute_system_command(arg, **_):
         return [(None, None, None, response)]
     except OSError as e:
         return [(None, None, None, 'OSError: %s' % e.strerror)]
+
+@special_command('tee', 'tee [-o] filename',
+                 'write to an output file (optionally overwrite using -o)')
+def set_tee(arg, **_):
+    global tee_file
+    if arg.startswith('-o '):
+        mode = "w"
+        filename = arg[3:]
+    else:
+        mode = 'a'
+        filename = arg
+
+    if not filename:
+        raise TypeError('You must provide a filename.')
+
+    try:
+        tee_file = open(filename, mode)
+    except (IOError, OSError) as e:
+        raise OSError("Cannot write to file '{}': {}".format(e.filename, e.strerror))
+
+    return [(None, None, None, "")]
+
+@export
+def close_tee():
+    global tee_file
+    if tee_file:
+        tee_file.close()
+        tee_file = None
+
+@special_command('notee', 'notee', 'stop writing to an output file')
+def no_tee(arg, **_):
+    close_tee()
+    return [(None, None, None, "")]
+
+@export
+def write_tee(output):
+    global tee_file
+    if tee_file:
+        tee_file.write(output)
+        tee_file.write(u"\n")
+        tee_file.flush()
