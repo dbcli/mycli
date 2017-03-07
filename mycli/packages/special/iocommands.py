@@ -258,7 +258,7 @@ def set_tee(arg, **_):
 
     try:
         tee_file = open(filename, mode)
-    except OSError as e:
+    except (IOError, OSError) as e:
         raise OSError("Cannot write to file '{}': {}".format(e.filename, e.strerror))
 
     return [(None, None, None, "")]
