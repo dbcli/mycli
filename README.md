@@ -116,9 +116,17 @@ Twitter: [@amjithr](http://twitter.com/amjithr)
 
 ## Detailed Install Instructions:
 
-### RHEL, Centos, Fedora:
+### Fedora
 
-I haven't built an RPM package for mycli yet. So please use `pip` to install `mycli`. You can install pip on your system using:
+Fedora has a package available for mycli, install it using dnf:
+
+```
+$ sudo dnf install mycli
+```
+
+### RHEL, Centos
+
+I haven't built an RPM package for mycli for RHEL or Centos yet. So please use `pip` to install `mycli`. You can install pip on your system using:
 
 ```
 $ sudo yum install python-pip
