@@ -1,6 +1,12 @@
-import mycli.packages.special
-import tempfile
 import os
+import stat
+import tempfile
+
+import pytest
+
+import mycli.packages.special
+
+
 def test_set_get_pager():
     mycli.packages.special.set_pager_enabled(True)
     assert mycli.packages.special.is_pager_enabled()
@@ -53,3 +59,12 @@ def test_tee_command():
         mycli.packages.special.write_tee(u"hello world")
         f.seek(0)
         assert f.read() == b"hello world\n"
+
+def test_tee_command_error():
+    with pytest.raises(TypeError):
+        mycli.packages.special.execute(None, 'tee')
+
+    with pytest.raises(OSError):
+        with tempfile.NamedTemporaryFile() as f:
+            os.chmod(f.name, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
+            mycli.packages.special.execute(None, 'tee {}'.format(f.name))
