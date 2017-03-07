@@ -251,7 +251,15 @@ def set_tee(arg, **_):
     else:
         mode = 'a'
         filename = arg
-    tee_file = open(filename, mode)
+
+    if not filename:
+        raise TypeError('You must provide a filename.')
+
+    try:
+        tee_file = open(filename, mode)
+    except OSError as e:
+        raise OSError("Cannot write to file '{}': {}".format(e.filename, e.strerror))
+
     return [(None, None, None, "")]
 
 @export
