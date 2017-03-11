@@ -3,9 +3,11 @@ from mycli.main import format_output, special
 from mycli.packages import connection
 from os import getenv
 
-# TODO: should this be somehow be divined from environment?
-USER, HOST, PORT, CHARSET = 'root', 'localhost', 3306, 'utf8'
-PASSWORD = getenv('PASSWORD')
+PASSWORD = getenv('PYTEST_PASSWORD')
+USER = getenv('PYTEST_USER', 'root')
+HOST = getenv('PYTEST_HOST', 'localhost')
+PORT = getenv('PYTEST_PORT', 3306)
+CHARSET = getenv('PYTEST_CHARSET', 'utf8')
 
 def db_connection(dbname=None):
     conn = connection.connect(user=USER, host=HOST, port=PORT, database=dbname, password=PASSWORD,
