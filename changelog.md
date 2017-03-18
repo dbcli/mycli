@@ -1,3 +1,38 @@
+1.9.0:
+======
+
+Features:
+---------
+
+* Add tee/notee commands for outputing results to a file. (Thanks: [Dick Marinus]).
+* Add date, port, and whitespace options to prompt configuration. (Thanks: [Matheus Rosa]).
+* Allow user to specify LESS pager flags. (Thanks: [John Sterling]).
+* Add support for auto-reconnect. (Thanks: [Jialong Liu]).
+* Add CSV batch output. (Thanks: [Matheus Rosa]).
+* Add auto_vertical_output config to myclirc. (Thanks: [Matheus Rosa]).
+* Improve Fedora install instructions. (Thanks: [Dick Marinus]).
+
+Bug Fixes:
+----------
+
+* Fix crashes occuring from commands starting with #. (Thanks: [Zhidong]).
+* Fix broken PyMySQL link in README. (Thanks: [Daniël van Eeden]).
+* Add various missing keywords for highlighting and autocompletion. (Thanks: [zer09]).
+* Add the missing REGEXP keyword for highlighting and autocompletion. (Thanks: [cxbig]).
+* Fix duplicate username entries in completion list. (Thanks: [John Sterling]).
+* Remove extra spaces in TSV table format output. (Thanks: [Dick Marinus]).
+* Kill running query when interrupted via Ctrl-C. (Thanks: [chainkite]).
+* Read the smart_completion config from myclirc. (Thanks: [Thomas Roten]).
+
+Internal Changes:
+-----------------
+
+* Improve handling of test database credentials. (Thanks: [Dick Marinus]).
+* Add Python 3.6 to test environments and PyPI metadata. (Thanks: [Thomas Roten]).
+* Drop Python 2.6 support. (Thanks: [Thomas Roten]).
+* Swap pycrypto dependency for pycryptodome. (Thanks: [Michał Górny]).
+* Bump sqlparse version so pgcli and mycli can be installed together. (Thanks: [darikg]).
+
 1.8.1:
 ======
 
@@ -60,7 +95,7 @@ Internal Changes:
 Features:
 ---------
 
-* Change continuation prompt for multi-line mode to match default mysql. 
+* Change continuation prompt for multi-line mode to match default mysql.
 * Add `status` command to match mysql's `status` command. (Thanks: [Thomas Roten]).
 * Add SSL support for `mycli`. (Thanks: [Artem Bezsmertnyi]).
 * Add auto-completion and highlight support for OFFSET keyword. (Thanks: [Matheus Rosa]).
@@ -102,7 +137,7 @@ Bug Fixes:
 Bug Fixes:
 ----------
 
-* Cast the value of port read from my.cnf to int. 
+* Cast the value of port read from my.cnf to int.
 
 1.5.0:
 ======
@@ -115,7 +150,7 @@ Features:
   This feature is only available when `pycrypto` package is installed.
 * Register the special command `prompt` with the `\R` as alias. (Thanks: [Matheus Rosa]).
   Users can now change the mysql prompt at runtime using `prompt` command.
-  eg: 
+  eg:
   ```
   mycli> prompt \u@\h>
   Changed prompt format to \u@\h>
@@ -162,9 +197,9 @@ Internal Changes:
 Features:
 ---------
 
-* Add `source` command. This allows running sql statement from a file. 
+* Add `source` command. This allows running sql statement from a file.
 
-  eg: 
+  eg:
   ```
   mycli> source filename.sql
   ```
@@ -175,13 +210,13 @@ Features:
   disable the warning before running `DROP` commands.
 
 * Add completion support for CHANGE TO and other master/slave commands. This is
-  still preliminary and it will be enhanced in the future. 
+  still preliminary and it will be enhanced in the future.
 
-* Add custom styles to color the menus and toolbars. 
+* Add custom styles to color the menus and toolbars.
 
-* Upgrade prompt_toolkit to 0.46. (Thanks: [Jonathan Slenders]) 
+* Upgrade prompt_toolkit to 0.46. (Thanks: [Jonathan Slenders])
 
-  Multi-line queries are automatically indented. 
+  Multi-line queries are automatically indented.
 
 Bug Fixes:
 ----------
@@ -196,7 +231,7 @@ Bug Fixes:
 Features:
 ---------
 * Add a new special command (\T) to change the table format on the fly. (Thanks: [Jonathan Bruno](https://github.com/brewneaux))
-  eg: 
+  eg:
   ```
   mycli> \T tsv
   ```
@@ -217,7 +252,7 @@ Features:
   [clientamjith]
   user     = 'amjith'
   database  = 'user_management'
-  
+
   $ mycli --defaults-group-suffix=amjith   # uses the [clientamjith] section in my.cnf
   ```
 
@@ -225,7 +260,7 @@ Features:
   `my.cnf` to use at launch. This also makes it play nice with mysql sandbox.
 
 * Make `-p` and `--password` take the password in commandline. This makes mycli
-  a drop in replacement for mysql. 
+  a drop in replacement for mysql.
 
 1.2.0:
 ======
@@ -240,7 +275,7 @@ Features:
 Bug Fixes:
 ---------
 
-* Prevent Ctrl-C from quitting mycli while the pager is active. 
+* Prevent Ctrl-C from quitting mycli while the pager is active.
 * Refresh auto-completions after the database is changed via a CONNECT command.
 
 Internal Changes:
@@ -289,7 +324,7 @@ Features:
 
 * Customizable prompt. (Thanks [Steve Robbins](https://github.com/steverobbins))
 * Make `\G` formatting to behave more like mysql.
-   
+
 Bug Fixes:
 ----------
 
@@ -302,7 +337,7 @@ Bug Fixes:
 Features:
 ---------
 
-* Upgrade prompt_toolkit to 0.38. This improves the performance of pasting long queries. 
+* Upgrade prompt_toolkit to 0.38. This improves the performance of pasting long queries.
 * Add support for reading my.cnf files.
 * Add editor command \e.
 * Replace ConfigParser with ConfigObj.
@@ -327,12 +362,12 @@ Features:
 * Add support for connecting via socket.
 * Add completion for SQL functions.
 * Add completion support for SHOW statements.
-* Made the timing of sql statements human friendly. 
+* Made the timing of sql statements human friendly.
 * Automatically prompt for a password if needed.
 
 Bug Fixes:
 ----------
-* Fixed the installation issues with PyMySQL dependency on case-sensitive file systems. 
+* Fixed the installation issues with PyMySQL dependency on case-sensitive file systems.
 
 [Daniel West]: http://github.com/danieljwest
 [Iryna Cherniavska]: https://github.com/j-bennet
@@ -342,7 +377,7 @@ Bug Fixes:
 [Shoma Suzuki]: https://github.com/shoma
 [spacewander]: https://github.com/spacewander
 [Thomas Roten]: https://github.com/tsroten
-[Artem Bezsmertnyi]: https://github.com/mrdeathless 
+[Artem Bezsmertnyi]: https://github.com/mrdeathless
 [Mikhail Borisov]: https://github.com/borman
 [Casper Langemeijer]: Casper Langemeijer
 [Lennart Weller]: https://github.com/lhw
