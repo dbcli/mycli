@@ -75,8 +75,10 @@ def register_with_pypi():
 def create_source_tarball():
     run_step('python', 'setup.py', 'sdist')
 
+
 def create_python_wheel():
     run_step('python', 'setup.py', 'sdist', 'bdist_wheel')
+
 
 def upload_source_tarball():
     run_step('python', 'setup.py', 'sdist', 'upload')
