@@ -6,6 +6,11 @@ import subprocess
 import sys
 from optparse import OptionParser
 
+try:
+    input = raw_input
+except NameError:
+    pass
+
 DEBUG = False
 CONFIRM_STEPS = False
 DRY_RUN = False
@@ -19,7 +24,7 @@ def skip_step():
     global CONFIRM_STEPS
 
     if CONFIRM_STEPS:
-        choice = raw_input("--- Confirm step? (y/N) [y] ")
+        choice = input("--- Confirm step? (y/N) [y] ")
         if choice.lower() == 'n':
             return True
     return False
@@ -70,6 +75,7 @@ def register_with_pypi():
 def create_source_tarball():
     run_step('python', 'setup.py', 'sdist')
 
+
 def create_python_wheel():
     run_step('python', 'setup.py', 'bdist_wheel')
 
@@ -88,7 +94,7 @@ def push_tags_to_github():
 
 def checklist(questions):
     for question in questions:
-        choice = raw_input(question + ' (y/N) [n] ')
+        choice = input(question + ' (y/N) [n] ')
         if choice.lower() != 'y':
             sys.exit(1)
 
@@ -120,7 +126,7 @@ if __name__ == '__main__':
     CONFIRM_STEPS = popts.confirm_steps
     DRY_RUN = popts.dry_run
 
-    choice = raw_input('Are you sure? (y/N) [n] ')
+    choice = input('Are you sure? (y/N) [n] ')
     if choice.lower() != 'y':
         sys.exit(1)
 
