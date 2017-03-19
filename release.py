@@ -72,12 +72,8 @@ def register_with_pypi():
     run_step('python', 'setup.py', 'register')
 
 
-def create_source_tarball():
-    run_step('python', 'setup.py', 'sdist')
-
-
-def create_python_wheel():
-    run_step('python', 'setup.py', 'bdist_wheel')
+def create_distribution_files():
+    run_step('python', 'setup.py', 'sdist', 'bdist_wheel')
 
 
 def upload_distribution_files():
@@ -133,8 +129,7 @@ if __name__ == '__main__':
     commit_for_release('mycli/__init__.py', ver)
     create_git_tag('v%s' % ver)
     register_with_pypi()
-    create_source_tarball()
-    create_python_wheel()
+    create_distribution_files()
     push_to_github()
     push_tags_to_github()
     upload_distribution_files()
