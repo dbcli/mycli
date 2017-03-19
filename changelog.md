@@ -1,3 +1,12 @@
+TBD
+===
+
+Internal Changes:
+-----------------
+
+* Upload mycli distributions in a safer manner (using twine). (Thanks: [Thomas
+  Roten]).
+
 1.9.0:
 ======
 
