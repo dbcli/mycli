@@ -71,10 +71,11 @@ def create_source_tarball():
     run_step('python', 'setup.py', 'sdist')
 
 def create_python_wheel():
-    run_step('python', 'setup.py', 'sdist', 'bdist_wheel')
+    run_step('python', 'setup.py', 'bdist_wheel')
 
-def upload_source_tarball():
-    run_step('python', 'setup.py', 'sdist', 'upload')
+
+def upload_distribution_files():
+    run_step('twine', 'upload', 'dist/*')
 
 
 def push_to_github():
@@ -130,4 +131,4 @@ if __name__ == '__main__':
     create_python_wheel()
     push_to_github()
     push_tags_to_github()
-    upload_source_tarball()
+    upload_distribution_files()
