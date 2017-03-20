@@ -1,6 +1,11 @@
 TBD
 ===
 
+Bug Fixes:
+----------
+
+* Fix external editor bug (issue #377). (Thanks: [Irina Truong]).
+
 Internal Changes:
 -----------------
 
@@ -194,9 +199,9 @@ Bug Fixes:
 
 Internal Changes:
 -----------------
-* Make pycrypto optional and only install it in \*nix systems. (Thanks: [Iryna Cherniavska]).
+* Make pycrypto optional and only install it in \*nix systems. (Thanks: [Irina Truong]).
 * Add badge for PyPI version to README. (Thanks: [Shoma Suzuki]).
-* Updated release script with a --dry-run and --confirm-steps option. (Thanks: [Iryna Cherniavska]).
+* Updated release script with a --dry-run and --confirm-steps option. (Thanks: [Irina Truong]).
 * Adds support for PyMySQL 0.6.2 and above. This is useful for debian package builders. (Thanks: [Thomas Roten]).
 * Disable click warning.
 
@@ -245,7 +250,7 @@ Features:
   mycli> \T tsv
   ```
 * Add `--defaults-group-suffix` to the command line. This lets the user specify
-  a group to use in the my.cnf files. (Thanks: [Iryna Cherniavska](http://github.com/j-bennet))
+  a group to use in the my.cnf files. (Thanks: [Irina Truong](http://github.com/j-bennet))
 
   In the my.cnf file a user can specify credentials for different databases and
   invoke mycli with the group name to use the appropriate credentials.
@@ -310,7 +315,7 @@ Features:
 
 * Fuzzy completion is now case-insensitive. (Thanks: [bjarnagin](https://github.com/bjarnagin))
 * Added new-line (`\n`) to the list of special characters to use in prompt. (Thanks: [brewneaux](https://github.com/brewneaux))
-* Honor the `pager` setting in my.cnf files. (Thanks: [Iryna Cherniavska](http://github.com/j-bennet))
+* Honor the `pager` setting in my.cnf files. (Thanks: [Irina Truong](http://github.com/j-bennet))
 
 Bug Fixes:
 ----------
@@ -379,7 +384,7 @@ Bug Fixes:
 * Fixed the installation issues with PyMySQL dependency on case-sensitive file systems.
 
 [Daniel West]: http://github.com/danieljwest
-[Iryna Cherniavska]: https://github.com/j-bennet
+[Irina Truong]: https://github.com/j-bennet
 [Kacper Kwapisz]: https://github.com/KKKas
 [Martijn Engler]: https://github.com/martijnengler
 [Matheus Rosa]:  https://github.com/mdsrosa
