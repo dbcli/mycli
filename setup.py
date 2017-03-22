@@ -13,12 +13,12 @@ description = 'CLI for MySQL Database. With auto-completion and syntax highlight
 
 install_requirements = [
     'click >= 4.1',
-    'Pygments >= 2.0',  # Pygments has to be Capitalcased. WTF?
+    'Pygments >= 1.6',
     'prompt_toolkit>=1.0.10,<1.1.0',
-    'PyMySQL >= 0.6.2',
+    'PyMySQL >= 0.6.7',
     'sqlparse>=0.2.2,<0.3.0',
-    'configobj >= 5.0.6',
-    'pycryptodome',
+    'configobj >= 5.0.5',
+    'pycryptodome >= 3',
 ]
 
 setup(

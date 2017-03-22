@@ -7,9 +7,8 @@ import sys
 import tempfile
 import pytest
 
-from mycli.config import (CryptoError, get_mylogin_cnf_path,
-                          open_mylogin_cnf, read_and_decrypt_mylogin_cnf,
-                          str_to_bool)
+from mycli.config import (get_mylogin_cnf_path, open_mylogin_cnf,
+                          read_and_decrypt_mylogin_cnf, str_to_bool)
 
 with_pycryptodome = ['pycryptodome' in set([package.project_name for package in
                                     pip.get_installed_distributions()])]
@@ -24,12 +23,6 @@ def open_bmylogin_cnf(name):
         buf = BytesIO()
         buf.write(f.read())
     return buf
-
-
-@pytest.mark.skipif(with_pycryptodome, reason='requires pycryptodome missing')
-def test_read_mylogin_cnf_without_crypto():
-    with pytest.raises(CryptoError):
-        mylogin_cnf = open_mylogin_cnf(LOGIN_PATH_FILE)
 
 
 @pytest.mark.skipif(not with_pycryptodome, reason='requires pycryptodome')

@@ -7,8 +7,6 @@ from textwrap import dedent
 from utils import run, dbtest, set_expanded_output
 
 
-pymysql_support_binary = pymysql.VERSION >= (0, 6, 7)
-
 @dbtest
 def test_conn(executor):
     run(executor, '''create table test(a text)''')
@@ -36,7 +34,6 @@ def test_bools(executor):
         1 row in set""")
 
 @dbtest
-@pytest.mark.skipif(not pymysql_support_binary, reason='pymysql < 0.6.7')
 def test_binary(executor):
     run(executor, '''create table bt(geom linestring NOT NULL)''')
     run(executor, '''INSERT INTO bt VALUES (GeomFromText('LINESTRING(116.37604 39.73979,116.375 39.73965)'));''')
@@ -50,7 +47,6 @@ def test_binary(executor):
         1 row in set""")
 
 @dbtest
-@pytest.mark.skipif(not pymysql_support_binary, reason='pymysql < 0.6.7')
 def test_binary_expanded(executor):
     run(executor, '''create table bt(geom linestring NOT NULL)''')
     run(executor, '''INSERT INTO bt VALUES (GeomFromText('LINESTRING(116.37604 39.73979,116.375 39.73965)'));''')

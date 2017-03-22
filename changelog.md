@@ -7,6 +7,7 @@ Bug Fixes:
 * Fix external editor bug (issue #377). (Thanks: [Irina Truong]).
 * Fixed bug so that favorite queries can include unicode characters. (Thanks:
   [Thomas Roten]).
+* Fix requirements and remove old compatibility code (Thanks: [Dick Marinus])
 
 Internal Changes:
 -----------------
@@ -25,7 +26,7 @@ Features:
 * Allow user to specify LESS pager flags. (Thanks: [John Sterling]).
 * Add support for auto-reconnect. (Thanks: [Jialong Liu]).
 * Add CSV batch output. (Thanks: [Matheus Rosa]).
-* Add auto_vertical_output config to myclirc. (Thanks: [Matheus Rosa]).
+* Add `auto_vertical_output` config to myclirc. (Thanks: [Matheus Rosa]).
 * Improve Fedora install instructions. (Thanks: [Dick Marinus]).
 
 Bug Fixes:
@@ -38,7 +39,7 @@ Bug Fixes:
 * Fix duplicate username entries in completion list. (Thanks: [John Sterling]).
 * Remove extra spaces in TSV table format output. (Thanks: [Dick Marinus]).
 * Kill running query when interrupted via Ctrl-C. (Thanks: [chainkite]).
-* Read the smart_completion config from myclirc. (Thanks: [Thomas Roten]).
+* Read the `smart_completion` config from myclirc. (Thanks: [Thomas Roten]).
 
 Internal Changes:
 -----------------
@@ -72,7 +73,7 @@ Features:
 
 * Add support for --execute/-e commandline arg. (Thanks: [Matheus Rosa]).
 * Add `less_chatty` config option to skip the intro messages. (Thanks: [Scrappy Soft]).
-* Support MYCLI_HISTFILE environment variable to specify where to write the history file. (Thanks: [Scrappy Soft]).
+* Support `MYCLI_HISTFILE` environment variable to specify where to write the history file. (Thanks: [Scrappy Soft]).
 * Add `prompt_continuation` config option to allow configuring the continuation prompt for multi-line queries. (Thanks: [Scrappy Soft]).
 * Display login-path instead of host in prompt. (Thanks: [Irina Truong]).
 
@@ -103,7 +104,7 @@ Bug Fixes:
 Internal Changes:
 -----------------
 
-* Upgrade prompt_toolkit to 1.0.0. (Thanks: [Jonathan Slenders])
+* Upgrade `prompt_toolkit` to 1.0.0. (Thanks: [Jonathan Slenders])
 
 1.6.0:
 ======
@@ -131,7 +132,7 @@ Bug Fixes:
 Internal Changes:
 -----------------
 
-* Upgrade prompt_toolkit to 0.60.
+* Upgrade `prompt_toolkit` to 0.60.
 * Add Python 3.5 to test environments. (Thanks: [Thomas Roten]).
 * Remove license meta-data. (Thanks: [Thomas Roten]).
 * Skip binary tests if PyMySQL version does not support it. (Thanks: [Thomas Roten]).
@@ -230,7 +231,7 @@ Features:
 
 * Add custom styles to color the menus and toolbars.
 
-* Upgrade prompt_toolkit to 0.46. (Thanks: [Jonathan Slenders])
+* Upgrade `prompt_toolkit` to 0.46. (Thanks: [Jonathan Slenders])
 
   Multi-line queries are automatically indented.
 
@@ -297,7 +298,7 @@ Bug Fixes:
 Internal Changes:
 -----------------
 
-* Upgrade prompt_toolkit dependency version to 0.45.
+* Upgrade `prompt_toolkit` dependency version to 0.45.
 * Added Travis CI to run the tests automatically.
 
 1.1.1:
@@ -329,7 +330,7 @@ Internal Changes:
 -----------------
 
 * Changed pymysql version to be greater than 0.6.6.
-* Upgrade prompt_toolkit version to 0.42. (Thanks: [Yasuhiro Matsumoto](https://github.com/mattn))
+* Upgrade `prompt_toolkit` version to 0.42. (Thanks: [Yasuhiro Matsumoto](https://github.com/mattn))
 * Removed the explicit dependency on six.
 
 2015/06/10:
@@ -353,7 +354,7 @@ Bug Fixes:
 Features:
 ---------
 
-* Upgrade prompt_toolkit to 0.38. This improves the performance of pasting long queries.
+* Upgrade `prompt_toolkit` to 0.38. This improves the performance of pasting long queries.
 * Add support for reading my.cnf files.
 * Add editor command \e.
 * Replace ConfigParser with ConfigObj.

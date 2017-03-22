@@ -1,6 +1,6 @@
 import pytest
+import pymysql
 from mycli.main import format_output, special
-from mycli.packages import connection
 from os import getenv
 
 PASSWORD = getenv('PYTEST_PASSWORD')
@@ -10,8 +10,8 @@ PORT = getenv('PYTEST_PORT', 3306)
 CHARSET = getenv('PYTEST_CHARSET', 'utf8')
 
 def db_connection(dbname=None):
-    conn = connection.connect(user=USER, host=HOST, port=PORT, database=dbname, password=PASSWORD,
-                              charset=CHARSET, cursorclass=connection.Cursor,
+    conn = pymysql.connect(user=USER, host=HOST, port=PORT, database=dbname, password=PASSWORD,
+                              charset=CHARSET,
                               local_infile=False)
     conn.autocommit = True
     return conn
