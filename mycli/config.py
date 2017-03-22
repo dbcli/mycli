@@ -40,7 +40,7 @@ def read_config_file(f):
         f = os.path.expanduser(f)
 
     try:
-        config = ConfigObj(f, interpolation=False)
+        config = ConfigObj(f, interpolation=False, encoding='utf8')
     except ConfigObjError as e:
         log(logger, logging.ERROR, "Unable to parse line {0} of config file "
             "'{1}'.".format(e.line_number, f))

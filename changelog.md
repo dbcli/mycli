@@ -5,6 +5,8 @@ Bug Fixes:
 ----------
 
 * Fix external editor bug (issue #377). (Thanks: [Irina Truong]).
+* Fixed bug so that favorite queries can include unicode characters. (Thanks:
+  [Thomas Roten]).
 
 Internal Changes:
 -----------------
