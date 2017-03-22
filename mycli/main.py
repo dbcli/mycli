@@ -422,6 +422,10 @@ class MyCli(object):
         :param document: Document
         :return: Document
         """
+        # FIXME: using application.pre_run_callables like this here is not the best solution.
+        # It's internal api of prompt_toolkit that may change. This was added to fix
+        # https://github.com/dbcli/pgcli/issues/668. We may find a better way to do it in the future.
+        saved_callables = cli.application.pre_run_callables
         while special.editor_command(document.text):
             filename = special.get_filename(document.text)
             sql, message = special.open_external_editor(filename,
@@ -430,8 +434,10 @@ class MyCli(object):
                 # Something went wrong. Raise an exception and bail.
                 raise RuntimeError(message)
             cli.current_buffer.document = Document(sql, cursor_position=len(sql))
-            document = cli.run(False)
+            cli.application.pre_run_callables = []
+            document = cli.run()
             continue
+        cli.application.pre_run_callables = saved_callables
         return document
 
     def run_cli(self):
@@ -464,7 +470,7 @@ class MyCli(object):
 
         def one_iteration(document=None):
             if document is None:
-                document = self.cli.run(reset_current_buffer=True)
+                document = self.cli.run()
 
                 special.set_expanded_output(False)
 
