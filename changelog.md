@@ -10,6 +10,7 @@ Bug Fixes:
 * Fix requirements and remove old compatibility code (Thanks: [Dick Marinus])
 * Fix bug where mycli would not start due to the thanks/credit intro text.
   (Thanks: [Thomas Roten]).
+* Use pymysql default conversions (issue #375). (Thanks: [Dick Marinus]).
 
 Internal Changes:
 -----------------
