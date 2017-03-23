@@ -981,7 +981,7 @@ def quit_command(sql):
 
 def thanks_picker(files=()):
     for filename in files:
-        with open(filename) as f:
+        with open(filename, encoding='utf-8') as f:
             contents = f.readlines()
 
     return choice([x.split('*')[1].strip() for x in contents if x.startswith('*')])
