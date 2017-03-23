@@ -8,6 +8,8 @@ Bug Fixes:
 * Fixed bug so that favorite queries can include unicode characters. (Thanks:
   [Thomas Roten]).
 * Fix requirements and remove old compatibility code (Thanks: [Dick Marinus])
+* Fix bug where mycli would not start due to the thanks/credit intro text.
+  (Thanks: [Thomas Roten]).
 
 Internal Changes:
 -----------------

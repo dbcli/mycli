@@ -1,9 +1,17 @@
+import os
+
 import click
 from click.testing import CliRunner
 
 from mycli.main import (cli, confirm_destructive_query, format_output,
-                        is_destructive, query_starts_with, queries_start_with)
+                        is_destructive, query_starts_with, queries_start_with,
+                        thanks_picker, PACKAGE_ROOT)
 from utils import USER, HOST, PORT, PASSWORD, dbtest, run
+
+try:
+    text_type = basestring
+except NameError:
+    text_type = str
 
 CLI_ARGS = ['--user', USER, '--host', HOST, '--port', PORT,
             '--password', PASSWORD, '_test_db']
@@ -171,3 +179,11 @@ def test_confirm_destructive_query_notty(executor):
 
     sql = 'drop database foo;'
     assert confirm_destructive_query(sql) is None
+
+def test_thanks_picker_utf8():
+    project_root = os.path.dirname(PACKAGE_ROOT)
+    author_file = os.path.join(project_root, 'AUTHORS')
+    sponsor_file = os.path.join(project_root, 'SPONSORS')
+
+    name = thanks_picker((author_file, sponsor_file))
+    assert isinstance(name, text_type)
