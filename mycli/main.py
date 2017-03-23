@@ -46,7 +46,7 @@ from .sqlexecute import SQLExecute
 from .clibuffer import CLIBuffer
 from .completion_refresher import CompletionRefresher
 from .config import (write_default_config, get_mylogin_cnf_path,
-                     open_mylogin_cnf, CryptoError, read_config_file,
+                     open_mylogin_cnf, read_config_file,
                      read_config_files, str_to_bool)
 from .key_bindings import mycli_bindings
 from .encodingutils import utf8tounicode
@@ -165,17 +165,13 @@ class MyCli(object):
         # Load .mylogin.cnf if it exists.
         mylogin_cnf_path = get_mylogin_cnf_path()
         if mylogin_cnf_path:
-            try:
-                mylogin_cnf = open_mylogin_cnf(mylogin_cnf_path)
-                if mylogin_cnf_path and mylogin_cnf:
-                    # .mylogin.cnf gets read last, even if defaults_file is specified.
-                    self.cnf_files.append(mylogin_cnf)
-                elif mylogin_cnf_path and not mylogin_cnf:
-                    # There was an error reading the login path file.
-                    print('Error: Unable to read login path file.')
-            except CryptoError:
-                click.secho('Warning: .mylogin.cnf was not read: pycrypto(dome) '
-                            'module is not available.')
+            mylogin_cnf = open_mylogin_cnf(mylogin_cnf_path)
+            if mylogin_cnf_path and mylogin_cnf:
+                # .mylogin.cnf gets read last, even if defaults_file is specified.
+                self.cnf_files.append(mylogin_cnf)
+            elif mylogin_cnf_path and not mylogin_cnf:
+                # There was an error reading the login path file.
+                print('Error: Unable to read login path file.')
 
         self.cli = None
 
@@ -545,15 +541,6 @@ class MyCli(object):
                     end = time()
                     total += end - start
                     mutating = mutating or is_mutating(status)
-            except UnicodeDecodeError as e:
-                import pymysql
-                if pymysql.VERSION < (0, 6, 7):
-                    message = ('You are running an older version of pymysql.\n'
-                            'Please upgrade to 0.6.7 or above to view binary data.\n'
-                            'Try \'pip install -U pymysql\'.')
-                    self.output(message)
-                else:
-                    raise e
             except KeyboardInterrupt:
                 # get last connection id
                 connection_id_to_kill = sqlexecute.connection_id

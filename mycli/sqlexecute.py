@@ -1,7 +1,7 @@
 import logging
 import pymysql
 import sqlparse
-from .packages import connection, special
+from .packages import special
 from pymysql.constants import FIELD_TYPE
 from pymysql.converters import (convert_mysql_timestamp, convert_datetime,
         convert_timedelta, convert_date)
@@ -72,11 +72,11 @@ class SQLExecute(object):
                 FIELD_TYPE.DATE: lambda obj: (convert_date(obj) or obj),
                 }
 
-        conn = connection.connect(database=db, user=user, password=password,
+        conn = pymysql.connect(database=db, user=user, password=password,
                 host=host, port=port, unix_socket=socket,
                 use_unicode=True, charset=charset, autocommit=True,
                 client_flag=pymysql.constants.CLIENT.INTERACTIVE,
-                cursorclass=connection.Cursor, local_infile=local_infile,
+                local_infile=local_infile,
                 conv=conv, ssl=ssl)
         if hasattr(self, 'conn'):
             self.conn.close()
