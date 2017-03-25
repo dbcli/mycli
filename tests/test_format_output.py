@@ -50,3 +50,23 @@ def test_handle_unicode_values():
         +--------+
         ''').strip()
     assert '\n'.join(output) == expected
+
+def test_multi_line_output():
+    title = ''
+    rows = [['abc\ndef', 'bar'], ['日本語\nabcdef', 'baz\nqux\nbiz'],]
+    headers = ['xyz', 'pqr']
+    status = ''
+    table_format = ''
+    output = format_output(title, rows, headers, status, table_format)
+    expected = dedent(u'''
+        +--------+-----+
+        | xyz    | pqr |
+        +--------+-----+
+        | abc    | bar |
+        | def    |     |
+        | 日本語 | baz |
+        | abcdef | qux |
+        |        | biz |
+        +--------+-----+
+        ''').strip()
+    assert '\n'.join(output) == expected
