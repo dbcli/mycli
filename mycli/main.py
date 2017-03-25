@@ -10,6 +10,7 @@ import traceback
 import socket
 import logging
 import threading
+import binascii
 from time import time
 from datetime import datetime
 from random import choice
@@ -858,7 +859,18 @@ def preprocess(rows, headers):
     results = [headers]
 
     for row in rows:
-        results.append([utf8tounicode(cell) if cell else u'<null>' for cell in row])
+        result = []
+        for cell in row:
+            if cell is None:
+                cell = u'<null>'
+            if isinstance(cell, bytes):
+                try:
+                    cell = cell.decode('utf8')
+                except UnicodeDecodeError:
+                    cell = '0x' + binascii.hexlify(cell).decode('ascii')
+            result.append(utf8tounicode(cell))
+
+        results.append(result)
     return results
 
 def format_output(title, cur, headers, status, table_format, expanded=False, auto_vertical=False):
