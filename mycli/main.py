@@ -192,9 +192,9 @@ class MyCli(object):
                 '\\R', 'Change prompt format.', aliases=('\\R',), case_sensitive=True)
 
     def change_table_format(self, arg, **_):
-        if not arg in table_formats():
+        if not arg in ['csv', 'tsv']:
             msg = "Table type %s not yet implemented.  Allowed types:" % arg
-            for table_type in table_formats():
+            for table_type in ['csv', 'tsv']:
                 msg += "\n\t%s" % table_type
             yield (None, None, None, msg)
         else:
