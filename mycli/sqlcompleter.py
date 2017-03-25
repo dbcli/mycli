@@ -6,7 +6,6 @@ from .packages.completion_engine import suggest_type
 from .packages.parseutils import last_word
 from .packages.special.favoritequeries import favoritequeries
 from re import compile, escape
-from .packages.tabulate import table_formats
 from collections import Counter
 
 _logger = logging.getLogger(__name__)
@@ -57,7 +56,7 @@ class SQLCompleter(Completer):
         self.name_pattern = compile("^[_a-z][_a-z0-9\$]*$")
 
         self.special_commands = []
-        self.table_formats = table_formats()
+        self.table_formats = ['csv', 'tsv']
         self.reset_completions()
 
     def escape_name(self, name):

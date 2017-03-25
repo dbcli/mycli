@@ -1,5 +1,10 @@
-from .tabulate import _text_type
 import binascii
+from platform import python_version_tuple
+
+if python_version_tuple()[0] < "3":
+    _text_type = unicode
+else:
+    _text_type = str
 
 def pad(field, total, char=u" "):
     return field + (char * (total - len(field)))
