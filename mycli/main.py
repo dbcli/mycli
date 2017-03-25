@@ -890,7 +890,6 @@ def format_output(title, cur, headers, status, table_format, expanded=False, aut
             else:
                 output.append(tabulated.table)
     if status:  # Only print the status if it's not None.
-        output.append('\n')
         output.append(status)
 
     return output

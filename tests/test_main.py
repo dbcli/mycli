@@ -16,32 +16,6 @@ except NameError:
 CLI_ARGS = ['--user', USER, '--host', HOST, '--port', PORT,
             '--password', PASSWORD, '_test_db']
 
-def test_format_output():
-    results = format_output('Title', [('abc', 'def')], ['head1', 'head2'],
-                            'test status', 'psql')
-    expected = ['Title', '+---------+---------+\n| head1   | head2   |\n|---------+---------|\n| abc     | def     |\n+---------+---------+', 'test status']
-    assert results == expected
-
-def test_format_output_auto_expand():
-    table_results = format_output('Title', [('abc', 'def')],
-                                  ['head1', 'head2'], 'test status', 'psql',
-                                  max_width=100)
-    table = ['Title', '+---------+---------+\n| head1   | head2   |\n|---------+---------|\n| abc     | def     |\n+---------+---------+', 'test status']
-    assert table_results == table
-
-    expanded_results = format_output('Title', [('abc', 'def')],
-                                     ['head1', 'head2'], 'test status', 'psql',
-                                     max_width=1)
-    expanded = ['Title', u'***************************[ 1. row ]***************************\nhead1 | abc\nhead2 | def\n', 'test status']
-    assert expanded_results == expanded
-
-def test_format_output_no_table():
-    results = format_output('Title', [('abc', 'def')], ['head1', 'head2'],
-                            'test status', None)
-
-    expected = ['Title', u'head1\thead2\nabc\tdef', 'test status']
-    assert results == expected
-
 @dbtest
 def test_execute_arg(executor):
     run(executor, 'create table test (a text)')
@@ -59,11 +33,6 @@ def test_execute_arg(executor):
     assert result.exit_code == 0
     assert 'abc' in result.output
 
-    expected = 'a\nabc\n'
-
-    assert expected in result.output
-
-
 @dbtest
 def test_execute_arg_with_table(executor):
     run(executor, 'create table test (a text)')
@@ -72,7 +41,7 @@ def test_execute_arg_with_table(executor):
     sql = 'select * from test;'
     runner = CliRunner()
     result = runner.invoke(cli, args=CLI_ARGS + ['-e', sql] + ['--table'])
-    expected = '+-----+\n| a   |\n|-----|\n| abc |\n+-----+\n'
+    expected = u'+-----+\n| a   |\n+-----+\n| abc |\n+-----+\n'
 
     assert result.exit_code == 0
     assert expected in result.output
@@ -106,7 +75,7 @@ def test_batch_mode(executor):
     result = runner.invoke(cli, args=CLI_ARGS, input=sql)
 
     assert result.exit_code == 0
-    assert 'count(*)\n3\na\nabc\n' in result.output
+    assert 'count(*)' in result.output
 
 @dbtest
 def test_batch_mode_table(executor):
@@ -121,10 +90,7 @@ def test_batch_mode_table(executor):
     runner = CliRunner()
     result = runner.invoke(cli, args=CLI_ARGS + ['-t'], input=sql)
 
-    expected = (
-        '|   count(*) |\n|------------|\n|          3 |\n+------------+\n'
-        '+-----+\n| a   |\n|-----|\n| abc |\n+-----+'
-    )
+    expected = u'+----------+\n| count(*) |\n+----------+\n| 3        |\n+----------+\n+-----+\n| a   |\n+-----+\n| abc |\n+-----+\n'
 
     assert result.exit_code == 0
     assert expected in result.output

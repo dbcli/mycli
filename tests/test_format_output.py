@@ -17,7 +17,7 @@ def test_happy_path():
     | ghi   | jkl    |
     +-------+--------+
     status message''').strip()
-    assert ''.join(output) == expected
+    assert '\n'.join(output) == expected
 
 def test_dont_strip_leading_whitespace():
     title = ''
@@ -33,7 +33,7 @@ def test_dont_strip_leading_whitespace():
         |     abc |
         +---------+
         ''').strip()
-    assert ''.join(output) == expected
+    assert '\n'.join(output) == expected
 
 def test_handle_unicode_values():
     title = ''
@@ -49,4 +49,4 @@ def test_handle_unicode_values():
         | 日本語 |
         +--------+
         ''').strip()
-    assert ''.join(output) == expected
+    assert '\n'.join(output) == expected
