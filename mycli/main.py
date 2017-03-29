@@ -838,10 +838,12 @@ def cli(database, user, host, port, socket, password, dbname,
     #  --execute argument
     if execute:
         try:
-            table_format = 'tsv'
-            if csv:
+            table_format = None
+            if table:
+                table_format = mycli.table_format
+            elif csv:
                 table_format = 'csv'
-            mycli.table_format = table_format or mycli.table_format
+            mycli.table_format = table_format or 'tsv'
             mycli.run_query(execute)
             exit(0)
         except Exception as e:
@@ -863,14 +865,16 @@ def cli(database, user, host, port, socket, password, dbname,
                 confirm_destructive_query(stdin_text) is False):
             exit(0)
         try:
-            table_format = 'tsv'
+            table_format = None
             new_line = True
 
             if csv:
                 table_format = 'csv'
                 new_line = False
+            elif table:
+                table_format = mycli.table_format
 
-            mycli.table_format = table_format or mycli.table_format
+            mycli.table_format = table_format or 'tsv'
 
             mycli.run_query(stdin_text, new_line=new_line)
             exit(0)
