@@ -52,6 +52,7 @@ class OutputFormatter(object):
 
         self.register_output_format('csv', csv_wrapper)
         self.register_output_format('tsv', csv_wrapper, delimiter='\t')
+
         self.register_output_format('expanded', expanded_table)
 
     def register_output_format(self, name, function, **kwargs):
