@@ -13,7 +13,7 @@ from tabulate import tabulate
 from .packages.expanded import expanded_table
 
 
-def tabulate_wrapper(data, headers, table_format=None, missing_value=None):
+def tabulate_wrapper(data, headers, table_format=None, missing_value=''):
     """Wrap tabulate inside a standard function for OutputFormatter."""
     return tabulate(data, headers, tablefmt=table_format,
                     missingval=missing_value)

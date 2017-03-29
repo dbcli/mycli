@@ -720,27 +720,24 @@ class MyCli(object):
 
     def format_output(self, title, cur, headers, status, expanded=False,
                       max_width=None):
+        table_format = 'expanded' if expanded else self.table_format
         output = []
+
         if title:  # Only print the title if it's not None.
             output.append(title)
+
         if cur:
             headers = [utf8tounicode(x) for x in headers]
 
-            if expanded:
-                output.append(self.formatter.format_output(cur, headers,
-                                                           'expanded'))
-            else:
-                rows = list(cur)
-                formatted = self.formatter.format_output(rows, headers,
-                                                         self.table_format)
-                if (self.table_format != 'expanded' and
-                        max_width and rows and
-                        content_exceeds_width(rows[0], max_width) and
-                        headers):
-                    output.append(self.formatter.format_output(cur, headers,
-                                                               'expanded'))
-                else:
-                    output.append(formatted)
+            rows = list(cur)
+            formatted = self.formatter.format_output(rows, headers, table_format)
+
+            if (table_format != 'expanded' and max_width and rows and
+                    content_exceeds_width(rows[0], max_width) and headers):
+                formatted = self.formatter.format_output(rows, headers, 'expanded')
+
+            output.append(formatted)
+
         if status:  # Only print the status if it's not None.
             output.append(status)
 
