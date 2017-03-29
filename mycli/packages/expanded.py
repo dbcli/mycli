@@ -1,4 +1,4 @@
-from .tabulate import _text_type
+from tabulate import _text_type
 import binascii
 
 def pad(field, total, char=u" "):
