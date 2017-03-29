@@ -5,9 +5,7 @@ from __future__ import print_function
 import os
 import os.path
 import sys
-import csv
 import traceback
-import socket
 import logging
 import threading
 from time import time
@@ -27,9 +25,8 @@ from prompt_toolkit.layout.processors import (HighlightMatchingBracketProcessor,
                                               ConditionalProcessor)
 from prompt_toolkit.history import FileHistory
 from pygments.token import Token
-from configobj import ConfigObj, ConfigObjError
 
-from .packages.special.main import (COMMANDS, NO_QUERY)
+from .packages.special.main import NO_QUERY
 import mycli.packages.special as special
 from .sqlcompleter import SQLCompleter
 from .clitoolbar import create_toolbar_tokens_func
@@ -38,8 +35,7 @@ from .sqlexecute import SQLExecute
 from .clibuffer import CLIBuffer
 from .completion_refresher import CompletionRefresher
 from .config import (write_default_config, get_mylogin_cnf_path,
-                     open_mylogin_cnf, read_config_file,
-                     read_config_files, str_to_bool)
+                     open_mylogin_cnf, read_config_files, str_to_bool)
 from .key_bindings import mycli_bindings
 from .output_formatter import OutputFormatter
 from .encodingutils import utf8tounicode
