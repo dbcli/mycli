@@ -21,7 +21,7 @@ def override_missing_value(data, missing_value='', **_):
 def tabulate_wrapper(data, headers, table_format=None, missing_value='', **_):
     """Wrap tabulate inside a standard function for OutputFormatter."""
     return tabulate(data, headers, tablefmt=table_format,
-                    missingval=missing_value)
+                    missingval=missing_value, disable_numparse=True)
 
 
 def csv_wrapper(data, headers, delimiter=',', **_):
