@@ -2,6 +2,12 @@
 
 from __future__ import unicode_literals
 
+import csv
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from io import StringIO
+
 from tabulate import tabulate
 
 from .packages.expanded import expanded_table
@@ -11,6 +17,21 @@ def tabulate_wrapper(data, headers, table_format=None, missing_value=None):
     """Wrap tabulate inside a standard function for OutputFormatter."""
     return tabulate(data, headers, tablefmt=table_format,
                     missingval=missing_value)
+
+
+def csv_wrapper(data, headers):
+    content = StringIO()
+    writer = csv.writer(content)
+    writer.writerow(headers)
+
+    for row in data:
+        row = ['null' if val is None else str(val) for val in row]
+        writer.writerow(row)
+
+    output = content.getvalue()
+    content.close()
+
+    return output
 
 
 class OutputFormatter(object):
@@ -28,6 +49,7 @@ class OutputFormatter(object):
             self.register_output_format(tabulate_format, tabulate_wrapper,
                                         table_format=tabulate_format)
 
+        self.register_output_format('csv', csv_wrapper)
         self.register_output_format('expanded', expanded_table)
 
     def register_output_format(self, name, function, **kwargs):

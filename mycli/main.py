@@ -15,12 +15,6 @@ from datetime import datetime
 from random import choice
 from io import open
 
-# support StringIO for Python 2 and 3
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from io import StringIO
-
 import click
 import sqlparse
 from prompt_toolkit import CommandLineInterface, Application, AbortAction
@@ -735,17 +729,6 @@ class MyCli(object):
             if expanded:
                 output.append(self.formatter.format_output(cur, headers,
                                                            'expanded'))
-            elif self.table_format == 'csv':
-                content = StringIO()
-                writer = csv.writer(content)
-                writer.writerow(headers)
-
-                for row in cur:
-                    row = ['null' if val is None else str(val) for val in row]
-                    writer.writerow(row)
-
-                output.append(content.getvalue())
-                content.close()
             else:
                 rows = list(cur)
                 formatted = self.formatter.format_output(rows, headers,
