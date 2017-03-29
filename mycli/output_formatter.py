@@ -19,13 +19,14 @@ def tabulate_wrapper(data, headers, table_format=None, missing_value=''):
                     missingval=missing_value)
 
 
-def csv_wrapper(data, headers):
+def csv_wrapper(data, headers, missing_value='null'):
+    """Wrap CSV formatting inside a standard function for OutputFormatter."""
     content = StringIO()
     writer = csv.writer(content)
     writer.writerow(headers)
 
     for row in data:
-        row = ['null' if val is None else str(val) for val in row]
+        row = [missing_value if val is None else str(val) for val in row]
         writer.writerow(row)
 
     output = content.getvalue()
