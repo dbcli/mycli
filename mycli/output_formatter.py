@@ -19,10 +19,10 @@ def tabulate_wrapper(data, headers, table_format=None, missing_value=''):
                     missingval=missing_value)
 
 
-def csv_wrapper(data, headers, missing_value='null'):
+def csv_wrapper(data, headers, missing_value='null', delimiter=','):
     """Wrap CSV formatting inside a standard function for OutputFormatter."""
     content = StringIO()
-    writer = csv.writer(content)
+    writer = csv.writer(content, delimiter=delimiter)
     writer.writerow(headers)
 
     for row in data:
@@ -43,14 +43,15 @@ class OutputFormatter(object):
         self._output_formats = {}
 
         tabulate_formats = ('plain', 'simple', 'grid', 'fancy_grid', 'pipe',
-                            'orgtbl', 'jira', 'psql', 'rst', 'tsv',
-                            'mediawiki', 'moinmoin', 'html', 'latex',
-                            'latex_booktabs', 'textile')
+                            'orgtbl', 'jira', 'psql', 'rst', 'mediawiki',
+                            'moinmoin', 'html', 'latex', 'latex_booktabs',
+                            'textile')
         for tabulate_format in tabulate_formats:
             self.register_output_format(tabulate_format, tabulate_wrapper,
                                         table_format=tabulate_format)
 
         self.register_output_format('csv', csv_wrapper)
+        self.register_output_format('tsv', csv_wrapper, delimiter='\t')
         self.register_output_format('expanded', expanded_table)
 
     def register_output_format(self, name, function, **kwargs):
