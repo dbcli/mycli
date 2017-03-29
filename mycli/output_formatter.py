@@ -18,9 +18,10 @@ def override_missing_value(data, missing_value='', **_):
     return [[missing_value if v is None else v for v in row] for row in data]
 
 
-def tabulate_wrapper(data, headers, table_format=None, **_):
+def tabulate_wrapper(data, headers, table_format=None, missing_value='', **_):
     """Wrap tabulate inside a standard function for OutputFormatter."""
-    return tabulate(data, headers, tablefmt=table_format)
+    return tabulate(data, headers, tablefmt=table_format,
+                    missingval=missing_value)
 
 
 def csv_wrapper(data, headers, delimiter=',', **_):
@@ -52,7 +53,6 @@ class OutputFormatter(object):
         for tabulate_format in tabulate_formats:
             self.register_output_format(tabulate_format, tabulate_wrapper,
                                         table_format=tabulate_format,
-                                        preprocessor=override_missing_value,
                                         missing_value='<null>')
 
         self.register_output_format('csv', csv_wrapper,
