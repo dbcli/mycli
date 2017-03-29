@@ -19,7 +19,7 @@ def format_field(value):
     except UnicodeDecodeError:
         return _text_type('0x' + binascii.hexlify(value).decode('ascii'))
 
-def expanded_table(rows, headers):
+def expanded_table(rows, headers, **_):
     header_len = max([len(x) for x in headers])
     max_row_len = 0
     results = []

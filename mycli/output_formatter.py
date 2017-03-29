@@ -13,20 +13,23 @@ from tabulate import tabulate
 from .packages.expanded import expanded_table
 
 
-def tabulate_wrapper(data, headers, table_format=None, missing_value=''):
+def override_missing_value(data, missing_value='', **_):
+    """Override missing values in the data with *missing_value*."""
+    return [[missing_value if v is None else v for v in row] for row in data]
+
+
+def tabulate_wrapper(data, headers, table_format=None, **_):
     """Wrap tabulate inside a standard function for OutputFormatter."""
-    return tabulate(data, headers, tablefmt=table_format,
-                    missingval=missing_value)
+    return tabulate(data, headers, tablefmt=table_format)
 
 
-def csv_wrapper(data, headers, missing_value='null', delimiter=','):
+def csv_wrapper(data, headers, delimiter=',', **_):
     """Wrap CSV formatting inside a standard function for OutputFormatter."""
     content = StringIO()
     writer = csv.writer(content, delimiter=delimiter)
     writer.writerow(headers)
 
     for row in data:
-        row = [missing_value if val is None else str(val) for val in row]
         writer.writerow(row)
 
     output = content.getvalue()
@@ -48,12 +51,20 @@ class OutputFormatter(object):
                             'textile')
         for tabulate_format in tabulate_formats:
             self.register_output_format(tabulate_format, tabulate_wrapper,
-                                        table_format=tabulate_format)
+                                        table_format=tabulate_format,
+                                        preprocessor=override_missing_value,
+                                        missing_value='<null>')
 
-        self.register_output_format('csv', csv_wrapper)
-        self.register_output_format('tsv', csv_wrapper, delimiter='\t')
+        self.register_output_format('csv', csv_wrapper,
+                                    preprocessor=override_missing_value,
+                                    missing_value='null')
+        self.register_output_format('tsv', csv_wrapper, delimiter='\t',
+                                    preprocessor=override_missing_value,
+                                    missing_value='null')
 
-        self.register_output_format('expanded', expanded_table)
+        self.register_output_format('expanded', expanded_table,
+                                    preprocessor=override_missing_value,
+                                    missing_value='<null>')
 
     def register_output_format(self, name, function, **kwargs):
         """Register a new output format.
@@ -79,4 +90,7 @@ class OutputFormatter(object):
         """
         function, fkwargs = self._output_formats[format_name]
         fkwargs.update(kwargs)
+        preprocessor = fkwargs.pop('preprocessor', None)
+        if preprocessor:
+            data = preprocessor(data, **fkwargs)
         return function(data, headers, **fkwargs)
