@@ -7,6 +7,13 @@ import sys
 PY2 = sys.version_info[0] == 2
 PY3 = sys.version_info[0] == 3
 
+if PY2:
+    text_type = unicode
+    binary_type = str
+else:
+    text_type = str
+    binary_type = bytes
+
 
 def unicode2utf8(arg):
     """
@@ -14,7 +21,7 @@ def unicode2utf8(arg):
     In Python 3 the args are expected as unicode.
     """
 
-    if PY2 and isinstance(arg, unicode):
+    if PY2 and isinstance(arg, text_type):
         return arg.encode('utf-8')
     return arg
 
@@ -25,7 +32,7 @@ def utf8tounicode(arg):
     In Python 3 the errors are returned as unicode.
     """
 
-    if PY2 and isinstance(arg, str):
+    if PY2 and isinstance(arg, binary_type):
         return arg.decode('utf-8')
     return arg
 
@@ -40,7 +47,7 @@ def bytes_to_hex(b):
     >>> print(bytes_to_hex('✌'))
     ✌
     """
-    if isinstance(b, bytes):
+    if isinstance(b, binary_type):
         try:
             b.decode('utf8')
         except:

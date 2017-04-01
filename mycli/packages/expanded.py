@@ -1,5 +1,6 @@
-from tabulate import _text_type
 import binascii
+
+from .encodingutils import binary_type, text_type
 
 def pad(field, total, char=u" "):
     return field + (char * (total - len(field)))
@@ -12,12 +13,12 @@ def get_separator(num, header_len, data_len):
 def format_field(value):
     # Returns the field as a text type, otherwise will hexify the string
     try:
-        if isinstance(value, bytes):
-            return _text_type(value, "ascii")
+        if isinstance(value, binary_type):
+            return text_type(value, "ascii")
         else:
-            return _text_type(value)
+            return text_type(value)
     except UnicodeDecodeError:
-        return _text_type('0x' + binascii.hexlify(value).decode('ascii'))
+        return text_type('0x' + binascii.hexlify(value).decode('ascii'))
 
 def expanded_table(rows, headers, **_):
     header_len = max([len(x) for x in headers])
