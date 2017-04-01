@@ -5,8 +5,7 @@ from __future__ import unicode_literals
 
 def get_separator(num, header_len):
     """Get a row separator."""
-    sep = "{0}[ {1}. row ]{2}\n".format('*' * 27, num + 1, '*' * 27)
-    return sep
+    return "{0}[ {1}. row ]{2}\n".format('*' * 27, num + 1, '*' * 27)
 
 
 def format_row(headers, row):
