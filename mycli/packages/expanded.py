@@ -3,8 +3,8 @@
 from __future__ import unicode_literals
 
 
-def get_separator(num, header_len):
-    """Get a row separator."""
+def get_separator(num):
+    """Get a row separator for row *num*."""
     return "{0}[ {1}. row ]{2}\n".format('*' * 27, num + 1, '*' * 27)
 
 
@@ -25,7 +25,7 @@ def expanded_table(rows, headers, **_):
 
     output = []
     for i, result in enumerate(results):
-        output.append(get_separator(i, header_len + 2))
+        output.append(get_separator(i))
         output.append(result)
         output.append('\n')
 
