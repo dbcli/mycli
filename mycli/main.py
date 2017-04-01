@@ -180,7 +180,6 @@ class MyCli(object):
                 '\\R', 'Change prompt format.', aliases=('\\R',), case_sensitive=True)
 
     def change_table_format(self, arg, **_):
-        print('change table: ' + arg)
         try:
             self.formatter.set_format_name(arg)
             yield (None, None, None,
