@@ -1,6 +1,6 @@
 import binascii
 
-from .encodingutils import binary_type, text_type
+from mycli.encodingutils import binary_type, text_type
 
 def pad(field, total, char=u" "):
     return field + (char * (total - len(field)))
