@@ -11,7 +11,7 @@ def get_separator(num):
 
 def format_row(headers, row):
     """Format a row."""
-    formatted_row = [' '.join(field) for field in zip(headers, row)]
+    formatted_row = [' | '.join(field) for field in zip(headers, row)]
     return '\n'.join(formatted_row)
 
 
@@ -21,11 +21,11 @@ def expanded_table(rows, headers, **_):
     The values in *rows* and *headers* must be strings.
     """
     header_len = max([len(x) for x in headers])
-    padded_headers = ['{} |'.format(x.ljust(header_len)) for x in headers]
-    results = [format_row(padded_headers, row) for row in rows]
+    padded_headers = [x.ljust(header_len) for x in headers]
+    formatted_rows = [format_row(padded_headers, row) for row in rows]
 
     output = []
-    for i, result in enumerate(results):
+    for i, result in enumerate(formatted_rows):
         output.append(get_separator(i))
         output.append(result)
         output.append('\n')
