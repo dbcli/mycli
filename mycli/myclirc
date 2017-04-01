@@ -31,7 +31,8 @@ log_level = INFO
 timing = True
 
 # Table format. Possible values: psql, plain, simple, grid, fancy_grid, pipe,
-# orgtbl, rst, mediawiki, html, latex, latex_booktabs, tsv.
+# orgtbl, jira, rst, mediawiki, moinmoin, html, latex, latex_booktabs,
+# textile, csv, tsv.
 # Recommended: psql, fancy_grid and grid.
 table_format = psql
 
