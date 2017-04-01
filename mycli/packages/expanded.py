@@ -3,13 +3,16 @@
 from __future__ import unicode_literals
 
 
-def pad(field, total, char=' '):
-    return field + (char * (total - len(field)))
-
-
-def get_separator(num, header_len, data_len):
-    sep = "***************************[ %d. row ]***************************\n" % (num + 1)
+def get_separator(num, header_len):
+    """Get a row separator."""
+    sep = "{0}[ {1}. row ]{2}\n".format('*' * 27, num + 1, '*' * 27)
     return sep
+
+
+def format_row(headers, row):
+    """Format a row."""
+    formatted_row = [' '.join(field) for field in zip(headers, row)]
+    return '\n'.join(formatted_row)
 
 
 def expanded_table(rows, headers, **_):
@@ -18,26 +21,12 @@ def expanded_table(rows, headers, **_):
     The values in *rows* and *headers* must be strings.
     """
     header_len = max([len(x) for x in headers])
-    max_row_len = 0
-    results = []
-
-    padded_headers = [pad(x, header_len) + ' |' for x in headers]
-    header_len += 2
-
-    for row in rows:
-        row_len = max([len(x) for x in row])
-        row_result = []
-        if row_len > max_row_len:
-            max_row_len = row_len
-
-        for header, value in zip(padded_headers, row):
-            row_result.append('{0} {1}'.format(header, value))
-
-        results.append('\n'.join(row_result))
+    padded_headers = ['{} |'.format(x.ljust(header_len)) for x in headers]
+    results = [format_row(padded_headers, row) for row in rows]
 
     output = []
     for i, result in enumerate(results):
-        output.append(get_separator(i, header_len, max_row_len))
+        output.append(get_separator(i, header_len + 2))
         output.append(result)
         output.append('\n')
 
