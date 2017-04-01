@@ -44,7 +44,6 @@ def run(executor, sql, join=False):
     # TODO: this needs to go away. `run()` should not test formatted output.
     # It should test raw results.
     mycli = MyCli()
-    mycli.table_format = 'psql'
     for title, rows, headers, status in executor.run(sql):
         result.extend(mycli.format_output(title, rows, headers, status, special.is_expanded_output()))
 

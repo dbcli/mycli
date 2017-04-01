@@ -106,7 +106,7 @@ class MyCli(object):
         self.multi_line = c['main'].as_bool('multi_line')
         self.key_bindings = c['main']['key_bindings']
         special.set_timing_enabled(c['main'].as_bool('timing'))
-        self.table_format = c['main']['table_format']
+        self.formatter = OutputFormatter(format_name=c['main']['table_format'])
         self.syntax_style = c['main']['syntax_style']
         self.less_chatty = c['main'].as_bool('less_chatty')
         self.cli_style = c['colors']
@@ -132,8 +132,6 @@ class MyCli(object):
                 self.logfile = False
 
         self.completion_refresher = CompletionRefresher()
-
-        self.formatter = OutputFormatter()
 
         self.logger = logging.getLogger(__name__)
         self.initialize_logging()
@@ -182,14 +180,16 @@ class MyCli(object):
                 '\\R', 'Change prompt format.', aliases=('\\R',), case_sensitive=True)
 
     def change_table_format(self, arg, **_):
-        if arg not in self.formatter.supported_formats():
-            msg = "Table type %s not yet implemented.  Allowed types:" % arg
+        print('change table: ' + arg)
+        try:
+            self.formatter.set_format_name(arg)
+            yield (None, None, None,
+                   'Changed table type to {}'.format(arg))
+        except ValueError:
+            msg = 'Table type {} not yet implemented. Allowed types:'.format(arg)
             for table_type in self.formatter.supported_formats():
-                msg += "\n\t%s" % table_type
+                msg += "\n\t{}".format(table_type)
             yield (None, None, None, msg)
-        else:
-            self.table_format = arg
-            yield (None, None, None, "Changed table Type to %s" % self.table_format)
 
     def change_db(self, arg, **_):
         if arg is None:
@@ -716,7 +716,7 @@ class MyCli(object):
 
     def format_output(self, title, cur, headers, status, expanded=False,
                       max_width=None):
-        table_format = 'expanded' if expanded else self.table_format
+        expanded = expanded or self.formatter.get_format_name() == 'expanded'
         output = []
 
         if title:  # Only print the title if it's not None.
@@ -726,11 +726,13 @@ class MyCli(object):
             headers = [utf8tounicode(x) for x in headers]
 
             rows = list(cur)
-            formatted = self.formatter.format_output(rows, headers, table_format)
+            formatted = self.formatter.format_output(
+                rows, headers, format_name='expanded' if expanded else None)
 
-            if (table_format != 'expanded' and max_width and rows and
+            if (not expanded and max_width and rows and
                     content_exceeds_width(rows[0], max_width) and headers):
-                formatted = self.formatter.format_output(rows, headers, 'expanded')
+                formatted = self.formatter.format_output(
+                    rows, headers, format_name='expanded')
 
             output.append(formatted)
 
@@ -834,12 +836,11 @@ def cli(database, user, host, port, socket, password, dbname,
     #  --execute argument
     if execute:
         try:
-            table_format = None
-            if table:
-                table_format = mycli.table_format
-            elif csv:
-                table_format = 'csv'
-            mycli.table_format = table_format or 'tsv'
+            if csv:
+                mycli.formatter.set_format_name('csv')
+            elif not table:
+                mycli.formatter.set_format_name('tsv')
+
             mycli.run_query(execute)
             exit(0)
         except Exception as e:
@@ -861,16 +862,13 @@ def cli(database, user, host, port, socket, password, dbname,
                 confirm_destructive_query(stdin_text) is False):
             exit(0)
         try:
-            table_format = None
             new_line = True
 
             if csv:
-                table_format = 'csv'
+                mycli.formatter.set_format_name('csv')
                 new_line = False
-            elif table:
-                table_format = mycli.table_format
-
-            mycli.table_format = table_format or 'tsv'
+            elif not table:
+                mycli.formatter.set_format_name('tsv')
 
             mycli.run_query(stdin_text, new_line=new_line)
             exit(0)

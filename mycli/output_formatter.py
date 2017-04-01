@@ -3,8 +3,8 @@
 
 from __future__ import unicode_literals
 
-import csv
 import binascii
+import csv
 try:
     from cStringIO import StringIO
 except ImportError:
@@ -69,9 +69,10 @@ def csv_wrapper(data, headers, delimiter=',', **_):
 class OutputFormatter(object):
     """A class with a standard interface for various formatting libraries."""
 
-    def __init__(self):
+    def __init__(self, format_name=None):
         """Register the supported output formats."""
         self._output_formats = {}
+        self._format_name = None
 
         tabulate_formats = ('plain', 'simple', 'grid', 'fancy_grid', 'pipe',
                             'orgtbl', 'jira', 'psql', 'rst', 'mediawiki',
@@ -94,6 +95,21 @@ class OutputFormatter(object):
                                     preprocessor=override_missing_value,
                                     missing_value='<null>')
 
+        if format_name:
+            self.set_format_name(format_name)
+
+    def set_format_name(self, format_name):
+        """Set the OutputFormatter's default format."""
+        if format_name in self.supported_formats():
+            self._format_name = format_name
+        else:
+            raise ValueError('unrecognized format_name: {}'.format(
+                format_name))
+
+    def get_format_name(self):
+        """Get the OutputFormatter's default format."""
+        return self._format_name
+
     def register_output_format(self, name, function, **kwargs):
         """Register a new output format.
 
@@ -109,13 +125,17 @@ class OutputFormatter(object):
         """Return the supported output format names."""
         return tuple(self._output_formats.keys())
 
-    def format_output(self, data, headers, format_name, **kwargs):
+    def format_output(self, data, headers, format_name=None, **kwargs):
         """Format the headers and data using a specific formatter.
 
         *format_name* must be a formatter available in `supported_formats()`.
 
         All keyword arguments are passed to the specified formatter.
         """
+        format_name = format_name or self._format_name
+        if format_name not in self.supported_formats():
+            raise ValueError('unrecognized format: {}'.format(format_name))
+
         function, fkwargs = self._output_formats[format_name]
         fkwargs.update(kwargs)
         preprocessor = fkwargs.pop('preprocessor', None)
