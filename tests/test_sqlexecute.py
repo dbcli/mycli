@@ -27,9 +27,9 @@ def test_bools(executor):
     results = run(executor, '''select * from test''', join=True)
     assert results == dedent("""\
         +-----+
-        |   a |
+        | a   |
         |-----|
-        |   1 |
+        | 1   |
         +-----+
         1 row in set""")
 

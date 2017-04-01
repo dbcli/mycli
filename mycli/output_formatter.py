@@ -3,6 +3,7 @@
 from __future__ import unicode_literals
 
 import csv
+import binascii
 try:
     from cStringIO import StringIO
 except ImportError:
@@ -16,6 +17,21 @@ from .packages.expanded import expanded_table
 def override_missing_value(data, missing_value='', **_):
     """Override missing values in the data with *missing_value*."""
     return [[missing_value if v is None else v for v in row] for row in data]
+
+
+def bytes_to_unicode(data, **_):
+    results = []
+    for row in data:
+        result = []
+        for v in row:
+            if isinstance(v, bytes):
+                try:
+                    conv = v.decode('utf8')
+                except:
+                    v = '0x' + binascii.hexlify(v).decode('ascii')
+            result.append(v)
+        results.append(result)
+    return results
 
 
 def tabulate_wrapper(data, headers, table_format=None, missing_value='', **_):
@@ -52,6 +68,7 @@ class OutputFormatter(object):
                             'textile')
         for tabulate_format in tabulate_formats:
             self.register_output_format(tabulate_format, tabulate_wrapper,
+                                        preprocessor=bytes_to_unicode,
                                         table_format=tabulate_format,
                                         missing_value='<null>')
 
