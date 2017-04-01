@@ -43,7 +43,7 @@ def tabulate_wrapper(data, headers, table_format=None, missing_value='', **_):
 def csv_wrapper(data, headers, delimiter=',', **_):
     """Wrap CSV formatting inside a standard function for OutputFormatter."""
     content = StringIO()
-    writer = csv.writer(content, delimiter=delimiter)
+    writer = csv.writer(content, delimiter=str(delimiter))
     writer.writerow(headers)
 
     for row in data:
