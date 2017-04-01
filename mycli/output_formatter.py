@@ -4,6 +4,7 @@
 from __future__ import unicode_literals
 
 import binascii
+import contextlib
 import csv
 try:
     from cStringIO import StringIO
@@ -53,17 +54,14 @@ def tabulate_wrapper(data, headers, table_format=None, missing_value='', **_):
 
 def csv_wrapper(data, headers, delimiter=',', **_):
     """Wrap CSV formatting inside a standard function for OutputFormatter."""
-    content = StringIO()
-    writer = csv.writer(content, delimiter=str(delimiter))
-    writer.writerow(headers)
+    with contextlib.closing(StringIO()) as content:
+        writer = csv.writer(content, delimiter=str(delimiter))
 
-    for row in data:
-        writer.writerow(row)
+        writer.writerow(headers)
+        for row in data:
+            writer.writerow(row)
 
-    output = content.getvalue()
-    content.close()
-
-    return output
+        return content.getvalue()
 
 
 class OutputFormatter(object):
