@@ -15,30 +15,34 @@ from tabulate import tabulate
 from .packages.expanded import expanded_table
 
 
-def override_missing_value(data, missing_value='', **_):
+def override_missing_value(data, headers, missing_value='', **_):
     """Override missing values in the data with *missing_value*."""
-    return [[missing_value if v is None else v for v in row] for row in data]
+    return ([[missing_value if v is None else v for v in row] for row in data],
+            headers)
 
 
-def bytes_to_unicode(data, **_):
-    """Convert bytes that cannot be decoded to utf8 to hexlified string
-    >>> result = bytes_to_unicode([[b"\\xff", "abc", "✌"]])
-    >>> print(" ".join(result[0]))
-    0xff abc ✌
+def bytes_to_hex(b):
+    """Convert bytes that cannot be decoded to utf8 to hexlified string.
+
+    >>> print(bytes_to_hex(b"\\xff"))
+    0xff
+    >>> print(bytes_to_hex('abc'))
+    abc
+    >>> print(bytes_to_hex('✌'))
+    ✌
     """
+    if isinstance(b, bytes):
+        try:
+            b.decode('utf8')
+        except:
+            b = '0x' + binascii.hexlify(b).decode('ascii')
+    return b
 
-    results = []
-    for row in data:
-        result = []
-        for v in row:
-            if isinstance(v, bytes):
-                try:
-                    conv = v.decode('utf8')
-                except:
-                    v = '0x' + binascii.hexlify(v).decode('ascii')
-            result.append(v)
-        results.append(result)
-    return results
+
+def bytes_to_unicode(data, headers, **_):
+    """Convert all *data* and *headers* to unicode."""
+    return ([[bytes_to_hex(v) for v in row] for row in data],
+            [bytes_to_hex(h) for h in headers])
 
 
 def tabulate_wrapper(data, headers, table_format=None, missing_value='', **_):
@@ -116,5 +120,5 @@ class OutputFormatter(object):
         fkwargs.update(kwargs)
         preprocessor = fkwargs.pop('preprocessor', None)
         if preprocessor:
-            data = preprocessor(data, **fkwargs)
+            data, headers = preprocessor(data, headers, **fkwargs)
         return function(data, headers, **fkwargs)
