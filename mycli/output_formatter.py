@@ -69,7 +69,21 @@ class OutputFormatter(object):
 
     def __init__(self, format_name=None):
         """Register the supported output formats."""
-        self._output_formats = {}
+        self._output_formats = {
+            'csv': (csv_wrapper, {
+                'preprocessor': override_missing_value,
+                'missing_value': '<null>'
+            }),
+            'tsv': (csv_wrapper, {
+                'preprocessor': override_missing_value,
+                'missing_value': '<null>',
+                'delimiter': '\t'
+            }),
+            'expanded': (expanded_table, {
+                'preprocessor': override_missing_value,
+                'missing_value': '<null>'
+            })
+        }
         self._format_name = None
 
         tabulate_formats = ('plain', 'simple', 'grid', 'fancy_grid', 'pipe',
@@ -77,21 +91,11 @@ class OutputFormatter(object):
                             'moinmoin', 'html', 'latex', 'latex_booktabs',
                             'textile')
         for tabulate_format in tabulate_formats:
-            self.register_output_format(tabulate_format, tabulate_wrapper,
-                                        preprocessor=bytes_to_unicode,
-                                        table_format=tabulate_format,
-                                        missing_value='<null>')
-
-        self.register_output_format('csv', csv_wrapper,
-                                    preprocessor=override_missing_value,
-                                    missing_value='null')
-        self.register_output_format('tsv', csv_wrapper, delimiter='\t',
-                                    preprocessor=override_missing_value,
-                                    missing_value='null')
-
-        self.register_output_format('expanded', expanded_table,
-                                    preprocessor=override_missing_value,
-                                    missing_value='<null>')
+            self._output_formats[tabulate_format] = (
+                tabulate_wrapper, {'preprocessor': bytes_to_unicode,
+                                   'table_format': tabulate_format,
+                                   'missing_value': '<null>'}
+            )
 
         if format_name:
             self.set_format_name(format_name)
@@ -107,17 +111,6 @@ class OutputFormatter(object):
     def get_format_name(self):
         """Get the OutputFormatter's default format."""
         return self._format_name
-
-    def register_output_format(self, name, function, **kwargs):
-        """Register a new output format.
-
-        *function* should be a callable that accepts the following arguments:
-            - *headers*: A list of headers for the output data.
-            - *data*: The data that needs formatting.
-            - *kwargs*: Any other keyword arguments for controlling the output.
-        It should return the formatted output as a string.
-        """
-        self._output_formats[name] = (function, kwargs)
 
     def supported_formats(self):
         """Return the supported output format names."""
