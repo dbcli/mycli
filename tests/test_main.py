@@ -8,6 +8,8 @@ from mycli.main import (cli, confirm_destructive_query,
                         thanks_picker, PACKAGE_ROOT)
 from utils import USER, HOST, PORT, PASSWORD, dbtest, run
 
+from textwrap import dedent
+
 try:
     text_type = basestring
 except NameError:
@@ -80,7 +82,7 @@ def test_batch_mode(executor):
     result = runner.invoke(cli, args=CLI_ARGS, input=sql)
 
     assert result.exit_code == 0
-    assert 'count(*)\n3\na\nabc\n' in result.output
+    assert 'count(*)\n3\n\na\nabc\n' in result.output
 
 @dbtest
 def test_batch_mode_table(executor):
@@ -95,10 +97,17 @@ def test_batch_mode_table(executor):
     runner = CliRunner()
     result = runner.invoke(cli, args=CLI_ARGS + ['-t'], input=sql)
 
-    expected = (
-        '|   count(*) |\n|------------|\n|          3 |\n+------------+\n'
-        '+-----+\n| a   |\n|-----|\n| abc |\n+-----+'
-    )
+    expected = (dedent("""\
+        +------------+
+        | count(*)   |
+        |------------|
+        | 3          |
+        +------------+
+        +-----+
+        | a   |
+        |-----|
+        | abc |
+        +-----+"""))
 
     assert result.exit_code == 0
     assert expected in result.output
