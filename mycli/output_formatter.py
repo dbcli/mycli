@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """A generic output formatter interface."""
 
 from __future__ import unicode_literals
@@ -20,6 +21,12 @@ def override_missing_value(data, missing_value='', **_):
 
 
 def bytes_to_unicode(data, **_):
+    """Convert bytes that cannot be decoded to utf8 to hexlified string
+    >>> result = bytes_to_unicode([[b"\\xff", "abc", "✌"]])
+    >>> print(" ".join(result[0]))
+    0xff abc ✌
+    """
+
     results = []
     for row in data:
         result = []
