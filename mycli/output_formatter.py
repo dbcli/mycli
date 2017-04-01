@@ -3,7 +3,6 @@
 
 from __future__ import unicode_literals
 
-import binascii
 import contextlib
 import csv
 try:
@@ -13,6 +12,7 @@ except ImportError:
 
 from tabulate import tabulate
 
+from .encodingutils import bytes_to_hex
 from .packages.expanded import expanded_table
 
 
@@ -20,24 +20,6 @@ def override_missing_value(data, headers, missing_value='', **_):
     """Override missing values in the data with *missing_value*."""
     return ([[missing_value if v is None else v for v in row] for row in data],
             headers)
-
-
-def bytes_to_hex(b):
-    """Convert bytes that cannot be decoded to utf8 to hexlified string.
-
-    >>> print(bytes_to_hex(b"\\xff"))
-    0xff
-    >>> print(bytes_to_hex('abc'))
-    abc
-    >>> print(bytes_to_hex('✌'))
-    ✌
-    """
-    if isinstance(b, bytes):
-        try:
-            b.decode('utf8')
-        except:
-            b = '0x' + binascii.hexlify(b).decode('ascii')
-    return b
 
 
 def bytes_to_unicode(data, headers, **_):
