@@ -12,8 +12,22 @@ except ImportError:
 
 from tabulate import tabulate
 
-from .encodingutils import bytes_to_hex
+from . import encodingutils
 from .packages.expanded import expanded_table
+
+
+def to_string(value):
+    """Convert *value* to a string."""
+    if isinstance(value, encodingutils.binary_type):
+        return encodingutils.bytes_to_string(value)
+    else:
+        return encodingutils.text_type(value)
+
+
+def convert_to_string(data, headers, **_):
+    """Convert all *data* and *headers* to strings."""
+    return ([[to_string(v) for v in row] for row in data],
+            [to_string(h) for h in headers])
 
 
 def override_missing_value(data, headers, missing_value='', **_):
@@ -22,10 +36,10 @@ def override_missing_value(data, headers, missing_value='', **_):
             headers)
 
 
-def bytes_to_unicode(data, headers, **_):
-    """Convert all *data* and *headers* to unicode."""
-    return ([[bytes_to_hex(v) for v in row] for row in data],
-            [bytes_to_hex(h) for h in headers])
+def bytes_to_string(data, headers, **_):
+    """Convert all *data* and *headers* to strings."""
+    return ([[encodingutils.bytes_to_string(v) for v in row] for row in data],
+            [encodingutils.bytes_to_string(h) for h in headers])
 
 
 def tabulate_wrapper(data, headers, table_format=None, missing_value='', **_):
@@ -53,16 +67,16 @@ class OutputFormatter(object):
         """Register the supported output formats."""
         self._output_formats = {
             'csv': (csv_wrapper, {
-                'preprocessor': override_missing_value,
+                'preprocessor': (override_missing_value, bytes_to_string),
                 'missing_value': '<null>'
             }),
             'tsv': (csv_wrapper, {
-                'preprocessor': override_missing_value,
+                'preprocessor': (override_missing_value, bytes_to_string),
                 'missing_value': '<null>',
                 'delimiter': '\t'
             }),
             'expanded': (expanded_table, {
-                'preprocessor': override_missing_value,
+                'preprocessor': (override_missing_value, convert_to_string),
                 'missing_value': '<null>'
             })
         }
@@ -73,11 +87,11 @@ class OutputFormatter(object):
                             'moinmoin', 'html', 'latex', 'latex_booktabs',
                             'textile')
         for tabulate_format in tabulate_formats:
-            self._output_formats[tabulate_format] = (
-                tabulate_wrapper, {'preprocessor': bytes_to_unicode,
-                                   'table_format': tabulate_format,
-                                   'missing_value': '<null>'}
-            )
+            self._output_formats[tabulate_format] = (tabulate_wrapper, {
+                'preprocessor': (bytes_to_string, ),
+                'table_format': tabulate_format,
+                'missing_value': '<null>'
+            })
 
         if format_name:
             self.set_format_name(format_name)
@@ -111,7 +125,8 @@ class OutputFormatter(object):
 
         function, fkwargs = self._output_formats[format_name]
         fkwargs.update(kwargs)
-        preprocessor = fkwargs.pop('preprocessor', None)
+        preprocessor = fkwargs.get('preprocessor', None)
         if preprocessor:
-            data, headers = preprocessor(data, headers, **fkwargs)
+            for f in preprocessor:
+                data, headers = f(data, headers, **fkwargs)
         return function(data, headers, **fkwargs)

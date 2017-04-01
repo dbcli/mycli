@@ -722,8 +722,6 @@ class MyCli(object):
             output.append(title)
 
         if cur:
-            headers = [utf8tounicode(x) for x in headers]
-
             rows = list(cur)
             formatted = self.formatter.format_output(
                 rows, headers, format_name='expanded' if expanded else None)

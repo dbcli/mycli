@@ -37,19 +37,19 @@ def utf8tounicode(arg):
     return arg
 
 
-def bytes_to_hex(b):
-    """Convert bytes that cannot be decoded to utf8 to hexlified string.
+def bytes_to_string(b):
+    """Convert bytes to a string. Hexlify bytes that can't be decoded.
 
-    >>> print(bytes_to_hex(b"\\xff"))
+    >>> print(bytes_to_string(b"\\xff"))
     0xff
-    >>> print(bytes_to_hex('abc'))
+    >>> print(bytes_to_string('abc'))
     abc
-    >>> print(bytes_to_hex('✌'))
+    >>> print(bytes_to_string('✌'))
     ✌
     """
     if isinstance(b, binary_type):
         try:
-            b.decode('utf8')
-        except:
-            b = '0x' + binascii.hexlify(b).decode('ascii')
+            return b.decode('utf8')
+        except UnicodeDecodeError:
+            return '0x' + binascii.hexlify(b).decode('ascii')
     return b
