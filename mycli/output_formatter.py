@@ -5,17 +5,17 @@ from __future__ import unicode_literals
 
 import contextlib
 import csv
+from decimal import Decimal
 try:
     from cStringIO import StringIO
 except ImportError:
     from io import StringIO
 
 from tabulate import tabulate
+import terminaltables
 
 from . import encodingutils
 from .packages.expanded import expanded_table
-
-from decimal import Decimal
 
 
 def to_string(value):
@@ -143,6 +143,23 @@ def csv_wrapper(data, headers, delimiter=',', **_):
         return content.getvalue()
 
 
+def terminal_tables_wrapper(data, headers, table_format=None, **_):
+    """Wrap terminaltables inside a standard function for OutputFormatter."""
+    if table_format == 'ascii':
+        table = terminaltables.AsciiTable
+    elif table_format == 'single':
+        table = terminaltables.SingleTable
+    elif table_format == 'double':
+        table = terminaltables.DoubleTable
+    elif table_format == 'github':
+        table = terminaltables.GithubFlavoredMarkdownTable
+    else:
+        raise ValueError('unrecognized table format: {}'.format(table_format))
+
+    t = table([headers] + data)
+    return t.table
+
+
 class OutputFormatter(object):
     """A class with a standard interface for various formatting libraries."""
 
@@ -171,9 +188,19 @@ class OutputFormatter(object):
                             'textile')
         for tabulate_format in tabulate_formats:
             self._output_formats[tabulate_format] = (tabulate_wrapper, {
-                'preprocessor': (bytes_to_string, align_decimals, quote_whitespaces),
+                'preprocessor': (bytes_to_string, align_decimals),
                 'table_format': tabulate_format,
                 'missing_value': '<null>'
+            })
+
+        terminal_tables_formats = ('ascii', 'single', 'double', 'github')
+        for terminal_tables_format in terminal_tables_formats:
+            self._output_formats[terminal_tables_format] = (
+                terminal_tables_wrapper, {
+                    'preprocessor': (bytes_to_string, override_missing_value,
+                                     align_decimals),
+                    'table_format': terminal_tables_format,
+                    'missing_value': '<null>'
             })
 
         if format_name:
