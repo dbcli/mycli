@@ -48,7 +48,7 @@ def test_execute_arg_with_table(executor):
     sql = 'select * from test;'
     runner = CliRunner()
     result = runner.invoke(cli, args=CLI_ARGS + ['-e', sql] + ['--table'])
-    expected = '+-----+\n| a   |\n|-----|\n| abc |\n+-----+\n'
+    expected = '+-----+\n| a   |\n+-----+\n| abc |\n+-----+\n'
 
     assert result.exit_code == 0
     assert expected in result.output
@@ -98,14 +98,14 @@ def test_batch_mode_table(executor):
     result = runner.invoke(cli, args=CLI_ARGS + ['-t'], input=sql)
 
     expected = (dedent("""\
-        +------------+
-        | count(*)   |
-        |------------|
-        | 3          |
-        +------------+
+        +----------+
+        | count(*) |
+        +----------+
+        | 3        |
+        +----------+
         +-----+
         | a   |
-        |-----|
+        +-----+
         | abc |
         +-----+"""))
 

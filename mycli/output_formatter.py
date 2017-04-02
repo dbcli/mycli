@@ -231,15 +231,15 @@ class OutputFormatter(object):
         >>> print(OutputFormatter().format_output( \
                 [["abc", Decimal(1)], ["defg", Decimal('11.1')], ["hi", Decimal('1.1')]], \
                 ["text", "numeric"], \
-                "psql" \
+                "ascii" \
             ))
-        +--------+-----------+
-        | text   | numeric   |
-        |--------+-----------|
-        | abc    | ' 1'      |
-        | defg   | '11.1'    |
-        | hi     | ' 1.1'    |
-        +--------+-----------+
+        +------+---------+
+        | text | numeric |
+        +------+---------+
+        | abc  |  1      |
+        | defg | 11.1    |
+        | hi   |  1.1    |
+        +------+---------+
         """
         format_name = format_name or self._format_name
         if format_name not in self.supported_formats():
