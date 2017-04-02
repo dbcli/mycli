@@ -67,23 +67,19 @@ def align_decimals(data, headers, **_):
     """
     pointpos = len(data[0]) * [0]
     for row in data:
-        i = 0
-        for v in row:
+        for i, v in enumerate(row):
             if isinstance(v, Decimal):
-                v = str(v)
+                v = encodingutils.text_type(v)
                 pointpos[i] = max(intlen(v), pointpos[i])
-            i += 1
     results = []
     for row in data:
-        i = 0
         result = []
-        for v in row:
+        for i, v in enumerate(row):
             if isinstance(v, Decimal):
-                v = str(v)
-                result.append((pointpos[i]-intlen(v))*" "+v)
+                v = encodingutils.text_type(v)
+                result.append((pointpos[i] - intlen(v)) * " " + v)
             else:
                 result.append(v)
-            i += 1
         results.append(result)
     return results, headers
 
@@ -101,26 +97,22 @@ def quote_whitespaces(data, headers, quotestyle="'", **_):
     ghi
     jkl
     """
-    """Convert all *data* and *headers* to strings."""
-    quote = len(data[0])*[False]
+    quote = len(data[0]) * [False]
     for row in data:
-        i = 0
-        for v in row:
+        for i, v in enumerate(row):
             v = encodingutils.text_type(v)
             if v[0] == ' ' or v[-1] == ' ':
                 quote[i] = True
-            i += 1
 
     results = []
     for row in data:
         result = []
-        i = 0
-        for v in row:
+        for i, v in enumerate(row):
             if quote[i]:
-                result.append('{quotestyle}{value}{quotestyle}'.format(quotestyle=quotestyle, value=v))
+                result.append('{quotestyle}{value}{quotestyle}'.format(
+                    quotestyle=quotestyle, value=v))
             else:
                 result.append(v)
-            i += 1
         results.append(result)
     return results, headers
 

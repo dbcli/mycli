@@ -3,12 +3,14 @@
 
 from __future__ import unicode_literals
 
+from decimal import Decimal
 from textwrap import dedent
 
-from mycli.output_formatter import (bytes_to_string, convert_to_string,
-                                    csv_wrapper, OutputFormatter,
-                                    override_missing_value, tabulate_wrapper,
-                                    terminal_tables_wrapper, to_string)
+from mycli.output_formatter import (align_decimals, bytes_to_string,
+                                    convert_to_string, csv_wrapper,
+                                    OutputFormatter, override_missing_value,
+                                    tabulate_wrapper, terminal_tables_wrapper,
+                                    to_string)
 
 
 def test_to_string():
@@ -45,6 +47,15 @@ def test_bytes_to_string():
     expected = ([[1, 'John'], [2, 'Jill']], [0, 'name'])
 
     assert expected == bytes_to_string(data, headers)
+
+
+def test_align_decimals():
+    """Test the *output_formatter.align_decimals()* function."""
+    data = [[Decimal('200'), Decimal('1')], [Decimal('1.00002'), Decimal('1.0')]]
+    headers = ['num1', 'num2']
+    expected = ([['200', '1'], ['  1.00002', '1.0']], ['num1', 'num2'])
+
+    assert expected == align_decimals(data, headers)
 
 
 def test_tabulate_wrapper():
