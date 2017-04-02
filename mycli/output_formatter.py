@@ -15,6 +15,8 @@ from tabulate import tabulate
 from . import encodingutils
 from .packages.expanded import expanded_table
 
+from decimal import Decimal
+
 
 def to_string(value):
     """Convert *value* to a string."""
@@ -40,6 +42,87 @@ def bytes_to_string(data, headers, **_):
     """Convert all *data* and *headers* bytes to strings."""
     return ([[encodingutils.bytes_to_string(v) for v in row] for row in data],
             [encodingutils.bytes_to_string(h) for h in headers])
+
+
+def intlen(value):
+    """Find (character) length
+    >>> intlen('11.1')
+    2
+    >>> intlen('11')
+    2
+    >>> intlen('1.1')
+    1
+    """
+    pos = value.find('.')
+    if pos < 0:
+        pos = len(value)
+    return pos
+
+def align_decimals(data, headers, **_):
+    """Align decimals to decimal point
+    >>> for i in align_decimals([[Decimal(1)], [Decimal('11.1')], [Decimal('1.1')]], [])[0]: print(i[0])
+     1
+    11.1
+     1.1
+    """
+    pointpos = len(data[0]) * [0]
+    for row in data:
+        i = 0
+        for v in row:
+            if isinstance(v, Decimal):
+                v = str(v)
+                pointpos[i] = max(intlen(v), pointpos[i])
+            i += 1
+    results = []
+    for row in data:
+        i = 0
+        result = []
+        for v in row:
+            if isinstance(v, Decimal):
+                v = str(v)
+                result.append((pointpos[i]-intlen(v))*" "+v)
+            else:
+                result.append(v)
+            i += 1
+        results.append(result)
+    return results, headers
+
+
+def quote_whitespaces(data, headers, quotestyle="'", **_):
+    """Quote whitespace
+    >>> for i in quote_whitespaces([["  before"], ["after  "], ["  both  "], ["none"]], [])[0]: print(i[0])
+    '  before'
+    'after  '
+    '  both  '
+    'none'
+    >>> for i in quote_whitespaces([["abc"], ["def"], ["ghi"], ["jkl"]], [])[0]: print(i[0])
+    abc
+    def
+    ghi
+    jkl
+    """
+    """Convert all *data* and *headers* to strings."""
+    quote = len(data[0])*[False]
+    for row in data:
+        i = 0
+        for v in row:
+            v = encodingutils.text_type(v)
+            if v[0] == ' ' or v[-1] == ' ':
+                quote[i] = True
+            i += 1
+
+    results = []
+    for row in data:
+        result = []
+        i = 0
+        for v in row:
+            if quote[i]:
+                result.append('{quotestyle}{value}{quotestyle}'.format(quotestyle=quotestyle, value=v))
+            else:
+                result.append(v)
+            i += 1
+        results.append(result)
+    return results, headers
 
 
 def tabulate_wrapper(data, headers, table_format=None, missing_value='', **_):
@@ -88,7 +171,7 @@ class OutputFormatter(object):
                             'textile')
         for tabulate_format in tabulate_formats:
             self._output_formats[tabulate_format] = (tabulate_wrapper, {
-                'preprocessor': (bytes_to_string, ),
+                'preprocessor': (bytes_to_string, align_decimals, quote_whitespaces),
                 'table_format': tabulate_format,
                 'missing_value': '<null>'
             })
@@ -118,6 +201,18 @@ class OutputFormatter(object):
         *format_name* must be a formatter available in `supported_formats()`.
 
         All keyword arguments are passed to the specified formatter.
+        >>> print(OutputFormatter().format_output( \
+                [["abc", Decimal(1)], ["defg", Decimal('11.1')], ["hi", Decimal('1.1')]], \
+                ["text", "numeric"], \
+                "psql" \
+            ))
+        +--------+-----------+
+        | text   | numeric   |
+        |--------+-----------|
+        | abc    | ' 1'      |
+        | defg   | '11.1'    |
+        | hi     | ' 1.1'    |
+        +--------+-----------+
         """
         format_name = format_name or self._format_name
         if format_name not in self.supported_formats():
