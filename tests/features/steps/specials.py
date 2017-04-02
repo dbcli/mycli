@@ -15,7 +15,7 @@ def step_refresh_completions(context):
     """
     Send refresh command.
     """
-    context.cli.sendline('\\refresh')
+    context.cli.sendline('rehash')
 
 
 @then('we see completions refresh started')
@@ -23,4 +23,4 @@ def step_see_refresh_started(context):
     """
     Wait to see refresh output.
     """
-    wrappers.expect_exact(context, 'refresh started in the background', timeout=2)
+    wrappers.expect_exact(context, 'Auto-completion refresh started in the background', timeout=2)

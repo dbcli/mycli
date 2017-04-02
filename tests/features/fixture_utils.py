@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 from __future__ import print_function
 
 import os
-import codecs
+import io
 
 
 def read_fixture_lines(filename):
@@ -13,7 +12,7 @@ def read_fixture_lines(filename):
     :return: list of strings
     """
     lines = []
-    for line in codecs.open(filename, 'rb', encoding='utf-8'):
+    for line in io.open(filename, 'r', encoding='utf8'):
         lines.append(line.strip())
     return lines
 

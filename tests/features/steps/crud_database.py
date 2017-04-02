@@ -33,6 +33,8 @@ def step_db_drop(context):
     context.cli.sendline('drop database {0};'.format(
         context.conf['dbname_tmp']))
 
+    wrappers.expect_exact(context, 'You\'re about to run a destructive command.\r\nDo you want to proceed? (y/n):', timeout=2)
+    context.cli.sendline('y')
 
 @when('we connect to test database')
 def step_db_connect_test(context):
@@ -40,7 +42,7 @@ def step_db_connect_test(context):
     Send connect to database.
     """
     db_name = context.conf['dbname']
-    context.cli.sendline('\\connect {0}'.format(db_name))
+    context.cli.sendline('use {0}'.format(db_name))
 
 
 @when('we connect to dbserver')
@@ -48,7 +50,7 @@ def step_db_connect_dbserver(context):
     """
     Send connect to database.
     """
-    context.cli.sendline('\\connect postgres')
+    context.cli.sendline('use mysql')
 
 
 @then('dbcli exits')
@@ -64,13 +66,16 @@ def step_see_prompt(context):
     """
     Wait to see the prompt.
     """
-    wrappers.expect_exact(context, '{0}> '.format(context.conf['dbname']), timeout=5)
+    user = context.conf['user']
+    host = context.conf['host']
+    dbname = context.conf['dbname']
+    wrappers.expect_exact(context, 'mysql {0}@{1}:{2}> '.format(user, host, dbname), timeout=5)
 
 
 @then('we see help output')
 def step_see_help(context):
     for expected_line in context.fixture_data['help_commands.txt']:
-        wrappers.expect_exact(context, expected_line, timeout=1)
+        wrappers.expect_exact(context, expected_line+'\r\n', timeout=1)
 
 
 @then('we see database created')
@@ -78,7 +83,7 @@ def step_see_db_created(context):
     """
     Wait to see create database output.
     """
-    wrappers.expect_exact(context, 'CREATE DATABASE', timeout=2)
+    wrappers.expect_exact(context, 'Query OK, 1 row affected\r\n', timeout=2)
 
 
 @then('we see database dropped')
@@ -86,7 +91,7 @@ def step_see_db_dropped(context):
     """
     Wait to see drop database output.
     """
-    wrappers.expect_exact(context, 'DROP DATABASE', timeout=2)
+    wrappers.expect_exact(context, 'Query OK, 0 rows affected\r\n', timeout=2)
 
 
 @then('we see database connected')
@@ -94,4 +99,6 @@ def step_see_db_connected(context):
     """
     Wait to see drop database output.
     """
-    wrappers.expect_exact(context, 'You are now connected to database', timeout=2)
+    wrappers.expect_exact(context, 'You are now connected to database "', timeout=2)
+    wrappers.expect_exact(context, '"', timeout=2)
+    wrappers.expect_exact(context, ' as user "{0}"\r\n'.format(context.conf['user']), timeout=2)

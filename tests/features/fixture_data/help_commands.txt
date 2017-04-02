@@ -1,21 +1,27 @@
-Command
-\#
-\?
-\c[onnect] database_name
-\d [pattern]
-\dT[S+] [pattern]
-\df[+] [pattern]
-\di[+] [pattern]
-\dn[+] [pattern]
-\ds[+] [pattern]
-\dt[+] [pattern]
-\du[+] [pattern]
-\dv[+] [pattern]
-\e [file]
-\l
-\n[+] [name]
-\nd [name]
-\ns name query
-\refresh
-\timing
-\x
++-------------+-------------------+---------------------------------------------------------+
+| Command     | Shortcut          | Description                                             |
+|-------------+-------------------+---------------------------------------------------------|
+| \G          | \G                | Display results vertically.                             |
+| \dt         | \dt [table]       | List or describe tables.                                |
+| \e          | \e                | Edit command with editor. (uses $EDITOR)                |
+| \f          | \f [name]         | List or execute favorite queries.                       |
+| \fd         | \fd [name]        | Delete a favorite query.                                |
+| \fs         | \fs name query    | Save a favorite query.                                  |
+| \l          | \l                | List databases.                                         |
+| \timing     | \t                | Toggle timing of commands.                              |
+| connect     | \r                | Reconnect to the database. Optional database argument.  |
+| exit        | \q                | Exit.                                                   |
+| help        | \?                | Show this help.                                         |
+| nopager     | \n                | Disable pager, print to stdout.                         |
+| notee       | notee             | stop writing to an output file                          |
+| pager       | \P [command]      | Set PAGER. Print the query results via PAGER            |
+| prompt      | \R                | Change prompt format.                                   |
+| quit        | \q                | Quit.                                                   |
+| rehash      | \#                | Refresh auto-completions.                               |
+| source      | \. filename       | Execute commands from file.                             |
+| status      | \s                | Get status information from the server.                 |
+| system      | system [command]  | Execute a system commmand.                              |
+| tableformat | \T                | Change Table Type.                                      |
+| tee         | tee [-o] filename | write to an output file (optionally overwrite using -o) |
+| use         | \u                | Change to a new database.                               |
++-------------+-------------------+---------------------------------------------------------+

@@ -21,42 +21,30 @@ def before_all(context):
     context.exit_sent = False
 
     vi = '_'.join([str(x) for x in sys.version_info[:3]])
-    db_name = context.config.userdata.get('pg_test_db', None)
+    db_name = context.config.userdata.get('my_test_db', None) or "mycli_behave_tests"
     db_name_full = '{0}_{1}'.format(db_name, vi)
 
-    # Store get params from config.
+    # Store get params from config/environment variables
     context.conf = {
-        'host': context.config.userdata.get('pg_test_host', 'localhost'),
-        'user': context.config.userdata.get('pg_test_user', 'postgres'),
-        'pass': context.config.userdata.get('pg_test_pass', None),
-        'dbname': db_name_full,
+        'host': context.config.userdata.get(
+            'my_test_host',
+            os.getenv('PYTEST_HOST', 'localhost')
+        ),
+        'user': context.config.userdata.get(
+            'my_test_user',
+            os.getenv('PYTEST_USER', 'root')
+        ),
+        'pass': context.config.userdata.get(
+            'my_test_pass',
+            os.getenv('PYTEST_PASSWORD', None)
+        ),
+        'cli_command': context.config.userdata.get(
+            'my_cli_command', None) or
+            sys.executable+' -c "import coverage ; coverage.process_startup(); import mycli.main; mycli.main.cli()"',
+        'dbname': db_name,
         'dbname_tmp': db_name_full + '_tmp',
         'vi': vi,
-        'cli_command': context.config.userdata.get('pg_cli_command', None) or
-                       sys.executable +
-                       ' -c "import coverage; coverage.process_startup(); import pgcli.main; pgcli.main.cli()"'
     }
-
-    # Store old env vars.
-    context.pgenv = {
-        'PGDATABASE': os.environ.get('PGDATABASE', None),
-        'PGUSER': os.environ.get('PGUSER', None),
-        'PGHOST': os.environ.get('PGHOST', None),
-        'PGPASSWORD': os.environ.get('PGPASSWORD', None),
-    }
-
-    # Set new env vars.
-    os.environ['PGDATABASE'] = context.conf['dbname']
-    os.environ['PGUSER'] = context.conf['user']
-    os.environ['PGHOST'] = context.conf['host']
-
-    if context.conf['pass']:
-        os.environ['PGPASSWORD'] = context.conf['pass']
-    else:
-        if 'PGPASSWORD' in os.environ:
-            del os.environ['PGPASSWORD']
-        if 'PGHOST' in os.environ:
-            del os.environ['PGHOST']
 
     context.cn = dbutils.create_db(context.conf['host'], context.conf['user'],
                                    context.conf['pass'],
@@ -74,11 +62,11 @@ def after_all(context):
                     context.conf['pass'], context.conf['dbname'])
 
     # Restore env vars.
-    for k, v in context.pgenv.items():
-        if k in os.environ and v is None:
-            del os.environ[k]
-        elif v:
-            os.environ[k] = v
+    #for k, v in context.pgenv.items():
+    #    if k in os.environ and v is None:
+    #        del os.environ[k]
+    #    elif v:
+    #        os.environ[k] = v
 
 
 def after_scenario(context, _):

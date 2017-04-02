@@ -15,7 +15,7 @@ def step_save_named_query(context):
     """
     Send \ns command
     """
-    context.cli.sendline('\\ns foo SELECT 12345')
+    context.cli.sendline('\\fs foo SELECT 12345')
 
 
 @when('we use a named query')
@@ -23,7 +23,7 @@ def step_use_named_query(context):
     """
     Send \n command
     """
-    context.cli.sendline('\\n foo')
+    context.cli.sendline('\\f foo')
 
 
 @when('we delete a named query')
@@ -31,7 +31,7 @@ def step_delete_named_query(context):
     """
     Send \nd command
     """
-    context.cli.sendline('\\nd foo')
+    context.cli.sendline('\\fd foo')
 
 
 @then('we see the named query saved')
