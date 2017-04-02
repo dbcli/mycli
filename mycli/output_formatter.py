@@ -37,7 +37,7 @@ def override_missing_value(data, headers, missing_value='', **_):
 
 
 def bytes_to_string(data, headers, **_):
-    """Convert all *data* and *headers* to strings."""
+    """Convert all *data* and *headers* bytes to strings."""
     return ([[encodingutils.bytes_to_string(v) for v in row] for row in data],
             [encodingutils.bytes_to_string(h) for h in headers])
 
