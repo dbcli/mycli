@@ -5,17 +5,16 @@ from __future__ import unicode_literals
 
 import contextlib
 import csv
+from decimal import Decimal
 try:
     from cStringIO import StringIO
 except ImportError:
     from io import StringIO
 
-from tabulate import tabulate
+import terminaltables
 
 from . import encodingutils
 from .packages.expanded import expanded_table
-
-from decimal import Decimal
 
 
 def to_string(value):
@@ -88,49 +87,6 @@ def align_decimals(data, headers, **_):
     return results, headers
 
 
-def quote_whitespaces(data, headers, quotestyle="'", **_):
-    """Quote whitespace
-    >>> for i in quote_whitespaces([["  before"], ["after  "], ["  both  "], ["none"]], [])[0]: print(i[0])
-    '  before'
-    'after  '
-    '  both  '
-    'none'
-    >>> for i in quote_whitespaces([["abc"], ["def"], ["ghi"], ["jkl"]], [])[0]: print(i[0])
-    abc
-    def
-    ghi
-    jkl
-    """
-    """Convert all *data* and *headers* to strings."""
-    quote = len(data[0])*[False]
-    for row in data:
-        i = 0
-        for v in row:
-            v = encodingutils.text_type(v)
-            if v[0] == ' ' or v[-1] == ' ':
-                quote[i] = True
-            i += 1
-
-    results = []
-    for row in data:
-        result = []
-        i = 0
-        for v in row:
-            if quote[i]:
-                result.append('{quotestyle}{value}{quotestyle}'.format(quotestyle=quotestyle, value=v))
-            else:
-                result.append(v)
-            i += 1
-        results.append(result)
-    return results, headers
-
-
-def tabulate_wrapper(data, headers, table_format=None, missing_value='', **_):
-    """Wrap tabulate inside a standard function for OutputFormatter."""
-    return tabulate(data, headers, tablefmt=table_format,
-                    missingval=missing_value, disable_numparse=True)
-
-
 def csv_wrapper(data, headers, delimiter=',', **_):
     """Wrap CSV formatting inside a standard function for OutputFormatter."""
     with contextlib.closing(StringIO()) as content:
@@ -141,6 +97,23 @@ def csv_wrapper(data, headers, delimiter=',', **_):
             writer.writerow(row)
 
         return content.getvalue()
+
+
+def terminal_tables_wrapper(data, headers, table_format=None, **_):
+    """Wrap terminaltables inside a standard function for OutputFormatter."""
+    if table_format == 'ascii':
+        table = terminaltables.AsciiTable
+    elif table_format == 'single':
+        table = terminaltables.SingleTable
+    elif table_format == 'double':
+        table = terminaltables.DoubleTable
+    elif table_format == 'github':
+        table = terminaltables.GithubFlavoredMarkdownTable
+    else:
+        raise ValueError('unrecognized table format: {}'.format(table_format))
+
+    t = table([headers] + data)
+    return t.table
 
 
 class OutputFormatter(object):
@@ -165,15 +138,14 @@ class OutputFormatter(object):
         }
         self._format_name = None
 
-        tabulate_formats = ('plain', 'simple', 'grid', 'fancy_grid', 'pipe',
-                            'orgtbl', 'jira', 'psql', 'rst', 'mediawiki',
-                            'moinmoin', 'html', 'latex', 'latex_booktabs',
-                            'textile')
-        for tabulate_format in tabulate_formats:
-            self._output_formats[tabulate_format] = (tabulate_wrapper, {
-                'preprocessor': (bytes_to_string, align_decimals, quote_whitespaces),
-                'table_format': tabulate_format,
-                'missing_value': '<null>'
+        terminal_tables_formats = ('ascii', 'single', 'double', 'github')
+        for terminal_tables_format in terminal_tables_formats:
+            self._output_formats[terminal_tables_format] = (
+                terminal_tables_wrapper, {
+                    'preprocessor': (bytes_to_string, override_missing_value,
+                                     align_decimals),
+                    'table_format': terminal_tables_format,
+                    'missing_value': '<null>'
             })
 
         if format_name:
@@ -204,15 +176,15 @@ class OutputFormatter(object):
         >>> print(OutputFormatter().format_output( \
                 [["abc", Decimal(1)], ["defg", Decimal('11.1')], ["hi", Decimal('1.1')]], \
                 ["text", "numeric"], \
-                "psql" \
+                "ascii" \
             ))
-        +--------+-----------+
-        | text   | numeric   |
-        |--------+-----------|
-        | abc    | ' 1'      |
-        | defg   | '11.1'    |
-        | hi     | ' 1.1'    |
-        +--------+-----------+
+        +------+---------+
+        | text | numeric |
+        +------+---------+
+        | abc  |  1      |
+        | defg | 11.1    |
+        | hi   |  1.1    |
+        +------+---------+
         """
         format_name = format_name or self._format_name
         if format_name not in self.supported_formats():

@@ -7,8 +7,8 @@ from textwrap import dedent
 
 from mycli.output_formatter import (bytes_to_string, convert_to_string,
                                     csv_wrapper, OutputFormatter,
-                                    override_missing_value, tabulate_wrapper,
-                                    to_string)
+                                    override_missing_value,
+                                    terminal_tables_wrapper, to_string)
 
 
 def test_to_string():
@@ -47,20 +47,6 @@ def test_bytes_to_string():
     assert expected == bytes_to_string(data, headers)
 
 
-def test_tabulate_wrapper():
-    """Test the *output_formatter.tabulate_wrapper()* function."""
-    data = [['abc', 1], ['d', 456]]
-    headers = ['letters', 'number']
-    output = tabulate_wrapper(data, headers, table_format='psql')
-    assert output == dedent('''\
-        +-----------+----------+
-        | letters   | number   |
-        |-----------+----------|
-        | abc       | 1        |
-        | d         | 456      |
-        +-----------+----------+''')
-
-
 def test_csv_wrapper():
     """Test the *output_formatter.csv_wrapper()* function."""
     # Test comma-delimited output.
@@ -80,3 +66,17 @@ def test_csv_wrapper():
         letters\tnumber\r\n\
         abc\t1\r\n\
         d\t456\r\n''')
+
+
+def test_terminal_tables_wrapper():
+    """Test the *output_formatter.terminal_tables_wrapper()* function."""
+    data = [['abc', 1], ['d', 456]]
+    headers = ['letters', 'number']
+    output = terminal_tables_wrapper(data, headers, table_format='ascii')
+    assert output == dedent('''\
+        +---------+--------+
+        | letters | number |
+        +---------+--------+
+        | abc     | 1      |
+        | d       | 456    |
+        +---------+--------+''')

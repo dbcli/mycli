@@ -30,11 +30,9 @@ log_level = INFO
 # Timing of sql statments and table rendering.
 timing = True
 
-# Table format. Possible values: psql, plain, simple, grid, fancy_grid, pipe,
-# orgtbl, jira, rst, mediawiki, moinmoin, html, latex, latex_booktabs,
-# textile, csv, tsv.
-# Recommended: psql, fancy_grid and grid.
-table_format = psql
+# Table format. Possible values: ascii, single, double, or github.
+# Recommended: ascii
+table_format = ascii
 
 # Syntax coloring style. Possible values (many support the "-dark" suffix):
 # manni, igor, xcode, vim, autumn, vs, rrt, native, perldoc, borland, tango, emacs,

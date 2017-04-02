@@ -15,7 +15,7 @@ def test_conn(executor):
     assert results == dedent("""\
         +-----+
         | a   |
-        |-----|
+        +-----+
         | abc |
         +-----+
         1 row in set""")
@@ -26,11 +26,11 @@ def test_bools(executor):
     run(executor, '''insert into test values(True)''')
     results = run(executor, '''select * from test''', join=True)
     assert results == dedent("""\
-        +-----+
-        | a   |
-        |-----|
-        | 1   |
-        +-----+
+        +---+
+        | a |
+        +---+
+        | 1 |
+        +---+
         1 row in set""")
 
 @dbtest
@@ -41,7 +41,7 @@ def test_binary(executor):
     assert results == dedent("""\
         +----------------------------------------------------------------------------------------------+
         | geom                                                                                         |
-        |----------------------------------------------------------------------------------------------|
+        +----------------------------------------------------------------------------------------------+
         | 0x00000000010200000002000000397f130a11185d4034f44f70b1de43400000000000185d40423ee8d9acde4340 |
         +----------------------------------------------------------------------------------------------+
         1 row in set""")
@@ -140,7 +140,7 @@ def test_favorite_query(executor):
            > select * from test where a like 'a%'
            +-----+
            | a   |
-           |-----|
+           +-----+
            | abc |
            +-----+""")
 
@@ -163,13 +163,13 @@ def test_favorite_query_multiple_statement(executor):
            > select * from test where a like 'a%'
            +-----+
            | a   |
-           |-----|
+           +-----+
            | abc |
            +-----+
            > select * from test where a like 'd%'
            +-----+
            | a   |
-           |-----|
+           +-----+
            | def |
            +-----+""")
 
@@ -261,13 +261,13 @@ def test_favorite_query_multiline_statement(executor):
            > select * from test where a like 'a%'
            +-----+
            | a   |
-           |-----|
+           +-----+
            | abc |
            +-----+
            > select * from test where a like 'd%'
            +-----+
            | a   |
-           |-----|
+           +-----+
            | def |
            +-----+""")
 
@@ -282,7 +282,7 @@ def test_timestamp_null(executor):
     assert results == dedent("""\
         +---------------------+
         | a                   |
-        |---------------------|
+        +---------------------+
         | 0000-00-00 00:00:00 |
         +---------------------+
         1 row in set""")
@@ -295,7 +295,7 @@ def test_datetime_null(executor):
     assert results == dedent("""\
         +---------------------+
         | a                   |
-        |---------------------|
+        +---------------------+
         | 0000-00-00 00:00:00 |
         +---------------------+
         1 row in set""")
@@ -308,7 +308,7 @@ def test_date_null(executor):
     assert results == dedent("""\
         +------------+
         | a          |
-        |------------|
+        +------------+
         | 0000-00-00 |
         +------------+
         1 row in set""")
@@ -321,7 +321,7 @@ def test_time_null(executor):
     assert results == dedent("""\
         +----------+
         | a        |
-        |----------|
+        +----------+
         | 00:00:00 |
         +----------+
         1 row in set""")
