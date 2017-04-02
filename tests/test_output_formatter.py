@@ -7,7 +7,7 @@ from textwrap import dedent
 
 from mycli.output_formatter import (bytes_to_string, convert_to_string,
                                     csv_wrapper, OutputFormatter,
-                                    override_missing_value, tabulate_wrapper,
+                                    override_missing_value,
                                     terminal_tables_wrapper, to_string)
 
 
@@ -45,20 +45,6 @@ def test_bytes_to_string():
     expected = ([[1, 'John'], [2, 'Jill']], [0, 'name'])
 
     assert expected == bytes_to_string(data, headers)
-
-
-def test_tabulate_wrapper():
-    """Test the *output_formatter.tabulate_wrapper()* function."""
-    data = [['abc', 1], ['d', 456]]
-    headers = ['letters', 'number']
-    output = tabulate_wrapper(data, headers, table_format='psql')
-    assert output == dedent('''\
-        +-----------+----------+
-        | letters   | number   |
-        |-----------+----------|
-        | abc       | 1        |
-        | d         | 456      |
-        +-----------+----------+''')
 
 
 def test_csv_wrapper():
