@@ -101,18 +101,16 @@ def quote_whitespaces(data, headers, quotestyle="'", **_):
     for row in data:
         for i, v in enumerate(row):
             v = encodingutils.text_type(v)
-            if v[0] == ' ' or v[-1] == ' ':
+            if v.startswith(' ') or v.endswith(' '):
                 quote[i] = True
 
     results = []
     for row in data:
         result = []
         for i, v in enumerate(row):
-            if quote[i]:
-                result.append('{quotestyle}{value}{quotestyle}'.format(
-                    quotestyle=quotestyle, value=v))
-            else:
-                result.append(v)
+            quotation = quotestyle if quote[i] else ''
+            result.append('{quotestyle}{value}{quotestyle}'.format(
+                quotestyle=quotation, value=v))
         results.append(result)
     return results, headers
 
@@ -192,8 +190,8 @@ class OutputFormatter(object):
                     'preprocessor': (bytes_to_string, override_missing_value,
                                      align_decimals),
                     'table_format': terminal_tables_format,
-                    'missing_value': '<null>'
-            })
+                    'missing_value': '<null>'}
+            )
 
         if format_name:
             self.set_format_name(format_name)
@@ -220,10 +218,12 @@ class OutputFormatter(object):
         *format_name* must be a formatter available in `supported_formats()`.
 
         All keyword arguments are passed to the specified formatter.
-        >>> print(OutputFormatter().format_output( \
-                [["abc", Decimal(1)], ["defg", Decimal('11.1')], ["hi", Decimal('1.1')]], \
-                ["text", "numeric"], \
-                "ascii" \
+
+        >>> print(OutputFormatter().format_output(\
+                [["abc", Decimal(1)], ["defg", Decimal('11.1')],\
+                ["hi", Decimal('1.1')]],\
+                ["text", "numeric"],\
+                "ascii"\
             ))
         +------+---------+
         | text | numeric |
