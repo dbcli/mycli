@@ -105,3 +105,21 @@ def test_terminal_tables_wrapper():
         | abc     | 1      |
         | d       | 456    |
         +---------+--------+''')
+
+
+def test_output_formatter():
+    """Test the *output_formatter.OutputFormatter* class."""
+    data = [['abc', Decimal(1)], ['defg', Decimal('11.1')],
+            ['hi', Decimal('1.1')]]
+    headers = ['text', 'numeric']
+    expected = dedent('''\
+        +------+---------+
+        | text | numeric |
+        +------+---------+
+        | abc  |  1      |
+        | defg | 11.1    |
+        | hi   |  1.1    |
+        +------+---------+''')
+
+    assert expected == OutputFormatter().format_output(data, headers,
+                                                       format_name='ascii')
