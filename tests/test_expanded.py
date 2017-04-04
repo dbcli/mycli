@@ -1,7 +1,7 @@
 """Test the vertical, expanded table formatter."""
 from textwrap import dedent
 
-from mycli.packages.expanded import expanded_table
+from mycli.output_formatter.expanded import expanded_table
 from mycli.encodingutils import text_type
 
 

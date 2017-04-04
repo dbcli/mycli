@@ -4,7 +4,7 @@
 from __future__ import unicode_literals
 from collections import namedtuple
 
-from mycli.packages.expanded import expanded_table
+from .expanded import expanded_table
 from .preprocessors import (override_missing_value, convert_to_string)
 from .delimited_output_adapter import (delimiter_adapter,
                                        delimiter_preprocessors)
@@ -81,8 +81,7 @@ OutputFormatter.register_new_formatter('tsv', delimiter_adapter,
 OutputFormatter.register_new_formatter('expanded', expanded_table,
                                        (override_missing_value,
                                         convert_to_string),
-                                       {'missing_value': '<null>',
-                                        'delimiter': '\t'})
+                                       {'missing_value': '<null>'})
 
 for tabulate_format in tabulate_formats:
     OutputFormatter.register_new_formatter(tabulate_format, tabulate_adapter,

@@ -7,7 +7,7 @@ except ImportError:
 
 from .preprocessors import override_missing_value, bytes_to_string
 
-supported_formats = ('csv',)
+supported_formats = ('csv', 'tsv')
 delimiter_preprocessors = (override_missing_value, bytes_to_string)
 
 
