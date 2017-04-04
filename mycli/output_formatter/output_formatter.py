@@ -7,6 +7,7 @@ from collections import namedtuple
 from .expanded import expanded_table
 from .preprocessors import (override_missing_value, convert_to_string)
 from .delimited_output_adapter import (delimiter_adapter,
+                                       supported_formats as delimiter_formats,
                                        delimiter_preprocessors)
 from .tabulate_adapter import (tabulate_adapter,
                                supported_formats as tabulate_formats,
@@ -71,17 +72,16 @@ class OutputFormatter(object):
         return formatter(data, headers, **fkwargs)
 
 
-OutputFormatter.register_new_formatter('csv', delimiter_adapter,
-                                       delimiter_preprocessors,
-                                       {'missing_value': '<null>'})
-OutputFormatter.register_new_formatter('tsv', delimiter_adapter,
-                                       delimiter_preprocessors,
-                                       {'missing_value': '<null>',
-                                        'delimiter': '\t'})
 OutputFormatter.register_new_formatter('expanded', expanded_table,
                                        (override_missing_value,
                                         convert_to_string),
                                        {'missing_value': '<null>'})
+
+for delimiter_format in delimiter_formats:
+    OutputFormatter.register_new_formatter(delimiter_format, delimiter_adapter,
+                                           delimiter_preprocessors,
+                                           {'table_format': delimiter_format,
+                                            'missing_value': '<null>'})
 
 for tabulate_format in tabulate_formats:
     OutputFormatter.register_new_formatter(tabulate_format, tabulate_adapter,

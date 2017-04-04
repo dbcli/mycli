@@ -11,10 +11,15 @@ supported_formats = ('csv', 'tsv')
 delimiter_preprocessors = (override_missing_value, bytes_to_string)
 
 
-def delimiter_adapter(data, headers, delimiter=',', **_):
+def delimiter_adapter(data, headers, table_format=',', **_):
     """Wrap CSV formatting inside a standard function for OutputFormatter."""
     with contextlib.closing(StringIO()) as content:
-        writer = csv.writer(content, delimiter=str(delimiter))
+        if table_format == 'csv':
+            writer = csv.writer(content, delimiter=',')
+        elif table_format == 'tsv':
+            writer = csv.writer(content, delimiter='\t')
+        else:
+            raise ValueError('Invalid table_format specified.')
 
         writer.writerow(headers)
         for row in data:
