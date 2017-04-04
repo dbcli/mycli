@@ -4,7 +4,6 @@ import pymysql
 import pytest
 
 from mycli.main import MyCli, special
-from mycli.output_formatter import OutputFormatter
 
 PASSWORD = getenv('PYTEST_PASSWORD')
 USER = getenv('PYTEST_USER', 'root')
