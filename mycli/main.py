@@ -37,7 +37,7 @@ from .completion_refresher import CompletionRefresher
 from .config import (write_default_config, get_mylogin_cnf_path,
                      open_mylogin_cnf, read_config_files, str_to_bool)
 from .key_bindings import mycli_bindings
-from .output_formatter import OutputFormatter
+from .output_formatter import output_formatter
 from .encodingutils import utf8tounicode
 from .lexer import MyCliLexer
 from .__init__ import __version__
@@ -106,7 +106,7 @@ class MyCli(object):
         self.multi_line = c['main'].as_bool('multi_line')
         self.key_bindings = c['main']['key_bindings']
         special.set_timing_enabled(c['main'].as_bool('timing'))
-        self.formatter = OutputFormatter(format_name=c['main']['table_format'])
+        self.formatter = output_formatter.OutputFormatter(format_name=c['main']['table_format'])
         self.syntax_style = c['main']['syntax_style']
         self.less_chatty = c['main'].as_bool('less_chatty')
         self.cli_style = c['colors']
@@ -145,7 +145,8 @@ class MyCli(object):
 
         # Initialize completer.
         self.smart_completion = c['main'].as_bool('smart_completion')
-        self.completer = SQLCompleter(self.smart_completion)
+        self.completer = SQLCompleter(self.smart_completion,
+                supported_formats=self.formatter.supported_formats)
         self._completer_lock = threading.Lock()
 
         # Register custom special commands.

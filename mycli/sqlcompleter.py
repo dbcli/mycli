@@ -6,7 +6,6 @@ from collections import Counter
 
 from prompt_toolkit.completion import Completer, Completion
 
-from .output_formatter import OutputFormatter
 from .packages.completion_engine import suggest_type
 from .packages.parseutils import last_word
 from .packages.special.favoritequeries import favoritequeries
@@ -50,7 +49,7 @@ class SQLCompleter(Completer):
 
     users = []
 
-    def __init__(self, smart_completion=True):
+    def __init__(self, smart_completion=True, supported_formats=()):
         super(self.__class__, self).__init__()
         self.smart_completion = smart_completion
         self.reserved_words = set()
@@ -59,8 +58,7 @@ class SQLCompleter(Completer):
         self.name_pattern = compile("^[_a-z][_a-z0-9\$]*$")
 
         self.special_commands = []
-        formatter = OutputFormatter()
-        self.table_formats = formatter.supported_formats()
+        self.table_formats = supported_formats
         self.reset_completions()
 
     def escape_name(self, name):
