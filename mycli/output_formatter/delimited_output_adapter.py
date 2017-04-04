@@ -11,7 +11,7 @@ supported_formats = ('csv', 'tsv')
 delimiter_preprocessors = (override_missing_value, bytes_to_string)
 
 
-def delimiter_adapter(data, headers, table_format=',', **_):
+def delimiter_adapter(data, headers, table_format='csv', **_):
     """Wrap CSV formatting inside a standard function for OutputFormatter."""
     with contextlib.closing(StringIO()) as content:
         if table_format == 'csv':

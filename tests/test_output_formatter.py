@@ -92,7 +92,7 @@ def test_csv_wrapper():
     # Test tab-delimited output.
     data = [['abc', 1], ['d', 456]]
     headers = ['letters', 'number']
-    output = csv_wrapper(data, headers, delimiter='\t')
+    output = csv_wrapper(data, headers, table_format='tsv')
     assert output == dedent('''\
         letters\tnumber\r\n\
         abc\t1\r\n\
