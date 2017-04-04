@@ -81,12 +81,12 @@ class MyCli(object):
     ]
 
     default_config_file = os.path.join(PACKAGE_ROOT, 'myclirc')
-    user_config_file = '~/.myclirc'
 
 
     def __init__(self, sqlexecute=None, prompt=None,
             logfile=None, defaults_suffix=None, defaults_file=None,
-            login_path=None, auto_vertical_output=False, warn=None):
+            login_path=None, auto_vertical_output=False, warn=None,
+            myclirc="~/.myclirc"):
         self.sqlexecute = sqlexecute
         self.logfile = logfile
         self.defaults_suffix = defaults_suffix
@@ -101,7 +101,7 @@ class MyCli(object):
 
         # Load config.
         config_files = ([self.default_config_file] + self.system_config_files +
-                        [self.user_config_file])
+                        [myclirc])
         c = self.config = read_config_files(config_files)
         self.multi_line = c['main'].as_bool('multi_line')
         self.key_bindings = c['main']['key_bindings']
@@ -121,7 +121,7 @@ class MyCli(object):
 
         # Write user config if system config wasn't the last config loaded.
         if c.filename not in self.system_config_files:
-            write_default_config(self.default_config_file, self.user_config_file)
+            write_default_config(self.default_config_file, myclirc)
 
         # audit log
         if self.logfile is None and 'audit_log' in c['main']:
@@ -775,6 +775,8 @@ class MyCli(object):
               help='Read config group with the specified suffix.')
 @click.option('--defaults-file', type=click.Path(),
               help='Only read default options from the given file')
+@click.option('--myclirc', type=click.Path(), default="~/.myclirc",
+              help='Location of myclirc file.')
 @click.option('--auto-vertical-output', is_flag=True,
               help='Automatically switch to vertical output mode if the result is wider than the terminal width.')
 @click.option('-t', '--table', is_flag=True,
@@ -794,7 +796,7 @@ def cli(database, user, host, port, socket, password, dbname,
         version, prompt, logfile, defaults_group_suffix, defaults_file,
         login_path, auto_vertical_output, local_infile, ssl_ca, ssl_capath,
         ssl_cert, ssl_key, ssl_cipher, ssl_verify_server_cert, table, csv,
-        warn, execute):
+        warn, execute, myclirc):
 
     if version:
         print('Version:', __version__)
@@ -803,7 +805,8 @@ def cli(database, user, host, port, socket, password, dbname,
     mycli = MyCli(prompt=prompt, logfile=logfile,
                   defaults_suffix=defaults_group_suffix,
                   defaults_file=defaults_file, login_path=login_path,
-                  auto_vertical_output=auto_vertical_output, warn=warn)
+                  auto_vertical_output=auto_vertical_output, warn=warn,
+                  myclirc=myclirc)
 
     # Choose which ever one has a valid value.
     database = database or dbname

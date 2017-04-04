@@ -1,6 +1,11 @@
 TBD
 ===
 
+Features:
+---------
+
+* Add ability to specify alternative myclirc file. (Thanks: [Dick Marinus]).
+
 Bug Fixes:
 ----------
 
@@ -17,6 +22,7 @@ Internal Changes:
 
 * Upload mycli distributions in a safer manner (using twine). (Thanks: [Thomas
   Roten]).
+* Test mycli using pexpect/python-behave (Thanks: [Dick Marinus]).
 
 1.9.0:
 ======

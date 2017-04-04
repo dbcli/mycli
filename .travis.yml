@@ -7,12 +7,16 @@ python:
   - "3.6"
 
 install:
-  - pip install PyMySQL . pytest mock codecov
+  - pip install PyMySQL . pytest mock codecov pexpect behave
 
 script:
   - coverage run --source mycli -m py.test
+  - cd tests
+  - behave
+  - cd ..
 
 after_success:
+  - coverage combine
   - codecov
 
 notifications:
