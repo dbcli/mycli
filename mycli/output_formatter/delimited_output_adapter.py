@@ -5,10 +5,11 @@ try:
 except ImportError:
     from io import StringIO
 
-from .preprocessors import (override_missing_value, bytes_to_string)
+from .preprocessors import override_missing_value, bytes_to_string
 
 supported_formats = ('csv',)
 delimiter_preprocessors = (override_missing_value, bytes_to_string)
+
 
 def delimiter_adapter(data, headers, delimiter=',', **_):
     """Wrap CSV formatting inside a standard function for OutputFormatter."""

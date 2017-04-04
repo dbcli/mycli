@@ -1,21 +1,25 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+"""A generic output formatter interface."""
 
-from ..packages.expanded import expanded_table
-from .preprocessors import (override_missing_value, convert_to_string)
-from .delimited_output_adapter import delimiter_adapter, delimiter_preprocessors
-from .tabulate_adapter import (tabulate_adapter,
-        supported_formats as tabulate_formats,
-        preprocessors as tabulate_preprocessors)
-from .terminaltables_adapter import (terminaltables_adapter,
-        preprocessors as terminaltables_preprocessors,
-        supported_formats as terminaltables_formats)
+from __future__ import unicode_literals
 from collections import namedtuple
 
-OutputFormatHandler = namedtuple('OutputFormatHandler',
-        'format_name preprocessors formatter formatter_args')
+from mycli.packages.expanded import expanded_table
+from .preprocessors import (override_missing_value, convert_to_string)
+from .delimited_output_adapter import (delimiter_adapter,
+                                       delimiter_preprocessors)
+from .tabulate_adapter import (tabulate_adapter,
+                               supported_formats as tabulate_formats,
+                               preprocessors as tabulate_preprocessors)
+from .terminaltables_adapter import (
+    terminaltables_adapter, preprocessors as terminaltables_preprocessors,
+    supported_formats as terminaltables_formats)
 
-"""A generic output formatter interface."""
+OutputFormatHandler = namedtuple(
+    'OutputFormatHandler',
+    'format_name preprocessors formatter formatter_args')
+
+
 class OutputFormatter(object):
     """A class with a standard interface for various formatting libraries."""
 
@@ -43,10 +47,10 @@ class OutputFormatter(object):
 
     @classmethod
     def register_new_formatter(cls, format_name, handler, preprocessors=None,
-            kwargs=None):
-        """Register a new fomatter to format the output"""
-        cls._output_formats[format_name] = OutputFormatHandler(format_name,
-                preprocessors, handler, kwargs)
+                               kwargs=None):
+        """Register a new formatter to format the output."""
+        cls._output_formats[format_name] = OutputFormatHandler(
+            format_name, preprocessors, handler, kwargs)
 
     def format_output(self, data, headers, format_name=None, **kwargs):
         """Format the headers and data using a specific formatter.
@@ -66,26 +70,28 @@ class OutputFormatter(object):
                 data, headers = f(data, headers, **fkwargs)
         return formatter(data, headers, **fkwargs)
 
-OutputFormatter.register_new_formatter('csv',
-        delimiter_adapter,
-        delimiter_preprocessors, {'missing_value': '<null>'})
-OutputFormatter.register_new_formatter('tsv',
-        delimiter_adapter,
-        delimiter_preprocessors,
-        {'missing_value': '<null>', 'delimiter': '\t'})
-OutputFormatter.register_new_formatter('expanded',
-        expanded_table,
-        (override_missing_value, convert_to_string),
-        {'missing_value': '<null>', 'delimiter': '\t'})
+
+OutputFormatter.register_new_formatter('csv', delimiter_adapter,
+                                       delimiter_preprocessors,
+                                       {'missing_value': '<null>'})
+OutputFormatter.register_new_formatter('tsv', delimiter_adapter,
+                                       delimiter_preprocessors,
+                                       {'missing_value': '<null>',
+                                        'delimiter': '\t'})
+OutputFormatter.register_new_formatter('expanded', expanded_table,
+                                       (override_missing_value,
+                                        convert_to_string),
+                                       {'missing_value': '<null>',
+                                        'delimiter': '\t'})
 
 for tabulate_format in tabulate_formats:
-    OutputFormatter.register_new_formatter(tabulate_format,
-            tabulate_adapter,
-            tabulate_preprocessors,
-            {'table_format': tabulate_format, 'missing_value': '<null>'})
+    OutputFormatter.register_new_formatter(tabulate_format, tabulate_adapter,
+                                           tabulate_preprocessors,
+                                           {'table_format': tabulate_format,
+                                            'missing_value': '<null>'})
 
 for terminaltables_format in terminaltables_formats:
-    OutputFormatter.register_new_formatter(terminaltables_format,
-            terminaltables_adapter,
-            terminaltables_preprocessors,
-            {'table_format': terminaltables_format, 'missing_value': '<null>'})
+    OutputFormatter.register_new_formatter(
+        terminaltables_format, terminaltables_adapter,
+        terminaltables_preprocessors,
+        {'table_format': terminaltables_format, 'missing_value': '<null>'})

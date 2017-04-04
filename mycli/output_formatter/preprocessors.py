@@ -1,5 +1,7 @@
 from decimal import Decimal
-from .. import encodingutils
+
+from mycli import encodingutils
+
 
 def to_string(value):
     """Convert *value* to a string."""
@@ -40,6 +42,7 @@ def intlen(value):
     if pos < 0:
         pos = len(value)
     return pos
+
 
 def align_decimals(data, headers, **_):
     """Align decimals to decimal point

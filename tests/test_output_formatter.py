@@ -2,22 +2,22 @@
 """Test the generic output formatter interface."""
 
 from __future__ import unicode_literals
-
 from decimal import Decimal
 from textwrap import dedent
 
 from mycli.output_formatter.preprocessors import (align_decimals,
-        bytes_to_string,
-        convert_to_string,
-        override_missing_value,
-        to_string)
+                                                  bytes_to_string,
+                                                  convert_to_string,
+                                                  override_missing_value,
+                                                  to_string)
 from mycli.output_formatter.output_formatter import OutputFormatter
-from mycli.output_formatter.delimited_output_adapter import (delimiter_adapter
-        as csv_wrapper)
-from mycli.output_formatter.tabulate_adapter import (tabulate_adapter as
-        tabulate_wrapper)
-from mycli.output_formatter.terminaltables_adapter import \
-        (terminaltables_adapter as terminal_tables_wrapper)
+from mycli.output_formatter.delimited_output_adapter import (
+    delimiter_adapter as csv_wrapper)
+from mycli.output_formatter.tabulate_adapter import (
+    tabulate_adapter as tabulate_wrapper)
+from mycli.output_formatter.terminaltables_adapter import (
+    terminaltables_adapter as terminal_tables_wrapper)
+
 
 def test_to_string():
     """Test the *output_formatter.to_string()* function."""
