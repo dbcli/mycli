@@ -2,3 +2,6 @@ mock
 pytest
 tox
 twine==1.8.1
+behave
+pexpect
+coverage==4.3.4
