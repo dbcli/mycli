@@ -101,6 +101,7 @@ if __name__ == '__main__':
 
     checks = ['Have you created the debian package?',
               'Have you updated the AUTHORS file?',
+              'Have you updated the `Usage` section of the README?',
               ]
     checklist(checks)
 
