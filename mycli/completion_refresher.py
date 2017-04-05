@@ -9,9 +9,10 @@ class CompletionRefresher(object):
 
     refreshers = OrderedDict()
 
-    def __init__(self):
+    def __init__(self, smart_completion):
         self._completer_thread = None
         self._restart_refresh = threading.Event()
+        self.smart_completion = smart_completion
 
     def refresh(self, executor, callbacks):
         """
@@ -40,7 +41,7 @@ class CompletionRefresher(object):
         return self._completer_thread and self._completer_thread.is_alive()
 
     def _bg_refresh(self, sqlexecute, callbacks):
-        completer = SQLCompleter(smart_completion=True)
+        completer = SQLCompleter(smart_completion=self.smart_completion)
 
         # Create a new pgexecute method to popoulate the completions.
         e = sqlexecute
