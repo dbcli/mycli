@@ -75,7 +75,7 @@ def align_decimals(data, headers, **_):
 
 
 def quote_whitespaces(data, headers, quotestyle="'", **_):
-    """Quote whitespace
+    """Quote whitespace.
 
     >>> for i in quote_whitespaces([["  before"], ["after  "], ["  both  "], ["none"]], [])[0]: print(i[0])
     '  before'
