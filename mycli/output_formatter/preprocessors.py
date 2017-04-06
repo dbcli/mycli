@@ -30,13 +30,15 @@ def bytes_to_string(data, headers, **_):
 
 
 def intlen(value):
-    """Find (character) length
+    """Find (character) length.
+
     >>> intlen('11.1')
     2
     >>> intlen('11')
     2
     >>> intlen('1.1')
     1
+
     """
     pos = value.find('.')
     if pos < 0:
@@ -45,11 +47,13 @@ def intlen(value):
 
 
 def align_decimals(data, headers, **_):
-    """Align decimals to decimal point
+    """Align decimals to decimal point.
+
     >>> for i in align_decimals([[Decimal(1)], [Decimal('11.1')], [Decimal('1.1')]], [])[0]: print(i[0])
      1
     11.1
      1.1
+
     """
     pointpos = len(data[0]) * [0]
     for row in data:
@@ -72,6 +76,7 @@ def align_decimals(data, headers, **_):
 
 def quote_whitespaces(data, headers, quotestyle="'", **_):
     """Quote whitespace
+
     >>> for i in quote_whitespaces([["  before"], ["after  "], ["  both  "], ["none"]], [])[0]: print(i[0])
     '  before'
     'after  '
@@ -82,6 +87,7 @@ def quote_whitespaces(data, headers, quotestyle="'", **_):
     def
     ghi
     jkl
+
     """
     quote = len(data[0]) * [False]
     for row in data:

@@ -59,12 +59,14 @@ class OutputFormatter(object):
         *format_name* must be a formatter available in `supported_formats()`.
 
         All keyword arguments are passed to the specified formatter.
+
         """
         format_name = format_name or self._format_name
         if format_name not in self.supported_formats():
             raise ValueError('unrecognized format: {}'.format(format_name))
 
-        (_, preprocessors, formatter, fkwargs) = self._output_formats[format_name]
+        (_, preprocessors, formatter,
+         fkwargs) = self._output_formats[format_name]
         fkwargs.update(kwargs)
         if preprocessors:
             for f in preprocessors:

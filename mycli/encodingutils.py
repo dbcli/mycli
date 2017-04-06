@@ -16,9 +16,10 @@ else:
 
 
 def unicode2utf8(arg):
-    """
-    Only in Python 2. Psycopg2 expects the args as bytes not unicode.
-    In Python 3 the args are expected as unicode.
+    """Convert strings to UTF8-encoded bytes.
+
+    Only in Python 2. In Python 3 the args are expected as unicode.
+
     """
 
     if PY2 and isinstance(arg, text_type):
@@ -27,9 +28,10 @@ def unicode2utf8(arg):
 
 
 def utf8tounicode(arg):
-    """
-    Only in Python 2. Psycopg2 returns the error message as utf-8.
-    In Python 3 the errors are returned as unicode.
+    """Convert UTF8-encoded bytes to strings.
+
+    Only in Python 2. In Python 3 the errors are returned as strings.
+
     """
 
     if PY2 and isinstance(arg, binary_type):
@@ -46,6 +48,7 @@ def bytes_to_string(b):
     abc
     >>> print(bytes_to_string('✌'))
     ✌
+
     """
     if isinstance(b, binary_type):
         try:

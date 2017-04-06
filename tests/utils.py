@@ -44,7 +44,8 @@ def run(executor, sql, join=False):
     # It should test raw results.
     mycli = MyCli()
     for title, rows, headers, status in executor.run(sql):
-        result.extend(mycli.format_output(title, rows, headers, status, special.is_expanded_output()))
+        result.extend(mycli.format_output(title, rows, headers, status,
+                                          special.is_expanded_output()))
 
     if join:
         result = '\n'.join(result)

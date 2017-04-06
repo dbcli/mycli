@@ -106,7 +106,8 @@ class MyCli(object):
         self.multi_line = c['main'].as_bool('multi_line')
         self.key_bindings = c['main']['key_bindings']
         special.set_timing_enabled(c['main'].as_bool('timing'))
-        self.formatter = output_formatter.OutputFormatter(format_name=c['main']['table_format'])
+        self.formatter = output_formatter.OutputFormatter(
+            format_name=c['main']['table_format'])
         self.syntax_style = c['main']['syntax_style']
         self.less_chatty = c['main'].as_bool('less_chatty')
         self.cli_style = c['colors']
@@ -146,7 +147,7 @@ class MyCli(object):
         # Initialize completer.
         self.smart_completion = c['main'].as_bool('smart_completion')
         self.completer = SQLCompleter(self.smart_completion,
-                supported_formats=self.formatter.supported_formats)
+                                      supported_formats=self.formatter.supported_formats)
         self._completer_lock = threading.Lock()
 
         # Register custom special commands.
@@ -186,7 +187,8 @@ class MyCli(object):
             yield (None, None, None,
                    'Changed table type to {}'.format(arg))
         except ValueError:
-            msg = 'Table type {} not yet implemented. Allowed types:'.format(arg)
+            msg = 'Table type {} not yet implemented. Allowed types:'.format(
+                arg)
             for table_type in self.formatter.supported_formats():
                 msg += "\n\t{}".format(table_type)
             yield (None, None, None, msg)
@@ -524,8 +526,9 @@ class MyCli(object):
                     else:
                         max_width = None
 
-                    formatted = self.format_output(title, cur, headers,
-                        status, special.is_expanded_output(), max_width)
+                    formatted = self.format_output(title, cur, headers, status,
+                                                   special.is_expanded_output(),
+                                                   max_width)
 
                     output.extend(formatted)
                     end = time()
@@ -706,7 +709,7 @@ class MyCli(object):
         return string
 
     def run_query(self, query, new_line=True):
-        """Runs query"""
+        """Runs *query*."""
         results = self.sqlexecute.run(query)
         for result in results:
             title, cur, headers, status = result

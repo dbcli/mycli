@@ -19,6 +19,7 @@ def expanded_table(rows, headers, **_):
     """Format *rows* and *headers* as an expanded table.
 
     The values in *rows* and *headers* must be strings.
+
     """
     header_len = max([len(x) for x in headers])
     padded_headers = [x.ljust(header_len) for x in headers]
