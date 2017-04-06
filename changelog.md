@@ -22,6 +22,7 @@ Internal Changes:
 * Upload mycli distributions in a safer manner (using twine). (Thanks: [Thomas
   Roten]).
 * Test mycli using pexpect/python-behave (Thanks: [Dick Marinus]).
+* Run pep8 checks in travis (Thanks: [Irina Truong]).
 
 1.9.0:
 ======
