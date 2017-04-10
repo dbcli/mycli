@@ -55,7 +55,7 @@ def align_decimals(data, headers, **_):
      1.1
 
     """
-    pointpos = len(data[0]) * [0]
+    pointpos = len(headers) * [0]
     for row in data:
         for i, v in enumerate(row):
             if isinstance(v, Decimal):
@@ -89,7 +89,7 @@ def quote_whitespaces(data, headers, quotestyle="'", **_):
     jkl
 
     """
-    quote = len(data[0]) * [False]
+    quote = len(headers) * [False]
     for row in data:
         for i, v in enumerate(row):
             v = encodingutils.text_type(v)
