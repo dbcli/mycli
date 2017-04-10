@@ -47,14 +47,7 @@ def intlen(value):
 
 
 def align_decimals(data, headers, **_):
-    """Align decimals to decimal point.
-
-    >>> for i in align_decimals([[Decimal(1)], [Decimal('11.1')], [Decimal('1.1')]], [])[0]: print(i[0])
-     1
-    11.1
-     1.1
-
-    """
+    """Align decimals to decimal point."""
     pointpos = len(headers) * [0]
     for row in data:
         for i, v in enumerate(row):
@@ -75,20 +68,7 @@ def align_decimals(data, headers, **_):
 
 
 def quote_whitespaces(data, headers, quotestyle="'", **_):
-    """Quote whitespace.
-
-    >>> for i in quote_whitespaces([["  before"], ["after  "], ["  both  "], ["none"]], [])[0]: print(i[0])
-    '  before'
-    'after  '
-    '  both  '
-    'none'
-    >>> for i in quote_whitespaces([["abc"], ["def"], ["ghi"], ["jkl"]], [])[0]: print(i[0])
-    abc
-    def
-    ghi
-    jkl
-
-    """
+    """Quote leading/trailing whitespace."""
     quote = len(headers) * [False]
     for row in data:
         for i, v in enumerate(row):
