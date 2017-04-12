@@ -1,5 +1,5 @@
 from mycli.packages import tabulate
-from .preprocessors import bytes_to_string, align_decimals, quote_whitespaces
+from .preprocessors import bytes_to_string, align_decimals
 
 tabulate.PRESERVE_WHITESPACE = True
 
