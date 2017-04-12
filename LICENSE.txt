@@ -27,3 +27,9 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 -------------------------------------------------------------------------------
+
+This program also bundles with it python-tabulate
+(https://pypi.python.org/pypi/tabulate) library. This library is licensed under
+MIT License.
+
+-------------------------------------------------------------------------------
