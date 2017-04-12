@@ -180,9 +180,9 @@ def _moin_row_with_attrs(celltag, cell_values, colwidths, colaligns,
                  "decimal": '<style="text-align: right;">'}
     values_with_attrs = ["{0}{1} {2} ".format(celltag,
                                               alignment.get(a, ''),
-                                              header+c+header)
+                                              header + c + header)
                          for c, a in zip(cell_values, colaligns)]
-    return "".join(values_with_attrs)+"||"
+    return "".join(values_with_attrs) + "||"
 
 
 def _latex_line_begin_tabular(colwidths, colaligns, booktabs=False):
@@ -684,7 +684,8 @@ def _format(val, valtype, floatfmt, missingval="", has_invisible=True):
 
 
 def _align_header(header, alignment, width, visible_width):
-    "Pad string header to width chars given known visible_width of the header."
+    """Pad string header to width chars given known visible_width of the
+    header."""
     width += len(header) - visible_width
     if alignment == "left":
         return _padright(width, header)
@@ -704,12 +705,13 @@ def _prepend_row_index(rows, index):
         print('index=', index)
         print('rows=', rows)
         raise ValueError('index must be as long as the number of data rows')
-    rows = [[v]+list(row) for v, row in zip(index, rows)]
+    rows = [[v] + list(row) for v, row in zip(index, rows)]
     return rows
 
 
 def _bool(val):
-    "A wrapper around standard bool() which doesn't throw on NumPy arrays"
+    """A wrapper around standard bool() which doesn't throw on NumPy
+    arrays."""
     try:
         return bool(val)
     except ValueError:  # val is likely to be a numpy array with many elements
@@ -717,7 +719,8 @@ def _bool(val):
 
 
 def _normalize_tabular_data(tabular_data, headers, showindex="default"):
-    """Transform a supported data type to a list of lists, and a list of headers.
+    """Transform a supported data type to a list of lists, and a list of
+    headers.
 
     Supported tabular data types:
 
@@ -878,7 +881,7 @@ def _normalize_tabular_data(tabular_data, headers, showindex="default"):
         nhs = len(headers)
         ncols = len(rows[0])
         if nhs < ncols:
-            headers = [""]*(ncols - nhs) + headers
+            headers = [""] * (ncols - nhs) + headers
 
     return rows, headers
 
@@ -1169,11 +1172,12 @@ def tabulate(tabular_data, headers=(), tablefmt="simple",
     indices is used to disable number parsing only on those columns
     e.g. `disable_numparse=[0, 2]` would disable number parsing only on the
     first and third columns.
+
     """
     if tabular_data is None:
         tabular_data = []
     list_of_lists, headers = _normalize_tabular_data(
-            tabular_data, headers, showindex=showindex)
+        tabular_data, headers, showindex=showindex)
 
     # empty values in the first column of RST tables should be escaped
     # (issue #82). "" should be escaped as "\\ " or ".."
@@ -1207,14 +1211,14 @@ def tabulate(tabular_data, headers=(), tablefmt="simple",
     else:  # if floatfmt is list, tuple etc we have one per column
         float_formats = list(floatfmt)
         if len(float_formats) < len(cols):
-            float_formats.extend((len(cols)-len(float_formats)) *
+            float_formats.extend((len(cols) - len(float_formats)) *
                                  [_DEFAULT_FLOATFMT])
     if isinstance(missingval, basestring):
         missing_vals = len(cols) * [missingval]
     else:
         missing_vals = list(missingval)
         if len(missing_vals) < len(cols):
-            missing_vals.extend((len(cols)-len(missing_vals)) *
+            missing_vals.extend((len(cols) - len(missing_vals)) *
                                 [_DEFAULT_MISSINGVAL])
     cols = [[_format(v, ct, fl_fmt, miss_v, has_invisible) for v in c]
             for c, ct, fl_fmt, miss_v in zip(cols, coltypes, float_formats,
@@ -1223,7 +1227,7 @@ def tabulate(tabular_data, headers=(), tablefmt="simple",
     # align columns
     aligns = [numalign if ct in [int, float] else stralign for ct in coltypes]
     minwidths = [width_fn(h) + MIN_PADDING
-                 for h in headers] if headers else [0]*len(cols)
+                 for h in headers] if headers else [0] * len(cols)
     cols = [_align_column(c, a, minw, has_invisible)
             for c, a, minw in zip(cols, aligns, minwidths)]
 
@@ -1247,12 +1251,13 @@ def tabulate(tabular_data, headers=(), tablefmt="simple",
 
 
 def _expand_numparse(disable_numparse, column_count):
-    """
-    Return a list of bools of length `column_count` which indicates whether
+    """Return a list of bools of length `column_count` which indicates whether
     number parsing should be used on each column.
-    If `disable_numparse` is a list of indices, each of those indices are
-    False, and everything else is True.
-    If `disable_numparse` is a bool, then the returned list is all the same.
+
+    If `disable_numparse` is a list of indices, each of those indices
+    are False, and everything else is True. If `disable_numparse` is a
+    bool, then the returned list is all the same.
+
     """
     if isinstance(disable_numparse, Iterable):
         numparses = [True] * column_count
@@ -1346,8 +1351,7 @@ def _format_table(fmt, headers, rows, colwidths, colaligns):
 
 
 def _main():
-    """\
-    Usage: tabulate [options] [FILE ...]
+    """\ Usage: tabulate [options] [FILE ...]
 
     Pretty-print tabular data.
     See also https://bitbucket.org/astanin/python-tabulate
@@ -1367,6 +1371,7 @@ def _main():
                               rst, mediawiki, html, latex, latex_raw,
                               latex_booktabs, tsv
                               (default: simple)
+
     """
     import getopt
     import sys
