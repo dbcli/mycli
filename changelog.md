@@ -5,6 +5,8 @@ Features:
 ---------
 
 * Add ability to specify alternative myclirc file. (Thanks: [Dick Marinus]).
+* Add new display formats for pretty printing query results. (Thanks: [Amjith
+  Ramanujam], [Dick Marinus], [Thomas Roten]).
 
 Bug Fixes:
 ----------
