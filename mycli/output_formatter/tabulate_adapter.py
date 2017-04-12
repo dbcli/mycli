@@ -1,6 +1,8 @@
 from mycli.packages import tabulate
 from .preprocessors import bytes_to_string, align_decimals, quote_whitespaces
 
+tabulate.PRESERVE_WHITESPACE = True
+
 supported_formats = ('plain', 'simple', 'grid', 'fancy_grid', 'pipe', 'orgtbl',
                      'jira', 'psql', 'rst', 'mediawiki', 'moinmoin', 'html',
                      'html', 'latex', 'latex_booktabs', 'textile')
