@@ -9,7 +9,7 @@ supported_table_formats = ('plain', 'simple', 'grid', 'fancy_grid', 'pipe',
                            'orgtbl', 'psql', 'rst')
 supported_formats = supported_markup_formats + supported_table_formats
 
-preprocessors = (bytes_to_string, align_decimals, quote_whitespaces)
+preprocessors = (bytes_to_string, align_decimals)
 
 
 def tabulate_adapter(data, headers, table_format=None, missing_value='', **_):
