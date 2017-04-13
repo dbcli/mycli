@@ -146,8 +146,9 @@ class MyCli(object):
 
         # Initialize completer.
         self.smart_completion = c['main'].as_bool('smart_completion')
-        self.completer = SQLCompleter(self.smart_completion,
-                                      supported_formats=self.formatter.supported_formats)
+        self.completer = SQLCompleter(
+            self.smart_completion,
+            supported_formats=self.formatter.supported_formats())
         self._completer_lock = threading.Lock()
 
         # Register custom special commands.
@@ -665,8 +666,10 @@ class MyCli(object):
         if reset:
             with self._completer_lock:
                 self.completer.reset_completions()
-        self.completion_refresher.refresh(self.sqlexecute,
-                                          self._on_completions_refreshed)
+        self.completion_refresher.refresh(
+            self.sqlexecute, self._on_completions_refreshed,
+            {'smart_completion': self.smart_completion,
+             'supported_formats': self.formatter.supported_formats()})
 
         return [(None, None, None,
                 'Auto-completion refresh started in the background.')]
