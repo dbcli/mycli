@@ -14,8 +14,7 @@ class CompletionRefresher(object):
         self._restart_refresh = threading.Event()
 
     def refresh(self, executor, callbacks, completer_options={}):
-        """
-        Creates a SQLCompleter object and populates it with the relevant
+        """Creates a SQLCompleter object and populates it with the relevant
         completion suggestions in a background thread.
 
         executor - SQLExecute object, used to extract the credentials to connect
@@ -24,6 +23,7 @@ class CompletionRefresher(object):
                     has completed the refresh. The newly created completion
                     object will be passed in as an argument to each callback.
         completer_options - dict of options to pass to SQLCompleter.
+
         """
         if self.is_refreshing():
             self._restart_refresh.set()
