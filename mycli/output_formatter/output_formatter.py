@@ -16,6 +16,8 @@ from .terminaltables_adapter import (
     terminaltables_adapter, preprocessors as terminaltables_preprocessors,
     supported_formats as terminaltables_formats)
 
+MISSING_VALUE = '<null>'
+
 OutputFormatHandler = namedtuple(
     'OutputFormatHandler',
     'format_name preprocessors formatter formatter_args')
@@ -77,22 +79,22 @@ class OutputFormatter(object):
 OutputFormatter.register_new_formatter('expanded', expanded_table,
                                        (override_missing_value,
                                         convert_to_string),
-                                       {'missing_value': '<null>'})
+                                       {'missing_value': MISSING_VALUE})
 
 for delimiter_format in delimiter_formats:
     OutputFormatter.register_new_formatter(delimiter_format, delimiter_adapter,
                                            delimiter_preprocessors,
                                            {'table_format': delimiter_format,
-                                            'missing_value': '<null>'})
+                                            'missing_value': MISSING_VALUE})
 
 for tabulate_format in tabulate_formats:
     OutputFormatter.register_new_formatter(tabulate_format, tabulate_adapter,
                                            tabulate_preprocessors,
                                            {'table_format': tabulate_format,
-                                            'missing_value': '<null>'})
+                                            'missing_value': MISSING_VALUE})
 
 for terminaltables_format in terminaltables_formats:
     OutputFormatter.register_new_formatter(
         terminaltables_format, terminaltables_adapter,
         terminaltables_preprocessors,
-        {'table_format': terminaltables_format, 'missing_value': '<null>'})
+        {'table_format': terminaltables_format, 'missing_value': MISSING_VALUE})
