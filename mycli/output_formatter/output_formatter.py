@@ -49,8 +49,8 @@ class OutputFormatter(object):
         return tuple(self._output_formats.keys())
 
     @classmethod
-    def register_new_formatter(cls, format_name, handler, preprocessors=None,
-                               kwargs=None):
+    def register_new_formatter(cls, format_name, handler, preprocessors=(),
+                               kwargs={}):
         """Register a new formatter to format the output."""
         cls._output_formats[format_name] = OutputFormatHandler(
             format_name, preprocessors, handler, kwargs)
