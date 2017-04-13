@@ -30,7 +30,7 @@ log_level = INFO
 # Timing of sql statments and table rendering.
 timing = True
 
-# Table format. Possible values: ascii, single, double, github,
+# Table format. Possible values: ascii, double, github,
 # psql, plain, simple, grid, fancy_grid, pipe, orgtbl, rst, mediawiki, html,
 # latex, latex_booktabs, textile, moinmoin, jira, expanded, tsv, csv.
 # Recommended: ascii
