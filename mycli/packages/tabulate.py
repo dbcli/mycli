@@ -252,12 +252,12 @@ _table_formats = {"simple":
                       padding=1, with_header_hide=None),
                   "fancy_grid":
                   TableFormat(
-                      lineabove=Line("â•’", "â•", "â•¤", "â••"),
-                      linebelowheader=Line("â•ž", "â•", "â•ª", "â•¡"),
-                      linebetweenrows=Line("â”œ", "â”€", "â”¼", "â”¤"),
-                      linebelow=Line("â•˜", "â•", "â•§", "â•›"),
-                      headerrow=DataRow("â”‚", "â”‚", "â”‚"),
-                      datarow=DataRow("â”‚", "â”‚", "â”‚"),
+                      lineabove=Line("╒", "═", "╤", "╕"),
+                      linebelowheader=Line("╞", "═", "╪", "╡"),
+                      linebetweenrows=Line("├", "─", "┼", "┤"),
+                      linebelow=Line("╘", "═", "╧", "╛"),
+                      headerrow=DataRow("│", "│", "│"),
+                      datarow=DataRow("│", "│", "│"),
                       padding=1, with_header_hide=None),
                   "pipe":
                   TableFormat(
@@ -1032,13 +1032,13 @@ def tabulate(tabular_data, headers=(), tablefmt="simple",
 
     >>> print(tabulate([["spam", 41.9999], ["eggs", "451.0"]],
     ...                ["strings", "numbers"], "fancy_grid"))
-    â•’â•â•â•â•â•â•â•â•â•â•â•â•¤â•â•â•â•â•â•â•â•â•â•â•â••
-    â”‚ strings   â”‚   numbers â”‚
-    â•žâ•â•â•â•â•â•â•â•â•â•â•â•ªâ•â•â•â•â•â•â•â•â•â•â•â•¡
-    â”‚ spam      â”‚   41.9999 â”‚
-    â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
-    â”‚ eggs      â”‚  451      â”‚
-    â•˜â•â•â•â•â•â•â•â•â•â•â•â•§â•â•â•â•â•â•â•â•â•â•â•â•›
+    ╒═══════════╤═══════════╕
+    │ strings   │   numbers │
+    ╞═══════════╪═══════════╡
+    │ spam      │   41.9999 │
+    ├───────────┼───────────┤
+    │ eggs      │  451      │
+    ╘═══════════╧═══════════╛
 
     "pipe" is like tables in PHP Markdown Extra extension or Pandoc
     pipe_tables:
