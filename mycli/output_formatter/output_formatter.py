@@ -27,7 +27,7 @@ class OutputFormatter(object):
     _output_formats = {}
 
     def __init__(self, format_name=None):
-        """Register the supported output formats."""
+        """Set the default *format_name*."""
         self._format_name = format_name
 
     def set_format_name(self, format_name):
