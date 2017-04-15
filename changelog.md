@@ -5,6 +5,7 @@ Features:
 ---------
 
 * Add ability to specify alternative myclirc file. (Thanks: [Dick Marinus]).
+* Add logic to shorten the default prompt if it becomes too long once generated. (Thanks: [John Sterling]).
 
 Bug Fixes:
 ----------
