@@ -12,12 +12,9 @@ from mycli.output_formatter.preprocessors import (align_decimals,
                                                   override_missing_value,
                                                   to_string)
 from mycli.output_formatter.output_formatter import OutputFormatter
-from mycli.output_formatter.delimited_output_adapter import (
-    adapter as csv_wrapper)
-from mycli.output_formatter.tabulate_adapter import (
-    adapter as tabulate_wrapper)
-from mycli.output_formatter.terminaltables_adapter import (
-    adapter as terminal_tables_wrapper)
+from mycli.output_formatter import delimited_output_adapter
+from mycli.output_formatter import tabulate_adapter
+from mycli.output_formatter import terminaltables_adapter
 
 
 def test_to_string():
@@ -98,7 +95,7 @@ def test_tabulate_wrapper():
     """Test the *output_formatter.tabulate_wrapper()* function."""
     data = [['abc', 1], ['d', 456]]
     headers = ['letters', 'number']
-    output = tabulate_wrapper(data, headers, table_format='psql')
+    output = tabulate_adapter.adapter(data, headers, table_format='psql')
     assert output == dedent('''\
         +-----------+----------+
         | letters   | number   |
@@ -113,7 +110,7 @@ def test_csv_wrapper():
     # Test comma-delimited output.
     data = [['abc', 1], ['d', 456]]
     headers = ['letters', 'number']
-    output = csv_wrapper(data, headers)
+    output = delimited_output_adapter.adapter(data, headers)
     assert output == dedent('''\
         letters,number\r\n\
         abc,1\r\n\
@@ -122,7 +119,8 @@ def test_csv_wrapper():
     # Test tab-delimited output.
     data = [['abc', 1], ['d', 456]]
     headers = ['letters', 'number']
-    output = csv_wrapper(data, headers, table_format='tsv')
+    output = delimited_output_adapter.adapter(
+        data, headers, table_format='tsv')
     assert output == dedent('''\
         letters\tnumber\r\n\
         abc\t1\r\n\
@@ -133,7 +131,8 @@ def test_terminal_tables_wrapper():
     """Test the *output_formatter.terminal_tables_wrapper()* function."""
     data = [['abc', 1], ['d', 456]]
     headers = ['letters', 'number']
-    output = terminal_tables_wrapper(data, headers, table_format='ascii')
+    output = terminaltables_adapter.adapter(
+        data, headers, table_format='ascii')
     assert output == dedent('''\
         +---------+--------+
         | letters | number |
