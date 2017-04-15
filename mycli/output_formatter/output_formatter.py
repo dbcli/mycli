@@ -78,18 +78,18 @@ OutputFormatter.register_new_formatter('expanded', expanded_table,
 
 for delimiter_format in delimited_output_adapter.supported_formats:
     OutputFormatter.register_new_formatter(
-        delimiter_format, delimited_output_adapter.delimiter_adapter,
-        delimited_output_adapter.delimiter_preprocessors,
+        delimiter_format, delimited_output_adapter.adapter,
+        delimited_output_adapter.preprocessors,
         {'table_format': delimiter_format, 'missing_value': MISSING_VALUE})
 
 for tabulate_format in tabulate_adapter.supported_formats:
     OutputFormatter.register_new_formatter(
-        tabulate_format, tabulate_adapter.tabulate_adapter,
+        tabulate_format, tabulate_adapter.adapter,
         tabulate_adapter.preprocessors,
         {'table_format': tabulate_format, 'missing_value': MISSING_VALUE})
 
 for terminaltables_format in terminaltables_adapter.supported_formats:
     OutputFormatter.register_new_formatter(
-        terminaltables_format, terminaltables_adapter.terminaltables_adapter,
+        terminaltables_format, terminaltables_adapter.adapter,
         terminaltables_adapter.preprocessors,
         {'table_format': terminaltables_format, 'missing_value': MISSING_VALUE})

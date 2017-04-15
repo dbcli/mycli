@@ -7,7 +7,7 @@ supported_formats = ('ascii', 'double', 'github')
 preprocessors = (bytes_to_string, override_missing_value, align_decimals)
 
 
-def terminaltables_adapter(data, headers, table_format=None, **_):
+def adapter(data, headers, table_format=None, **_):
     """Wrap terminaltables inside a standard function for OutputFormatter."""
 
     table_format_handler = {

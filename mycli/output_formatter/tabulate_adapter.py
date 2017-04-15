@@ -12,7 +12,7 @@ supported_formats = supported_markup_formats + supported_table_formats
 preprocessors = (bytes_to_string, align_decimals)
 
 
-def tabulate_adapter(data, headers, table_format=None, missing_value='', **_):
+def adapter(data, headers, table_format=None, missing_value='', **_):
     """Wrap tabulate inside a standard function for OutputFormatter."""
     kwargs = {'tablefmt': table_format, 'missingval': missing_value,
               'disable_numparse': True}
