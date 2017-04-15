@@ -6,15 +6,10 @@ from collections import namedtuple
 
 from .expanded import expanded_table
 from .preprocessors import (override_missing_value, convert_to_string)
-from .delimited_output_adapter import (delimiter_adapter,
-                                       supported_formats as delimiter_formats,
-                                       delimiter_preprocessors)
-from .tabulate_adapter import (tabulate_adapter,
-                               supported_formats as tabulate_formats,
-                               preprocessors as tabulate_preprocessors)
-from .terminaltables_adapter import (
-    terminaltables_adapter, preprocessors as terminaltables_preprocessors,
-    supported_formats as terminaltables_formats)
+
+from . import delimited_output_adapter
+from . import tabulate_adapter
+from . import terminaltables_adapter
 
 MISSING_VALUE = '<null>'
 
@@ -81,20 +76,20 @@ OutputFormatter.register_new_formatter('expanded', expanded_table,
                                         convert_to_string),
                                        {'missing_value': MISSING_VALUE})
 
-for delimiter_format in delimiter_formats:
-    OutputFormatter.register_new_formatter(delimiter_format, delimiter_adapter,
-                                           delimiter_preprocessors,
-                                           {'table_format': delimiter_format,
-                                            'missing_value': MISSING_VALUE})
-
-for tabulate_format in tabulate_formats:
-    OutputFormatter.register_new_formatter(tabulate_format, tabulate_adapter,
-                                           tabulate_preprocessors,
-                                           {'table_format': tabulate_format,
-                                            'missing_value': MISSING_VALUE})
-
-for terminaltables_format in terminaltables_formats:
+for delimiter_format in delimited_output_adapter.supported_formats:
     OutputFormatter.register_new_formatter(
-        terminaltables_format, terminaltables_adapter,
-        terminaltables_preprocessors,
+        delimiter_format, delimited_output_adapter.delimiter_adapter,
+        delimited_output_adapter.delimiter_preprocessors,
+        {'table_format': delimiter_format, 'missing_value': MISSING_VALUE})
+
+for tabulate_format in tabulate_adapter.supported_formats:
+    OutputFormatter.register_new_formatter(
+        tabulate_format, tabulate_adapter.tabulate_adapter,
+        tabulate_adapter.preprocessors,
+        {'table_format': tabulate_format, 'missing_value': MISSING_VALUE})
+
+for terminaltables_format in terminaltables_adapter.supported_formats:
+    OutputFormatter.register_new_formatter(
+        terminaltables_format, terminaltables_adapter.terminaltables_adapter,
+        terminaltables_adapter.preprocessors,
         {'table_format': terminaltables_format, 'missing_value': MISSING_VALUE})
