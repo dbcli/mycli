@@ -23,6 +23,7 @@ Internal Changes:
   Roten]).
 * Test mycli using pexpect/python-behave (Thanks: [Dick Marinus]).
 * Run pep8 checks in travis (Thanks: [Irina Truong]).
+* Remove temporary hack for sqlparse (Thanks: [Dick Marinus]).
 
 1.9.0:
 ======
