@@ -77,9 +77,9 @@ class NullHandler(logging.Handler):
 class MyCli(object):
 
     default_prompt = '\\t \\u@\\h:\\d> '
+    max_len_prompt = 45
     defaults_suffix = None
 
-    # In order of being loaded. Files lower in list override earlier ones.
     cnf_files = [
         '/etc/my.cnf',
         '/etc/mysql/my.cnf',
@@ -458,7 +458,10 @@ class MyCli(object):
             print('Thanks to the contributor -', thanks_picker([author_file, sponsor_file]))
 
         def prompt_tokens(cli):
-            return [(Token.Prompt, self.get_prompt(self.prompt_format))]
+            prompt = self.get_prompt(self.prompt_format)
+            if self.prompt_format == self.default_prompt and len(prompt) > self.max_len_prompt:
+                prompt = self.get_prompt('\\d> ')
+            return [(Token.Prompt, prompt)]
 
         def get_continuation_tokens(cli, width):
             continuation_prompt = self.get_prompt(self.prompt_continuation_format)
