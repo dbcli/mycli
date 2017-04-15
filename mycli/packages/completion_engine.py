@@ -34,7 +34,8 @@ def suggest_type(full_text, text_before_cursor):
     # partially typed string which renders the smart completion useless because
     # it will always return the list of keywords as completion.
     if word_before_cursor:
-        if word_before_cursor[-1] == '(' or word_before_cursor[0] == '\\':
+        if word_before_cursor.endswith(
+                '(') or word_before_cursor.startswith('\\'):
             parsed = sqlparse.parse(text_before_cursor)
         else:
             parsed = sqlparse.parse(
