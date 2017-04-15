@@ -80,6 +80,7 @@ class MyCli(object):
     max_len_prompt = 45
     defaults_suffix = None
 
+    # In order of being loaded. Files lower in list override earlier ones.
     cnf_files = [
         '/etc/my.cnf',
         '/etc/mysql/my.cnf',
