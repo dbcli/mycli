@@ -43,11 +43,11 @@ $ sudo apt-get install mycli # Only on debian or ubuntu
 
     Options:
       -h, --host TEXT               Host address of the database.
-      -P, --port TEXT               Port number to use for connection. Honors
+      -P, --port INTEGER            Port number to use for connection. Honors
                                     $MYSQL_TCP_PORT
       -u, --user TEXT               User name to connect to the database.
       -S, --socket TEXT             The socket file to use for connection.
-      -p, --password                Force password prompt.
+      -p, --password TEXT           Password to connect to the database
       --pass TEXT                   Password to connect to the database
       --ssl-ca PATH                 CA file in PEM format
       --ssl-capath TEXT             CA directory
@@ -58,18 +58,21 @@ $ sudo apt-get install mycli # Only on debian or ubuntu
                                     against hostname used when connecting. This
                                     option is disabled by default
       -v, --version                 Version of mycli.
-      -D, --database TEXT     	    Database to use.
+      -D, --database TEXT           Database to use.
       -R, --prompt TEXT             Prompt format (Default: "\t \u@\h:\d> ")
       -l, --logfile FILENAME        Log every query and its results to a file.
       --defaults-group-suffix TEXT  Read config group with the specified suffix.
       --defaults-file PATH          Only read default options from the given file
+      --myclirc PATH                Location of myclirc file.
       --auto-vertical-output        Automatically switch to vertical output mode
                                     if the result is wider than the terminal
                                     width.
       -t, --table                   Display batch output in table format.
+      --csv                         Display batch output in CSV format.
       --warn / --no-warn            Warn before running a destructive query.
       --local-infile BOOLEAN        Enable/disable LOAD DATA LOCAL INFILE.
       --login-path TEXT             Read this path from the login file.
+      -e, --execute TEXT            Execute query to the database.
       --help                        Show this message and exit.
 
 ### Examples

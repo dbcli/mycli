@@ -7,6 +7,7 @@ Features:
 * Add ability to specify alternative myclirc file. (Thanks: [Dick Marinus]).
 * Add new display formats for pretty printing query results. (Thanks: [Amjith
   Ramanujam], [Dick Marinus], [Thomas Roten]).
+* Add logic to shorten the default prompt if it becomes too long once generated. (Thanks: [John Sterling]).
 
 Bug Fixes:
 ----------
@@ -26,6 +27,7 @@ Internal Changes:
   Roten]).
 * Test mycli using pexpect/python-behave (Thanks: [Dick Marinus]).
 * Run pep8 checks in travis (Thanks: [Irina Truong]).
+* Remove temporary hack for sqlparse (Thanks: [Dick Marinus]).
 
 1.9.0:
 ======
