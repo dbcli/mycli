@@ -45,9 +45,8 @@ from .clistyle import style_factory
 from .sqlexecute import SQLExecute
 from .clibuffer import CLIBuffer
 from .completion_refresher import CompletionRefresher
-from .config import (write_default_config, get_mylogin_cnf_path,
-                     open_mylogin_cnf, read_config_file,
-                     read_config_files, str_to_bool)
+from .config import (write_default_config, read_config_files, str_to_bool,
+                     MySqlConfig)
 from .key_bindings import mycli_bindings
 from .encodingutils import utf8tounicode
 from .lexer import MyCliLexer
@@ -80,20 +79,11 @@ class MyCli(object):
     max_len_prompt = 45
     defaults_suffix = None
 
-    # In order of being loaded. Files lower in list override earlier ones.
-    cnf_files = [
-        '/etc/my.cnf',
-        '/etc/mysql/my.cnf',
-        '/usr/local/etc/my.cnf',
-        '~/.my.cnf'
-    ]
-
     system_config_files = [
         '/etc/myclirc',
     ]
 
     default_config_file = os.path.join(PACKAGE_ROOT, 'myclirc')
-
 
     def __init__(self, sqlexecute=None, prompt=None,
             logfile=None, defaults_suffix=None, defaults_file=None,
@@ -101,15 +91,11 @@ class MyCli(object):
             myclirc="~/.myclirc"):
         self.sqlexecute = sqlexecute
         self.logfile = logfile
-        self.defaults_suffix = defaults_suffix
         self.login_path = login_path
 
-        # self.cnf_files is a class variable that stores the list of mysql
-        # config files to read in at launch.
-        # If defaults_file is specified then override the class variable with
-        # defaults_file.
-        if defaults_file:
-            self.cnf_files = [defaults_file]
+        self.mysql_config = MySqlConfig(
+            defaults_file=defaults_file, defaults_suffix=defaults_suffix,
+            login_path=login_path)
 
         # Load config.
         config_files = ([self.default_config_file] + self.system_config_files +
@@ -148,9 +134,8 @@ class MyCli(object):
         self.logger = logging.getLogger(__name__)
         self.initialize_logging()
 
-        prompt_cnf = self.read_my_cnf_files(self.cnf_files, ['prompt'])['prompt']
-        self.prompt_format = prompt or prompt_cnf or c['main']['prompt'] or \
-                             self.default_prompt
+        self.prompt_format = (prompt or self.mysql_config.get('prompt') or
+                              c['main']['prompt'] or self.default_prompt)
         self.prompt_continuation_format = c['main']['prompt_continuation']
 
         self.query_history = []
@@ -162,17 +147,6 @@ class MyCli(object):
 
         # Register custom special commands.
         self.register_special_commands()
-
-        # Load .mylogin.cnf if it exists.
-        mylogin_cnf_path = get_mylogin_cnf_path()
-        if mylogin_cnf_path:
-            mylogin_cnf = open_mylogin_cnf(mylogin_cnf_path)
-            if mylogin_cnf_path and mylogin_cnf:
-                # .mylogin.cnf gets read last, even if defaults_file is specified.
-                self.cnf_files.append(mylogin_cnf)
-            elif mylogin_cnf_path and not mylogin_cnf:
-                # There was an error reading the login path file.
-                print('Error: Unable to read login path file.')
 
         self.cli = None
 
@@ -279,31 +253,6 @@ class MyCli(object):
         self.connect(database, uri.username, uri.password, uri.hostname,
                 uri.port, local_infile=local_infile, ssl=ssl)
 
-    def read_my_cnf_files(self, files, keys):
-        """
-        Reads a list of config files and merges them. The last one will win.
-        :param files: list of files to read
-        :param keys: list of keys to retrieve
-        :returns: tuple, with None for missing keys.
-        """
-        cnf = read_config_files(files)
-
-        sections = ['client']
-        if self.login_path and self.login_path != 'client':
-            sections.append(self.login_path)
-
-        if self.defaults_suffix:
-            sections.extend([sect + self.defaults_suffix for sect in sections])
-
-        def get(key):
-            result = None
-            for sect in cnf:
-                if sect in sections and key in cnf[sect]:
-                    result = cnf[sect][key]
-            return result
-
-        return {x: get(x) for x in keys}
-
     def merge_ssl_with_cnf(self, ssl, cnf):
         """Merge SSL configuration dict with cnf dict"""
 
@@ -329,35 +278,14 @@ class MyCli(object):
 
     def connect(self, database='', user='', passwd='', host='', port='',
             socket='', charset='', local_infile='', ssl=''):
-
-        cnf = {'database': None,
-               'user': None,
-               'password': None,
-               'host': None,
-               'port': None,
-               'socket': None,
-               'default-character-set': None,
-               'local-infile': None,
-               'loose-local-infile': None,
-               'ssl-ca': None,
-               'ssl-cert': None,
-               'ssl-key': None,
-               'ssl-cipher': None,
-               'ssl-verify-serer-cert': None,
-        }
-
-        cnf = self.read_my_cnf_files(self.cnf_files, cnf.keys())
-
-        # Fall back to config values only if user did not specify a value.
-
-        database = database or cnf['database']
+        database = database or self.mysql_config.get('database')
         if port or host:
             socket = ''
         else:
-            socket = socket or cnf['socket']
-        user = user or cnf['user'] or os.getenv('USER')
-        host = host or cnf['host'] or 'localhost'
-        port = port or cnf['port'] or 3306
+            socket = socket or self.mysql_config.get('socket')
+        user = user or self.mysql_config.get('user') or os.getenv('USER')
+        host = host or self.mysql_config.get('host') or 'localhost'
+        port = port or self.mysql_config.get('port') or 3306
         ssl = ssl or {}
 
         try:
@@ -367,19 +295,21 @@ class MyCli(object):
                         err=True, fg='red')
             exit(1)
 
-        passwd = passwd or cnf['password']
-        charset = charset or cnf['default-character-set'] or 'utf8'
+        passwd = passwd or self.mysql_config.get('password')
+        charset = (charset or self.mysql_config.get('default-character-set') or
+                   'utf8')
 
         # Favor whichever local_infile option is set.
-        for local_infile_option in (local_infile, cnf['local-infile'],
-                                    cnf['loose-local-infile'], False):
+        for local_infile_option in (
+            local_infile, self.mysql_config.get('local-infile'),
+            self.mysql_config.get('loose-local-infile'), False):
             try:
                 local_infile = str_to_bool(local_infile_option)
                 break
             except (TypeError, ValueError):
                 pass
 
-        ssl = self.merge_ssl_with_cnf(ssl, cnf)
+        ssl = self.merge_ssl_with_cnf(ssl, self.mysql_config)
         # prune lone check_hostname=False
         if not any(v for v in ssl.values()):
             ssl = None
@@ -666,10 +596,9 @@ class MyCli(object):
         if not os.environ.get('LESS'):
             os.environ['LESS'] = '-RXF'
 
-        cnf = self.read_my_cnf_files(self.cnf_files, ['pager', 'skip-pager'])
-        if cnf['pager']:
-            special.set_pager(cnf['pager'])
-        if cnf['skip-pager']:
+        if self.mysql_config.get('pager'):
+            special.set_pager(self.mysql_config.get('pager'))
+        if self.mysql_config.get('skip-pager'):
             special.disable_pager()
 
     def refresh_completions(self, reset=False):

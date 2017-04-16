@@ -9,9 +9,53 @@ import sys
 from configobj import ConfigObj, ConfigObjError
 try:
     basestring
+    from UserDict import UserDict
 except NameError:
     basestring = str
+    from collections import UserDict
 from Crypto.Cipher import AES
+
+PACKAGE_ROOT = os.path.dirname(__file__)
+
+
+class MySqlConfig(UserDict):
+    """Read the MySQL option files' sections into a single config."""
+
+    files = [
+        '/etc/my.cnf',
+        '/etc/mysql/my.cnf',
+        '/usr/local/etc/my.cnf',
+        '~/.my.cnf'
+    ]
+
+    sections = ['client']
+
+    def __init__(self, defaults_file=None, defaults_suffix=None,
+                 login_path=None):
+        if defaults_file:
+            self.files = [defaults_file]
+
+        if login_path:
+            self.sections.append(login_path)
+
+        if defaults_suffix:
+            self.sections.extend([s + defaults_suffix for s in self.sections])
+
+        login_path_file = get_mylogin_cnf_path()
+        if login_path_file:
+            login_path = open_mylogin_cnf(login_path_file)
+            if login_path:
+                self.files.append(login_path)
+
+        self.data = {}
+        self.config = read_config_files(self.files)
+        self._read_sections()
+
+    def _read_sections(self):
+        """Combine the sections into a single dictionary."""
+        for section in self.sections:
+            if section in self.config:
+                self.data.update(self.config[section])
 
 
 logger = logging.getLogger(__name__)
