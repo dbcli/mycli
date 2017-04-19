@@ -153,9 +153,8 @@ def read_and_decrypt_mylogin_cnf(f):
             return None
     rkey = struct.pack('16B', *rkey)
 
-    # Create a cipher object using the key.
-    aes_cipher = _get_aes_cipher(rkey)
-    decryptor = aes_cipher.decryptor()
+    # Create a decryptor object using the key.
+    decryptor = _get_decryptor(rkey)
 
     # Create a bytes buffer to hold the plaintext.
     plaintext = BytesIO()
@@ -200,9 +199,10 @@ def str_to_bool(s):
         raise ValueError('not a recognized boolean value: %s'.format(s))
 
 
-def _get_aes_cipher(key):
+def _get_decryptor(key):
     """Get the AES cipher object."""
-    return Cipher(algorithms.AES(key), modes.ECB(), backend=default_backend())
+    c = Cipher(algorithms.AES(key), modes.ECB(), backend=default_backend())
+    return c.decryptor()
 
 
 def _remove_pad(line):
