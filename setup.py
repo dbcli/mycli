@@ -23,8 +23,8 @@ install_requirements = [
 
 setup(
         name='mycli',
-        author='Amjith Ramanujam',
-        author_email='amjith[dot]r[at]gmail.com',
+        author='Mycli Core Team',
+        author_email='thomas@roten.us',
         version=version,
         url='http://mycli.net',
         packages=find_packages(),
