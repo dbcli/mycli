@@ -19,6 +19,7 @@ except NameError:
 
 logger = logging.getLogger(__name__)
 
+
 def log(logger, level, message):
     """Logs message to stderr if logging isn't initialized."""
 
@@ -26,6 +27,7 @@ def log(logger, level, message):
         logger.log(level, message)
     else:
         print(message, file=sys.stderr)
+
 
 def read_config_file(f):
     """Read a config file."""
@@ -47,6 +49,7 @@ def read_config_file(f):
 
     return config
 
+
 def read_config_files(files):
     """Read and merge a list of config files."""
 
@@ -60,12 +63,14 @@ def read_config_files(files):
 
     return config
 
+
 def write_default_config(source, destination, overwrite=False):
     destination = os.path.expanduser(destination)
     if not overwrite and exists(destination):
         return
 
     shutil.copyfile(source, destination)
+
 
 def get_mylogin_cnf_path():
     """Return the path to the login path file or None if it doesn't exist."""
@@ -82,6 +87,7 @@ def get_mylogin_cnf_path():
         logger.debug("Found login path file at '{0}'".format(mylogin_cnf_path))
         return mylogin_cnf_path
     return None
+
 
 def open_mylogin_cnf(name):
     """Open a readable version of .mylogin.cnf.
@@ -104,6 +110,7 @@ def open_mylogin_cnf(name):
         return None
 
     return TextIOWrapper(plaintext)
+
 
 def read_and_decrypt_mylogin_cnf(f):
     """Read and decrypt the contents of .mylogin.cnf.
@@ -174,6 +181,7 @@ def read_and_decrypt_mylogin_cnf(f):
     plaintext.seek(0)
     return plaintext
 
+
 def str_to_bool(s):
     """Convert a string value to its corresponding boolean value."""
     if isinstance(s, bool):
@@ -191,9 +199,11 @@ def str_to_bool(s):
     else:
         raise ValueError('not a recognized boolean value: %s'.format(s))
 
+
 def _get_aes_cipher(key):
     """Get the AES cipher object."""
     return Cipher(algorithms.AES(key), modes.ECB(), backend=default_backend())
+
 
 def _remove_pad(line):
     """Remove the pad from the *line*."""
