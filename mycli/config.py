@@ -11,7 +11,7 @@ try:
     basestring
 except NameError:
     basestring = str
-from Crypto.Cipher import AES
+from Cryptodome.Cipher import AES
 
 
 logger = logging.getLogger(__name__)

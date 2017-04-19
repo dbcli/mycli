@@ -25,6 +25,7 @@ Internal Changes:
 * Test mycli using pexpect/python-behave (Thanks: [Dick Marinus]).
 * Run pep8 checks in travis (Thanks: [Irina Truong]).
 * Remove temporary hack for sqlparse (Thanks: [Dick Marinus]).
+* Switch from pycryptodome to pycryptodomex (Thanks: [Thomas Roten]).
 
 1.9.0:
 ======
