@@ -18,7 +18,7 @@ install_requirements = [
     'PyMySQL >= 0.6.7',
     'sqlparse>=0.2.2,<0.3.0',
     'configobj >= 5.0.5',
-    'pycryptodome >= 3',
+    'cryptography >= 1.0.0',
 ]
 
 setup(

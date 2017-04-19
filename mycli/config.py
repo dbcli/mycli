@@ -6,12 +6,15 @@ import os
 from os.path import exists
 import struct
 import sys
+
 from configobj import ConfigObj, ConfigObjError
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
+
 try:
     basestring
 except NameError:
     basestring = str
-from Crypto.Cipher import AES
 
 
 logger = logging.getLogger(__name__)
@@ -144,7 +147,8 @@ def read_and_decrypt_mylogin_cnf(f):
     rkey = struct.pack('16B', *rkey)
 
     # Create a cipher object using the key.
-    aes_cipher = AES.new(rkey, AES.MODE_ECB)
+    aes_cipher = _get_aes_cipher(rkey)
+    decryptor = aes_cipher.decryptor()
 
     # Create a bytes buffer to hold the plaintext.
     plaintext = BytesIO()
@@ -158,24 +162,9 @@ def read_and_decrypt_mylogin_cnf(f):
 
         # Read cipher_len bytes from the file and decrypt.
         cipher = f.read(cipher_len)
-        pplain = aes_cipher.decrypt(cipher)
-
-        try:
-            # Determine pad length.
-            pad_len = ord(pplain[-1:])
-        except TypeError:
-            # ord() was unable to get the value of the byte.
-            logger.warning('Unable to remove pad.')
+        plain = _remove_pad(decryptor.update(cipher))
+        if plain is False:
             continue
-
-        if pad_len > len(pplain) or len(set(pplain[-pad_len:])) != 1:
-            # Pad length should be less than or equal to the length of the
-            # plaintext. The pad should have a single unqiue byte.
-            logger.warning('Invalid pad found in login path file.')
-            continue
-
-        # Get rid of pad.
-        plain = pplain[:-pad_len]
         plaintext.write(plain)
 
     if plaintext.tell() == 0:
@@ -201,3 +190,26 @@ def str_to_bool(s):
         return False
     else:
         raise ValueError('not a recognized boolean value: %s'.format(s))
+
+def _get_aes_cipher(key):
+    """Get the AES cipher object."""
+    return Cipher(algorithms.AES(key), modes.ECB(), backend=default_backend())
+
+def _remove_pad(line):
+    """Remove the pad from the *line*."""
+    pad_length = ord(line[-1:])
+    try:
+        # Determine pad length.
+        pad_length = ord(line[-1:])
+    except TypeError:
+        # ord() was unable to get the value of the byte.
+        logger.warning('Unable to remove pad.')
+        return False
+
+    if pad_length > len(line) or len(set(line[-pad_length:])) != 1:
+        # Pad length should be less than or equal to the length of the
+        # plaintext. The pad should have a single unqiue byte.
+        logger.warning('Invalid pad found in login path file.')
+        return False
+
+    return line[:-pad_length]
