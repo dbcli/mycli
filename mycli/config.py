@@ -200,7 +200,7 @@ def str_to_bool(s):
 
 
 def _get_decryptor(key):
-    """Get the AES cipher object."""
+    """Get the AES decryptor."""
     c = Cipher(algorithms.AES(key), modes.ECB(), backend=default_backend())
     return c.decryptor()
 
