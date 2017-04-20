@@ -22,35 +22,35 @@ install_requirements = [
 ]
 
 setup(
-        name='mycli',
-        author='Mycli Core Team',
-        author_email='thomas@roten.us',
-        version=version,
-        url='http://mycli.net',
-        packages=find_packages(),
-        package_data={'mycli': ['myclirc', '../AUTHORS', '../SPONSORS']},
-        description=description,
-        long_description=description,
-        install_requires=install_requirements,
-        entry_points='''
-            [console_scripts]
-            mycli=mycli.main:cli
-        ''',
-        classifiers=[
-            'Intended Audience :: Developers',
-            'License :: OSI Approved :: BSD License',
-            'Operating System :: Unix',
-            'Programming Language :: Python',
-            'Programming Language :: Python :: 2.7',
-            'Programming Language :: Python :: 3',
-            'Programming Language :: Python :: 3.3',
-            'Programming Language :: Python :: 3.4',
-            'Programming Language :: Python :: 3.5',
-            'Programming Language :: Python :: 3.6',
-            'Programming Language :: SQL',
-            'Topic :: Database',
-            'Topic :: Database :: Front-Ends',
-            'Topic :: Software Development',
-            'Topic :: Software Development :: Libraries :: Python Modules',
-            ],
-        )
+    name='mycli',
+    author='Mycli Core Team',
+    author_email='mycli-dev@googlegroups.com',
+    version=version,
+    url='http://mycli.net',
+    packages=find_packages(),
+    package_data={'mycli': ['myclirc', '../AUTHORS', '../SPONSORS']},
+    description=description,
+    long_description=description,
+    install_requires=install_requirements,
+    entry_points='''
+        [console_scripts]
+        mycli=mycli.main:cli
+    ''',
+    classifiers=[
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: BSD License',
+        'Operating System :: Unix',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: SQL',
+        'Topic :: Database',
+        'Topic :: Database :: Front-Ends',
+        'Topic :: Software Development',
+        'Topic :: Software Development :: Libraries :: Python Modules',
+    ],
+)
