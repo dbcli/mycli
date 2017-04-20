@@ -320,11 +320,13 @@ def _type(string, has_invisible=True):
     True
     >>> _type("foo") is type("")
     True
-    >>> _type("1") is type(1)
+    >>> _type("1") is type("")
     True
-    >>> _type('\x1b[31m42\x1b[0m') is type(42)
+    >>> _type(1) is type(1)
     True
-    >>> _type('\x1b[31m42\x1b[0m') is type(42)
+    >>> _type('\x1b[31m42\x1b[0m') is type("42")
+    True
+    >>> _type('\x1b[31m42\x1b[0m') is type("42")
     True
 
     """
@@ -339,7 +341,9 @@ def _type(string, has_invisible=True):
         return _text_type
     elif hasattr(string, "isoformat"):  # datetime.datetime, date, and time
         return _text_type
-    elif _isint(string):
+    elif isinstance(string, _text_type):
+        return _text_type
+    elif isinstance(string, int):
         return int
     elif _isnumber(string):
         return float
@@ -477,9 +481,9 @@ def _more_generic(type1, type2):
 def _column_type(strings, has_invisible=True):
     """The least generic type all column values are convertible to.
 
-    >>> _column_type(["1", "2"]) is _int_type
+    >>> _column_type([1, 2]) is _int_type
     True
-    >>> _column_type(["1", "2.3"]) is _float_type
+    >>> _column_type([1, 2.3]) is _float_type
     True
     >>> _column_type(["1", "2.3", "four"]) is _text_type
     True
@@ -658,7 +662,7 @@ def tabulate(tabular_data, headers=[], tablefmt="simple",
              missingval=""):
     """Format a fixed width table for pretty printing.
 
-    >>> print(tabulate([[1, 2.34], [-56, "8.999"], ["2", "10001"]])[0])
+    >>> print(tabulate([[1, 2.34], [-56, 8.999], [2, 10001]])[0])
     ---  ---------
       1      2.34
     -56      8.999
@@ -731,26 +735,26 @@ def tabulate(tabular_data, headers=[], tablefmt="simple",
     "plain" format doesn't use any pseudographics to draw tables,
     it separates columns with a double space:
 
-    >>> print(tabulate([["spam", 41.9999], ["eggs", "451.0"]],
+    >>> print(tabulate([["spam", 41.9999], ["eggs", 451.0]],
     ...                 ["strings", "numbers"], "plain")[0])
     strings      numbers
     spam         41.9999
     eggs        451
 
-    >>> print(tabulate([["spam", 41.9999], ["eggs", "451.0"]], tablefmt="plain")[0])
+    >>> print(tabulate([["spam", 41.9999], ["eggs", 451.0]], tablefmt="plain")[0])
     spam   41.9999
     eggs  451
 
     "simple" format is like Pandoc simple_tables:
 
-    >>> print(tabulate([["spam", 41.9999], ["eggs", "451.0"]],
+    >>> print(tabulate([["spam", 41.9999], ["eggs", 451.0]],
     ...                 ["strings", "numbers"], "simple")[0])
     strings      numbers
     ---------  ---------
     spam         41.9999
     eggs        451
 
-    >>> print(tabulate([["spam", 41.9999], ["eggs", "451.0"]], tablefmt="simple")[0])
+    >>> print(tabulate([["spam", 41.9999], ["eggs", 451.0]], tablefmt="simple")[0])
     ----  --------
     spam   41.9999
     eggs  451
@@ -759,7 +763,7 @@ def tabulate(tabular_data, headers=[], tablefmt="simple",
     "grid" is similar to tables produced by Emacs table.el package or
     Pandoc grid_tables:
 
-    >>> print(tabulate([["spam", 41.9999], ["eggs", "451.0"]],
+    >>> print(tabulate([["spam", 41.9999], ["eggs", 451.0]],
     ...                ["strings", "numbers"], "grid")[0])
     +-----------+-----------+
     | strings   |   numbers |
@@ -769,7 +773,7 @@ def tabulate(tabular_data, headers=[], tablefmt="simple",
     | eggs      |  451      |
     +-----------+-----------+
 
-    >>> print(tabulate([["spam", 41.9999], ["eggs", "451.0"]], tablefmt="grid")[0])
+    >>> print(tabulate([["spam", 41.9999], ["eggs", 451.0]], tablefmt="grid")[0])
     +------+----------+
     | spam |  41.9999 |
     +------+----------+
@@ -778,7 +782,7 @@ def tabulate(tabular_data, headers=[], tablefmt="simple",
 
     "fancy_grid" draws a grid using box-drawing characters:
 
-    >>> print(tabulate([["spam", 41.9999], ["eggs", "451.0"]],
+    >>> print(tabulate([["spam", 41.9999], ["eggs", 451.0]],
     ...                ["strings", "numbers"], "fancy_grid")[0])
     ╒═══════════╤═══════════╕
     │ strings   │   numbers │
@@ -791,14 +795,14 @@ def tabulate(tabular_data, headers=[], tablefmt="simple",
     "pipe" is like tables in PHP Markdown Extra extension or Pandoc
     pipe_tables:
 
-    >>> print(tabulate([["spam", 41.9999], ["eggs", "451.0"]],
+    >>> print(tabulate([["spam", 41.9999], ["eggs", 451.0]],
     ...                ["strings", "numbers"], "pipe")[0])
     | strings   |   numbers |
     |:----------|----------:|
     | spam      |   41.9999 |
     | eggs      |  451      |
 
-    >>> print(tabulate([["spam", 41.9999], ["eggs", "451.0"]], tablefmt="pipe")[0])
+    >>> print(tabulate([["spam", 41.9999], ["eggs", 451.0]], tablefmt="pipe")[0])
     |:-----|---------:|
     | spam |  41.9999 |
     | eggs | 451      |
@@ -808,7 +812,7 @@ def tabulate(tabular_data, headers=[], tablefmt="simple",
     define column alignment, and using a "+" sign to indicate line
     intersections:
 
-    >>> print(tabulate([["spam", 41.9999], ["eggs", "451.0"]],
+    >>> print(tabulate([["spam", 41.9999], ["eggs", 451.0]],
     ...                ["strings", "numbers"], "orgtbl")[0])
     | strings   |   numbers |
     |-----------+-----------|
@@ -816,14 +820,14 @@ def tabulate(tabular_data, headers=[], tablefmt="simple",
     | eggs      |  451      |
 
 
-    >>> print(tabulate([["spam", 41.9999], ["eggs", "451.0"]], tablefmt="orgtbl")[0])
+    >>> print(tabulate([["spam", 41.9999], ["eggs", 451.0]], tablefmt="orgtbl")[0])
     | spam |  41.9999 |
     | eggs | 451      |
 
     "rst" is like a simple table format from reStructuredText; please
     note that reStructuredText accepts also "grid" tables:
 
-    >>> print(tabulate([["spam", 41.9999], ["eggs", "451.0"]],
+    >>> print(tabulate([["spam", 41.9999], ["eggs", 451.0]],
     ...                ["strings", "numbers"], "rst")[0])
     =========  =========
     strings      numbers
@@ -832,7 +836,7 @@ def tabulate(tabular_data, headers=[], tablefmt="simple",
     eggs        451
     =========  =========
 
-    >>> print(tabulate([["spam", 41.9999], ["eggs", "451.0"]], tablefmt="rst")[0])
+    >>> print(tabulate([["spam", 41.9999], ["eggs", 451.0]], tablefmt="rst")[0])
     ====  ========
     spam   41.9999
     eggs  451
@@ -841,7 +845,7 @@ def tabulate(tabular_data, headers=[], tablefmt="simple",
     "mediawiki" produces a table markup used in Wikipedia and on other
     MediaWiki-based sites:
 
-    >>> print(tabulate([["strings", "numbers"], ["spam", 41.9999], ["eggs", "451.0"]],
+    >>> print(tabulate([["strings", "numbers"], ["spam", 41.9999], ["eggs", 451.0]],
     ...                headers="firstrow", tablefmt="mediawiki")[0])
     {| class="wikitable" style="text-align: left;"
     |+ <!-- caption -->
@@ -855,7 +859,7 @@ def tabulate(tabular_data, headers=[], tablefmt="simple",
 
     "html" produces HTML markup:
 
-    >>> print(tabulate([["strings", "numbers"], ["spam", 41.9999], ["eggs", "451.0"]],
+    >>> print(tabulate([["strings", "numbers"], ["spam", 41.9999], ["eggs", 451.0]],
     ...                headers="firstrow", tablefmt="html")[0])
     <table>
     <tr><th>strings</th><th>numbers</th></tr>
@@ -865,7 +869,7 @@ def tabulate(tabular_data, headers=[], tablefmt="simple",
 
     "latex" produces a tabular environment of LaTeX document markup:
 
-    >>> print(tabulate([["spam", 41.9999], ["eggs", "451.0"]], tablefmt="latex")[0])
+    >>> print(tabulate([["spam", 41.9999], ["eggs", 451.0]], tablefmt="latex")[0])
     \\begin{tabular}{ll}
     \\hline
      spam & 41.9999 \\\\
@@ -876,7 +880,7 @@ def tabulate(tabular_data, headers=[], tablefmt="simple",
     "latex_booktabs" produces a tabular environment of LaTeX document markup
     using the booktabs.sty package:
 
-    >>> print(tabulate([["spam", 41.9999], ["eggs", "451.0"]], tablefmt="latex_booktabs")[0])
+    >>> print(tabulate([["spam", 41.9999], ["eggs", 451.0]], tablefmt="latex_booktabs")[0])
     \\begin{tabular}{ll}
     \\toprule
      spam & 41.9999 \\\\
