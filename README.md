@@ -156,8 +156,6 @@ and printing error messages.
 
 Thanks to [PyMysql](https://github.com/PyMySQL/PyMySQL) for a pure python adapter to MySQL database.
 
-[Tabulate](https://pypi.python.org/pypi/tabulate) library is used for pretty printing the output of tables.
-
 
 ### Compatibility
 

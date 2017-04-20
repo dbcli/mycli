@@ -10,6 +10,7 @@ import traceback
 import socket
 import logging
 import threading
+import binascii
 from time import time
 from datetime import datetime
 from random import choice
@@ -35,7 +36,7 @@ from prompt_toolkit.history import FileHistory
 from pygments.token import Token
 from configobj import ConfigObj, ConfigObjError
 
-from .packages.tabulate import tabulate, table_formats
+from terminaltables import AsciiTable
 from .packages.expanded import expanded_table
 from .packages.special.main import (COMMANDS, NO_QUERY)
 import mycli.packages.special as special
@@ -192,9 +193,9 @@ class MyCli(object):
                 '\\R', 'Change prompt format.', aliases=('\\R',), case_sensitive=True)
 
     def change_table_format(self, arg, **_):
-        if not arg in table_formats():
+        if not arg in ['csv', 'tsv']:
             msg = "Table type %s not yet implemented.  Allowed types:" % arg
-            for table_type in table_formats():
+            for table_type in ['csv', 'tsv']:
                 msg += "\n\t%s" % table_type
             yield (None, None, None, msg)
         else:
@@ -532,14 +533,9 @@ class MyCli(object):
                             self.output("Aborted!", err=True, fg='red')
                             break
 
-                    if self.auto_vertical_output:
-                        max_width = self.cli.output.get_size().columns
-                    else:
-                        max_width = None
-
                     formatted = format_output(title, cur, headers,
                         status, self.table_format,
-                        special.is_expanded_output(), max_width)
+                        special.is_expanded_output(), self.auto_vertical_output)
 
                     output.extend(formatted)
                     end = time()
@@ -866,8 +862,25 @@ def cli(database, user, host, port, socket, password, dbname,
             click.secho(str(e), err=True, fg='red')
             exit(1)
 
+def preprocess(rows, headers):
+    results = [headers]
 
-def format_output(title, cur, headers, status, table_format, expanded=False, max_width=None):
+    for row in rows:
+        result = []
+        for cell in row:
+            if cell is None:
+                cell = u'<null>'
+            if isinstance(cell, bytes):
+                try:
+                    cell = cell.decode('utf8')
+                except UnicodeDecodeError:
+                    cell = '0x' + binascii.hexlify(cell).decode('ascii')
+            result.append(utf8tounicode(cell))
+
+        results.append(result)
+    return results
+
+def format_output(title, cur, headers, status, table_format, expanded=False, auto_vertical=False):
     output = []
     if title:  # Only print the title if it's not None.
         output.append(title)
@@ -889,15 +902,12 @@ def format_output(title, cur, headers, status, table_format, expanded=False, max
             output.append(content.getvalue())
             content.close()
         else:
-            rows = list(cur)
-            tabulated, frows = tabulate(rows, headers, tablefmt=table_format,
-                                        missingval='<null>')
-            if (max_width and rows and
-                    content_exceeds_width(frows[0], max_width) and
-                    headers):
+            rows = preprocess(cur, headers)
+            tabulated = AsciiTable(rows)
+            if (auto_vertical and (not tabulated.ok)):
                 output.append(expanded_table(rows, headers))
             else:
-                output.append(tabulated)
+                output.append(tabulated.table)
     if status:  # Only print the status if it's not None.
         output.append(status)
 
