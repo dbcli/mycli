@@ -13,9 +13,8 @@ class CompletionRefresher(object):
         self._completer_thread = None
         self._restart_refresh = threading.Event()
 
-    def refresh(self, executor, callbacks):
-        """
-        Creates a SQLCompleter object and populates it with the relevant
+    def refresh(self, executor, callbacks, completer_options={}):
+        """Creates a SQLCompleter object and populates it with the relevant
         completion suggestions in a background thread.
 
         executor - SQLExecute object, used to extract the credentials to connect
@@ -23,14 +22,17 @@ class CompletionRefresher(object):
         callbacks - A function or a list of functions to call after the thread
                     has completed the refresh. The newly created completion
                     object will be passed in as an argument to each callback.
+        completer_options - dict of options to pass to SQLCompleter.
+
         """
         if self.is_refreshing():
             self._restart_refresh.set()
             return [(None, None, None, 'Auto-completion refresh restarted.')]
         else:
-            self._completer_thread = threading.Thread(target=self._bg_refresh,
-                                                      args=(executor, callbacks),
-                                                      name='completion_refresh')
+            self._completer_thread = threading.Thread(
+                target=self._bg_refresh,
+                args=(executor, callbacks, completer_options),
+                name='completion_refresh')
             self._completer_thread.setDaemon(True)
             self._completer_thread.start()
             return [(None, None, None,
@@ -39,8 +41,8 @@ class CompletionRefresher(object):
     def is_refreshing(self):
         return self._completer_thread and self._completer_thread.is_alive()
 
-    def _bg_refresh(self, sqlexecute, callbacks):
-        completer = SQLCompleter(smart_completion=True)
+    def _bg_refresh(self, sqlexecute, callbacks, completer_options):
+        completer = SQLCompleter(**completer_options)
 
         # Create a new pgexecute method to popoulate the completions.
         e = sqlexecute
