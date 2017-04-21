@@ -1,3 +1,10 @@
+TBD
+===
+
+Internal Changes:
+-----------------
+* Move AUTHORS and SPONSORS to mycli directory. (Thanks: [Terje Røsten] []).
+
 1.10.0:
 =======
 

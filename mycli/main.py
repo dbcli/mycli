@@ -439,7 +439,7 @@ class MyCli(object):
         if self.smart_completion:
             self.refresh_completions()
 
-        project_root = os.path.dirname(PACKAGE_ROOT)
+        project_root = os.path.join(os.path.dirname(PACKAGE_ROOT), 'mycli')
         author_file = os.path.join(project_root, 'AUTHORS')
         sponsor_file = os.path.join(project_root, 'SPONSORS')
 
