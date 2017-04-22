@@ -173,9 +173,8 @@ def test_confirm_destructive_query_notty(executor):
 
 
 def test_thanks_picker_utf8():
-    project_root = os.path.dirname(PACKAGE_ROOT)
-    author_file = os.path.join(project_root, 'AUTHORS')
-    sponsor_file = os.path.join(project_root, 'SPONSORS')
+    author_file = os.path.join(PACKAGE_ROOT, 'AUTHORS')
+    sponsor_file = os.path.join(PACKAGE_ROOT, 'SPONSORS')
 
     name = thanks_picker((author_file, sponsor_file))
     assert isinstance(name, text_type)

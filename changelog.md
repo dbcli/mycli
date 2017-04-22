@@ -4,8 +4,8 @@ TBD
 Internal Changes:
 -----------------
 
-* Rename tests/ to test/ . (Thanks: [Dick Marinus]).
-
+* Rename tests/ to test/. (Thanks: [Dick Marinus]).
+* Move AUTHORS and SPONSORS to mycli directory. (Thanks: [Terje Røsten] []).
 
 1.10.0:
 =======
