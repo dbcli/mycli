@@ -91,7 +91,8 @@ def step_see_data_selected(context):
     """
     Wait to see select output.
     """
-    wrappers.expect_exact(context, '+-----+\r\n| x   |\r\n|-----|\r\n| yyy |\r\n+-----+\r\n1 row in set\r\n', timeout=1)
+    wrappers.expect_exact(
+        context, '+-----+\r\n| x   |\r\n+-----+\r\n| yyy |\r\n+-----+\r\n1 row in set\r\n', timeout=1)
 
 
 @then('we see record deleted')

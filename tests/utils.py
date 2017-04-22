@@ -1,7 +1,9 @@
-import pytest
-import pymysql
-from mycli.main import format_output, special
 from os import getenv
+
+import pymysql
+import pytest
+
+from mycli.main import MyCli, special
 
 PASSWORD = getenv('PYTEST_PASSWORD')
 USER = getenv('PYTEST_USER', 'root')
@@ -37,8 +39,14 @@ def create_db(dbname):
 def run(executor, sql, join=False):
     " Return string output for the sql to be run "
     result = []
+
+    # TODO: this needs to go away. `run()` should not test formatted output.
+    # It should test raw results.
+    mycli = MyCli()
     for title, rows, headers, status in executor.run(sql):
-        result.extend(format_output(title, rows, headers, status, 'psql', special.is_expanded_output()))
+        result.extend(mycli.format_output(title, rows, headers, status,
+                                          special.is_expanded_output()))
+
     if join:
         result = '\n'.join(result)
     return result

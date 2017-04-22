@@ -5,21 +5,13 @@ from __future__ import print_function
 import os
 import os.path
 import sys
-import csv
 import traceback
-import socket
 import logging
 import threading
 from time import time
 from datetime import datetime
 from random import choice
 from io import open
-
-# support StringIO for Python 2 and 3
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from io import StringIO
 
 import click
 import sqlparse
@@ -33,11 +25,8 @@ from prompt_toolkit.layout.processors import (HighlightMatchingBracketProcessor,
                                               ConditionalProcessor)
 from prompt_toolkit.history import FileHistory
 from pygments.token import Token
-from configobj import ConfigObj, ConfigObjError
 
-from .packages.tabulate import tabulate, table_formats
-from .packages.expanded import expanded_table
-from .packages.special.main import (COMMANDS, NO_QUERY)
+from .packages.special.main import NO_QUERY
 import mycli.packages.special as special
 from .sqlcompleter import SQLCompleter
 from .clitoolbar import create_toolbar_tokens_func
@@ -46,9 +35,9 @@ from .sqlexecute import SQLExecute
 from .clibuffer import CLIBuffer
 from .completion_refresher import CompletionRefresher
 from .config import (write_default_config, get_mylogin_cnf_path,
-                     open_mylogin_cnf, read_config_file,
-                     read_config_files, str_to_bool)
+                     open_mylogin_cnf, read_config_files, str_to_bool)
 from .key_bindings import mycli_bindings
+from .output_formatter import output_formatter
 from .encodingutils import utf8tounicode
 from .lexer import MyCliLexer
 from .__init__ import __version__
@@ -118,7 +107,8 @@ class MyCli(object):
         self.multi_line = c['main'].as_bool('multi_line')
         self.key_bindings = c['main']['key_bindings']
         special.set_timing_enabled(c['main'].as_bool('timing'))
-        self.table_format = c['main']['table_format']
+        self.formatter = output_formatter.OutputFormatter(
+            format_name=c['main']['table_format'])
         self.syntax_style = c['main']['syntax_style']
         self.less_chatty = c['main'].as_bool('less_chatty')
         self.cli_style = c['colors']
@@ -157,7 +147,9 @@ class MyCli(object):
 
         # Initialize completer.
         self.smart_completion = c['main'].as_bool('smart_completion')
-        self.completer = SQLCompleter(self.smart_completion)
+        self.completer = SQLCompleter(
+            self.smart_completion,
+            supported_formats=self.formatter.supported_formats())
         self._completer_lock = threading.Lock()
 
         # Register custom special commands.
@@ -192,14 +184,16 @@ class MyCli(object):
                 '\\R', 'Change prompt format.', aliases=('\\R',), case_sensitive=True)
 
     def change_table_format(self, arg, **_):
-        if not arg in table_formats():
-            msg = "Table type %s not yet implemented.  Allowed types:" % arg
-            for table_type in table_formats():
-                msg += "\n\t%s" % table_type
+        try:
+            self.formatter.set_format_name(arg)
+            yield (None, None, None,
+                   'Changed table type to {}'.format(arg))
+        except ValueError:
+            msg = 'Table type {} not yet implemented. Allowed types:'.format(
+                arg)
+            for table_type in self.formatter.supported_formats():
+                msg += "\n\t{}".format(table_type)
             yield (None, None, None, msg)
-        else:
-            self.table_format = arg
-            yield (None, None, None, "Changed table Type to %s" % self.table_format)
 
     def change_db(self, arg, **_):
         if arg is None:
@@ -537,9 +531,9 @@ class MyCli(object):
                     else:
                         max_width = None
 
-                    formatted = format_output(title, cur, headers,
-                        status, self.table_format,
-                        special.is_expanded_output(), max_width)
+                    formatted = self.format_output(title, cur, headers, status,
+                                                   special.is_expanded_output(),
+                                                   max_width)
 
                     output.extend(formatted)
                     end = time()
@@ -676,8 +670,10 @@ class MyCli(object):
         if reset:
             with self._completer_lock:
                 self.completer.reset_completions()
-        self.completion_refresher.refresh(self.sqlexecute,
-                                          self._on_completions_refreshed)
+        self.completion_refresher.refresh(
+            self.sqlexecute, self._on_completions_refreshed,
+            {'smart_completion': self.smart_completion,
+             'supported_formats': self.formatter.supported_formats()})
 
         return [(None, None, None,
                 'Auto-completion refresh started in the background.')]
@@ -719,14 +715,40 @@ class MyCli(object):
         string = string.replace('\\_', ' ')
         return string
 
-    def run_query(self, query, table_format=None, new_line=True):
-        """Runs query"""
+    def run_query(self, query, new_line=True):
+        """Runs *query*."""
         results = self.sqlexecute.run(query)
         for result in results:
             title, cur, headers, status = result
-            output = format_output(title, cur, headers, None, table_format)
+            output = self.format_output(title, cur, headers, None)
             for line in output:
                 click.echo(line, nl=new_line)
+
+    def format_output(self, title, cur, headers, status, expanded=False,
+                      max_width=None):
+        expanded = expanded or self.formatter.get_format_name() == 'expanded'
+        output = []
+
+        if title:  # Only print the title if it's not None.
+            output.append(title)
+
+        if cur:
+            rows = list(cur)
+            formatted = self.formatter.format_output(
+                rows, headers, format_name='expanded' if expanded else None)
+
+            if (not expanded and max_width and rows and
+                    content_exceeds_width(rows[0], max_width) and headers):
+                formatted = self.formatter.format_output(
+                    rows, headers, format_name='expanded')
+
+            output.append(formatted)
+
+        if status:  # Only print the status if it's not None.
+            output.append(status)
+
+        return output
+
 
 @click.command()
 @click.option('-h', '--host', envvar='MYSQL_HOST', help='Host address of the database.')
@@ -825,12 +847,12 @@ def cli(database, user, host, port, socket, password, dbname,
     #  --execute argument
     if execute:
         try:
-            table_format = None
-            if table:
-                table_format = mycli.table_format
-            elif csv:
-                table_format = 'csv'
-            mycli.run_query(execute, table_format=table_format)
+            if csv:
+                mycli.formatter.set_format_name('csv')
+            elif not table:
+                mycli.formatter.set_format_name('tsv')
+
+            mycli.run_query(execute)
             exit(0)
         except Exception as e:
             click.secho(str(e), err=True, fg='red')
@@ -851,57 +873,20 @@ def cli(database, user, host, port, socket, password, dbname,
                 confirm_destructive_query(stdin_text) is False):
             exit(0)
         try:
-            table_format = None
             new_line = True
 
             if csv:
-                table_format = 'csv'
+                mycli.formatter.set_format_name('csv')
                 new_line = False
-            elif table:
-                table_format = mycli.table_format
+            elif not table:
+                mycli.formatter.set_format_name('tsv')
 
-            mycli.run_query(stdin_text, table_format=table_format, new_line=new_line)
+            mycli.run_query(stdin_text, new_line=new_line)
             exit(0)
         except Exception as e:
             click.secho(str(e), err=True, fg='red')
             exit(1)
 
-
-def format_output(title, cur, headers, status, table_format, expanded=False, max_width=None):
-    output = []
-    if title:  # Only print the title if it's not None.
-        output.append(title)
-    if cur:
-        headers = [utf8tounicode(x) for x in headers]
-        table_format = 'tsv' if table_format is None else table_format
-
-        if expanded:
-            output.append(expanded_table(cur, headers))
-        elif table_format == 'csv':
-            content = StringIO()
-            writer = csv.writer(content)
-            writer.writerow(headers)
-
-            for row in cur:
-                row = ['null' if val is None else str(val) for val in row]
-                writer.writerow(row)
-
-            output.append(content.getvalue())
-            content.close()
-        else:
-            rows = list(cur)
-            tabulated, frows = tabulate(rows, headers, tablefmt=table_format,
-                                        missingval='<null>')
-            if (max_width and rows and
-                    content_exceeds_width(frows[0], max_width) and
-                    headers):
-                output.append(expanded_table(rows, headers))
-            else:
-                output.append(tabulated)
-    if status:  # Only print the status if it's not None.
-        output.append(status)
-
-    return output
 
 def content_exceeds_width(row, width):
     # Account for 3 characters between each column
