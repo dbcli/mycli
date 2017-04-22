@@ -229,7 +229,7 @@ def test_system_command_not_found(executor):
 
 @dbtest
 def test_system_command_output(executor):
-    test_file_path = os.path.join(os.path.abspath('.'), 'tests/test.txt')
+    test_file_path = os.path.join(os.path.abspath('.'), 'test', 'test.txt')
     results = run(executor, 'system cat {0}'.format(test_file_path))
     assert len(results) == 1
     expected_line = u'mycli rocks!\n'
@@ -237,9 +237,9 @@ def test_system_command_output(executor):
 
 @dbtest
 def test_cd_command_current_dir(executor):
-    tests_path = os.path.join(os.path.abspath('.'), 'tests')
-    results = run(executor, 'system cd {0}'.format(tests_path))
-    assert os.getcwd() == tests_path
+    test_path = os.path.join(os.path.abspath('.'), 'test')
+    results = run(executor, 'system cd {0}'.format(test_path))
+    assert os.getcwd() == test_path
 
 @dbtest
 def test_unicode_support(executor):
