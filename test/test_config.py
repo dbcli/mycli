@@ -11,7 +11,7 @@ from mycli.config import (get_mylogin_cnf_path, open_mylogin_cnf,
                           read_and_decrypt_mylogin_cnf, str_to_bool)
 
 with_pycryptodome = ['pycryptodome' in set([package.project_name for package in
-                                    pip.get_installed_distributions()])]
+                                            pip.get_installed_distributions()])]
 
 LOGIN_PATH_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                'mylogin.cnf'))

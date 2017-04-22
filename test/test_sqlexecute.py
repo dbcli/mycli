@@ -20,6 +20,7 @@ def test_conn(executor):
         +-----+
         1 row in set""")
 
+
 @dbtest
 def test_bools(executor):
     run(executor, '''create table test(a boolean)''')
@@ -32,6 +33,7 @@ def test_bools(executor):
         | 1 |
         +---+
         1 row in set""")
+
 
 @dbtest
 def test_binary(executor):
@@ -46,6 +48,7 @@ def test_binary(executor):
         +----------------------------------------------------------------------------------------------+
         1 row in set""")
 
+
 @dbtest
 def test_binary_expanded(executor):
     run(executor, '''create table bt(geom linestring NOT NULL)''')
@@ -57,6 +60,7 @@ def test_binary_expanded(executor):
 
         1 row in set""")
 
+
 @dbtest
 def test_table_and_columns_query(executor):
     run(executor, "create table a(x text, y text)")
@@ -64,12 +68,14 @@ def test_table_and_columns_query(executor):
 
     assert set(executor.tables()) == set([('a',), ('b',)])
     assert set(executor.table_columns()) == set(
-            [('a', 'x'), ('a', 'y'), ('b', 'z')])
+        [('a', 'x'), ('a', 'y'), ('b', 'z')])
+
 
 @dbtest
 def test_database_list(executor):
     databases = executor.databases()
     assert '_test_db' in databases
+
 
 @dbtest
 def test_invalid_syntax(executor):
@@ -77,11 +83,13 @@ def test_invalid_syntax(executor):
         run(executor, 'invalid syntax!')
     assert 'You have an error in your SQL syntax;' in str(excinfo.value)
 
+
 @dbtest
 def test_invalid_column_name(executor):
     with pytest.raises(pymysql.InternalError) as excinfo:
         run(executor, 'select invalid command')
     assert "Unknown column 'invalid' in 'field list'" in str(excinfo.value)
+
 
 @dbtest
 def test_unicode_support_in_output(executor):
@@ -90,6 +98,7 @@ def test_unicode_support_in_output(executor):
 
     # See issue #24, this raises an exception without proper handling
     assert u'é' in run(executor, u"select * from unicodechars", join=True)
+
 
 @dbtest
 def test_expanded_output(executor):
@@ -112,18 +121,22 @@ def test_expanded_output(executor):
 
     assert results in expected_results
 
+
 @dbtest
 def test_multiple_queries_same_line(executor):
     result = run(executor, "select 'foo'; select 'bar'")
-    assert len(result) == 4  # 2 for the results and 2 more for status messages.
+    # 2 for the results and 2 more for status messages.
+    assert len(result) == 4
     assert "foo" in result[0]
     assert "bar" in result[2]
+
 
 @dbtest
 def test_multiple_queries_same_line_syntaxerror(executor):
     with pytest.raises(pymysql.ProgrammingError) as excinfo:
         run(executor, "select 'foo'; invalid syntax")
     assert 'You have an error in your SQL syntax;' in str(excinfo.value)
+
 
 @dbtest
 def test_favorite_query(executor):
@@ -146,6 +159,7 @@ def test_favorite_query(executor):
 
     results = run(executor, "\\fd test-a")
     assert results == ['test-a: Deleted']
+
 
 @dbtest
 def test_favorite_query_multiple_statement(executor):
@@ -175,6 +189,7 @@ def test_favorite_query_multiple_statement(executor):
 
     results = run(executor, "\\fd test-ad")
     assert results == ['test-ad: Deleted']
+
 
 @dbtest
 def test_favorite_query_expanded_output(executor):
@@ -206,12 +221,14 @@ def test_favorite_query_expanded_output(executor):
     results = run(executor, "\\fd test-ae")
     assert results == ['test-ae: Deleted']
 
+
 @dbtest
 def test_special_command(executor):
     results = run(executor, '\\?')
     expected_line = u'\n| help'
     assert len(results) == 1
     assert expected_line in results[0]
+
 
 @dbtest
 def test_cd_command_without_a_folder_name(executor):
@@ -220,6 +237,7 @@ def test_cd_command_without_a_folder_name(executor):
     assert len(results) == 1
     assert expected_line in results[0]
 
+
 @dbtest
 def test_system_command_not_found(executor):
     results = run(executor, 'system xyz')
@@ -227,23 +245,27 @@ def test_system_command_not_found(executor):
     expected_line = 'OSError:'
     assert expected_line in results[0]
 
+
 @dbtest
 def test_system_command_output(executor):
-    test_file_path = os.path.join(os.path.abspath('.'), 'tests/test.txt')
+    test_file_path = os.path.join(os.path.abspath('.'), 'test', 'test.txt')
     results = run(executor, 'system cat {0}'.format(test_file_path))
     assert len(results) == 1
     expected_line = u'mycli rocks!\n'
     assert expected_line == results[0]
 
+
 @dbtest
 def test_cd_command_current_dir(executor):
-    tests_path = os.path.join(os.path.abspath('.'), 'tests')
-    results = run(executor, 'system cd {0}'.format(tests_path))
-    assert os.getcwd() == tests_path
+    test_path = os.path.join(os.path.abspath('.'), 'test')
+    results = run(executor, 'system cd {0}'.format(test_path))
+    assert os.getcwd() == test_path
+
 
 @dbtest
 def test_unicode_support(executor):
     assert u'日本語' in run(executor, u"SELECT '日本語' AS japanese;", join=True)
+
 
 @dbtest
 def test_favorite_query_multiline_statement(executor):
@@ -274,6 +296,7 @@ def test_favorite_query_multiline_statement(executor):
     results = run(executor, "\\fd test-ad")
     assert results == ['test-ad: Deleted']
 
+
 @dbtest
 def test_timestamp_null(executor):
     run(executor, '''create table ts_null(a timestamp)''')
@@ -286,6 +309,7 @@ def test_timestamp_null(executor):
         | 0000-00-00 00:00:00 |
         +---------------------+
         1 row in set""")
+
 
 @dbtest
 def test_datetime_null(executor):
@@ -300,6 +324,7 @@ def test_datetime_null(executor):
         +---------------------+
         1 row in set""")
 
+
 @dbtest
 def test_date_null(executor):
     run(executor, '''create table date_null(a date)''')
@@ -312,6 +337,7 @@ def test_date_null(executor):
         | 0000-00-00 |
         +------------+
         1 row in set""")
+
 
 @dbtest
 def test_time_null(executor):

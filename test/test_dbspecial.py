@@ -2,10 +2,11 @@ from mycli.packages.completion_engine import suggest_type
 from test_completion_engine import sorted_dicts
 from mycli.packages.special.utils import format_uptime
 
+
 def test_u_suggests_databases():
     suggestions = suggest_type('\\u ', '\\u ')
     assert sorted_dicts(suggestions) == sorted_dicts([
-            {'type': 'database'}])
+        {'type': 'database'}])
 
 
 def test_describe_table():

@@ -6,10 +6,11 @@ import io
 
 
 def read_fixture_lines(filename):
-    """
-    Read lines of text from file.
+    """Read lines of text from file.
+
     :param filename: string name
     :return: list of strings
+
     """
     lines = []
     for line in io.open(filename, 'r', encoding='utf8'):
@@ -18,9 +19,7 @@ def read_fixture_lines(filename):
 
 
 def read_fixture_files():
-    """
-    Read all files inside fixture_data directory.
-    """
+    """Read all files inside fixture_data directory."""
     fixture_dict = {}
 
     current_dir = os.path.dirname(__file__)
