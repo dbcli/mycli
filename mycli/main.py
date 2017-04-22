@@ -439,9 +439,8 @@ class MyCli(object):
         if self.smart_completion:
             self.refresh_completions()
 
-        project_root = os.path.join(os.path.dirname(PACKAGE_ROOT), 'mycli')
-        author_file = os.path.join(project_root, 'AUTHORS')
-        sponsor_file = os.path.join(project_root, 'SPONSORS')
+        author_file = os.path.join(PACKAGE_ROOT, 'AUTHORS')
+        sponsor_file = os.path.join(PACKAGE_ROOT, 'SPONSORS')
 
         key_binding_manager = mycli_bindings()
 

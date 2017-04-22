@@ -164,9 +164,8 @@ def test_confirm_destructive_query_notty(executor):
     assert confirm_destructive_query(sql) is None
 
 def test_thanks_picker_utf8():
-    project_root = os.path.join(os.path.dirname(PACKAGE_ROOT), 'mycli')
-    author_file = os.path.join(project_root, 'AUTHORS')
-    sponsor_file = os.path.join(project_root, 'SPONSORS')
+    author_file = os.path.join(PACKAGE_ROOT, 'AUTHORS')
+    sponsor_file = os.path.join(PACKAGE_ROOT, 'SPONSORS')
 
     name = thanks_picker((author_file, sponsor_file))
     assert isinstance(name, text_type)
