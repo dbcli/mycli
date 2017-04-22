@@ -4,15 +4,17 @@ from __future__ import print_function
 
 import pymysql
 
+
 def create_db(hostname='localhost', username=None, password=None,
               dbname=None):
-    """
-    Create test database.
+    """Create test database.
+
     :param hostname: string
     :param username: string
     :param password: string
     :param dbname: string
     :return:
+
     """
     cn = pymysql.connect(
         host=hostname,
@@ -23,8 +25,8 @@ def create_db(hostname='localhost', username=None, password=None,
     )
 
     with cn.cursor() as cr:
-        cr.execute('drop database if exists '+dbname)
-        cr.execute('create database '+dbname)
+        cr.execute('drop database if exists ' + dbname)
+        cr.execute('create database ' + dbname)
 
     cn.close()
 
@@ -33,13 +35,14 @@ def create_db(hostname='localhost', username=None, password=None,
 
 
 def create_cn(hostname, password, username, dbname):
-    """
-    Open connection to database.
+    """Open connection to database.
+
     :param hostname:
     :param password:
     :param username:
     :param dbname: string
     :return: psycopg2.connection
+
     """
     cn = pymysql.connect(
         host=hostname,
@@ -55,12 +58,13 @@ def create_cn(hostname, password, username, dbname):
 
 def drop_db(hostname='localhost', username=None, password=None,
             dbname=None):
-    """
-    Drop database.
+    """Drop database.
+
     :param hostname: string
     :param username: string
     :param password: string
     :param dbname: string
+
     """
     cn = pymysql.connect(
         host=hostname,
@@ -72,15 +76,16 @@ def drop_db(hostname='localhost', username=None, password=None,
     )
 
     with cn.cursor() as cr:
-        cr.execute('drop database if exists '+dbname)
+        cr.execute('drop database if exists ' + dbname)
 
     close_cn(cn)
 
 
 def close_cn(cn=None):
-    """
-    Close connection.
+    """Close connection.
+
     :param connection: pymysql.connection
+
     """
     if cn:
         cn.close()
