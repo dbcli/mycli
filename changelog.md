@@ -8,6 +8,11 @@ Internal Changes:
 * Move AUTHORS and SPONSORS to mycli directory. (Thanks: [Terje Røsten] []).
 * Add pager wrapper for behave tests (Thanks: [Dick Marinus]).
 
+Features:
+---------
+
+* Add unix like redirect output (Thanks: [Dick Marinus]).
+
 1.10.0:
 =======
 
