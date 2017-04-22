@@ -29,7 +29,7 @@ setup(
     version=version,
     url='http://mycli.net',
     packages=find_packages(),
-    package_data={'mycli': ['myclirc', '../AUTHORS', '../SPONSORS']},
+    package_data={'mycli': ['myclirc', 'AUTHORS', 'SPONSORS']},
     description=description,
     long_description=description,
     install_requires=install_requirements,

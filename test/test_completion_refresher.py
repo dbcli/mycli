@@ -10,10 +10,11 @@ def refresher():
 
 
 def test_ctor(refresher):
-    """
-    Refresher object should contain a few handlers
+    """Refresher object should contain a few handlers.
+
     :param refresher:
     :return:
+
     """
     assert len(refresher.refreshers) > 0
     actual_handlers = list(refresher.refreshers.keys())
@@ -41,10 +42,11 @@ def test_refresh_called_once(refresher):
 
 
 def test_refresh_called_twice(refresher):
-    """
-    If refresh is called a second time, it should be restarted
+    """If refresh is called a second time, it should be restarted.
+
     :param refresher:
     :return:
+
     """
     callbacks = Mock()
 
@@ -69,9 +71,10 @@ def test_refresh_called_twice(refresher):
 
 
 def test_refresh_with_callbacks(refresher):
-    """
-    Callbacks must be called
+    """Callbacks must be called.
+
     :param refresher:
+
     """
     callbacks = [Mock()]
     sqlexecute_class = Mock()

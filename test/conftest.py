@@ -1,5 +1,6 @@
 import pytest
-from utils import (HOST, USER, PASSWORD, PORT, CHARSET, create_db, db_connection)
+from utils import (HOST, USER, PASSWORD, PORT,
+                   CHARSET, create_db, db_connection)
 import mycli.sqlexecute
 
 

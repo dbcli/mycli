@@ -9,9 +9,7 @@ import fixture_utils as fixutils
 
 
 def before_all(context):
-    """
-    Set env parameters.
-    """
+    """Set env parameters."""
     os.environ['LINES'] = "100"
     os.environ['COLUMNS'] = "100"
     os.environ['PAGER'] = 'cat'
@@ -21,7 +19,8 @@ def before_all(context):
     context.exit_sent = False
 
     vi = '_'.join([str(x) for x in sys.version_info[:3]])
-    db_name = context.config.userdata.get('my_test_db', None) or "mycli_behave_tests"
+    db_name = context.config.userdata.get(
+        'my_test_db', None) or "mycli_behave_tests"
     db_name_full = '{0}_{1}'.format(db_name, vi)
 
     # Store get params from config/environment variables
@@ -40,7 +39,7 @@ def before_all(context):
         ),
         'cli_command': context.config.userdata.get(
             'my_cli_command', None) or
-            sys.executable+' -c "import coverage ; coverage.process_startup(); import mycli.main; mycli.main.cli()"',
+        sys.executable + ' -c "import coverage ; coverage.process_startup(); import mycli.main; mycli.main.cli()"',
         'dbname': db_name,
         'dbname_tmp': db_name_full + '_tmp',
         'vi': vi,
@@ -54,9 +53,7 @@ def before_all(context):
 
 
 def after_all(context):
-    """
-    Unset env parameters.
-    """
+    """Unset env parameters."""
     dbutils.close_cn(context.cn)
     dbutils.drop_db(context.conf['host'], context.conf['user'],
                     context.conf['pass'], context.conf['dbname'])
@@ -70,9 +67,7 @@ def after_all(context):
 
 
 def after_scenario(context, _):
-    """
-    Cleans up after each test complete.
-    """
+    """Cleans up after each test complete."""
 
     if hasattr(context, 'cli') and not context.exit_sent:
         # Terminate nicely.

@@ -18,6 +18,7 @@ except NameError:
 CLI_ARGS = ['--user', USER, '--host', HOST, '--port', PORT,
             '--password', PASSWORD, '_test_db']
 
+
 @dbtest
 def test_execute_arg(executor):
     run(executor, 'create table test (a text)')
@@ -84,6 +85,7 @@ def test_batch_mode(executor):
     assert result.exit_code == 0
     assert 'count(*)\n3\n\na\nabc\n' in result.output
 
+
 @dbtest
 def test_batch_mode_table(executor):
     run(executor, '''create table test(a text)''')
@@ -112,6 +114,7 @@ def test_batch_mode_table(executor):
     assert result.exit_code == 0
     assert expected in result.output
 
+
 @dbtest
 def test_batch_mode_csv(executor):
     run(executor, '''create table test(a text, b text)''')
@@ -127,6 +130,7 @@ def test_batch_mode_csv(executor):
     assert result.exit_code == 0
     assert expected in result.output
 
+
 def test_query_starts_with(executor):
     query = 'USE test;'
     assert query_starts_with(query, ('use', )) is True
@@ -134,9 +138,11 @@ def test_query_starts_with(executor):
     query = 'DROP DATABASE test;'
     assert query_starts_with(query, ('use', )) is False
 
+
 def test_query_starts_with_comment(executor):
     query = '# comment\nUSE test;'
     assert query_starts_with(query, ('use', )) is True
+
 
 def test_queries_start_with(executor):
     sql = (
@@ -148,6 +154,7 @@ def test_queries_start_with(executor):
     assert queries_start_with(sql, ('use', 'drop')) is True
     assert queries_start_with(sql, ('delete', 'update')) is False
 
+
 def test_is_destructive(executor):
     sql = (
         'use test;\n'
@@ -156,6 +163,7 @@ def test_is_destructive(executor):
     )
     assert is_destructive(sql) is True
 
+
 def test_confirm_destructive_query_notty(executor):
     stdin = click.get_text_stream('stdin')
     assert stdin.isatty() is False
@@ -163,10 +171,10 @@ def test_confirm_destructive_query_notty(executor):
     sql = 'drop database foo;'
     assert confirm_destructive_query(sql) is None
 
+
 def test_thanks_picker_utf8():
-    project_root = os.path.dirname(PACKAGE_ROOT)
-    author_file = os.path.join(project_root, 'AUTHORS')
-    sponsor_file = os.path.join(project_root, 'SPONSORS')
+    author_file = os.path.join(PACKAGE_ROOT, 'AUTHORS')
+    sponsor_file = os.path.join(PACKAGE_ROOT, 'SPONSORS')
 
     name = thanks_picker((author_file, sponsor_file))
     assert isinstance(name, text_type)

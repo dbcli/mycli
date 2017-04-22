@@ -8,14 +8,13 @@ from behave import when, then
 
 @when('we start external editor providing a file name')
 def step_edit_file(context):
-    """
-    Edit file with external editor.
-    """
+    """Edit file with external editor."""
     context.editor_file_name = 'test_file_{0}.sql'.format(context.conf['vi'])
     if os.path.exists(context.editor_file_name):
         os.remove(context.editor_file_name)
     context.cli.sendline('\e {0}'.format(context.editor_file_name))
-    wrappers.expect_exact(context, 'Entering Ex mode.  Type "visual" to go to Normal mode.', timeout=2)
+    wrappers.expect_exact(
+        context, 'Entering Ex mode.  Type "visual" to go to Normal mode.', timeout=2)
     wrappers.expect_exact(context, '\r\n:', timeout=2)
 
 
