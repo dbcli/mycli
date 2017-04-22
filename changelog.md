@@ -1,3 +1,12 @@
+TBD
+===
+
+Internal Changes:
+-----------------
+
+* Rename tests/ to test/ . (Thanks: [Dick Marinus]).
+
+
 1.10.0:
 =======
 
