@@ -59,3 +59,5 @@ def step_send_help(context):
 
     """
     context.cli.sendline('\\?')
+    wrappers.expect_exact(
+        context, context.conf['pager_boundary'] + '\r\n', timeout=5)
