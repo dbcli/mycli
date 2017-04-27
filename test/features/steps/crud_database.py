@@ -73,20 +73,24 @@ def step_see_help(context):
 @then('we see database created')
 def step_see_db_created(context):
     """Wait to see create database output."""
-    wrappers.expect_exact(context, 'Query OK, 1 row affected\r\n', timeout=2)
+    wrappers.expect_pager(context, 'Query OK, 1 row affected\r\n', timeout=2)
 
 
 @then('we see database dropped')
 def step_see_db_dropped(context):
     """Wait to see drop database output."""
-    wrappers.expect_exact(context, 'Query OK, 0 rows affected\r\n', timeout=2)
+    wrappers.expect_pager(context, 'Query OK, 0 rows affected\r\n', timeout=2)
 
 
 @then('we see database connected')
 def step_see_db_connected(context):
     """Wait to see drop database output."""
     wrappers.expect_exact(
+        context, context.conf['pager_boundary'] + '\r\n', timeout=5)
+    wrappers.expect_exact(
         context, 'You are now connected to database "', timeout=2)
     wrappers.expect_exact(context, '"', timeout=2)
     wrappers.expect_exact(context, ' as user "{0}"\r\n'.format(
         context.conf['user']), timeout=2)
+    wrappers.expect_exact(
+        context, context.conf['pager_boundary'] + '\r\n', timeout=5)

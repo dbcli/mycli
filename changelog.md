@@ -6,6 +6,7 @@ Internal Changes:
 
 * Rename tests/ to test/. (Thanks: [Dick Marinus]).
 * Move AUTHORS and SPONSORS to mycli directory. (Thanks: [Terje Røsten] []).
+* Add pager wrapper for behave tests (Thanks: [Dick Marinus]).
 
 1.10.0:
 =======

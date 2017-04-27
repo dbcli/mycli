@@ -23,7 +23,7 @@ def step_edit_type_sql(context):
     context.cli.sendline('i')
     context.cli.sendline('select * from abc')
     context.cli.sendline('.')
-    wrappers.expect_exact(context, ':', timeout=2)
+    wrappers.expect_exact(context, '\r\n:', timeout=2)
 
 
 @when('we exit the editor')

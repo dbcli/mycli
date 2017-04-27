@@ -12,7 +12,6 @@ def before_all(context):
     """Set env parameters."""
     os.environ['LINES'] = "100"
     os.environ['COLUMNS'] = "100"
-    os.environ['PAGER'] = 'cat'
     os.environ['EDITOR'] = 'ex'
     os.environ["COVERAGE_PROCESS_START"] = os.getcwd() + "/../.coveragerc"
 
@@ -43,7 +42,10 @@ def before_all(context):
         'dbname': db_name,
         'dbname_tmp': db_name_full + '_tmp',
         'vi': vi,
+        'pager_boundary': '---boundary---',
     }
+    os.environ['PAGER'] = "{0} {1} {2}".format(
+        sys.executable, "test/features/wrappager.py", context.conf['pager_boundary'])
 
     context.cn = dbutils.create_db(context.conf['host'], context.conf['user'],
                                    context.conf['pass'],
