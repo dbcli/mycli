@@ -33,6 +33,7 @@ def step_run_cli(context):
     cmd = ' '.join(cmd_parts)
     context.cli = pexpect.spawnu(cmd, cwd='..')
     context.exit_sent = False
+    context.currentdb = context.conf['dbname']
 
 
 @when('we wait for prompt')
@@ -40,9 +41,10 @@ def step_wait_prompt(context):
     """Make sure prompt is displayed."""
     user = context.conf['user']
     host = context.conf['host']
-    dbname = context.conf['dbname']
+    dbname = context.currentdb
     wrappers.expect_exact(context, 'mysql {0}@{1}:{2}> '.format(
         user, host, dbname), timeout=5)
+    context.atprompt = True
 
 
 @when('we send "ctrl + d"')

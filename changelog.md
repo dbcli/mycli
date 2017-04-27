@@ -11,6 +11,7 @@ Internal Changes:
 * Behave test source command (Thanks: [Dick Marinus]).
 * Test using behave the tee command (Thanks: [Dick Marinus]).
 * Behave fix clean up. (Thanks: [Dick Marinus]).
+* Behave quit mycli nicely (Thanks: [Dick Marinus])
 
 1.10.0:
 =======
