@@ -8,6 +8,7 @@ Internal Changes:
 * Move AUTHORS and SPONSORS to mycli directory. (Thanks: [Terje Røsten] []).
 * Add pager wrapper for behave tests (Thanks: [Dick Marinus]).
 * Behave test source command (Thanks: [Dick Marinus]).
+* Behave fix clean up. (Thanks: [Dick Marinus]).
 
 1.10.0:
 =======
