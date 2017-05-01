@@ -41,7 +41,7 @@ def step_delete_from_table(context):
     """Send deete from table."""
     context.cli.sendline('''delete from a where x = 'yyy';''')
     wrappers.expect_exact(
-        context, 'You\'re about to run a destructive command.\r\nDo you want to proceed? (y/n):', timeout=2)
+        context, 'You\'re about to run a destructive command.\r\nDo you want to proceed? (y/n):', timeout=2, ignore_before=True)
     context.cli.sendline('y')
 
 
@@ -50,7 +50,7 @@ def step_drop_table(context):
     """Send drop table."""
     context.cli.sendline('drop table a;')
     wrappers.expect_exact(
-        context, 'You\'re about to run a destructive command.\r\nDo you want to proceed? (y/n):', timeout=2)
+        context, 'You\'re about to run a destructive command.\r\nDo you want to proceed? (y/n):', timeout=2, ignore_before=True)
     context.cli.sendline('y')
 
 

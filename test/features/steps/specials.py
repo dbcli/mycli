@@ -21,7 +21,7 @@ def step_refresh_completions(context):
 def step_see_refresh_started(context):
     """Wait to see refresh output."""
     wrappers.expect_exact(
-        context, context.conf['pager_boundary'] + '\r\n', timeout=5)
+        context, context.conf['pager_boundary'] + '\r\n', timeout=5, ignore_before=True)
     wrappers.expect_exact(
         context, 'Auto-completion refresh started in the background.\r\n', timeout=2)
     wrappers.expect_exact(

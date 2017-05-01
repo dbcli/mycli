@@ -5,9 +5,11 @@ import re
 import pexpect
 
 
-def expect_exact(context, expected, timeout):
+def expect_exact(context, expected, timeout, ignore_before=False):
     try:
         context.cli.expect_exact(expected, timeout=timeout)
+        if not ignore_before:
+            assert context.cli.before == ""
     except:
         # Strip color codes out of the output.
         actual = re.sub(r'\x1b\[([0-9A-Za-z;?])+[m|K]?',
@@ -47,7 +49,7 @@ def wait_prompt(context):
     """Make sure prompt is displayed."""
     user = context.conf['user']
     host = context.conf['host']
-    dbname = context.currentdb
-    expect_exact(context, 'mysql {0}@{1}:{2}> '.format(
-        user, host, dbname), timeout=5)
+    dbname = context.conf['dbname']
+    wrappers.expect_exact(context, 'mysql {0}@{1}:{2}> '.format(
+        user, host, dbname), timeout=5, ignore_before=True)
     context.atprompt = True

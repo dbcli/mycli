@@ -31,7 +31,7 @@ def step_db_drop(context):
         context.conf['dbname_tmp']))
 
     wrappers.expect_exact(
-        context, 'You\'re about to run a destructive command.\r\nDo you want to proceed? (y/n):', timeout=2)
+        context, 'You\'re about to run a destructive command.\r\nDo you want to proceed? (y/n):', timeout=2, ignore_before=True)
     context.cli.sendline('y')
 
 
@@ -53,7 +53,7 @@ def step_db_connect_dbserver(context):
 @then('dbcli exits')
 def step_wait_exit(context):
     """Make sure the cli exits."""
-    wrappers.expect_exact(context, pexpect.EOF, timeout=5)
+    wrappers.expect_exact(context, pexpect.EOF, timeout=5, ignore_before=True)
 
 
 @then('we see dbcli prompt')
@@ -63,7 +63,7 @@ def step_see_prompt(context):
     host = context.conf['host']
     dbname = context.currentdb
     wrappers.expect_exact(context, 'mysql {0}@{1}:{2}> '.format(
-        user, host, dbname), timeout=5)
+        user, host, dbname), timeout=5, ignore_before=True)
     context.atprompt = True
 
 
@@ -89,10 +89,10 @@ def step_see_db_dropped(context):
 def step_see_db_connected(context):
     """Wait to see drop database output."""
     wrappers.expect_exact(
-        context, context.conf['pager_boundary'] + '\r\n', timeout=5)
+        context, context.conf['pager_boundary'] + '\r\n', timeout=5, ignore_before=True)
     wrappers.expect_exact(
         context, 'You are now connected to database "', timeout=2)
-    wrappers.expect_exact(context, '"', timeout=2)
+    wrappers.expect_exact(context, '"', timeout=2, ignore_before=True)
     wrappers.expect_exact(context, ' as user "{0}"\r\n'.format(
         context.conf['user']), timeout=2)
     wrappers.expect_exact(
