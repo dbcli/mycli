@@ -53,7 +53,7 @@ def suggest_type(full_text, text_before_cursor):
         else:
             parsed = sqlparse.parse(text_before_cursor)
     except (TypeError, AttributeError):
-        return []
+        return [{'type': 'keyword'}]
 
     if len(parsed) > 1:
         # Multiple statements being edited -- isolate the current one by
