@@ -6,6 +6,7 @@ Internal Changes:
 
 * Rename tests/ to test/. (Thanks: [Dick Marinus]).
 * Move AUTHORS and SPONSORS to mycli directory. (Thanks: [Terje Røsten] []).
+* Switch from pycryptodome to cryptography (Thanks: [Thomas Roten]).
 * Add pager wrapper for behave tests (Thanks: [Dick Marinus]).
 * Behave test source command (Thanks: [Dick Marinus]).
 * Test using behave the tee command (Thanks: [Dick Marinus]).
