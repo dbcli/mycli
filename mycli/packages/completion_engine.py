@@ -28,28 +28,32 @@ def suggest_type(full_text, text_before_cursor):
 
     identifier = None
 
-    # If we've partially typed a word then word_before_cursor won't be an empty
-    # string. In that case we want to remove the partially typed string before
-    # sending it to the sqlparser. Otherwise the last token will always be the
-    # partially typed string which renders the smart completion useless because
-    # it will always return the list of keywords as completion.
-    if word_before_cursor:
-        if word_before_cursor.endswith(
-                '(') or word_before_cursor.startswith('\\'):
-            parsed = sqlparse.parse(text_before_cursor)
+    # here should be removed once sqlparse has been fixed
+    try:
+        # If we've partially typed a word then word_before_cursor won't be an empty
+        # string. In that case we want to remove the partially typed string before
+        # sending it to the sqlparser. Otherwise the last token will always be the
+        # partially typed string which renders the smart completion useless because
+        # it will always return the list of keywords as completion.
+        if word_before_cursor:
+            if word_before_cursor.endswith(
+                    '(') or word_before_cursor.startswith('\\'):
+                parsed = sqlparse.parse(text_before_cursor)
+            else:
+                parsed = sqlparse.parse(
+                    text_before_cursor[:-len(word_before_cursor)])
+
+                # word_before_cursor may include a schema qualification, like
+                # "schema_name.partial_name" or "schema_name.", so parse it
+                # separately
+                p = sqlparse.parse(word_before_cursor)[0]
+
+                if p.tokens and isinstance(p.tokens[0], Identifier):
+                    identifier = p.tokens[0]
         else:
-            parsed = sqlparse.parse(
-                text_before_cursor[:-len(word_before_cursor)])
-
-            # word_before_cursor may include a schema qualification, like
-            # "schema_name.partial_name" or "schema_name.", so parse it
-            # separately
-            p = sqlparse.parse(word_before_cursor)[0]
-
-            if p.tokens and isinstance(p.tokens[0], Identifier):
-                identifier = p.tokens[0]
-    else:
-        parsed = sqlparse.parse(text_before_cursor)
+            parsed = sqlparse.parse(text_before_cursor)
+    except (TypeError, AttributeError):
+        return []
 
     if len(parsed) > 1:
         # Multiple statements being edited -- isolate the current one by
