@@ -4,6 +4,7 @@ import os
 import wrappers
 
 from behave import when, then
+from textwrap import dedent
 
 
 @when('we start external editor providing a file name')
@@ -43,3 +44,41 @@ def step_edit_done_sql(context):
     # Cleanup the edited file.
     if context.editor_file_name and os.path.exists(context.editor_file_name):
         os.remove(context.editor_file_name)
+
+
+@when(u'we tee output')
+def step_tee_ouptut(context):
+    context.tee_file_name = '../tee_file_{0}.sql'.format(context.conf['vi'])
+    if os.path.exists(context.tee_file_name):
+        os.remove(context.tee_file_name)
+    context.cli.sendline('tee {0}'.format(
+        os.path.basename(context.tee_file_name)))
+    wrappers.expect_pager(context, "\r\n", timeout=5)
+
+
+@when(u'we query "select 123456"')
+def step_query_select_123456(context):
+    context.cli.sendline('select 123456')
+    wrappers.expect_pager(context, dedent("""\
+        +--------+\r
+        | 123456 |\r
+        +--------+\r
+        | 123456 |\r
+        +--------+\r
+        1 row in set\r
+        """), timeout=5)
+
+
+@when(u'we notee output')
+def step_notee_output(context):
+    context.cli.sendline('notee')
+    wrappers.expect_pager(context, "\r\n", timeout=5)
+
+
+@then(u'we see 123456 in tee output')
+def step_see_123456_in_ouput(context):
+    with open(context.tee_file_name) as f:
+        assert '123456' in f.read()
+    if os.path.exists(context.tee_file_name):
+        os.remove(context.tee_file_name)
+    context.atprompt = True
