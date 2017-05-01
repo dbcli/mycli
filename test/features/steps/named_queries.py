@@ -32,7 +32,7 @@ def step_delete_named_query(context):
 @then('we see the named query saved')
 def step_see_named_query_saved(context):
     """Wait to see query saved."""
-    wrappers.expect_exact(context, 'Saved.', timeout=1)
+    wrappers.expect_pager(context, 'Saved.\r\n', timeout=1)
 
 
 @then('we see the named query executed')
@@ -45,4 +45,4 @@ def step_see_named_query_executed(context):
 @then('we see the named query deleted')
 def step_see_named_query_deleted(context):
     """Wait to see query deleted."""
-    wrappers.expect_exact(context, 'foo: Deleted', timeout=1)
+    wrappers.expect_pager(context, 'foo: Deleted\r\n', timeout=1)

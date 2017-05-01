@@ -8,6 +8,7 @@ to call the step in "*.feature" file.
 from __future__ import unicode_literals
 
 import pexpect
+import tempfile
 
 from behave import when
 import wrappers
@@ -59,3 +60,15 @@ def step_send_help(context):
 
     """
     context.cli.sendline('\\?')
+    wrappers.expect_exact(
+        context, context.conf['pager_boundary'] + '\r\n', timeout=5)
+
+
+@when(u'we send source command')
+def step_send_source_command(context):
+    with tempfile.NamedTemporaryFile() as f:
+        f.write(b'\?')
+        f.flush()
+        context.cli.sendline('\. {0}'.format(f.name))
+        wrappers.expect_exact(
+            context, context.conf['pager_boundary'] + '\r\n', timeout=5)
