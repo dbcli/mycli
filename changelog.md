@@ -1,6 +1,11 @@
 TBD
 ===
 
+Features:
+---------
+
+* Display current vi mode in toolbar. (Thanks: [Thomas Roten]).
+
 Bug Fixes:
 ----------
 

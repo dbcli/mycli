@@ -1,5 +1,6 @@
 from pygments.token import Token
 from prompt_toolkit.enums import DEFAULT_BUFFER, EditingMode
+from prompt_toolkit.key_binding.vi_state import InputMode
 
 def create_toolbar_tokens_func(get_is_refreshing):
     """
@@ -26,7 +27,10 @@ def create_toolbar_tokens_func(get_is_refreshing):
                 ' (Semi-colon [;] will end the line)'))
 
         if cli.editing_mode == EditingMode.VI:
-            result.append((token.On, '[F4] Vi-mode'))
+            result.append((
+                token.On,
+                '[F4] Vi-mode ({})'.format(_get_vi_mode(cli))
+            ))
         else:
             result.append((token.On, '[F4] Emacs-mode'))
 
@@ -35,3 +39,13 @@ def create_toolbar_tokens_func(get_is_refreshing):
 
         return result
     return get_toolbar_tokens
+
+
+def _get_vi_mode(cli):
+    """Get the current vi mode for display."""
+    return {
+        InputMode.INSERT: 'I',
+        InputMode.NAVIGATION: 'N',
+        InputMode.REPLACE: 'R',
+        InputMode.INSERT_MULTIPLE: 'M'
+    }[cli.vi_state.input_mode]
