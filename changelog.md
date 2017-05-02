@@ -23,6 +23,9 @@ Internal Changes:
 * Test using behave the tee command (Thanks: [Dick Marinus]).
 * Behave fix clean up. (Thanks: [Dick Marinus]).
 * Remove output formatter code in favor of CLI Helpers dependency (Thanks: [Thomas Roten]).
+* Better handle common before/after scenarios in behave. (Thanks: [Dick Marinus])
+* Added a regression test for sqlparse >= 0.2.3 (Thanks: [Dick Marinus]).
+* Reverted removal of temporary hack for sqlparse (Thanks: [Dick Marinus]).
 
 1.10.0:
 =======

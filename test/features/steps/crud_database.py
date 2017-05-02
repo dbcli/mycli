@@ -39,12 +39,14 @@ def step_db_drop(context):
 def step_db_connect_test(context):
     """Send connect to database."""
     db_name = context.conf['dbname']
+    context.currentdb = db_name
     context.cli.sendline('use {0}'.format(db_name))
 
 
 @when('we connect to dbserver')
 def step_db_connect_dbserver(context):
     """Send connect to database."""
+    context.currentdb = 'mysql'
     context.cli.sendline('use mysql')
 
 
@@ -59,9 +61,10 @@ def step_see_prompt(context):
     """Wait to see the prompt."""
     user = context.conf['user']
     host = context.conf['host']
-    dbname = context.conf['dbname']
+    dbname = context.currentdb
     wrappers.expect_exact(context, 'mysql {0}@{1}:{2}> '.format(
         user, host, dbname), timeout=5)
+    context.atprompt = True
 
 
 @then('we see help output')
