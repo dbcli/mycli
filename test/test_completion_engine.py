@@ -234,6 +234,7 @@ def test_dot_col_comma_suggests_cols_or_schema_qualified_table():
     'SELECT * FROM (',
     'SELECT * FROM foo WHERE EXISTS (',
     'SELECT * FROM foo WHERE bar AND NOT EXISTS (',
+    'SELECT 1 AS',
 ])
 def test_sub_select_suggests_keyword(expression):
     suggestion = suggest_type(expression, expression)

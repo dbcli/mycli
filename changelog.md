@@ -1,6 +1,17 @@
 TBD
 ===
 
+Features:
+---------
+
+* Handle reserved space for completion menu better in small windows. (Thanks: [Thomas Roten]).
+* Display current vi mode in toolbar. (Thanks: [Thomas Roten]).
+
+Bug Fixes:
+----------
+
+* Fixed incorrect timekeeping when running queries from a file. (Thanks: [Thomas Roten]).
+
 Internal Changes:
 -----------------
 
@@ -11,7 +22,9 @@ Internal Changes:
 * Behave test source command (Thanks: [Dick Marinus]).
 * Test using behave the tee command (Thanks: [Dick Marinus]).
 * Behave fix clean up. (Thanks: [Dick Marinus]).
-* Behave quit mycli nicely (Thanks: [Dick Marinus])
+* Better handle common before/after scenarios in behave. (Thanks: [Dick Marinus])
+* Added a regression test for sqlparse >= 0.2.3 (Thanks: [Dick Marinus]).
+* Reverted removal of temporary hack for sqlparse (Thanks: [Dick Marinus]).
 
 1.10.0:
 =======
