@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-import binascii
 import sys
 
 PY2 = sys.version_info[0] == 2
@@ -37,22 +36,3 @@ def utf8tounicode(arg):
     if PY2 and isinstance(arg, binary_type):
         return arg.decode('utf-8')
     return arg
-
-
-def bytes_to_string(b):
-    """Convert bytes to a string. Hexlify bytes that can't be decoded.
-
-    >>> print(bytes_to_string(b"\\xff"))
-    0xff
-    >>> print(bytes_to_string('abc'))
-    abc
-    >>> print(bytes_to_string('✌'))
-    ✌
-
-    """
-    if isinstance(b, binary_type):
-        try:
-            return b.decode('utf8')
-        except UnicodeDecodeError:
-            return '0x' + binascii.hexlify(b).decode('ascii')
-    return b
