@@ -1,6 +1,11 @@
 TBD
 ===
 
+Bug Fixes:
+----------
+
+* Fixed incorrect timekeeping when running queries from a file. (Thanks: [Thomas Roten]).
+
 Internal Changes:
 -----------------
 
