@@ -113,7 +113,6 @@ class MyCli(object):
         self.less_chatty = c['main'].as_bool('less_chatty')
         self.cli_style = c['colors']
         self.wider_completion_menu = c['main'].as_bool('wider_completion_menu')
-        self.min_num_menu_lines = c['main'].as_int('min_num_menu_lines')
         c_dest_warning = c['main'].as_bool('destructive_warning')
         self.destructive_warning = c_dest_warning if warn is None else warn
         self.login_path_as_host = c['main'].as_bool('login_path_as_host')
@@ -613,7 +612,7 @@ class MyCli(object):
                 processor=HighlightMatchingBracketProcessor(chars='[](){}'),
                 filter=HasFocus(DEFAULT_BUFFER) & ~IsDone()
             )],
-            reserve_space_for_menu=self.min_num_menu_lines
+            reserve_space_for_menu=self.get_reserved_space()
         )
         with self._completer_lock:
             buf = CLIBuffer(always_multiline=self.multi_line, completer=self.completer,
@@ -749,6 +748,13 @@ class MyCli(object):
             output.append(status)
 
         return output
+
+    def get_reserved_space(self):
+        """Get the number of lines to reserve for the completion menu."""
+        reserved_space_ratio = .2
+        max_reserved_space = 8
+        _, height = click.get_terminal_size()
+        return min(int(height * reserved_space_ratio), max_reserved_space)
 
 
 @click.command()

@@ -4,7 +4,7 @@ TBD
 Features:
 ---------
 
-* Add option to control how much space is reserved for the completion menu. (Thanks: [Thomas Roten]).
+* Handle reserved space for completion menu better in small windows. (Thanks: [Thomas Roten]).
 
 Bug Fixes:
 ----------

@@ -51,9 +51,6 @@ key_bindings = emacs
 # Enabling this option will show the suggestions in a wider menu. Thus more items are suggested.
 wider_completion_menu = False
 
-# Number of lines to reserve for the completion menu.
-min_num_menu_lines = 8
-
 # MySQL prompt
 # \t - Product type (Percona, MySQL, Mariadb)
 # \u - Username
