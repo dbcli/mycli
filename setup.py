@@ -19,7 +19,7 @@ install_requirements = [
     'sqlparse>=0.2.2,<0.3.0',
     'configobj >= 5.0.5',
     'cryptography >= 1.0.0',
-    'terminaltables >= 3.0.0',
+    'cli_helpers >= 0.1.0',
 ]
 
 setup(
