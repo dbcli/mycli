@@ -13,6 +13,7 @@ from datetime import datetime
 from random import choice
 from io import open
 
+from cli_helpers.tabular_output import TabularOutputFormatter
 import click
 import sqlparse
 from prompt_toolkit import CommandLineInterface, Application, AbortAction
@@ -37,7 +38,6 @@ from .completion_refresher import CompletionRefresher
 from .config import (write_default_config, get_mylogin_cnf_path,
                      open_mylogin_cnf, read_config_files, str_to_bool)
 from .key_bindings import mycli_bindings
-from .output_formatter import output_formatter
 from .encodingutils import utf8tounicode
 from .lexer import MyCliLexer
 from .__init__ import __version__
@@ -107,7 +107,7 @@ class MyCli(object):
         self.multi_line = c['main'].as_bool('multi_line')
         self.key_bindings = c['main']['key_bindings']
         special.set_timing_enabled(c['main'].as_bool('timing'))
-        self.formatter = output_formatter.OutputFormatter(
+        self.formatter = TabularOutputFormatter(
             format_name=c['main']['table_format'])
         self.syntax_style = c['main']['syntax_style']
         self.less_chatty = c['main'].as_bool('less_chatty')
@@ -149,7 +149,7 @@ class MyCli(object):
         self.smart_completion = c['main'].as_bool('smart_completion')
         self.completer = SQLCompleter(
             self.smart_completion,
-            supported_formats=self.formatter.supported_formats())
+            supported_formats=self.formatter.supported_formats)
         self._completer_lock = threading.Lock()
 
         # Register custom special commands.
@@ -185,13 +185,13 @@ class MyCli(object):
 
     def change_table_format(self, arg, **_):
         try:
-            self.formatter.set_format_name(arg)
+            self.formatter.format_name = arg
             yield (None, None, None,
                    'Changed table type to {}'.format(arg))
         except ValueError:
             msg = 'Table type {} not yet implemented. Allowed types:'.format(
                 arg)
-            for table_type in self.formatter.supported_formats():
+            for table_type in self.formatter.supported_formats:
                 msg += "\n\t{}".format(table_type)
             yield (None, None, None, msg)
 
@@ -673,7 +673,7 @@ class MyCli(object):
         self.completion_refresher.refresh(
             self.sqlexecute, self._on_completions_refreshed,
             {'smart_completion': self.smart_completion,
-             'supported_formats': self.formatter.supported_formats()})
+             'supported_formats': self.formatter.supported_formats})
 
         return [(None, None, None,
                 'Auto-completion refresh started in the background.')]
@@ -726,7 +726,7 @@ class MyCli(object):
 
     def format_output(self, title, cur, headers, status, expanded=False,
                       max_width=None):
-        expanded = expanded or self.formatter.get_format_name() == 'expanded'
+        expanded = expanded or self.formatter.format_name == 'vertical'
         output = []
 
         if title:  # Only print the title if it's not None.
@@ -735,12 +735,12 @@ class MyCli(object):
         if cur:
             rows = list(cur)
             formatted = self.formatter.format_output(
-                rows, headers, format_name='expanded' if expanded else None)
+                rows, headers, format_name='vertical' if expanded else None)
 
             if (not expanded and max_width and rows and
                     content_exceeds_width(rows[0], max_width) and headers):
                 formatted = self.formatter.format_output(
-                    rows, headers, format_name='expanded')
+                    rows, headers, format_name='vertical')
 
             output.append(formatted)
 
@@ -855,9 +855,9 @@ def cli(database, user, host, port, socket, password, dbname,
     if execute:
         try:
             if csv:
-                mycli.formatter.set_format_name('csv')
+                mycli.formatter.format_name = 'csv'
             elif not table:
-                mycli.formatter.set_format_name('tsv')
+                mycli.formatter.format_name = 'tsv'
 
             mycli.run_query(execute)
             exit(0)
@@ -883,10 +883,10 @@ def cli(database, user, host, port, socket, password, dbname,
             new_line = True
 
             if csv:
-                mycli.formatter.set_format_name('csv')
+                mycli.formatter.format_name = 'csv'
                 new_line = False
             elif not table:
-                mycli.formatter.set_format_name('tsv')
+                mycli.formatter.format_name = 'tsv'
 
             mycli.run_query(stdin_text, new_line=new_line)
             exit(0)

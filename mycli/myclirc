@@ -32,7 +32,7 @@ timing = True
 
 # Table format. Possible values: ascii, double, github,
 # psql, plain, simple, grid, fancy_grid, pipe, orgtbl, rst, mediawiki, html,
-# latex, latex_booktabs, textile, moinmoin, jira, expanded, tsv, csv.
+# latex, latex_booktabs, textile, moinmoin, jira, vertical, tsv, csv.
 # Recommended: ascii
 table_format = ascii
 
