@@ -601,17 +601,19 @@ class MyCli(object):
 
         get_toolbar_tokens = create_toolbar_tokens_func(self.completion_refresher.is_refreshing)
 
-        layout = create_prompt_layout(lexer=MyCliLexer,
-                                      multiline=True,
-                                      get_prompt_tokens=prompt_tokens,
-                                      get_continuation_tokens=get_continuation_tokens,
-                                      get_bottom_toolbar_tokens=get_toolbar_tokens,
-                                      display_completions_in_columns=self.wider_completion_menu,
-                                      extra_input_processors=[
-                                          ConditionalProcessor(
-                                              processor=HighlightMatchingBracketProcessor(chars='[](){}'),
-                                              filter=HasFocus(DEFAULT_BUFFER) & ~IsDone()),
-                                      ])
+        layout = create_prompt_layout(
+            lexer=MyCliLexer,
+            multiline=True,
+            get_prompt_tokens=prompt_tokens,
+            get_continuation_tokens=get_continuation_tokens,
+            get_bottom_toolbar_tokens=get_toolbar_tokens,
+            display_completions_in_columns=self.wider_completion_menu,
+            extra_input_processors=[ConditionalProcessor(
+                processor=HighlightMatchingBracketProcessor(chars='[](){}'),
+                filter=HasFocus(DEFAULT_BUFFER) & ~IsDone()
+            )],
+            reserve_space_for_menu=self.get_reserved_space()
+        )
         with self._completer_lock:
             buf = CLIBuffer(always_multiline=self.multi_line, completer=self.completer,
                     history=FileHistory(os.path.expanduser(os.environ.get('MYCLI_HISTFILE', '~/.mycli-history'))),
@@ -746,6 +748,13 @@ class MyCli(object):
             output.append(status)
 
         return output
+
+    def get_reserved_space(self):
+        """Get the number of lines to reserve for the completion menu."""
+        reserved_space_ratio = .45
+        max_reserved_space = 8
+        _, height = click.get_terminal_size()
+        return min(round(height * reserved_space_ratio), max_reserved_space)
 
 
 @click.command()
