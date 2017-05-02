@@ -1,6 +1,11 @@
 TBD
 ===
 
+Features:
+---------
+
+* Add option to control how much space is reserved for the completion menu. (Thanks: [Thomas Roten]).
+
 Internal Changes:
 -----------------
 

@@ -113,6 +113,7 @@ class MyCli(object):
         self.less_chatty = c['main'].as_bool('less_chatty')
         self.cli_style = c['colors']
         self.wider_completion_menu = c['main'].as_bool('wider_completion_menu')
+        self.min_num_menu_lines = c['main'].as_int('min_num_menu_lines')
         c_dest_warning = c['main'].as_bool('destructive_warning')
         self.destructive_warning = c_dest_warning if warn is None else warn
         self.login_path_as_host = c['main'].as_bool('login_path_as_host')
@@ -602,17 +603,19 @@ class MyCli(object):
 
         get_toolbar_tokens = create_toolbar_tokens_func(self.completion_refresher.is_refreshing)
 
-        layout = create_prompt_layout(lexer=MyCliLexer,
-                                      multiline=True,
-                                      get_prompt_tokens=prompt_tokens,
-                                      get_continuation_tokens=get_continuation_tokens,
-                                      get_bottom_toolbar_tokens=get_toolbar_tokens,
-                                      display_completions_in_columns=self.wider_completion_menu,
-                                      extra_input_processors=[
-                                          ConditionalProcessor(
-                                              processor=HighlightMatchingBracketProcessor(chars='[](){}'),
-                                              filter=HasFocus(DEFAULT_BUFFER) & ~IsDone()),
-                                      ])
+        layout = create_prompt_layout(
+            lexer=MyCliLexer,
+            multiline=True,
+            get_prompt_tokens=prompt_tokens,
+            get_continuation_tokens=get_continuation_tokens,
+            get_bottom_toolbar_tokens=get_toolbar_tokens,
+            display_completions_in_columns=self.wider_completion_menu,
+            extra_input_processors=[ConditionalProcessor(
+                processor=HighlightMatchingBracketProcessor(chars='[](){}'),
+                filter=HasFocus(DEFAULT_BUFFER) & ~IsDone()
+            )],
+            reserve_space_for_menu=self.min_num_menu_lines
+        )
         with self._completer_lock:
             buf = CLIBuffer(always_multiline=self.multi_line, completer=self.completer,
                     history=FileHistory(os.path.expanduser(os.environ.get('MYCLI_HISTFILE', '~/.mycli-history'))),
