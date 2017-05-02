@@ -6,6 +6,11 @@ Features:
 
 * Add option to control how much space is reserved for the completion menu. (Thanks: [Thomas Roten]).
 
+Bug Fixes:
+----------
+
+* Fixed incorrect timekeeping when running queries from a file. (Thanks: [Thomas Roten]).
+
 Internal Changes:
 -----------------
 

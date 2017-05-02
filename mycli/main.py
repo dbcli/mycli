@@ -536,8 +536,7 @@ class MyCli(object):
                                                    max_width)
 
                     output.extend(formatted)
-                    end = time()
-                    total += end - start
+                    total = time() - start
                     mutating = mutating or is_mutating(status)
             except KeyboardInterrupt:
                 # get last connection id
