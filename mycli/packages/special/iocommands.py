@@ -116,7 +116,7 @@ def get_editor_query(sql):
     return sql
 
 @export
-def open_external_editor(filename=None, sql='', default_text=''):
+def open_external_editor(filename=None, sql=''):
     """
     Open external editor, wait for the user to type in his query,
     return the query.
