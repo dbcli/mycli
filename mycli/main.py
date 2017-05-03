@@ -420,7 +420,7 @@ class MyCli(object):
         while special.editor_command(document.text):
             filename = special.get_filename(document.text)
             query = (special.get_editor_query(document.text) or
-                     self.get_last_query() or '')
+                     self.get_last_query())
             sql, message = special.open_external_editor(filename,
                                                         sql=query)
             if message:

@@ -116,7 +116,7 @@ def get_editor_query(sql):
     return sql
 
 @export
-def open_external_editor(filename=None, sql=''):
+def open_external_editor(filename=None, sql=None):
     """Open external editor, wait for the user to type in their query, return
     the query.
 
@@ -126,12 +126,13 @@ def open_external_editor(filename=None, sql=''):
     message = None
     filename = filename.strip().split(' ', 1)[0] if filename else None
 
+    sql = sql or ''
     MARKER = '# Type your query above this line.\n'
 
     # Populate the editor buffer with the partial sql (if available) and a
     # placeholder comment.
-    query = click.edit(sql + '\n\n' + MARKER, filename=filename,
-            extension='.sql')
+    query = click.edit("{sql}\n\n{marker}".format(sql=sql, marker=MARKER),
+                       filename=filename, extension='.sql')
 
     if filename:
         try:
