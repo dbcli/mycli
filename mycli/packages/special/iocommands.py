@@ -123,6 +123,7 @@ def open_external_editor(filename=None, sql=None):
     the query.
 
     :return: list with one tuple, query as first element.
+
     """
 
     message = None
