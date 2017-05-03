@@ -118,7 +118,7 @@ def open_external_editor(filename=None, sql='', default_text=''):
     while pattern.search(sql):
         sql = pattern.sub('', sql)
 
-    text = sql if sql else default_text
+    text = sql or default_text
 
     message = None
     filename = filename.strip().split(' ', 1)[0] if filename else None
