@@ -101,6 +101,7 @@ def get_filename(sql):
         command, _, filename = sql.partition(' ')
         return filename.strip() or None
 
+
 @export
 def get_editor_query(sql):
     """Get the query part of an editor command."""
@@ -114,6 +115,7 @@ def get_editor_query(sql):
         sql = pattern.sub('', sql)
 
     return sql
+
 
 @export
 def open_external_editor(filename=None, sql=None):
