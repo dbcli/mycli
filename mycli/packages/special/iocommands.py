@@ -102,7 +102,7 @@ def get_filename(sql):
         return filename.strip() or None
 
 @export
-def open_external_editor(filename=None, sql=''):
+def open_external_editor(filename=None, sql='', default_text=''):
     """
     Open external editor, wait for the user to type in his query,
     return the query.
@@ -118,6 +118,8 @@ def open_external_editor(filename=None, sql=''):
     while pattern.search(sql):
         sql = pattern.sub('', sql)
 
+    text = sql if sql else default_text
+
     message = None
     filename = filename.strip().split(' ', 1)[0] if filename else None
 
@@ -125,7 +127,7 @@ def open_external_editor(filename=None, sql=''):
 
     # Populate the editor buffer with the partial sql (if available) and a
     # placeholder comment.
-    query = click.edit(sql + '\n\n' + MARKER, filename=filename,
+    query = click.edit(text + '\n\n' + MARKER, filename=filename,
             extension='.sql')
 
     if filename:
