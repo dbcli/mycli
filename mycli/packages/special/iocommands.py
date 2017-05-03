@@ -102,13 +102,8 @@ def get_filename(sql):
         return filename.strip() or None
 
 @export
-def open_external_editor(filename=None, sql='', default_text=''):
-    """
-    Open external editor, wait for the user to type in his query,
-    return the query.
-    :return: list with one tuple, query as first element.
-    """
-
+def get_editor_query(sql):
+    """Get the query part of an editor command."""
     sql = sql.strip()
 
     # The reason we can't simply do .strip('\e') is that it strips characters,
@@ -118,7 +113,15 @@ def open_external_editor(filename=None, sql='', default_text=''):
     while pattern.search(sql):
         sql = pattern.sub('', sql)
 
-    text = sql or default_text
+    return sql
+
+@export
+def open_external_editor(filename=None, sql='', default_text=''):
+    """
+    Open external editor, wait for the user to type in his query,
+    return the query.
+    :return: list with one tuple, query as first element.
+    """
 
     message = None
     filename = filename.strip().split(' ', 1)[0] if filename else None
@@ -127,7 +130,7 @@ def open_external_editor(filename=None, sql='', default_text=''):
 
     # Populate the editor buffer with the partial sql (if available) and a
     # placeholder comment.
-    query = click.edit(text + '\n\n' + MARKER, filename=filename,
+    query = click.edit(sql + '\n\n' + MARKER, filename=filename,
             extension='.sql')
 
     if filename:
