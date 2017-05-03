@@ -419,8 +419,9 @@ class MyCli(object):
         saved_callables = cli.application.pre_run_callables
         while special.editor_command(document.text):
             filename = special.get_filename(document.text)
-            sql, message = special.open_external_editor(filename,
-                                                          sql=document.text)
+            query = (special.get_editor_query(document.text) or
+                     self.get_last_query())
+            sql, message = special.open_external_editor(filename, sql=query)
             if message:
                 # Something went wrong. Raise an exception and bail.
                 raise RuntimeError(message)
@@ -755,6 +756,10 @@ class MyCli(object):
         max_reserved_space = 8
         _, height = click.get_terminal_size()
         return min(round(height * reserved_space_ratio), max_reserved_space)
+
+    def get_last_query(self):
+        """Get the last query executed or None."""
+        return self.query_history[-1][0] if self.query_history else None
 
 
 @click.command()

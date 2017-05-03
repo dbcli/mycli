@@ -6,6 +6,7 @@ Features:
 
 * Handle reserved space for completion menu better in small windows. (Thanks: [Thomas Roten]).
 * Display current vi mode in toolbar. (Thanks: [Thomas Roten]).
+* Opening an external editor will edit the last-run query. (Thanks: [Thomas Roten]).
 
 Bug Fixes:
 ----------
