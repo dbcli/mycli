@@ -117,9 +117,9 @@ def get_editor_query(sql):
 
 @export
 def open_external_editor(filename=None, sql=''):
-    """
-    Open external editor, wait for the user to type in his query,
-    return the query.
+    """Open external editor, wait for the user to type in their query, return
+    the query.
+
     :return: list with one tuple, query as first element.
     """
 
