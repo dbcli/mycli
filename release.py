@@ -1,7 +1,10 @@
 #!/usr/bin/env python
+"""A script to publish a release of mycli to PyPI."""
+
 from __future__ import print_function
 import re
 import ast
+import io
 import subprocess
 import sys
 from optparse import OptionParser
@@ -51,9 +54,8 @@ def run_step(*args):
 def version(version_file):
     _version_re = re.compile(r'__version__\s+=\s+(.*)')
 
-    with open(version_file, 'rb') as f:
-        ver = str(ast.literal_eval(_version_re.search(
-            f.read().decode('utf-8')).group(1)))
+    with io.open(version_file, encoding='utf-8') as f:
+        ver = str(ast.literal_eval(_version_re.search(f.read()).group(1)))
 
     return ver
 
@@ -61,7 +63,8 @@ def version(version_file):
 def commit_for_release(version_file, ver):
     run_step('git', 'reset')
     run_step('git', 'add', version_file)
-    run_step('git', 'commit', '--message', 'Releasing version %s' % ver)
+    run_step('git', 'commit', '--message',
+             'Releasing version {}'.format(ver))
 
 
 def create_git_tag(tag_name):
@@ -128,7 +131,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     commit_for_release('mycli/__init__.py', ver)
-    create_git_tag('v%s' % ver)
+    create_git_tag('v{}'.format(ver))
     register_with_pypi()
     create_distribution_files()
     push_to_github()
