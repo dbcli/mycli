@@ -2,9 +2,8 @@
 """A script to publish a release of mycli to PyPI."""
 
 from __future__ import print_function
-import re
-import ast
 import io
+import re
 import subprocess
 import sys
 from optparse import OptionParser
@@ -52,10 +51,11 @@ def run_step(*args):
 
 
 def version(version_file):
-    _version_re = re.compile(r'__version__\s+=\s+(.*)')
+    _version_re = re.compile(
+        r'__version__\s+=\s+(?P<quote>[\'"])(?P<version>.*)(?P=quote)')
 
     with io.open(version_file, encoding='utf-8') as f:
-        ver = str(ast.literal_eval(_version_re.search(f.read()).group(1)))
+        ver = _version_re.search(f.read()).group('version')
 
     return ver
 
