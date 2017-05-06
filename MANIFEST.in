@@ -1,2 +1,2 @@
-include LICENSE.txt *.md *.rst TODO requirements-dev.txt screenshots/*
+include LICENSE.txt *.md *.rst TODO requirements-dev.txt Makefile screenshots/*
 include conftest.py .coveragerc pytest.ini test tox.ini
