@@ -66,10 +66,6 @@ def create_git_tag(tag_name):
     run_step('git', 'tag', tag_name)
 
 
-def register_with_pypi():
-    run_step('python', 'setup.py', 'register')
-
-
 def create_distribution_files():
     run_step('python', 'setup.py', 'sdist', 'bdist_wheel')
 
@@ -125,7 +121,6 @@ if __name__ == '__main__':
 
     commit_for_release('mycli/__init__.py', ver)
     create_git_tag('v{}'.format(ver))
-    register_with_pypi()
     create_distribution_files()
     push_to_github()
     push_tags_to_github()
