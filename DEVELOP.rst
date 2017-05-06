@@ -1,86 +1,75 @@
 Development Guide
 -----------------
+
 This is a guide for developers who would like to contribute to this project.
+
+If you're interested in contributing to mycli, thank you. We'd love your help!
+You'll always get credit for your work.
 
 GitHub Workflow
 ---------------
 
-If you're interested in contributing to mycli, first of all my heart felt
-thanks. `Fork the project <https://github.com/dbcli/mycli>`_ in github.  Then
-clone your fork into your computer (``git clone <url-for-your-fork>``).  Make
-the changes and create the commits in your local machine. Then push those
-changes to your fork. Then click on the pull request icon on github and create
-a new pull request. Add a description about the change and send it along. I
-promise to review the pull request in a reasonable window of time and get back
-to you. 
+1. `Fork the repository <https://github.com/dbcli/mycli>`_ on GitHub.
+2. Clone your fork locally::
 
-In order to keep your fork up to date with any changes from mainline, add a new
-git remote to your local copy called 'upstream' and point it to the main mycli
-repo.
+    $ git clone <url-for-your-fork>
 
-:: 
+3. Add the official repository (``upstream``) as a remote repository::
 
-   $ git remote add upstream git@github.com:dbcli/mycli.git
+    $ git remote add upstream git@github.com:dbcli/mycli.git
 
-Once the 'upstream' end point is added you can then periodically do a ``git
-pull upstream master`` to update your local copy and then do a ``git push
-origin master`` to keep your own fork up to date. 
+4. Set up a `virtual environment <http://docs.python-guide.org/en/latest/dev/virtualenvs>`_
+   for development::
 
-Local Setup
------------
+    $ cd mycli
+    $ pip install virtualenv
+    $ virtualenv mycli_dev
 
-The installation instructions in the README file are intended for users of
-mycli. If you're developing mycli, you'll need to install it in a slightly
-different way so you can see the effects of your changes right away without
-having to go through the install cycle everytime you change the code.
+   We've just created a virtual environment that we'll use to install all the dependencies
+   and tools we need to work on mycli. Whenever you want to work on mycli, you
+   need to activate the virtual environment::
 
-It is highly recommended to use virtualenv for development. If you don't know
-what a virtualenv is, this `guide <http://docs.python-guide.org/en/latest/dev/virtualenvs/#virtual-environments>`_
-will help you get started.
+    $ source mycli_dev/bin/activate
 
-Create a virtualenv (let's call it mycli-dev). Activate it:
+5. Install the dependencies and development tools::
 
-::
-
-    source ./mycli-dev/bin/activate
-
-Once the virtualenv is activated, `cd` into the local clone of mycli folder
-and install mycli using pip as follows:
-
-::
-
+    $ pip install -r requirements-dev.txt
     $ pip install --editable .
 
-    or
+6. Create a branch for your bugfix or feature::
 
-    $ pip install -e .
+    $ git checkout -b <name-of-bugfix-or-feature>
 
-This will install the necessary dependencies as well as install mycli from the
-working folder into the virtualenv. By installing it using `pip install -e`
-we've linked the mycli installation with the working copy. So any changes made
-to the code is immediately available in the installed version of mycli. This
-makes it easy to change something in the code, launch mycli and check the
-effects of your change. 
+7. While you work on your bugfix or feature, be sure to pull the latest changes from ``upstream``. This ensures that your local codebase is up-to-date::
 
-Building DEB package from scratch
---------------------
+    $ git pull upstream master
 
-First pip install `make-deb`. Then run make-deb. It will create a debian folder
-after asking a few questions like maintainer name, email etc.
 
-$ vagrant up
+Running the Tests
+-----------------
 
-PEP8 checks
------------
+While you work on mycli, it's important to run the tests to make sure your code
+hasn't broken any existing functionality. To run the tests, just type in::
 
-When you submit a PR, the changeset is checked for pep8 compliance using
-`pep8radius <https://github.com/hayd/pep8radius>`_. If you see a build failing because
-of these checks, install pep8radius and apply style fixes:
+    $ make test
 
-::
+Mycli supports Python 2.7 and 3.3+. You can test against multiple versions of
+Python by running::
 
-    $ pip install pep8radius
-    $ pep8radius --docformatter --diff # view a diff of proposed fixes
-    $ pep8radius --docformatter --in-place # apply the fixes
+    $ make test-all
 
-Then commit and push the fixes.
+
+Coding Style
+------------
+
+Mycli requires code submissions to adhere to
+`PEP 8 <https://www.python.org/dev/peps/pep-0008/>`_.
+It's easy to check the style of your code, just run::
+
+    $ make lint
+
+If you see any PEP 8 style issues, you can automatically fix them by running::
+
+    $ make lint-fix
+
+Be sure to commit and push any PEP 8 fixes.
