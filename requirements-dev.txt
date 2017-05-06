@@ -5,4 +5,4 @@ twine==1.8.1
 behave
 pexpect
 coverage==4.3.4
-pep8radius
+git+https://github.com/hayd/pep8radius.git@c8aebd0e1d272160896124e104773b97a6249c3e#egg=pep8radius
