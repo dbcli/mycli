@@ -7,12 +7,13 @@ python:
   - "3.6"
 
 install:
-  - pip install PyMySQL . pytest mock codecov pexpect behave
+  - pip install PyMySQL pytest mock codecov pexpect behave pytest-cov
   - pip install git+https://github.com/hayd/pep8radius.git
+  - pip install -e .
 
 script:
   - set -e
-  - coverage run --source mycli -m py.test
+  - pytest --cov-report= --cov=mycli
   - cd test
   - behave
   - cd ..
