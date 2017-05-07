@@ -7,13 +7,13 @@ python:
   - "3.6"
 
 install:
-  - pip install PyMySQL pytest mock codecov pexpect behave pytest-cov
+  - pip install PyMySQL pytest mock codecov pexpect behave
   - pip install git+https://github.com/hayd/pep8radius.git
   - pip install -e .
 
 script:
   - set -e
-  - py.test --cov-report= --cov=mycli
+  - coverage run -m py.test
   - behave test/features
   # check for pep8 errors, only looking at branch vs master. If there are errors, show diff and return an error code.
   - pep8radius master --docformatter --error-status || ( pep8radius master --docformatter --diff; false )
