@@ -13,7 +13,7 @@ install:
 
 script:
   - set -e
-  - pytest --cov-report= --cov=mycli
+  - py.test --cov-report= --cov=mycli
   - cd test
   - behave
   - cd ..
