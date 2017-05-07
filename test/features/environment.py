@@ -10,13 +10,16 @@ import pexpect
 
 from steps.wrappers import run_cli, wait_prompt
 
+PACKAGE_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+
 
 def before_all(context):
     """Set env parameters."""
     os.environ['LINES'] = "100"
     os.environ['COLUMNS'] = "100"
     os.environ['EDITOR'] = 'ex'
-    os.environ["COVERAGE_PROCESS_START"] = os.getcwd() + "/../setup.cfg"
+    os.environ["COVERAGE_PROCESS_START"] = os.path.join(PACKAGE_ROOT,
+                                                        'setup.cfg')
 
     context.exit_sent = False
 
@@ -48,7 +51,9 @@ def before_all(context):
         'pager_boundary': '---boundary---',
     }
     os.environ['PAGER'] = "{0} {1} {2}".format(
-        sys.executable, "test/features/wrappager.py", context.conf['pager_boundary'])
+        sys.executable,
+        os.path.join(PACKAGE_ROOT, '/test/features/wrappager.py'),
+        context.conf['pager_boundary'])
 
     context.cn = dbutils.create_db(context.conf['host'], context.conf['user'],
                                    context.conf['pass'],
