@@ -16,7 +16,7 @@ def before_all(context):
     os.environ['LINES'] = "100"
     os.environ['COLUMNS'] = "100"
     os.environ['EDITOR'] = 'ex'
-    os.environ["COVERAGE_PROCESS_START"] = os.getcwd() + "/../.coveragerc"
+    os.environ["COVERAGE_PROCESS_START"] = os.getcwd() + "/../setup.cfg"
 
     context.exit_sent = False
 
