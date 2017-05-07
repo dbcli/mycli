@@ -1,5 +1,0 @@
-#!/bin/bash
-
-echo "Setting up symlink to mycli"
-ln -sf /usr/share/python/mycli/bin/mycli /usr/local/bin/mycli
-
