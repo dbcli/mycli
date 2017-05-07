@@ -52,7 +52,7 @@ def before_all(context):
     }
     os.environ['PAGER'] = "{0} {1} {2}".format(
         sys.executable,
-        os.path.join(PACKAGE_ROOT, '/test/features/wrappager.py'),
+        os.path.join(PACKAGE_ROOT, 'test/features/wrappager.py'),
         context.conf['pager_boundary'])
 
     context.cn = dbutils.create_db(context.conf['host'], context.conf['user'],
