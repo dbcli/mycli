@@ -16,7 +16,12 @@ def before_all(context):
     os.environ['LINES'] = "100"
     os.environ['COLUMNS'] = "100"
     os.environ['EDITOR'] = 'ex'
-    os.environ["COVERAGE_PROCESS_START"] = os.getcwd() + "/../.coveragerc"
+
+    context.package_root = os.path.abspath(
+        os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+
+    os.environ["COVERAGE_PROCESS_START"] = os.path.join(context.package_root,
+                                                        '.coveragerc')
 
     context.exit_sent = False
 
@@ -48,7 +53,9 @@ def before_all(context):
         'pager_boundary': '---boundary---',
     }
     os.environ['PAGER'] = "{0} {1} {2}".format(
-        sys.executable, "test/features/wrappager.py", context.conf['pager_boundary'])
+        sys.executable,
+        os.path.join(context.package_root, 'test/features/wrappager.py'),
+        context.conf['pager_boundary'])
 
     context.cn = dbutils.create_db(context.conf['host'], context.conf['user'],
                                    context.conf['pass'],

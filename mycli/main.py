@@ -56,7 +56,7 @@ from collections import namedtuple
 # Query tuples are used for maintaining history
 Query = namedtuple('Query', ['query', 'successful', 'mutating'])
 
-PACKAGE_ROOT = os.path.dirname(__file__)
+PACKAGE_ROOT = os.path.abspath(os.path.dirname(__file__))
 
 # no-op logging handler
 class NullHandler(logging.Handler):
