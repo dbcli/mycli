@@ -1,2 +1,6 @@
-include LICENSE.txt *.md *.rst TODO requirements-dev.txt screenshots/*
-include tasks.py conftest.py .coveragerc pytest.ini test tox.ini
+include LICENSE.txt *.md *.rst requirements-dev.txt screenshots/*
+include tasks.py .coveragerc tox.ini
+recursive-include test *.cnf
+recursive-include test *.feature
+recursive-include test *.py
+recursive-include test *.txt

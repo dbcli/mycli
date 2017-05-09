@@ -38,7 +38,7 @@ def run_cli(context):
 
     cmd_parts = [cli_cmd] + run_args
     cmd = ' '.join(cmd_parts)
-    context.cli = pexpect.spawnu(cmd, cwd='..')
+    context.cli = pexpect.spawnu(cmd, cwd=context.package_root)
     context.exit_sent = False
     context.currentdb = context.conf['dbname']
 
