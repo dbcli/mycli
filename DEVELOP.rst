@@ -51,12 +51,12 @@ Running the Tests
 While you work on mycli, it's important to run the tests to make sure your code
 hasn't broken any existing functionality. To run the tests, just type in::
 
-    $ make test
+    $ ./setup.py test
 
 Mycli supports Python 2.7 and 3.3+. You can test against multiple versions of
 Python by running::
 
-    $ make test-all
+    $ ./setup.py test --all
 
 
 Coding Style
@@ -66,10 +66,10 @@ Mycli requires code submissions to adhere to
 `PEP 8 <https://www.python.org/dev/peps/pep-0008/>`_.
 It's easy to check the style of your code, just run::
 
-    $ make lint
+    $ ./setup.py lint
 
 If you see any PEP 8 style issues, you can automatically fix them by running::
 
-    $ make lint-fix
+    $ ./setup.py lint --fix
 
 Be sure to commit and push any PEP 8 fixes.
