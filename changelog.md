@@ -27,7 +27,7 @@ Internal Changes:
 * Better handle common before/after scenarios in behave. (Thanks: [Dick Marinus])
 * Added a regression test for sqlparse >= 0.2.3 (Thanks: [Dick Marinus]).
 * Reverted removal of temporary hack for sqlparse (Thanks: [Dick Marinus]).
-* Add Makefile to simplify development tasks (Thanks: [Thomas Roten]).
+* Add setup.py commands to simplify development tasks (Thanks: [Thomas Roten]).
 
 1.10.0:
 =======
