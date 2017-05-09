@@ -13,13 +13,11 @@ install:
 
 script:
   - set -e
-  - py.test --cov-report= --cov=mycli
-  - behave test/features
+  - ./setup.py test -c
   - ./setup.py lint
   - set +e
 
 after_success:
-  - coverage combine
   - codecov
 
 notifications:

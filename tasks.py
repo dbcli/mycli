@@ -82,15 +82,19 @@ class test(BaseCommand):
 
     user_options = [
         ('all', 'a', 'test against all supported versions of Python'),
+        ('coverage', 'c', 'measure test coverage')
     ]
 
-    unit_test_cmd = 'py.test{quiet: -q}{verbose: -v}{dry_run: --setup-only}'
+    unit_test_cmd = ('py.test{quiet: -q}{verbose: -v}{dry_run: --setup-only}'
+                     '{coverage: --cov-report= --cov=mycli}')
     cli_test_cmd = 'behave{quiet: -q}{verbose: -v}{dry_run: -d} test/features'
     test_all_cmd = 'tox{verbose: -v}{dry_run: --notest}'
+    coverage_cmd = 'coverage combine && coverage report'
 
     def initialize_options(self):
         """Set the default options."""
         self.all = False
+        self.coverage = False
         super(test, self).initialize_options()
 
     def run(self):
@@ -99,6 +103,8 @@ class test(BaseCommand):
             cmd = self.apply_options(self.test_all_cmd)
             self.call_and_exit(cmd)
         else:
-            cmds = (self.apply_options(self.unit_test_cmd),
+            cmds = (self.apply_options(self.unit_test_cmd, ('coverage', )),
                     self.apply_options(self.cli_test_cmd))
+            if self.coverage:
+                cmds += (self.apply_options(self.coverage_cmd), )
             self.call_in_sequence(cmds)
