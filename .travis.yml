@@ -7,8 +7,7 @@ python:
   - "3.6"
 
 install:
-  - pip install PyMySQL pytest mock codecov pexpect behave pytest-cov
-  - pip install git+https://github.com/hayd/pep8radius.git
+  - pip install -r requirements-dev.txt
   - pip install -e .
 
 script:
