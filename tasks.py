@@ -57,7 +57,7 @@ class lint(BaseCommand):
     description = 'check code against PEP 8 (and fix violations)'
 
     user_options = [
-        ('branch', 'b', 'branch or revision to compare against (e.g. master)'),
+        ('branch=', 'b', 'branch or revision to compare against (e.g. master)'),
         ('fix', 'f', 'fix the violations in place')
     ]
 
