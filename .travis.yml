@@ -11,10 +11,7 @@ install:
   - pip install -e .
 
 script:
-  - set -e
-  - ./setup.py test -c
-  - ./setup.py lint
-  - set +e
+  - ./setup.py test -c lint
 
 after_success:
   - codecov
