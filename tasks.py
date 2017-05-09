@@ -69,8 +69,7 @@ class lint(BaseCommand):
 
     def run(self):
         """Run the linter."""
-        cmd = ('pep8radius {branch} --docformatter --diff --error-status'
-               '{{fix: --in-place}}{{verbose: -vv}}')
+        cmd = 'pep8radius {branch} {{fix: --in-place}}{{verbose: -vv}}'
         cmd = cmd.format(branch=self.branch)
         self.call_and_exit(self.apply_options(cmd, ('fix', )))
 
