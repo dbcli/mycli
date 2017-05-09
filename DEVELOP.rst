@@ -73,6 +73,22 @@ You can also measure mycli's test coverage by running::
     $ ./setup.py test --coverage
 
 
+Test Database Credentials
++++++++++++++++++++++++++
+
+The tests require a database connection to work. You can tell the tests which
+credentials to use by setting the applicable environment variables::
+
+   $ export PYTEST_HOST=localhost
+   $ export PYTEST_USER=user
+   $ export PYTEST_PASSWORD=myclirocks
+   $ export PYTEST_PORT=3306
+   $ export PYTEST_CHARSET=utf8
+
+The default values are ``localhost``, ``root``, no password, ``3306``, and ``utf8``.
+You only need to set the values that differ from the defaults.
+
+
 Coding Style
 ------------
 
