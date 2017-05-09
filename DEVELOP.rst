@@ -31,18 +31,28 @@ GitHub Workflow
 
     $ source mycli_dev/bin/activate
 
+   When you're done working, you can deactivate the virtual environment::
+
+   $ deactivate
+
 5. Install the dependencies and development tools::
 
     $ pip install -r requirements-dev.txt
     $ pip install --editable .
 
-6. Create a branch for your bugfix or feature::
+6. Create a branch for your bugfix or feature based off the ``master`` branch::
 
-    $ git checkout -b <name-of-bugfix-or-feature>
+    $ git checkout -b <name-of-bugfix-or-feature> master
 
 7. While you work on your bugfix or feature, be sure to pull the latest changes from ``upstream``. This ensures that your local codebase is up-to-date::
 
     $ git pull upstream master
+
+8. When your work is ready for the mycli team to review it, push your branch to your fork::
+
+    $ git push origin <name-of-bugfix-or-feature>
+
+9. `Create a pull request <https://help.github.com/articles/creating-a-pull-request-from-a-fork/>`_ on GitHub.
 
 
 Running the Tests
@@ -57,6 +67,10 @@ Mycli supports Python 2.7 and 3.3+. You can test against multiple versions of
 Python by running::
 
     $ ./setup.py test --all
+
+You can also measure mycli's test coverage by running::
+
+    $ ./setup.py test --coverage
 
 
 Coding Style
