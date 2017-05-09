@@ -16,8 +16,7 @@ script:
   - cd test
   - behave
   - cd ..
-  # check for pep8 errors, only looking at branch vs master. If there are errors, show diff and return an error code.
-  - pep8radius master --docformatter --error-status || ( pep8radius master --docformatter --diff; false )
+  - ./setup.py lint
   - set +e
 
 after_success:

@@ -1,6 +1,7 @@
+#!/usr/bin/env python
+
 import re
 import ast
-import platform
 from setuptools import setup, find_packages
 
 _version_re = re.compile(r'__version__\s+=\s+(.*)')
@@ -33,10 +34,13 @@ setup(
     description=description,
     long_description=description,
     install_requires=install_requirements,
-    entry_points='''
-        [console_scripts]
-        mycli=mycli.main:cli
-    ''',
+    entry_points={
+        'console_scripts': ['mycli = mycli.main:cli'],
+        'distutils.commands': [
+            'lint = tasks:lint',
+            'test = tasks:test',
+        ],
+    },
     classifiers=[
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
