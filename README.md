@@ -109,7 +109,7 @@ If you're interested in contributing to this project, first of all I would like
 to extend my heartfelt gratitude. I've written a small doc to describe how to
 get this running in a development setup.
 
-https://github.com/dbcli/mycli/blob/master/DEVELOP.rst
+https://github.com/dbcli/mycli/blob/master/CONTRIBUTING.rst
 
 Please feel free to reach out to me if you need help.
 
