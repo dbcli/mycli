@@ -580,6 +580,7 @@ class MyCli(object):
             else:
                 try:
                     special.write_tee('\n'.join(output))
+                    special.write_once('\n'.join(output))
                     if special.is_pager_enabled():
                         self.output_via_pager('\n'.join(output))
                     else:
