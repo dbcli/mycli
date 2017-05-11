@@ -123,6 +123,8 @@ class SQLExecute(object):
             if sql.endswith('\\G'):
                 special.set_expanded_output(True)
                 sql = sql[:-2].strip()
+            sql, redirect = special.redirectmatch(sql)
+            special.set_redirected_output(**redirect)
             try:   # Special command
                 _logger.debug('Trying a dbspecial command. sql: %r', sql)
                 cur = self.conn.cursor()

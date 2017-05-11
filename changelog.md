@@ -29,6 +29,11 @@ Internal Changes:
 * Reverted removal of temporary hack for sqlparse (Thanks: [Dick Marinus]).
 * Add setup.py commands to simplify development tasks (Thanks: [Thomas Roten]).
 
+Features:
+---------
+
+* Add unix like redirect output (Thanks: [Dick Marinus]).
+
 1.10.0:
 =======
 

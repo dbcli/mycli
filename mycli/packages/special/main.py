@@ -105,5 +105,7 @@ def show_keyword_help(cur, arg):
 @special_command('quit', '\\q', 'Quit.', arg_type=NO_QUERY)
 @special_command('\\e', '\\e', 'Edit command with editor. (uses $EDITOR)', arg_type=NO_QUERY, case_sensitive=True)
 @special_command('\\G', '\\G', 'Display results vertically.', arg_type=NO_QUERY, case_sensitive=True)
+@special_command('redirect', 'query \> filename', 'Write the query results to filename')
+@special_command('redirectappend', 'query \>> filename', 'Append the query results to filename')
 def stub():
     raise NotImplementedError

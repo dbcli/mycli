@@ -467,6 +467,7 @@ class MyCli(object):
                 document = self.cli.run()
 
                 special.set_expanded_output(False)
+                special.set_redirected_output(enabled=False)
 
                 # The reason we check here instead of inside the sqlexecute is
                 # because we want to raise the Exit exception which will be
@@ -580,6 +581,7 @@ class MyCli(object):
             else:
                 try:
                     special.write_tee('\n'.join(output))
+                    special.output_to_file('\n'.join(output))
                     if special.is_pager_enabled():
                         self.output_via_pager('\n'.join(output))
                     else:

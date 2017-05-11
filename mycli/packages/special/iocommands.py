@@ -291,3 +291,65 @@ def write_tee(output):
         tee_file.write(output)
         tee_file.write(u"\n")
         tee_file.flush()
+
+
+@export
+def set_redirected_output(append=False, filename=None, enabled=False):
+    global use_redirected_output
+    use_redirected_output = {'append': append,
+                             'filename': filename, 'enabled': enabled}
+
+
+@export
+def get_redirected_output():
+    return use_redirected_output
+
+
+@export
+def redirectmatch(sql):
+    filename = None
+    if sql and sql[-1] in ("'", '"'):  # find filename in quoted redirect
+        quote = sql[-1]
+        m = re.match(r'.*([^\\]' + quote + r'.*' + quote + '$)', sql)
+        if m:
+            filename = m.group(1).replace('\\' + quote, quote)
+    else:  # find filename for non-quoted redirect
+        quote = ''
+        m = re.match(r'.*?([^\][^>]*$)', sql)
+        if m:
+            filename = m.group(1)
+
+    if filename is None:
+        redirect = None
+    else:
+        redirect = sql[:-len(filename)].strip()
+
+    if redirect and (redirect[-2:] == r'\>' or redirect[-3:] == r'\>>'):
+        append = redirect[-3:] == r'\>>'
+
+        sql = redirect[:-3] if append else redirect[:-2]
+        sql = sql.strip()
+        filename = filename.strip()
+
+        if quote:
+            filename = filename[len(quote):-len(quote)]
+        return (sql, {
+            "enabled": True,
+            "filename": filename,
+            "append": append,
+        })
+    else:
+        return (sql, {
+            "enabled": False,
+            "filename": None,
+            "append": False,
+        })
+
+
+@export
+def output_to_file(text):
+    output = get_redirected_output()
+    if output["enabled"]:
+        mode = 'a' if output['append'] else 'w'
+        with open(output["filename"], mode, encoding='utf-8') as f:
+            f.write(text)
