@@ -367,7 +367,6 @@ class MyCli(object):
         # Favor whichever local_infile option is set.
         for local_infile_option in (local_infile, cnf['local-infile'],
                                     cnf['loose-local-infile'], False):
-
             try:
                 local_infile = str_to_bool(local_infile_option)
                 break
