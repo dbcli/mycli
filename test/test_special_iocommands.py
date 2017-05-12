@@ -83,3 +83,23 @@ def test_favorite_query():
         mycli.packages.special.execute(cur, u'\\fs check {0}'.format(query))
         assert next(mycli.packages.special.execute(
             cur, u'\\f check'))[0] == "> " + query
+
+
+def test_once_command():
+    with pytest.raises(TypeError):
+        mycli.packages.special.execute(None, u"\once")
+
+    mycli.packages.special.execute(None, u"\once /proc/access-denied")
+    with pytest.raises(OSError):
+        mycli.packages.special.write_once(u"hello world")
+
+    mycli.packages.special.write_once(u"hello world")  # write without file set
+    with tempfile.NamedTemporaryFile() as f:
+        mycli.packages.special.execute(None, u"\once " + f.name)
+        mycli.packages.special.write_once(u"hello world")
+        assert f.read() == b"hello world\n"
+
+        mycli.packages.special.execute(None, u"\once -o " + f.name)
+        mycli.packages.special.write_once(u"hello world")
+        f.seek(0)
+        assert f.read() == b"hello world\n"
