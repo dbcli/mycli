@@ -267,7 +267,6 @@ def parseargfile(arg):
     return {'file': filename, 'mode': mode}
 
 
-
 @special_command('tee', 'tee [-o] filename',
                  'write to an output file (optionally overwrite using -o)')
 def set_tee(arg, **_):
