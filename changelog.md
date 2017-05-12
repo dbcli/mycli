@@ -29,6 +29,7 @@ Internal Changes:
 * Added a regression test for sqlparse >= 0.2.3 (Thanks: [Dick Marinus]).
 * Reverted removal of temporary hack for sqlparse (Thanks: [Dick Marinus]).
 * Add setup.py commands to simplify development tasks (Thanks: [Thomas Roten]).
+* Add behave tests to tox (Thanks: [Dick Marinus]).
 
 1.10.0:
 =======
