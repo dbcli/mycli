@@ -483,7 +483,7 @@ class MyCli(object):
                     self.output(str(e), err=True, fg='red')
                     return
 
-            if not document.text:
+            if not document.text.strip():
                 return
 
             if self.destructive_warning:
