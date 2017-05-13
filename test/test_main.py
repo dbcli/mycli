@@ -131,6 +131,7 @@ def test_batch_mode_csv(executor):
     assert expected in result.output
 
 
+@dbtest
 def test_query_starts_with(executor):
     query = 'USE test;'
     assert query_starts_with(query, ('use', )) is True
@@ -139,11 +140,13 @@ def test_query_starts_with(executor):
     assert query_starts_with(query, ('use', )) is False
 
 
+@dbtest
 def test_query_starts_with_comment(executor):
     query = '# comment\nUSE test;'
     assert query_starts_with(query, ('use', )) is True
 
 
+@dbtest
 def test_queries_start_with(executor):
     sql = (
         '# comment\n'
@@ -155,6 +158,7 @@ def test_queries_start_with(executor):
     assert queries_start_with(sql, ('delete', 'update')) is False
 
 
+@dbtest
 def test_is_destructive(executor):
     sql = (
         'use test;\n'
@@ -164,6 +168,7 @@ def test_is_destructive(executor):
     assert is_destructive(sql) is True
 
 
+@dbtest
 def test_confirm_destructive_query_notty(executor):
     stdin = click.get_text_stream('stdin')
     assert stdin.isatty() is False
