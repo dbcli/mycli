@@ -1,4 +1,5 @@
 environment:
+  PYTEST_PASSWORD: Password12!
 
   matrix:
     - PYTHON: "C:\\Python27"
