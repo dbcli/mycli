@@ -6,7 +6,8 @@ import tempfile
 import pytest
 
 import mycli.packages.special
-import utils
+
+from utils import dbtest, db_connection
 
 
 def test_set_get_pager():
@@ -77,8 +78,9 @@ def test_tee_command_error():
             mycli.packages.special.execute(None, 'tee {}'.format(f.name))
 
 
+@dbtest
 def test_favorite_query():
-    with utils.db_connection().cursor() as cur:
+    with db_connection().cursor() as cur:
         query = u'select "✔"'
         mycli.packages.special.execute(cur, u'\\fs check {0}'.format(query))
         assert next(mycli.packages.special.execute(
