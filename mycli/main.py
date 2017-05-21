@@ -387,6 +387,9 @@ class MyCli(object):
                     self.output(str(e), err=True, fg='red')
                     return
 
+            if not document.text.strip():
+                return
+
             if self.destructive_warning:
                 destroy = confirm_destructive_query(document.text)
                 if destroy is None:

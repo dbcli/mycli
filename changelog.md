@@ -13,6 +13,7 @@ Bug Fixes:
 ----------
 
 * Fixed incorrect timekeeping when running queries from a file. (Thanks: [Thomas Roten]).
+* Do not display time and empty line for blank queries (Thanks: [Thomas Roten]).
 
 Internal Changes:
 -----------------
@@ -30,6 +31,7 @@ Internal Changes:
 * Reverted removal of temporary hack for sqlparse (Thanks: [Dick Marinus]).
 * Add setup.py commands to simplify development tasks (Thanks: [Thomas Roten]).
 * Add behave tests to tox (Thanks: [Dick Marinus]).
+* Add missing @dbtest to tests (Thanks: [Dick Marinus]).
 
 1.10.0:
 =======
