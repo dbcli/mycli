@@ -45,8 +45,7 @@ from .clistyle import style_factory
 from .sqlexecute import SQLExecute
 from .clibuffer import CLIBuffer
 from .completion_refresher import CompletionRefresher
-from .config import (write_default_config, read_config_files, str_to_bool,
-                     MySqlConfig)
+from .config import MyCliConfig
 from .key_bindings import mycli_bindings
 from .encodingutils import utf8tounicode
 from .lexer import MyCliLexer
@@ -79,47 +78,34 @@ class MyCli(object):
     max_len_prompt = 45
     defaults_suffix = None
 
-    system_config_files = [
-        '/etc/myclirc',
-    ]
-
-    default_config_file = os.path.join(PACKAGE_ROOT, 'myclirc')
-
     def __init__(self, sqlexecute=None, prompt=None,
             logfile=None, defaults_suffix=None, defaults_file=None,
             login_path=None, auto_vertical_output=False, warn=None,
-            myclirc="~/.myclirc"):
+            myclirc=None):
         self.sqlexecute = sqlexecute
         self.logfile = logfile
         self.login_path = login_path
 
-        self.mysql_config = MySqlConfig(
-            defaults_file=defaults_file, defaults_suffix=defaults_suffix,
-            login_path=login_path)
+        c = self.config = MyCliConfig('mycli', 'dbcli', 'myclirc',
+                                      default=myclirc, validate=True,
+                                      write_default=False)
+        c.read()
 
-        # Load config.
-        config_files = ([self.default_config_file] + self.system_config_files +
-                        [myclirc])
-        c = self.config = read_config_files(config_files)
-        self.multi_line = c['main'].as_bool('multi_line')
+        self.multi_line = c['main']['multi_line']
         self.key_bindings = c['main']['key_bindings']
-        special.set_timing_enabled(c['main'].as_bool('timing'))
+        special.set_timing_enabled(c['main']['timing'])
         self.table_format = c['main']['table_format']
         self.syntax_style = c['main']['syntax_style']
-        self.less_chatty = c['main'].as_bool('less_chatty')
+        self.less_chatty = c['main']['less_chatty']
         self.cli_style = c['colors']
-        self.wider_completion_menu = c['main'].as_bool('wider_completion_menu')
-        c_dest_warning = c['main'].as_bool('destructive_warning')
+        self.wider_completion_menu = c['main']['wider_completion_menu']
+        c_dest_warning = c['main']['destructive_warning']
         self.destructive_warning = c_dest_warning if warn is None else warn
-        self.login_path_as_host = c['main'].as_bool('login_path_as_host')
+        self.login_path_as_host = c['main']['login_path_as_host']
 
         # read from cli argument or user config file
         self.auto_vertical_output = auto_vertical_output or \
-                                c['main'].as_bool('auto_vertical_output')
-
-        # Write user config if system config wasn't the last config loaded.
-        if c.filename not in self.system_config_files:
-            write_default_config(self.default_config_file, myclirc)
+                                c['main']['auto_vertical_output']
 
         # audit log
         if self.logfile is None and 'audit_log' in c['main']:
@@ -134,14 +120,14 @@ class MyCli(object):
         self.logger = logging.getLogger(__name__)
         self.initialize_logging()
 
-        self.prompt_format = (prompt or self.mysql_config.get('prompt') or
+        self.prompt_format = (prompt or c.mysql.get('prompt') or
                               c['main']['prompt'] or self.default_prompt)
         self.prompt_continuation_format = c['main']['prompt_continuation']
 
         self.query_history = []
 
         # Initialize completer.
-        self.smart_completion = c['main'].as_bool('smart_completion')
+        self.smart_completion = c['main']['smart_completion']
         self.completer = SQLCompleter(self.smart_completion)
         self._completer_lock = threading.Lock()
 
@@ -278,38 +264,25 @@ class MyCli(object):
 
     def connect(self, database='', user='', passwd='', host='', port='',
             socket='', charset='', local_infile='', ssl=''):
-        database = database or self.mysql_config.get('database')
+        database = database or self.config.mysql.get('database')
         if port or host:
             socket = ''
         else:
-            socket = socket or self.mysql_config.get('socket')
-        user = user or self.mysql_config.get('user') or os.getenv('USER')
-        host = host or self.mysql_config.get('host') or 'localhost'
-        port = port or self.mysql_config.get('port') or 3306
+            socket = socket or self.config.mysql.get('socket')
+        user = user or self.config.mysql.get('user') or os.getenv('USER')
+        host = host or self.config.mysql.get('host')
+        port = port or self.config.mysql.get('port')
         ssl = ssl or {}
 
-        try:
-            port = int(port)
-        except ValueError as e:
-            self.output("Error: Invalid port number: '{0}'.".format(port),
-                        err=True, fg='red')
-            exit(1)
-
-        passwd = passwd or self.mysql_config.get('password')
-        charset = (charset or self.mysql_config.get('default-character-set') or
+        passwd = passwd or self.config.mysql.get('password')
+        charset = (charset or self.config.mysql.get('default-character-set') or
                    'utf8')
 
         # Favor whichever local_infile option is set.
-        for local_infile_option in (
-                local_infile, self.mysql_config.get('local-infile'),
-                self.mysql_config.get('loose-local-infile'), False):
-            try:
-                local_infile = str_to_bool(local_infile_option)
-                break
-            except (TypeError, ValueError):
-                pass
+        local_infile = (local_infile or self.config.mysql.get('local-infile')
+                        or self.config.mysql.get('loose-local-infile'))
 
-        ssl = self.merge_ssl_with_cnf(ssl, self.mysql_config)
+        ssl = self.merge_ssl_with_cnf(ssl, self.config.mysql)
         # prune lone check_hostname=False
         if not any(v for v in ssl.values()):
             ssl = None
@@ -596,9 +569,9 @@ class MyCli(object):
         if not os.environ.get('LESS'):
             os.environ['LESS'] = '-RXF'
 
-        if self.mysql_config.get('pager'):
-            special.set_pager(self.mysql_config.get('pager'))
-        if self.mysql_config.get('skip-pager'):
+        if self.config.mysql.get('pager'):
+            special.set_pager(self.config.mysql.get('pager'))
+        if self.config.mysql.get('skip-pager'):
             special.disable_pager()
 
     def refresh_completions(self, reset=False):

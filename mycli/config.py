@@ -1,12 +1,12 @@
 from __future__ import print_function
-import shutil
 from io import BytesIO, TextIOWrapper
 import logging
 import os
-from os.path import exists
 import struct
 import sys
-from configobj import ConfigObj, ConfigObjError
+from configobj import ConfigObj
+from cli_helpers.config import Config, get_system_config_dirs
+from cli_helpers.compat import WIN
 try:
     basestring
     from UserDict import UserDict
@@ -18,44 +18,122 @@ from Crypto.Cipher import AES
 PACKAGE_ROOT = os.path.dirname(__file__)
 
 
-class MySqlConfig(UserDict):
-    """Read the MySQL option files' sections into a single config."""
-
-    files = [
-        '/etc/my.cnf',
-        '/etc/mysql/my.cnf',
-        '/usr/local/etc/my.cnf',
-        '~/.my.cnf'
-    ]
+class MySqlConfig(Config):
 
     sections = ['client']
 
-    def __init__(self, defaults_file=None, defaults_suffix=None,
-                 login_path=None):
-        if defaults_file:
-            self.files = [defaults_file]
+    def __init__(self, *args, **kwargs):
+        self.defaults_file = kwargs.pop('defaults_file', None)
+        self.defaults_suffix = kwargs.pop('default_suffix', None)
+        self.login_path = kwargs.pop('login_path', None)
 
-        if login_path:
+        if self.login_path:
             self.sections.append(login_path)
 
-        if defaults_suffix:
-            self.sections.extend([s + defaults_suffix for s in self.sections])
+        if self.defaults_suffix:
+            self.sections.extend([s + self.defaults_suffix
+                                  for s in self.sections])
 
-        login_path_file = get_mylogin_cnf_path()
-        if login_path_file:
-            login_path = open_mylogin_cnf(login_path_file)
-            if login_path:
-                self.files.append(login_path)
+        super(self.__class__, self).__init__(*args, **kwargs)
 
-        self.data = {}
-        self.config = read_config_files(self.files)
-        self._read_sections()
-
-    def _read_sections(self):
-        """Combine the sections into a single dictionary."""
+    def read(self):
+        """Read the MySQL config."""
+        errors = super(self.__class__, self).read()
+        data, self.data = self.data, {}
         for section in self.sections:
-            if section in self.config:
-                self.data.update(self.config[section])
+            self.data.update(data[section])
+        return errors
+
+    def system_config_files(self):
+        """Get a list of paths to the system's config files."""
+        if WIN:
+            system_dirs = get_system_config_dirs(self.app_name,
+                                                 self.app_author)
+            system_dirs.append(os.environ.get('WINDIR'))
+            system_dirs.append('C:\\')
+            return [os.path.join(dir, self.filename) for dir in system_dirs]
+        else:
+            return [
+                os.path.join('/etc', self.filename),
+                os.path.join('/etc/mysql', self.filename),
+                os.path.join('/usr/local/etc', self.filename)
+            ]
+
+    def user_config_file(self):
+        """Get the path to the user's config file."""
+        if WIN:
+            return super(self.__class__, self).user_config_file()
+        else:
+            return os.path.expanduser(os.path.join('~', '.{}'.format(
+                self.filename)))
+
+    def login_path_file(self):
+        """Return the path to the login path file or None if it doesn't exist."""
+        mylogin_cnf_path = os.environ.get('MYSQL_TEST_LOGIN_FILE')
+
+        if mylogin_cnf_path is None:
+            default_dir = '~'
+            if WIN:
+                default_dir = os.path.join(os.environ.get('APPDATA'), 'MySQL')
+
+            mylogin_cnf_path = os.path.expanduser(os.path.join(
+                default_dir, '.mylogin.cnf'))
+
+        if os.path.exists(mylogin_cnf_path):
+            # TODO: Check permissions.
+            logger.debug("Found login path file at '{0}'".format(
+                mylogin_cnf_path))
+            return mylogin_cnf_path
+        return None
+
+    def all_config_files(self):
+        """Get a list of all the MySQL config files.
+
+        The login path file is returned as a decrypted TextIOWrapper.
+        """
+        login_path_file = self.login_path_file()
+
+        if self.defaults_file:
+            files = [self.defaults_file]
+        else:
+            files = (self.additional_files() + self.system_config_files() +
+                     [self.user_config_file()])
+
+        if login_path_file:
+            files.append(open_mylogin_cnf(login_path_file))
+
+        return files
+
+
+class MyCliConfig(Config):
+
+    mysql_sections = ['client']
+    mysql_filename = 'my.cnf'
+    filename = 'myclirc'
+    additional_dirs = (
+        '/etc',
+    )
+
+    def __init__(self, *args, **kwargs):
+        mysql_default = kwargs.pop('mysql_default', None)
+        mysql_default_suffix = kwargs.pop('mysql_default_suffix', None)
+        mysql_login_path = kwargs.pop('mysql_login_path', None)
+
+        kwargs['default'] = self.default_config_file()
+        super(MyCliConfig, self).__init__(*args, **kwargs,
+                                          additional_dirs=self.additional_dirs)
+        # TODO: look into other MySQL server versions.
+        self.mysql = MySqlConfig('MySQL Server 5.7', 'MySQL',
+                                        self.filename,
+                                        default=self.default_mysql_file(),
+                                        validate=True)
+        self.mysql.read()
+
+    def default_mysql_file(self):
+        return os.path.join(PACKAGE_ROOT, self.mysql_filename)
+
+    def default_config_file(self):
+        return os.path.join(PACKAGE_ROOT, self.filename)
 
 
 logger = logging.getLogger(__name__)
@@ -68,61 +146,6 @@ def log(logger, level, message):
     else:
         print(message, file=sys.stderr)
 
-def read_config_file(f):
-    """Read a config file."""
-
-    if isinstance(f, basestring):
-        f = os.path.expanduser(f)
-
-    try:
-        config = ConfigObj(f, interpolation=False, encoding='utf8')
-    except ConfigObjError as e:
-        log(logger, logging.ERROR, "Unable to parse line {0} of config file "
-            "'{1}'.".format(e.line_number, f))
-        log(logger, logging.ERROR, "Using successfully parsed config values.")
-        return e.config
-    except (IOError, OSError) as e:
-        log(logger, logging.WARNING, "You don't have permission to read "
-            "config file '{0}'.".format(e.filename))
-        return None
-
-    return config
-
-def read_config_files(files):
-    """Read and merge a list of config files."""
-
-    config = ConfigObj()
-
-    for _file in files:
-        _config = read_config_file(_file)
-        if bool(_config) is True:
-            config.merge(_config)
-            config.filename = _config.filename
-
-    return config
-
-def write_default_config(source, destination, overwrite=False):
-    destination = os.path.expanduser(destination)
-    if not overwrite and exists(destination):
-        return
-
-    shutil.copyfile(source, destination)
-
-def get_mylogin_cnf_path():
-    """Return the path to the login path file or None if it doesn't exist."""
-    mylogin_cnf_path = os.getenv('MYSQL_TEST_LOGIN_FILE')
-
-    if mylogin_cnf_path is None:
-        app_data = os.getenv('APPDATA')
-        default_dir = os.path.join(app_data, 'MySQL') if app_data else '~'
-        mylogin_cnf_path = os.path.join(default_dir, '.mylogin.cnf')
-
-    mylogin_cnf_path = os.path.expanduser(mylogin_cnf_path)
-
-    if exists(mylogin_cnf_path):
-        logger.debug("Found login path file at '{0}'".format(mylogin_cnf_path))
-        return mylogin_cnf_path
-    return None
 
 def open_mylogin_cnf(name):
     """Open a readable version of .mylogin.cnf.

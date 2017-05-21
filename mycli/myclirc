@@ -3,52 +3,52 @@
 
 # Enables context sensitive auto-completion. If this is disabled the all
 # possible completions will be listed.
-smart_completion = True
+smart_completion = boolean(default=True)
 
 # Multi-line mode allows breaking up the sql statements into multiple lines. If
 # this is set to True, then the end of the statements must have a semi-colon.
 # If this is set to False then sql statements can't be split into multiple
 # lines. End of line (return) is considered as the end of the statement.
-multi_line = False
+multi_line = boolean(default=False)
 
 # Destructive warning mode will alert you before executing a sql statement
 # that may cause harm to the database such as "drop table", "drop database"
 # or "shutdown".
-destructive_warning = True
+destructive_warning = boolean(default=True)
 
 # log_file location.
-log_file = ~/.mycli.log
+log_file = string(default='~/.mycli.log')
 
 # Default log level. Possible values: "CRITICAL", "ERROR", "WARNING", "INFO"
 # and "DEBUG". "NONE" disables logging.
-log_level = INFO
+log_level = option('CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'NONE', default='INFO')
 
-# Log every query and its results to a file. Enable this by uncommenting the
-# line below.
-# audit_log = ~/.mycli-audit.log
+# Log every query and its results to a file. Enable this by entering a filename
+# like "~/.mycli-audit.log"
+audit_log = string(default='')
 
 # Timing of sql statments and table rendering.
-timing = True
+timing = boolean(default=True)
 
 # Table format. Possible values: psql, plain, simple, grid, fancy_grid, pipe,
 # orgtbl, rst, mediawiki, html, latex, latex_booktabs, tsv.
 # Recommended: psql, fancy_grid and grid.
-table_format = psql
+table_format = string(default='psql')
 
 # Syntax coloring style. Possible values (many support the "-dark" suffix):
 # manni, igor, xcode, vim, autumn, vs, rrt, native, perldoc, borland, tango, emacs,
 # friendly, monokai, paraiso, colorful, murphy, bw, pastie, paraiso, trac, default,
 # fruity.
 # Screenshots at http://mycli.net/syntax
-syntax_style = default
+syntax_style = string(default='default')
 
 # Keybindings: Possible values: emacs, vi.
 # Emacs mode: Ctrl-A is home, Ctrl-E is end. All emacs keybindings are available in the REPL.
 # When Vi mode is enabled you can use modal editing features offered by Vi in the REPL.
-key_bindings = emacs
+key_bindings = option('emacs', 'vi', default='emacs')
 
 # Enabling this option will show the suggestions in a wider menu. Thus more items are suggested.
-wider_completion_menu = False
+wider_completion_menu = boolean(default=False)
 
 # MySQL prompt
 # \t - Product type (Percona, MySQL, Mariadb)
@@ -56,46 +56,46 @@ wider_completion_menu = False
 # \h - Hostname of the server
 # \d - Database name
 # \n - Newline
-prompt = '\t \u@\h:\d> '
-prompt_continuation = '-> '
+prompt = string(default='\t \u@\h:\d> ')
+prompt_continuation = string(default='-> ')
 
 # Skip intro info on startup and outro info on exit
-less_chatty = False
+less_chatty = boolean(default=False)
 
 # Use alias from --login-path instead of host name in prompt
-login_path_as_host = False
+login_path_as_host = boolean(default=False)
 
 # Cause result sets to be displayed vertically if they are too wide for the current window,
-# and using normal tabular format otherwise. (This applies to statements terminated by ; or \G.) 
-auto_vertical_output = False
+# and using normal tabular format otherwise. (This applies to statements terminated by ; or \G.)
+auto_vertical_output = boolean(default=False)
 
 # Custom colors for the completion menu, toolbar, etc.
 [colors]
 # Completion menus.
-Token.Menu.Completions.Completion.Current = 'bg:#00aaaa #000000'
-Token.Menu.Completions.Completion = 'bg:#008888 #ffffff'
-Token.Menu.Completions.MultiColumnMeta = 'bg:#aaffff #000000'
-Token.Menu.Completions.ProgressButton = 'bg:#003333'
-Token.Menu.Completions.ProgressBar = 'bg:#00aaaa'
+Token.Menu.Completions.Completion.Current = string(default='bg:#00aaaa #000000')
+Token.Menu.Completions.Completion = string(default='bg:#008888 #ffffff')
+Token.Menu.Completions.MultiColumnMeta = string(default='bg:#aaffff #000000')
+Token.Menu.Completions.ProgressButton = string(default='bg:#003333')
+Token.Menu.Completions.ProgressBar = string(default='bg:#00aaaa')
 
 # Selected text.
-Token.SelectedText = '#ffffff bg:#6666aa'
+Token.SelectedText = string(default='#ffffff bg:#6666aa')
 
 # Search matches. (reverse-i-search)
-Token.SearchMatch = '#ffffff bg:#4444aa'
-Token.SearchMatch.Current = '#ffffff bg:#44aa44'
+Token.SearchMatch = string(default='#ffffff bg:#4444aa')
+Token.SearchMatch.Current = string(default='#ffffff bg:#44aa44')
 
 # The bottom toolbar.
-Token.Toolbar = 'bg:#222222 #aaaaaa'
-Token.Toolbar.Off = 'bg:#222222 #888888'
-Token.Toolbar.On = 'bg:#222222 #ffffff'
+Token.Toolbar = string(default='bg:#222222 #aaaaaa')
+Token.Toolbar.Off = string(default='bg:#222222 #888888')
+Token.Toolbar.On = string(default='bg:#222222 #ffffff')
 
 # Search/arg/system toolbars.
-Token.Toolbar.Search = 'noinherit bold'
-Token.Toolbar.Search.Text = 'nobold'
-Token.Toolbar.System = 'noinherit bold'
-Token.Toolbar.Arg = 'noinherit bold'
-Token.Toolbar.Arg.Text = 'nobold'
+Token.Toolbar.Search = string(default='noinherit bold')
+Token.Toolbar.Search.Text = string(default='nobold')
+Token.Toolbar.System = string(default='noinherit bold')
+Token.Toolbar.Arg = string(default='noinherit bold')
+Token.Toolbar.Arg.Text = string(default='nobold')
 
 # Favorite queries.
 [favorite_queries]
