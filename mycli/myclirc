@@ -30,10 +30,11 @@ audit_log = string(default='')
 # Timing of sql statments and table rendering.
 timing = boolean(default=True)
 
-# Table format. Possible values: psql, plain, simple, grid, fancy_grid, pipe,
-# orgtbl, rst, mediawiki, html, latex, latex_booktabs, tsv.
-# Recommended: psql, fancy_grid and grid.
-table_format = string(default='psql')
+# Table format. Possible values: ascii, double, github,
+# psql, plain, simple, grid, fancy_grid, pipe, orgtbl, rst, mediawiki, html,
+# latex, latex_booktabs, textile, moinmoin, jira, vertical, tsv, csv.
+# Recommended: ascii
+table_format = string(default='ascii')
 
 # Syntax coloring style. Possible values (many support the "-dark" suffix):
 # manni, igor, xcode, vim, autumn, vs, rrt, native, perldoc, borland, tango, emacs,

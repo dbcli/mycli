@@ -17,6 +17,7 @@ TIMING_ENABLED = False
 use_expanded_output = False
 PAGER_ENABLED = True
 tee_file = None
+once_file = None
 
 @export
 def set_timing_enabled(val):
@@ -101,14 +102,10 @@ def get_filename(sql):
         command, _, filename = sql.partition(' ')
         return filename.strip() or None
 
-@export
-def open_external_editor(filename=None, sql=''):
-    """
-    Open external editor, wait for the user to type in his query,
-    return the query.
-    :return: list with one tuple, query as first element.
-    """
 
+@export
+def get_editor_query(sql):
+    """Get the query part of an editor command."""
     sql = sql.strip()
 
     # The reason we can't simply do .strip('\e') is that it strips characters,
@@ -118,15 +115,28 @@ def open_external_editor(filename=None, sql=''):
     while pattern.search(sql):
         sql = pattern.sub('', sql)
 
+    return sql
+
+
+@export
+def open_external_editor(filename=None, sql=None):
+    """Open external editor, wait for the user to type in their query, return
+    the query.
+
+    :return: list with one tuple, query as first element.
+
+    """
+
     message = None
     filename = filename.strip().split(' ', 1)[0] if filename else None
 
+    sql = sql or ''
     MARKER = '# Type your query above this line.\n'
 
     # Populate the editor buffer with the partial sql (if available) and a
     # placeholder comment.
-    query = click.edit(sql + '\n\n' + MARKER, filename=filename,
-            extension='.sql')
+    query = click.edit('{sql}\n\n{marker}'.format(sql=sql, marker=MARKER),
+                       filename=filename, extension='.sql')
 
     if filename:
         try:
@@ -242,10 +252,8 @@ def execute_system_command(arg, **_):
     except OSError as e:
         return [(None, None, None, 'OSError: %s' % e.strerror)]
 
-@special_command('tee', 'tee [-o] filename',
-                 'write to an output file (optionally overwrite using -o)')
-def set_tee(arg, **_):
-    global tee_file
+
+def parseargfile(arg):
     if arg.startswith('-o '):
         mode = "w"
         filename = arg[3:]
@@ -256,8 +264,16 @@ def set_tee(arg, **_):
     if not filename:
         raise TypeError('You must provide a filename.')
 
+    return {'file': filename, 'mode': mode}
+
+
+@special_command('tee', 'tee [-o] filename',
+                 'write to an output file (optionally overwrite using -o)')
+def set_tee(arg, **_):
+    global tee_file
+
     try:
-        tee_file = open(filename, mode)
+        tee_file = open(**parseargfile(arg))
     except (IOError, OSError) as e:
         raise OSError("Cannot write to file '{}': {}".format(e.filename, e.strerror))
 
@@ -282,3 +298,30 @@ def write_tee(output):
         tee_file.write(output)
         tee_file.write(u"\n")
         tee_file.flush()
+
+
+@special_command('\\once', '\\o [-o] filename', 'Output for the next SQL command only to FILENAME', aliases=('\\o', ))
+def set_once(arg, **_):
+    global once_file
+
+    once_file = parseargfile(arg)
+
+    return [(None, None, None, "")]
+
+
+@export
+def write_once(output):
+    global once_file
+    if output and once_file:
+        try:
+            f = open(**once_file)
+        except (IOError, OSError) as e:
+            once_file = None
+            raise OSError("Cannot write to file '{}': {}".format(
+                e.filename, e.strerror))
+
+        with f:
+            f.write(output)
+            f.write(u"\n")
+
+        once_file = None
