@@ -7,7 +7,7 @@ import sys
 import tempfile
 import pytest
 
-from mycli.config import (get_mylogin_cnf_path, open_mylogin_cnf,
+from mycli.config import (MySqlConfig, open_mylogin_cnf,
                           read_and_decrypt_mylogin_cnf)
 
 with_pycryptodome = ['pycryptodome' in set([package.project_name for package in
@@ -90,12 +90,14 @@ def test_corrupted_pad():
 
 def test_get_mylogin_cnf_path():
     """Tests that the path for .mylogin.cnf is detected."""
+    config = MySqlConfig('foo', 'bar', 'foobar')
+
     original_env = None
     if 'MYSQL_TEST_LOGIN_FILE' in os.environ:
         original_env = os.environ.pop('MYSQL_TEST_LOGIN_FILE')
     is_windows = sys.platform == 'win32'
 
-    login_cnf_path = get_mylogin_cnf_path()
+    login_cnf_path = config.login_path_file()
 
     if original_env is not None:
         os.environ['MYSQL_TEST_LOGIN_FILE'] = original_env
@@ -112,6 +114,8 @@ def test_get_mylogin_cnf_path():
 
 def test_alternate_get_mylogin_cnf_path():
     """Tests that the alternate path for .mylogin.cnf is detected."""
+    config = MySqlConfig('foo', 'bar', 'foobar')
+
     original_env = None
     if 'MYSQL_TEST_LOGIN_FILE' in os.environ:
         original_env = os.environ.pop('MYSQL_TEST_LOGIN_FILE')
@@ -119,7 +123,7 @@ def test_alternate_get_mylogin_cnf_path():
     _, temp_path = tempfile.mkstemp()
     os.environ['MYSQL_TEST_LOGIN_FILE'] = temp_path
 
-    login_cnf_path = get_mylogin_cnf_path()
+    login_cnf_path = config.login_path_file()
 
     if original_env is not None:
         os.environ['MYSQL_TEST_LOGIN_FILE'] = original_env
