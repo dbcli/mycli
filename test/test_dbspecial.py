@@ -17,6 +17,14 @@ def test_describe_table():
         {'type': 'schema'}])
 
 
+def test_list_or_show_create_tables():
+    suggestions = suggest_type('\\d', '\\d ')
+    assert sorted_dicts(suggestions) == sorted_dicts([
+        {'type': 'table', 'schema': []},
+        {'type': 'view', 'schema': []},
+        {'type': 'schema'}])
+
+
 def test_format_uptime():
     seconds = 59
     assert '59 sec' == format_uptime(seconds)
