@@ -220,11 +220,10 @@ def delete_favorite_query(arg, **_):
 
     return [(None, None, None, status)]
 
-@special_command('system', 'system [command]', 'Execute a system commmand.')
+@special_command('system', 'system [command]',
+                 'Execute a system shell commmand.')
 def execute_system_command(arg, **_):
-    """
-    Execute a system command.
-    """
+    """Execute a system shell command."""
     usage = "Syntax: system [command].\n"
 
     if not arg:
