@@ -267,7 +267,7 @@ def parseargfile(arg):
 
 
 @special_command('tee', 'tee [-o] filename',
-                 'write to an output file (optionally overwrite using -o)')
+                 'Append all results to an output file (overwrite using -o).')
 def set_tee(arg, **_):
     global tee_file
 
@@ -285,7 +285,7 @@ def close_tee():
         tee_file.close()
         tee_file = None
 
-@special_command('notee', 'notee', 'stop writing to an output file')
+@special_command('notee', 'notee', 'Stop writing results to an output file.')
 def no_tee(arg, **_):
     close_tee()
     return [(None, None, None, "")]
@@ -299,7 +299,9 @@ def write_tee(output):
         tee_file.flush()
 
 
-@special_command('\\once', '\\o [-o] filename', 'Output for the next SQL command only to FILENAME', aliases=('\\o', ))
+@special_command('\\once', '\\o [-o] filename',
+                 'Append next result to an output file (overwrite using -o).',
+                 aliases=('\\o', ))
 def set_once(arg, **_):
     global once_file
 
