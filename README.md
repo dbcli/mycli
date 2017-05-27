@@ -51,22 +51,22 @@ $ sudo apt-get install mycli # Only on debian or ubuntu
     Options:
       -h, --host TEXT               Host address of the database.
       -P, --port INTEGER            Port number to use for connection. Honors
-                                    $MYSQL_TCP_PORT
+                                    $MYSQL_TCP_PORT.
       -u, --user TEXT               User name to connect to the database.
       -S, --socket TEXT             The socket file to use for connection.
-      -p, --password TEXT           Password to connect to the database
-      --pass TEXT                   Password to connect to the database
-      --ssl-ca PATH                 CA file in PEM format
-      --ssl-capath TEXT             CA directory
-      --ssl-cert PATH               X509 cert in PEM format
-      --ssl-key PATH                X509 key in PEM format
-      --ssl-cipher TEXT             SSL cipher to use
+      -p, --password TEXT           Password to connect to the database.
+      --pass TEXT                   Password to connect to the database.
+      --ssl-ca PATH                 CA file in PEM format.
+      --ssl-capath TEXT             CA directory.
+      --ssl-cert PATH               X509 cert in PEM format.
+      --ssl-key PATH                X509 key in PEM format.
+      --ssl-cipher TEXT             SSL cipher to use.
       --ssl-verify-server-cert      Verify server's "Common Name" in its cert
                                     against hostname used when connecting. This
-                                    option is disabled by default
+                                    option is disabled by default.
       -v, --version                 Output mycli's version.
       -D, --database TEXT           Database to use.
-      -R, --prompt TEXT             Prompt format (Default: "\t \u@\h:\d> ")
+      -R, --prompt TEXT             Prompt format (Default: "\t \u@\h:\d> ").
       -l, --logfile FILENAME        Log every query and its results to a file.
       --defaults-group-suffix TEXT  Read MySQL config groups with the specified
                                     suffix.

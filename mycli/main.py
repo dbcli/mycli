@@ -771,31 +771,31 @@ class MyCli(object):
 @click.command()
 @click.option('-h', '--host', envvar='MYSQL_HOST', help='Host address of the database.')
 @click.option('-P', '--port', envvar='MYSQL_TCP_PORT', type=int, help='Port number to use for connection. Honors '
-              '$MYSQL_TCP_PORT')
+              '$MYSQL_TCP_PORT.')
 @click.option('-u', '--user', help='User name to connect to the database.')
 @click.option('-S', '--socket', envvar='MYSQL_UNIX_PORT', help='The socket file to use for connection.')
 @click.option('-p', '--password', 'password', envvar='MYSQL_PWD', type=str,
-              help='Password to connect to the database')
+              help='Password to connect to the database.')
 @click.option('--pass', 'password', envvar='MYSQL_PWD', type=str,
-              help='Password to connect to the database')
-@click.option('--ssl-ca', help='CA file in PEM format',
+              help='Password to connect to the database.')
+@click.option('--ssl-ca', help='CA file in PEM format.',
               type=click.Path(exists=True))
-@click.option('--ssl-capath', help='CA directory')
-@click.option('--ssl-cert', help='X509 cert in PEM format',
+@click.option('--ssl-capath', help='CA directory.')
+@click.option('--ssl-cert', help='X509 cert in PEM format.',
               type=click.Path(exists=True))
-@click.option('--ssl-key', help='X509 key in PEM format',
+@click.option('--ssl-key', help='X509 key in PEM format.',
               type=click.Path(exists=True))
-@click.option('--ssl-cipher', help='SSL cipher to use')
+@click.option('--ssl-cipher', help='SSL cipher to use.')
 @click.option('--ssl-verify-server-cert', is_flag=True,
               help=('Verify server\'s "Common Name" in its cert against '
                     'hostname used when connecting. This option is disabled '
-                    'by default'))
+                    'by default.'))
 # as of 2016-02-15 revocation list is not supported by underling PyMySQL
 # library (--ssl-crl and --ssl-crlpath options in vanilla mysql client)
 @click.option('-v', '--version', is_flag=True, help='Output mycli\'s version.')
 @click.option('-D', '--database', 'dbname', help='Database to use.')
 @click.option('-R', '--prompt', 'prompt',
-              help='Prompt format (Default: "{0}")'.format(
+              help='Prompt format (Default: "{0}").'.format(
                   MyCli.default_prompt))
 @click.option('-l', '--logfile', type=click.File(mode='a', encoding='utf-8'),
               help='Log every query and its results to a file.')
