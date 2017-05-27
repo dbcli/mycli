@@ -32,6 +32,7 @@ Internal Changes:
 * Add setup.py commands to simplify development tasks (Thanks: [Thomas Roten]).
 * Add behave tests to tox (Thanks: [Dick Marinus]).
 * Add missing @dbtest to tests (Thanks: [Dick Marinus]).
+* Standardizes punctuation/grammar for help strings (Thanks: [Thomas Roten]).
 
 1.10.0:
 =======
