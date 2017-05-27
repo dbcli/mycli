@@ -790,7 +790,7 @@ class MyCli(object):
                     'by default'))
 # as of 2016-02-15 revocation list is not supported by underling PyMySQL
 # library (--ssl-crl and --ssl-crlpath options in vanilla mysql client)
-@click.option('-v', '--version', is_flag=True, help='Version of mycli.')
+@click.option('-v', '--version', is_flag=True, help='Output mycli\'s version.')
 @click.option('-D', '--database', 'dbname', help='Database to use.')
 @click.option('-R', '--prompt', 'prompt',
               help='Prompt format (Default: "{0}")'.format(
@@ -798,9 +798,9 @@ class MyCli(object):
 @click.option('-l', '--logfile', type=click.File(mode='a', encoding='utf-8'),
               help='Log every query and its results to a file.')
 @click.option('--defaults-group-suffix', type=str,
-              help='Read config group with the specified suffix.')
+              help='Read MySQL config groups with the specified suffix.')
 @click.option('--defaults-file', type=click.Path(),
-              help='Only read default options from the given file')
+              help='Only read MySQL options from the given file.')
 @click.option('--myclirc', type=click.Path(), default="~/.myclirc",
               help='Location of myclirc file.')
 @click.option('--auto-vertical-output', is_flag=True,
@@ -816,7 +816,7 @@ class MyCli(object):
 @click.option('--login-path', type=str,
               help='Read this path from the login file.')
 @click.option('-e', '--execute',  type=str,
-              help='Execute query to the database.')
+              help='Execute command and quit.')
 @click.argument('database', default='', nargs=1)
 def cli(database, user, host, port, socket, password, dbname,
         version, prompt, logfile, defaults_group_suffix, defaults_file,
