@@ -176,8 +176,10 @@ class MyCli(object):
                 aliases=('\\r', ), case_sensitive=True)
         special.register_special_command(self.refresh_completions, 'rehash',
                 '\\#', 'Refresh auto-completions.', arg_type=NO_QUERY, aliases=('\\#',))
-        special.register_special_command(self.change_table_format, 'tableformat',
-                '\\T', 'Change Table Type.', aliases=('\\T',), case_sensitive=True)
+        special.register_special_command(
+            self.change_table_format, 'tableformat', '\\T',
+            'Change the table format used to output results.',
+            aliases=('\\T',), case_sensitive=True)
         special.register_special_command(self.execute_from_file, 'source', '\\. filename',
                               'Execute commands from file.', aliases=('\\.',))
         special.register_special_command(self.change_prompt_format, 'prompt',
@@ -187,9 +189,9 @@ class MyCli(object):
         try:
             self.formatter.format_name = arg
             yield (None, None, None,
-                   'Changed table type to {}'.format(arg))
+                   'Changed table format to {}'.format(arg))
         except ValueError:
-            msg = 'Table type {} not yet implemented. Allowed types:'.format(
+            msg = 'Table format {} not recognized. Allowed formats:'.format(
                 arg)
             for table_type in self.formatter.supported_formats:
                 msg += "\n\t{}".format(table_type)

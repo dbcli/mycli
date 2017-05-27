@@ -34,7 +34,9 @@ def is_pager_enabled():
     return PAGER_ENABLED
 
 @export
-@special_command('pager', '\\P [command]', 'Set PAGER. Print the query results via PAGER', arg_type=PARSED_QUERY, aliases=('\\P', ), case_sensitive=True)
+@special_command('pager', '\\P [command]',
+                 'Set PAGER. Print the query results via PAGER.',
+                 arg_type=PARSED_QUERY, aliases=('\\P', ), case_sensitive=True)
 def set_pager(arg, **_):
     if arg:
         os.environ['PAGER'] = arg
