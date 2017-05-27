@@ -222,6 +222,7 @@ def delete_favorite_query(arg, **_):
 
     return [(None, None, None, status)]
 
+
 @special_command('system', 'system [command]',
                  'Execute a system shell commmand.')
 def execute_system_command(arg, **_):
@@ -286,6 +287,7 @@ def close_tee():
     if tee_file:
         tee_file.close()
         tee_file = None
+
 
 @special_command('notee', 'notee', 'Stop writing results to an output file.')
 def no_tee(arg, **_):

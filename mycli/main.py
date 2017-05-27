@@ -825,13 +825,14 @@ def cli(database, user, host, port, socket, password, dbname,
         login_path, auto_vertical_output, local_infile, ssl_ca, ssl_capath,
         ssl_cert, ssl_key, ssl_cipher, ssl_verify_server_cert, table, csv,
         warn, execute, myclirc):
-    """A terminal client for MySQL with auto-completion and syntax highlighting.
+    """A MySQL terminal client with auto-completion and syntax highlighting.
 
     \b
     Examples:
-      $ mycli my_database
-      $ mycli -u my_user -h my_host.com my_database
-      $ mycli mysql://my_user@my_host.com:3306/my_database
+      - mycli my_database
+      - mycli -u my_user -h my_host.com my_database
+      - mycli mysql://my_user@my_host.com:3306/my_database
+
     """
 
     if version:
