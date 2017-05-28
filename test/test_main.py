@@ -183,3 +183,11 @@ def test_thanks_picker_utf8():
 
     name = thanks_picker((author_file, sponsor_file))
     assert isinstance(name, text_type)
+
+
+def test_help_strings_end_with_periods():
+    """Make sure command-line options have help text that end with a period."""
+    for param in cli.params:
+        if isinstance(param, click.core.Option):
+            assert hasattr(param, 'help')
+            assert param.help.endswith('.')
