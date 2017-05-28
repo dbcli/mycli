@@ -3,9 +3,10 @@ import os
 import click
 from click.testing import CliRunner
 
-from mycli.main import (cli, confirm_destructive_query,
+from mycli.main import (MyCli, cli, confirm_destructive_query,
                         is_destructive, query_starts_with, queries_start_with,
                         thanks_picker, PACKAGE_ROOT)
+from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
 from utils import USER, HOST, PORT, PASSWORD, dbtest, run
 
 from textwrap import dedent
@@ -191,3 +192,10 @@ def test_help_strings_end_with_periods():
         if isinstance(param, click.core.Option):
             assert hasattr(param, 'help')
             assert param.help.endswith('.')
+
+
+def test_command_descriptions_end_with_periods():
+    """Make sure that mycli commands' descriptions end with a period."""
+    MyCli()
+    for _, command in SPECIAL_COMMANDS.items():
+        assert command[3].endswith('.')
