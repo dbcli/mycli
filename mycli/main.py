@@ -468,13 +468,6 @@ class MyCli(object):
 
                 special.set_expanded_output(False)
 
-                # The reason we check here instead of inside the sqlexecute is
-                # because we want to raise the Exit exception which will be
-                # caught by the try/except block that wraps the
-                # sqlexecute.run() statement.
-                if quit_command(document.text):
-                    raise EOFError
-
                 try:
                     document = self.handle_editor_command(self.cli, document)
                 except RuntimeError as e:
@@ -541,6 +534,8 @@ class MyCli(object):
                     output.extend(formatted)
                     total = time() - start
                     mutating = mutating or is_mutating(status)
+            except EOFError as e:
+                raise e
             except KeyboardInterrupt:
                 # get last connection id
                 connection_id_to_kill = sqlexecute.connection_id
@@ -981,11 +976,6 @@ def confirm_destructive_query(queries):
     if is_destructive(queries) and sys.stdin.isatty():
         return click.prompt(prompt_text, type=bool)
 
-def quit_command(sql):
-    return (sql.strip().lower() == 'exit'
-            or sql.strip().lower() == 'quit'
-            or sql.strip() == '\q'
-            or sql.strip() == ':q')
 
 def thanks_picker(files=()):
     for filename in files:

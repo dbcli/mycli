@@ -78,8 +78,6 @@ def set_expanded_output(val):
 def is_expanded_output():
     return use_expanded_output
 
-def quit(*args):
-    raise NotImplementedError
 
 def stub(*args):
     raise NotImplementedError
