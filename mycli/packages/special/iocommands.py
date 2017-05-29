@@ -78,10 +78,6 @@ def set_expanded_output(val):
 def is_expanded_output():
     return use_expanded_output
 
-
-def stub(*args):
-    raise NotImplementedError
-
 _logger = logging.getLogger(__name__)
 
 @export
