@@ -111,8 +111,8 @@ class MyCli(object):
         self.logger = logging.getLogger(__name__)
         self.initialize_logging()
 
-        self.prompt_format = (prompt or c.mysql.get('prompt') or
-                              c['main']['prompt'] or self.default_prompt)
+        self.prompt_format = (prompt or c['main']['prompt'] or
+                              self.default_prompt)
         self.prompt_continuation_format = c['main']['prompt_continuation']
 
         self.query_history = []
