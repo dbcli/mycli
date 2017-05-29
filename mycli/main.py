@@ -99,7 +99,7 @@ class MyCli(object):
                                 c['main']['auto_vertical_output']
 
         # audit log
-        if self.logfile is None and 'audit_log' in c['main']:
+        if self.logfile is None and c['main']['audit_log']:
             try:
                 self.logfile = open(os.path.expanduser(c['main']['audit_log']), 'a')
             except (IOError, OSError) as e:
