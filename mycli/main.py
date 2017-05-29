@@ -64,8 +64,7 @@ class NullHandler(logging.Handler):
 
 class MyCli(object):
 
-    default_prompt = '\\t \\u@\\h:\\d> '
-    max_len_prompt = 45
+    max_len_prompt = 25
     defaults_suffix = None
 
     def __init__(self, sqlexecute=None, prompt=None,
@@ -111,8 +110,7 @@ class MyCli(object):
         self.logger = logging.getLogger(__name__)
         self.initialize_logging()
 
-        self.prompt_format = (prompt or c['main']['prompt'] or
-                              self.default_prompt)
+        self.prompt_format = prompt or c['main']['prompt']
         self.prompt_continuation_format = c['main']['prompt_continuation']
 
         self.query_history = []
@@ -358,7 +356,8 @@ class MyCli(object):
 
         def prompt_tokens(cli):
             prompt = self.get_prompt(self.prompt_format)
-            if self.prompt_format == self.default_prompt and len(prompt) > self.max_len_prompt:
+            if (self.prompt_format == self.config.default_config['main']['prompt']
+                    and len(prompt) > self.max_len_prompt):
                 prompt = self.get_prompt('\\d> ')
             return [(Token.Prompt, prompt)]
 
@@ -690,9 +689,7 @@ class MyCli(object):
 # library (--ssl-crl and --ssl-crlpath options in vanilla mysql client)
 @click.option('-v', '--version', is_flag=True, help='Version of mycli.')
 @click.option('-D', '--database', 'dbname', help='Database to use.')
-@click.option('-R', '--prompt', 'prompt',
-              help='Prompt format (Default: "{0}")'.format(
-                  MyCli.default_prompt))
+@click.option('-R', '--prompt', 'prompt', help='Prompt format.')
 @click.option('-l', '--logfile', type=click.File(mode='a', encoding='utf-8'),
               help='Log every query and its results to a file.')
 @click.option('--defaults-group-suffix', type=str,
