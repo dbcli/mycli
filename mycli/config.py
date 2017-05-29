@@ -27,7 +27,7 @@ class MySqlConfig(Config):
 
     def __init__(self, *args, **kwargs):
         self.defaults_file = kwargs.pop('defaults_file', None)
-        self.defaults_suffix = kwargs.pop('default_suffix', None)
+        self.defaults_suffix = kwargs.pop('defaults_suffix', None)
         self.login_path = kwargs.pop('login_path', None)
 
         if self.login_path:
@@ -112,24 +112,24 @@ class MyCliConfig(Config):
 
     mysql_sections = ['client']
     mysql_filename = 'my.cnf'
-    filename = 'myclirc'
-    additional_dirs = (
-        '/etc',
-    )
 
-    def __init__(self, *args, **kwargs):
-        mysql_default = kwargs.pop('mysql_default', None)
-        mysql_default_suffix = kwargs.pop('mysql_default_suffix', None)
+    def __init__(self, app_name, app_author, filename, **kwargs):
+        self.filename = filename
+
+        mysql_defaults_file = kwargs.pop('mysql_defaults_file', None)
+        mysql_defaults_suffix = kwargs.pop('mysql_defaults_suffix', None)
         mysql_login_path = kwargs.pop('mysql_login_path', None)
 
         kwargs['default'] = self.default_config_file()
-        super(MyCliConfig, self).__init__(*args, **kwargs,
-                                          additional_dirs=self.additional_dirs)
+        super(MyCliConfig, self).__init__(app_name, app_author, filename,
+                                          **kwargs)
+
         # TODO: look into other MySQL server versions.
-        self.mysql = MySqlConfig('MySQL Server 5.7', 'MySQL',
-                                        self.filename,
-                                        default=self.default_mysql_file(),
-                                        validate=True)
+        self.mysql = MySqlConfig(
+            'MySQL Server 5.7', 'MySQL', self.mysql_filename,
+            default=self.default_mysql_file(), validate=True,
+            defaults_file=mysql_defaults_file,
+            defaults_suffix=mysql_defaults_suffix, login_path=mysql_login_path)
         self.mysql.read()
 
     def default_mysql_file(self):

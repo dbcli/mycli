@@ -64,7 +64,7 @@ class NullHandler(logging.Handler):
 
 class MyCli(object):
 
-    max_len_prompt = 25
+    max_len_prompt = 45
     defaults_suffix = None
 
     def __init__(self, sqlexecute=None, prompt=None,
@@ -75,9 +75,10 @@ class MyCli(object):
         self.logfile = logfile
         self.login_path = login_path
 
-        c = self.config = MyCliConfig('mycli', 'dbcli', 'myclirc',
-                                      default=myclirc, validate=True,
-                                      write_default=False)
+        c = self.config = MyCliConfig(
+            'mycli', 'dbcli', 'config', default=myclirc, validate=True,
+            write_default=False, mysql_defaults_file=defaults_file,
+            mysql_defaults_suffix=defaults_suffix, mysql_login_path=login_path)
         c.read()
 
         self.multi_line = c['main']['multi_line']
@@ -696,8 +697,7 @@ class MyCli(object):
               help='Read config group with the specified suffix.')
 @click.option('--defaults-file', type=click.Path(),
               help='Only read default options from the given file')
-@click.option('--myclirc', type=click.Path(), default="~/.myclirc",
-              help='Location of myclirc file.')
+@click.option('--myclirc', type=click.Path(), help='Location of myclirc file.')
 @click.option('--auto-vertical-output', is_flag=True,
               help='Automatically switch to vertical output mode if the result is wider than the terminal width.')
 @click.option('-t', '--table', is_flag=True,
