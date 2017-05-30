@@ -176,8 +176,10 @@ class MyCli(object):
                 aliases=('\\r', ), case_sensitive=True)
         special.register_special_command(self.refresh_completions, 'rehash',
                 '\\#', 'Refresh auto-completions.', arg_type=NO_QUERY, aliases=('\\#',))
-        special.register_special_command(self.change_table_format, 'tableformat',
-                '\\T', 'Change Table Type.', aliases=('\\T',), case_sensitive=True)
+        special.register_special_command(
+            self.change_table_format, 'tableformat', '\\T',
+            'Change the table format used to output results.',
+            aliases=('\\T',), case_sensitive=True)
         special.register_special_command(self.execute_from_file, 'source', '\\. filename',
                               'Execute commands from file.', aliases=('\\.',))
         special.register_special_command(self.change_prompt_format, 'prompt',
@@ -187,9 +189,9 @@ class MyCli(object):
         try:
             self.formatter.format_name = arg
             yield (None, None, None,
-                   'Changed table type to {}'.format(arg))
+                   'Changed table format to {}'.format(arg))
         except ValueError:
-            msg = 'Table type {} not yet implemented. Allowed types:'.format(
+            msg = 'Table format {} not recognized. Allowed formats:'.format(
                 arg)
             for table_type in self.formatter.supported_formats:
                 msg += "\n\t{}".format(table_type)
@@ -764,38 +766,38 @@ class MyCli(object):
 @click.command()
 @click.option('-h', '--host', envvar='MYSQL_HOST', help='Host address of the database.')
 @click.option('-P', '--port', envvar='MYSQL_TCP_PORT', type=int, help='Port number to use for connection. Honors '
-              '$MYSQL_TCP_PORT')
+              '$MYSQL_TCP_PORT.')
 @click.option('-u', '--user', help='User name to connect to the database.')
 @click.option('-S', '--socket', envvar='MYSQL_UNIX_PORT', help='The socket file to use for connection.')
 @click.option('-p', '--password', 'password', envvar='MYSQL_PWD', type=str,
-              help='Password to connect to the database')
+              help='Password to connect to the database.')
 @click.option('--pass', 'password', envvar='MYSQL_PWD', type=str,
-              help='Password to connect to the database')
-@click.option('--ssl-ca', help='CA file in PEM format',
+              help='Password to connect to the database.')
+@click.option('--ssl-ca', help='CA file in PEM format.',
               type=click.Path(exists=True))
-@click.option('--ssl-capath', help='CA directory')
-@click.option('--ssl-cert', help='X509 cert in PEM format',
+@click.option('--ssl-capath', help='CA directory.')
+@click.option('--ssl-cert', help='X509 cert in PEM format.',
               type=click.Path(exists=True))
-@click.option('--ssl-key', help='X509 key in PEM format',
+@click.option('--ssl-key', help='X509 key in PEM format.',
               type=click.Path(exists=True))
-@click.option('--ssl-cipher', help='SSL cipher to use')
+@click.option('--ssl-cipher', help='SSL cipher to use.')
 @click.option('--ssl-verify-server-cert', is_flag=True,
               help=('Verify server\'s "Common Name" in its cert against '
                     'hostname used when connecting. This option is disabled '
-                    'by default'))
+                    'by default.'))
 # as of 2016-02-15 revocation list is not supported by underling PyMySQL
 # library (--ssl-crl and --ssl-crlpath options in vanilla mysql client)
-@click.option('-v', '--version', is_flag=True, help='Version of mycli.')
+@click.option('-v', '--version', is_flag=True, help='Output mycli\'s version.')
 @click.option('-D', '--database', 'dbname', help='Database to use.')
 @click.option('-R', '--prompt', 'prompt',
-              help='Prompt format (Default: "{0}")'.format(
+              help='Prompt format (Default: "{0}").'.format(
                   MyCli.default_prompt))
 @click.option('-l', '--logfile', type=click.File(mode='a', encoding='utf-8'),
               help='Log every query and its results to a file.')
 @click.option('--defaults-group-suffix', type=str,
-              help='Read config group with the specified suffix.')
+              help='Read MySQL config groups with the specified suffix.')
 @click.option('--defaults-file', type=click.Path(),
-              help='Only read default options from the given file')
+              help='Only read MySQL options from the given file.')
 @click.option('--myclirc', type=click.Path(), default="~/.myclirc",
               help='Location of myclirc file.')
 @click.option('--auto-vertical-output', is_flag=True,
@@ -811,13 +813,22 @@ class MyCli(object):
 @click.option('--login-path', type=str,
               help='Read this path from the login file.')
 @click.option('-e', '--execute',  type=str,
-              help='Execute query to the database.')
+              help='Execute command and quit.')
 @click.argument('database', default='', nargs=1)
 def cli(database, user, host, port, socket, password, dbname,
         version, prompt, logfile, defaults_group_suffix, defaults_file,
         login_path, auto_vertical_output, local_infile, ssl_ca, ssl_capath,
         ssl_cert, ssl_key, ssl_cipher, ssl_verify_server_cert, table, csv,
         warn, execute, myclirc):
+    """A MySQL terminal client with auto-completion and syntax highlighting.
+
+    \b
+    Examples:
+      - mycli my_database
+      - mycli -u my_user -h my_host.com my_database
+      - mycli mysql://my_user@my_host.com:3306/my_database
+
+    """
 
     if version:
         print('Version:', __version__)

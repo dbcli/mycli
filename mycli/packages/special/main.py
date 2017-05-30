@@ -108,7 +108,9 @@ def quit(*_args):
     raise EOFError
 
 
-@special_command('\\e', '\\e', 'Edit command with editor. (uses $EDITOR)', arg_type=NO_QUERY, case_sensitive=True)
-@special_command('\\G', '\\G', 'Display results vertically.', arg_type=NO_QUERY, case_sensitive=True)
+@special_command('\\e', '\\e', 'Edit command with editor (uses $EDITOR).',
+                 arg_type=NO_QUERY, case_sensitive=True)
+@special_command('\\G', '\\G', 'Display current query results vertically.',
+                 arg_type=NO_QUERY, case_sensitive=True)
 def stub():
     raise NotImplementedError
