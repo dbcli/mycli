@@ -1,3 +1,11 @@
+TBD
+===
+
+Bug Fixes:
+----------
+
+* Remove shebang from main.py (Thanks: [Dick Marinus]).
+
 1.10.0:
 =======
 
