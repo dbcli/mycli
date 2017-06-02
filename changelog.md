@@ -1,10 +1,40 @@
 TBD
 ===
 
+Features:
+---------
+
+* Handle reserved space for completion menu better in small windows. (Thanks: [Thomas Roten]).
+* Display current vi mode in toolbar. (Thanks: [Thomas Roten]).
+* Opening an external editor will edit the last-run query. (Thanks: [Thomas Roten]).
+* Output once special command. (Thanks: [Dick Marinus]).
+
 Bug Fixes:
 ----------
 
+* Fixed incorrect timekeeping when running queries from a file. (Thanks: [Thomas Roten]).
+* Do not display time and empty line for blank queries (Thanks: [Thomas Roten]).
+* Fixed issue where quit command would sometimes not work (Thanks: [Thomas Roten]).
 * Remove shebang from main.py (Thanks: [Dick Marinus]).
+
+Internal Changes:
+-----------------
+
+* Rename tests/ to test/. (Thanks: [Dick Marinus]).
+* Move AUTHORS and SPONSORS to mycli directory. (Thanks: [Terje Røsten] []).
+* Switch from pycryptodome to cryptography (Thanks: [Thomas Roten]).
+* Add pager wrapper for behave tests (Thanks: [Dick Marinus]).
+* Behave test source command (Thanks: [Dick Marinus]).
+* Test using behave the tee command (Thanks: [Dick Marinus]).
+* Behave fix clean up. (Thanks: [Dick Marinus]).
+* Remove output formatter code in favor of CLI Helpers dependency (Thanks: [Thomas Roten]).
+* Better handle common before/after scenarios in behave. (Thanks: [Dick Marinus])
+* Added a regression test for sqlparse >= 0.2.3 (Thanks: [Dick Marinus]).
+* Reverted removal of temporary hack for sqlparse (Thanks: [Dick Marinus]).
+* Add setup.py commands to simplify development tasks (Thanks: [Thomas Roten]).
+* Add behave tests to tox (Thanks: [Dick Marinus]).
+* Add missing @dbtest to tests (Thanks: [Dick Marinus]).
+* Standardizes punctuation/grammar for help strings (Thanks: [Thomas Roten]).
 
 1.10.0:
 =======
@@ -13,6 +43,8 @@ Features:
 ---------
 
 * Add ability to specify alternative myclirc file. (Thanks: [Dick Marinus]).
+* Add new display formats for pretty printing query results. (Thanks: [Amjith
+  Ramanujam], [Dick Marinus], [Thomas Roten]).
 * Add logic to shorten the default prompt if it becomes too long once generated. (Thanks: [John Sterling]).
 
 Bug Fixes:
@@ -24,6 +56,7 @@ Bug Fixes:
 * Fix requirements and remove old compatibility code (Thanks: [Dick Marinus])
 * Fix bug where mycli would not start due to the thanks/credit intro text.
   (Thanks: [Thomas Roten]).
+* Use pymysql default conversions (issue #375). (Thanks: [Dick Marinus]).
 
 Internal Changes:
 -----------------

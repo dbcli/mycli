@@ -6,15 +6,19 @@ import os
 from os.path import exists
 import struct
 import sys
+
 from configobj import ConfigObj, ConfigObjError
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
+
 try:
     basestring
 except NameError:
     basestring = str
-from Crypto.Cipher import AES
 
 
 logger = logging.getLogger(__name__)
+
 
 def log(logger, level, message):
     """Logs message to stderr if logging isn't initialized."""
@@ -23,6 +27,7 @@ def log(logger, level, message):
         logger.log(level, message)
     else:
         print(message, file=sys.stderr)
+
 
 def read_config_file(f):
     """Read a config file."""
@@ -44,6 +49,7 @@ def read_config_file(f):
 
     return config
 
+
 def read_config_files(files):
     """Read and merge a list of config files."""
 
@@ -57,12 +63,14 @@ def read_config_files(files):
 
     return config
 
+
 def write_default_config(source, destination, overwrite=False):
     destination = os.path.expanduser(destination)
     if not overwrite and exists(destination):
         return
 
     shutil.copyfile(source, destination)
+
 
 def get_mylogin_cnf_path():
     """Return the path to the login path file or None if it doesn't exist."""
@@ -79,6 +87,7 @@ def get_mylogin_cnf_path():
         logger.debug("Found login path file at '{0}'".format(mylogin_cnf_path))
         return mylogin_cnf_path
     return None
+
 
 def open_mylogin_cnf(name):
     """Open a readable version of .mylogin.cnf.
@@ -101,6 +110,7 @@ def open_mylogin_cnf(name):
         return None
 
     return TextIOWrapper(plaintext)
+
 
 def read_and_decrypt_mylogin_cnf(f):
     """Read and decrypt the contents of .mylogin.cnf.
@@ -143,8 +153,8 @@ def read_and_decrypt_mylogin_cnf(f):
             return None
     rkey = struct.pack('16B', *rkey)
 
-    # Create a cipher object using the key.
-    aes_cipher = AES.new(rkey, AES.MODE_ECB)
+    # Create a decryptor object using the key.
+    decryptor = _get_decryptor(rkey)
 
     # Create a bytes buffer to hold the plaintext.
     plaintext = BytesIO()
@@ -158,24 +168,9 @@ def read_and_decrypt_mylogin_cnf(f):
 
         # Read cipher_len bytes from the file and decrypt.
         cipher = f.read(cipher_len)
-        pplain = aes_cipher.decrypt(cipher)
-
-        try:
-            # Determine pad length.
-            pad_len = ord(pplain[-1:])
-        except TypeError:
-            # ord() was unable to get the value of the byte.
-            logger.warning('Unable to remove pad.')
+        plain = _remove_pad(decryptor.update(cipher))
+        if plain is False:
             continue
-
-        if pad_len > len(pplain) or len(set(pplain[-pad_len:])) != 1:
-            # Pad length should be less than or equal to the length of the
-            # plaintext. The pad should have a single unqiue byte.
-            logger.warning('Invalid pad found in login path file.')
-            continue
-
-        # Get rid of pad.
-        plain = pplain[:-pad_len]
         plaintext.write(plain)
 
     if plaintext.tell() == 0:
@@ -184,6 +179,7 @@ def read_and_decrypt_mylogin_cnf(f):
 
     plaintext.seek(0)
     return plaintext
+
 
 def str_to_bool(s):
     """Convert a string value to its corresponding boolean value."""
@@ -201,3 +197,29 @@ def str_to_bool(s):
         return False
     else:
         raise ValueError('not a recognized boolean value: %s'.format(s))
+
+
+def _get_decryptor(key):
+    """Get the AES decryptor."""
+    c = Cipher(algorithms.AES(key), modes.ECB(), backend=default_backend())
+    return c.decryptor()
+
+
+def _remove_pad(line):
+    """Remove the pad from the *line*."""
+    pad_length = ord(line[-1:])
+    try:
+        # Determine pad length.
+        pad_length = ord(line[-1:])
+    except TypeError:
+        # ord() was unable to get the value of the byte.
+        logger.warning('Unable to remove pad.')
+        return False
+
+    if pad_length > len(line) or len(set(line[-pad_length:])) != 1:
+        # Pad length should be less than or equal to the length of the
+        # plaintext. The pad should have a single unqiue byte.
+        logger.warning('Invalid pad found in login path file.')
+        return False
+
+    return line[:-pad_length]
