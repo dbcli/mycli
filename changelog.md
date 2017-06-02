@@ -15,6 +15,7 @@ Bug Fixes:
 * Fixed incorrect timekeeping when running queries from a file. (Thanks: [Thomas Roten]).
 * Do not display time and empty line for blank queries (Thanks: [Thomas Roten]).
 * Fixed issue where quit command would sometimes not work (Thanks: [Thomas Roten]).
+* Remove shebang from main.py (Thanks: [Dick Marinus]).
 
 Internal Changes:
 -----------------
