@@ -23,7 +23,7 @@ def list_tables(cur, arg=None, arg_type=PARSED_QUERY):
         return [(None, None, None, '')]
 
 
-@special_command('\\d', '\\d [table]', 'List tables or show create table.', arg_type=PARSED_QUERY, case_sensitive=True)
+@special_command('\\dt+', '\\dt+ [table]', 'List tables or show create table.', arg_type=PARSED_QUERY, case_sensitive=True)
 def list_or_show_create_tables(cur, arg=None, arg_type=PARSED_QUERY):
     if arg:
         query = 'SHOW CREATE TABLE {0}'.format(arg)
