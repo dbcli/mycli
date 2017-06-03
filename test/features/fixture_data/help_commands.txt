@@ -2,8 +2,7 @@
 | Command     | Shortcut          | Description                                                |
 +-------------+-------------------+------------------------------------------------------------+
 | \G          | \G                | Display current query results vertically.                  |
-| \dt         | \dt [table]       | List or describe tables.                                   |
-| \dt+        | \dt+ [table]      | List tables or show create table.                          |
+| \dt         | \dt[+] [table]    | List or describe tables.                                   |
 | \e          | \e                | Edit command with editor (uses $EDITOR).                   |
 | \f          | \f [name]         | List or execute favorite queries.                          |
 | \fd         | \fd [name]        | Delete a favorite query.                                   |
