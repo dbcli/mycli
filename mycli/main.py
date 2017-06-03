@@ -1,13 +1,10 @@
-#!/usr/bin/env python
 from __future__ import unicode_literals
 from __future__ import print_function
 
 import os
 import os.path
 import sys
-import csv
 import traceback
-import socket
 import logging
 import threading
 from time import time
@@ -15,12 +12,7 @@ from datetime import datetime
 from random import choice
 from io import open
 
-# support StringIO for Python 2 and 3
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from io import StringIO
-
+from cli_helpers.tabular_output import TabularOutputFormatter
 import click
 import sqlparse
 from prompt_toolkit import CommandLineInterface, Application, AbortAction
@@ -33,11 +25,8 @@ from prompt_toolkit.layout.processors import (HighlightMatchingBracketProcessor,
                                               ConditionalProcessor)
 from prompt_toolkit.history import FileHistory
 from pygments.token import Token
-from configobj import ConfigObj, ConfigObjError
 
-from .packages.tabulate import tabulate, table_formats
-from .packages.expanded import expanded_table
-from .packages.special.main import (COMMANDS, NO_QUERY)
+from .packages.special.main import NO_QUERY
 import mycli.packages.special as special
 from .sqlcompleter import SQLCompleter
 from .clitoolbar import create_toolbar_tokens_func
@@ -46,8 +35,7 @@ from .sqlexecute import SQLExecute
 from .clibuffer import CLIBuffer
 from .completion_refresher import CompletionRefresher
 from .config import (write_default_config, get_mylogin_cnf_path,
-                     open_mylogin_cnf, read_config_file,
-                     read_config_files, str_to_bool)
+                     open_mylogin_cnf, read_config_files, str_to_bool)
 from .key_bindings import mycli_bindings
 from .encodingutils import utf8tounicode
 from .lexer import MyCliLexer
@@ -67,7 +55,7 @@ from collections import namedtuple
 # Query tuples are used for maintaining history
 Query = namedtuple('Query', ['query', 'successful', 'mutating'])
 
-PACKAGE_ROOT = os.path.dirname(__file__)
+PACKAGE_ROOT = os.path.abspath(os.path.dirname(__file__))
 
 # no-op logging handler
 class NullHandler(logging.Handler):
@@ -118,7 +106,8 @@ class MyCli(object):
         self.multi_line = c['main'].as_bool('multi_line')
         self.key_bindings = c['main']['key_bindings']
         special.set_timing_enabled(c['main'].as_bool('timing'))
-        self.table_format = c['main']['table_format']
+        self.formatter = TabularOutputFormatter(
+            format_name=c['main']['table_format'])
         self.syntax_style = c['main']['syntax_style']
         self.less_chatty = c['main'].as_bool('less_chatty')
         self.cli_style = c['colors']
@@ -158,7 +147,9 @@ class MyCli(object):
 
         # Initialize completer.
         self.smart_completion = c['main'].as_bool('smart_completion')
-        self.completer = SQLCompleter(self.smart_completion)
+        self.completer = SQLCompleter(
+            self.smart_completion,
+            supported_formats=self.formatter.supported_formats)
         self._completer_lock = threading.Lock()
 
         # Register custom special commands.
@@ -185,22 +176,26 @@ class MyCli(object):
                 aliases=('\\r', ), case_sensitive=True)
         special.register_special_command(self.refresh_completions, 'rehash',
                 '\\#', 'Refresh auto-completions.', arg_type=NO_QUERY, aliases=('\\#',))
-        special.register_special_command(self.change_table_format, 'tableformat',
-                '\\T', 'Change Table Type.', aliases=('\\T',), case_sensitive=True)
+        special.register_special_command(
+            self.change_table_format, 'tableformat', '\\T',
+            'Change the table format used to output results.',
+            aliases=('\\T',), case_sensitive=True)
         special.register_special_command(self.execute_from_file, 'source', '\\. filename',
                               'Execute commands from file.', aliases=('\\.',))
         special.register_special_command(self.change_prompt_format, 'prompt',
                 '\\R', 'Change prompt format.', aliases=('\\R',), case_sensitive=True)
 
     def change_table_format(self, arg, **_):
-        if not arg in table_formats():
-            msg = "Table type %s not yet implemented.  Allowed types:" % arg
-            for table_type in table_formats():
-                msg += "\n\t%s" % table_type
+        try:
+            self.formatter.format_name = arg
+            yield (None, None, None,
+                   'Changed table format to {}'.format(arg))
+        except ValueError:
+            msg = 'Table format {} not recognized. Allowed formats:'.format(
+                arg)
+            for table_type in self.formatter.supported_formats:
+                msg += "\n\t{}".format(table_type)
             yield (None, None, None, msg)
-        else:
-            self.table_format = arg
-            yield (None, None, None, "Changed table Type to %s" % self.table_format)
 
     def change_db(self, arg, **_):
         if arg is None:
@@ -426,8 +421,9 @@ class MyCli(object):
         saved_callables = cli.application.pre_run_callables
         while special.editor_command(document.text):
             filename = special.get_filename(document.text)
-            sql, message = special.open_external_editor(filename,
-                                                          sql=document.text)
+            query = (special.get_editor_query(document.text) or
+                     self.get_last_query())
+            sql, message = special.open_external_editor(filename, sql=query)
             if message:
                 # Something went wrong. Raise an exception and bail.
                 raise RuntimeError(message)
@@ -446,9 +442,8 @@ class MyCli(object):
         if self.smart_completion:
             self.refresh_completions()
 
-        project_root = os.path.dirname(PACKAGE_ROOT)
-        author_file = os.path.join(project_root, 'AUTHORS')
-        sponsor_file = os.path.join(project_root, 'SPONSORS')
+        author_file = os.path.join(PACKAGE_ROOT, 'AUTHORS')
+        sponsor_file = os.path.join(PACKAGE_ROOT, 'SPONSORS')
 
         key_binding_manager = mycli_bindings()
 
@@ -475,13 +470,6 @@ class MyCli(object):
 
                 special.set_expanded_output(False)
 
-                # The reason we check here instead of inside the sqlexecute is
-                # because we want to raise the Exit exception which will be
-                # caught by the try/except block that wraps the
-                # sqlexecute.run() statement.
-                if quit_command(document.text):
-                    raise EOFError
-
                 try:
                     document = self.handle_editor_command(self.cli, document)
                 except RuntimeError as e:
@@ -489,6 +477,9 @@ class MyCli(object):
                     logger.error("traceback: %r", traceback.format_exc())
                     self.output(str(e), err=True, fg='red')
                     return
+
+            if not document.text.strip():
+                return
 
             if self.destructive_warning:
                 destroy = confirm_destructive_query(document.text)
@@ -538,14 +529,15 @@ class MyCli(object):
                     else:
                         max_width = None
 
-                    formatted = format_output(title, cur, headers,
-                        status, self.table_format,
-                        special.is_expanded_output(), max_width)
+                    formatted = self.format_output(title, cur, headers, status,
+                                                   special.is_expanded_output(),
+                                                   max_width)
 
                     output.extend(formatted)
-                    end = time()
-                    total += end - start
+                    total = time() - start
                     mutating = mutating or is_mutating(status)
+            except EOFError as e:
+                raise e
             except KeyboardInterrupt:
                 # get last connection id
                 connection_id_to_kill = sqlexecute.connection_id
@@ -588,6 +580,7 @@ class MyCli(object):
             else:
                 try:
                     special.write_tee('\n'.join(output))
+                    special.write_once('\n'.join(output))
                     if special.is_pager_enabled():
                         self.output_via_pager('\n'.join(output))
                     else:
@@ -610,17 +603,19 @@ class MyCli(object):
 
         get_toolbar_tokens = create_toolbar_tokens_func(self.completion_refresher.is_refreshing)
 
-        layout = create_prompt_layout(lexer=MyCliLexer,
-                                      multiline=True,
-                                      get_prompt_tokens=prompt_tokens,
-                                      get_continuation_tokens=get_continuation_tokens,
-                                      get_bottom_toolbar_tokens=get_toolbar_tokens,
-                                      display_completions_in_columns=self.wider_completion_menu,
-                                      extra_input_processors=[
-                                          ConditionalProcessor(
-                                              processor=HighlightMatchingBracketProcessor(chars='[](){}'),
-                                              filter=HasFocus(DEFAULT_BUFFER) & ~IsDone()),
-                                      ])
+        layout = create_prompt_layout(
+            lexer=MyCliLexer,
+            multiline=True,
+            get_prompt_tokens=prompt_tokens,
+            get_continuation_tokens=get_continuation_tokens,
+            get_bottom_toolbar_tokens=get_toolbar_tokens,
+            display_completions_in_columns=self.wider_completion_menu,
+            extra_input_processors=[ConditionalProcessor(
+                processor=HighlightMatchingBracketProcessor(chars='[](){}'),
+                filter=HasFocus(DEFAULT_BUFFER) & ~IsDone()
+            )],
+            reserve_space_for_menu=self.get_reserved_space()
+        )
         with self._completer_lock:
             buf = CLIBuffer(always_multiline=self.multi_line, completer=self.completer,
                     history=FileHistory(os.path.expanduser(os.environ.get('MYCLI_HISTFILE', '~/.mycli-history'))),
@@ -680,8 +675,10 @@ class MyCli(object):
         if reset:
             with self._completer_lock:
                 self.completer.reset_completions()
-        self.completion_refresher.refresh(self.sqlexecute,
-                                          self._on_completions_refreshed)
+        self.completion_refresher.refresh(
+            self.sqlexecute, self._on_completions_refreshed,
+            {'smart_completion': self.smart_completion,
+             'supported_formats': self.formatter.supported_formats})
 
         return [(None, None, None,
                 'Auto-completion refresh started in the background.')]
@@ -723,50 +720,87 @@ class MyCli(object):
         string = string.replace('\\_', ' ')
         return string
 
-    def run_query(self, query, table_format=None, new_line=True):
-        """Runs query"""
+    def run_query(self, query, new_line=True):
+        """Runs *query*."""
         results = self.sqlexecute.run(query)
         for result in results:
             title, cur, headers, status = result
-            output = format_output(title, cur, headers, None, table_format)
+            output = self.format_output(title, cur, headers, None)
             for line in output:
                 click.echo(line, nl=new_line)
+
+    def format_output(self, title, cur, headers, status, expanded=False,
+                      max_width=None):
+        expanded = expanded or self.formatter.format_name == 'vertical'
+        output = []
+
+        if title:  # Only print the title if it's not None.
+            output.append(title)
+
+        if cur:
+            rows = list(cur)
+            formatted = self.formatter.format_output(
+                rows, headers, format_name='vertical' if expanded else None)
+
+            if (not expanded and max_width and rows and
+                    content_exceeds_width(rows[0], max_width) and headers):
+                formatted = self.formatter.format_output(
+                    rows, headers, format_name='vertical')
+
+            output.append(formatted)
+
+        if status:  # Only print the status if it's not None.
+            output.append(status)
+
+        return output
+
+    def get_reserved_space(self):
+        """Get the number of lines to reserve for the completion menu."""
+        reserved_space_ratio = .45
+        max_reserved_space = 8
+        _, height = click.get_terminal_size()
+        return min(round(height * reserved_space_ratio), max_reserved_space)
+
+    def get_last_query(self):
+        """Get the last query executed or None."""
+        return self.query_history[-1][0] if self.query_history else None
+
 
 @click.command()
 @click.option('-h', '--host', envvar='MYSQL_HOST', help='Host address of the database.')
 @click.option('-P', '--port', envvar='MYSQL_TCP_PORT', type=int, help='Port number to use for connection. Honors '
-              '$MYSQL_TCP_PORT')
+              '$MYSQL_TCP_PORT.')
 @click.option('-u', '--user', help='User name to connect to the database.')
 @click.option('-S', '--socket', envvar='MYSQL_UNIX_PORT', help='The socket file to use for connection.')
 @click.option('-p', '--password', 'password', envvar='MYSQL_PWD', type=str,
-              help='Password to connect to the database')
+              help='Password to connect to the database.')
 @click.option('--pass', 'password', envvar='MYSQL_PWD', type=str,
-              help='Password to connect to the database')
-@click.option('--ssl-ca', help='CA file in PEM format',
+              help='Password to connect to the database.')
+@click.option('--ssl-ca', help='CA file in PEM format.',
               type=click.Path(exists=True))
-@click.option('--ssl-capath', help='CA directory')
-@click.option('--ssl-cert', help='X509 cert in PEM format',
+@click.option('--ssl-capath', help='CA directory.')
+@click.option('--ssl-cert', help='X509 cert in PEM format.',
               type=click.Path(exists=True))
-@click.option('--ssl-key', help='X509 key in PEM format',
+@click.option('--ssl-key', help='X509 key in PEM format.',
               type=click.Path(exists=True))
-@click.option('--ssl-cipher', help='SSL cipher to use')
+@click.option('--ssl-cipher', help='SSL cipher to use.')
 @click.option('--ssl-verify-server-cert', is_flag=True,
               help=('Verify server\'s "Common Name" in its cert against '
                     'hostname used when connecting. This option is disabled '
-                    'by default'))
+                    'by default.'))
 # as of 2016-02-15 revocation list is not supported by underling PyMySQL
 # library (--ssl-crl and --ssl-crlpath options in vanilla mysql client)
-@click.option('-v', '--version', is_flag=True, help='Version of mycli.')
+@click.option('-v', '--version', is_flag=True, help='Output mycli\'s version.')
 @click.option('-D', '--database', 'dbname', help='Database to use.')
 @click.option('-R', '--prompt', 'prompt',
-              help='Prompt format (Default: "{0}")'.format(
+              help='Prompt format (Default: "{0}").'.format(
                   MyCli.default_prompt))
 @click.option('-l', '--logfile', type=click.File(mode='a', encoding='utf-8'),
               help='Log every query and its results to a file.')
 @click.option('--defaults-group-suffix', type=str,
-              help='Read config group with the specified suffix.')
+              help='Read MySQL config groups with the specified suffix.')
 @click.option('--defaults-file', type=click.Path(),
-              help='Only read default options from the given file')
+              help='Only read MySQL options from the given file.')
 @click.option('--myclirc', type=click.Path(), default="~/.myclirc",
               help='Location of myclirc file.')
 @click.option('--auto-vertical-output', is_flag=True,
@@ -782,13 +816,22 @@ class MyCli(object):
 @click.option('--login-path', type=str,
               help='Read this path from the login file.')
 @click.option('-e', '--execute',  type=str,
-              help='Execute query to the database.')
+              help='Execute command and quit.')
 @click.argument('database', default='', nargs=1)
 def cli(database, user, host, port, socket, password, dbname,
         version, prompt, logfile, defaults_group_suffix, defaults_file,
         login_path, auto_vertical_output, local_infile, ssl_ca, ssl_capath,
         ssl_cert, ssl_key, ssl_cipher, ssl_verify_server_cert, table, csv,
         warn, execute, myclirc):
+    """A MySQL terminal client with auto-completion and syntax highlighting.
+
+    \b
+    Examples:
+      - mycli my_database
+      - mycli -u my_user -h my_host.com my_database
+      - mycli mysql://my_user@my_host.com:3306/my_database
+
+    """
 
     if version:
         print('Version:', __version__)
@@ -829,12 +872,12 @@ def cli(database, user, host, port, socket, password, dbname,
     #  --execute argument
     if execute:
         try:
-            table_format = None
-            if table:
-                table_format = mycli.table_format
-            elif csv:
-                table_format = 'csv'
-            mycli.run_query(execute, table_format=table_format)
+            if csv:
+                mycli.formatter.format_name = 'csv'
+            elif not table:
+                mycli.formatter.format_name = 'tsv'
+
+            mycli.run_query(execute)
             exit(0)
         except Exception as e:
             click.secho(str(e), err=True, fg='red')
@@ -855,57 +898,20 @@ def cli(database, user, host, port, socket, password, dbname,
                 confirm_destructive_query(stdin_text) is False):
             exit(0)
         try:
-            table_format = None
             new_line = True
 
             if csv:
-                table_format = 'csv'
+                mycli.formatter.format_name = 'csv'
                 new_line = False
-            elif table:
-                table_format = mycli.table_format
+            elif not table:
+                mycli.formatter.format_name = 'tsv'
 
-            mycli.run_query(stdin_text, table_format=table_format, new_line=new_line)
+            mycli.run_query(stdin_text, new_line=new_line)
             exit(0)
         except Exception as e:
             click.secho(str(e), err=True, fg='red')
             exit(1)
 
-
-def format_output(title, cur, headers, status, table_format, expanded=False, max_width=None):
-    output = []
-    if title:  # Only print the title if it's not None.
-        output.append(title)
-    if cur:
-        headers = [utf8tounicode(x) for x in headers]
-        table_format = 'tsv' if table_format is None else table_format
-
-        if expanded:
-            output.append(expanded_table(cur, headers))
-        elif table_format == 'csv':
-            content = StringIO()
-            writer = csv.writer(content)
-            writer.writerow(headers)
-
-            for row in cur:
-                row = ['null' if val is None else str(val) for val in row]
-                writer.writerow(row)
-
-            output.append(content.getvalue())
-            content.close()
-        else:
-            rows = list(cur)
-            tabulated, frows = tabulate(rows, headers, tablefmt=table_format,
-                                        missingval='<null>')
-            if (max_width and rows and
-                    content_exceeds_width(frows[0], max_width) and
-                    headers):
-                output.append(expanded_table(rows, headers))
-            else:
-                output.append(tabulated)
-    if status:  # Only print the status if it's not None.
-        output.append(status)
-
-    return output
 
 def content_exceeds_width(row, width):
     # Account for 3 characters between each column
@@ -984,11 +990,6 @@ def confirm_destructive_query(queries):
     if is_destructive(queries) and sys.stdin.isatty():
         return click.prompt(prompt_text, type=bool)
 
-def quit_command(sql):
-    return (sql.strip().lower() == 'exit'
-            or sql.strip().lower() == 'quit'
-            or sql.strip() == '\q'
-            or sql.strip() == ':q')
 
 def thanks_picker(files=()):
     for filename in files:
