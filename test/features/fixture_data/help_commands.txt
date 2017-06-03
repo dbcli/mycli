@@ -3,6 +3,7 @@
 +-------------+-------------------+------------------------------------------------------------+
 | \G          | \G                | Display current query results vertically.                  |
 | \dt         | \dt [table]       | List or describe tables.                                   |
+| \dt+        | \dt+ [table]      | List tables or show create table.                          |
 | \e          | \e                | Edit command with editor (uses $EDITOR).                   |
 | \f          | \f [name]         | List or execute favorite queries.                          |
 | \fd         | \fd [name]        | Delete a favorite query.                                   |

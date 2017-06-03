@@ -109,7 +109,7 @@ def suggest_special(text):
     if cmd in ['\\f', '\\fs', '\\fd']:
         return [{'type': 'favoritequery'}]
 
-    if cmd in ['\\dt']:
+    if cmd in ['\\dt', '\\dt+']:
         return [
             {'type': 'table', 'schema': []},
             {'type': 'view', 'schema': []},

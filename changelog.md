@@ -8,6 +8,7 @@ Features:
 * Display current vi mode in toolbar. (Thanks: [Thomas Roten]).
 * Opening an external editor will edit the last-run query. (Thanks: [Thomas Roten]).
 * Output once special command. (Thanks: [Dick Marinus]).
+* Add special command to show create table statement. (Thanks: [Ryan Smith])
 
 Bug Fixes:
 ----------
