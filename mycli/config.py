@@ -10,13 +10,6 @@ from cli_helpers.compat import WIN
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 
-try:
-    basestring
-    from UserDict import UserDict
-except NameError:
-    basestring = str
-    from collections import UserDict
-
 logger = logging.getLogger(__name__)
 PACKAGE_ROOT = os.path.dirname(__file__)
 
@@ -31,7 +24,7 @@ class MySqlConfig(Config):
         self.login_path = kwargs.pop('login_path', None)
 
         if self.login_path:
-            self.sections.append(login_path)
+            self.sections.append(self.login_path)
 
         if self.defaults_suffix:
             self.sections.extend([s + self.defaults_suffix
@@ -71,7 +64,7 @@ class MySqlConfig(Config):
                 self.filename)))
 
     def login_path_file(self):
-        """Return the path to the login path file or None if it doesn't exist."""
+        """Return the login path file's path or None if it doesn't exist."""
         mylogin_cnf_path = os.environ.get('MYSQL_TEST_LOGIN_FILE')
 
         if mylogin_cnf_path is None:
@@ -93,6 +86,7 @@ class MySqlConfig(Config):
         """Get a list of all the MySQL config files.
 
         The login path file is returned as a decrypted TextIOWrapper.
+
         """
         login_path_file = self.login_path_file()
 
