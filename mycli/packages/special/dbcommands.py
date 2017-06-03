@@ -24,7 +24,7 @@ def list_tables(cur, arg=None, arg_type=PARSED_QUERY, verbose=False):
     else:
         return [(None, None, None, '')]
 
-    if verbose:
+    if verbose and arg:
         log.debug(query)
         cur.execute('SHOW CREATE TABLE {0}'.format(arg))
         status = cur.fetchone()[1]
