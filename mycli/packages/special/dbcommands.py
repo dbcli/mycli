@@ -26,8 +26,9 @@ def list_tables(cur, arg=None, arg_type=PARSED_QUERY, verbose=False):
         return [(None, None, None, '')]
 
     if verbose and arg:
+        query = 'SHOW CREATE TABLE {0}'.format(arg)
         log.debug(query)
-        cur.execute('SHOW CREATE TABLE {0}'.format(arg))
+        cur.execute(query)
         status = cur.fetchone()[1]
 
     return [(None, tables, headers, status)]
