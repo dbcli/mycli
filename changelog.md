@@ -1,3 +1,11 @@
+TBD
+===
+
+Bug Fixes:
+----------
+
+* Add warning when -F is missing from LESS (Thanks: [Dick Marinus]).
+
 1.10.0:
 =======
 
