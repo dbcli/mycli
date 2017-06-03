@@ -94,7 +94,7 @@ def suggest_type(full_text, text_before_cursor):
 
 def suggest_special(text):
     text = text.lstrip()
-    cmd, arg = parse_special_command(text)
+    cmd, _, arg = parse_special_command(text)
 
     if cmd == text:
         # Trying to complete the special command itself
