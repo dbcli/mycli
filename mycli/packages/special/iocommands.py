@@ -151,7 +151,7 @@ def open_external_editor(filename=None, sql=None):
     return (query, message)
 
 @special_command('\\f', '\\f [name]', 'List or execute favorite queries.', arg_type=PARSED_QUERY, case_sensitive=True)
-def execute_favorite_query(cur, arg):
+def execute_favorite_query(cur, arg, **_):
     """Returns (title, rows, headers, status)"""
     if arg == '':
         for result in list_favorite_queries():
