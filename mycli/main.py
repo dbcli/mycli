@@ -111,6 +111,7 @@ class MyCli(object):
         self.syntax_style = c['main']['syntax_style']
         self.less_chatty = c['main'].as_bool('less_chatty')
         self.cli_style = c['colors']
+        self.less_warning = c['main'].as_bool('less_warning')
         self.wider_completion_menu = c['main'].as_bool('wider_completion_menu')
         c_dest_warning = c['main'].as_bool('destructive_warning')
         self.destructive_warning = c_dest_warning if warn is None else warn
@@ -660,6 +661,9 @@ class MyCli(object):
         # Provide sane defaults for less if they are empty.
         if not os.environ.get('LESS'):
             os.environ['LESS'] = '-RXF'
+        elif 'F' not in os.environ.get('LESS') and self.less_warning:
+            self.output(
+                'Warning: LESS environment variable set without -F', err=True, fg='red')
 
         cnf = self.read_my_cnf_files(self.cnf_files, ['pager', 'skip-pager'])
         if cnf['pager']:
