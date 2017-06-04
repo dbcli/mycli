@@ -30,10 +30,11 @@ log_level = INFO
 # Timing of sql statments and table rendering.
 timing = True
 
-# Table format. Possible values: psql, plain, simple, grid, fancy_grid, pipe,
-# orgtbl, rst, mediawiki, html, latex, latex_booktabs, tsv.
-# Recommended: psql, fancy_grid and grid.
-table_format = psql
+# Table format. Possible values: ascii, double, github,
+# psql, plain, simple, grid, fancy_grid, pipe, orgtbl, rst, mediawiki, html,
+# latex, latex_booktabs, textile, moinmoin, jira, vertical, tsv, csv.
+# Recommended: ascii
+table_format = ascii
 
 # Syntax coloring style. Possible values (many support the "-dark" suffix):
 # manni, igor, xcode, vim, autumn, vs, rrt, native, perldoc, borland, tango, emacs,
@@ -66,7 +67,7 @@ less_chatty = False
 login_path_as_host = False
 
 # Cause result sets to be displayed vertically if they are too wide for the current window,
-# and using normal tabular format otherwise. (This applies to statements terminated by ; or \G.) 
+# and using normal tabular format otherwise. (This applies to statements terminated by ; or \G.)
 auto_vertical_output = False
 
 # Custom colors for the completion menu, toolbar, etc.

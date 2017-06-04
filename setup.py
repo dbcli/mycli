@@ -1,6 +1,7 @@
+#!/usr/bin/env python
+
 import re
 import ast
-import platform
 from setuptools import setup, find_packages
 
 _version_re = re.compile(r'__version__\s+=\s+(.*)')
@@ -18,39 +19,43 @@ install_requirements = [
     'PyMySQL >= 0.6.7',
     'sqlparse>=0.2.2,<0.3.0',
     'configobj >= 5.0.5',
-    'pycryptodome >= 3',
+    'cryptography >= 1.0.0',
+    'cli_helpers >= 0.1.0',
 ]
 
 setup(
-        name='mycli',
-        author='Amjith Ramanujam',
-        author_email='amjith[dot]r[at]gmail.com',
-        version=version,
-        url='http://mycli.net',
-        packages=find_packages(),
-        package_data={'mycli': ['myclirc', '../AUTHORS', '../SPONSORS']},
-        description=description,
-        long_description=description,
-        install_requires=install_requirements,
-        entry_points='''
-            [console_scripts]
-            mycli=mycli.main:cli
-        ''',
-        classifiers=[
-            'Intended Audience :: Developers',
-            'License :: OSI Approved :: BSD License',
-            'Operating System :: Unix',
-            'Programming Language :: Python',
-            'Programming Language :: Python :: 2.7',
-            'Programming Language :: Python :: 3',
-            'Programming Language :: Python :: 3.3',
-            'Programming Language :: Python :: 3.4',
-            'Programming Language :: Python :: 3.5',
-            'Programming Language :: Python :: 3.6',
-            'Programming Language :: SQL',
-            'Topic :: Database',
-            'Topic :: Database :: Front-Ends',
-            'Topic :: Software Development',
-            'Topic :: Software Development :: Libraries :: Python Modules',
-            ],
-        )
+    name='mycli',
+    author='Mycli Core Team',
+    author_email='mycli-dev@googlegroups.com',
+    version=version,
+    url='http://mycli.net',
+    packages=find_packages(),
+    package_data={'mycli': ['myclirc', 'AUTHORS', 'SPONSORS']},
+    description=description,
+    long_description=description,
+    install_requires=install_requirements,
+    entry_points={
+        'console_scripts': ['mycli = mycli.main:cli'],
+        'distutils.commands': [
+            'lint = tasks:lint',
+            'test = tasks:test',
+        ],
+    },
+    classifiers=[
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: BSD License',
+        'Operating System :: Unix',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: SQL',
+        'Topic :: Database',
+        'Topic :: Database :: Front-Ends',
+        'Topic :: Software Development',
+        'Topic :: Software Development :: Libraries :: Python Modules',
+    ],
+)

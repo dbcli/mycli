@@ -22,7 +22,9 @@ class CommandNotFound(Exception):
 @export
 def parse_special_command(sql):
     command, _, arg = sql.partition(' ')
-    return (command, arg.strip())
+    verbose = '+' in command
+    command = command.strip().replace('+', '')
+    return (command, verbose, arg.strip())
 
 @export
 def special_command(command, shortcut, description, arg_type=PARSED_QUERY,
@@ -50,7 +52,7 @@ def execute(cur, sql):
     """Execute a special command and return the results. If the special command
     is not supported a KeyError will be raised.
     """
-    command, arg = parse_special_command(sql)
+    command, verbose, arg = parse_special_command(sql)
 
     if (command not in COMMANDS) and (command.lower() not in COMMANDS):
         raise CommandNotFound
@@ -70,7 +72,7 @@ def execute(cur, sql):
     if special_cmd.arg_type == NO_QUERY:
         return special_cmd.handler()
     elif special_cmd.arg_type == PARSED_QUERY:
-        return special_cmd.handler(cur=cur, arg=arg)
+        return special_cmd.handler(cur=cur, arg=arg, verbose=verbose)
     elif special_cmd.arg_type == RAW_QUERY:
         return special_cmd.handler(cur=cur, query=sql)
 
@@ -101,9 +103,16 @@ def show_keyword_help(cur, arg):
     else:
         return [(None, None, None, 'No help found for {0}.'.format(keyword))]
 
+
 @special_command('exit', '\\q', 'Exit.', arg_type=NO_QUERY, aliases=('\\q', ))
 @special_command('quit', '\\q', 'Quit.', arg_type=NO_QUERY)
-@special_command('\\e', '\\e', 'Edit command with editor. (uses $EDITOR)', arg_type=NO_QUERY, case_sensitive=True)
-@special_command('\\G', '\\G', 'Display results vertically.', arg_type=NO_QUERY, case_sensitive=True)
+def quit(*_args):
+    raise EOFError
+
+
+@special_command('\\e', '\\e', 'Edit command with editor (uses $EDITOR).',
+                 arg_type=NO_QUERY, case_sensitive=True)
+@special_command('\\G', '\\G', 'Display current query results vertically.',
+                 arg_type=NO_QUERY, case_sensitive=True)
 def stub():
     raise NotImplementedError

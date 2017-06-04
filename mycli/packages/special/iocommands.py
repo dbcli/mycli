@@ -17,6 +17,7 @@ TIMING_ENABLED = False
 use_expanded_output = False
 PAGER_ENABLED = True
 tee_file = None
+once_file = None
 
 @export
 def set_timing_enabled(val):
@@ -33,7 +34,9 @@ def is_pager_enabled():
     return PAGER_ENABLED
 
 @export
-@special_command('pager', '\\P [command]', 'Set PAGER. Print the query results via PAGER', arg_type=PARSED_QUERY, aliases=('\\P', ), case_sensitive=True)
+@special_command('pager', '\\P [command]',
+                 'Set PAGER. Print the query results via PAGER.',
+                 arg_type=PARSED_QUERY, aliases=('\\P', ), case_sensitive=True)
 def set_pager(arg, **_):
     if arg:
         os.environ['PAGER'] = arg
@@ -77,12 +80,6 @@ def set_expanded_output(val):
 def is_expanded_output():
     return use_expanded_output
 
-def quit(*args):
-    raise NotImplementedError
-
-def stub(*args):
-    raise NotImplementedError
-
 _logger = logging.getLogger(__name__)
 
 @export
@@ -101,14 +98,10 @@ def get_filename(sql):
         command, _, filename = sql.partition(' ')
         return filename.strip() or None
 
-@export
-def open_external_editor(filename=None, sql=''):
-    """
-    Open external editor, wait for the user to type in his query,
-    return the query.
-    :return: list with one tuple, query as first element.
-    """
 
+@export
+def get_editor_query(sql):
+    """Get the query part of an editor command."""
     sql = sql.strip()
 
     # The reason we can't simply do .strip('\e') is that it strips characters,
@@ -118,15 +111,28 @@ def open_external_editor(filename=None, sql=''):
     while pattern.search(sql):
         sql = pattern.sub('', sql)
 
+    return sql
+
+
+@export
+def open_external_editor(filename=None, sql=None):
+    """Open external editor, wait for the user to type in their query, return
+    the query.
+
+    :return: list with one tuple, query as first element.
+
+    """
+
     message = None
     filename = filename.strip().split(' ', 1)[0] if filename else None
 
+    sql = sql or ''
     MARKER = '# Type your query above this line.\n'
 
     # Populate the editor buffer with the partial sql (if available) and a
     # placeholder comment.
-    query = click.edit(sql + '\n\n' + MARKER, filename=filename,
-            extension='.sql')
+    query = click.edit('{sql}\n\n{marker}'.format(sql=sql, marker=MARKER),
+                       filename=filename, extension='.sql')
 
     if filename:
         try:
@@ -145,7 +151,7 @@ def open_external_editor(filename=None, sql=''):
     return (query, message)
 
 @special_command('\\f', '\\f [name]', 'List or execute favorite queries.', arg_type=PARSED_QUERY, case_sensitive=True)
-def execute_favorite_query(cur, arg):
+def execute_favorite_query(cur, arg, **_):
     """Returns (title, rows, headers, status)"""
     if arg == '':
         for result in list_favorite_queries():
@@ -210,11 +216,11 @@ def delete_favorite_query(arg, **_):
 
     return [(None, None, None, status)]
 
-@special_command('system', 'system [command]', 'Execute a system commmand.')
+
+@special_command('system', 'system [command]',
+                 'Execute a system shell commmand.')
 def execute_system_command(arg, **_):
-    """
-    Execute a system command.
-    """
+    """Execute a system shell command."""
     usage = "Syntax: system [command].\n"
 
     if not arg:
@@ -242,10 +248,8 @@ def execute_system_command(arg, **_):
     except OSError as e:
         return [(None, None, None, 'OSError: %s' % e.strerror)]
 
-@special_command('tee', 'tee [-o] filename',
-                 'write to an output file (optionally overwrite using -o)')
-def set_tee(arg, **_):
-    global tee_file
+
+def parseargfile(arg):
     if arg.startswith('-o '):
         mode = "w"
         filename = arg[3:]
@@ -256,8 +260,16 @@ def set_tee(arg, **_):
     if not filename:
         raise TypeError('You must provide a filename.')
 
+    return {'file': filename, 'mode': mode}
+
+
+@special_command('tee', 'tee [-o] filename',
+                 'Append all results to an output file (overwrite using -o).')
+def set_tee(arg, **_):
+    global tee_file
+
     try:
-        tee_file = open(filename, mode)
+        tee_file = open(**parseargfile(arg))
     except (IOError, OSError) as e:
         raise OSError("Cannot write to file '{}': {}".format(e.filename, e.strerror))
 
@@ -270,7 +282,8 @@ def close_tee():
         tee_file.close()
         tee_file = None
 
-@special_command('notee', 'notee', 'stop writing to an output file')
+
+@special_command('notee', 'notee', 'Stop writing results to an output file.')
 def no_tee(arg, **_):
     close_tee()
     return [(None, None, None, "")]
@@ -282,3 +295,32 @@ def write_tee(output):
         tee_file.write(output)
         tee_file.write(u"\n")
         tee_file.flush()
+
+
+@special_command('\\once', '\\o [-o] filename',
+                 'Append next result to an output file (overwrite using -o).',
+                 aliases=('\\o', ))
+def set_once(arg, **_):
+    global once_file
+
+    once_file = parseargfile(arg)
+
+    return [(None, None, None, "")]
+
+
+@export
+def write_once(output):
+    global once_file
+    if output and once_file:
+        try:
+            f = open(**once_file)
+        except (IOError, OSError) as e:
+            once_file = None
+            raise OSError("Cannot write to file '{}': {}".format(
+                e.filename, e.strerror))
+
+        with f:
+            f.write(output)
+            f.write(u"\n")
+
+        once_file = None
