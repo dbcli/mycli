@@ -587,10 +587,7 @@ class MyCli(object):
             else:
                 try:
                     special.write_tee('\n'.join(output))
-                    if special.is_pager_enabled():
-                        self.output_via_pager('\n'.join(output))
-                    else:
-                        self.output('\n'.join(output))
+                    self.output('\n'.join(output))
                 except KeyboardInterrupt:
                     pass
                 if special.is_timing_enabled():
@@ -648,18 +645,27 @@ class MyCli(object):
             if not self.less_chatty:
                 self.output('Goodbye!')
 
-    def output(self, text, **kwargs):
-        special.write_tee(text)
-        if self.logfile:
-            self.logfile.write(utf8tounicode(text))
-            self.logfile.write('\n')
-        click.secho(text, **kwargs)
 
-    def output_via_pager(self, text):
+    def output(self, output, **kwargs):
+        special.write_tee(output)
         if self.logfile:
-            self.logfile.write(text)
+            self.logfile.write(utf8tounicode(output))
             self.logfile.write('\n')
-        click.echo_via_pager(text)
+
+        size = self.cli.output.get_size()
+
+        pager = False
+        margin = self.get_reserved_space() + self.get_prompt(self.prompt_format).count('\n') + 1
+        for i, line in enumerate(output.splitlines()):
+            if len(line) > size.columns or i > (size.rows - margin):
+                pager = True
+                break
+
+        if (special.is_pager_enabled() and pager) or self.explicit_pager:
+            click.echo_via_pager(output)
+        else:
+            click.secho(output, **kwargs)
+
 
     def configure_pager(self):
         # Provide sane defaults for less if they are empty.
@@ -669,6 +675,10 @@ class MyCli(object):
         cnf = self.read_my_cnf_files(self.cnf_files, ['pager', 'skip-pager'])
         if cnf['pager']:
             special.set_pager(cnf['pager'])
+            self.explicit_pager = True
+        else:
+            self.explicit_pager = False
+
         if cnf['skip-pager']:
             special.disable_pager()
 
@@ -727,6 +737,13 @@ class MyCli(object):
             output = format_output(title, cur, headers, None, table_format)
             for line in output:
                 click.echo(line, nl=new_line)
+
+    def get_reserved_space(self):
+        """Get the number of lines to reserve for the completion menu."""
+        reserved_space_ratio = .45
+        max_reserved_space = 8
+        _, height = click.get_terminal_size()
+        return min(round(height * reserved_space_ratio), max_reserved_space)
 
 @click.command()
 @click.option('-h', '--host', envvar='MYSQL_HOST', help='Host address of the database.')

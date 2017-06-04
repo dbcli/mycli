@@ -1,3 +1,11 @@
+TBD
+===
+
+Bug Fixes:
+----------
+
+* Only use pager if output doesn't fit. (Thanks: [Dick Marinus]).
+
 1.10.0:
 =======
 
