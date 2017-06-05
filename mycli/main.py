@@ -645,15 +645,24 @@ class MyCli(object):
                 self.echo('Goodbye!')
 
     def log_output(self, output):
+        """Log the output in the audit log, if it's enabled."""
         if self.logfile:
             self.logfile.write(utf8tounicode(output))
             self.logfile.write('\n')
 
     def echo(self, s, **kwargs):
+        """Print a message to stdout.
+
+        The message will be logged in the audit log, if enabled.
+
+        All keyword arguments are passed to click.echo().
+
+        """
         self.log_output(s)
         click.secho(s, **kwargs)
 
     def output_fits_on_screen(self, output):
+        """Check if the given output fits on the screen."""
         size = self.cli.output.get_size()
 
         margin = self.get_reserved_space() + self.get_prompt(self.prompt_format).count('\n') + 1
@@ -667,6 +676,12 @@ class MyCli(object):
         return True
 
     def output(self, output):
+        """Output text to stdout or a pager command.
+
+        The message will be logged in the audit log, if enabled. The
+        message will be written to the tee file, if enabled.
+
+        """
         self.log_output(output)
         special.write_tee(output)
 
