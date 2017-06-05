@@ -4,6 +4,9 @@ from __future__ import print_function
 
 import os
 import sys
+from tempfile import mkstemp
+
+
 import db_utils as dbutils
 import fixture_utils as fixutils
 import pexpect
@@ -52,10 +55,17 @@ def before_all(context):
         'vi': vi,
         'pager_boundary': '---boundary---',
     }
-    os.environ['PAGER'] = "{0} {1} {2}".format(
-        sys.executable,
-        os.path.join(context.package_root, 'test/features/wrappager.py'),
-        context.conf['pager_boundary'])
+
+    _, my_cnf = mkstemp()
+    with open(my_cnf, 'w') as f:
+        f.write(
+            '[client]\n'
+            'pager={0} {1} {2}\n'.format(
+                sys.executable, os.path.join(context.package_root,
+                                             'test/features/wrappager.py'),
+                context.conf['pager_boundary'])
+        )
+    context.conf['defaults-file'] = my_cnf
 
     context.cn = dbutils.create_db(context.conf['host'], context.conf['user'],
                                    context.conf['pass'],
