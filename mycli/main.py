@@ -640,28 +640,29 @@ class MyCli(object):
             if not self.less_chatty:
                 self.output('Goodbye!')
 
+    def output_fits_on_screen(self, output):
+        size = self.cli.output.get_size()
+
+        margin = self.get_reserved_space() + self.get_prompt(self.prompt_format).count('\n') + 1
+        if special.is_timing_enabled():
+            margin += 1
+
+        for i, line in enumerate(output.splitlines(), 1):
+            if len(line) > size.columns or i > (size.rows - margin):
+                return True
+
+        return False
+
     def output(self, output, **kwargs):
         special.write_tee(output)
         if self.logfile:
             self.logfile.write(utf8tounicode(output))
             self.logfile.write('\n')
 
-        size = self.cli.output.get_size()
-
-        pager = False
-        margin = self.get_reserved_space() + self.get_prompt(self.prompt_format).count('\n') + 1
-        if special.is_timing_enabled():
-            margin += 1
-        for i, line in enumerate(output.splitlines(), 1):
-            if len(line) > size.columns or i > (size.rows - margin):
-                pager = True
-                break
-
-        if (special.is_pager_enabled() and pager) or self.explicit_pager:
+        if self.explicit_pager or (special.is_pager_enabled() and not self.output_fits_on_screen(output)):
             click.echo_via_pager(output)
         else:
             click.secho(output, **kwargs)
-
 
     def configure_pager(self):
         # Provide sane defaults for less if they are empty.
