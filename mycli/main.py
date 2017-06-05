@@ -640,7 +640,6 @@ class MyCli(object):
             if not self.less_chatty:
                 self.output('Goodbye!')
 
-
     def output(self, output, **kwargs):
         special.write_tee(output)
         if self.logfile:
