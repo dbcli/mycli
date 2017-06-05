@@ -17,6 +17,7 @@ Bug Fixes:
 * Do not display time and empty line for blank queries (Thanks: [Thomas Roten]).
 * Fixed issue where quit command would sometimes not work (Thanks: [Thomas Roten]).
 * Remove shebang from main.py (Thanks: [Dick Marinus]).
+* Only use pager if output doesn't fit. (Thanks: [Dick Marinus]).
 
 Internal Changes:
 -----------------

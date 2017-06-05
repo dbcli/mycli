@@ -171,15 +171,13 @@ As described [here](https://github.com/dbcli/mycli/issues/281), " we only read t
 So, if you want to use a pager, your .my.cnf file should looks like this:
 
 ```
-[mysql]
-pager  = mypager
 [client]
-pager  = mypager
+pager = mypager
 ```
 
-instead of just this :
+instead of this:
 
 ```
 [mysql]
-pager  = mypager
+pager = mypager
 ```
