@@ -175,7 +175,7 @@ So, if you want to use a pager, your .my.cnf file should looks like this:
 pager = mypager
 ```
 
-instead of this :
+instead of this:
 
 ```
 [mysql]
