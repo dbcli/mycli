@@ -6,7 +6,6 @@ import os
 import sys
 from tempfile import mkstemp
 
-
 import db_utils as dbutils
 import fixture_utils as fixutils
 import pexpect
