@@ -129,7 +129,8 @@ class MyCli(object):
             try:
                 self.logfile = open(os.path.expanduser(c['main']['audit_log']), 'a')
             except (IOError, OSError) as e:
-                self.output('Error: Unable to open the audit log file. Your queries will not be logged.', err=True, fg='red')
+                self.echo('Error: Unable to open the audit log file. Your queries will not be logged.',
+                          err=True, fg='red')
                 self.logfile = False
 
         self.completion_refresher = CompletionRefresher()
@@ -358,7 +359,7 @@ class MyCli(object):
         try:
             port = int(port)
         except ValueError as e:
-            self.output("Error: Invalid port number: '{0}'.".format(port),
+            self.echo("Error: Invalid port number: '{0}'.".format(port),
                         err=True, fg='red')
             exit(1)
 
@@ -396,7 +397,7 @@ class MyCli(object):
         except Exception as e:  # Connecting to a database could fail.
             self.logger.debug('Database connection failed: %r.', e)
             self.logger.error("traceback: %r", traceback.format_exc())
-            self.output(str(e), err=True, fg='red')
+            self.echo(str(e), err=True, fg='red')
             exit(1)
 
         self.sqlexecute = sqlexecute
@@ -474,7 +475,7 @@ class MyCli(object):
                 except RuntimeError as e:
                     logger.error("sql: %r, error: %r", document.text, e)
                     logger.error("traceback: %r", traceback.format_exc())
-                    self.output(str(e), err=True, fg='red')
+                    self.echo(str(e), err=True, fg='red')
                     return
 
             if not document.text.strip():
@@ -485,9 +486,9 @@ class MyCli(object):
                 if destroy is None:
                     pass  # Query was not destructive. Nothing to do here.
                 elif destroy is True:
-                    self.output('Your call!')
+                    self.echo('Your call!')
                 else:
-                    self.output('Wise choice!')
+                    self.echo('Wise choice!')
                     return
 
             # Keep track of whether or not the query is mutating. In case
@@ -517,10 +518,10 @@ class MyCli(object):
                     threshold = 1000
                     if (is_select(status) and
                             cur and cur.rowcount > threshold):
-                        self.output('The result set has more than %s rows.'
-                                % threshold, fg='red')
+                        self.echo('The result set has more than {} rows.'.format(
+                            threshold), fg='red')
                         if not click.confirm('Do you want to continue?'):
-                            self.output("Aborted!", err=True, fg='red')
+                            self.echo("Aborted!", err=True, fg='red')
                             break
 
                     if self.auto_vertical_output:
@@ -549,16 +550,17 @@ class MyCli(object):
                         if status_str.find('ok') > -1:
                             logger.debug("cancelled query, connection id: %r, sql: %r",
                                          connection_id_to_kill, document.text)
-                            self.output("cancelled query", err=True, fg='red')
+                            self.echo("cancelled query", err=True, fg='red')
                 except Exception as e:
-                    self.output('Encountered error while cancelling query: %s' % str(e), err=True, fg='red')
+                    self.echo('Encountered error while cancelling query: {}'.format(e),
+                              err=True, fg='red')
             except NotImplementedError:
-                self.output('Not Yet Implemented.', fg="yellow")
+                self.echo('Not Yet Implemented.', fg="yellow")
             except OperationalError as e:
                 logger.debug("Exception: %r", e)
                 if (e.args[0] in (2003, 2006, 2013)):
                     logger.debug('Attempting to reconnect.')
-                    self.output('Reconnecting...', fg='yellow')
+                    self.echo('Reconnecting...', fg='yellow')
                     try:
                         sqlexecute.connect()
                         logger.debug('Reconnected successfully.')
@@ -566,16 +568,17 @@ class MyCli(object):
                         return  # OK to just return, cuz the recursion call runs to the end.
                     except OperationalError as e:
                         logger.debug('Reconnect failed. e: %r', e)
-                        self.output(str(e), err=True, fg='red')
-                        return  # If reconnection failed, don't proceed further.
+                        self.echo(str(e), err=True, fg='red')
+                        # If reconnection failed, don't proceed further.
+                        return
                 else:
                     logger.error("sql: %r, error: %r", document.text, e)
                     logger.error("traceback: %r", traceback.format_exc())
-                    self.output(str(e), err=True, fg='red')
+                    self.echo(str(e), err=True, fg='red')
             except Exception as e:
                 logger.error("sql: %r, error: %r", document.text, e)
                 logger.error("traceback: %r", traceback.format_exc())
-                self.output(str(e), err=True, fg='red')
+                self.echo(str(e), err=True, fg='red')
             else:
                 try:
                     special.write_tee('\n'.join(output))
@@ -584,7 +587,7 @@ class MyCli(object):
                 except KeyboardInterrupt:
                     pass
                 if special.is_timing_enabled():
-                    self.output('Time: %0.03fs' % total)
+                    self.echo('Time: %0.03fs' % total)
 
                 # Refresh the table names and column names if necessary.
                 if need_completion_refresh(document.text):
@@ -592,7 +595,8 @@ class MyCli(object):
                             reset=need_completion_reset(document.text))
             finally:
                 if self.logfile is False:
-                    self.output("Warning: This query was not logged.", err=True, fg='red')
+                    self.echo("Warning: This query was not logged.",
+                              err=True, fg='red')
             query = Query(document.text, successful, mutating)
             self.query_history.append(query)
 
@@ -638,7 +642,16 @@ class MyCli(object):
         except EOFError:
             special.close_tee()
             if not self.less_chatty:
-                self.output('Goodbye!')
+                self.echo('Goodbye!')
+
+    def log_output(self, output):
+        if self.logfile:
+            self.logfile.write(utf8tounicode(output))
+            self.logfile.write('\n')
+
+    def echo(self, s, **kwargs):
+        self.log_output(s)
+        click.secho(s, **kwargs)
 
     def output_fits_on_screen(self, output):
         size = self.cli.output.get_size()
@@ -653,16 +666,14 @@ class MyCli(object):
 
         return False
 
-    def output(self, output, **kwargs):
+    def output(self, output):
+        self.log_output(output)
         special.write_tee(output)
-        if self.logfile:
-            self.logfile.write(utf8tounicode(output))
-            self.logfile.write('\n')
 
         if self.explicit_pager or (special.is_pager_enabled() and not self.output_fits_on_screen(output)):
             click.echo_via_pager(output)
         else:
-            click.secho(output, **kwargs)
+            click.secho(output)
 
     def configure_pager(self):
         # Provide sane defaults for less if they are empty.
