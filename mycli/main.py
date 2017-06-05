@@ -650,7 +650,9 @@ class MyCli(object):
 
         pager = False
         margin = self.get_reserved_space() + self.get_prompt(self.prompt_format).count('\n') + 1
-        for i, line in enumerate(output.splitlines()):
+        if special.is_timing_enabled():
+            margin += 1
+        for i, line in enumerate(output.splitlines(), 1):
             if len(line) > size.columns or i > (size.rows - margin):
                 pager = True
                 break
