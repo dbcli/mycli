@@ -581,8 +581,6 @@ class MyCli(object):
                 self.echo(str(e), err=True, fg='red')
             else:
                 try:
-                    special.write_tee('\n'.join(output))
-                    special.write_once('\n'.join(output))
                     self.output('\n'.join(output))
                 except KeyboardInterrupt:
                     pass
@@ -679,11 +677,13 @@ class MyCli(object):
         """Output text to stdout or a pager command.
 
         The message will be logged in the audit log, if enabled. The
-        message will be written to the tee file, if enabled.
+        message will be written to the tee file, if enabled. The
+        message will be written to the output file, if enabled.
 
         """
         self.log_output(output)
         special.write_tee(output)
+        special.write_once(output)
 
         if self.explicit_pager or (special.is_pager_enabled() and not self.output_fits_on_screen(output)):
             click.echo_via_pager(output)
