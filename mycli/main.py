@@ -510,6 +510,7 @@ class MyCli(object):
                 res = sqlexecute.run(document.text)
                 successful = True
                 output = []
+                output_status = []
                 total = 0
                 for title, cur, headers, status in res:
                     logger.debug("headers: %r", headers)
@@ -529,11 +530,12 @@ class MyCli(object):
                     else:
                         max_width = None
 
-                    formatted = self.format_output(title, cur, headers, status,
-                                                   special.is_expanded_output(),
-                                                   max_width)
+                    formatted = self.format_output(
+                        title, cur, headers, special.is_expanded_output(),
+                        max_width)
 
-                    output.extend(formatted)
+                    output.append('\n'.join(formatted))
+                    output_status.append(status)
                     total = time() - start
                     mutating = mutating or is_mutating(status)
             except EOFError as e:
@@ -581,7 +583,8 @@ class MyCli(object):
                 self.echo(str(e), err=True, fg='red')
             else:
                 try:
-                    self.output('\n'.join(output))
+                    for i, text in enumerate(output):
+                        self.output(text, output_status[i])
                 except KeyboardInterrupt:
                     pass
                 if special.is_timing_enabled():
@@ -659,13 +662,15 @@ class MyCli(object):
         self.log_output(s)
         click.secho(s, **kwargs)
 
-    def output_fits_on_screen(self, output):
+    def output_fits_on_screen(self, output, status=None):
         """Check if the given output fits on the screen."""
         size = self.cli.output.get_size()
 
         margin = self.get_reserved_space() + self.get_prompt(self.prompt_format).count('\n') + 1
         if special.is_timing_enabled():
             margin += 1
+        if status:
+            margin += 1 + status.count('\n')
 
         for i, line in enumerate(output.splitlines(), 1):
             if len(line) > size.columns or i > (size.rows - margin):
@@ -673,22 +678,30 @@ class MyCli(object):
 
         return True
 
-    def output(self, output):
+    def output(self, output, status=None):
         """Output text to stdout or a pager command.
+
+        The status text is not outputted to pager or files.
 
         The message will be logged in the audit log, if enabled. The
         message will be written to the tee file, if enabled. The
         message will be written to the output file, if enabled.
 
         """
-        self.log_output(output)
-        special.write_tee(output)
-        special.write_once(output)
+        if output:
+            self.log_output(output)
+            special.write_tee(output)
+            special.write_once(output)
 
-        if self.explicit_pager or (special.is_pager_enabled() and not self.output_fits_on_screen(output)):
-            click.echo_via_pager(output)
-        else:
-            click.secho(output)
+            if (self.explicit_pager or
+                (special.is_pager_enabled() and not self.output_fits_on_screen(output, status))):
+                click.echo_via_pager(output)
+            else:
+                click.secho(output)
+
+        if status:
+            self.log_output(status)
+            click.secho(status)
 
     def configure_pager(self):
         # Provide sane defaults for less if they are empty.
@@ -759,11 +772,11 @@ class MyCli(object):
         results = self.sqlexecute.run(query)
         for result in results:
             title, cur, headers, status = result
-            output = self.format_output(title, cur, headers, None)
+            output = self.format_output(title, cur, headers)
             for line in output:
                 click.echo(line, nl=new_line)
 
-    def format_output(self, title, cur, headers, status, expanded=False,
+    def format_output(self, title, cur, headers, expanded=False,
                       max_width=None):
         expanded = expanded or self.formatter.format_name == 'vertical'
         output = []
@@ -782,9 +795,6 @@ class MyCli(object):
                     rows, headers, format_name='vertical')
 
             output.append(formatted)
-
-        if status:  # Only print the status if it's not None.
-            output.append(status)
 
         return output
 
