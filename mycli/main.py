@@ -662,9 +662,9 @@ class MyCli(object):
 
         for i, line in enumerate(output.splitlines(), 1):
             if len(line) > size.columns or i > (size.rows - margin):
-                return True
+                return False
 
-        return False
+        return True
 
     def output(self, output):
         self.log_output(output)
