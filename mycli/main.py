@@ -694,7 +694,7 @@ class MyCli(object):
             special.write_once(output)
 
             if (self.explicit_pager or
-                (special.is_pager_enabled() and not self.output_fits_on_screen(output, status))):
+                    (special.is_pager_enabled() and not self.output_fits_on_screen(output, status))):
                 click.echo_via_pager(output)
             else:
                 click.secho(output)
