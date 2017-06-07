@@ -8,15 +8,32 @@ import pymysql
 from utils import run, dbtest, set_expanded_output, is_expanded_output
 
 
+def assert_result_equal(result, title=None, rows=None, headers=None,
+                        status=None, auto_status=True, assert_contains=False):
+    """Assert that an sqlexecute.run() result matches the expected values."""
+    if status is None and auto_status and rows:
+        status = '{} row{} in set'.format(
+            len(rows), 's' if len(rows) > 1 else '')
+    fields = {'title': title, 'rows': rows, 'headers': headers,
+              'status': status}
+
+    if assert_contains:
+        # Do a loose match on the results using the *in* operator.
+        for key, field in fields.items():
+            if field:
+                assert field in result[0][key]
+    else:
+        # Do an exact match on the fields.
+        assert result == [fields]
+
+
 @dbtest
 def test_conn(executor):
     run(executor, '''create table test(a text)''')
     run(executor, '''insert into test values('abc')''')
     results = run(executor, '''select * from test''')
 
-    expected = [{'title': None, 'headers': ['a'], 'rows': [('abc',)],
-                 'status': '1 row in set'}]
-    assert expected == results
+    assert_result_equal(results, headers=['a'], rows=[('abc',)])
 
 
 @dbtest
@@ -25,21 +42,21 @@ def test_bools(executor):
     run(executor, '''insert into test values(True)''')
     results = run(executor, '''select * from test''')
 
-    expected = [{'title': None, 'headers': ['a'], 'rows': [(1,)],
-                 'status': '1 row in set'}]
-    assert expected == results
+    assert_result_equal(results, headers=['a'], rows=[(1,)])
 
 
 @dbtest
 def test_binary(executor):
     run(executor, '''create table bt(geom linestring NOT NULL)''')
-    run(executor, '''INSERT INTO bt VALUES (GeomFromText('LINESTRING(116.37604 39.73979,116.375 39.73965)'));''')
+    run(executor, "INSERT INTO bt VALUES "
+        "(GeomFromText('LINESTRING(116.37604 39.73979,116.375 39.73965)'));")
     results = run(executor, '''select * from bt''')
 
-    expected = [{'title': None, 'headers': ['geom'],
-                 'rows': [(b'\x00\x00\x00\x00\x01\x02\x00\x00\x00\x02\x00\x00\x009\x7f\x13\n\x11\x18]@4\xf4Op\xb1\xdeC@\x00\x00\x00\x00\x00\x18]@B>\xe8\xd9\xac\xdeC@',)],
-                 'status': '1 row in set'}]
-    assert expected == results
+    geom = (b'\x00\x00\x00\x00\x01\x02\x00\x00\x00\x02\x00\x00\x009\x7f\x13\n'
+            b'\x11\x18]@4\xf4Op\xb1\xdeC@\x00\x00\x00\x00\x00\x18]@B>\xe8\xd9'
+            b'\xac\xdeC@')
+
+    assert_result_equal(results, headers=['geom'], rows=[(geom,)])
 
 
 @dbtest
@@ -79,9 +96,7 @@ def test_unicode_support_in_output(executor):
 
     # See issue #24, this raises an exception without proper handling
     results = run(executor, u"select * from unicodechars")
-    expected = [{'title': None, 'headers': ['t'], 'rows': [(u'é',)],
-                 'status': '1 row in set'}]
-    assert expected == results
+    assert_result_equal(results, headers=['t'], rows=[(u'é',)])
 
 
 @dbtest
@@ -110,19 +125,15 @@ def test_favorite_query(executor):
     run(executor, "insert into test values('def')")
 
     results = run(executor, "\\fs test-a select * from test where a like 'a%'")
-    expected = [{'title': None, 'headers': None,
-                 'rows': None, 'status': 'Saved.'}]
-    assert expected == results
+    assert_result_equal(results, status='Saved.')
 
     results = run(executor, "\\f test-a")
-    expected = [{'title': "> select * from test where a like 'a%'",
-                 'headers': ['a'], 'rows': [('abc',)], 'status': None}]
-    assert expected == results
+    assert_result_equal(results,
+                        title="> select * from test where a like 'a%'",
+                        headers=['a'], rows=[('abc',)], auto_status=False)
 
     results = run(executor, "\\fd test-a")
-    expected = [{'title': None, 'headers': None, 'rows': None,
-                 'status': 'test-a: Deleted'}]
-    assert expected == results
+    assert_result_equal(results, status='test-a: Deleted')
 
 
 @dbtest
@@ -135,9 +146,7 @@ def test_favorite_query_multiple_statement(executor):
     results = run(executor,
                   "\\fs test-ad select * from test where a like 'a%'; "
                   "select * from test where a like 'd%'")
-    expected = [{'title': None, 'headers': None,
-                 'rows': None, 'status': 'Saved.'}]
-    assert expected == results
+    assert_result_equal(results, status='Saved.')
 
     results = run(executor, "\\f test-ad")
     expected = [{'title': "> select * from test where a like 'a%'",
@@ -147,9 +156,7 @@ def test_favorite_query_multiple_statement(executor):
     assert expected == results
 
     results = run(executor, "\\fd test-ad")
-    expected = [{'title': None, 'headers': None, 'rows': None,
-                 'status': 'test-ad: Deleted'}]
-    assert expected == results
+    assert_result_equal(results, status='test-ad: Deleted')
 
 
 @dbtest
@@ -159,56 +166,45 @@ def test_favorite_query_expanded_output(executor):
     run(executor, '''insert into test values('abc')''')
 
     results = run(executor, "\\fs test-ae select * from test")
-    expected = [{'title': None, 'headers': None, 'rows': None,
-                 'status': 'Saved.'}]
-    assert expected == results
+    assert_result_equal(results, status='Saved.')
 
     results = run(executor, "\\f test-ae \G")
     assert is_expanded_output() is True
-    expected = [{'title': '> select * from test', 'headers': ['a'],
-                 'rows': [('abc',)], 'status': None}]
-    assert expected == results
+    assert_result_equal(results, title='> select * from test',
+                        headers=['a'], rows=[('abc',)], auto_status=False)
 
     set_expanded_output(False)
 
     results = run(executor, "\\fd test-ae")
-    expected = [{'title': None, 'headers': None, 'rows': None,
-                 'status': 'test-ae: Deleted'}]
-    assert expected == results
+    assert_result_equal(results, status='test-ae: Deleted')
 
 
 @dbtest
 def test_special_command(executor):
     results = run(executor, '\\?')
-    assert results[0]['headers'] == ['Command', 'Shortcut', 'Description']
-    assert len(results) == 1
+    assert_result_equal(results, rows=('quit', '\\q', 'Quit.'),
+                        headers='Command', assert_contains=True,
+                        auto_status=False)
 
 
 @dbtest
 def test_cd_command_without_a_folder_name(executor):
     results = run(executor, 'system cd')
-    expected = [{'title': None, 'headers': None, 'rows': None,
-                 'status': 'No folder name was provided.'}]
-    assert expected == results
+    assert_result_equal(results, status='No folder name was provided.')
 
 
 @dbtest
 def test_system_command_not_found(executor):
     results = run(executor, 'system xyz')
-    assert 'OSError: No such file or directory' in results[0]['status']
-    assert results[0]['title'] is None
-    assert results[0]['headers'] is None
-    assert results[0]['rows'] is None
-    assert len(results) == 1
+    assert_result_equal(results, status='OSError: No such file or directory',
+                        assert_contains=True)
 
 
 @dbtest
 def test_system_command_output(executor):
     test_file_path = os.path.join(os.path.abspath('.'), 'test', 'test.txt')
     results = run(executor, 'system cat {0}'.format(test_file_path))
-    expected = [{'title': None, 'headers': None, 'rows': None,
-                 'status': 'mycli rocks!\n'}]
-    assert expected == results
+    assert_result_equal(results, status='mycli rocks!\n')
 
 
 @dbtest
@@ -221,9 +217,7 @@ def test_cd_command_current_dir(executor):
 @dbtest
 def test_unicode_support(executor):
     results = run(executor, u"SELECT '日本語' AS japanese;")
-    expected = [{'title': None, 'headers': ['japanese'], 'rows': [(u'日本語',)],
-                 'status': '1 row in set'}]
-    assert expected == results
+    assert_result_equal(results, headers=['japanese'], rows=[(u'日本語',)])
 
 
 @dbtest
@@ -231,9 +225,8 @@ def test_timestamp_null(executor):
     run(executor, '''create table ts_null(a timestamp)''')
     run(executor, '''insert into ts_null values(0)''')
     results = run(executor, '''select * from ts_null''')
-    expected = [{'title': None, 'headers': ['a'],
-                 'rows': [('0000-00-00 00:00:00',)], 'status': '1 row in set'}]
-    assert expected == results
+    assert_result_equal(results, headers=['a'],
+                        rows=[('0000-00-00 00:00:00',)])
 
 
 @dbtest
@@ -241,9 +234,8 @@ def test_datetime_null(executor):
     run(executor, '''create table dt_null(a datetime)''')
     run(executor, '''insert into dt_null values(0)''')
     results = run(executor, '''select * from dt_null''')
-    expected = [{'title': None, 'headers': ['a'],
-                 'rows': [('0000-00-00 00:00:00',)], 'status': '1 row in set'}]
-    assert expected == results
+    assert_result_equal(results, headers=['a'],
+                        rows=[('0000-00-00 00:00:00',)])
 
 
 @dbtest
@@ -251,9 +243,7 @@ def test_date_null(executor):
     run(executor, '''create table date_null(a date)''')
     run(executor, '''insert into date_null values(0)''')
     results = run(executor, '''select * from date_null''')
-    expected = [{'title': None, 'headers': ['a'], 'rows': [('0000-00-00',)],
-                 'status': '1 row in set'}]
-    assert expected == results
+    assert_result_equal(results, headers=['a'], rows=[('0000-00-00',)])
 
 
 @dbtest
@@ -261,6 +251,4 @@ def test_time_null(executor):
     run(executor, '''create table time_null(a time)''')
     run(executor, '''insert into time_null values(0)''')
     results = run(executor, '''select * from time_null''')
-    expected = [{'title': None, 'headers': ['a'], 'rows': [('00:00:00',)],
-                 'status': '1 row in set'}]
-    assert expected == results
+    assert_result_equal(results, headers=['a'], rows=[('00:00:00',)])
