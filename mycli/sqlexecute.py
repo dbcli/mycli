@@ -129,25 +129,37 @@ class SQLExecute(object):
                 for result in special.execute(cur, sql):
                     yield result
             except special.CommandNotFound:  # Regular SQL
-                yield self.execute_normal_sql(sql)
+                cur = self.execute_normal_sql(sql)
+                while True:
+                    yield self.get_result(cur)
+
+                    # PyMySQL returns an extra, empty result set with stored
+                    # procedures. We skip it (rowcount is zero and no
+                    # description).
+                    if not cur.nextset() or (not cur.rowcount and cur.description is None):
+                        break
 
     def execute_normal_sql(self, split_sql):
         _logger.debug('Regular sql statement. sql: %r', split_sql)
         cur = self.conn.cursor()
-        num_rows = cur.execute(split_sql)
+        cur.execute(split_sql)
+        return cur
+
+    def get_result(self, cursor):
         title = headers = None
 
         # cur.description is not None for queries that return result sets, e.g.
         # SELECT or SHOW.
-        if cur.description is not None:
-            headers = [x[0] for x in cur.description]
+        if cursor.description is not None:
+            headers = [x[0] for x in cursor.description]
             status = '{0} row{1} in set'
         else:
             _logger.debug('No rows in result.')
             status = 'Query OK, {0} row{1} affected'
-        status = status.format(num_rows, '' if num_rows == 1 else 's')
+        status = status.format(cursor.rowcount,
+                               '' if cursor.rowcount == 1 else 's')
 
-        return (title, cur if cur.description else None, headers, status)
+        return (title, cursor if cursor.description else None, headers, status)
 
     def tables(self):
         """Yields table names"""

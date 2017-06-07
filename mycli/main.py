@@ -509,8 +509,6 @@ class MyCli(object):
                 start = time()
                 res = sqlexecute.run(document.text)
                 successful = True
-                output = []
-                total = 0
                 for title, cur, headers, status in res:
                     logger.debug("headers: %r", headers)
                     logger.debug("rows: %r", cur)
@@ -533,8 +531,15 @@ class MyCli(object):
                                                    special.is_expanded_output(),
                                                    max_width)
 
-                    output.extend(formatted)
-                    total = time() - start
+                    t = time() - start
+                    try:
+                        self.output('\n'.join(formatted))
+                        if special.is_timing_enabled():
+                            self.echo('Time: %0.03fs' % t)
+                    except KeyboardInterrupt:
+                        pass
+
+                    start = time()
                     mutating = mutating or is_mutating(status)
             except EOFError as e:
                 raise e
@@ -580,13 +585,6 @@ class MyCli(object):
                 logger.error("traceback: %r", traceback.format_exc())
                 self.echo(str(e), err=True, fg='red')
             else:
-                try:
-                    self.output('\n'.join(output))
-                except KeyboardInterrupt:
-                    pass
-                if special.is_timing_enabled():
-                    self.echo('Time: %0.03fs' % total)
-
                 # Refresh the table names and column names if necessary.
                 if need_completion_refresh(document.text):
                     self.refresh_completions(
