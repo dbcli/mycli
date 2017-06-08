@@ -351,3 +351,30 @@ def test_time_null(executor):
         | 00:00:00 |
         +----------+
         1 row in set""")
+
+
+@dbtest
+def test_multiple_results(executor):
+    query = '''CREATE PROCEDURE dmtest()
+        BEGIN
+          SELECT 1;
+          SELECT 2;
+        END'''
+    executor.conn.cursor().execute(query)
+
+    results = run(executor, 'call dmtest;')
+    assert len(results) == 4
+    assert results[0] == dedent("""\
+        +---+
+        | 1 |
+        +---+
+        | 1 |
+        +---+""")
+    assert results[1] == '1 row in set'
+    assert results[2] == dedent("""\
+        +---+
+        | 2 |
+        +---+
+        | 2 |
+        +---+""")
+    assert results[3] == '1 row in set'
