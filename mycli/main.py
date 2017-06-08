@@ -509,9 +509,7 @@ class MyCli(object):
                 start = time()
                 res = sqlexecute.run(document.text)
                 successful = True
-                output = []
-                output_status = []
-                total = 0
+                result_count = 0
                 for title, cur, headers, status in res:
                     logger.debug("headers: %r", headers)
                     logger.debug("rows: %r", cur)
@@ -534,10 +532,23 @@ class MyCli(object):
                         title, cur, headers, special.is_expanded_output(),
                         max_width)
 
-                    output.append('\n'.join(formatted))
-                    output_status.append(status)
-                    total = time() - start
+                    t = time() - start
+                    try:
+                        if result_count > 0:
+                            self.echo('')
+                        try:
+                            self.output('\n'.join(formatted), status)
+                        except KeyboardInterrupt:
+                            pass
+                        if special.is_timing_enabled():
+                            self.echo('Time: %0.03fs' % t)
+                    except KeyboardInterrupt:
+                        pass
+
+                    start = time()
+                    result_count += 1
                     mutating = mutating or is_mutating(status)
+                special.unset_once_if_written()
             except EOFError as e:
                 raise e
             except KeyboardInterrupt:
@@ -582,14 +593,6 @@ class MyCli(object):
                 logger.error("traceback: %r", traceback.format_exc())
                 self.echo(str(e), err=True, fg='red')
             else:
-                try:
-                    for i, text in enumerate(output):
-                        self.output(text, output_status[i])
-                except KeyboardInterrupt:
-                    pass
-                if special.is_timing_enabled():
-                    self.echo('Time: %0.03fs' % total)
-
                 # Refresh the table names and column names if necessary.
                 if need_completion_refresh(document.text):
                     self.refresh_completions(
