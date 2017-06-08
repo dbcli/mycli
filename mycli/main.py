@@ -545,6 +545,7 @@ class MyCli(object):
                     start = time()
                     result_count += 1
                     mutating = mutating or is_mutating(status)
+                special.unset_once_if_written()
             except EOFError as e:
                 raise e
             except KeyboardInterrupt:

@@ -17,7 +17,7 @@ TIMING_ENABLED = False
 use_expanded_output = False
 PAGER_ENABLED = True
 tee_file = None
-once_file = None
+once_file = written_to_once_file = None
 
 @export
 def set_timing_enabled(val):
@@ -310,7 +310,7 @@ def set_once(arg, **_):
 
 @export
 def write_once(output):
-    global once_file
+    global once_file, written_to_once_file
     if output and once_file:
         try:
             f = open(**once_file)
@@ -322,5 +322,12 @@ def write_once(output):
         with f:
             f.write(output)
             f.write(u"\n")
+        written_to_once_file = True
 
+
+@export
+def unset_once_if_written():
+    """Unset the once file, if it has been written to."""
+    global once_file
+    if written_to_once_file:
         once_file = None
