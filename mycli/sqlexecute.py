@@ -123,13 +123,15 @@ class SQLExecute(object):
             if sql.endswith('\\G'):
                 special.set_expanded_output(True)
                 sql = sql[:-2].strip()
+
+            cur = self.conn.cursor()
             try:   # Special command
                 _logger.debug('Trying a dbspecial command. sql: %r', sql)
-                cur = self.conn.cursor()
                 for result in special.execute(cur, sql):
                     yield result
             except special.CommandNotFound:  # Regular SQL
-                cur = self.execute_normal_sql(sql)
+                _logger.debug('Regular sql statement. sql: %r', sql)
+                cur.execute(sql)
                 while True:
                     yield self.get_result(cur)
 
@@ -139,17 +141,12 @@ class SQLExecute(object):
                     if not cur.nextset() or (not cur.rowcount and cur.description is None):
                         break
 
-    def execute_normal_sql(self, split_sql):
-        _logger.debug('Regular sql statement. sql: %r', split_sql)
-        cur = self.conn.cursor()
-        cur.execute(split_sql)
-        return cur
-
     def get_result(self, cursor):
+        """Get the current result's data from the cursor."""
         title = headers = None
 
-        # cur.description is not None for queries that return result sets, e.g.
-        # SELECT or SHOW.
+        # cursor.description is not None for queries that return result sets,
+        # e.g. SELECT or SHOW.
         if cursor.description is not None:
             headers = [x[0] for x in cursor.description]
             status = '{0} row{1} in set'
