@@ -757,12 +757,18 @@ class MyCli(object):
     def get_prompt(self, string):
         sqlexecute = self.sqlexecute
         host = self.login_path if self.login_path and self.login_path_as_host else sqlexecute.host
+        now = datetime.now()
         string = string.replace('\\u', sqlexecute.user or '(none)')
         string = string.replace('\\h', host or '(none)')
         string = string.replace('\\d', sqlexecute.dbname or '(none)')
         string = string.replace('\\t', sqlexecute.server_type()[0] or 'mycli')
         string = string.replace('\\n', "\n")
-        string = string.replace('\\D', datetime.now().strftime('%a %b %d %H:%M:%S %Y'))
+        string = string.replace('\\D', now.strftime('%a %b %d %H:%M:%S %Y'))
+        string = string.replace('\\m', now.strftime('%M'))
+        string = string.replace('\\P', now.strftime('%p'))
+        string = string.replace('\\R', now.strftime('%H'))
+        string = string.replace('\\r', now.strftime('%I'))
+        string = string.replace('\\s', now.strftime('%S'))
         string = string.replace('\\p', str(sqlexecute.port))
         string = string.replace('\\_', ' ')
         return string
