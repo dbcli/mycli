@@ -10,6 +10,7 @@ Features:
 * Output once special command. (Thanks: [Dick Marinus]).
 * Add special command to show create table statement. (Thanks: [Ryan Smith])
 * Display all result sets returned by stored procedures (Thanks: [Thomas Roten]).
+* Add current time to prompt options (Thanks: [Thomas Roten]).
 
 Bug Fixes:
 ----------

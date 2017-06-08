@@ -52,11 +52,18 @@ key_bindings = emacs
 wider_completion_menu = False
 
 # MySQL prompt
+# \D - The full current date
+# \d - Database name
+# \h - Hostname of the server
+# \m - Minutes of the current time
+# \n - Newline
+# \P - AM/PM
+# \p - Port
+# \R - The current time, in 24-hour military time (0–23)
+# \r - The current time, standard 12-hour time (1–12)
+# \s - Seconds of the current time
 # \t - Product type (Percona, MySQL, Mariadb)
 # \u - Username
-# \h - Hostname of the server
-# \d - Database name
-# \n - Newline
 prompt = '\t \u@\h:\d> '
 prompt_continuation = '-> '
 
