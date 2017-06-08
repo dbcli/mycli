@@ -252,3 +252,22 @@ def test_time_null(executor):
     run(executor, '''insert into time_null values(0)''')
     results = run(executor, '''select * from time_null''')
     assert_result_equal(results, headers=['a'], rows=[('00:00:00',)])
+
+
+@dbtest
+def test_multiple_results(executor):
+    query = '''CREATE PROCEDURE dmtest()
+        BEGIN
+          SELECT 1;
+          SELECT 2;
+        END'''
+    executor.conn.cursor().execute(query)
+
+    results = run(executor, 'call dmtest;')
+    expected = [
+        {'title': None, 'rows': [(1,)], 'headers': ['1'],
+         'status': '1 row in set'},
+        {'title': None, 'rows': [(2,)], 'headers': ['2'],
+         'status': '1 row in set'}
+    ]
+    assert results == expected
