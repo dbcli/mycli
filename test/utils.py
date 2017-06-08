@@ -3,7 +3,7 @@ from os import getenv
 import pymysql
 import pytest
 
-from mycli.main import MyCli, special
+from mycli.main import special
 
 PASSWORD = getenv('PYTEST_PASSWORD')
 USER = getenv('PYTEST_USER', 'root')
@@ -13,8 +13,8 @@ CHARSET = getenv('PYTEST_CHARSET', 'utf8')
 
 
 def db_connection(dbname=None):
-    conn = pymysql.connect(user=USER, host=HOST, port=PORT, database=dbname, password=PASSWORD,
-                           charset=CHARSET,
+    conn = pymysql.connect(user=USER, host=HOST, port=PORT, database=dbname,
+                           password=PASSWORD, charset=CHARSET,
                            local_infile=False)
     conn.autocommit = True
     return conn
@@ -40,22 +40,23 @@ def create_db(dbname):
             pass
 
 
-def run(executor, sql, join=False):
+def run(executor, sql, rows_as_list=True):
     """Return string output for the sql to be run."""
     result = []
 
-    # TODO: this needs to go away. `run()` should not test formatted output.
-    # It should test raw results.
-    mycli = MyCli()
     for title, rows, headers, status in executor.run(sql):
-        result.extend(mycli.format_output(title, rows, headers, status,
-                                          special.is_expanded_output()))
+        rows = list(rows) if (rows_as_list and rows) else rows
+        result.append({'title': title, 'rows': rows, 'headers': headers,
+                       'status': status})
 
-    if join:
-        result = '\n'.join(result)
     return result
 
 
 def set_expanded_output(is_expanded):
     """Pass-through for the tests."""
     return special.set_expanded_output(is_expanded)
+
+
+def is_expanded_output():
+    """Pass-through for the tests."""
+    return special.is_expanded_output()
