@@ -750,6 +750,11 @@ class MyCli(object):
         string = string.replace('\\t', sqlexecute.server_type()[0] or 'mycli')
         string = string.replace('\\n', "\n")
         string = string.replace('\\D', datetime.now().strftime('%a %b %d %H:%M:%S %Y'))
+        string = string.replace('\\m', datetime.now().strftime('%M'))
+        string = string.replace('\\P', datetime.now().strftime('%p'))
+        string = string.replace('\\R', datetime.now().strftime('%H'))
+        string = string.replace('\\r', datetime.now().strftime('%I'))
+        string = string.replace('\\s', datetime.now().strftime('%S'))
         string = string.replace('\\p', str(sqlexecute.port))
         string = string.replace('\\_', ' ')
         return string
