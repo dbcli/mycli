@@ -509,6 +509,7 @@ class MyCli(object):
                 start = time()
                 res = sqlexecute.run(document.text)
                 successful = True
+                result_count = 0
                 for title, cur, headers, status in res:
                     logger.debug("headers: %r", headers)
                     logger.debug("rows: %r", cur)
@@ -533,6 +534,8 @@ class MyCli(object):
 
                     t = time() - start
                     try:
+                        if result_count > 0:
+                            self.echo('')
                         self.output('\n'.join(formatted))
                         if special.is_timing_enabled():
                             self.echo('Time: %0.03fs' % t)
@@ -540,6 +543,7 @@ class MyCli(object):
                         pass
 
                     start = time()
+                    result_count += 1
                     mutating = mutating or is_mutating(status)
             except EOFError as e:
                 raise e

@@ -265,7 +265,9 @@ def test_multiple_results(executor):
 
     results = run(executor, 'call dmtest;')
     expected = [
-        {'title': None, 'rows': [(1,)], 'headers': ['1'], 'status': '1 row in set'},
-        {'title': None, 'rows': [(2,)], 'headers': ['2'], 'status': '1 row in set'}
+        {'title': None, 'rows': [(1,)], 'headers': ['1'],
+         'status': '1 row in set'},
+        {'title': None, 'rows': [(2,)], 'headers': ['2'],
+         'status': '1 row in set'}
     ]
     assert results == expected
