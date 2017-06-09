@@ -57,19 +57,19 @@ def step_drop_table(context):
 @then('we see table created')
 def step_see_table_created(context):
     """Wait to see create table output."""
-    wrappers.expect_exact(context, 'Query OK, 0 rows affected\r\n', timeout=2)
+    wrappers.expect_exact(context, 'Query OK, 0 rows affected', timeout=2)
 
 
 @then('we see record inserted')
 def step_see_record_inserted(context):
     """Wait to see insert output."""
-    wrappers.expect_exact(context, 'Query OK, 1 row affected\r\n', timeout=2)
+    wrappers.expect_exact(context, 'Query OK, 1 row affected', timeout=2)
 
 
 @then('we see record updated')
 def step_see_record_updated(context):
     """Wait to see update output."""
-    wrappers.expect_exact(context, 'Query OK, 1 row affected\r\n', timeout=2)
+    wrappers.expect_exact(context, 'Query OK, 1 row affected', timeout=2)
 
 
 @then('we see data selected')
@@ -83,16 +83,16 @@ def step_see_data_selected(context):
             | yyy |\r
             +-----+\r
             """), timeout=1)
-    wrappers.expect_exact(context, '1 row in set\r\n', timeout=2)
+    wrappers.expect_exact(context, '1 row in set', timeout=2)
 
 
 @then('we see record deleted')
 def step_see_data_deleted(context):
     """Wait to see delete output."""
-    wrappers.expect_exact(context, 'Query OK, 1 row affected\r\n', timeout=2)
+    wrappers.expect_exact(context, 'Query OK, 1 row affected', timeout=2)
 
 
 @then('we see table dropped')
 def step_see_table_dropped(context):
     """Wait to see drop output."""
-    wrappers.expect_exact(context, 'Query OK, 0 rows affected\r\n', timeout=2)
+    wrappers.expect_exact(context, 'Query OK, 0 rows affected', timeout=2)
