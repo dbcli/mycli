@@ -292,8 +292,8 @@ def no_tee(arg, **_):
 def write_tee(output):
     global tee_file
     if tee_file:
-        tee_file.write(output)
-        tee_file.write(u"\n")
+        click.echo(output, file=tee_file)
+        click.echo(u'\n', file=tee_file)
         tee_file.flush()
 
 
@@ -320,8 +320,8 @@ def write_once(output):
                 e.filename, e.strerror))
 
         with f:
-            f.write(output)
-            f.write(u"\n")
+            click.echo(output, file=f)
+            click.echo(u"\n", file=f)
         written_to_once_file = True
 
 
