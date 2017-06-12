@@ -650,8 +650,7 @@ class MyCli(object):
     def log_output(self, output):
         """Log the output in the audit log, if it's enabled."""
         if self.logfile:
-            self.logfile.write(utf8tounicode(output))
-            self.logfile.write('\n')
+            click.echo(utf8tounicode(output), file=self.logfile)
 
     def echo(self, s, **kwargs):
         """Print a message to stdout.
