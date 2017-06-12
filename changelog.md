@@ -11,6 +11,7 @@ Features:
 * Add special command to show create table statement. (Thanks: [Ryan Smith])
 * Display all result sets returned by stored procedures (Thanks: [Thomas Roten]).
 * Add current time to prompt options (Thanks: [Thomas Roten]).
+* Output status text in a more intuitive way (Thanks: [Thomas Roten]).
 * Add colored/styled headers and odd/even rows (Thanks: [Thomas Roten]).
 
 Bug Fixes:
