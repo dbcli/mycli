@@ -124,7 +124,10 @@ class MyCliConfig(Config):
             default=self.default_mysql_file(), validate=True,
             defaults_file=mysql_defaults_file,
             defaults_suffix=mysql_defaults_suffix, login_path=mysql_login_path)
+
+    def read(self):
         self.mysql.read()
+        return super(self.__class__, self).read()
 
     def default_mysql_file(self):
         return os.path.join(PACKAGE_ROOT, self.mysql_filename)
