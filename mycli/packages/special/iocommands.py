@@ -17,7 +17,7 @@ TIMING_ENABLED = False
 use_expanded_output = False
 PAGER_ENABLED = True
 tee_file = None
-once_file = None
+once_file = written_to_once_file = None
 
 @export
 def set_timing_enabled(val):
@@ -34,7 +34,9 @@ def is_pager_enabled():
     return PAGER_ENABLED
 
 @export
-@special_command('pager', '\\P [command]', 'Set PAGER. Print the query results via PAGER', arg_type=PARSED_QUERY, aliases=('\\P', ), case_sensitive=True)
+@special_command('pager', '\\P [command]',
+                 'Set PAGER. Print the query results via PAGER.',
+                 arg_type=PARSED_QUERY, aliases=('\\P', ), case_sensitive=True)
 def set_pager(arg, **_):
     if arg:
         os.environ['PAGER'] = arg
@@ -149,7 +151,7 @@ def open_external_editor(filename=None, sql=None):
     return (query, message)
 
 @special_command('\\f', '\\f [name]', 'List or execute favorite queries.', arg_type=PARSED_QUERY, case_sensitive=True)
-def execute_favorite_query(cur, arg):
+def execute_favorite_query(cur, arg, **_):
     """Returns (title, rows, headers, status)"""
     if arg == '':
         for result in list_favorite_queries():
@@ -214,11 +216,11 @@ def delete_favorite_query(arg, **_):
 
     return [(None, None, None, status)]
 
-@special_command('system', 'system [command]', 'Execute a system commmand.')
+
+@special_command('system', 'system [command]',
+                 'Execute a system shell commmand.')
 def execute_system_command(arg, **_):
-    """
-    Execute a system command.
-    """
+    """Execute a system shell command."""
     usage = "Syntax: system [command].\n"
 
     if not arg:
@@ -262,7 +264,7 @@ def parseargfile(arg):
 
 
 @special_command('tee', 'tee [-o] filename',
-                 'write to an output file (optionally overwrite using -o)')
+                 'Append all results to an output file (overwrite using -o).')
 def set_tee(arg, **_):
     global tee_file
 
@@ -280,7 +282,8 @@ def close_tee():
         tee_file.close()
         tee_file = None
 
-@special_command('notee', 'notee', 'stop writing to an output file')
+
+@special_command('notee', 'notee', 'Stop writing results to an output file.')
 def no_tee(arg, **_):
     close_tee()
     return [(None, None, None, "")]
@@ -294,7 +297,9 @@ def write_tee(output):
         tee_file.flush()
 
 
-@special_command('\\once', '\\o [-o] filename', 'Output for the next SQL command only to FILENAME', aliases=('\\o', ))
+@special_command('\\once', '\\o [-o] filename',
+                 'Append next result to an output file (overwrite using -o).',
+                 aliases=('\\o', ))
 def set_once(arg, **_):
     global once_file
 
@@ -305,7 +310,7 @@ def set_once(arg, **_):
 
 @export
 def write_once(output):
-    global once_file
+    global once_file, written_to_once_file
     if output and once_file:
         try:
             f = open(**once_file)
@@ -317,5 +322,12 @@ def write_once(output):
         with f:
             f.write(output)
             f.write(u"\n")
+        written_to_once_file = True
 
+
+@export
+def unset_once_if_written():
+    """Unset the once file, if it has been written to."""
+    global once_file
+    if written_to_once_file:
         once_file = None

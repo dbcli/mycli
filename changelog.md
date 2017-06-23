@@ -8,6 +8,10 @@ Features:
 * Display current vi mode in toolbar. (Thanks: [Thomas Roten]).
 * Opening an external editor will edit the last-run query. (Thanks: [Thomas Roten]).
 * Output once special command. (Thanks: [Dick Marinus]).
+* Add special command to show create table statement. (Thanks: [Ryan Smith])
+* Display all result sets returned by stored procedures (Thanks: [Thomas Roten]).
+* Add current time to prompt options (Thanks: [Thomas Roten]).
+* Output status text in a more intuitive way (Thanks: [Thomas Roten]).
 
 Bug Fixes:
 ----------
@@ -15,6 +19,8 @@ Bug Fixes:
 * Fixed incorrect timekeeping when running queries from a file. (Thanks: [Thomas Roten]).
 * Do not display time and empty line for blank queries (Thanks: [Thomas Roten]).
 * Fixed issue where quit command would sometimes not work (Thanks: [Thomas Roten]).
+* Remove shebang from main.py (Thanks: [Dick Marinus]).
+* Only use pager if output doesn't fit. (Thanks: [Dick Marinus]).
 
 Internal Changes:
 -----------------
@@ -33,6 +39,7 @@ Internal Changes:
 * Add setup.py commands to simplify development tasks (Thanks: [Thomas Roten]).
 * Add behave tests to tox (Thanks: [Dick Marinus]).
 * Add missing @dbtest to tests (Thanks: [Dick Marinus]).
+* Standardizes punctuation/grammar for help strings (Thanks: [Thomas Roten]).
 
 1.10.0:
 =======

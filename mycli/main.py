@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from __future__ import unicode_literals
 from __future__ import print_function
 
@@ -57,10 +56,6 @@ Query = namedtuple('Query', ['query', 'successful', 'mutating'])
 
 PACKAGE_ROOT = os.path.abspath(os.path.dirname(__file__))
 
-# no-op logging handler
-class NullHandler(logging.Handler):
-    def emit(self, record):
-        pass
 
 class MyCli(object):
 
@@ -103,7 +98,8 @@ class MyCli(object):
             try:
                 self.logfile = open(os.path.expanduser(c['main']['audit_log']), 'a')
             except (IOError, OSError) as e:
-                self.output('Error: Unable to open the audit log file. Your queries will not be logged.', err=True, fg='red')
+                self.echo('Error: Unable to open the audit log file. Your queries will not be logged.',
+                          err=True, fg='red')
                 self.logfile = False
 
         self.completion_refresher = CompletionRefresher()
@@ -136,8 +132,10 @@ class MyCli(object):
                 aliases=('\\r', ), case_sensitive=True)
         special.register_special_command(self.refresh_completions, 'rehash',
                 '\\#', 'Refresh auto-completions.', arg_type=NO_QUERY, aliases=('\\#',))
-        special.register_special_command(self.change_table_format, 'tableformat',
-                '\\T', 'Change Table Type.', aliases=('\\T',), case_sensitive=True)
+        special.register_special_command(
+            self.change_table_format, 'tableformat', '\\T',
+            'Change the table format used to output results.',
+            aliases=('\\T',), case_sensitive=True)
         special.register_special_command(self.execute_from_file, 'source', '\\. filename',
                               'Execute commands from file.', aliases=('\\.',))
         special.register_special_command(self.change_prompt_format, 'prompt',
@@ -147,9 +145,9 @@ class MyCli(object):
         try:
             self.formatter.format_name = arg
             yield (None, None, None,
-                   'Changed table type to {}'.format(arg))
+                   'Changed table format to {}'.format(arg))
         except ValueError:
-            msg = 'Table type {} not yet implemented. Allowed types:'.format(
+            msg = 'Table format {} not recognized. Allowed formats:'.format(
                 arg)
             for table_type in self.formatter.supported_formats:
                 msg += "\n\t{}".format(table_type)
@@ -207,7 +205,7 @@ class MyCli(object):
         # Disable logging if value is NONE by switching to a no-op handler
         # Set log level to a high value so it doesn't even waste cycles getting called.
         if log_level.upper() == "NONE":
-            handler = NullHandler()
+            handler = logging.NullHandler()
             log_level = "CRITICAL"
         else:
             handler = logging.FileHandler(os.path.expanduser(log_file))
@@ -298,7 +296,7 @@ class MyCli(object):
         except Exception as e:  # Connecting to a database could fail.
             self.logger.debug('Database connection failed: %r.', e)
             self.logger.error("traceback: %r", traceback.format_exc())
-            self.output(str(e), err=True, fg='red')
+            self.echo(str(e), err=True, fg='red')
             exit(1)
 
         self.sqlexecute = sqlexecute
@@ -377,7 +375,7 @@ class MyCli(object):
                 except RuntimeError as e:
                     logger.error("sql: %r, error: %r", document.text, e)
                     logger.error("traceback: %r", traceback.format_exc())
-                    self.output(str(e), err=True, fg='red')
+                    self.echo(str(e), err=True, fg='red')
                     return
 
             if not document.text.strip():
@@ -388,9 +386,9 @@ class MyCli(object):
                 if destroy is None:
                     pass  # Query was not destructive. Nothing to do here.
                 elif destroy is True:
-                    self.output('Your call!')
+                    self.echo('Your call!')
                 else:
-                    self.output('Wise choice!')
+                    self.echo('Wise choice!')
                     return
 
             # Keep track of whether or not the query is mutating. In case
@@ -411,8 +409,7 @@ class MyCli(object):
                 start = time()
                 res = sqlexecute.run(document.text)
                 successful = True
-                output = []
-                total = 0
+                result_count = 0
                 for title, cur, headers, status in res:
                     logger.debug("headers: %r", headers)
                     logger.debug("rows: %r", cur)
@@ -420,10 +417,10 @@ class MyCli(object):
                     threshold = 1000
                     if (is_select(status) and
                             cur and cur.rowcount > threshold):
-                        self.output('The result set has more than %s rows.'
-                                % threshold, fg='red')
+                        self.echo('The result set has more than {} rows.'.format(
+                            threshold), fg='red')
                         if not click.confirm('Do you want to continue?'):
-                            self.output("Aborted!", err=True, fg='red')
+                            self.echo("Aborted!", err=True, fg='red')
                             break
 
                     if self.auto_vertical_output:
@@ -431,13 +428,27 @@ class MyCli(object):
                     else:
                         max_width = None
 
-                    formatted = self.format_output(title, cur, headers, status,
-                                                   special.is_expanded_output(),
-                                                   max_width)
+                    formatted = self.format_output(
+                        title, cur, headers, special.is_expanded_output(),
+                        max_width)
 
-                    output.extend(formatted)
-                    total = time() - start
+                    t = time() - start
+                    try:
+                        if result_count > 0:
+                            self.echo('')
+                        try:
+                            self.output('\n'.join(formatted), status)
+                        except KeyboardInterrupt:
+                            pass
+                        if special.is_timing_enabled():
+                            self.echo('Time: %0.03fs' % t)
+                    except KeyboardInterrupt:
+                        pass
+
+                    start = time()
+                    result_count += 1
                     mutating = mutating or is_mutating(status)
+                special.unset_once_if_written()
             except EOFError as e:
                 raise e
             except KeyboardInterrupt:
@@ -452,16 +463,17 @@ class MyCli(object):
                         if status_str.find('ok') > -1:
                             logger.debug("cancelled query, connection id: %r, sql: %r",
                                          connection_id_to_kill, document.text)
-                            self.output("cancelled query", err=True, fg='red')
+                            self.echo("cancelled query", err=True, fg='red')
                 except Exception as e:
-                    self.output('Encountered error while cancelling query: %s' % str(e), err=True, fg='red')
+                    self.echo('Encountered error while cancelling query: {}'.format(e),
+                              err=True, fg='red')
             except NotImplementedError:
-                self.output('Not Yet Implemented.', fg="yellow")
+                self.echo('Not Yet Implemented.', fg="yellow")
             except OperationalError as e:
                 logger.debug("Exception: %r", e)
                 if (e.args[0] in (2003, 2006, 2013)):
                     logger.debug('Attempting to reconnect.')
-                    self.output('Reconnecting...', fg='yellow')
+                    self.echo('Reconnecting...', fg='yellow')
                     try:
                         sqlexecute.connect()
                         logger.debug('Reconnected successfully.')
@@ -469,36 +481,26 @@ class MyCli(object):
                         return  # OK to just return, cuz the recursion call runs to the end.
                     except OperationalError as e:
                         logger.debug('Reconnect failed. e: %r', e)
-                        self.output(str(e), err=True, fg='red')
-                        return  # If reconnection failed, don't proceed further.
+                        self.echo(str(e), err=True, fg='red')
+                        # If reconnection failed, don't proceed further.
+                        return
                 else:
                     logger.error("sql: %r, error: %r", document.text, e)
                     logger.error("traceback: %r", traceback.format_exc())
-                    self.output(str(e), err=True, fg='red')
+                    self.echo(str(e), err=True, fg='red')
             except Exception as e:
                 logger.error("sql: %r, error: %r", document.text, e)
                 logger.error("traceback: %r", traceback.format_exc())
-                self.output(str(e), err=True, fg='red')
+                self.echo(str(e), err=True, fg='red')
             else:
-                try:
-                    special.write_tee('\n'.join(output))
-                    special.write_once('\n'.join(output))
-                    if special.is_pager_enabled():
-                        self.output_via_pager('\n'.join(output))
-                    else:
-                        self.output('\n'.join(output))
-                except KeyboardInterrupt:
-                    pass
-                if special.is_timing_enabled():
-                    self.output('Time: %0.03fs' % total)
-
                 # Refresh the table names and column names if necessary.
                 if need_completion_refresh(document.text):
                     self.refresh_completions(
                             reset=need_completion_reset(document.text))
             finally:
                 if self.logfile is False:
-                    self.output("Warning: This query was not logged.", err=True, fg='red')
+                    self.echo("Warning: This query was not logged.",
+                              err=True, fg='red')
             query = Query(document.text, successful, mutating)
             self.query_history.append(query)
 
@@ -544,28 +546,75 @@ class MyCli(object):
         except EOFError:
             special.close_tee()
             if not self.less_chatty:
-                self.output('Goodbye!')
+                self.echo('Goodbye!')
 
-    def output(self, text, **kwargs):
-        special.write_tee(text)
+    def log_output(self, output):
+        """Log the output in the audit log, if it's enabled."""
         if self.logfile:
-            self.logfile.write(utf8tounicode(text))
+            self.logfile.write(utf8tounicode(output))
             self.logfile.write('\n')
-        click.secho(text, **kwargs)
 
-    def output_via_pager(self, text):
-        if self.logfile:
-            self.logfile.write(text)
-            self.logfile.write('\n')
-        click.echo_via_pager(text)
+    def echo(self, s, **kwargs):
+        """Print a message to stdout.
+
+        The message will be logged in the audit log, if enabled.
+
+        All keyword arguments are passed to click.echo().
+
+        """
+        self.log_output(s)
+        click.secho(s, **kwargs)
+
+    def output_fits_on_screen(self, output, status=None):
+        """Check if the given output fits on the screen."""
+        size = self.cli.output.get_size()
+
+        margin = self.get_reserved_space() + self.get_prompt(self.prompt_format).count('\n') + 1
+        if special.is_timing_enabled():
+            margin += 1
+        if status:
+            margin += 1 + status.count('\n')
+
+        for i, line in enumerate(output.splitlines(), 1):
+            if len(line) > size.columns or i > (size.rows - margin):
+                return False
+
+        return True
+
+    def output(self, output, status=None):
+        """Output text to stdout or a pager command.
+
+        The status text is not outputted to pager or files.
+
+        The message will be logged in the audit log, if enabled. The
+        message will be written to the tee file, if enabled. The
+        message will be written to the output file, if enabled.
+
+        """
+        if output:
+            self.log_output(output)
+            special.write_tee(output)
+            special.write_once(output)
+
+            if (self.explicit_pager or
+                    (special.is_pager_enabled() and not self.output_fits_on_screen(output, status))):
+                click.echo_via_pager(output)
+            else:
+                click.secho(output)
+
+        if status:
+            self.log_output(status)
+            click.secho(status)
 
     def configure_pager(self):
         # Provide sane defaults for less if they are empty.
         if not os.environ.get('LESS'):
             os.environ['LESS'] = '-RXF'
 
+        self.explicit_pager = False
         if self.config.mysql.get('pager'):
             special.set_pager(self.config.mysql.get('pager'))
+            self.explicit_pager = True
         if self.config.mysql.get('skip-pager'):
             special.disable_pager()
 
@@ -608,12 +657,18 @@ class MyCli(object):
     def get_prompt(self, string):
         sqlexecute = self.sqlexecute
         host = self.login_path if self.login_path and self.login_path_as_host else sqlexecute.host
+        now = datetime.now()
         string = string.replace('\\u', sqlexecute.user or '(none)')
         string = string.replace('\\h', host or '(none)')
         string = string.replace('\\d', sqlexecute.dbname or '(none)')
         string = string.replace('\\t', sqlexecute.server_type()[0] or 'mycli')
         string = string.replace('\\n', "\n")
-        string = string.replace('\\D', datetime.now().strftime('%a %b %d %H:%M:%S %Y'))
+        string = string.replace('\\D', now.strftime('%a %b %d %H:%M:%S %Y'))
+        string = string.replace('\\m', now.strftime('%M'))
+        string = string.replace('\\P', now.strftime('%p'))
+        string = string.replace('\\R', now.strftime('%H'))
+        string = string.replace('\\r', now.strftime('%I'))
+        string = string.replace('\\s', now.strftime('%S'))
         string = string.replace('\\p', str(sqlexecute.port))
         string = string.replace('\\_', ' ')
         return string
@@ -623,11 +678,11 @@ class MyCli(object):
         results = self.sqlexecute.run(query)
         for result in results:
             title, cur, headers, status = result
-            output = self.format_output(title, cur, headers, None)
+            output = self.format_output(title, cur, headers)
             for line in output:
                 click.echo(line, nl=new_line)
 
-    def format_output(self, title, cur, headers, status, expanded=False,
+    def format_output(self, title, cur, headers, expanded=False,
                       max_width=None):
         expanded = expanded or self.formatter.format_name == 'vertical'
         output = []
@@ -647,9 +702,6 @@ class MyCli(object):
 
             output.append(formatted)
 
-        if status:  # Only print the status if it's not None.
-            output.append(status)
-
         return output
 
     def get_reserved_space(self):
@@ -667,36 +719,36 @@ class MyCli(object):
 @click.command()
 @click.option('-h', '--host', envvar='MYSQL_HOST', help='Host address of the database.')
 @click.option('-P', '--port', envvar='MYSQL_TCP_PORT', type=int, help='Port number to use for connection. Honors '
-              '$MYSQL_TCP_PORT')
+              '$MYSQL_TCP_PORT.')
 @click.option('-u', '--user', help='User name to connect to the database.')
 @click.option('-S', '--socket', envvar='MYSQL_UNIX_PORT', help='The socket file to use for connection.')
 @click.option('-p', '--password', 'password', envvar='MYSQL_PWD', type=str,
-              help='Password to connect to the database')
+              help='Password to connect to the database.')
 @click.option('--pass', 'password', envvar='MYSQL_PWD', type=str,
-              help='Password to connect to the database')
-@click.option('--ssl-ca', help='CA file in PEM format',
+              help='Password to connect to the database.')
+@click.option('--ssl-ca', help='CA file in PEM format.',
               type=click.Path(exists=True))
-@click.option('--ssl-capath', help='CA directory')
-@click.option('--ssl-cert', help='X509 cert in PEM format',
+@click.option('--ssl-capath', help='CA directory.')
+@click.option('--ssl-cert', help='X509 cert in PEM format.',
               type=click.Path(exists=True))
-@click.option('--ssl-key', help='X509 key in PEM format',
+@click.option('--ssl-key', help='X509 key in PEM format.',
               type=click.Path(exists=True))
-@click.option('--ssl-cipher', help='SSL cipher to use')
+@click.option('--ssl-cipher', help='SSL cipher to use.')
 @click.option('--ssl-verify-server-cert', is_flag=True,
               help=('Verify server\'s "Common Name" in its cert against '
                     'hostname used when connecting. This option is disabled '
-                    'by default'))
+                    'by default.'))
 # as of 2016-02-15 revocation list is not supported by underling PyMySQL
 # library (--ssl-crl and --ssl-crlpath options in vanilla mysql client)
-@click.option('-v', '--version', is_flag=True, help='Version of mycli.')
+@click.option('-v', '--version', is_flag=True, help='Output mycli\'s version.')
 @click.option('-D', '--database', 'dbname', help='Database to use.')
 @click.option('-R', '--prompt', 'prompt', help='Prompt format.')
 @click.option('-l', '--logfile', type=click.File(mode='a', encoding='utf-8'),
               help='Log every query and its results to a file.')
 @click.option('--defaults-group-suffix', type=str,
-              help='Read config group with the specified suffix.')
+              help='Read MySQL config groups with the specified suffix.')
 @click.option('--defaults-file', type=click.Path(),
-              help='Only read default options from the given file')
+              help='Only read MySQL options from the given file.')
 @click.option('--myclirc', type=click.Path(), help='Location of myclirc file.')
 @click.option('--auto-vertical-output', is_flag=True,
               help='Automatically switch to vertical output mode if the result is wider than the terminal width.')
@@ -711,13 +763,22 @@ class MyCli(object):
 @click.option('--login-path', type=str,
               help='Read this path from the login file.')
 @click.option('-e', '--execute',  type=str,
-              help='Execute query to the database.')
+              help='Execute command and quit.')
 @click.argument('database', default='', nargs=1)
 def cli(database, user, host, port, socket, password, dbname,
         version, prompt, logfile, defaults_group_suffix, defaults_file,
         login_path, auto_vertical_output, local_infile, ssl_ca, ssl_capath,
         ssl_cert, ssl_key, ssl_cipher, ssl_verify_server_cert, table, csv,
         warn, execute, myclirc):
+    """A MySQL terminal client with auto-completion and syntax highlighting.
+
+    \b
+    Examples:
+      - mycli my_database
+      - mycli -u my_user -h my_host.com my_database
+      - mycli mysql://my_user@my_host.com:3306/my_database
+
+    """
 
     if version:
         print('Version:', __version__)
