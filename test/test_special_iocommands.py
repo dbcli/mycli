@@ -105,3 +105,26 @@ def test_once_command():
         mycli.packages.special.write_once(u"hello world")
         f.seek(0)
         assert f.read() == b"hello world\n"
+
+
+def test_parseargfile():
+    """Test that parseargfile expands the user directory."""
+    expected = {'file': os.path.join(os.path.expanduser('~'), 'filename'),
+                'mode': 'a'}
+    assert expected == mycli.packages.special.iocommands.parseargfile(
+        '~/filename')
+
+    expected = {'file': os.path.join(os.path.expanduser('~'), 'filename'),
+                'mode': 'w'}
+    assert expected == mycli.packages.special.iocommands.parseargfile(
+        '-o ~/filename')
+
+
+
+def test_parseargfile_no_file():
+    """Test that parseargfile raises a TypeError if there is no filename."""
+    with pytest.raises(TypeError):
+        mycli.packages.special.iocommands.parseargfile('')
+
+    with pytest.raises(TypeError):
+        mycli.packages.special.iocommands.parseargfile('-o ')
