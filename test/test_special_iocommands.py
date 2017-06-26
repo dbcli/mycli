@@ -120,7 +120,6 @@ def test_parseargfile():
         '-o ~/filename')
 
 
-
 def test_parseargfile_no_file():
     """Test that parseargfile raises a TypeError if there is no filename."""
     with pytest.raises(TypeError):
