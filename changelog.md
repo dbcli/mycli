@@ -12,6 +12,7 @@ Features:
 * Display all result sets returned by stored procedures (Thanks: [Thomas Roten]).
 * Add current time to prompt options (Thanks: [Thomas Roten]).
 * Output status text in a more intuitive way (Thanks: [Thomas Roten]).
+* Output via generator. (Thanks: Dick Marinus).
 
 Bug Fixes:
 ----------
