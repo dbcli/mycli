@@ -151,7 +151,7 @@ which is quite literally the backbone library, that made this app possible.
 Jonathan has also provided valuable feedback and support during the development
 of this app.
 
-[Click](http://click.pocoo.org/3/) is used for command line option parsing
+[Click](http://click.pocoo.org/) is used for command line option parsing
 and printing error messages.
 
 Thanks to [PyMysql](https://github.com/PyMySQL/PyMySQL) for a pure python adapter to MySQL database.
