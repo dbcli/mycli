@@ -13,6 +13,7 @@ from random import choice
 from io import open
 
 from cli_helpers.tabular_output import TabularOutputFormatter
+from cli_helpers.tabular_output import preprocessors
 import click
 import sqlparse
 from prompt_toolkit import CommandLineInterface, Application, AbortAction
@@ -786,19 +787,26 @@ class MyCli(object):
         expanded = expanded or self.formatter.format_name == 'vertical'
         output = []
 
+        output_kwargs = {
+            'disable_numparse': True,
+            'preserve_whitespace': True,
+            'preprocessors': (preprocessors.align_decimals, )
+        }
+
         if title:  # Only print the title if it's not None.
             output.append(title)
 
         if cur:
             rows = list(cur)
             formatted = self.formatter.format_output(
-                rows, headers, format_name='vertical' if expanded else None)
+                rows, headers, format_name='vertical' if expanded else None,
+                **output_kwargs)
             first_line = formatted[:formatted.find('\n')]
 
             if (not expanded and max_width and headers and rows and
                     len(first_line) > max_width):
                 formatted = self.formatter.format_output(
-                    rows, headers, format_name='vertical')
+                    rows, headers, format_name='vertical', **output_kwargs)
 
             output.append(formatted)
 
