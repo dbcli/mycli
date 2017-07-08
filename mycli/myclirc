@@ -86,6 +86,11 @@ Token.Menu.Completions.MultiColumnMeta = 'bg:#aaffff #000000'
 Token.Menu.Completions.ProgressButton = 'bg:#003333'
 Token.Menu.Completions.ProgressBar = 'bg:#00aaaa'
 
+# Query results
+Token.Output.Header = 'bold'
+Token.Output.OddRow = ''
+Token.Output.EvenRow = ''
+
 # Selected text.
 Token.SelectedText = '#ffffff bg:#6666aa'
 
