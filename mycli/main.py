@@ -13,12 +13,14 @@ from random import choice
 from io import open
 
 from cli_helpers.tabular_output import TabularOutputFormatter
+from cli_helpers.tabular_output import preprocessors
 import click
 import sqlparse
 from prompt_toolkit import CommandLineInterface, Application, AbortAction
 from prompt_toolkit.interface import AcceptAction
 from prompt_toolkit.enums import DEFAULT_BUFFER, EditingMode
 from prompt_toolkit.shortcuts import create_prompt_layout, create_eventloop
+from prompt_toolkit.styles.from_pygments import style_from_pygments
 from prompt_toolkit.document import Document
 from prompt_toolkit.filters import Always, HasFocus, IsDone
 from prompt_toolkit.layout.processors import (HighlightMatchingBracketProcessor,
@@ -109,6 +111,7 @@ class MyCli(object):
         self.syntax_style = c['main']['syntax_style']
         self.less_chatty = c['main'].as_bool('less_chatty')
         self.cli_style = c['colors']
+        self.output_style = style_factory(self.syntax_style, self.cli_style)
         self.wider_completion_menu = c['main'].as_bool('wider_completion_menu')
         c_dest_warning = c['main'].as_bool('destructive_warning')
         self.destructive_warning = c_dest_warning if warn is None else warn
@@ -628,13 +631,13 @@ class MyCli(object):
             else:
                 editing_mode = EditingMode.EMACS
 
-            application = Application(style=style_factory(self.syntax_style, self.cli_style),
-                                      layout=layout, buffer=buf,
-                                      key_bindings_registry=key_binding_manager.registry,
-                                      on_exit=AbortAction.RAISE_EXCEPTION,
-                                      on_abort=AbortAction.RETRY,
-                                      editing_mode=editing_mode,
-                                      ignore_case=True)
+            application = Application(
+                style=style_from_pygments(style_cls=self.output_style),
+                layout=layout, buffer=buf,
+                key_bindings_registry=key_binding_manager.registry,
+                on_exit=AbortAction.RAISE_EXCEPTION,
+                on_abort=AbortAction.RETRY, editing_mode=editing_mode,
+                ignore_case=True)
             self.cli = CommandLineInterface(application=application,
                                        eventloop=create_eventloop())
 
@@ -649,8 +652,7 @@ class MyCli(object):
     def log_output(self, output):
         """Log the output in the audit log, if it's enabled."""
         if self.logfile:
-            self.logfile.write(utf8tounicode(output))
-            self.logfile.write('\n')
+            click.echo(utf8tounicode(output), file=self.logfile)
 
     def echo(self, s, **kwargs):
         """Print a message to stdout.
@@ -810,18 +812,26 @@ class MyCli(object):
         expanded = expanded or self.formatter.format_name == 'vertical'
         output = []
 
+        output_kwargs = {
+            'disable_numparse': True,
+            'preserve_whitespace': True,
+            'preprocessors': (preprocessors.align_decimals, )
+        }
+
         if title:  # Only print the title if it's not None.
             output = itertools.chain(output, [title])
 
         if cur:
             rows = list(cur)
             formatted = self.formatter.format_output(
-                rows, headers, format_name='vertical' if expanded else None)
+                rows, headers, format_name='vertical' if expanded else None,
+                style=self.output_style, **output_kwargs)
 
             if (not expanded and max_width and rows and
                     content_exceeds_width(rows[0], max_width) and headers):
                 formatted = self.formatter.format_output(
-                    rows, headers, format_name='vertical')
+                    rows, headers, format_name='vertical',
+                    style=self.output_style, **output_kwargs)
 
             if isinstance(formatted, (str, text_type)):
                 formatted = formatted.splitlines()
