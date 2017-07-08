@@ -832,9 +832,7 @@ class MyCli(object):
               '$MYSQL_TCP_PORT.')
 @click.option('-u', '--user', help='User name to connect to the database.')
 @click.option('-S', '--socket', envvar='MYSQL_UNIX_PORT', help='The socket file to use for connection.')
-@click.option('-p', '--password', 'password', envvar='MYSQL_PWD', type=str,
-              help='Password to connect to the database.')
-@click.option('--pass', 'password', envvar='MYSQL_PWD', type=str,
+@click.option('-p', '--pass', '--password', 'password', envvar='MYSQL_PWD', type=str,
               help='Password to connect to the database.')
 @click.option('--ssl-ca', help='CA file in PEM format.',
               type=click.Path(exists=True))
