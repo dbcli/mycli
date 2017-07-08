@@ -791,7 +791,8 @@ class MyCli(object):
         output_kwargs = {
             'disable_numparse': True,
             'preserve_whitespace': True,
-            'preprocessors': (preprocessors.align_decimals, )
+            'preprocessors': (preprocessors.align_decimals, ),
+            'style': self.output_style
         }
 
         if title:  # Only print the title if it's not None.
@@ -801,13 +802,13 @@ class MyCli(object):
             rows = list(cur)
             formatted = self.formatter.format_output(
                 rows, headers, format_name='vertical' if expanded else None,
-                style=self.output_style, **output_kwargs)
+                **output_kwargs)
+            first_line = formatted[:formatted.find('\n')]
 
-            if (not expanded and max_width and rows and
-                    content_exceeds_width(rows[0], max_width) and headers):
+            if (not expanded and max_width and headers and rows and
+                    len(first_line) > max_width):
                 formatted = self.formatter.format_output(
-                    rows, headers, format_name='vertical',
-                    style=self.output_style, **output_kwargs)
+                    rows, headers, format_name='vertical', **output_kwargs)
 
             output.append(formatted)
 
@@ -971,13 +972,6 @@ def cli(database, user, host, port, socket, password, dbname,
             click.secho(str(e), err=True, fg='red')
             exit(1)
 
-
-def content_exceeds_width(row, width):
-    # Account for 3 characters between each column
-    separator_space = (len(row)*3)
-    # Add 2 columns for a bit of buffer
-    line_len = sum([len(str(x)) for x in row]) + separator_space + 2
-    return line_len > width
 
 def need_completion_refresh(queries):
     """Determines if the completion needs a refresh by checking if the sql
