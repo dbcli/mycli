@@ -13,6 +13,7 @@ from random import choice
 from io import open
 
 from cli_helpers.tabular_output import TabularOutputFormatter
+from cli_helpers.tabular_output import preprocessors
 import click
 import sqlparse
 from prompt_toolkit import CommandLineInterface, Application, AbortAction
@@ -58,10 +59,6 @@ Query = namedtuple('Query', ['query', 'successful', 'mutating'])
 
 PACKAGE_ROOT = os.path.abspath(os.path.dirname(__file__))
 
-# no-op logging handler
-class NullHandler(logging.Handler):
-    def emit(self, record):
-        pass
 
 class MyCli(object):
 
@@ -251,7 +248,7 @@ class MyCli(object):
         # Disable logging if value is NONE by switching to a no-op handler
         # Set log level to a high value so it doesn't even waste cycles getting called.
         if log_level.upper() == "NONE":
-            handler = NullHandler()
+            handler = logging.NullHandler()
             log_level = "CRITICAL"
         else:
             handler = logging.FileHandler(os.path.expanduser(log_file))
@@ -791,6 +788,12 @@ class MyCli(object):
         expanded = expanded or self.formatter.format_name == 'vertical'
         output = []
 
+        output_kwargs = {
+            'disable_numparse': True,
+            'preserve_whitespace': True,
+            'preprocessors': (preprocessors.align_decimals, )
+        }
+
         if title:  # Only print the title if it's not None.
             output.append(title)
 
@@ -798,13 +801,13 @@ class MyCli(object):
             rows = list(cur)
             formatted = self.formatter.format_output(
                 rows, headers, format_name='vertical' if expanded else None,
-                style=self.output_style)
+                style=self.output_style, **output_kwargs)
 
             if (not expanded and max_width and rows and
                     content_exceeds_width(rows[0], max_width) and headers):
                 formatted = self.formatter.format_output(
                     rows, headers, format_name='vertical',
-                    style=self.output_style)
+                    style=self.output_style, **output_kwargs)
 
             output.append(formatted)
 

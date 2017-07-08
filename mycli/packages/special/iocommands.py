@@ -260,7 +260,7 @@ def parseargfile(arg):
     if not filename:
         raise TypeError('You must provide a filename.')
 
-    return {'file': filename, 'mode': mode}
+    return {'file': os.path.expanduser(filename), 'mode': mode}
 
 
 @special_command('tee', 'tee [-o] filename',
