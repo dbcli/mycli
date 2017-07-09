@@ -827,6 +827,10 @@ class MyCli(object):
             formatted = self.formatter.format_output(
                 rows, headers, format_name='vertical' if expanded else None,
                 **output_kwargs)
+
+            if isinstance(formatted, (str, text_type)):
+                formatted = iter(formatted.splitlines())
+
             first_line = next(formatted)
             formatted = itertools.chain([first_line], formatted)
 
@@ -835,8 +839,6 @@ class MyCli(object):
                 formatted = self.formatter.format_output(
                     rows, headers, format_name='vertical', **output_kwargs)
 
-            if isinstance(formatted, (str, text_type)):
-                formatted = formatted.splitlines()
             output = itertools.chain(output, formatted)
 
 
