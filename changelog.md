@@ -24,6 +24,7 @@ Bug Fixes:
 * Remove shebang from main.py (Thanks: [Dick Marinus]).
 * Only use pager if output doesn't fit. (Thanks: [Dick Marinus]).
 * Support tilde user directory for output file names (Thanks: [Thomas Roten]).
+* Auto vertical output is a little bit better at its calculations (Thanks: [Thomas Roten]).
 
 Internal Changes:
 -----------------

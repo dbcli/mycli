@@ -22,9 +22,9 @@ def expect_pager(context, expected, timeout):
         context.conf['pager_boundary'], expected), timeout=timeout)
 
 
-def run_cli(context):
+def run_cli(context, run_args=None):
     """Run the process using pexpect."""
-    run_args = []
+    run_args = run_args or []
     if context.conf.get('host', None):
         run_args.extend(('-h', context.conf['host']))
     if context.conf.get('user', None):
