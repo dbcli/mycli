@@ -282,3 +282,13 @@ def test_conditional_pager(monkeypatch):
         explicit_pager=True,
         expect_pager=True
     )
+
+    SPECIAL_COMMANDS['nopager'].handler()
+    output(
+        monkeypatch,
+        terminal_size=(5, 10),
+        testdata=testdata,
+        explicit_pager=False,
+        expect_pager=False
+    )
+    SPECIAL_COMMANDS['pager'].handler('')
