@@ -12,6 +12,7 @@ Features:
 * Display all result sets returned by stored procedures (Thanks: [Thomas Roten]).
 * Add current time to prompt options (Thanks: [Thomas Roten]).
 * Output status text in a more intuitive way (Thanks: [Thomas Roten]).
+* Add colored/styled headers and odd/even rows (Thanks: [Thomas Roten]).
 
 Bug Fixes:
 ----------
@@ -21,6 +22,8 @@ Bug Fixes:
 * Fixed issue where quit command would sometimes not work (Thanks: [Thomas Roten]).
 * Remove shebang from main.py (Thanks: [Dick Marinus]).
 * Only use pager if output doesn't fit. (Thanks: [Dick Marinus]).
+* Support tilde user directory for output file names (Thanks: [Thomas Roten]).
+* Auto vertical output is a little bit better at its calculations (Thanks: [Thomas Roten]).
 
 Internal Changes:
 -----------------

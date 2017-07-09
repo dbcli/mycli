@@ -86,6 +86,11 @@ Token.Menu.Completions.MultiColumnMeta = string(default='bg:#aaffff #000000')
 Token.Menu.Completions.ProgressButton = string(default='bg:#003333')
 Token.Menu.Completions.ProgressBar = string(default='bg:#00aaaa')
 
+# Query results
+Token.Output.Header = 'bold'
+Token.Output.OddRow = ''
+Token.Output.EvenRow = ''
+
 # Selected text.
 Token.SelectedText = string(default='#ffffff bg:#6666aa')
 

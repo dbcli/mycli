@@ -260,7 +260,7 @@ def parseargfile(arg):
     if not filename:
         raise TypeError('You must provide a filename.')
 
-    return {'file': filename, 'mode': mode}
+    return {'file': os.path.expanduser(filename), 'mode': mode}
 
 
 @special_command('tee', 'tee [-o] filename',
@@ -292,8 +292,8 @@ def no_tee(arg, **_):
 def write_tee(output):
     global tee_file
     if tee_file:
-        tee_file.write(output)
-        tee_file.write(u"\n")
+        click.echo(output, file=tee_file, nl=False)
+        click.echo(u'\n', file=tee_file, nl=False)
         tee_file.flush()
 
 
@@ -320,8 +320,8 @@ def write_once(output):
                 e.filename, e.strerror))
 
         with f:
-            f.write(output)
-            f.write(u"\n")
+            click.echo(output, file=f, nl=False)
+            click.echo(u"\n", file=f, nl=False)
         written_to_once_file = True
 
 
