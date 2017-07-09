@@ -104,7 +104,6 @@ class MySqlConfig(Config):
 
 class MyCliConfig(Config):
 
-    mysql_sections = ['client']
     mysql_filename = 'my.cnf'
 
     def __init__(self, app_name, app_author, filename, **kwargs):
