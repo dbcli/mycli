@@ -141,6 +141,7 @@ class MyCli(object):
         self.prompt_format = prompt or prompt_cnf or c['main']['prompt'] or \
                              self.default_prompt
         self.prompt_continuation_format = c['main']['prompt_continuation']
+        keyword_casing = c['main'].get('keyword_casing', 'upper')
 
         self.query_history = []
 
@@ -148,7 +149,8 @@ class MyCli(object):
         self.smart_completion = c['main'].as_bool('smart_completion')
         self.completer = SQLCompleter(
             self.smart_completion,
-            supported_formats=self.formatter.supported_formats)
+            supported_formats=self.formatter.supported_formats,
+            keyword_casing=keyword_casing)
         self._completer_lock = threading.Lock()
 
         # Register custom special commands.
