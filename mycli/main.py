@@ -709,7 +709,7 @@ class MyCli(object):
                 if len(line) > size.columns or i > (size.rows - margin):
                     # doesn't fit, flush buffer
                     fits = False
-                    if special.is_pager_enabled:
+                    if special.is_pager_enabled():
                         output_via_pager = True
                     if not output_via_pager:
                         for line in buf:
