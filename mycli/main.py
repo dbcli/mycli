@@ -838,6 +838,8 @@ class MyCli(object):
                     len(first_line) > max_width):
                 formatted = self.formatter.format_output(
                     rows, headers, format_name='vertical', **output_kwargs)
+                if isinstance(formatted, (str, text_type)):
+                    formatted = iter(formatted.splitlines())
 
             output = itertools.chain(output, formatted)
 
