@@ -699,7 +699,8 @@ class MyCli(object):
             output_via_pager = self.explicit_pager and special.is_pager_enabled()
             for i, line in enumerate(output, 1):
                 self.log_output(line)
-                special.write_tee(line)
+                # line needs to be casted to unicode for click with Python 2.7
+                special.write_tee(text_type(line))
                 special.write_once(line)
 
                 if fits or output_via_pager:
