@@ -827,7 +827,8 @@ class MyCli(object):
             formatted = self.formatter.format_output(
                 rows, headers, format_name='vertical' if expanded else None,
                 **output_kwargs)
-            first_line = formatted[:formatted.find('\n')]
+            first_line = next(formatted)
+            formatted = itertools.chain([first_line], formatted)
 
             if (not expanded and max_width and headers and rows and
                     len(first_line) > max_width):
