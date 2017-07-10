@@ -128,6 +128,14 @@ class MyCliConfig(Config):
         self.mysql.read()
         return super(self.__class__, self).read()
 
+    def user_config_file(self):
+        """Use the legacy config file if the new config file doesn't exist."""
+        config_file = super(self.__class__, self).user_config_file()
+        legacy_file = os.path.expanduser('~/.myclirc')
+        if not os.path.exists(config_file) and os.path.exists(legacy_file):
+            return legacy_file
+        return config_file
+
     def default_mysql_file(self):
         return os.path.join(PACKAGE_ROOT, self.mysql_filename)
 
