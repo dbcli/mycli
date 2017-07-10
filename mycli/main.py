@@ -706,16 +706,19 @@ class MyCli(object):
                 if fits or output_via_pager:
                     # buffering
                     buf.append(line)
+                    if len(line) > size.columns or i > (size.rows - margin):
+                        fits = False
+                        if not self.explicit_pager and special.is_pager_enabled():
+                            # doesn't fit, use pager
+                            output_via_pager = True
 
-                if len(line) > size.columns or i > (size.rows - margin):
-                    # doesn't fit, flush buffer
-                    fits = False
-                    if special.is_pager_enabled():
-                        output_via_pager = True
-                    if not output_via_pager:
-                        for line in buf:
-                            click.secho(line)
-                        buf = []
+                        if not output_via_pager:
+                            # doesn't fit, flush buffer
+                            for line in buf:
+                                click.secho(line)
+                            buf = []
+                else:
+                    click.secho(line)
 
             if buf:
                 if output_via_pager:
