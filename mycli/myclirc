@@ -78,7 +78,7 @@ login_path_as_host = False
 auto_vertical_output = False
 
 # keyword casing preference. Possible values "lower", "upper", "auto"
-keyword_casing = upper
+keyword_casing = auto
 
 # Custom colors for the completion menu, toolbar, etc.
 [colors]

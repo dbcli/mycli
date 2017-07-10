@@ -141,7 +141,7 @@ class MyCli(object):
         self.prompt_format = prompt or prompt_cnf or c['main']['prompt'] or \
                              self.default_prompt
         self.prompt_continuation_format = c['main']['prompt_continuation']
-        keyword_casing = c['main'].get('keyword_casing', 'upper')
+        keyword_casing = c['main'].get('keyword_casing', 'auto')
 
         self.query_history = []
 

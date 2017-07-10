@@ -60,7 +60,7 @@ class SQLCompleter(Completer):
         self.special_commands = []
         self.table_formats = supported_formats
         if keyword_casing not in ('upper', 'lower', 'auto'):
-            keyword_casing = 'upper'
+            keyword_casing = 'auto'
         self.keyword_casing = keyword_casing
         self.reset_completions()
 
