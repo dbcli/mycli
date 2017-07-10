@@ -728,7 +728,8 @@ class MyCli(object):
         self.completion_refresher.refresh(
             self.sqlexecute, self._on_completions_refreshed,
             {'smart_completion': self.smart_completion,
-             'supported_formats': self.formatter.supported_formats})
+             'supported_formats': self.formatter.supported_formats,
+             'keyword_casing': self.completer.keyword_casing})
 
         return [(None, None, None,
                 'Auto-completion refresh started in the background.')]
