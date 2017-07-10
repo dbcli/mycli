@@ -826,22 +826,25 @@ class MyCli(object):
         return self.query_history[-1][0] if self.query_history else None
 
 
-@click.command()
-@click.option('-h', '--host', envvar='MYSQL_HOST', help='Host address of the database.')
-@click.option('-P', '--port', envvar='MYSQL_TCP_PORT', type=int, help='Port number to use for connection. Honors '
-              '$MYSQL_TCP_PORT.')
-@click.option('-u', '--user', help='User name to connect to the database.')
-@click.option('-S', '--socket', envvar='MYSQL_UNIX_PORT', help='The socket file to use for connection.')
+@click.command(options_metavar='<options>')
+@click.option('-h', '--host', envvar='MYSQL_HOST', metavar='<host>',
+              help='Host address of the database.')
+@click.option('-P', '--port', envvar='MYSQL_TCP_PORT', type=int, metavar='<port>',
+              help='Port number to use for connection. Honors $MYSQL_TCP_PORT.')
+@click.option('-u', '--user', metavar='<username>',
+              help='User name to connect to the database.')
+@click.option('-S', '--socket', envvar='MYSQL_UNIX_PORT', metavar='<path>',
+              help='The socket file to use for connection.')
 @click.option('-p', '--pass', '--password', 'password', envvar='MYSQL_PWD', type=str,
-              help='Password to connect to the database.')
-@click.option('--ssl-ca', help='CA file in PEM format.',
+              metavar='<password>', help='Password to connect to the database.')
+@click.option('--ssl-ca', help='CA file in PEM format.', metavar='<path>',
               type=click.Path(exists=True))
-@click.option('--ssl-capath', help='CA directory.')
-@click.option('--ssl-cert', help='X509 cert in PEM format.',
+@click.option('--ssl-capath', help='CA directory.', metavar='<path>')
+@click.option('--ssl-cert', help='X509 cert in PEM format.', metavar='<path>',
               type=click.Path(exists=True))
-@click.option('--ssl-key', help='X509 key in PEM format.',
+@click.option('--ssl-key', help='X509 key in PEM format.', metavar='<path>',
               type=click.Path(exists=True))
-@click.option('--ssl-cipher', help='SSL cipher to use.')
+@click.option('--ssl-cipher', help='SSL cipher(s) to use.', metavar='<ciphers>')
 @click.option('--ssl-verify-server-cert', is_flag=True,
               help=('Verify server\'s "Common Name" in its cert against '
                     'hostname used when connecting. This option is disabled '
@@ -849,17 +852,17 @@ class MyCli(object):
 # as of 2016-02-15 revocation list is not supported by underling PyMySQL
 # library (--ssl-crl and --ssl-crlpath options in vanilla mysql client)
 @click.option('-v', '--version', is_flag=True, help='Output mycli\'s version.')
-@click.option('-D', '--database', 'dbname', help='Database to use.')
-@click.option('-R', '--prompt', 'prompt',
-              help='Prompt format (Default: "{0}").'.format(
-                  MyCli.default_prompt))
+@click.option('-D', '--database', 'dbname', metavar='<name>',
+              help='Database to use.')
+@click.option('-R', '--prompt', 'prompt', metavar='<format_string>', show_default=True,
+              help="Set the prompt's format.", default=MyCli.default_prompt)
 @click.option('-l', '--logfile', type=click.File(mode='a', encoding='utf-8'),
-              help='Log every query and its results to a file.')
-@click.option('--defaults-group-suffix', type=str,
+              metavar='<path>', help='Log every query and its results to a file.')
+@click.option('--defaults-group-suffix', type=str, metavar='<suffix>',
               help='Read MySQL config groups with the specified suffix.')
-@click.option('--defaults-file', type=click.Path(),
+@click.option('--defaults-file', type=click.Path(), metavar='<path>',
               help='Only read MySQL options from the given file.')
-@click.option('--myclirc', type=click.Path(), default="~/.myclirc",
+@click.option('--myclirc', type=click.Path(), default="~/.myclirc", metavar='<path>',
               help='Location of myclirc file.')
 @click.option('--auto-vertical-output', is_flag=True,
               help='Automatically switch to vertical output mode if the result is wider than the terminal width.')
@@ -869,13 +872,13 @@ class MyCli(object):
               help='Display batch output in CSV format.')
 @click.option('--warn/--no-warn', default=None,
               help='Warn before running a destructive query.')
-@click.option('--local-infile', type=bool,
+@click.option('--local-infile', type=bool, metavar='<true/false>',
               help='Enable/disable LOAD DATA LOCAL INFILE.')
-@click.option('--login-path', type=str,
+@click.option('--login-path', type=str, metavar='<section>',
               help='Read this path from the login file.')
-@click.option('-e', '--execute',  type=str,
+@click.option('-e', '--execute',  type=str, metavar='<command>',
               help='Execute command and quit.')
-@click.argument('database', default='', nargs=1)
+@click.argument('database', default='', nargs=1, metavar='<database>')
 def cli(database, user, host, port, socket, password, dbname,
         version, prompt, logfile, defaults_group_suffix, defaults_file,
         login_path, auto_vertical_output, local_infile, ssl_ca, ssl_capath,
