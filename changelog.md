@@ -13,6 +13,7 @@ Features:
 * Add current time to prompt options (Thanks: [Thomas Roten]).
 * Output status text in a more intuitive way (Thanks: [Thomas Roten]).
 * Add colored/styled headers and odd/even rows (Thanks: [Thomas Roten]).
+* Keyword completion casing (upper/lower/auto) (Thanks: [Irina Truong]).
 
 Bug Fixes:
 ----------
