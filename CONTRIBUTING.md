@@ -128,3 +128,5 @@ $ ./setup.py lint --fix
 ```
 
 Be sure to commit and push any PEP 8 fixes.
+
+For bugfixes: Submit against the latest tag instead of master!
