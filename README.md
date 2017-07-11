@@ -7,6 +7,7 @@
 A command line client for MySQL that can do auto-completion and syntax highlighting.
 
 HomePage: [http://mycli.net](http://mycli.net)
+Documentation: [http://mycli.net/docs](http://mycli.net/docs)
 
 ![Completion](screenshots/tables.png)
 ![CompletionGif](screenshots/main.gif)
@@ -165,19 +166,11 @@ Tests have been run on OS X and Linux.
 
 THIS HAS NOT BEEN TESTED IN WINDOWS, but the libraries used in this app are Windows compatible. This means it should work without any modifications. If you're unable to run it on Windows, please file a bug. I will try my best to fix it.
 
-### Use with pager (mysql workaround)
-As described [here](https://github.com/dbcli/mycli/issues/281), " we only read the [client] section of my.cnf not the [mysql] section".
+### Configuration and Usage
 
-So, if you want to use a pager, your .my.cnf file should looks like this:
+For more information on using and configuring mycli, [check out our documentation](http://mycli.net/docs).
 
-```
-[client]
-pager = mypager
-```
-
-instead of this:
-
-```
-[mysql]
-pager = mypager
-```
+Common topics include:
+- [Configuring mycli](http://mycli.net/config)
+- [Using/Disabling the pager](http://mycli.net/pager)
+- [Syntax colors](http://mycli.net/syntax)
