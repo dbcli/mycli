@@ -131,7 +131,7 @@ def open_external_editor(filename=None, sql=None):
 
     # Populate the editor buffer with the partial sql (if available) and a
     # placeholder comment.
-    query = click.edit('{sql}\n\n{marker}'.format(sql=sql, marker=MARKER),
+    query = click.edit(u'{sql}\n\n{marker}'.format(sql=sql, marker=MARKER),
                        filename=filename, extension='.sql')
 
     if filename:
