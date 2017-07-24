@@ -2,7 +2,6 @@ import logging
 from prompt_toolkit.enums import EditingMode
 from prompt_toolkit.keys import Keys
 from prompt_toolkit.key_binding.manager import KeyBindingManager
-from prompt_toolkit.filters import Condition
 from .filters import HasSelectedCompletion
 
 _logger = logging.getLogger(__name__)
@@ -15,6 +14,7 @@ def mycli_bindings():
     key_binding_manager = KeyBindingManager(
             enable_open_in_editor=True,
             enable_system_bindings=True,
+            enable_auto_suggest_bindings=True,
             enable_search=True,
             enable_abort_and_exit_bindings=True)
 

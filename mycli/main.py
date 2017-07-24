@@ -26,6 +26,7 @@ from prompt_toolkit.filters import Always, HasFocus, IsDone
 from prompt_toolkit.layout.processors import (HighlightMatchingBracketProcessor,
                                               ConditionalProcessor)
 from prompt_toolkit.history import FileHistory
+from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from pygments.token import Token
 
 from .packages.special.main import NO_QUERY
@@ -624,6 +625,7 @@ class MyCli(object):
         with self._completer_lock:
             buf = CLIBuffer(always_multiline=self.multi_line, completer=self.completer,
                     history=FileHistory(os.path.expanduser(os.environ.get('MYCLI_HISTFILE', '~/.mycli-history'))),
+                    auto_suggest=AutoSuggestFromHistory(),
                     complete_while_typing=Always(), accept_action=AcceptAction.RETURN_DOCUMENT)
 
             if self.key_bindings == 'vi':
