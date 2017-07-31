@@ -437,6 +437,7 @@ class MyCli(object):
         return document
 
     def run_cli(self):
+        iterations = 0
         sqlexecute = self.sqlexecute
         logger = self.logger
         self.configure_pager()
@@ -465,6 +466,9 @@ class MyCli(object):
         def get_continuation_tokens(cli, width):
             continuation_prompt = self.get_prompt(self.prompt_continuation_format)
             return [(Token.Continuation, ' ' * (width - len(continuation_prompt)) + continuation_prompt)]
+
+        def show_suggestion_tip():
+            return iterations < 2
 
         def one_iteration(document=None):
             if document is None:
@@ -606,8 +610,9 @@ class MyCli(object):
             query = Query(document.text, successful, mutating)
             self.query_history.append(query)
 
-
-        get_toolbar_tokens = create_toolbar_tokens_func(self.completion_refresher.is_refreshing)
+        get_toolbar_tokens = create_toolbar_tokens_func(
+                self.completion_refresher.is_refreshing,
+                show_suggestion_tip)
 
         layout = create_prompt_layout(
             lexer=MyCliLexer,
@@ -646,6 +651,7 @@ class MyCli(object):
         try:
             while True:
                 one_iteration()
+                iterations += 1
         except EOFError:
             special.close_tee()
             if not self.less_chatty:

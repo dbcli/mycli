@@ -2,7 +2,7 @@ from pygments.token import Token
 from prompt_toolkit.enums import DEFAULT_BUFFER, EditingMode
 from prompt_toolkit.key_binding.vi_state import InputMode
 
-def create_toolbar_tokens_func(get_is_refreshing):
+def create_toolbar_tokens_func(get_is_refreshing, show_fish_help):
     """
     Return a function that generates the toolbar tokens.
     """
@@ -11,11 +11,6 @@ def create_toolbar_tokens_func(get_is_refreshing):
     def get_toolbar_tokens(cli):
         result = []
         result.append((token, ' '))
-
-        if cli.buffers[DEFAULT_BUFFER].completer.smart_completion:
-            result.append((token.On, '[F2] Smart Completion: ON  '))
-        else:
-            result.append((token.Off, '[F2] Smart Completion: OFF  '))
 
         if cli.buffers[DEFAULT_BUFFER].always_multiline:
             result.append((token.On, '[F3] Multiline: ON  '))
@@ -29,10 +24,11 @@ def create_toolbar_tokens_func(get_is_refreshing):
         if cli.editing_mode == EditingMode.VI:
             result.append((
                 token.On,
-                '[F4] Vi-mode ({})'.format(_get_vi_mode(cli))
+                'Vi-mode ({})'.format(_get_vi_mode(cli))
             ))
-        else:
-            result.append((token.On, '[F4] Emacs-mode'))
+
+        if show_fish_help():
+            result.append((token, '  Right-arrow to complete suggestion'))
 
         if get_is_refreshing():
             result.append((token, '     Refreshing completions...'))
