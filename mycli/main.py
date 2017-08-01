@@ -611,8 +611,8 @@ class MyCli(object):
             self.query_history.append(query)
 
         get_toolbar_tokens = create_toolbar_tokens_func(
-                self.completion_refresher.is_refreshing,
-                show_suggestion_tip)
+            self.completion_refresher.is_refreshing,
+            show_suggestion_tip)
 
         layout = create_prompt_layout(
             lexer=MyCliLexer,
@@ -629,9 +629,10 @@ class MyCli(object):
         )
         with self._completer_lock:
             buf = CLIBuffer(always_multiline=self.multi_line, completer=self.completer,
-                    history=FileHistory(os.path.expanduser(os.environ.get('MYCLI_HISTFILE', '~/.mycli-history'))),
-                    auto_suggest=AutoSuggestFromHistory(),
-                    complete_while_typing=Always(), accept_action=AcceptAction.RETURN_DOCUMENT)
+                            history=FileHistory(os.path.expanduser(
+                                os.environ.get('MYCLI_HISTFILE', '~/.mycli-history'))),
+                            auto_suggest=AutoSuggestFromHistory(),
+                            complete_while_typing=Always(), accept_action=AcceptAction.RETURN_DOCUMENT)
 
             if self.key_bindings == 'vi':
                 editing_mode = EditingMode.VI

@@ -12,11 +12,11 @@ def mycli_bindings():
     Custom key bindings for mycli.
     """
     key_binding_manager = KeyBindingManager(
-            enable_open_in_editor=True,
-            enable_system_bindings=True,
-            enable_auto_suggest_bindings=True,
-            enable_search=True,
-            enable_abort_and_exit_bindings=True)
+        enable_open_in_editor=True,
+        enable_system_bindings=True,
+        enable_auto_suggest_bindings=True,
+        enable_search=True,
+        enable_abort_and_exit_bindings=True)
 
     @key_binding_manager.registry.add_binding(Keys.F2)
     def _(event):

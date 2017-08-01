@@ -2,6 +2,7 @@ from pygments.token import Token
 from prompt_toolkit.enums import DEFAULT_BUFFER, EditingMode
 from prompt_toolkit.key_binding.vi_state import InputMode
 
+
 def create_toolbar_tokens_func(get_is_refreshing, show_fish_help):
     """
     Return a function that generates the toolbar tokens.
