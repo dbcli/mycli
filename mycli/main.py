@@ -40,7 +40,7 @@ from .completion_refresher import CompletionRefresher
 from .config import (write_default_config, get_mylogin_cnf_path,
                      open_mylogin_cnf, read_config_files, str_to_bool)
 from .key_bindings import mycli_bindings
-from .encodingutils import utf8tounicode
+from .encodingutils import utf8tounicode, text_type
 from .lexer import MyCliLexer
 from .__init__ import __version__
 
@@ -51,7 +51,7 @@ try:
     FileNotFoundError = OSError
 except ImportError:
     from urllib.parse import urlparse
-from pymysql import OperationalError
+from pymysql import OperationalError, converters
 
 from collections import namedtuple
 
@@ -811,16 +811,29 @@ class MyCli(object):
             output.append(title)
 
         if cur:
-            rows = list(cur)
+            column_types = None
+            if hasattr(cur, 'description'):
+                def sanitize(col):
+                    if col is converters.through:
+                        return text_type
+                    else:
+                        return col
+                column_types = [sanitize(converters.decoders[col[1]])
+                                for col in cur.description]
+
+            if max_width is not None:
+                cur = list(cur)
+
             formatted = self.formatter.format_output(
-                rows, headers, format_name='vertical' if expanded else None,
+                cur, headers, format_name='vertical' if expanded else None,
+                column_types=column_types,
                 **output_kwargs)
             first_line = formatted[:formatted.find('\n')]
 
-            if (not expanded and max_width and headers and rows and
+            if (not expanded and max_width and headers and cur and
                     len(first_line) > max_width):
                 formatted = self.formatter.format_output(
-                    rows, headers, format_name='vertical', **output_kwargs)
+                    cur, headers, format_name='vertical', **output_kwargs)
 
             output.append(formatted)
 

@@ -1,3 +1,11 @@
+TBD
+===
+
+Features:
+---------
+* Keep cursor for cli_helpers. (Thanks: [Dick Marinus])
+
+
 1.12.0:
 =======
 
