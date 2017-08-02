@@ -1,3 +1,12 @@
+TBD
+===
+
+Features:
+---------
+
+* Add fish-style auto-suggestion from history. (Thanks: [Amjith Ramanujam])
+
+
 1.11.0:
 =======
 
