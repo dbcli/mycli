@@ -1017,8 +1017,8 @@ def is_dropping_database(queries, dbname):
     for query in sqlparse.split(queries):
         try:
             stmt = sqlparse.parse(query)[0]
-            first_token = stmt.token_first(skip_ws=True, skip_cm=True)
-            _, second_token = stmt.token_next(0, skip_ws=True, skip_cm=True)
+            first_token = stmt.token_first(skip_cm=True)
+            _, second_token = stmt.token_next(0, skip_cm=True)
             if (first_token.value.lower() == 'drop' and
                     second_token.value.lower() in ('database', 'schema') and
                     stmt.get_name().lower() == dbname.lower()):
