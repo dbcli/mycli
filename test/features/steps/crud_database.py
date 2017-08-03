@@ -42,6 +42,7 @@ def step_db_connect_test(context):
     context.currentdb = db_name
     context.cli.sendline('use {0}'.format(db_name))
 
+
 @when('we connect to tmp database')
 def step_db_connect_tmp(context):
     """Send connect to database."""
