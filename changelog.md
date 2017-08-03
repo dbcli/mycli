@@ -1,3 +1,11 @@
+TBD:
+=======
+
+Bug Fixes:
+----------
+
+* Prevent missing MySQL help database from causing errors in completions (Thanks: [Thomas Roten]).
+
 1.12.0:
 =======
 
