@@ -599,6 +599,10 @@ class MyCli(object):
                 logger.error("traceback: %r", traceback.format_exc())
                 self.echo(str(e), err=True, fg='red')
             else:
+                if is_dropping_database(document.text, self.sqlexecute.dbname):
+                    self.sqlexecute.dbname = None
+                    self.sqlexecute.connect()
+
                 # Refresh the table names and column names if necessary.
                 if need_completion_refresh(document.text):
                     self.refresh_completions(
@@ -1006,6 +1010,22 @@ def need_completion_refresh(queries):
                 return True
         except Exception:
             return False
+
+
+def is_dropping_database(queries, dbname):
+    """Determine if the query is dropping a specific database."""
+    for query in sqlparse.split(queries):
+        try:
+            stmt = sqlparse.parse(query)[0]
+            first_token = stmt.token_first(skip_ws=True, skip_cm=True)
+            _, second_token = stmt.token_next(0, skip_ws=True, skip_cm=True)
+            if (first_token.value.lower() == 'drop' and
+                    second_token.value.lower() in ('database', 'schema') and
+                    stmt.get_name().lower() == dbname.lower()):
+                return True
+        except Exception:
+            return False
+
 
 def need_completion_reset(queries):
     """Determines if the statement is a database switch such as 'use' or '\\u'.
