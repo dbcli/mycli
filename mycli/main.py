@@ -814,10 +814,7 @@ class MyCli(object):
             column_types = None
             if hasattr(cur, 'description'):
                 def sanitize(col):
-                    if col is converters.through:
-                        return text_type
-                    else:
-                        return col
+                    return col if type(col) is type else text_type
                 column_types = [sanitize(converters.decoders[col[1]])
                                 for col in cur.description]
 
