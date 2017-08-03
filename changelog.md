@@ -1,10 +1,14 @@
-TBD
-===
+TBD:
+=======
+
+Bug Fixes:
+----------
+
+* Prevent missing MySQL help database from causing errors in completions (Thanks: [Thomas Roten]).
 
 Features:
 ---------
 * Keep cursor for cli_helpers. (Thanks: [Dick Marinus])
-
 
 1.12.0:
 =======

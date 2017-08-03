@@ -195,7 +195,7 @@ class SQLExecute(object):
             _logger.debug('Show Query. sql: %r', self.show_candidates_query)
             try:
                 cur.execute(self.show_candidates_query)
-            except pymysql.OperationalError as e:
+            except pymysql.DatabaseError as e:
                 _logger.error('No show completions due to %r', e)
                 yield ''
             else:
@@ -207,7 +207,7 @@ class SQLExecute(object):
             _logger.debug('Users Query. sql: %r', self.users_query)
             try:
                 cur.execute(self.users_query)
-            except pymysql.OperationalError as e:
+            except pymysql.DatabaseError as e:
                 _logger.error('No user completions due to %r', e)
                 yield ''
             else:
