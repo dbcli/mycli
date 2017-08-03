@@ -7,6 +7,11 @@ Bug Fixes:
 * Prevent missing MySQL help database from causing errors in completions (Thanks: [Thomas Roten]).
 * Fix mycli from crashing with small terminal windows under Python 2 (Thanks: [Thomas Roten]).
 
+Internal Changes:
+-----------------
+
+* Use less memory when formatting results for display (Thanks: [Dick Marinus]).
+
 1.12.0:
 =======
 
