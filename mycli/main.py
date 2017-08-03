@@ -830,7 +830,7 @@ class MyCli(object):
             if (not expanded and max_width and headers and cur and
                     len(first_line) > max_width):
                 formatted = self.formatter.format_output(
-                    cur, headers, format_name='vertical', **output_kwargs)
+                    cur, headers, format_name='vertical', column_types=column_types, **output_kwargs)
 
             output.append(formatted)
 
