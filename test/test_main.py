@@ -199,3 +199,17 @@ def test_command_descriptions_end_with_periods():
     MyCli()
     for _, command in SPECIAL_COMMANDS.items():
         assert command[3].endswith('.')
+
+
+def test_reserved_space_is_integer():
+    """Make sure that reserved space is returned as an integer."""
+    def stub_terminal_size():
+        return (5, 5)
+
+    old_func = click.get_terminal_size
+
+    click.get_terminal_size = stub_terminal_size
+    mycli = MyCli()
+    assert isinstance(mycli.get_reserved_space(), int)
+
+    click.get_terminal_size = old_func

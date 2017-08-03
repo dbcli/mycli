@@ -831,7 +831,7 @@ class MyCli(object):
         reserved_space_ratio = .45
         max_reserved_space = 8
         _, height = click.get_terminal_size()
-        return min(round(height * reserved_space_ratio), max_reserved_space)
+        return min(int(round(height * reserved_space_ratio)), max_reserved_space)
 
     def get_last_query(self):
         """Get the last query executed or None."""
