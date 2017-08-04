@@ -117,9 +117,12 @@ class MyCliConfig(Config):
         self.mysql.read()
         return super(self.__class__, self).read()
 
+    def new_config_file(self):
+        return super(self.__class__, self).user_config_file()
+
     def user_config_file(self):
         """Use the legacy config file if the new config file doesn't exist."""
-        config_file = super(self.__class__, self).user_config_file()
+        config_file = self.new_config_file()
         legacy_file = self.legacy_config_file()
         if not os.path.exists(config_file) and os.path.exists(legacy_file):
             return legacy_file

@@ -79,6 +79,10 @@ class MyCli(object):
             mysql_defaults_suffix=defaults_suffix, mysql_login_path=login_path)
         c.read()
 
+        if c.legacy_file_loaded():
+            self.output_config_deprecation_warning(c.legacy_config_file(),
+                                                   c.new_config_file())
+
         self.multi_line = c['main']['multi_line']
         self.key_bindings = c['main']['key_bindings']
         special.set_timing_enabled(c['main']['timing'])
@@ -745,6 +749,13 @@ class MyCli(object):
     def get_last_query(self):
         """Get the last query executed or None."""
         return self.query_history[-1][0] if self.query_history else None
+
+    def output_config_deprecation_warning(self, legacy_file, new_file):
+        """Warn users if their config file is in the legacy location."""
+        message = ('Warning: your mycli config file is in a deprecated '
+                   'location ({}). Please move it to {}. A future version '
+                   'of mycli will stop reading the old config file.')
+        self.echo(message.format(legacy_file, new_file), fg="yellow")
 
 
 @click.command()
