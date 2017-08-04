@@ -5,7 +5,7 @@ import os
 import struct
 import sys
 
-from cli_helpers.config import Config, get_system_config_dirs
+from cli_helpers.config import Config
 from cli_helpers.compat import WIN
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
@@ -43,25 +43,16 @@ class MySqlConfig(Config):
     def system_config_files(self):
         """Get a list of paths to the system's config files."""
         if WIN:
-            system_dirs = get_system_config_dirs(self.app_name,
-                                                 self.app_author)
-            system_dirs.append(os.environ.get('WINDIR'))
-            system_dirs.append('C:\\')
-            return [os.path.join(dir, self.filename) for dir in system_dirs]
+            system_dirs = [os.environ.get('WINDIR'), 'C:\\']
         else:
-            return [
-                os.path.join('/etc', self.filename),
-                os.path.join('/etc/mysql', self.filename),
-                os.path.join('/usr/local/etc', self.filename)
-            ]
+            system_dirs = ['/etc', '/etc/mysql', '/usr/local/etc']
+
+        return [os.path.join(dir, self.filename) for dir in system_dirs]
 
     def user_config_file(self):
         """Get the path to the user's config file."""
-        if WIN:
-            return super(self.__class__, self).user_config_file()
-        else:
-            return os.path.expanduser(os.path.join('~', '.{}'.format(
-                self.filename)))
+        return os.path.expanduser(os.path.join('~', '.{}'.format(
+            self.filename)))
 
     def login_path_file(self):
         """Return the login path file's path or None if it doesn't exist."""
@@ -117,11 +108,9 @@ class MyCliConfig(Config):
         super(MyCliConfig, self).__init__(app_name, app_author, filename,
                                           **kwargs)
 
-        # TODO: look into other MySQL server versions.
         self.mysql = MySqlConfig(
-            'MySQL Server 5.7', 'MySQL', self.mysql_filename,
-            default=self.default_mysql_file(), validate=True,
-            defaults_file=mysql_defaults_file,
+            None, None, self.mysql_filename, default=self.default_mysql_file(),
+            validate=True, defaults_file=mysql_defaults_file,
             defaults_suffix=mysql_defaults_suffix, login_path=mysql_login_path)
 
     def read(self):
@@ -131,16 +120,24 @@ class MyCliConfig(Config):
     def user_config_file(self):
         """Use the legacy config file if the new config file doesn't exist."""
         config_file = super(self.__class__, self).user_config_file()
-        legacy_file = os.path.expanduser('~/.myclirc')
+        legacy_file = self.legacy_config_file()
         if not os.path.exists(config_file) and os.path.exists(legacy_file):
             return legacy_file
         return config_file
+
+    def legacy_config_file(self):
+        return os.path.expanduser('~/.myclirc')
 
     def default_mysql_file(self):
         return os.path.join(PACKAGE_ROOT, self.mysql_filename)
 
     def default_config_file(self):
         return os.path.join(PACKAGE_ROOT, self.filename)
+
+    def legacy_file_loaded(self):
+        """Check if the legacy config file was loaded."""
+        return (self.config_filenames and
+                self.config_filenames[-1] == self.legacy_config_file())
 
 
 def log(logger, level, message):
