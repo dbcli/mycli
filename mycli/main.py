@@ -75,7 +75,7 @@ class MyCli(object):
 
         c = self.config = MyCliConfig(
             'mycli', 'dbcli', 'config', default=myclirc, validate=True,
-            write_default=False, mysql_defaults_file=defaults_file,
+            mysql_defaults_file=defaults_file,
             mysql_defaults_suffix=defaults_suffix, mysql_login_path=login_path)
         c.read()
 
