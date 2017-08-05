@@ -1014,17 +1014,16 @@ def need_completion_refresh(queries):
 
 def is_dropping_database(queries, dbname):
     """Determine if the query is dropping a specific database."""
-    for query in sqlparse.split(queries):
-        try:
-            stmt = sqlparse.parse(query)[0]
-            first_token = stmt.token_first(skip_cm=True)
-            _, second_token = stmt.token_next(0, skip_cm=True)
-            if (first_token.value.lower() == 'drop' and
-                    second_token.value.lower() in ('database', 'schema') and
-                    stmt.get_name().lower() == dbname.lower()):
-                return True
-        except Exception:
-            return False
+    if dbname is None:
+        return False
+
+    for query in sqlparse.parse(queries):
+        first_token = query.token_first(skip_cm=True)
+        _, second_token = query.token_next(0, skip_cm=True)
+        if (first_token.value.lower() == 'drop' and
+                second_token.value.lower() in ('database', 'schema') and
+                query.get_name().lower() == dbname.lower()):
+            return True
 
 
 def need_completion_reset(queries):
