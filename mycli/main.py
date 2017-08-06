@@ -855,7 +855,8 @@ class MyCli(object):
                 **output_kwargs)
 
             if isinstance(formatted, (str, text_type)):
-                formatted = iter(formatted.splitlines())
+                formatted = formatted.splitlines()
+            formatted = iter(formatted)
 
             first_line = next(formatted)
             formatted = itertools.chain([first_line], formatted)
