@@ -26,6 +26,7 @@ from prompt_toolkit.filters import Always, HasFocus, IsDone
 from prompt_toolkit.layout.processors import (HighlightMatchingBracketProcessor,
                                               ConditionalProcessor)
 from prompt_toolkit.history import FileHistory
+from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from pygments.token import Token
 
 from .packages.special.main import NO_QUERY
@@ -52,7 +53,7 @@ try:
     FileNotFoundError = OSError
 except ImportError:
     from urllib.parse import urlparse
-from pymysql import OperationalError
+from pymysql import OperationalError, converters
 
 from collections import namedtuple
 
@@ -143,6 +144,7 @@ class MyCli(object):
         self.prompt_format = prompt or prompt_cnf or c['main']['prompt'] or \
                              self.default_prompt
         self.prompt_continuation_format = c['main']['prompt_continuation']
+        keyword_casing = c['main'].get('keyword_casing', 'auto')
 
         self.query_history = []
 
@@ -150,7 +152,8 @@ class MyCli(object):
         self.smart_completion = c['main'].as_bool('smart_completion')
         self.completer = SQLCompleter(
             self.smart_completion,
-            supported_formats=self.formatter.supported_formats)
+            supported_formats=self.formatter.supported_formats,
+            keyword_casing=keyword_casing)
         self._completer_lock = threading.Lock()
 
         # Register custom special commands.
@@ -436,6 +439,7 @@ class MyCli(object):
         return document
 
     def run_cli(self):
+        iterations = 0
         sqlexecute = self.sqlexecute
         logger = self.logger
         self.configure_pager()
@@ -464,6 +468,9 @@ class MyCli(object):
         def get_continuation_tokens(cli, width):
             continuation_prompt = self.get_prompt(self.prompt_continuation_format)
             return [(Token.Continuation, ' ' * (width - len(continuation_prompt)) + continuation_prompt)]
+
+        def show_suggestion_tip():
+            return iterations < 2
 
         def one_iteration(document=None):
             if document is None:
@@ -605,8 +612,9 @@ class MyCli(object):
             query = Query(document.text, successful, mutating)
             self.query_history.append(query)
 
-
-        get_toolbar_tokens = create_toolbar_tokens_func(self.completion_refresher.is_refreshing)
+        get_toolbar_tokens = create_toolbar_tokens_func(
+            self.completion_refresher.is_refreshing,
+            show_suggestion_tip)
 
         layout = create_prompt_layout(
             lexer=MyCliLexer,
@@ -623,8 +631,10 @@ class MyCli(object):
         )
         with self._completer_lock:
             buf = CLIBuffer(always_multiline=self.multi_line, completer=self.completer,
-                    history=FileHistory(os.path.expanduser(os.environ.get('MYCLI_HISTFILE', '~/.mycli-history'))),
-                    complete_while_typing=Always(), accept_action=AcceptAction.RETURN_DOCUMENT)
+                            history=FileHistory(os.path.expanduser(
+                                os.environ.get('MYCLI_HISTFILE', '~/.mycli-history'))),
+                            auto_suggest=AutoSuggestFromHistory(),
+                            complete_while_typing=Always(), accept_action=AcceptAction.RETURN_DOCUMENT)
 
             if self.key_bindings == 'vi':
                 editing_mode = EditingMode.VI
@@ -644,6 +654,7 @@ class MyCli(object):
         try:
             while True:
                 one_iteration()
+                iterations += 1
         except EOFError:
             special.close_tee()
             if not self.less_chatty:
@@ -754,7 +765,8 @@ class MyCli(object):
         self.completion_refresher.refresh(
             self.sqlexecute, self._on_completions_refreshed,
             {'smart_completion': self.smart_completion,
-             'supported_formats': self.formatter.supported_formats})
+             'supported_formats': self.formatter.supported_formats,
+             'keyword_casing': self.completer.keyword_casing})
 
         return [(None, None, None,
                 'Auto-completion refresh started in the background.')]
@@ -827,9 +839,19 @@ class MyCli(object):
             output = itertools.chain(output, [title])
 
         if cur:
-            rows = list(cur)
+            column_types = None
+            if hasattr(cur, 'description'):
+                def sanitize(col):
+                    return col if type(col) is type else text_type
+                column_types = [sanitize(converters.decoders[col[1]])
+                                for col in cur.description]
+
+            if max_width is not None:
+                cur = list(cur)
+
             formatted = self.formatter.format_output(
-                rows, headers, format_name='vertical' if expanded else None,
+                cur, headers, format_name='vertical' if expanded else None,
+                column_types=column_types,
                 **output_kwargs)
 
             if isinstance(formatted, (str, text_type)):
@@ -838,10 +860,10 @@ class MyCli(object):
             first_line = next(formatted)
             formatted = itertools.chain([first_line], formatted)
 
-            if (not expanded and max_width and headers and rows and
+            if (not expanded and max_width and headers and cur and
                     len(first_line) > max_width):
                 formatted = self.formatter.format_output(
-                    rows, headers, format_name='vertical', **output_kwargs)
+                    rows, headers, format_name='vertical', column_types=column_types, **output_kwargs)
                 if isinstance(formatted, (str, text_type)):
                     formatted = iter(formatted.splitlines())
 
@@ -855,7 +877,7 @@ class MyCli(object):
         reserved_space_ratio = .45
         max_reserved_space = 8
         _, height = click.get_terminal_size()
-        return min(round(height * reserved_space_ratio), max_reserved_space)
+        return min(int(round(height * reserved_space_ratio)), max_reserved_space)
 
     def get_last_query(self):
         """Get the last query executed or None."""

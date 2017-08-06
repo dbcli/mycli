@@ -13,7 +13,7 @@ class CompletionRefresher(object):
         self._completer_thread = None
         self._restart_refresh = threading.Event()
 
-    def refresh(self, executor, callbacks, completer_options={}):
+    def refresh(self, executor, callbacks, completer_options=None):
         """Creates a SQLCompleter object and populates it with the relevant
         completion suggestions in a background thread.
 
@@ -25,6 +25,9 @@ class CompletionRefresher(object):
         completer_options - dict of options to pass to SQLCompleter.
 
         """
+        if completer_options is None:
+            completer_options = {}
+
         if self.is_refreshing():
             self._restart_refresh.set()
             return [(None, None, None, 'Auto-completion refresh restarted.')]

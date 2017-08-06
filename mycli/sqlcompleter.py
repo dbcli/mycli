@@ -49,7 +49,7 @@ class SQLCompleter(Completer):
 
     users = []
 
-    def __init__(self, smart_completion=True, supported_formats=()):
+    def __init__(self, smart_completion=True, supported_formats=(), keyword_casing='auto'):
         super(self.__class__, self).__init__()
         self.smart_completion = smart_completion
         self.reserved_words = set()
@@ -59,6 +59,9 @@ class SQLCompleter(Completer):
 
         self.special_commands = []
         self.table_formats = supported_formats
+        if keyword_casing not in ('upper', 'lower', 'auto'):
+            keyword_casing = 'auto'
+        self.keyword_casing = keyword_casing
         self.reset_completions()
 
     def escape_name(self, name):
@@ -195,7 +198,7 @@ class SQLCompleter(Completer):
         self.all_completions = set(self.keywords + self.functions)
 
     @staticmethod
-    def find_matches(text, collection, start_only=False, fuzzy=True):
+    def find_matches(text, collection, start_only=False, fuzzy=True, casing=None):
         """Find completion matches for the given text.
 
         Given the user's input text and a collection of available
@@ -209,7 +212,8 @@ class SQLCompleter(Completer):
         yields prompt_toolkit Completion instances for any matches found
         in the collection of available completions.
         """
-        text = last_word(text, include='most_punctuations').lower()
+        last = last_word(text, include='most_punctuations')
+        text = last.lower()
 
         completions = []
 
@@ -227,7 +231,16 @@ class SQLCompleter(Completer):
                 if match_point >= 0:
                     completions.append((len(text), match_point, item))
 
-        return (Completion(z, -len(text)) for x, y, z in sorted(completions))
+        if casing == 'auto':
+            casing = 'lower' if last and last[-1].islower() else 'upper'
+
+        def apply_case(kw):
+            if casing == 'upper':
+                return kw.upper()
+            return kw.lower()
+
+        return (Completion(z if casing is None else apply_case(z), -len(text))
+                for x, y, z in sorted(completions))
 
     def get_completions(self, document, complete_event, smart_completion=None):
         word_before_cursor = document.get_word_before_cursor(WORD=True)
@@ -278,7 +291,8 @@ class SQLCompleter(Completer):
                     predefined_funcs = self.find_matches(word_before_cursor,
                                                          self.functions,
                                                          start_only=True,
-                                                         fuzzy=False)
+                                                         fuzzy=False,
+                                                         casing=self.keyword_casing)
                     completions.extend(predefined_funcs)
 
             elif suggestion['type'] == 'table':
@@ -305,7 +319,8 @@ class SQLCompleter(Completer):
             elif suggestion['type'] == 'keyword':
                 keywords = self.find_matches(word_before_cursor, self.keywords,
                                              start_only=True,
-                                             fuzzy=False)
+                                             fuzzy=False,
+                                             casing=self.keyword_casing)
                 completions.extend(keywords)
 
             elif suggestion['type'] == 'show':

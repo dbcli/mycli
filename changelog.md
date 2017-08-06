@@ -1,5 +1,28 @@
-TBD
-===
+TBD:
+=======
+
+Bug Fixes:
+----------
+
+* Prevent missing MySQL help database from causing errors in completions (Thanks: [Thomas Roten]).
+* Fix mycli from crashing with small terminal windows under Python 2 (Thanks: [Thomas Roten]).
+
+Internal Changes:
+-----------------
+
+* Use less memory when formatting results for display (Thanks: [Dick Marinus]).
+
+1.12.0:
+=======
+
+Features:
+---------
+
+* Add fish-style auto-suggestion from history. (Thanks: [Amjith Ramanujam])
+
+
+1.11.0:
+=======
 
 Features:
 ---------
@@ -14,6 +37,7 @@ Features:
 * Output status text in a more intuitive way (Thanks: [Thomas Roten]).
 * Output via generator. (Thanks: Dick Marinus).
 * Add colored/styled headers and odd/even rows (Thanks: [Thomas Roten]).
+* Keyword completion casing (upper/lower/auto) (Thanks: [Irina Truong]).
 
 Bug Fixes:
 ----------

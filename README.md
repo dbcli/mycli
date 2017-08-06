@@ -6,7 +6,8 @@
 
 A command line client for MySQL that can do auto-completion and syntax highlighting.
 
-HomePage: [http://mycli.net](http://mycli.net)
+HomePage: [http://mycli.net](http://mycli.net)  
+Documentation: [http://mycli.net/docs](http://mycli.net/docs)
 
 ![Completion](screenshots/tables.png)
 ![CompletionGif](screenshots/main.gif)
@@ -27,7 +28,7 @@ $ pip install -U mycli
 or
 
 ```
-$ brew update && brew install mycli  # Only on OS X
+$ brew update && brew install mycli  # Only on macOS
 ```
 
 or
@@ -99,7 +100,7 @@ Features
 * Timing of sql statments and table rendering.
 * Config file is automatically created at ``~/.myclirc`` at first launch.
 * Log every query and its results to a file (disabled by default).
-* Pretty prints tabular data.
+* Pretty prints tabular data (with colors!)
 * Support for SSL connections
 
 Contributions:
@@ -156,28 +157,20 @@ and printing error messages.
 
 Thanks to [PyMysql](https://github.com/PyMySQL/PyMySQL) for a pure python adapter to MySQL database.
 
-[Tabulate](https://pypi.python.org/pypi/tabulate) library is used for pretty printing the output of tables.
-
 
 ### Compatibility
 
-Tests have been run on OS X and Linux.
+Mycli is tested on macOS and Linux.
 
-THIS HAS NOT BEEN TESTED IN WINDOWS, but the libraries used in this app are Windows compatible. This means it should work without any modifications. If you're unable to run it on Windows, please file a bug. I will try my best to fix it.
+**Mycli is not tested on Windows**, but the libraries used in this app are Windows-compatible.
+This means it should work without any modifications. If you're unable to run it
+on Windows, please [file a bug](https://github.com/dbcli/mycli/issues/new).
 
-### Use with pager (mysql workaround)
-As described [here](https://github.com/dbcli/mycli/issues/281), " we only read the [client] section of my.cnf not the [mysql] section".
+### Configuration and Usage
 
-So, if you want to use a pager, your .my.cnf file should looks like this:
+For more information on using and configuring mycli, [check out our documentation](http://mycli.net/docs).
 
-```
-[client]
-pager = mypager
-```
-
-instead of this:
-
-```
-[mysql]
-pager = mypager
-```
+Common topics include:
+- [Configuring mycli](http://mycli.net/config)
+- [Using/Disabling the pager](http://mycli.net/pager)
+- [Syntax colors](http://mycli.net/syntax)
