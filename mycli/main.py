@@ -1017,12 +1017,21 @@ def is_dropping_database(queries, dbname):
     if dbname is None:
         return False
 
+    def normalize_db_name(db):
+        return db.lower().strip('`"')
+
+    dbname = normalize_db_name(dbname)
+
     for query in sqlparse.parse(queries):
+        if query.get_name() is None:
+            continue
+
         first_token = query.token_first(skip_cm=True)
         _, second_token = query.token_next(0, skip_cm=True)
+        database_name = normalize_db_name(query.get_name())
         if (first_token.value.lower() == 'drop' and
                 second_token.value.lower() in ('database', 'schema') and
-                query.get_name().lower() == dbname.lower()):
+                database_name == dbname):
             return True
 
 
