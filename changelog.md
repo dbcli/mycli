@@ -12,6 +12,11 @@ Internal Changes:
 -----------------
 
 * Use less memory when formatting results for display (Thanks: [Dick Marinus]).
+  This is done by passing the database cursor directly to `cli_helpers` and
+  allow generators for output formats. This also contains a change in the communication
+  between `cli_helpers` and `mycli`. The output from `cli_helpers` is now formatted as an
+  iterable with an unicode string for every line instead of a single unicode string with newline
+  characters.
 
 1.12.0:
 =======
@@ -36,7 +41,6 @@ Features:
 * Display all result sets returned by stored procedures (Thanks: [Thomas Roten]).
 * Add current time to prompt options (Thanks: [Thomas Roten]).
 * Output status text in a more intuitive way (Thanks: [Thomas Roten]).
-* Output via generator. (Thanks: Dick Marinus).
 * Add colored/styled headers and odd/even rows (Thanks: [Thomas Roten]).
 * Keyword completion casing (upper/lower/auto) (Thanks: [Irina Truong]).
 
