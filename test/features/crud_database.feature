@@ -14,3 +14,11 @@ Feature: manipulate databases:
       then we see database connected
       when we connect to dbserver
       then we see database connected
+
+  Scenario: create and drop default database
+     When we create database
+      then we see database created
+      when we connect to tmp database
+      then we see database connected
+      when we drop database
+      then we see database dropped and no default database

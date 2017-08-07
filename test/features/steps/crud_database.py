@@ -43,6 +43,14 @@ def step_db_connect_test(context):
     context.cli.sendline('use {0}'.format(db_name))
 
 
+@when('we connect to tmp database')
+def step_db_connect_tmp(context):
+    """Send connect to database."""
+    db_name = context.conf['dbname_tmp']
+    context.currentdb = db_name
+    context.cli.sendline('use {0}'.format(db_name))
+
+
 @when('we connect to dbserver')
 def step_db_connect_dbserver(context):
     """Send connect to database."""
@@ -83,6 +91,21 @@ def step_see_db_created(context):
 def step_see_db_dropped(context):
     """Wait to see drop database output."""
     wrappers.expect_exact(context, 'Query OK, 0 rows affected', timeout=2)
+
+
+@then('we see database dropped and no default database')
+def step_see_db_dropped_no_default(context):
+    """Wait to see drop database output."""
+    user = context.conf['user']
+    host = context.conf['host']
+    database = '(none)'
+    context.currentdb = None
+
+    wrappers.expect_exact(context, 'Query OK, 0 rows affected', timeout=2)
+    wrappers.expect_exact(context, 'mysql {0}@{1}:{2}> '.format(
+        user, host, database), timeout=5)
+
+    context.atprompt = True
 
 
 @then('we see database connected')
