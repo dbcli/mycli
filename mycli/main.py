@@ -710,8 +710,7 @@ class MyCli(object):
             output_via_pager = self.explicit_pager and special.is_pager_enabled()
             for i, line in enumerate(output, 1):
                 self.log_output(line)
-                # line needs to be casted to unicode for click with Python 2.7
-                special.write_tee(text_type(line))
+                special.write_tee(line)
                 special.write_once(line)
 
                 if fits or output_via_pager:
@@ -854,7 +853,7 @@ class MyCli(object):
                 column_types=column_types,
                 **output_kwargs)
 
-            if isinstance(formatted, (str, text_type)):
+            if isinstance(formatted, (text_type)):
                 formatted = formatted.splitlines()
             formatted = iter(formatted)
 
@@ -865,7 +864,7 @@ class MyCli(object):
                     len(first_line) > max_width):
                 formatted = self.formatter.format_output(
                     cur, headers, format_name='vertical', column_types=column_types, **output_kwargs)
-                if isinstance(formatted, (str, text_type)):
+                if isinstance(formatted, (text_type)):
                     formatted = iter(formatted.splitlines())
 
             output = itertools.chain(output, formatted)
