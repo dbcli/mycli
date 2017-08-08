@@ -12,11 +12,7 @@ Internal Changes:
 -----------------
 
 * Use less memory when formatting results for display (Thanks: [Dick Marinus]).
-  This is done by passing the database cursor directly to `cli_helpers` and
-  allow generators for output formats. This also contains a change in the communication
-  between `cli_helpers` and `mycli`. The output from `cli_helpers` is now formatted as an
-  iterable with an unicode string for every line instead of a single unicode string seperated by
-  newline characters.
+* Preliminary work for a future change in outputting results that uses less memory (Thanks: [Dick Marinus]).
 
 1.12.0:
 =======
