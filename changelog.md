@@ -12,6 +12,7 @@ Internal Changes:
 -----------------
 
 * Use less memory when formatting results for display (Thanks: [Dick Marinus]).
+* Preliminary work for a future change in outputting results that uses less memory (Thanks: [Dick Marinus]).
 
 1.12.0:
 =======
