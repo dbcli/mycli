@@ -1,3 +1,11 @@
+TBD
+===
+
+Bug Fixes:
+----------
+
+* Fix UnicodeEncodeError when editing sql command in external editor
+
 1.12.1:
 =======
 
