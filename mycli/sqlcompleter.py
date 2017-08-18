@@ -9,6 +9,7 @@ from prompt_toolkit.completion import Completer, Completion
 from .packages.completion_engine import suggest_type
 from .packages.parseutils import last_word
 from .packages.special.favoritequeries import favoritequeries
+from .packages.filepaths import parse_path, complete_path, suggest_path
 
 _logger = logging.getLogger(__name__)
 
@@ -358,8 +359,24 @@ class SQLCompleter(Completer):
                                             self.table_formats,
                                             start_only=True, fuzzy=False)
                 completions.extend(formats)
+            elif suggestion['type'] == 'file_name':
+                file_names = self.find_files(word_before_cursor)
+                completions.extend(file_names)
 
         return completions
+
+    def find_files(self, word):
+        """Yield matching directory or file names.
+
+        :param word:
+        :return: iterable
+        """
+        base_path, last_path, position = parse_path(word)
+        paths = suggest_path(word)
+        for name in sorted(paths):
+            suggestion = complete_path(name, last_path)
+            if suggestion:
+                yield Completion(suggestion, position)
 
     def populate_scoped_cols(self, scoped_tbls):
         """Find all columns in a set of scoped_tables

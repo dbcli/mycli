@@ -289,6 +289,8 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
                 prev_keyword, text_before_cursor, full_text, identifier)
         else:
             return []
+    elif text_before_cursor.lower().startswith('source'):
+        return[{'type': 'file_name'}]
     else:
         return [{'type': 'keyword'}]
 
