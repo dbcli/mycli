@@ -227,6 +227,9 @@ class SQLExecute(object):
                               self.version_comment_query_mysql4)
                 cur.execute(self.version_comment_query_mysql4)
                 version_comment = cur.fetchone()[1].lower()
+                if isinstance(version_comment, bytes):
+                    # with python3 this query returns bytes
+                    version_comment = version_comment.decode('utf-8')
             else:
                 _logger.debug('Version Comment. sql: %r',
                               self.version_comment_query)
