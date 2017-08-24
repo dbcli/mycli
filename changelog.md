@@ -5,6 +5,7 @@ Bug Fixes:
 ----------
 
 * Fix UnicodeEncodeError when editing sql command in external editor
+* Fix MySQL4 version comment retrieval (Thanks: [François Pietka])
 
 1.12.1:
 =======
@@ -499,3 +500,4 @@ Bug Fixes:
 [Casper Langemeijer]: https://github.com/langemeijer
 [Scrappy Soft]: https://github.com/scrappysoft
 [Dick Marinus]: https://github.com/meeuw
+[François Pietka]: https://github.com/fpietka
