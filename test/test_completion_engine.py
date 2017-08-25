@@ -495,3 +495,14 @@ def test_cross_join():
 def test_after_as(expression):
     suggestions = suggest_type(expression, expression)
     assert set(suggestions) == set()
+
+
+@pytest.mark.parametrize('expression', [
+    'source ',
+    'truncate table test; source ',
+    'truncate table test ; source ',
+    'truncate table test;source ',
+])
+def test_source_is_file(expression):
+    suggestions = suggest_type(expression, expression)
+    assert suggestions == [{'type': 'file_name'}]
