@@ -370,6 +370,7 @@ class SQLCompleter(Completer):
 
         :param word:
         :return: iterable
+
         """
         base_path, last_path, position = parse_path(word)
         paths = suggest_path(word)

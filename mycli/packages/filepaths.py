@@ -7,6 +7,7 @@ def list_path(root_dir):
 
     :param dir: str
     :return: list
+
     """
     res = []
     if os.path.exists(root_dir):
@@ -24,6 +25,7 @@ def complete_path(curr_dir, last_dir):
     :param curr_dir: str
     :param last_dir: str
     :return: str
+
     """
     if not last_dir or curr_dir.startswith(last_dir):
         return curr_dir
@@ -38,6 +40,7 @@ def parse_path(root_dir):
 
     :param root_dir: str path
     :return: tuple of (string, string, int)
+
     """
     base_dir, last_dir, position = '', '', 0
     if root_dir:
@@ -54,6 +57,7 @@ def suggest_path(root_dir):
 
     :param root_dir: string: directory to list
     :return: list
+
     """
     if not root_dir:
         return [os.path.abspath(os.sep), '~', os.curdir, os.pardir]
