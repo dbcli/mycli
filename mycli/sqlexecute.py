@@ -17,6 +17,7 @@ class SQLExecute(object):
     version_query = '''SELECT @@VERSION'''
 
     version_comment_query = '''SELECT @@VERSION_COMMENT'''
+    version_comment_query_mysql4 = '''SHOW VARIABLES LIKE "version_comment"'''
 
     show_candidates_query = '''SELECT name from mysql.help_topic WHERE name like "SHOW %"'''
 
@@ -221,9 +222,19 @@ class SQLExecute(object):
             _logger.debug('Version Query. sql: %r', self.version_query)
             cur.execute(self.version_query)
             version = cur.fetchone()[0]
-            _logger.debug('Version Comment. sql: %r', self.version_comment_query)
-            cur.execute(self.version_comment_query)
-            version_comment = cur.fetchone()[0].lower()
+            if version[0] == '4':
+                _logger.debug('Version Comment. sql: %r',
+                              self.version_comment_query_mysql4)
+                cur.execute(self.version_comment_query_mysql4)
+                version_comment = cur.fetchone()[1].lower()
+                if isinstance(version_comment, bytes):
+                    # with python3 this query returns bytes
+                    version_comment = version_comment.decode('utf-8')
+            else:
+                _logger.debug('Version Comment. sql: %r',
+                              self.version_comment_query)
+                cur.execute(self.version_comment_query)
+                version_comment = cur.fetchone()[0].lower()
 
         if 'mariadb' in version_comment:
             product_type = 'mariadb'
