@@ -1,4 +1,5 @@
 from mycli.packages.completion_engine import suggest_type
+import os
 import pytest
 
 
@@ -498,6 +499,10 @@ def test_after_as(expression):
 
 
 @pytest.mark.parametrize('expression', [
+    '\\. ',
+    'select 1; \\. ',
+    'select 1;\\. ',
+    'select 1 ; \\. ',
     'source ',
     'truncate table test; source ',
     'truncate table test ; source ',
