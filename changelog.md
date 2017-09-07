@@ -1,6 +1,11 @@
 TBD
 ===
 
+Features:
+---------
+
+* Add file name completion for source command (issue #500). (Thanks: [Irina Truong]).
+
 Bug Fixes:
 ----------
 

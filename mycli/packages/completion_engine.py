@@ -1,4 +1,5 @@
 from __future__ import print_function
+import os
 import sys
 import sqlparse
 from sqlparse.sql import Comparison, Identifier, Where
@@ -83,7 +84,7 @@ def suggest_type(full_text, text_before_cursor):
         # Be careful here because trivial whitespace is parsed as a statement,
         # but the statement won't have a first token
         tok1 = statement.token_first()
-        if tok1 and tok1.value == '\\':
+        if tok1 and tok1.value in ['\\', 'source']:
             return suggest_special(text_before_cursor)
 
     last_token = statement and statement.token_prev(len(statement.tokens))[1] or ''
@@ -115,8 +116,11 @@ def suggest_special(text):
             {'type': 'view', 'schema': []},
             {'type': 'schema'},
         ]
+    elif cmd in ['\\.', 'source']:
+        return[{'type': 'file_name'}]
 
     return [{'type': 'keyword'}, {'type': 'special'}]
+
 
 def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier):
     if isinstance(token, string_types):

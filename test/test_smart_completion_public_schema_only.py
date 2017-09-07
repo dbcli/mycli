@@ -1,6 +1,7 @@
 # coding: utf-8
 from __future__ import unicode_literals
 import pytest
+from mock import patch
 from prompt_toolkit.completion import Completion
 from prompt_toolkit.document import Document
 
@@ -321,3 +322,45 @@ def test_un_escaped_table_names(completer, complete_event):
         Completion(text='`ABC`', start_position=0), ] +
         list(map(Completion, completer.functions)) +
         list(map(Completion, completer.keywords)))
+
+
+def dummy_list_path(dir_name):
+    dirs = {
+        '/': [
+            'dir1',
+            'file1.sql',
+            'file2.sql',
+        ],
+        '/dir1': [
+            'subdir1',
+            'subfile1.sql',
+            'subfile2.sql',
+        ],
+        '/dir1/subdir1': [
+            'lastfile.sql',
+        ],
+    }
+    return dirs.get(dir_name, [])
+
+
+@patch('mycli.packages.filepaths.list_path', new=dummy_list_path)
+@pytest.mark.parametrize('text,expected', [
+    ('source ',  [('~', 0),
+                  ('/', 0),
+                  ('.', 0),
+                  ('..', 0)]),
+    ('source /', [('dir1', 0),
+                  ('file1.sql', 0),
+                  ('file2.sql', 0)]),
+    ('source /dir1/', [('subdir1', 0),
+                       ('subfile1.sql', 0),
+                       ('subfile2.sql', 0)]),
+    ('source /dir1/subdir1/', [('lastfile.sql', 0)]),
+])
+def test_file_name_completion(completer, complete_event, text, expected):
+    position = len(text)
+    result = set(completer.get_completions(
+        Document(text=text, cursor_position=position),
+        complete_event))
+    expected = set([Completion(txt, pos) for txt, pos in expected])
+    assert result == expected
