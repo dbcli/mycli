@@ -34,7 +34,7 @@ import mycli.packages.special as special
 from .sqlcompleter import SQLCompleter
 from .clitoolbar import create_toolbar_tokens_func
 from .clistyle import style_factory
-from .sqlexecute import SQLExecute
+from .sqlexecute import FIELD_TYPES, SQLExecute
 from .clibuffer import CLIBuffer
 from .completion_refresher import CompletionRefresher
 from .config import (write_default_config, get_mylogin_cnf_path,
@@ -846,7 +846,7 @@ class MyCli(object):
             if hasattr(cur, 'description'):
                 def sanitize(col):
                     return col if type(col) is type else text_type
-                column_types = [sanitize(converters.decoders[col[1]])
+                column_types = [sanitize(FIELD_TYPES.get(col[1]))
                                 for col in cur.description]
 
             if max_width is not None:
