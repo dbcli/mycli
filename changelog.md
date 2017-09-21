@@ -11,6 +11,8 @@ Bug Fixes:
 
 * Fix UnicodeEncodeError when editing sql command in external editor
 * Fix MySQL4 version comment retrieval (Thanks: [François Pietka])
+* Fix error that occurred when outputting JSON and NULL data (Thanks: [Thomas
+  Roten]).
 
 1.12.1:
 =======
