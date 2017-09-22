@@ -1,5 +1,5 @@
-TBD
-===
+1.13.0:
+=======
 
 Features:
 ---------
@@ -9,7 +9,7 @@ Features:
 Bug Fixes:
 ----------
 
-* Fix UnicodeEncodeError when editing sql command in external editor
+* Fix UnicodeEncodeError when editing sql command in external editor (Thanks: Klaus Wünschel).
 * Fix MySQL4 version comment retrieval (Thanks: [François Pietka])
 * Fix error that occurred when outputting JSON and NULL data (Thanks: [Thomas Roten]).
 
