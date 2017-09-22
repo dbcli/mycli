@@ -844,10 +844,10 @@ class MyCli(object):
         if cur:
             column_types = None
             if hasattr(cur, 'description'):
-                def sanitize(col):
-                    return col if type(col) is type else text_type
-                column_types = [sanitize(FIELD_TYPES.get(col[1], text_type))
-                                for col in cur.description]
+                def get_col_type(col):
+                    col_type = FIELD_TYPES.get(col[1], text_type)
+                    return col_type if type(col_type) is type else text_type
+                column_types = [get_col_type(col) for col in cur.description]
 
             if max_width is not None:
                 cur = list(cur)
