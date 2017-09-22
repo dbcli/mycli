@@ -4,9 +4,15 @@ import sqlparse
 from .packages import special
 from pymysql.constants import FIELD_TYPE
 from pymysql.converters import (convert_mysql_timestamp, convert_datetime,
-                                convert_timedelta, convert_date, conversions)
+                                convert_timedelta, convert_date, conversions,
+                                decoders)
 
 _logger = logging.getLogger(__name__)
+
+FIELD_TYPES = decoders.copy()
+FIELD_TYPES.update({
+    FIELD_TYPE.NULL: type(None)
+})
 
 class SQLExecute(object):
 
