@@ -1,3 +1,11 @@
+TBD
+=======
+
+Bug Fixes:
+----------
+
+* Fix keyword completion suggestion for `SHOW` (Thanks: [Thomas Roten]).
+
 1.13.0:
 =======
 
