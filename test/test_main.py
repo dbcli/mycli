@@ -20,8 +20,13 @@ except NameError:
 default_config_file = os.path.abspath(os.path.join(
     os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mycli'),
     'myclirc'))
+login_path_file = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                               'mylogin.cnf'))
+
+os.environ['MYSQL_TEST_LOGIN_FILE'] = login_path_file
 CLI_ARGS = ['--user', USER, '--host', HOST, '--port', PORT,
             '--password', PASSWORD, '--myclirc', default_config_file,
+            '--defaults-file', default_config_file,
             '_test_db']
 
 
