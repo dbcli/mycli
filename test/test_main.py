@@ -17,8 +17,12 @@ try:
 except NameError:
     text_type = str
 
+default_config_file = os.path.abspath(os.path.join(
+    os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mycli'),
+    'myclirc'))
 CLI_ARGS = ['--user', USER, '--host', HOST, '--port', PORT,
-            '--password', PASSWORD, '_test_db']
+            '--password', PASSWORD, '--myclirc', default_config_file,
+            '_test_db']
 
 
 @dbtest
