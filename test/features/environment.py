@@ -19,6 +19,10 @@ def before_all(context):
     os.environ['COLUMNS'] = "100"
     os.environ['EDITOR'] = 'ex'
 
+    login_path_file = os.path.abspath(os.path.join(
+        os.path.dirname(os.path.dirname(__file__)), 'mylogin.cnf'))
+    os.environ['MYSQL_TEST_LOGIN_FILE'] = login_path_file
+
     context.package_root = os.path.abspath(
         os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
