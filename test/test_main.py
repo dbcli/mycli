@@ -17,11 +17,10 @@ try:
 except NameError:
     text_type = str
 
-default_config_file = os.path.abspath(os.path.join(
-    os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mycli'),
-    'myclirc'))
-login_path_file = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                               'mylogin.cnf'))
+test_dir = os.path.abspath(os.path.dirname(__file__))
+project_dir = os.path.dirname(test_dir)
+default_config_file = os.path.join(project_dir, 'mycli', 'myclirc')
+login_path_file = os.path.join(test_dir, 'mylogin.cnf')
 
 os.environ['MYSQL_TEST_LOGIN_FILE'] = login_path_file
 CLI_ARGS = ['--user', USER, '--host', HOST, '--port', PORT,

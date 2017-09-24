@@ -35,6 +35,8 @@ def run_cli(context, run_args=None):
         run_args.extend(('-D', context.conf['dbname']))
     if context.conf.get('defaults-file', None):
         run_args.extend(('--defaults-file', context.conf['defaults-file']))
+    if context.conf.get('myclirc', None):
+        run_args.extend(('--myclirc', context.conf['myclirc']))
     cli_cmd = context.conf.get('cli_command', None) or sys.executable + \
         ' -c "import coverage ; coverage.process_startup(); import mycli.main; mycli.main.cli()"'
 
