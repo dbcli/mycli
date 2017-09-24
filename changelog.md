@@ -1,3 +1,11 @@
+TBD:
+=======
+
+Internal Changes:
+-----------------
+
+* Make tests ignore user config files (Thanks: [Thomas Roten]).
+
 1.13.0:
 =======
 
