@@ -17,8 +17,16 @@ try:
 except NameError:
     text_type = str
 
+test_dir = os.path.abspath(os.path.dirname(__file__))
+project_dir = os.path.dirname(test_dir)
+default_config_file = os.path.join(project_dir, 'mycli', 'myclirc')
+login_path_file = os.path.join(test_dir, 'mylogin.cnf')
+
+os.environ['MYSQL_TEST_LOGIN_FILE'] = login_path_file
 CLI_ARGS = ['--user', USER, '--host', HOST, '--port', PORT,
-            '--password', PASSWORD, '_test_db']
+            '--password', PASSWORD, '--myclirc', default_config_file,
+            '--defaults-file', default_config_file,
+            '_test_db']
 
 
 @dbtest

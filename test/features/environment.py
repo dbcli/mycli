@@ -19,6 +19,10 @@ def before_all(context):
     os.environ['COLUMNS'] = "100"
     os.environ['EDITOR'] = 'ex'
 
+    test_dir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+    login_path_file = os.path.join(test_dir, 'mylogin.cnf')
+    os.environ['MYSQL_TEST_LOGIN_FILE'] = login_path_file
+
     context.package_root = os.path.abspath(
         os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
@@ -65,6 +69,8 @@ def before_all(context):
                 context.conf['pager_boundary'])
         )
     context.conf['defaults-file'] = my_cnf
+    context.conf['myclirc'] = os.path.join(context.package_root, 'mycli',
+                                           'myclirc')
 
     context.cn = dbutils.create_db(context.conf['host'], context.conf['user'],
                                    context.conf['pass'],
