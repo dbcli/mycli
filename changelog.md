@@ -6,6 +6,11 @@ Bug Fixes:
 
 * Prevent mycli from crashing when failing to read login path file (Thanks: [Thomas Roten]).
 
+Internal Changes:
+-----------------
+
+* Make tests ignore user config files (Thanks: [Thomas Roten]).
+
 1.13.0:
 =======
 
