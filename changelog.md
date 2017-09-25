@@ -1,3 +1,11 @@
+TBD:
+=======
+
+Bug Fixes:
+----------
+
+* Prevent mycli from crashing when failing to read login path file (Thanks: [Thomas Roten]).
+
 1.13.0:
 =======
 
