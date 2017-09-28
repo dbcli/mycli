@@ -328,7 +328,8 @@ class SQLCompleter(Completer):
                 show_items = self.find_matches(word_before_cursor,
                                                self.show_items,
                                                start_only=False,
-                                               fuzzy=True)
+                                               fuzzy=True,
+                                               casing=self.keyword_casing)
                 completions.extend(show_items)
 
             elif suggestion['type'] == 'change':
