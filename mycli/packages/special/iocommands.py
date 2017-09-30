@@ -4,6 +4,7 @@ import locale
 import logging
 import subprocess
 from io import open
+from time import sleep
 
 import click
 import sqlparse
@@ -331,3 +332,45 @@ def unset_once_if_written():
     global once_file
     if written_to_once_file:
         once_file = None
+
+
+@special_command(
+    'watch',
+    'watch [seconds] query',
+    'Executes the query every [seconds] seconds (by default 5).'
+)
+def watch_query(arg, **kwargs):
+    usage = "Syntax: watch [seconds] query.\n"
+    if not arg:
+        yield (None, None, None, usage)
+        raise StopIteration
+    try:
+        args = arg.split(' ')
+        seconds = int(args[0])
+        statement = " ".join(filter(None, args[1:])).strip()
+    except ValueError:
+        seconds = 5
+        statement = arg
+    if not statement:
+        yield (None, None, None, usage)
+        raise StopIteration
+    cur = kwargs['cur']
+    sql_list = [
+        (sql.rstrip(';'), '> %s' % (sql))
+        for sql in sqlparse.split(statement)
+    ]
+    while True:
+        try:
+            for (sql, title) in sql_list:
+                cur.execute(sql)
+                if cur.description:
+                    headers = [x[0] for x in cur.description]
+                    yield (title, cur, headers, None)
+                else:
+                    yield (title, None, None, None)
+            sleep(seconds)
+        except KeyboardInterrupt:
+            # This prints the Ctrl-C character in its own line, which prevents
+            # to print a line with the cursor positioned behind the prompt
+            click.secho("", nl=True)
+            raise StopIteration

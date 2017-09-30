@@ -118,7 +118,6 @@ class SQLExecute(object):
         # want to save them all together.
         if statement.startswith('\\fs'):
             components = [statement]
-
         else:
             components = sqlparse.split(statement)
 

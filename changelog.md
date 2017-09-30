@@ -1,3 +1,11 @@
+TBD:
+=======
+
+Features:
+---------
+
+* Add `watch [seconds] query` command to repeat a query every [seconds] seconds (by default 5).
+
 1.13.1:
 =======
 
