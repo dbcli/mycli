@@ -150,16 +150,17 @@ def test_watch_query_full():
 
     * Returns the expected results.
     * Executes the defined times inside the given interval, in this case with
-      a 2 seconds wait, it should execute 2 times inside a 3 seconds interval.
+      a 0.3 seconds wait, it should execute 4 times inside a 1 seconds
+      interval.
     * Stops at Ctrl-C
 
     """
-    watch_seconds = 2
-    wait_interval = 3
+    watch_seconds = 0.3
+    wait_interval = 1
     expected_value = "1"
     query = "SELECT {0!s}".format(expected_value)
     expected_title = '> {0!s}'.format(query)
-    expected_results = 2
+    expected_results = 4
     ctrl_c_process = send_ctrl_c(wait_interval)
     with db_connection().cursor() as cur:
         results = list(

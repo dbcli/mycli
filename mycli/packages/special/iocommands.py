@@ -346,7 +346,7 @@ def watch_query(arg, **kwargs):
         raise StopIteration
     try:
         args = arg.split(' ')
-        seconds = int(args[0])
+        seconds = float(args[0])
         statement = " ".join(filter(None, args[1:])).strip()
     except ValueError:
         seconds = 5
