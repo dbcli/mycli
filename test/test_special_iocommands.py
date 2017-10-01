@@ -7,7 +7,7 @@ import pytest
 
 import mycli.packages.special
 
-from utils import dbtest, db_connection
+from utils import dbtest, db_connection, send_ctrl_c
 
 
 def test_set_get_pager():
@@ -127,3 +127,48 @@ def test_parseargfile_no_file():
 
     with pytest.raises(TypeError):
         mycli.packages.special.iocommands.parseargfile('-o ')
+
+
+@dbtest
+def test_watch_query_iteration():
+    """Test that a single iteration of the result of `watch_query` executes
+    the desired query and returns the given results."""
+    expected_value = "1"
+    query = "SELECT {0!s}".format(expected_value)
+    expected_title = '> {0!s}'.format(query)
+    with db_connection().cursor() as cur:
+        result = next(mycli.packages.special.iocommands.watch_query(
+            arg=query, cur=cur
+        ))
+    assert result[0] == expected_title
+    assert result[2][0] == expected_value
+
+
+@dbtest
+def test_watch_query_full():
+    """Test that `watch_query`:
+
+    * Returns the expected results.
+    * Executes the defined times inside the given interval, in this case with
+      a 2 seconds wait, it should execute 2 times inside a 3 seconds interval.
+    * Stops at Ctrl-C
+
+    """
+    watch_seconds = 2
+    wait_interval = 3
+    expected_value = "1"
+    query = "SELECT {0!s}".format(expected_value)
+    expected_title = '> {0!s}'.format(query)
+    expected_results = 2
+    ctrl_c_process = send_ctrl_c(wait_interval)
+    with db_connection().cursor() as cur:
+        results = list(
+            result for result in mycli.packages.special.iocommands.watch_query(
+                arg='{0!s} {1!s}'.format(watch_seconds, query), cur=cur
+            )
+        )
+    ctrl_c_process.join(1)
+    assert len(results) == expected_results
+    for result in results:
+        assert result[0] == expected_title
+        assert result[2][0] == expected_value
