@@ -13,6 +13,7 @@ from . import export
 from .main import special_command, NO_QUERY, PARSED_QUERY
 from .favoritequeries import favoritequeries
 from .utils import handle_cd_command
+from ..prompt_utils import confirm_destructive_query
 
 TIMING_ENABLED = False
 use_expanded_output = False
@@ -354,6 +355,12 @@ def watch_query(arg, **kwargs):
     if not statement:
         yield (None, None, None, usage)
         raise StopIteration
+    destructive_prompt = confirm_destructive_query(statement)
+    if destructive_prompt is False:
+        click.secho("Wise choice!")
+        raise StopIteration
+    elif destructive_prompt is True:
+        click.secho("Your call!")
     cur = kwargs['cur']
     sql_list = [
         (sql.rstrip(';'), "> {0!s}".format(sql))
