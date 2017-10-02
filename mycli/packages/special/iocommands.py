@@ -356,11 +356,15 @@ def watch_query(arg, **kwargs):
         raise StopIteration
     cur = kwargs['cur']
     sql_list = [
-        (sql.rstrip(';'), '> %s' % (sql))
+        (sql.rstrip(';'), "> {0!s}".format(sql))
         for sql in sqlparse.split(statement)
     ]
+    old_pager_enabled = is_pager_enabled()
     while True:
         try:
+            # Somewhere in the code the pager its activated after every yield,
+            # so we disable it in every iteration
+            set_pager_enabled(False)
             for (sql, title) in sql_list:
                 cur.execute(sql)
                 if cur.description:
@@ -374,3 +378,5 @@ def watch_query(arg, **kwargs):
             # to print a line with the cursor positioned behind the prompt
             click.secho("", nl=True)
             raise StopIteration
+        finally:
+            set_pager_enabled(old_pager_enabled)
