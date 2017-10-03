@@ -13,7 +13,7 @@ from . import export
 from .main import special_command, NO_QUERY, PARSED_QUERY
 from .favoritequeries import favoritequeries
 from .utils import handle_cd_command
-from ..prompt_utils import confirm_destructive_query
+from mycli.packages.prompt_utils import confirm_destructive_query
 
 TIMING_ENABLED = False
 use_expanded_output = False
@@ -337,24 +337,37 @@ def unset_once_if_written():
 
 @special_command(
     'watch',
-    'watch [seconds] query',
+    'watch [seconds] [-c] query',
     'Executes the query every [seconds] seconds (by default 5).'
 )
 def watch_query(arg, **kwargs):
-    usage = "Syntax: watch [seconds] query.\n"
+    usage = """Syntax: watch [seconds] [-c] query.
+    * seconds: The interval at the query will be repeated, in seconds.
+               By default 5.
+    * -c: Clears the screen between every iteration.
+"""
     if not arg:
         yield (None, None, None, usage)
         raise StopIteration
-    try:
-        args = arg.split(' ')
-        seconds = float(args[0])
-        statement = " ".join(filter(None, args[1:])).strip()
-    except ValueError:
-        seconds = 5
-        statement = arg
-    if not statement:
-        yield (None, None, None, usage)
-        raise StopIteration
+    seconds = 5
+    clear_screen = False
+    statement = None
+    while statement is None:
+        arg = arg.strip()
+        if not arg:
+            # Oops, we parsed all the arguments without finding a statement
+            yield (None, None, None, usage)
+            raise StopIteration
+        (current_arg, _, arg) = arg.partition(' ')
+        try:
+            seconds = float(current_arg)
+            continue
+        except ValueError:
+            pass
+        if current_arg == '-c':
+            clear_screen = True
+            continue
+        statement = '{0!s} {1!s}'.format(current_arg, arg)
     destructive_prompt = confirm_destructive_query(statement)
     if destructive_prompt is False:
         click.secho("Wise choice!")
@@ -368,6 +381,8 @@ def watch_query(arg, **kwargs):
     ]
     old_pager_enabled = is_pager_enabled()
     while True:
+        if clear_screen:
+            click.clear()
         try:
             # Somewhere in the code the pager its activated after every yield,
             # so we disable it in every iteration
