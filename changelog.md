@@ -1,3 +1,11 @@
+TBD:
+=======
+
+Internal Changes:
+-----------------
+
+* Drop support for Python 3.3 (Thanks: [Thomas Roten]).
+
 1.13.1:
 =======
 
