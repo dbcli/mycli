@@ -1,6 +1,11 @@
 TBD:
 =======
 
+Features:
+---------
+
+* Add `watch [seconds] query` command to repeat a query every [seconds] seconds (by default 5). (Thanks: [David Caro](https://github.com/Terseus))
+
 Internal Changes:
 -----------------
 

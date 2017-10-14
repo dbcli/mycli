@@ -30,6 +30,7 @@ from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from pygments.token import Token
 
 from .packages.special.main import NO_QUERY
+from .packages.prompt_utils import confirm_destructive_query
 import mycli.packages.special as special
 from .sqlcompleter import SQLCompleter
 from .clitoolbar import create_toolbar_tokens_func
@@ -1098,35 +1099,6 @@ def is_select(status):
     if not status:
         return False
     return status.split(None, 1)[0].lower() == 'select'
-
-def query_starts_with(query, prefixes):
-    """Check if the query starts with any item from *prefixes*."""
-    prefixes = [prefix.lower() for prefix in prefixes]
-    formatted_sql = sqlparse.format(query.lower(), strip_comments=True)
-    return bool(formatted_sql) and formatted_sql.split()[0] in prefixes
-
-def queries_start_with(queries, prefixes):
-    """Check if any queries start with any item from *prefixes*."""
-    for query in sqlparse.split(queries):
-        if query and query_starts_with(query, prefixes) is True:
-            return True
-    return False
-
-def is_destructive(queries):
-    keywords = ('drop', 'shutdown', 'delete', 'truncate')
-    return queries_start_with(queries, keywords)
-
-def confirm_destructive_query(queries):
-    """Check if the query is destructive and prompts the user to confirm.
-    Returns:
-    None if the query is non-destructive or we can't prompt the user.
-    True if the query is destructive and the user wants to proceed.
-    False if the query is destructive and the user doesn't want to proceed.
-    """
-    prompt_text = ("You're about to run a destructive command.\n"
-                   "Do you want to proceed? (y/n)")
-    if is_destructive(queries) and sys.stdin.isatty():
-        return click.prompt(prompt_text, type=bool)
 
 
 def thanks_picker(files=()):

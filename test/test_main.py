@@ -3,9 +3,7 @@ import os
 import click
 from click.testing import CliRunner
 
-from mycli.main import (MyCli, cli, confirm_destructive_query,
-                        is_destructive, query_starts_with, queries_start_with,
-                        thanks_picker, PACKAGE_ROOT)
+from mycli.main import MyCli, cli, thanks_picker, PACKAGE_ROOT
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
 from utils import USER, HOST, PORT, PASSWORD, dbtest, run
 
@@ -139,52 +137,6 @@ def test_batch_mode_csv(executor):
 
     assert result.exit_code == 0
     assert expected in "".join(result.output)
-
-
-@dbtest
-def test_query_starts_with(executor):
-    query = 'USE test;'
-    assert query_starts_with(query, ('use', )) is True
-
-    query = 'DROP DATABASE test;'
-    assert query_starts_with(query, ('use', )) is False
-
-
-@dbtest
-def test_query_starts_with_comment(executor):
-    query = '# comment\nUSE test;'
-    assert query_starts_with(query, ('use', )) is True
-
-
-@dbtest
-def test_queries_start_with(executor):
-    sql = (
-        '# comment\n'
-        'show databases;'
-        'use foo;'
-    )
-    assert queries_start_with(sql, ('show', 'select')) is True
-    assert queries_start_with(sql, ('use', 'drop')) is True
-    assert queries_start_with(sql, ('delete', 'update')) is False
-
-
-@dbtest
-def test_is_destructive(executor):
-    sql = (
-        'use test;\n'
-        'show databases;\n'
-        'drop database foo;'
-    )
-    assert is_destructive(sql) is True
-
-
-@dbtest
-def test_confirm_destructive_query_notty(executor):
-    stdin = click.get_text_stream('stdin')
-    assert stdin.isatty() is False
-
-    sql = 'drop database foo;'
-    assert confirm_destructive_query(sql) is None
 
 
 def test_thanks_picker_utf8():

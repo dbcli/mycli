@@ -1,5 +1,7 @@
 import pytest
-from mycli.packages.parseutils import extract_tables
+from mycli.packages.parseutils import (
+    extract_tables, query_starts_with, queries_start_with, is_destructive
+)
 
 
 def test_empty_string():
@@ -100,3 +102,36 @@ def test_join_table_schema_qualified():
 def test_join_as_table():
     tables = extract_tables('SELECT * FROM my_table AS m WHERE m.a > 5')
     assert tables == [(None, 'my_table', 'm')]
+
+
+def test_query_starts_with():
+    query = 'USE test;'
+    assert query_starts_with(query, ('use', )) is True
+
+    query = 'DROP DATABASE test;'
+    assert query_starts_with(query, ('use', )) is False
+
+
+def test_query_starts_with_comment():
+    query = '# comment\nUSE test;'
+    assert query_starts_with(query, ('use', )) is True
+
+
+def test_queries_start_with():
+    sql = (
+        '# comment\n'
+        'show databases;'
+        'use foo;'
+    )
+    assert queries_start_with(sql, ('show', 'select')) is True
+    assert queries_start_with(sql, ('use', 'drop')) is True
+    assert queries_start_with(sql, ('delete', 'update')) is False
+
+
+def test_is_destructive():
+    sql = (
+        'use test;\n'
+        'show databases;\n'
+        'drop database foo;'
+    )
+    assert is_destructive(sql) is True
