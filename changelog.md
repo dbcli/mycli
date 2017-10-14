@@ -4,7 +4,12 @@ TBD:
 Features:
 ---------
 
-* Add `watch [seconds] query` command to repeat a query every [seconds] seconds (by default 5).
+* Add `watch [seconds] query` command to repeat a query every [seconds] seconds (by default 5). (Thanks: [David Caro](https://github.com/Terseus))
+
+Internal Changes:
+-----------------
+
+* Drop support for Python 3.3 (Thanks: [Thomas Roten]).
 
 1.13.1:
 =======
