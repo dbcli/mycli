@@ -64,11 +64,11 @@ wider_completion_menu = False
 # \s - Seconds of the current time
 # \t - Product type (Percona, MySQL, Mariadb)
 # \u - Username
-prompt = '\t \u@\h:\d> '
+prompt = '\u@\h:\d> '
 prompt_continuation = '-> '
 
 # Skip intro info on startup and outro info on exit
-less_chatty = False
+less_chatty = True
 
 # Use alias from --login-path instead of host name in prompt
 login_path_as_host = False
