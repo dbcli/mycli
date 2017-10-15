@@ -17,7 +17,7 @@ except NameError:
 
 test_dir = os.path.abspath(os.path.dirname(__file__))
 project_dir = os.path.dirname(test_dir)
-default_config_file = os.path.join(project_dir, 'mycli', 'myclirc')
+default_config_file = os.path.join(project_dir, 'test', 'myclirc')
 login_path_file = os.path.join(test_dir, 'mylogin.cnf')
 
 os.environ['MYSQL_TEST_LOGIN_FILE'] = login_path_file

@@ -70,7 +70,7 @@ def before_all(context):
                 context.conf['pager_boundary'])
         )
     context.conf['defaults-file'] = my_cnf
-    context.conf['myclirc'] = os.path.join(context.package_root, 'mycli',
+    context.conf['myclirc'] = os.path.join(context.package_root, 'test',
                                            'myclirc')
 
     context.cn = dbutils.create_db(context.conf['host'], context.conf['user'],
