@@ -8,5 +8,5 @@
 
 log_file = ~/.mycli.test.log
 log_level = DEBUG
-prompt = '\u@\h:\d> '
+prompt = '\t \u@\h:\d> '
 less_chatty = True
