@@ -357,16 +357,9 @@ class MyCli(object):
         else:
             socket = socket or cnf['socket']
         user = user or cnf['user'] or os.getenv('USER')
-        host = host or cnf['host'] or 'localhost'
-        port = port or cnf['port'] or 3306
+        host = host or cnf['host']
+        port = port or cnf['port']
         ssl = ssl or {}
-
-        try:
-            port = int(port)
-        except ValueError as e:
-            self.echo("Error: Invalid port number: '{0}'.".format(port),
-                        err=True, fg='red')
-            exit(1)
 
         passwd = passwd or cnf['password']
         charset = charset or cnf['default-character-set'] or 'utf8'
@@ -387,25 +380,62 @@ class MyCli(object):
 
         # Connect to the database.
 
-        try:
+        def _connect():
             try:
-                sqlexecute = SQLExecute(database, user, passwd, host, port,
-                        socket, charset, local_infile, ssl)
+                self.sqlexecute = SQLExecute(database, user, passwd, host, port,
+                                             socket, charset, local_infile, ssl)
             except OperationalError as e:
                 if ('Access denied for user' in e.args[1]):
-                    passwd = click.prompt('Password', hide_input=True,
-                                          show_default=False, type=str)
-                    sqlexecute = SQLExecute(database, user, passwd, host, port,
-                            socket, charset, local_infile, ssl)
+                    new_passwd = click.prompt('Password', hide_input=True,
+                                              show_default=False, type=str)
+                    self.sqlexecute = SQLExecute(database, user, new_passwd, host, port,
+                                                 socket, charset, local_infile, ssl)
                 else:
                     raise e
+
+        try:
+            if socket is host is port is None:
+                # Try a sensible default socket first (simplifies auth)
+                # If we get a connection error, try tcp/ip localhost
+                try:
+                    socket = '/var/run/mysqld/mysqld.sock'
+                    _connect()
+                except OperationalError as e:
+                    # These are "Can't open socket" and 2x "Can't connect"
+                    if [code for code in (2001, 2002, 2003) if code == e.args[0]]:
+                        self.logger.debug('Database connection failed: %r.', e)
+                        self.logger.error(
+                            "traceback: %r", traceback.format_exc())
+                        self.logger.debug('Retrying over TCP/IP')
+                        self.echo(str(e), err=True)
+                        self.echo(
+                            'Failed to connect by socket, retrying over TCP/IP', err=True)
+
+                        # Else fall back to TCP/IP localhost
+                        socket = ""
+                        host = 'localhost'
+                        port = 3306
+                        _connect()
+                    else:
+                        raise e
+            else:
+                host = host or 'localhost'
+                port = port or 3306
+
+                # Bad ports give particularly daft error messages
+                try:
+                    port = int(port)
+                except ValueError as e:
+                    self.echo("Error: Invalid port number: '{0}'.".format(port),
+                              err=True, fg='red')
+                    exit(1)
+
+                _connect()
         except Exception as e:  # Connecting to a database could fail.
             self.logger.debug('Database connection failed: %r.', e)
             self.logger.error("traceback: %r", traceback.format_exc())
             self.echo(str(e), err=True, fg='red')
             exit(1)
-
-        self.sqlexecute = sqlexecute
 
     def handle_editor_command(self, cli, document):
         """
