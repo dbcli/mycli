@@ -9,6 +9,7 @@ Features:
 Internal Changes:
 -----------------
 
+* Unicode output to click for Python 2.7 (Thanks: [Dick Marinus]).
 * Drop support for Python 3.3 (Thanks: [Thomas Roten]).
 
 1.13.1:
