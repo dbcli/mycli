@@ -294,7 +294,7 @@ def no_tee(arg, **_):
 def write_tee(output):
     global tee_file
     if tee_file:
-        click.echo(output, file=tee_file, nl=False)
+        click.echo(u'%s' % output, file=tee_file, nl=False)
         click.echo(u'\n', file=tee_file, nl=False)
         tee_file.flush()
 
