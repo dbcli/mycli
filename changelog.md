@@ -10,6 +10,7 @@ Internal Changes:
 -----------------
 
 * Drop support for Python 3.3 (Thanks: [Thomas Roten]).
+* Merge `_on_completions_refreshed` and `_swap_completer_objects` functions (Thanks: [Dick Marinus]).
 
 1.13.1:
 =======
