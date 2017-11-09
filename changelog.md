@@ -1,6 +1,11 @@
 TBD:
 =======
 
+Bug Fixes:
+----------
+
+* Fix source command for script in current working directory. (Thanks: [Dick Marinus]).
+
 Features:
 ---------
 

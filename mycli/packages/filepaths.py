@@ -10,7 +10,7 @@ def list_path(root_dir):
 
     """
     res = []
-    if os.path.exists(root_dir):
+    if os.path.isdir(root_dir):
         for name in os.listdir(root_dir):
             res.append(name)
     return res
