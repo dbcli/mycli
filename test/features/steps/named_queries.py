@@ -62,7 +62,8 @@ def step_use_named_query_with_parameters(context):
 @then('we see the named query with parameters executed')
 def step_see_named_query_with_parameters_executed(context):
     """Wait to see select output."""
-    wrappers.expect_exact(context, 'SELECT 101, "second", "third value"', timeout=1)
+    wrappers.expect_exact(
+        context, 'SELECT 101, "second", "third value"', timeout=1)
 
 
 @when('we use named query with too few parameters')
@@ -74,7 +75,8 @@ def step_use_named_query_with_too_few_parameters(context):
 @then('we see the named query with parameters fail with missing parameters')
 def step_see_named_query_with_parameters_fail_with_missing_parameters(context):
     """Wait to see select output."""
-    wrappers.expect_exact(context, 'missing substitution for $2 in query:', timeout=1)
+    wrappers.expect_exact(
+        context, 'missing substitution for $2 in query:', timeout=1)
 
 
 @when('we use named query with too many parameters')
@@ -86,4 +88,5 @@ def step_use_named_query_with_too_many_parameters(context):
 @then('we see the named query with parameters fail with extra parameters')
 def step_see_named_query_with_parameters_fail_with_extra_parameters(context):
     """Wait to see select output."""
-    wrappers.expect_exact(context, 'query does not have substitution parameter $4:', timeout=1)
+    wrappers.expect_exact(
+        context, 'query does not have substitution parameter $4:', timeout=1)
