@@ -6,7 +6,7 @@
 
 A command line client for MySQL that can do auto-completion and syntax highlighting.
 
-HomePage: [http://mycli.net](http://mycli.net)  
+HomePage: [http://mycli.net](http://mycli.net)
 Documentation: [http://mycli.net/docs](http://mycli.net/docs)
 
 ![Completion](screenshots/tables.png)
@@ -96,11 +96,8 @@ Features
     - `SELECT * FROM <tab>` will only show table names.
     - `SELECT * FROM users WHERE <tab>` will only show column names.
 * Support for multiline queries.
-* Favorite queries. Save a query using `\fs alias query` and execute it with `\f alias` whenever you need.
-    - Also supports optional positional parameters of the form `$N` in the query
-    - Arguments are given after the name, with shell word and quoting rules
-    - `\fs user_by_name select * from users where name = '$1'`
-    - `\f user_by_name "Skelly McDermott"`
+* Favorite queries with optional positional parameters. Save a query using
+  `\fs alias query` and execute it with `\f alias` whenever you need.
 * Timing of sql statments and table rendering.
 * Config file is automatically created at ``~/.myclirc`` at first launch.
 * Log every query and its results to a file (disabled by default).
