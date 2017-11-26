@@ -3,6 +3,7 @@ import re
 import locale
 import logging
 import subprocess
+import shlex
 from io import open
 from time import sleep
 
@@ -152,27 +153,36 @@ def open_external_editor(filename=None, sql=None):
 
     return (query, message)
 
-@special_command('\\f', '\\f [name]', 'List or execute favorite queries.', arg_type=PARSED_QUERY, case_sensitive=True)
+
+@special_command('\\f', '\\f [name [args..]]', 'List or execute favorite queries.', arg_type=PARSED_QUERY, case_sensitive=True)
 def execute_favorite_query(cur, arg, **_):
     """Returns (title, rows, headers, status)"""
     if arg == '':
         for result in list_favorite_queries():
             yield result
 
-    query = favoritequeries.get(arg)
+    """Parse out favorite name and optional substitution parameters"""
+    name, _, arg_str = arg.partition(' ')
+    args = shlex.split(arg_str)
+
+    query = favoritequeries.get(name)
     if query is None:
-        message = "No favorite query: %s" % (arg)
+        message = "No favorite query: %s" % (name)
         yield (None, None, None, message)
     else:
-        for sql in sqlparse.split(query):
-            sql = sql.rstrip(';')
-            title = '> %s' % (sql)
-            cur.execute(sql)
-            if cur.description:
-                headers = [x[0] for x in cur.description]
-                yield (title, cur, headers, None)
-            else:
-                yield (title, None, None, None)
+        query, arg_error = subst_favorite_query_args(query, args)
+        if arg_error:
+            yield (None, None, None, arg_error)
+        else:
+            for sql in sqlparse.split(query):
+                sql = sql.rstrip(';')
+                title = '> %s' % (sql)
+                cur.execute(sql)
+                if cur.description:
+                    headers = [x[0] for x in cur.description]
+                    yield (title, cur, headers, None)
+                else:
+                    yield (title, None, None, None)
 
 def list_favorite_queries():
     """List of all favorite queries.
@@ -186,6 +196,22 @@ def list_favorite_queries():
     else:
         status = ''
     return [('', rows, headers, status)]
+
+
+def subst_favorite_query_args(query, args):
+    """replace positional parameters ($1...$N) in query."""
+    for idx, val in enumerate(args):
+        subst_var = '$' + str(idx + 1)
+        if subst_var not in query:
+            return [None, 'query does not have substitution parameter ' + subst_var + ':\n  ' + query]
+
+        query = query.replace(subst_var, val)
+
+    match = re.search('\\$\d+', query)
+    if match:
+        return[None, 'missing substitution for ' + match.group(0) + ' in query:\n  ' + query]
+
+    return [query, None]
 
 @special_command('\\fs', '\\fs name query', 'Save a favorite query.')
 def save_favorite_query(arg, **_):
