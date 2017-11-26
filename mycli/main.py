@@ -806,14 +806,6 @@ class MyCli(object):
                 'Auto-completion refresh started in the background.')]
 
     def _on_completions_refreshed(self, new_completer):
-        self._swap_completer_objects(new_completer)
-
-        if self.cli:
-            # After refreshing, redraw the CLI to clear the statusbar
-            # "Refreshing completions..." indicator
-            self.cli.request_redraw()
-
-    def _swap_completer_objects(self, new_completer):
         """Swap the completer object in cli with the newly created completer.
         """
         with self._completer_lock:
@@ -823,6 +815,11 @@ class MyCli(object):
             # exists before trying the replace the completer object in cli.
             if self.cli:
                 self.cli.current_buffer.completer = new_completer
+
+        if self.cli:
+            # After refreshing, redraw the CLI to clear the statusbar
+            # "Refreshing completions..." indicator
+            self.cli.request_redraw()
 
     def get_completions(self, text, cursor_positition):
         with self._completer_lock:

@@ -4,7 +4,7 @@
 | \G          | \G                         | Display current query results vertically.                  |
 | \dt         | \dt[+] [table]             | List or describe tables.                                   |
 | \e          | \e                         | Edit command with editor (uses $EDITOR).                   |
-| \f          | \f [name]                  | List or execute favorite queries.                          |
+| \f          | \f [name [args..]]         | List or execute favorite queries.                          |
 | \fd         | \fd [name]                 | Delete a favorite query.                                   |
 | \fs         | \fs name query             | Save a favorite query.                                     |
 | \l          | \l                         | List databases.                                            |

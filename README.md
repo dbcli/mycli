@@ -96,7 +96,8 @@ Features
     - `SELECT * FROM <tab>` will only show table names.
     - `SELECT * FROM users WHERE <tab>` will only show column names.
 * Support for multiline queries.
-* Favorite queries. Save a query using `\fs alias query` and execute it with `\f alias` whenever you need.
+* Favorite queries with optional positional parameters. Save a query using
+  `\fs alias query` and execute it with `\f alias` whenever you need.
 * Timing of sql statments and table rendering.
 * Config file is automatically created at ``~/.myclirc`` at first launch.
 * Log every query and its results to a file (disabled by default).
