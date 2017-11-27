@@ -10,6 +10,7 @@ Features:
 ---------
 
 * Add `watch [seconds] query` command to repeat a query every [seconds] seconds (by default 5). (Thanks: [David Caro](https://github.com/Terseus))
+* Default to unix socket connection if host and port are unspecified. This simplifies authentication on some systems and matches mysql behaviour.
 * Add support for positional parameters to favorite queries
 
 Internal Changes:
