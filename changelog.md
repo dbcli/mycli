@@ -1,17 +1,17 @@
-TBD:
+1.14.0:
 =======
-
-Bug Fixes:
-----------
-
-* Fix source command for script in current working directory. (Thanks: [Dick Marinus]).
 
 Features:
 ---------
 
 * Add `watch [seconds] query` command to repeat a query every [seconds] seconds (by default 5). (Thanks: [David Caro](https://github.com/Terseus))
 * Default to unix socket connection if host and port are unspecified. This simplifies authentication on some systems and matches mysql behaviour.
-* Add support for positional parameters to favorite queries
+* Add support for positional parameters to favorite queries.
+
+Bug Fixes:
+----------
+
+* Fix source command for script in current working directory. (Thanks: [Dick Marinus]).
 
 Internal Changes:
 -----------------
