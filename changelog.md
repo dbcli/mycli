@@ -12,6 +12,7 @@ Bug Fixes:
 ----------
 
 * Fix source command for script in current working directory. (Thanks: [Dick Marinus]).
+* Fix issue where the `tee` command did not work on Python 2.7 (Thanks: [Thomas Roten]).
 
 Internal Changes:
 -----------------
