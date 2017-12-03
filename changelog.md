@@ -1,3 +1,11 @@
+TBD
+=======
+
+Features:
+---------
+
+* Add sql-update/insert output format. (Thanks: [Dick Marinus]).
+
 1.14.0:
 =======
 

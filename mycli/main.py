@@ -31,6 +31,7 @@ from pygments.token import Token
 
 from .packages.special.main import NO_QUERY
 from .packages.prompt_utils import confirm_destructive_query
+from .packages.tabular_output import sql_format
 import mycli.packages.special as special
 from .sqlcompleter import SQLCompleter
 from .clitoolbar import create_toolbar_tokens_func
@@ -110,6 +111,8 @@ class MyCli(object):
         special.set_timing_enabled(c['main'].as_bool('timing'))
         self.formatter = TabularOutputFormatter(
             format_name=c['main']['table_format'])
+        sql_format.register_new_formatter(self.formatter)
+        self.formatter.mycli = self
         self.syntax_style = c['main']['syntax_style']
         self.less_chatty = c['main'].as_bool('less_chatty')
         self.cli_style = c['colors']
@@ -547,6 +550,7 @@ class MyCli(object):
                 successful = False
                 start = time()
                 res = sqlexecute.run(document.text)
+                self.formatter.query = document.text
                 successful = True
                 result_count = 0
                 for title, cur, headers, status in res:
@@ -850,6 +854,7 @@ class MyCli(object):
         results = self.sqlexecute.run(query)
         for result in results:
             title, cur, headers, status = result
+            self.formatter.query = query
             output = self.format_output(title, cur, headers)
             for line in output:
                 click.echo(line, nl=new_line)
