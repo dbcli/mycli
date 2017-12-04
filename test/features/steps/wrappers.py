@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 import re
 import pexpect
+import sys
 
 
 def expect_exact(context, expected, timeout):
@@ -12,9 +13,10 @@ def expect_exact(context, expected, timeout):
         # Strip color codes out of the output.
         actual = re.sub(r'\x1b\[([0-9A-Za-z;?])+[m|K]?',
                         '', context.cli.before)
-        raise Exception('Expected:\n---\n{0!r}\n---\n\nActual:\n---\n{1!r}\n---'.format(
-            expected,
-            actual))
+        raise Exception(
+            'Expected:\n---\n{0!r}\n---\n\nActual:\n---\n{1!r}\n---'
+            .format(expected, actual)
+        )
 
 
 def expect_pager(context, expected, timeout):
@@ -37,8 +39,17 @@ def run_cli(context, run_args=None):
         run_args.extend(('--defaults-file', context.conf['defaults-file']))
     if context.conf.get('myclirc', None):
         run_args.extend(('--myclirc', context.conf['myclirc']))
-    cli_cmd = context.conf.get('cli_command', None) or sys.executable + \
-        ' -c "import coverage ; coverage.process_startup(); import mycli.main; mycli.main.cli()"'
+    try:
+        cli_cmd = context.conf['cli_command']
+    except KeyError:
+        cli_cmd = (
+            '{0!s} -c "'
+            'import coverage ; '
+            'coverage.process_startup(); '
+            'import mycli.main; '
+            'mycli.main.cli()'
+            '"'
+        ).format(sys.executable)
 
     cmd_parts = [cli_cmd] + run_args
     cmd = ' '.join(cmd_parts)
@@ -52,6 +63,6 @@ def wait_prompt(context):
     user = context.conf['user']
     host = context.conf['host']
     dbname = context.currentdb
-    expect_exact(context, 'mysql {0}@{1}:{2}> '.format(
+    expect_exact(context, '{0}@{1}:{2}> '.format(
         user, host, dbname), timeout=5)
     context.atprompt = True
