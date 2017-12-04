@@ -218,16 +218,18 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
         # Check for a table alias or schema qualification
         parent = (identifier and identifier.get_parent_name()) or []
 
+        tables = extract_tables(full_text)
         if parent:
-            tables = extract_tables(full_text)
             tables = [t for t in tables if identifies(parent, *t)]
             return [{'type': 'column', 'tables': tables},
                     {'type': 'table', 'schema': parent},
                     {'type': 'view', 'schema': parent},
                     {'type': 'function', 'schema': parent}]
         else:
-            return [{'type': 'column', 'tables': extract_tables(full_text)},
+            aliases = [t[2] or t[1] for t in tables]
+            return [{'type': 'column', 'tables': tables},
                     {'type': 'function', 'schema': []},
+                    {'type': 'alias', 'aliases': aliases},
                     {'type': 'keyword'}]
     elif (token_v.endswith('join') and token.is_keyword) or (token_v in
             ('copy', 'from', 'update', 'into', 'describe', 'truncate',
