@@ -226,7 +226,7 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
                     {'type': 'view', 'schema': parent},
                     {'type': 'function', 'schema': parent}]
         else:
-            aliases = [t[2] or t[1] for t in tables]
+            aliases = [alias or table for (schema, table, alias) in tables]
             return [{'type': 'column', 'tables': tables},
                     {'type': 'function', 'schema': []},
                     {'type': 'alias', 'aliases': aliases},
@@ -272,7 +272,7 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
         else:
             # ON <suggestion>
             # Use table alias if there is one, otherwise the table name
-            aliases = [t[2] or t[1] for t in tables]
+            aliases = [alias or table for (schema, table, alias) in tables]
             suggest = [{'type': 'alias', 'aliases': aliases}]
 
             # The lists of 'aliases' could be empty if we're trying to complete
