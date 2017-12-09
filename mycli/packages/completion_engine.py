@@ -218,16 +218,18 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
         # Check for a table alias or schema qualification
         parent = (identifier and identifier.get_parent_name()) or []
 
+        tables = extract_tables(full_text)
         if parent:
-            tables = extract_tables(full_text)
             tables = [t for t in tables if identifies(parent, *t)]
             return [{'type': 'column', 'tables': tables},
                     {'type': 'table', 'schema': parent},
                     {'type': 'view', 'schema': parent},
                     {'type': 'function', 'schema': parent}]
         else:
-            return [{'type': 'column', 'tables': extract_tables(full_text)},
+            aliases = [alias or table for (schema, table, alias) in tables]
+            return [{'type': 'column', 'tables': tables},
                     {'type': 'function', 'schema': []},
+                    {'type': 'alias', 'aliases': aliases},
                     {'type': 'keyword'}]
     elif (token_v.endswith('join') and token.is_keyword) or (token_v in
             ('copy', 'from', 'update', 'into', 'describe', 'truncate',
@@ -270,7 +272,7 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
         else:
             # ON <suggestion>
             # Use table alias if there is one, otherwise the table name
-            aliases = [t[2] or t[1] for t in tables]
+            aliases = [alias or table for (schema, table, alias) in tables]
             suggest = [{'type': 'alias', 'aliases': aliases}]
 
             # The lists of 'aliases' could be empty if we're trying to complete

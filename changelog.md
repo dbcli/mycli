@@ -1,3 +1,11 @@
+TBD
+=======
+
+Features:
+---------
+
+* Also complete aliases in WHERE. (Thanks: [Dick Marinus]).
+
 1.14.0:
 =======
 

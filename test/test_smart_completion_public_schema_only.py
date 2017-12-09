@@ -93,6 +93,7 @@ def test_suggested_column_names(completer, complete_event):
         Document(text=text, cursor_position=position),
         complete_event))
     assert set(result) == set([
+        Completion(text='users', start_position=0),
         Completion(text='*', start_position=0),
         Completion(text='id', start_position=0),
         Completion(text='email', start_position=0),
@@ -181,6 +182,7 @@ def test_suggested_multiple_column_names(completer, complete_event):
         Document(text=text, cursor_position=position),
         complete_event))
     assert set(result) == set([
+        Completion(text='u', start_position=0),
         Completion(text='*', start_position=0),
         Completion(text='id', start_position=0),
         Completion(text='email', start_position=0),
@@ -301,6 +303,7 @@ def test_auto_escaped_col_names(completer, complete_event):
         Document(text=text, cursor_position=position),
         complete_event))
     assert set(result) == set([
+        Completion(text='`select`', start_position=0),
         Completion(text='*', start_position=0),
         Completion(text='id', start_position=0),
         Completion(text='`insert`', start_position=0),
@@ -316,6 +319,7 @@ def test_un_escaped_table_names(completer, complete_event):
         Document(text=text, cursor_position=position),
         complete_event))
     assert set(result) == set([
+        Completion(text='réveillé', start_position=0),
         Completion(text='*', start_position=0),
         Completion(text='id', start_position=0),
         Completion(text='`insert`', start_position=0),
