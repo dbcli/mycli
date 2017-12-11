@@ -1,0 +1,12 @@
+# vi: ft=dosini
+
+# This file is loaded after mycli/myclirc and should override only those
+# variables needed for testing.
+# To see what every variable does see mycli/myclirc
+
+[main]
+
+log_file = ~/.mycli.test.log
+log_level = DEBUG
+prompt = '\t \u@\h:\d> '
+less_chatty = True

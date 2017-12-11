@@ -18,6 +18,7 @@ def before_all(context):
     os.environ['LINES'] = "100"
     os.environ['COLUMNS'] = "100"
     os.environ['EDITOR'] = 'ex'
+    os.environ['LC_ALL'] = 'en_US.utf8'
 
     test_dir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
     login_path_file = os.path.join(test_dir, 'mylogin.cnf')
@@ -69,7 +70,7 @@ def before_all(context):
                 context.conf['pager_boundary'])
         )
     context.conf['defaults-file'] = my_cnf
-    context.conf['myclirc'] = os.path.join(context.package_root, 'mycli',
+    context.conf['myclirc'] = os.path.join(context.package_root, 'test',
                                            'myclirc')
 
     context.cn = dbutils.create_db(context.conf['host'], context.conf['user'],
@@ -112,7 +113,7 @@ def after_scenario(context, _):
             host = context.conf['host']
             dbname = context.currentdb
             context.cli.expect_exact(
-                'mysql {0}@{1}:{2}> '.format(
+                '{0}@{1}:{2}> '.format(
                     user, host, dbname
                 ),
                 timeout=5
