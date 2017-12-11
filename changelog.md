@@ -4,6 +4,7 @@ TBD
 Features:
 ---------
 
+* Add sql-update/insert output format. (Thanks: [Dick Marinus]).
 * Also complete aliases in WHERE. (Thanks: [Dick Marinus]).
 
 1.14.0:
