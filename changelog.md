@@ -1,3 +1,12 @@
+TBD
+=======
+
+Features:
+---------
+
+* Add sql-update/insert output format. (Thanks: [Dick Marinus]).
+* Also complete aliases in WHERE. (Thanks: [Dick Marinus]).
+
 1.14.0:
 =======
 
@@ -18,6 +27,8 @@ Internal Changes:
 -----------------
 
 * Drop support for Python 3.3 (Thanks: [Thomas Roten]).
+
+* Make tests more compatible between different build environments. (Thanks: [David Caro])
 * Merge `_on_completions_refreshed` and `_swap_completer_objects` functions (Thanks: [Dick Marinus]).
 
 1.13.1:
