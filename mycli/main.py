@@ -948,7 +948,7 @@ class MyCli(object):
 @click.option('-v', '--version', is_flag=True, help='Output mycli\'s version.')
 @click.option('-D', '--database', 'dbname', help='Database to use.')
 @click.option('-d', '--dsn', default='', envvar='DSN',
-        help='Use DSN configured into the [alias_dsn] section of myclirc file.')
+              help='Use DSN configured into the [alias_dsn] section of myclirc file.')
 @click.option('-R', '--prompt', 'prompt',
               help='Prompt format (Default: "{0}").'.format(
                   MyCli.default_prompt))
@@ -1019,8 +1019,8 @@ def cli(database, user, host, port, socket, password, dbname,
             database = mycli.config['alias_dsn'][dsn]
         except:
             click.secho('Invalid DSNs found in the config file. '\
-                'Please check the "[alias_dsn]" section in myclirc.',
-                 err=True, fg='red')
+                        'Please check the "[alias_dsn]" section in myclirc.',
+                        err=True, fg='red')
             exit(1)
     if database and '://' in database:
         mycli.connect_uri(database, local_infile, ssl)
