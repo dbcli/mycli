@@ -1018,7 +1018,7 @@ def cli(database, user, host, port, socket, password, dbname,
         try:
             database = mycli.config['alias_dsn'][dsn]
         except:
-            click.secho('Invalid DSNs found in the config file. '\
+            click.secho('Invalid DSNs found in the config file. '
                         'Please check the "[alias_dsn]" section in myclirc.',
                         err=True, fg='red')
             exit(1)
