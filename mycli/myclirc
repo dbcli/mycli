@@ -115,3 +115,7 @@ Token.Toolbar.Arg.Text = 'nobold'
 
 # Favorite queries.
 [favorite_queries]
+
+# DNS to call by -d option
+[alias_dsn]
+# example_dsn = mysql://[user[:password]@][netloc][:port][/dbname]

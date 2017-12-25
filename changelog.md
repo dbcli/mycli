@@ -1,3 +1,11 @@
+TBD:
+=======
+
+Features:
+---------
+
+* Add DSN aliases to the config file (Thanks: [Frederic Aoustin]).
+
 1.15.0:
 =======
 
@@ -554,3 +562,4 @@ Bug Fixes:
 [Scrappy Soft]: https://github.com/scrappysoft
 [Dick Marinus]: https://github.com/meeuw
 [François Pietka]: https://github.com/fpietka
+[Frederic Aoustin]: https://github.com/fraoustin
