@@ -6,6 +6,11 @@ Features:
 
 * Add DSN aliases to the config file (Thanks: [Frederic Aoustin]).
 
+Bug Fixes:
+----------
+
+* Do not try to connect to a unix socket on Windows (Thanks: [Thomas Roten]).
+
 1.15.0:
 =======
 

@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-import sys
+from mycli.compat import PY2, PY3
 
-PY2 = sys.version_info[0] == 2
-PY3 = sys.version_info[0] == 3
 
 if PY2:
     text_type = unicode
