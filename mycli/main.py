@@ -45,6 +45,7 @@ from .key_bindings import mycli_bindings
 from .encodingutils import utf8tounicode, text_type
 from .lexer import MyCliLexer
 from .__init__ import __version__
+from mycli.compat import WIN
 
 import itertools
 
@@ -397,7 +398,7 @@ class MyCli(object):
                     raise e
 
         try:
-            if socket is host is port is None:
+            if (socket is host is port is None) and not WIN:
                 # Try a sensible default socket first (simplifies auth)
                 # If we get a connection error, try tcp/ip localhost
                 try:
