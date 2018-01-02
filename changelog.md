@@ -1,4 +1,17 @@
-TBD
+1.16.0:
+=======
+
+Features:
+---------
+
+* Add DSN aliases to the config file (Thanks: [Frederic Aoustin]).
+
+Bug Fixes:
+----------
+
+* Do not try to connect to a unix socket on Windows (Thanks: [Thomas Roten]).
+
+1.15.0:
 =======
 
 Features:
@@ -554,3 +567,4 @@ Bug Fixes:
 [Scrappy Soft]: https://github.com/scrappysoft
 [Dick Marinus]: https://github.com/meeuw
 [François Pietka]: https://github.com/fpietka
+[Frederic Aoustin]: https://github.com/fraoustin

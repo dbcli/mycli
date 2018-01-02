@@ -45,6 +45,7 @@ from .key_bindings import mycli_bindings
 from .encodingutils import utf8tounicode, text_type
 from .lexer import MyCliLexer
 from .__init__ import __version__
+from mycli.compat import WIN
 
 import itertools
 
@@ -397,7 +398,7 @@ class MyCli(object):
                     raise e
 
         try:
-            if socket is host is port is None:
+            if (socket is host is port is None) and not WIN:
                 # Try a sensible default socket first (simplifies auth)
                 # If we get a connection error, try tcp/ip localhost
                 try:
@@ -947,6 +948,8 @@ class MyCli(object):
 # library (--ssl-crl and --ssl-crlpath options in vanilla mysql client)
 @click.option('-v', '--version', is_flag=True, help='Output mycli\'s version.')
 @click.option('-D', '--database', 'dbname', help='Database to use.')
+@click.option('-d', '--dsn', default='', envvar='DSN',
+              help='Use DSN configured into the [alias_dsn] section of myclirc file.')
 @click.option('-R', '--prompt', 'prompt',
               help='Prompt format (Default: "{0}").'.format(
                   MyCli.default_prompt))
@@ -977,7 +980,7 @@ def cli(database, user, host, port, socket, password, dbname,
         version, prompt, logfile, defaults_group_suffix, defaults_file,
         login_path, auto_vertical_output, local_infile, ssl_ca, ssl_capath,
         ssl_cert, ssl_key, ssl_cipher, ssl_verify_server_cert, table, csv,
-        warn, execute, myclirc):
+        warn, execute, myclirc, dsn):
     """A MySQL terminal client with auto-completion and syntax highlighting.
 
     \b
@@ -1012,6 +1015,14 @@ def cli(database, user, host, port, socket, password, dbname,
 
     # remove empty ssl options
     ssl = {k: v for k, v in ssl.items() if v is not None}
+    if dsn is not '':
+        try:
+            database = mycli.config['alias_dsn'][dsn]
+        except:
+            click.secho('Invalid DSNs found in the config file. '
+                        'Please check the "[alias_dsn]" section in myclirc.',
+                        err=True, fg='red')
+            exit(1)
     if database and '://' in database:
         mycli.connect_uri(database, local_infile, ssl)
     else:

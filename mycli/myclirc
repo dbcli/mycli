@@ -115,3 +115,7 @@ Token.Toolbar.Arg.Text = 'nobold'
 
 # Favorite queries.
 [favorite_queries]
+
+# Use the -d option to reference a DSN.
+[alias_dsn]
+# example_dsn = mysql://[user[:password]@][host][:port][/dbname]
