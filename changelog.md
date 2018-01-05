@@ -1,3 +1,11 @@
+1.17.0:
+=======
+
+Features:
+---------
+
+* Add nopager to the config file (Thanks: [Frederic Aoustin]).
+
 1.16.0:
 =======
 
