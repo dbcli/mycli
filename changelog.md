@@ -4,7 +4,7 @@
 Features:
 ---------
 
-* Add nopager to the config file (Thanks: [Frederic Aoustin]).
+* Add enable_pager to the config file (Thanks: [Frederic Aoustin]).
 
 1.16.0:
 =======
