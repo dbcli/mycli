@@ -20,7 +20,7 @@ install_requirements = [
     'sqlparse>=0.2.2,<0.3.0',
     'configobj >= 5.0.5',
     'cryptography >= 1.0.0',
-    'cli_helpers[styles] >= 0.2.3',
+    'cli_helpers[styles] >= 1.0.1',
 ]
 
 setup(
@@ -46,9 +46,9 @@ setup(
         'License :: OSI Approved :: BSD License',
         'Operating System :: Unix',
         'Programming Language :: Python',
+        'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',

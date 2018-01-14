@@ -5,6 +5,7 @@ from mycli import __version__
 from mycli.packages.special import iocommands
 from mycli.packages.special.utils import format_uptime
 from .main import special_command, RAW_QUERY, PARSED_QUERY
+from pymysql import ProgrammingError
 
 log = logging.getLogger(__name__)
 
@@ -49,13 +50,27 @@ def list_databases(cur, **_):
 def status(cur, **_):
     query = 'SHOW GLOBAL STATUS;'
     log.debug(query)
-    cur.execute(query)
+    try:
+        cur.execute(query)
+    except ProgrammingError:
+        # Fallback in case query fail, as it does with Mysql 4
+        query = 'SHOW STATUS;'
+        log.debug(query)
+        cur.execute(query)
     status = dict(cur.fetchall())
 
     query = 'SHOW GLOBAL VARIABLES;'
     log.debug(query)
     cur.execute(query)
     variables = dict(cur.fetchall())
+
+    # prepare in case keys are bytes, as with Python 3 and Mysql 4
+    if (isinstance(list(variables)[0], bytes) and
+            isinstance(list(status)[0], bytes)):
+        variables = {k.decode('utf-8'): v.decode('utf-8') for k, v
+                     in variables.items()}
+        status = {k.decode('utf-8'): v.decode('utf-8') for k, v
+                  in status.items()}
 
     # Create output buffers.
     title = []
@@ -125,13 +140,16 @@ def status(cur, **_):
     # Print the current server statistics.
     stats = []
     stats.append('Connections: {0}'.format(status['Threads_connected']))
-    stats.append('Queries: {0}'.format(status['Queries']))
+    if 'Queries' in status:
+        stats.append('Queries: {0}'.format(status['Queries']))
     stats.append('Slow queries: {0}'.format(status['Slow_queries']))
     stats.append('Opens: {0}'.format(status['Opened_tables']))
     stats.append('Flush tables: {0}'.format(status['Flush_commands']))
     stats.append('Open tables: {0}'.format(status['Open_tables']))
-    queries_per_second = int(status['Queries']) / int(status['Uptime'])
-    stats.append('Queries per second avg: {:.3f}'.format(queries_per_second))
+    if 'Queries' in status:
+        queries_per_second = int(status['Queries']) / int(status['Uptime'])
+        stats.append('Queries per second avg: {:.3f}'.format(
+            queries_per_second))
     stats = '  '.join(stats)
     footer.append('\n' + stats)
 

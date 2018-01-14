@@ -18,3 +18,9 @@ Feature: manipulate tables:
       then we see table dropped
       when we connect to dbserver
       then we see database connected
+
+  Scenario: select null values
+    When we connect to test database
+      then we see database connected
+      when we select null
+      then we see null selected

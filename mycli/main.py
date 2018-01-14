@@ -30,11 +30,13 @@ from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from pygments.token import Token
 
 from .packages.special.main import NO_QUERY
+from .packages.prompt_utils import confirm_destructive_query
+from .packages.tabular_output import sql_format
 import mycli.packages.special as special
 from .sqlcompleter import SQLCompleter
 from .clitoolbar import create_toolbar_tokens_func
 from .clistyle import style_factory
-from .sqlexecute import SQLExecute
+from .sqlexecute import FIELD_TYPES, SQLExecute
 from .clibuffer import CLIBuffer
 from .completion_refresher import CompletionRefresher
 from .config import MyCliConfig
@@ -42,6 +44,9 @@ from .key_bindings import mycli_bindings
 from .encodingutils import utf8tounicode, text_type
 from .lexer import MyCliLexer
 from .__init__ import __version__
+from mycli.compat import WIN
+
+import itertools
 
 click.disable_unicode_literals_warning = True
 
@@ -88,6 +93,8 @@ class MyCli(object):
         special.set_timing_enabled(c['main']['timing'])
         self.formatter = TabularOutputFormatter(
             format_name=c['main']['table_format'])
+        sql_format.register_new_formatter(self.formatter)
+        self.formatter.mycli = self
         self.less_chatty = c['main']['less_chatty']
         self.output_style = style_factory(c['main']['syntax_style'], c['colors'])
         self.wider_completion_menu = c['main']['wider_completion_menu']
@@ -289,25 +296,62 @@ class MyCli(object):
 
         # Connect to the database.
 
-        try:
+        def _connect():
             try:
-                sqlexecute = SQLExecute(database, user, passwd, host, port,
-                        socket, charset, local_infile, ssl)
+                self.sqlexecute = SQLExecute(database, user, passwd, host, port,
+                                             socket, charset, local_infile, ssl)
             except OperationalError as e:
                 if ('Access denied for user' in e.args[1]):
-                    passwd = click.prompt('Password', hide_input=True,
-                                          show_default=False, type=str)
-                    sqlexecute = SQLExecute(database, user, passwd, host, port,
-                            socket, charset, local_infile, ssl)
+                    new_passwd = click.prompt('Password', hide_input=True,
+                                              show_default=False, type=str)
+                    self.sqlexecute = SQLExecute(database, user, new_passwd, host, port,
+                                                 socket, charset, local_infile, ssl)
                 else:
                     raise e
+
+        try:
+            if (socket is host is port is None) and not WIN:
+                # Try a sensible default socket first (simplifies auth)
+                # If we get a connection error, try tcp/ip localhost
+                try:
+                    socket = '/var/run/mysqld/mysqld.sock'
+                    _connect()
+                except OperationalError as e:
+                    # These are "Can't open socket" and 2x "Can't connect"
+                    if [code for code in (2001, 2002, 2003) if code == e.args[0]]:
+                        self.logger.debug('Database connection failed: %r.', e)
+                        self.logger.error(
+                            "traceback: %r", traceback.format_exc())
+                        self.logger.debug('Retrying over TCP/IP')
+                        self.echo(str(e), err=True)
+                        self.echo(
+                            'Failed to connect by socket, retrying over TCP/IP', err=True)
+
+                        # Else fall back to TCP/IP localhost
+                        socket = ""
+                        host = 'localhost'
+                        port = 3306
+                        _connect()
+                    else:
+                        raise e
+            else:
+                host = host or 'localhost'
+                port = port or 3306
+
+                # Bad ports give particularly daft error messages
+                try:
+                    port = int(port)
+                except ValueError as e:
+                    self.echo("Error: Invalid port number: '{0}'.".format(port),
+                              err=True, fg='red')
+                    exit(1)
+
+                _connect()
         except Exception as e:  # Connecting to a database could fail.
             self.logger.debug('Database connection failed: %r.', e)
             self.logger.error("traceback: %r", traceback.format_exc())
             self.echo(str(e), err=True, fg='red')
             exit(1)
-
-        self.sqlexecute = sqlexecute
 
     def handle_editor_command(self, cli, document):
         """
@@ -420,6 +464,7 @@ class MyCli(object):
                 successful = False
                 start = time()
                 res = sqlexecute.run(document.text)
+                self.formatter.query = document.text
                 successful = True
                 result_count = 0
                 for title, cur, headers, status in res:
@@ -449,7 +494,7 @@ class MyCli(object):
                         if result_count > 0:
                             self.echo('')
                         try:
-                            self.output('\n'.join(formatted), status)
+                            self.output(formatted, status)
                         except KeyboardInterrupt:
                             pass
                         if special.is_timing_enabled():
@@ -505,6 +550,10 @@ class MyCli(object):
                 logger.error("traceback: %r", traceback.format_exc())
                 self.echo(str(e), err=True, fg='red')
             else:
+                if is_dropping_database(document.text, self.sqlexecute.dbname):
+                    self.sqlexecute.dbname = None
+                    self.sqlexecute.connect()
+
                 # Refresh the table names and column names if necessary.
                 if need_completion_refresh(document.text):
                     self.refresh_completions(
@@ -580,8 +629,9 @@ class MyCli(object):
         self.log_output(s)
         click.secho(s, **kwargs)
 
-    def output_fits_on_screen(self, output, status=None):
-        """Check if the given output fits on the screen."""
+    def get_output_margin(self, status=None):
+        """Get the output margin (number of rows for the prompt, footer and
+        timing message."""
         size = self.cli.output.get_size()
 
         margin = self.get_reserved_space() + self.get_prompt(self.prompt_format).count('\n') + 1
@@ -590,11 +640,8 @@ class MyCli(object):
         if status:
             margin += 1 + status.count('\n')
 
-        for i, line in enumerate(output.splitlines(), 1):
-            if len(line) > size.columns or i > (size.rows - margin):
-                return False
+        return margin
 
-        return True
 
     def output(self, output, status=None):
         """Output text to stdout or a pager command.
@@ -607,15 +654,42 @@ class MyCli(object):
 
         """
         if output:
-            self.log_output(output)
-            special.write_tee(output)
-            special.write_once(output)
+            size = self.cli.output.get_size()
 
-            if (self.explicit_pager or
-                    (special.is_pager_enabled() and not self.output_fits_on_screen(output, status))):
-                click.echo_via_pager(output)
-            else:
-                click.secho(output)
+            margin = self.get_output_margin(status)
+
+            fits = True
+            buf = []
+            output_via_pager = self.explicit_pager and special.is_pager_enabled()
+            for i, line in enumerate(output, 1):
+                self.log_output(line)
+                special.write_tee(line)
+                special.write_once(line)
+
+                if fits or output_via_pager:
+                    # buffering
+                    buf.append(line)
+                    if len(line) > size.columns or i > (size.rows - margin):
+                        fits = False
+                        if not self.explicit_pager and special.is_pager_enabled():
+                            # doesn't fit, use pager
+                            output_via_pager = True
+
+                        if not output_via_pager:
+                            # doesn't fit, flush buffer
+                            for line in buf:
+                                click.secho(line)
+                            buf = []
+                else:
+                    click.secho(line)
+
+            if buf:
+                if output_via_pager:
+                    # sadly click.echo_via_pager doesn't accept generators
+                    click.echo_via_pager("\n".join(buf))
+                else:
+                    for line in buf:
+                        click.secho(line)
 
         if status:
             self.log_output(status)
@@ -647,14 +721,6 @@ class MyCli(object):
                 'Auto-completion refresh started in the background.')]
 
     def _on_completions_refreshed(self, new_completer):
-        self._swap_completer_objects(new_completer)
-
-        if self.cli:
-            # After refreshing, redraw the CLI to clear the statusbar
-            # "Refreshing completions..." indicator
-            self.cli.request_redraw()
-
-    def _swap_completer_objects(self, new_completer):
         """Swap the completer object in cli with the newly created completer.
         """
         with self._completer_lock:
@@ -664,6 +730,11 @@ class MyCli(object):
             # exists before trying the replace the completer object in cli.
             if self.cli:
                 self.cli.current_buffer.completer = new_completer
+
+        if self.cli:
+            # After refreshing, redraw the CLI to clear the statusbar
+            # "Refreshing completions..." indicator
+            self.cli.request_redraw()
 
     def get_completions(self, text, cursor_positition):
         with self._completer_lock:
@@ -694,6 +765,7 @@ class MyCli(object):
         results = self.sqlexecute.run(query)
         for result in results:
             title, cur, headers, status = result
+            self.formatter.query = query
             output = self.format_output(title, cur, headers)
             for line in output:
                 click.echo(line, nl=new_line)
@@ -711,15 +783,15 @@ class MyCli(object):
         }
 
         if title:  # Only print the title if it's not None.
-            output.append(title)
+            output = itertools.chain(output, [title])
 
         if cur:
             column_types = None
             if hasattr(cur, 'description'):
-                def sanitize(col):
-                    return col if type(col) is type else text_type
-                column_types = [sanitize(converters.decoders[col[1]])
-                                for col in cur.description]
+                def get_col_type(col):
+                    col_type = FIELD_TYPES.get(col[1], text_type)
+                    return col_type if type(col_type) is type else text_type
+                column_types = [get_col_type(col) for col in cur.description]
 
             if max_width is not None:
                 cur = list(cur)
@@ -728,14 +800,23 @@ class MyCli(object):
                 cur, headers, format_name='vertical' if expanded else None,
                 column_types=column_types,
                 **output_kwargs)
-            first_line = formatted[:formatted.find('\n')]
+
+            if isinstance(formatted, (text_type)):
+                formatted = formatted.splitlines()
+            formatted = iter(formatted)
+
+            first_line = next(formatted)
+            formatted = itertools.chain([first_line], formatted)
 
             if (not expanded and max_width and headers and cur and
                     len(first_line) > max_width):
                 formatted = self.formatter.format_output(
                     cur, headers, format_name='vertical', column_types=column_types, **output_kwargs)
+                if isinstance(formatted, (text_type)):
+                    formatted = iter(formatted.splitlines())
 
-            output.append(formatted)
+            output = itertools.chain(output, formatted)
+
 
         return output
 
@@ -785,6 +866,8 @@ class MyCli(object):
 @click.option('-v', '--version', is_flag=True, help='Output mycli\'s version.')
 @click.option('-D', '--database', 'dbname', help='Database to use.')
 @click.option('-R', '--prompt', 'prompt', help='Prompt format.')
+@click.option('-d', '--dsn', default='', envvar='DSN',
+              help='Use DSN configured into the [alias_dsn] section of myclirc file.')
 @click.option('-l', '--logfile', type=click.File(mode='a', encoding='utf-8'),
               help='Log every query and its results to a file.')
 @click.option('--defaults-group-suffix', type=str,
@@ -811,7 +894,7 @@ def cli(database, user, host, port, socket, password, dbname,
         version, prompt, logfile, defaults_group_suffix, defaults_file,
         login_path, auto_vertical_output, local_infile, ssl_ca, ssl_capath,
         ssl_cert, ssl_key, ssl_cipher, ssl_verify_server_cert, table, csv,
-        warn, execute, myclirc):
+        warn, execute, myclirc, dsn):
     """A MySQL terminal client with auto-completion and syntax highlighting.
 
     \b
@@ -846,6 +929,14 @@ def cli(database, user, host, port, socket, password, dbname,
 
     # remove empty ssl options
     ssl = {k: v for k, v in ssl.items() if v is not None}
+    if dsn is not '':
+        try:
+            database = mycli.config['alias_dsn'][dsn]
+        except:
+            click.secho('Invalid DSNs found in the config file. '
+                        'Please check the "[alias_dsn]" section in myclirc.',
+                        err=True, fg='red')
+            exit(1)
     if database and '://' in database:
         mycli.connect_uri(database, local_infile, ssl)
     else:
@@ -891,7 +982,6 @@ def cli(database, user, host, port, socket, password, dbname,
 
             if csv:
                 mycli.formatter.format_name = 'csv'
-                new_line = False
             elif not table:
                 mycli.formatter.format_name = 'tsv'
 
@@ -913,6 +1003,30 @@ def need_completion_refresh(queries):
                 return True
         except Exception:
             return False
+
+
+def is_dropping_database(queries, dbname):
+    """Determine if the query is dropping a specific database."""
+    if dbname is None:
+        return False
+
+    def normalize_db_name(db):
+        return db.lower().strip('`"')
+
+    dbname = normalize_db_name(dbname)
+
+    for query in sqlparse.parse(queries):
+        if query.get_name() is None:
+            continue
+
+        first_token = query.token_first(skip_cm=True)
+        _, second_token = query.token_next(0, skip_cm=True)
+        database_name = normalize_db_name(query.get_name())
+        if (first_token.value.lower() == 'drop' and
+                second_token.value.lower() in ('database', 'schema') and
+                database_name == dbname):
+            return True
+
 
 def need_completion_reset(queries):
     """Determines if the statement is a database switch such as 'use' or '\\u'.
@@ -942,35 +1056,6 @@ def is_select(status):
     if not status:
         return False
     return status.split(None, 1)[0].lower() == 'select'
-
-def query_starts_with(query, prefixes):
-    """Check if the query starts with any item from *prefixes*."""
-    prefixes = [prefix.lower() for prefix in prefixes]
-    formatted_sql = sqlparse.format(query.lower(), strip_comments=True)
-    return bool(formatted_sql) and formatted_sql.split()[0] in prefixes
-
-def queries_start_with(queries, prefixes):
-    """Check if any queries start with any item from *prefixes*."""
-    for query in sqlparse.split(queries):
-        if query and query_starts_with(query, prefixes) is True:
-            return True
-    return False
-
-def is_destructive(queries):
-    keywords = ('drop', 'shutdown', 'delete', 'truncate')
-    return queries_start_with(queries, keywords)
-
-def confirm_destructive_query(queries):
-    """Check if the query is destructive and prompts the user to confirm.
-    Returns:
-    None if the query is non-destructive or we can't prompt the user.
-    True if the query is destructive and the user wants to proceed.
-    False if the query is destructive and the user doesn't want to proceed.
-    """
-    prompt_text = ("You're about to run a destructive command.\n"
-                   "Do you want to proceed? (y/n)")
-    if is_destructive(queries) and sys.stdin.isatty():
-        return click.prompt(prompt_text, type=bool)
 
 
 def thanks_picker(files=()):

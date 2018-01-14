@@ -1,4 +1,79 @@
-TBD:
+1.16.0:
+=======
+
+Features:
+---------
+
+* Add DSN aliases to the config file (Thanks: [Frederic Aoustin]).
+
+Bug Fixes:
+----------
+
+* Do not try to connect to a unix socket on Windows (Thanks: [Thomas Roten]).
+
+1.15.0:
+=======
+
+Features:
+---------
+
+* Add sql-update/insert output format. (Thanks: [Dick Marinus]).
+* Also complete aliases in WHERE. (Thanks: [Dick Marinus]).
+
+1.14.0:
+=======
+
+Features:
+---------
+
+* Add `watch [seconds] query` command to repeat a query every [seconds] seconds (by default 5). (Thanks: [David Caro](https://github.com/Terseus))
+* Default to unix socket connection if host and port are unspecified. This simplifies authentication on some systems and matches mysql behaviour.
+* Add support for positional parameters to favorite queries. (Thanks: [Scrappy Soft](https://github.com/scrappysoft))
+
+Bug Fixes:
+----------
+
+* Fix source command for script in current working directory. (Thanks: [Dick Marinus]).
+* Fix issue where the `tee` command did not work on Python 2.7 (Thanks: [Thomas Roten]).
+
+Internal Changes:
+-----------------
+
+* Drop support for Python 3.3 (Thanks: [Thomas Roten]).
+
+* Make tests more compatible between different build environments. (Thanks: [David Caro])
+* Merge `_on_completions_refreshed` and `_swap_completer_objects` functions (Thanks: [Dick Marinus]).
+
+1.13.1:
+=======
+
+Bug Fixes:
+----------
+
+* Fix keyword completion suggestion for `SHOW` (Thanks: [Thomas Roten]).
+* Prevent mycli from crashing when failing to read login path file (Thanks: [Thomas Roten]).
+
+Internal Changes:
+-----------------
+
+* Make tests ignore user config files (Thanks: [Thomas Roten]).
+
+1.13.0:
+=======
+
+Features:
+---------
+
+* Add file name completion for source command (issue #500). (Thanks: [Irina Truong]).
+
+Bug Fixes:
+----------
+
+* Fix UnicodeEncodeError when editing sql command in external editor (Thanks: Klaus Wünschel).
+* Fix MySQL4 version comment retrieval (Thanks: [François Pietka])
+* Fix error that occurred when outputting JSON and NULL data (Thanks: [Thomas Roten]).
+
+1.12.1:
 =======
 
 Bug Fixes:
@@ -6,11 +81,13 @@ Bug Fixes:
 
 * Prevent missing MySQL help database from causing errors in completions (Thanks: [Thomas Roten]).
 * Fix mycli from crashing with small terminal windows under Python 2 (Thanks: [Thomas Roten]).
+* Prevent an error from displaying when you drop the current database (Thanks: [Thomas Roten]).
 
 Internal Changes:
 -----------------
 
 * Use less memory when formatting results for display (Thanks: [Dick Marinus]).
+* Preliminary work for a future change in outputting results that uses less memory (Thanks: [Dick Marinus]).
 
 1.12.0:
 =======
@@ -489,3 +566,5 @@ Bug Fixes:
 [Casper Langemeijer]: https://github.com/langemeijer
 [Scrappy Soft]: https://github.com/scrappysoft
 [Dick Marinus]: https://github.com/meeuw
+[François Pietka]: https://github.com/fpietka
+[Frederic Aoustin]: https://github.com/fraoustin

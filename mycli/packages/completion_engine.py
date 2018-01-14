@@ -1,4 +1,5 @@
 from __future__ import print_function
+import os
 import sys
 import sqlparse
 from sqlparse.sql import Comparison, Identifier, Where
@@ -83,7 +84,7 @@ def suggest_type(full_text, text_before_cursor):
         # Be careful here because trivial whitespace is parsed as a statement,
         # but the statement won't have a first token
         tok1 = statement.token_first()
-        if tok1 and tok1.value == '\\':
+        if tok1 and tok1.value in ['\\', 'source']:
             return suggest_special(text_before_cursor)
 
     last_token = statement and statement.token_prev(len(statement.tokens))[1] or ''
@@ -115,8 +116,11 @@ def suggest_special(text):
             {'type': 'view', 'schema': []},
             {'type': 'schema'},
         ]
+    elif cmd in ['\\.', 'source']:
+        return[{'type': 'file_name'}]
 
     return [{'type': 'keyword'}, {'type': 'special'}]
+
 
 def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier):
     if isinstance(token, string_types):
@@ -214,16 +218,18 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
         # Check for a table alias or schema qualification
         parent = (identifier and identifier.get_parent_name()) or []
 
+        tables = extract_tables(full_text)
         if parent:
-            tables = extract_tables(full_text)
             tables = [t for t in tables if identifies(parent, *t)]
             return [{'type': 'column', 'tables': tables},
                     {'type': 'table', 'schema': parent},
                     {'type': 'view', 'schema': parent},
                     {'type': 'function', 'schema': parent}]
         else:
-            return [{'type': 'column', 'tables': extract_tables(full_text)},
+            aliases = [alias or table for (schema, table, alias) in tables]
+            return [{'type': 'column', 'tables': tables},
                     {'type': 'function', 'schema': []},
+                    {'type': 'alias', 'aliases': aliases},
                     {'type': 'keyword'}]
     elif (token_v.endswith('join') and token.is_keyword) or (token_v in
             ('copy', 'from', 'update', 'into', 'describe', 'truncate',
@@ -266,7 +272,7 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
         else:
             # ON <suggestion>
             # Use table alias if there is one, otherwise the table name
-            aliases = [t[2] or t[1] for t in tables]
+            aliases = [alias or table for (schema, table, alias) in tables]
             suggest = [{'type': 'alias', 'aliases': aliases}]
 
             # The lists of 'aliases' could be empty if we're trying to complete

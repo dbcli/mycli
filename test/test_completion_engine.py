@@ -1,4 +1,5 @@
 from mycli.packages.completion_engine import suggest_type
+import os
 import pytest
 
 
@@ -10,6 +11,7 @@ def sorted_dicts(dicts):
 def test_select_suggests_cols_with_visible_table_scope():
     suggestions = suggest_type('SELECT  FROM tabl', 'SELECT ')
     assert sorted_dicts(suggestions) == sorted_dicts([
+        {'type': 'alias', 'aliases': ['tabl']},
         {'type': 'column', 'tables': [(None, 'tabl', None)]},
         {'type': 'function', 'schema': []},
         {'type': 'keyword'},
@@ -19,6 +21,7 @@ def test_select_suggests_cols_with_visible_table_scope():
 def test_select_suggests_cols_with_qualified_table_scope():
     suggestions = suggest_type('SELECT  FROM sch.tabl', 'SELECT ')
     assert sorted_dicts(suggestions) == sorted_dicts([
+        {'type': 'alias', 'aliases': ['tabl']},
         {'type': 'column', 'tables': [('sch', 'tabl', None)]},
         {'type': 'function', 'schema': []},
         {'type': 'keyword'},
@@ -40,6 +43,7 @@ def test_select_suggests_cols_with_qualified_table_scope():
 def test_where_suggests_columns_functions(expression):
     suggestions = suggest_type(expression, expression)
     assert sorted_dicts(suggestions) == sorted_dicts([
+        {'type': 'alias', 'aliases': ['tabl']},
         {'type': 'column', 'tables': [(None, 'tabl', None)]},
         {'type': 'function', 'schema': []},
         {'type': 'keyword'},
@@ -53,6 +57,7 @@ def test_where_suggests_columns_functions(expression):
 def test_where_in_suggests_columns(expression):
     suggestions = suggest_type(expression, expression)
     assert sorted_dicts(suggestions) == sorted_dicts([
+        {'type': 'alias', 'aliases': ['tabl']},
         {'type': 'column', 'tables': [(None, 'tabl', None)]},
         {'type': 'function', 'schema': []},
         {'type': 'keyword'},
@@ -63,6 +68,7 @@ def test_where_equals_any_suggests_columns_or_keywords():
     text = 'SELECT * FROM tabl WHERE foo = ANY('
     suggestions = suggest_type(text, text)
     assert sorted_dicts(suggestions) == sorted_dicts([
+        {'type': 'alias', 'aliases': ['tabl']},
         {'type': 'column', 'tables': [(None, 'tabl', None)]},
         {'type': 'function', 'schema': []},
         {'type': 'keyword'}])
@@ -91,6 +97,7 @@ def test_operand_inside_function_suggests_cols2():
 def test_select_suggests_cols_and_funcs():
     suggestions = suggest_type('SELECT ', 'SELECT ')
     assert sorted_dicts(suggestions) == sorted_dicts([
+        {'type': 'alias', 'aliases': []},
         {'type': 'column', 'tables': []},
         {'type': 'function', 'schema': []},
         {'type': 'keyword'},
@@ -153,6 +160,7 @@ def test_distinct_suggests_cols():
 def test_col_comma_suggests_cols():
     suggestions = suggest_type('SELECT a, b, FROM tbl', 'SELECT a, b,')
     assert sorted_dicts(suggestions) == sorted_dicts([
+        {'type': 'alias', 'aliases': ['tbl']},
         {'type': 'column', 'tables': [(None, 'tbl', None)]},
         {'type': 'function', 'schema': []},
         {'type': 'keyword'},
@@ -195,6 +203,7 @@ def test_partially_typed_col_name_suggests_col_names():
     suggestions = suggest_type('SELECT * FROM tabl WHERE col_n',
                                'SELECT * FROM tabl WHERE col_n')
     assert sorted_dicts(suggestions) == sorted_dicts([
+        {'type': 'alias', 'aliases': ['tabl']},
         {'type': 'column', 'tables': [(None, 'tabl', None)]},
         {'type': 'function', 'schema': []},
         {'type': 'keyword'},
@@ -278,6 +287,7 @@ def test_sub_select_col_name_completion():
     suggestions = suggest_type('SELECT * FROM (SELECT  FROM abc',
                                'SELECT * FROM (SELECT ')
     assert sorted_dicts(suggestions) == sorted_dicts([
+        {'type': 'alias', 'aliases': ['abc']},
         {'type': 'column', 'tables': [(None, 'abc', None)]},
         {'type': 'function', 'schema': []},
         {'type': 'keyword'},
@@ -396,6 +406,7 @@ def test_2_statements_2nd_current():
     suggestions = suggest_type('select * from a; select  from b',
                                'select * from a; select ')
     assert sorted_dicts(suggestions) == sorted_dicts([
+        {'type': 'alias', 'aliases': ['b']},
         {'type': 'column', 'tables': [(None, 'b', None)]},
         {'type': 'function', 'schema': []},
         {'type': 'keyword'},
@@ -421,6 +432,7 @@ def test_2_statements_1st_current():
     suggestions = suggest_type('select  from a; select * from b',
                                'select ')
     assert sorted_dicts(suggestions) == sorted_dicts([
+        {'type': 'alias', 'aliases': ['a']},
         {'type': 'column', 'tables': [(None, 'a', None)]},
         {'type': 'function', 'schema': []},
         {'type': 'keyword'},
@@ -438,6 +450,7 @@ def test_3_statements_2nd_current():
     suggestions = suggest_type('select * from a; select  from b; select * from c',
                                'select * from a; select ')
     assert sorted_dicts(suggestions) == sorted_dicts([
+        {'type': 'alias', 'aliases': ['b']},
         {'type': 'column', 'tables': [(None, 'b', None)]},
         {'type': 'function', 'schema': []},
         {'type': 'keyword'},
@@ -495,3 +508,18 @@ def test_cross_join():
 def test_after_as(expression):
     suggestions = suggest_type(expression, expression)
     assert set(suggestions) == set()
+
+
+@pytest.mark.parametrize('expression', [
+    '\\. ',
+    'select 1; \\. ',
+    'select 1;\\. ',
+    'select 1 ; \\. ',
+    'source ',
+    'truncate table test; source ',
+    'truncate table test ; source ',
+    'truncate table test;source ',
+])
+def test_source_is_file(expression):
+    suggestions = suggest_type(expression, expression)
+    assert suggestions == [{'type': 'file_name'}]

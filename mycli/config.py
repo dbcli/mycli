@@ -169,7 +169,7 @@ def open_mylogin_cnf(name):
     try:
         with open(name, 'rb') as f:
             plaintext = read_and_decrypt_mylogin_cnf(f)
-    except (OSError, IOError):
+    except (OSError, IOError, ValueError):
         logger.error('Unable to open login path file.')
         return None
 

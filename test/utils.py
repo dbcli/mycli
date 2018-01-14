@@ -1,15 +1,22 @@
-from os import getenv
+# -*- coding: utf-8 -*-
+
+
+import os
+import time
+import signal
+import platform
+import multiprocessing
 
 import pymysql
 import pytest
 
 from mycli.main import special
 
-PASSWORD = getenv('PYTEST_PASSWORD')
-USER = getenv('PYTEST_USER', 'root')
-HOST = getenv('PYTEST_HOST', 'localhost')
-PORT = getenv('PYTEST_PORT', 3306)
-CHARSET = getenv('PYTEST_CHARSET', 'utf8')
+PASSWORD = os.getenv('PYTEST_PASSWORD')
+USER = os.getenv('PYTEST_USER', 'root')
+HOST = os.getenv('PYTEST_HOST', 'localhost')
+PORT = os.getenv('PYTEST_PORT', 3306)
+CHARSET = os.getenv('PYTEST_CHARSET', 'utf8')
 
 
 def db_connection(dbname=None):
@@ -60,3 +67,28 @@ def set_expanded_output(is_expanded):
 def is_expanded_output():
     """Pass-through for the tests."""
     return special.is_expanded_output()
+
+
+def send_ctrl_c_to_pid(pid, wait_seconds):
+    """Sends a Ctrl-C like signal to the given `pid` after `wait_seconds`
+    seconds."""
+    time.sleep(wait_seconds)
+    system_name = platform.system()
+    if system_name == "Windows":
+        os.kill(pid, signal.CTRL_C_EVENT)
+    else:
+        os.kill(pid, signal.SIGINT)
+
+
+def send_ctrl_c(wait_seconds):
+    """Create a process that sends a Ctrl-C like signal to the current process
+    after `wait_seconds` seconds.
+
+    Returns the `multiprocessing.Process` created.
+
+    """
+    ctrl_c_process = multiprocessing.Process(
+        target=send_ctrl_c_to_pid, args=(os.getpid(), wait_seconds)
+    )
+    ctrl_c_process.start()
+    return ctrl_c_process

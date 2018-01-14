@@ -2,12 +2,15 @@
 import os
 import stat
 import tempfile
+from time import time
+from mock import patch
 
 import pytest
+from pymysql import ProgrammingError
 
 import mycli.packages.special
 
-from utils import dbtest, db_connection
+from utils import dbtest, db_connection, send_ctrl_c
 
 
 def test_set_get_pager():
@@ -127,3 +130,105 @@ def test_parseargfile_no_file():
 
     with pytest.raises(TypeError):
         mycli.packages.special.iocommands.parseargfile('-o ')
+
+
+@dbtest
+def test_watch_query_iteration():
+    """Test that a single iteration of the result of `watch_query` executes
+    the desired query and returns the given results."""
+    expected_value = "1"
+    query = "SELECT {0!s}".format(expected_value)
+    expected_title = '> {0!s}'.format(query)
+    with db_connection().cursor() as cur:
+        result = next(mycli.packages.special.iocommands.watch_query(
+            arg=query, cur=cur
+        ))
+    assert result[0] == expected_title
+    assert result[2][0] == expected_value
+
+
+@dbtest
+def test_watch_query_full():
+    """Test that `watch_query`:
+
+    * Returns the expected results.
+    * Executes the defined times inside the given interval, in this case with
+      a 0.3 seconds wait, it should execute 4 times inside a 1 seconds
+      interval.
+    * Stops at Ctrl-C
+
+    """
+    watch_seconds = 0.3
+    wait_interval = 1
+    expected_value = "1"
+    query = "SELECT {0!s}".format(expected_value)
+    expected_title = '> {0!s}'.format(query)
+    expected_results = 4
+    ctrl_c_process = send_ctrl_c(wait_interval)
+    with db_connection().cursor() as cur:
+        results = list(
+            result for result in mycli.packages.special.iocommands.watch_query(
+                arg='{0!s} {1!s}'.format(watch_seconds, query), cur=cur
+            )
+        )
+    ctrl_c_process.join(1)
+    assert len(results) == expected_results
+    for result in results:
+        assert result[0] == expected_title
+        assert result[2][0] == expected_value
+
+
+@dbtest
+@patch('click.clear')
+def test_watch_query_clear(clear_mock):
+    """Test that the screen is cleared with the -c flag of `watch` command
+    before execute the query."""
+    with db_connection().cursor() as cur:
+        watch_gen = mycli.packages.special.iocommands.watch_query(
+            arg='0.1 -c select 1;', cur=cur
+        )
+        assert not clear_mock.called
+        next(watch_gen)
+        assert clear_mock.called
+        clear_mock.reset_mock()
+        next(watch_gen)
+        assert clear_mock.called
+        clear_mock.reset_mock()
+
+
+@dbtest
+def test_watch_query_bad_arguments():
+    """Test different incorrect combinations of arguments for `watch`
+    command."""
+    watch_query = mycli.packages.special.iocommands.watch_query
+    with db_connection().cursor() as cur:
+        with pytest.raises(ProgrammingError):
+            next(watch_query('a select 1;', cur=cur))
+        with pytest.raises(ProgrammingError):
+            next(watch_query('-a select 1;', cur=cur))
+        with pytest.raises(ProgrammingError):
+            next(watch_query('1 -a select 1;', cur=cur))
+        with pytest.raises(ProgrammingError):
+            next(watch_query('-c -a select 1;', cur=cur))
+
+
+@dbtest
+@patch('click.clear')
+def test_watch_query_interval_clear(clear_mock):
+    """Test `watch` command with interval and clear flag."""
+    def test_asserts(gen):
+        clear_mock.reset_mock()
+        start = time()
+        next(gen)
+        assert clear_mock.called
+        next(gen)
+        exec_time = time() - start
+        assert exec_time > seconds and exec_time < (seconds + seconds)
+
+    seconds = 1.0
+    watch_query = mycli.packages.special.iocommands.watch_query
+    with db_connection().cursor() as cur:
+        test_asserts(watch_query('{0!s} -c select 1;'.format(seconds),
+                                 cur=cur))
+        test_asserts(watch_query('-c {0!s} select 1;'.format(seconds),
+                                 cur=cur))

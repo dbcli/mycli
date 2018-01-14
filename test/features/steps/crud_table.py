@@ -96,3 +96,23 @@ def step_see_data_deleted(context):
 def step_see_table_dropped(context):
     """Wait to see drop output."""
     wrappers.expect_exact(context, 'Query OK, 0 rows affected', timeout=2)
+
+
+@when('we select null')
+def step_select_null(context):
+    """Send select null."""
+    context.cli.sendline('select null;')
+
+
+@then('we see null selected')
+def step_see_null_selected(context):
+    """Wait to see null output."""
+    wrappers.expect_pager(
+        context, dedent("""\
+            +--------+\r
+            | NULL   |\r
+            +--------+\r
+            | <null> |\r
+            +--------+\r
+            """), timeout=1)
+    wrappers.expect_exact(context, '1 row in set', timeout=2)
