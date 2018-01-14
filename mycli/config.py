@@ -114,8 +114,13 @@ class MyCliConfig(Config):
             defaults_suffix=mysql_defaults_suffix, login_path=mysql_login_path)
 
     def read(self):
-        self.mysql.read()
-        return super(self.__class__, self).read()
+        errors = {}
+        mycli = super(self.__class__, self).read()
+
+        if mycli is not True:
+            errors.update(mycli)
+
+        return errors or True
 
     def new_config_file(self):
         return super(self.__class__, self).user_config_file()
