@@ -7,7 +7,7 @@ from textwrap import dedent
 from mycli.packages.tabular_output import sql_format
 from cli_helpers.tabular_output import TabularOutputFormatter
 
-from utils import USER, PASSWORD, HOST, PORT
+from utils import USER, PASSWORD, HOST, PORT, dbtest
 
 import pytest
 import mycli.main
@@ -22,6 +22,7 @@ def formatter():
     return formatter
 
 
+@dbtest
 def test_sql_output(formatter):
     """Test the sql output adapter."""
     sql_format.register_new_formatter(formatter)

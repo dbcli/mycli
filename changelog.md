@@ -1,3 +1,11 @@
+TBD:
+====
+
+Bug Fixes:
+----------
+
+* Mark `test_sql_output` as a dbtest (Thanks: [Dick Marinus]).
+
 1.16.0:
 =======
 
