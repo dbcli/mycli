@@ -81,7 +81,7 @@ auto_vertical_output = False
 keyword_casing = auto
 
 # disabled pager on startup
-enable_pager = False
+enable_pager = True
 
 # Custom colors for the completion menu, toolbar, etc.
 [colors]

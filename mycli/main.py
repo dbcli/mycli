@@ -794,7 +794,7 @@ class MyCli(object):
         else:
             self.explicit_pager = False
 
-        if cnf['skip-pager'] or self.config['main'].as_bool('enable_pager'):
+        if cnf['skip-pager'] or not self.config['main'].as_bool('enable_pager'):
             special.disable_pager()
 
     def refresh_completions(self, reset=False):
