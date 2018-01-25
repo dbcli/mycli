@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from mycli.compat import PY2, PY3
+from mycli.compat import PY2
 
 
 if PY2:

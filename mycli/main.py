@@ -56,7 +56,7 @@ try:
     FileNotFoundError = OSError
 except ImportError:
     from urllib.parse import urlparse
-from pymysql import OperationalError, converters
+from pymysql import OperationalError
 
 from collections import namedtuple
 
@@ -719,8 +719,6 @@ class MyCli(object):
     def get_output_margin(self, status=None):
         """Get the output margin (number of rows for the prompt, footer and
         timing message."""
-        size = self.cli.output.get_size()
-
         margin = self.get_reserved_space() + self.get_prompt(self.prompt_format).count('\n') + 1
         if special.is_timing_enabled():
             margin += 1
