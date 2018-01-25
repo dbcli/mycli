@@ -1,6 +1,10 @@
 TBD:
 ====
 
+Features:
+----------
+* Add `CONCAT` to SQLCompleter and remove unused code (Thanks: [caitinggui])
+
 Bug Fixes:
 ----------
 
