@@ -8,6 +8,7 @@ Features:
 Bug Fixes:
 ----------
 
+* Add enable_pager to the config file (Thanks: [Frederic Aoustin]).
 * Mark `test_sql_output` as a dbtest (Thanks: [Dick Marinus]).
 
 1.16.0:

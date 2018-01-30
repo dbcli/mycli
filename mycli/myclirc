@@ -80,6 +80,9 @@ auto_vertical_output = False
 # keyword casing preference. Possible values "lower", "upper", "auto"
 keyword_casing = auto
 
+# disabled pager on startup
+enable_pager = True
+
 # Custom colors for the completion menu, toolbar, etc.
 [colors]
 # Completion menus.
