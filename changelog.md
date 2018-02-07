@@ -3,7 +3,9 @@ TBD:
 
 Features:
 ----------
+
 * Add `CONCAT` to SQLCompleter and remove unused code (Thanks: [caitinggui])
+* Do not quit when aborting a confirmation prompt (Thanks: [Thomas Roten]).
 
 Bug Fixes:
 ----------
