@@ -46,6 +46,7 @@ from .encodingutils import utf8tounicode, text_type
 from .lexer import MyCliLexer
 from .__init__ import __version__
 from mycli.compat import WIN
+from mycli.packages.filepaths import dir_path_exists
 
 import itertools
 
@@ -245,7 +246,7 @@ class MyCli(object):
 
     def initialize_logging(self):
 
-        log_file = self.config['main']['log_file']
+        log_file = os.path.expanduser(self.config['main']['log_file'])
         log_level = self.config['main']['log_level']
 
         level_map = {'CRITICAL': logging.CRITICAL,
@@ -260,8 +261,13 @@ class MyCli(object):
         if log_level.upper() == "NONE":
             handler = logging.NullHandler()
             log_level = "CRITICAL"
+        elif dir_path_exists(log_file):
+            handler = logging.FileHandler(log_file)
         else:
-            handler = logging.FileHandler(os.path.expanduser(log_file))
+            self.echo(
+                'Error: Unable to open the log file "{}".'.format(log_file),
+                err=True, fg='red')
+            return
 
         formatter = logging.Formatter(
             '%(asctime)s (%(process)d/%(threadName)s) '
@@ -485,6 +491,17 @@ class MyCli(object):
         author_file = os.path.join(PACKAGE_ROOT, 'AUTHORS')
         sponsor_file = os.path.join(PACKAGE_ROOT, 'SPONSORS')
 
+        history_file = os.path.expanduser(
+            os.environ.get('MYCLI_HISTFILE', '~/.mycli-history'))
+        if dir_path_exists(history_file):
+            history = FileHistory(history_file)
+        else:
+            history = None
+            self.echo(
+                'Error: Unable to open the history file "{}". '
+                'Your query history will not be saved.'.format(history_file),
+                err=True, fg='red')
+
         key_binding_manager = mycli_bindings()
 
         if not self.less_chatty:
@@ -670,11 +687,11 @@ class MyCli(object):
             reserve_space_for_menu=self.get_reserved_space()
         )
         with self._completer_lock:
-            buf = CLIBuffer(always_multiline=self.multi_line, completer=self.completer,
-                            history=FileHistory(os.path.expanduser(
-                                os.environ.get('MYCLI_HISTFILE', '~/.mycli-history'))),
-                            auto_suggest=AutoSuggestFromHistory(),
-                            complete_while_typing=Always(), accept_action=AcceptAction.RETURN_DOCUMENT)
+            buf = CLIBuffer(
+                always_multiline=self.multi_line, completer=self.completer,
+                history=history, auto_suggest=AutoSuggestFromHistory(),
+                complete_while_typing=Always(),
+                accept_action=AcceptAction.RETURN_DOCUMENT)
 
             if self.key_bindings == 'vi':
                 editing_mode = EditingMode.VI
