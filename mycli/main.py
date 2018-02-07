@@ -29,7 +29,7 @@ from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from pygments.token import Token
 
 from .packages.special.main import NO_QUERY
-from .packages.prompt_utils import confirm_destructive_query
+from .packages.prompt_utils import confirm, confirm_destructive_query, prompt
 from .packages.tabular_output import sql_format
 import mycli.packages.special as special
 from .sqlcompleter import SQLCompleter
@@ -579,7 +579,7 @@ class MyCli(object):
                             cur and cur.rowcount > threshold):
                         self.echo('The result set has more than {} rows.'.format(
                             threshold), fg='red')
-                        if not click.confirm('Do you want to continue?'):
+                        if not confirm('Do you want to continue?'):
                             self.echo("Aborted!", err=True, fg='red')
                             break
 
