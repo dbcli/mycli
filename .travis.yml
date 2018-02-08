@@ -10,7 +10,10 @@ install:
   - pip install -e .
 
 script:
-  - ./setup.py test -c lint
+  - ./setup.py test --pytest-args="--cov-report= --cov=mycli"
+  - coverage combine
+  - coverage report
+  - ./setup.py lint
 
 after_success:
   - codecov
