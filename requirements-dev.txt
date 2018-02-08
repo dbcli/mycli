@@ -1,5 +1,5 @@
 mock
-pytest
+pytest!=3.3.0
 pytest-cov==2.4.0
 tox
 twine==1.8.1
