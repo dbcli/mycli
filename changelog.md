@@ -6,6 +6,7 @@ Features:
 
 * Add `CONCAT` to SQLCompleter and remove unused code (Thanks: [caitinggui])
 * Do not quit when aborting a confirmation prompt (Thanks: [Thomas Roten]).
+* Add option list-dsn (Thanks: [`]Frederic Aoustin]).
 
 Bug Fixes:
 ----------
