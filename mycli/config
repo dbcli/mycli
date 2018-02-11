@@ -78,7 +78,12 @@ login_path_as_host = boolean(default=False)
 auto_vertical_output = boolean(default=False)
 
 # keyword casing preference. Possible values "lower", "upper", "auto"
-keyword_casing = auto
+keyword_casing = option('lower', 'upper', 'auto', default='auto')
+
+# Pager mode (on, off, or auto)
+pager = option('on', 'off', 'auto', default='auto')
+
+pager_command = string(default='')
 
 # Custom colors for the completion menu, toolbar, etc.
 [colors]
@@ -90,9 +95,9 @@ Token.Menu.Completions.ProgressButton = string(default='bg:#003333')
 Token.Menu.Completions.ProgressBar = string(default='bg:#00aaaa')
 
 # Query results
-Token.Output.Header = 'bold'
-Token.Output.OddRow = ''
-Token.Output.EvenRow = ''
+Token.Output.Header = string(default='bold')
+Token.Output.OddRow = string(default='')
+Token.Output.EvenRow = string(default='')
 
 # Selected text.
 Token.SelectedText = string(default='#ffffff bg:#6666aa')

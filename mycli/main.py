@@ -64,7 +64,6 @@ Query = namedtuple('Query', ['query', 'successful', 'mutating'])
 
 PACKAGE_ROOT = os.path.abspath(os.path.dirname(__file__))
 
-
 class MyCli(object):
 
     max_len_prompt = 45
@@ -79,9 +78,7 @@ class MyCli(object):
         self.login_path = login_path
 
         c = self.config = MyCliConfig(
-            'mycli', 'dbcli', 'config', default=myclirc, validate=True,
-            mysql_defaults_file=defaults_file,
-            mysql_defaults_suffix=defaults_suffix, mysql_login_path=login_path)
+            'mycli', 'dbcli', 'config', default=myclirc, validate=True)
         c.read()
 
         if c.legacy_file_loaded():
@@ -271,25 +268,13 @@ class MyCli(object):
 
     def connect(self, database='', user='', passwd='', host='', port='',
             socket='', charset='', local_infile='', ssl=''):
-        database = database or self.config.mysql.get('database')
         if port or host:
             socket = ''
-        else:
-            socket = socket or self.config.mysql.get('socket')
-        user = user or self.config.mysql.get('user') or os.getenv('USER')
-        host = host or self.config.mysql.get('host')
-        port = port or self.config.mysql.get('port')
+        user = user or os.getenv('USER')
         ssl = ssl or {}
 
-        passwd = passwd or self.config.mysql.get('password')
-        charset = (charset or self.config.mysql.get('default-character-set') or
-                   'utf8')
+        charset = charset or 'utf8'
 
-        # Favor whichever local_infile option is set.
-        local_infile = (local_infile or self.config.mysql.get('local-infile')
-                        or self.config.mysql.get('loose-local-infile'))
-
-        ssl = self.merge_ssl_with_cnf(ssl, self.config.mysql)
         # prune lone check_hostname=False
         if not any(v for v in ssl.values()):
             ssl = None
@@ -701,10 +686,11 @@ class MyCli(object):
             os.environ['LESS'] = '-RXF'
 
         self.explicit_pager = False
-        if self.config.mysql.get('pager'):
-            special.set_pager(self.config.mysql.get('pager'))
-            self.explicit_pager = True
-        if self.config.mysql.get('skip-pager'):
+        if self.config['main']['pager'].lower() in ('on', 'auto'):
+            special.set_pager(self.config['main']['pager_command'])
+            if self.config['main']['pager'].lower() == 'on':
+                self.explicit_pager = True
+        else:
             special.disable_pager()
 
     def refresh_completions(self, reset=False):
