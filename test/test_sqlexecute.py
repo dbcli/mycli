@@ -49,7 +49,7 @@ def test_bools(executor):
 def test_binary(executor):
     run(executor, '''create table bt(geom linestring NOT NULL)''')
     run(executor, "INSERT INTO bt VALUES "
-        "(GeomFromText('LINESTRING(116.37604 39.73979,116.375 39.73965)'));")
+        "(ST_GeomFromText('LINESTRING(116.37604 39.73979,116.375 39.73965)'));")
     results = run(executor, '''select * from bt''')
 
     geom = (b'\x00\x00\x00\x00\x01\x02\x00\x00\x00\x02\x00\x00\x009\x7f\x13\n'
@@ -222,36 +222,36 @@ def test_unicode_support(executor):
 
 @dbtest
 def test_timestamp_null(executor):
-    run(executor, '''create table ts_null(a timestamp)''')
-    run(executor, '''insert into ts_null values(0)''')
+    run(executor, '''create table ts_null(a timestamp null)''')
+    run(executor, '''insert into ts_null values(null)''')
     results = run(executor, '''select * from ts_null''')
     assert_result_equal(results, headers=['a'],
-                        rows=[('0000-00-00 00:00:00',)])
+                        rows=[(None,)])
 
 
 @dbtest
 def test_datetime_null(executor):
-    run(executor, '''create table dt_null(a datetime)''')
-    run(executor, '''insert into dt_null values(0)''')
+    run(executor, '''create table dt_null(a datetime null)''')
+    run(executor, '''insert into dt_null values(null)''')
     results = run(executor, '''select * from dt_null''')
     assert_result_equal(results, headers=['a'],
-                        rows=[('0000-00-00 00:00:00',)])
+                        rows=[(None,)])
 
 
 @dbtest
 def test_date_null(executor):
-    run(executor, '''create table date_null(a date)''')
-    run(executor, '''insert into date_null values(0)''')
+    run(executor, '''create table date_null(a date null)''')
+    run(executor, '''insert into date_null values(null)''')
     results = run(executor, '''select * from date_null''')
-    assert_result_equal(results, headers=['a'], rows=[('0000-00-00',)])
+    assert_result_equal(results, headers=['a'], rows=[(None,)])
 
 
 @dbtest
 def test_time_null(executor):
-    run(executor, '''create table time_null(a time)''')
-    run(executor, '''insert into time_null values(0)''')
+    run(executor, '''create table time_null(a time null)''')
+    run(executor, '''insert into time_null values(null)''')
     results = run(executor, '''select * from time_null''')
-    assert_result_equal(results, headers=['a'], rows=[('00:00:00',)])
+    assert_result_equal(results, headers=['a'], rows=[(None,)])
 
 
 @dbtest

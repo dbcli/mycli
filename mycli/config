@@ -85,6 +85,9 @@ pager = option('on', 'off', 'auto', default='auto')
 
 pager_command = string(default='')
 
+# disabled pager on startup
+enable_pager = True
+
 # Custom colors for the completion menu, toolbar, etc.
 [colors]
 # Completion menus.

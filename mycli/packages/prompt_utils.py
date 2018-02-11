@@ -18,4 +18,20 @@ def confirm_destructive_query(queries):
     prompt_text = ("You're about to run a destructive command.\n"
                    "Do you want to proceed? (y/n)")
     if is_destructive(queries) and sys.stdin.isatty():
-        return click.prompt(prompt_text, type=bool)
+        return prompt(prompt_text, type=bool)
+
+
+def confirm(*args, **kwargs):
+    """Prompt for confirmation (yes/no) and handle any abort exceptions."""
+    try:
+        return click.confirm(*args, **kwargs)
+    except click.Abort:
+        return False
+
+
+def prompt(*args, **kwargs):
+    """Prompt the user for input and handle any abort exceptions."""
+    try:
+        return click.prompt(*args, **kwargs)
+    except click.Abort:
+        return False
