@@ -965,7 +965,7 @@ class MyCli(object):
 @click.option('-d', '--dsn', default='', envvar='DSN',
               help='Use DSN configured into the [alias_dsn] section of myclirc file.')
 @click.option('--list-dsn', 'list_dsn', is_flag=True,
-        help='list of DSN configured into the [alias_dsn] section of pgclirc file.')
+        help='list of DSN configured into the [alias_dsn] section of myclirc file.')
 @click.option('-R', '--prompt', 'prompt',
               help='Prompt format (Default: "{0}").'.format(
                   MyCli.default_prompt))
@@ -1021,10 +1021,13 @@ def cli(database, user, host, port, socket, password, dbname,
             for alias in mycli.config['alias_dsn']:
                 click.secho(alias + " : " + mycli.config['alias_dsn'][alias])
             sys.exit(0)
-        except Exception as err:
+        except KeyError as err:
             click.secho('Invalid DSNs found in the config file. '\
                 'Please check the "[alias_dsn]" section in myclirc.',
                  err=True, fg='red')
+            exit(1)
+        except Exception as e:
+            click.secho(str(e), err=True, fg='red')
             exit(1)
     # Choose which ever one has a valid value.
     database = database or dbname
