@@ -960,7 +960,8 @@ class MyCli(object):
                     'by default.'))
 # as of 2016-02-15 revocation list is not supported by underling PyMySQL
 # library (--ssl-crl and --ssl-crlpath options in vanilla mysql client)
-@click.option('-v', '--version', is_flag=True, help='Output mycli\'s version.')
+@click.option('-V', '--version', is_flag=True, help='Output mycli\'s version.')
+@click.option('-v', '--verbose', is_flag=True, help='Verbose output.')
 @click.option('-D', '--database', 'dbname', help='Database to use.')
 @click.option('-d', '--dsn', default='', envvar='DSN',
               help='Use DSN configured into the [alias_dsn] section of myclirc file.')
@@ -993,10 +994,11 @@ class MyCli(object):
               help='Execute command and quit.')
 @click.argument('database', default='', nargs=1)
 def cli(database, user, host, port, socket, password, dbname,
-        version, prompt, logfile, defaults_group_suffix, defaults_file,
-        login_path, auto_vertical_output, local_infile, ssl_ca, ssl_capath,
-        ssl_cert, ssl_key, ssl_cipher, ssl_verify_server_cert, table, csv,
-        warn, execute, myclirc, dsn, list_dsn):
+        version, verbose, prompt, logfile, defaults_group_suffix,
+        defaults_file, login_path, auto_vertical_output, local_infile,
+        ssl_ca, ssl_capath, ssl_cert, ssl_key, ssl_cipher,
+        ssl_verify_server_cert, table, csv, warn, execute, myclirc, dsn,
+        list_dsn):
     """A MySQL terminal client with auto-completion and syntax highlighting.
 
     \b
@@ -1016,11 +1018,9 @@ def cli(database, user, host, port, socket, password, dbname,
                   defaults_file=defaults_file, login_path=login_path,
                   auto_vertical_output=auto_vertical_output, warn=warn,
                   myclirc=myclirc)
-    if list_dsn :
+    if list_dsn:
         try:
-            for alias in mycli.config['alias_dsn']:
-                click.secho(alias + " : " + mycli.config['alias_dsn'][alias])
-            sys.exit(0)
+            alias_dsn = mycli.config['alias_dsn']
         except KeyError as err:
             click.secho('Invalid DSNs found in the config file. '\
                 'Please check the "[alias_dsn]" section in myclirc.',
@@ -1029,6 +1029,12 @@ def cli(database, user, host, port, socket, password, dbname,
         except Exception as e:
             click.secho(str(e), err=True, fg='red')
             exit(1)
+        for alias, value in alias_dsn.items():
+            if verbose:
+                click.secho("{} : {}".format(alias, value))
+            else:
+                click.secho(alias)
+        sys.exit(0)
     # Choose which ever one has a valid value.
     database = database or dbname
 
