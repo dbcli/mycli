@@ -53,9 +53,11 @@ click.disable_unicode_literals_warning = True
 
 try:
     from urlparse import urlparse
+    from urlparse import unquote
     FileNotFoundError = OSError
 except ImportError:
     from urllib.parse import urlparse
+    from urllib.parse import unquote
 from pymysql import OperationalError
 
 from collections import namedtuple
@@ -286,8 +288,8 @@ class MyCli(object):
     def connect_uri(self, uri, local_infile=None, ssl=None):
         uri = urlparse(uri)
         database = uri.path[1:]  # ignore the leading fwd slash
-        self.connect(database, uri.username, uri.password, uri.hostname,
-                uri.port, local_infile=local_infile, ssl=ssl)
+        self.connect(database, unquote(uri.username), unquote(uri.password),
+                     uri.hostname, uri.port, local_infile=local_infile, ssl=ssl)
 
     def read_my_cnf_files(self, files, keys):
         """
