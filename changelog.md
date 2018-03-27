@@ -16,6 +16,8 @@ Bug Fixes:
 * Mark `test_sql_output` as a dbtest (Thanks: [Dick Marinus]).
 * Don't crash if the log/history file directories don't exist (Thanks: [Thomas Roten]).
 * Unquote dsn username and password (Thanks: [Dick Marinus]).
+* Output `Password:` prompt to stderr (Thanks: [ushuz]).
+
 
 1.16.0:
 =======

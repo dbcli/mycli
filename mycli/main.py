@@ -398,7 +398,7 @@ class MyCli(object):
             except OperationalError as e:
                 if ('Access denied for user' in e.args[1]):
                     new_passwd = click.prompt('Password', hide_input=True,
-                                              show_default=False, type=str)
+                                              show_default=False, type=str, err=True)
                     self.sqlexecute = SQLExecute(database, user, new_passwd, host, port,
                                                  socket, charset, local_infile, ssl)
                 else:
