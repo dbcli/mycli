@@ -146,9 +146,8 @@ $ sudo pip install mycli
 ### Cygwin
 
 1. Make sure the following Cygwin packages are installed:
-`python3`, `gcc-g++`, `python3-devel`, `libffi-devel`, and `openssl-devel`.
-2. [Install pip](https://pip.pypa.io/~th-get-pip-py).
-3. Install mycli: `pip install mycli`
+`python3`, `python3-pip`.
+2. Install mycli: `pip3 install mycli`
 
 ### Thanks:
 
