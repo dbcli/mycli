@@ -143,6 +143,12 @@ Once that is installed, you can install mycli as follows:
 $ sudo pip install mycli
 ```
 
+### Cygwin
+
+1. Make sure the following Cygwin packages are installed:
+`python3`, `python3-pip`.
+2. Install mycli: `pip3 install mycli`
+
 ### Thanks:
 
 This project was funded through kickstarter. My thanks to the [backers](http://mycli.net/sponsors) who supported the project.
