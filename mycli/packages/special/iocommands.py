@@ -11,7 +11,8 @@ import click
 import sqlparse
 
 from . import export
-from .main import special_command, NO_QUERY, PARSED_QUERY
+from .main import (CommandNotFound, execute, special_command, NO_QUERY,
+                   PARSED_QUERY)
 from .favoritequeries import favoritequeries
 from .utils import handle_cd_command
 from mycli.packages.prompt_utils import confirm_destructive_query
@@ -177,7 +178,13 @@ def execute_favorite_query(cur, arg, **_):
             for sql in sqlparse.split(query):
                 sql = sql.rstrip(';')
                 title = '> %s' % (sql)
-                cur.execute(sql)
+                try:   # Special command
+                    _logger.debug('Trying a dbspecial command. sql: %r', sql)
+                    for result in execute(cur, sql):
+                        yield result
+                except CommandNotFound:  # Regular SQL
+                    _logger.debug('Regular sql statement. sql: %r', sql)
+                    cur.execute(sql)
                 if cur.description:
                     headers = [x[0] for x in cur.description]
                     yield (title, cur, headers, None)
