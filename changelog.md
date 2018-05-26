@@ -19,6 +19,11 @@ Bug Fixes:
 * Output `Password:` prompt to stderr (Thanks: [ushuz]).
 * Mark `alter` as a destructive query (Thanks: [Dick Marinus]).
 
+Internal:
+---------
+
+* Refactor Destructive Warning behave tests (Thanks: [Dick Marinus]).
+
 
 1.16.0:
 =======
