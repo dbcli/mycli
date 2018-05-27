@@ -52,12 +52,15 @@ click.disable_unicode_literals_warning = True
 
 try:
     from urlparse import urlparse
+    from urlparse import unquote
     FileNotFoundError = OSError
 except ImportError:
     from urllib.parse import urlparse
+    from urllib.parse import unquote
 from pymysql import OperationalError
 
 from collections import namedtuple
+import re
 
 # Query tuples are used for maintaining history
 Query = namedtuple('Query', ['query', 'successful', 'mutating'])
@@ -245,8 +248,8 @@ class MyCli(object):
     def connect_uri(self, uri, local_infile=None, ssl=None):
         uri = urlparse(uri)
         database = uri.path[1:]  # ignore the leading fwd slash
-        self.connect(database, uri.username, uri.password, uri.hostname,
-                uri.port, local_infile=local_infile, ssl=ssl)
+        self.connect(database, unquote(uri.username), unquote(uri.password),
+                     uri.hostname, uri.port, local_infile=local_infile, ssl=ssl)
 
     def merge_ssl_with_cnf(self, ssl, cnf):
         """Merge SSL configuration dict with cnf dict"""
@@ -293,7 +296,7 @@ class MyCli(object):
             except OperationalError as e:
                 if ('Access denied for user' in e.args[1]):
                     new_passwd = click.prompt('Password', hide_input=True,
-                                              show_default=False, type=str)
+                                              show_default=False, type=str, err=True)
                     self.sqlexecute = SQLExecute(database, user, new_passwd, host, port,
                                                  socket, charset, local_infile, ssl)
                 else:
@@ -863,11 +866,16 @@ class MyCli(object):
                     'by default.'))
 # as of 2016-02-15 revocation list is not supported by underling PyMySQL
 # library (--ssl-crl and --ssl-crlpath options in vanilla mysql client)
-@click.option('-v', '--version', is_flag=True, help='Output mycli\'s version.')
+@click.option('-V', '--version', is_flag=True, help='Output mycli\'s version.')
+@click.option('-v', '--verbose', is_flag=True, help='Verbose output.')
 @click.option('-D', '--database', 'dbname', help='Database to use.')
-@click.option('-R', '--prompt', 'prompt', help='Prompt format.')
 @click.option('-d', '--dsn', default='', envvar='DSN',
               help='Use DSN configured into the [alias_dsn] section of myclirc file.')
+@click.option('--list-dsn', 'list_dsn', is_flag=True,
+        help='list of DSN configured into the [alias_dsn] section of myclirc file.')
+@click.option('-R', '--prompt', 'prompt',
+              help='Prompt format (Default: "{0}").'.format(
+                  MyCli.default_prompt))
 @click.option('-l', '--logfile', type=click.File(mode='a', encoding='utf-8'),
               help='Log every query and its results to a file.')
 @click.option('--defaults-group-suffix', type=str,
@@ -891,10 +899,11 @@ class MyCli(object):
               help='Execute command and quit.')
 @click.argument('database', default='', nargs=1)
 def cli(database, user, host, port, socket, password, dbname,
-        version, prompt, logfile, defaults_group_suffix, defaults_file,
-        login_path, auto_vertical_output, local_infile, ssl_ca, ssl_capath,
-        ssl_cert, ssl_key, ssl_cipher, ssl_verify_server_cert, table, csv,
-        warn, execute, myclirc, dsn):
+        version, verbose, prompt, logfile, defaults_group_suffix,
+        defaults_file, login_path, auto_vertical_output, local_infile,
+        ssl_ca, ssl_capath, ssl_cert, ssl_key, ssl_cipher,
+        ssl_verify_server_cert, table, csv, warn, execute, myclirc, dsn,
+        list_dsn):
     """A MySQL terminal client with auto-completion and syntax highlighting.
 
     \b
@@ -914,7 +923,23 @@ def cli(database, user, host, port, socket, password, dbname,
                   defaults_file=defaults_file, login_path=login_path,
                   auto_vertical_output=auto_vertical_output, warn=warn,
                   myclirc=myclirc)
-
+    if list_dsn:
+        try:
+            alias_dsn = mycli.config['alias_dsn']
+        except KeyError as err:
+            click.secho('Invalid DSNs found in the config file. '\
+                'Please check the "[alias_dsn]" section in myclirc.',
+                 err=True, fg='red')
+            exit(1)
+        except Exception as e:
+            click.secho(str(e), err=True, fg='red')
+            exit(1)
+        for alias, value in alias_dsn.items():
+            if verbose:
+                click.secho("{} : {}".format(alias, value))
+            else:
+                click.secho(alias)
+        sys.exit(0)
     # Choose which ever one has a valid value.
     database = database or dbname
 
@@ -1059,11 +1084,14 @@ def is_select(status):
 
 
 def thanks_picker(files=()):
+    contents = []
     for filename in files:
         with open(filename, encoding='utf-8') as f:
-            contents = f.readlines()
-
-    return choice([x.split('*')[1].strip() for x in contents if x.startswith('*')])
+            for line in f:
+                m = re.match('^ *\* (.*)', line)
+                if m:
+                    contents.append(m.group(1))
+    return choice(contents)
 
 
 if __name__ == "__main__":
