@@ -19,6 +19,7 @@ Bug Fixes:
 * Output `Password:` prompt to stderr (Thanks: [ushuz]).
 * Mark `alter` as a destructive query (Thanks: [Dick Marinus]).
 * Fix `thanks_picker` (Thanks: [Dick Marinus]).
+* Fixes mycli compatibility with pbr (Thanks [Thomas Roten]).
 
 Internal:
 ---------
