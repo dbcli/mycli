@@ -6,6 +6,8 @@ Features:
 
 * Add `CONCAT` to SQLCompleter and remove unused code (Thanks: [caitinggui])
 * Do not quit when aborting a confirmation prompt (Thanks: [Thomas Roten]).
+* Add option list-dsn (Thanks: [Frederic Aoustin]).
+* Add verbose option for list-dsn, add tests and clean up code (Thanks: [Dick Marinus]).
 
 Bug Fixes:
 ----------
@@ -13,6 +15,16 @@ Bug Fixes:
 * Add enable_pager to the config file (Thanks: [Frederic Aoustin]).
 * Mark `test_sql_output` as a dbtest (Thanks: [Dick Marinus]).
 * Don't crash if the log/history file directories don't exist (Thanks: [Thomas Roten]).
+* Unquote dsn username and password (Thanks: [Dick Marinus]).
+* Output `Password:` prompt to stderr (Thanks: [ushuz]).
+* Mark `alter` as a destructive query (Thanks: [Dick Marinus]).
+* Fix `thanks_picker` (Thanks: [Dick Marinus]).
+
+Internal:
+---------
+
+* Refactor Destructive Warning behave tests (Thanks: [Dick Marinus]).
+
 
 1.16.0:
 =======

@@ -49,3 +49,11 @@ def step_send_source_command(context):
         context.cli.sendline('\. {0}'.format(f.name))
         wrappers.expect_exact(
             context, context.conf['pager_boundary'] + '\r\n', timeout=5)
+
+
+@then(u'we confirm the destructive warning')
+def step_confirm_destructive_command(context):
+    """Confirm destructive command."""
+    wrappers.expect_exact(
+        context, 'You\'re about to run a destructive command.\r\nDo you want to proceed? (y/n):', timeout=2)
+    context.cli.sendline('y')

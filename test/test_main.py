@@ -10,6 +10,9 @@ from utils import USER, HOST, PORT, PASSWORD, dbtest, run
 from textwrap import dedent
 from collections import namedtuple
 
+from tempfile import NamedTemporaryFile
+from textwrap import dedent
+
 try:
     text_type = basestring
 except NameError:
@@ -266,3 +269,18 @@ def test_reserved_space_is_integer():
     assert isinstance(mycli.get_reserved_space(), int)
 
     click.get_terminal_size = old_func
+
+
+def test_list_dsn():
+    runner = CliRunner()
+    with NamedTemporaryFile(mode="w") as myclirc:
+        myclirc.write(dedent("""\
+            [alias_dsn]
+            test = mysql://test/test
+            """))
+        myclirc.flush()
+        args = ['--list-dsn', '--myclirc', myclirc.name]
+        result = runner.invoke(cli, args=args)
+        assert result.output == "test\n"
+        result = runner.invoke(cli, args=args + ['--verbose'])
+        assert result.output == "test : mysql://test/test\n"

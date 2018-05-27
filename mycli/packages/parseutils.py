@@ -205,7 +205,7 @@ def queries_start_with(queries, prefixes):
 
 def is_destructive(queries):
     """Returns if any of the queries in *queries* is destructive."""
-    keywords = ('drop', 'shutdown', 'delete', 'truncate')
+    keywords = ('drop', 'shutdown', 'delete', 'truncate', 'alter')
     return queries_start_with(queries, keywords)
 
 
