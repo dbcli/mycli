@@ -882,6 +882,7 @@ class MyCli(object):
         output = []
 
         output_kwargs = {
+            'dialect': 'unix',
             'disable_numparse': True,
             'preserve_whitespace': True,
             'preprocessors': (preprocessors.align_decimals, ),

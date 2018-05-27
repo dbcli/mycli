@@ -40,14 +40,14 @@ def test_execute_arg(executor):
     result = runner.invoke(cli, args=CLI_ARGS + ['-e', sql])
 
     assert result.exit_code == 0
-    assert 'abc' in result.output
+    assert '"abc"' in result.output
 
     result = runner.invoke(cli, args=CLI_ARGS + ['--execute', sql])
 
     assert result.exit_code == 0
-    assert 'abc' in result.output
+    assert '"abc"' in result.output
 
-    expected = 'a\nabc\n'
+    expected = '"a"\n"abc"\n'
 
     assert expected in result.output
 
@@ -74,7 +74,7 @@ def test_execute_arg_with_csv(executor):
     sql = 'select * from test;'
     runner = CliRunner()
     result = runner.invoke(cli, args=CLI_ARGS + ['-e', sql] + ['--csv'])
-    expected = 'a\nabc\n'
+    expected = '"a"\n"abc"\n'
 
     assert result.exit_code == 0
     assert expected in "".join(result.output)
@@ -94,7 +94,7 @@ def test_batch_mode(executor):
     result = runner.invoke(cli, args=CLI_ARGS, input=sql)
 
     assert result.exit_code == 0
-    assert 'count(*)\n3\na\nabc\n' in "".join(result.output)
+    assert '"count(*)"\n"3"\n"a"\n"abc"\n' in "".join(result.output)
 
 
 @dbtest
@@ -129,14 +129,15 @@ def test_batch_mode_table(executor):
 @dbtest
 def test_batch_mode_csv(executor):
     run(executor, '''create table test(a text, b text)''')
-    run(executor, '''insert into test (a, b) values('abc', 'def'), ('ghi', 'jkl')''')
+    run(executor,
+        '''insert into test (a, b) values('abc', 'de\nf'), ('ghi', 'jkl')''')
 
     sql = 'select * from test;'
 
     runner = CliRunner()
     result = runner.invoke(cli, args=CLI_ARGS + ['--csv'], input=sql)
 
-    expected = 'a,b\nabc,def\nghi,jkl\n'
+    expected = '"a","b"\n"abc","de\nf"\n"ghi","jkl"\n'
 
     assert result.exit_code == 0
     assert expected in "".join(result.output)
