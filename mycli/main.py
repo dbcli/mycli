@@ -61,6 +61,7 @@ except ImportError:
 from pymysql import OperationalError
 
 from collections import namedtuple
+import re
 
 # Query tuples are used for maintaining history
 Query = namedtuple('Query', ['query', 'successful', 'mutating'])
@@ -1182,11 +1183,14 @@ def is_select(status):
 
 
 def thanks_picker(files=()):
+    contents = []
     for filename in files:
         with open(filename, encoding='utf-8') as f:
-            contents = f.readlines()
-
-    return choice([x.split('*')[1].strip() for x in contents if x.startswith('*')])
+            for line in f:
+                m = re.match('^ *\* (.*)', line)
+                if m:
+                    contents.append(m.group(1))
+    return choice(contents)
 
 
 if __name__ == "__main__":
