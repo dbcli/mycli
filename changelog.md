@@ -1,5 +1,13 @@
-TBD:
-====
+TBD
+===
+
+Internal:
+---------
+
+* Use fileinput (Thanks: [Dick Marinus]).
+
+1.17.0:
+=======
 
 Features:
 ----------
@@ -18,6 +26,7 @@ Bug Fixes:
 * Unquote dsn username and password (Thanks: [Dick Marinus]).
 * Output `Password:` prompt to stderr (Thanks: [ushuz]).
 * Mark `alter` as a destructive query (Thanks: [Dick Marinus]).
+* Quote CSV fields (Thanks: [Thomas Roten]).
 * Fix `thanks_picker` (Thanks: [Dick Marinus]).
 * Fixes mycli compatibility with pbr (Thanks [Thomas Roten]).
 

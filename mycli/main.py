@@ -62,6 +62,7 @@ from pymysql import OperationalError
 
 from collections import namedtuple
 import re
+import fileinput
 
 # Query tuples are used for maintaining history
 Query = namedtuple('Query', ['query', 'successful', 'mutating'])
@@ -883,6 +884,7 @@ class MyCli(object):
         output = []
 
         output_kwargs = {
+            'dialect': 'unix',
             'disable_numparse': True,
             'preserve_whitespace': True,
             'preprocessors': (preprocessors.align_decimals, ),
@@ -1183,12 +1185,10 @@ def is_select(status):
 
 def thanks_picker(files=()):
     contents = []
-    for filename in files:
-        with open(filename, encoding='utf-8') as f:
-            for line in f:
-                m = re.match('^ *\* (.*)', line)
-                if m:
-                    contents.append(m.group(1))
+    for line in fileinput.input(files=files):
+        m = re.match('^ *\* (.*)', line)
+        if m:
+            contents.append(m.group(1))
     return choice(contents)
 
 

@@ -65,8 +65,13 @@ $ sudo apt-get install mycli # Only on debian or ubuntu
       --ssl-verify-server-cert      Verify server's "Common Name" in its cert
                                     against hostname used when connecting. This
                                     option is disabled by default.
-      -v, --version                 Output mycli's version.
+      -V, --version                 Output mycli's version.
+      -v, --verbose                 Verbose output.
       -D, --database TEXT           Database to use.
+      -d, --dsn TEXT                Use DSN configured into the [alias_dsn]
+                                    section of myclirc file.
+      --list-dsn                    list of DSN configured into the [alias_dsn]
+                                    section of myclirc file.
       -R, --prompt TEXT             Prompt format (Default: "\t \u@\h:\d> ").
       -l, --logfile FILENAME        Log every query and its results to a file.
       --defaults-group-suffix TEXT  Read MySQL config groups with the specified
