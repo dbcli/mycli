@@ -6,7 +6,7 @@
 
 A command line client for MySQL that can do auto-completion and syntax highlighting.
 
-HomePage: [http://mycli.net](http://mycli.net)
+HomePage: [http://mycli.net](http://mycli.net)  
 Documentation: [http://mycli.net/docs](http://mycli.net/docs)
 
 ![Completion](screenshots/tables.png)
