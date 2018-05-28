@@ -2,7 +2,7 @@ mock
 pytest
 pytest-cov==2.4.0
 tox
-twine==1.8.1
+twine==1.10.0
 behave
 pexpect
 coverage==4.3.4
