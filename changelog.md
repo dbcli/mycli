@@ -1,3 +1,11 @@
+TBD
+===
+
+Internal:
+---------
+
+* Use fileinput (Thanks: [Dick Marinus]).
+
 1.17.0:
 =======
 
