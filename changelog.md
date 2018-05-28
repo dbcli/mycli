@@ -1,6 +1,11 @@
 TBD
 ===
 
+Bug Fixes:
+----------
+
+* Fixes mycli compatibility with pbr (Thanks [Thomas Roten]).
+
 Internal:
 ---------
 
@@ -28,7 +33,6 @@ Bug Fixes:
 * Mark `alter` as a destructive query (Thanks: [Dick Marinus]).
 * Quote CSV fields (Thanks: [Thomas Roten]).
 * Fix `thanks_picker` (Thanks: [Dick Marinus]).
-* Fixes mycli compatibility with pbr (Thanks [Thomas Roten]).
 
 Internal:
 ---------
