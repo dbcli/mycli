@@ -174,7 +174,7 @@ class SQLExecute(object):
                 yield row
 
     def table_columns(self):
-        """Yields column names"""
+        """Yields (table name, column name) pairs"""
         with self.conn.cursor() as cur:
             _logger.debug('Columns Query. sql: %r', self.table_columns_query)
             cur.execute(self.table_columns_query % self.dbname)
