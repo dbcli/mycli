@@ -71,7 +71,7 @@ class SQLExecute(object):
             '\tcharset: %r'
             '\tlocal_infile: %r'
             '\tssl: %r',
-            database, user, host, port, socket, charset, local_infile, ssl)
+            db, user, host, port, socket, charset, local_infile, ssl)
         conv = conversions.copy()
         conv.update({
             FIELD_TYPE.TIMESTAMP: lambda obj: (convert_mysql_timestamp(obj) or obj),
