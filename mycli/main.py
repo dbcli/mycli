@@ -15,16 +15,16 @@ from cli_helpers.tabular_output import TabularOutputFormatter
 from cli_helpers.tabular_output import preprocessors
 import click
 import sqlparse
-from prompt_toolkit import CommandLineInterface, Application, AbortAction
-from prompt_toolkit.interface import AcceptAction
+from prompt_toolkit.application import get_app
+from prompt_toolkit.shortcuts.prompt import PromptSession, CompleteStyle
 from prompt_toolkit.enums import DEFAULT_BUFFER, EditingMode
-from prompt_toolkit.shortcuts import create_prompt_layout, create_eventloop
-from prompt_toolkit.styles.from_pygments import style_from_pygments
+from prompt_toolkit.styles.pygments import style_from_pygments_cls
 from prompt_toolkit.document import Document
-from prompt_toolkit.filters import Always, HasFocus, IsDone
+from prompt_toolkit.filters import has_focus, is_done, Condition
 from prompt_toolkit.layout.processors import (HighlightMatchingBracketProcessor,
                                               ConditionalProcessor)
 from prompt_toolkit.history import FileHistory
+from prompt_toolkit.lexers import PygmentsLexer
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from pygments.token import Token
 
@@ -36,13 +36,13 @@ from .sqlcompleter import SQLCompleter
 from .clitoolbar import create_toolbar_tokens_func
 from .clistyle import style_factory
 from .sqlexecute import FIELD_TYPES, SQLExecute
-from .clibuffer import CLIBuffer
 from .completion_refresher import CompletionRefresher
 from .config import (write_default_config, get_mylogin_cnf_path,
                      open_mylogin_cnf, read_config_files, str_to_bool)
 from .key_bindings import mycli_bindings
 from .encodingutils import utf8tounicode, text_type
 from .lexer import MyCliLexer
+from .clibuffer import multiline_exception
 from .__init__ import __version__
 from mycli.compat import WIN
 from mycli.packages.filepaths import dir_path_exists
@@ -99,6 +99,7 @@ class MyCli(object):
         self.logfile = logfile
         self.defaults_suffix = defaults_suffix
         self.login_path = login_path
+        self.always_multiline = False
 
         # self.cnf_files is a class variable that stores the list of mysql
         # config files to read in at launch.
@@ -179,7 +180,7 @@ class MyCli(object):
                 # There was an error reading the login path file.
                 print('Error: Unable to read login path file.')
 
-        self.cli = None
+        self.prompt_session = None
 
     def register_special_commands(self):
         special.register_special_command(self.change_db, 'use',
@@ -450,7 +451,7 @@ class MyCli(object):
             self.echo(str(e), err=True, fg='red')
             exit(1)
 
-    def handle_editor_command(self, cli, document):
+    def handle_editor_command(self, prompt_session, text):
         """
         Editor command is any query that is prefixed or suffixed
         by a '\e'. The reason for a while loop is because a user
@@ -459,28 +460,28 @@ class MyCli(object):
         "select * from \e"<enter> to edit it in vim, then come
         back to the prompt with the edited query "select * from
         blah where q = 'abc'\e" to edit it again.
-        :param cli: CommandLineInterface
-        :param document: Document
+        :param prompt_session: PromptSession
+        :param text: string.
         :return: Document
         """
         # FIXME: using application.pre_run_callables like this here is not the best solution.
         # It's internal api of prompt_toolkit that may change. This was added to fix
         # https://github.com/dbcli/pgcli/issues/668. We may find a better way to do it in the future.
-        saved_callables = cli.application.pre_run_callables
-        while special.editor_command(document.text):
-            filename = special.get_filename(document.text)
-            query = (special.get_editor_query(document.text) or
+#        saved_callables = cli.application.pre_run_callables
+        while special.editor_command(text):
+            filename = special.get_filename(text)
+            query = (special.get_editor_query(text) or
                      self.get_last_query())
             sql, message = special.open_external_editor(filename, sql=query)
             if message:
                 # Something went wrong. Raise an exception and bail.
                 raise RuntimeError(message)
-            cli.current_buffer.document = Document(sql, cursor_position=len(sql))
-            cli.application.pre_run_callables = []
-            document = cli.run()
+#            cli.current_buffer.document = Document(sql, cursor_position=len(sql))
+#            cli.application.pre_run_callables = []
+            text = prompt_session.prompt(default=sql)
             continue
-        cli.application.pre_run_callables = saved_callables
-        return document
+#        cli.application.pre_run_callables = saved_callables
+        return text
 
     def run_cli(self):
         iterations = 0
@@ -505,8 +506,6 @@ class MyCli(object):
                 'Your query history will not be saved.'.format(history_file),
                 err=True, fg='red')
 
-        key_binding_manager = mycli_bindings()
-
         if not self.less_chatty:
             print('Version:', __version__)
             print('Chat: https://gitter.im/dbcli/mycli')
@@ -514,38 +513,39 @@ class MyCli(object):
             print('Home: http://mycli.net')
             print('Thanks to the contributor -', thanks_picker([author_file, sponsor_file]))
 
-        def prompt_tokens(cli):
+        def prompt_tokens():
             prompt = self.get_prompt(self.prompt_format)
             if self.prompt_format == self.default_prompt and len(prompt) > self.max_len_prompt:
                 prompt = self.get_prompt('\\d> ')
-            return [(Token.Prompt, prompt)]
+            return [('class:prompt', prompt)]
 
-        def get_continuation_tokens(cli, width):
+        def get_continuation(width, line_number, is_soft_wrap):
             continuation_prompt = self.get_prompt(self.prompt_continuation_format)
-            return [(Token.Continuation, ' ' * (width - len(continuation_prompt)) + continuation_prompt)]
+            return [('class:continuation',
+                     ' ' * (width - len(continuation_prompt)) + continuation_prompt)]
 
         def show_suggestion_tip():
             return iterations < 2
 
-        def one_iteration(document=None):
-            if document is None:
-                document = self.cli.run()
+        def one_iteration(text=None):
+            if text is None:
+                text = self.prompt_session.prompt()
 
                 special.set_expanded_output(False)
 
                 try:
-                    document = self.handle_editor_command(self.cli, document)
+                    text = self.handle_editor_command(self.prompt_session, text)
                 except RuntimeError as e:
-                    logger.error("sql: %r, error: %r", document.text, e)
+                    logger.error("sql: %r, error: %r", text, e)
                     logger.error("traceback: %r", traceback.format_exc())
                     self.echo(str(e), err=True, fg='red')
                     return
 
-            if not document.text.strip():
+            if not text.strip():
                 return
 
             if self.destructive_warning:
-                destroy = confirm_destructive_query(document.text)
+                destroy = confirm_destructive_query(text)
                 if destroy is None:
                     pass  # Query was not destructive. Nothing to do here.
                 elif destroy is True:
@@ -560,18 +560,18 @@ class MyCli(object):
             mutating = False
 
             try:
-                logger.debug('sql: %r', document.text)
+                logger.debug('sql: %r', text)
 
-                special.write_tee(self.get_prompt(self.prompt_format) + document.text)
+                special.write_tee(self.get_prompt(self.prompt_format) + text)
                 if self.logfile:
                     self.logfile.write('\n# %s\n' % datetime.now())
-                    self.logfile.write(document.text)
+                    self.logfile.write(text)
                     self.logfile.write('\n')
 
                 successful = False
                 start = time()
-                res = sqlexecute.run(document.text)
-                self.formatter.query = document.text
+                res = sqlexecute.run(text)
+                self.formatter.query = text
                 successful = True
                 result_count = 0
                 for title, cur, headers, status in res:
@@ -626,7 +626,7 @@ class MyCli(object):
                         status_str = str(status).lower()
                         if status_str.find('ok') > -1:
                             logger.debug("cancelled query, connection id: %r, sql: %r",
-                                         connection_id_to_kill, document.text)
+                                         connection_id_to_kill, text)
                             self.echo("cancelled query", err=True, fg='red')
                 except Exception as e:
                     self.echo('Encountered error while cancelling query: {}'.format(e),
@@ -641,7 +641,7 @@ class MyCli(object):
                     try:
                         sqlexecute.connect()
                         logger.debug('Reconnected successfully.')
-                        one_iteration(document)
+                        one_iteration(text)
                         return  # OK to just return, cuz the recursion call runs to the end.
                     except OperationalError as e:
                         logger.debug('Reconnect failed. e: %r', e)
@@ -649,67 +649,74 @@ class MyCli(object):
                         # If reconnection failed, don't proceed further.
                         return
                 else:
-                    logger.error("sql: %r, error: %r", document.text, e)
+                    logger.error("sql: %r, error: %r", text, e)
                     logger.error("traceback: %r", traceback.format_exc())
                     self.echo(str(e), err=True, fg='red')
             except Exception as e:
-                logger.error("sql: %r, error: %r", document.text, e)
+                logger.error("sql: %r, error: %r", text, e)
                 logger.error("traceback: %r", traceback.format_exc())
                 self.echo(str(e), err=True, fg='red')
             else:
-                if is_dropping_database(document.text, self.sqlexecute.dbname):
+                if is_dropping_database(text, self.sqlexecute.dbname):
                     self.sqlexecute.dbname = None
                     self.sqlexecute.connect()
 
                 # Refresh the table names and column names if necessary.
-                if need_completion_refresh(document.text):
+                if need_completion_refresh(text):
                     self.refresh_completions(
-                            reset=need_completion_reset(document.text))
+                            reset=need_completion_reset(text))
             finally:
                 if self.logfile is False:
                     self.echo("Warning: This query was not logged.",
                               err=True, fg='red')
-            query = Query(document.text, successful, mutating)
+            query = Query(text, successful, mutating)
             self.query_history.append(query)
 
         get_toolbar_tokens = create_toolbar_tokens_func(
+            self,
             self.completion_refresher.is_refreshing,
             show_suggestion_tip)
 
-        layout = create_prompt_layout(
-            lexer=MyCliLexer,
-            multiline=True,
-            get_prompt_tokens=prompt_tokens,
-            get_continuation_tokens=get_continuation_tokens,
-            get_bottom_toolbar_tokens=get_toolbar_tokens,
-            display_completions_in_columns=self.wider_completion_menu,
-            extra_input_processors=[ConditionalProcessor(
-                processor=HighlightMatchingBracketProcessor(chars='[](){}'),
-                filter=HasFocus(DEFAULT_BUFFER) & ~IsDone()
-            )],
-            reserve_space_for_menu=self.get_reserved_space()
-        )
         with self._completer_lock:
-            buf = CLIBuffer(
-                always_multiline=self.multi_line, completer=self.completer,
-                history=history, auto_suggest=AutoSuggestFromHistory(),
-                complete_while_typing=Always(),
-                accept_action=AcceptAction.RETURN_DOCUMENT)
-
             if self.key_bindings == 'vi':
                 editing_mode = EditingMode.VI
             else:
                 editing_mode = EditingMode.EMACS
 
-            application = Application(
-                style=style_from_pygments(style_cls=self.output_style),
-                layout=layout, buffer=buf,
-                key_bindings_registry=key_binding_manager.registry,
-                on_exit=AbortAction.RAISE_EXCEPTION,
-                on_abort=AbortAction.RETRY, editing_mode=editing_mode,
-                ignore_case=True)
-            self.cli = CommandLineInterface(application=application,
-                                       eventloop=create_eventloop())
+            if self.wider_completion_menu:
+                complete_style = CompleteStyle.MULTI_COLUMN
+            else:
+                complete_style = CompleteStyle.COLUMN
+
+            self.prompt_session = PromptSession(
+                message=prompt_tokens,
+                style=style_from_pygments_cls(self.output_style),
+
+                # Layout options.
+                lexer=PygmentsLexer(MyCliLexer),
+                prompt_continuation=get_continuation,
+                bottom_toolbar=get_toolbar_tokens,
+                complete_style=complete_style,
+                input_processors=[ConditionalProcessor(
+                    processor=HighlightMatchingBracketProcessor(chars='[](){}'),
+                    filter=has_focus(DEFAULT_BUFFER) & ~is_done
+                )],
+                reserve_space_for_menu=self.get_reserved_space(),
+
+                # Buffer options.
+                multiline=self._is_multiline,
+                completer=self.completer,
+                history=history, auto_suggest=AutoSuggestFromHistory(),
+                complete_while_typing=True,
+
+                # Key bindings.
+                enable_system_prompt=True,
+                enable_open_in_editor=True,
+
+                # Other options.
+                key_bindings=mycli_bindings(self),
+                editing_mode=editing_mode,
+                search_ignore_case=True)
 
         try:
             while True:
@@ -719,6 +726,14 @@ class MyCli(object):
             special.close_tee()
             if not self.less_chatty:
                 self.echo('Goodbye!')
+
+    @property
+    def _is_multiline(self):
+        @Condition
+        def is_multiline():
+            doc = get_app().layout.get_buffer_by_name(DEFAULT_BUFFER).document
+            return self.always_multiline and not multiline_exception(doc.text)
+        return is_multiline
 
     def log_output(self, output):
         """Log the output in the audit log, if it's enabled."""
@@ -759,7 +774,7 @@ class MyCli(object):
 
         """
         if output:
-            size = self.cli.output.get_size()
+            size = self.prompt_session.output.get_size()
 
             margin = self.get_output_margin(status)
 
@@ -836,13 +851,13 @@ class MyCli(object):
             # When mycli is first launched we call refresh_completions before
             # instantiating the cli object. So it is necessary to check if cli
             # exists before trying the replace the completer object in cli.
-            if self.cli:
-                self.cli.current_buffer.completer = new_completer
+            if self.prompt_session:
+                self.prompt_session.completer = new_completer
 
-        if self.cli:
+        if self.prompt_session:
             # After refreshing, redraw the CLI to clear the statusbar
             # "Refreshing completions..." indicator
-            self.cli.request_redraw()
+            self.prompt_session.app.invalidate()
 
     def get_completions(self, text, cursor_positition):
         with self._completer_lock:
