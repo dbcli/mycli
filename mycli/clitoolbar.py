@@ -1,31 +1,37 @@
 from pygments.token import Token
+from prompt_toolkit.application import get_app
 from prompt_toolkit.enums import DEFAULT_BUFFER, EditingMode
 from prompt_toolkit.key_binding.vi_state import InputMode
 
 
-def create_toolbar_tokens_func(get_is_refreshing, show_fish_help):
+def create_toolbar_tokens_func(mycli, get_is_refreshing, show_fish_help):
     """
     Return a function that generates the toolbar tokens.
     """
-    token = Token.Toolbar
+    token = 'class:toolbar'
+    token_on = 'class:toolbar.on'
+    token_off = 'class:toolbar.off'
 
-    def get_toolbar_tokens(cli):
+    def get_toolbar_tokens():
+        app = get_app()
+        default_buffer = app.layout.get_buffer_by_name(DEFAULT_BUFFER)
+
         result = []
         result.append((token, ' '))
 
-        if cli.buffers[DEFAULT_BUFFER].always_multiline:
-            result.append((token.On, '[F3] Multiline: ON  '))
+        if mycli.always_multiline:
+            result.append((token_on, '[F3] Multiline: ON  '))
         else:
-            result.append((token.Off, '[F3] Multiline: OFF  '))
+            result.append((token_off, '[F3] Multiline: OFF  '))
 
-        if cli.buffers[DEFAULT_BUFFER].always_multiline:
+        if mycli.always_multiline:
             result.append((token,
                 ' (Semi-colon [;] will end the line)'))
 
-        if cli.editing_mode == EditingMode.VI:
+        if app.editing_mode == EditingMode.VI:
             result.append((
-                token.On,
-                'Vi-mode ({})'.format(_get_vi_mode(cli))
+                token_on,
+                'Vi-mode ({})'.format(_get_vi_mode())
             ))
 
         if show_fish_help():
@@ -38,11 +44,11 @@ def create_toolbar_tokens_func(get_is_refreshing, show_fish_help):
     return get_toolbar_tokens
 
 
-def _get_vi_mode(cli):
+def _get_vi_mode():
     """Get the current vi mode for display."""
     return {
         InputMode.INSERT: 'I',
         InputMode.NAVIGATION: 'N',
         InputMode.REPLACE: 'R',
         InputMode.INSERT_MULTIPLE: 'M'
-    }[cli.vi_state.input_mode]
+    }[get_app().vi_state.input_mode]

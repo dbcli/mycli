@@ -1,12 +1,11 @@
-from prompt_toolkit.filters import Filter
+from prompt_toolkit.filters import Condition
+from prompt_toolkit.application import get_app
 
-class HasSelectedCompletion(Filter):
+
+@Condition
+def has_selected_completion():
     """Enable when the current buffer has a selected completion."""
 
-    def __call__(self, cli):
-        complete_state = cli.current_buffer.complete_state
-        return (complete_state is not None and
-                 complete_state.current_completion is not None)
-
-    def __repr__(self):
-        return "HasSelectedCompletion()"
+    complete_state = get_app().current_buffer.complete_state
+    return (complete_state is not None and
+             complete_state.current_completion is not None)
