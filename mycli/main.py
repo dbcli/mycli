@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 from __future__ import print_function
 
+from sshtunnel import SSHTunnelForwarder,create_logger
 import os
 import os.path
 import sys
@@ -90,6 +91,7 @@ class MyCli(object):
     def __init__(self, sqlexecute=None, prompt=None,
             logfile=None, defaults_suffix=None, defaults_file=None,
             login_path=None, auto_vertical_output=False, warn=None,
+            jump=None, sshport=22, sshusername = "root", sshkey = None,
             myclirc="~/.myclirc"):
         self.sqlexecute = sqlexecute
         self.logfile = logfile
@@ -176,6 +178,11 @@ class MyCli(object):
                 print('Error: Unable to read login path file.')
 
         self.cli = None
+        self.sshserver = None
+        self.jump = jump
+        self.sshport = sshport
+        self.sshusername= sshusername
+        self.sshkey = sshkey
 
     def register_special_commands(self):
         special.register_special_command(self.change_db, 'use',
@@ -383,6 +390,20 @@ class MyCli(object):
             ssl = None
 
         # Connect to the database.
+
+        if self.jump :
+            print("using ssh connect ")
+            self.sshserver = SSHTunnelForwarder(
+                        (host,self.sshport),
+                        ssh_username=self.sshusername,
+                        #sshkey = self.sshkey,
+                        remote_bind_address=('127.0.0.1',port)
+                        )
+            self.sshserver.start()
+
+            port=int(self.sshserver.local_bind_port)
+            host='127.0.0.1'
+            print(port)
 
         def _connect():
             try:
@@ -697,6 +718,8 @@ class MyCli(object):
                 iterations += 1
         except EOFError:
             special.close_tee()
+            if self.jump :
+                    self.sshserver.close()
             if not self.less_chatty:
                 self.echo('Goodbye!')
 
@@ -930,6 +953,10 @@ class MyCli(object):
               help='Password to connect to the database.')
 @click.option('--pass', 'password', envvar='MYSQL_PWD', type=str,
               help='Password to connect to the database.')
+@click.option('-j', '--jump', is_flag=True, help='jump : using ssh connect remote mysql')
+@click.option('--sshport', type=int, help='SSH Port number to use for connection. Honors ' )
+@click.option('--sshusername', help='User name to connect to the linux .')
+@click.option('--sshkey', help='Privite ssh key when you use jumping .')
 @click.option('--ssl-ca', help='CA file in PEM format.',
               type=click.Path(exists=True))
 @click.option('--ssl-capath', help='CA directory.')
@@ -978,7 +1005,7 @@ def cli(database, user, host, port, socket, password, dbname,
         version, prompt, logfile, defaults_group_suffix, defaults_file,
         login_path, auto_vertical_output, local_infile, ssl_ca, ssl_capath,
         ssl_cert, ssl_key, ssl_cipher, ssl_verify_server_cert, table, csv,
-        warn, execute, myclirc, dsn):
+        warn, execute, myclirc, dsn, jump , sshport, sshusername, sshkey ):
     """A MySQL terminal client with auto-completion and syntax highlighting.
 
     \b
@@ -997,7 +1024,8 @@ def cli(database, user, host, port, socket, password, dbname,
                   defaults_suffix=defaults_group_suffix,
                   defaults_file=defaults_file, login_path=login_path,
                   auto_vertical_output=auto_vertical_output, warn=warn,
-                  myclirc=myclirc)
+                  myclirc=myclirc,
+                  jump=jump,sshport=sshport,sshusername=sshusername,sshkey=sshkey)
 
     # Choose which ever one has a valid value.
     database = database or dbname
