@@ -508,6 +508,7 @@ class MyCli(object):
         key_binding_manager = mycli_bindings()
 
         if not self.less_chatty:
+            print('Server:', ' '.join(sqlexecute.server_type()))
             print('Version:', __version__)
             print('Chat: https://gitter.im/dbcli/mycli')
             print('Mail: https://groups.google.com/forum/#!forum/mycli-users')
