@@ -285,3 +285,104 @@ def test_list_dsn():
         assert result.output == "test\n"
         result = runner.invoke(cli, args=args + ['--verbose'])
         assert result.output == "test : mysql://test/test\n"
+
+
+def test_dsn(monkeypatch):
+    # Setup classes to mock mycli.main.MyCli
+    class Formatter:
+        format_name = None
+    class Logger:
+        def debug(self, *args, **args_dict):
+            pass
+        def warning(self, *args, **args_dict):
+            pass
+    class MockMyCli:
+        def __init__(self, **args):
+            self.logger = Logger()
+            self.destructive_warning = False
+            self.formatter = Formatter()
+        def connect(self, **args):
+            MockMyCli.connect_args = args
+        def run_query(self, query, new_line=True):
+            pass
+
+    import mycli.main
+    monkeypatch.setattr(mycli.main, 'MyCli', MockMyCli)
+    runner = CliRunner()
+
+    # When a user supplies a DSN as database argument to mycli,
+    # use these values.
+    result = runner.invoke(mycli.main.cli, args=[
+        "mysql://dsn_user:dsn_passwd@dsn_host:1/dsn_database"]
+    )
+    assert result.exit_code == 0, result.output + " " + str(result.exception)
+    assert \
+        MockMyCli.connect_args["user"] == "dsn_user" and \
+        MockMyCli.connect_args["passwd"] == "dsn_passwd" and \
+        MockMyCli.connect_args["host"] == "dsn_host" and \
+        MockMyCli.connect_args["port"] == 1 and \
+        MockMyCli.connect_args["database"] == "dsn_database"
+
+    MockMyCli.connect_args = None
+
+    # When a use supplies a DSN as database argument to mycli,
+    # and used command line arguments, use the command line
+    # arguments.
+    result = runner.invoke(mycli.main.cli, args=[
+        "mysql://dsn_user:dsn_passwd@dsn_host:2/dsn_database",
+        "--user", "arg_user",
+        "--password", "arg_password",
+        "--host", "arg_host",
+        "--port", "3",
+        "--database", "arg_database",
+    ])
+    assert result.exit_code == 0, result.output + " " + str(result.exception)
+    assert \
+        MockMyCli.connect_args["user"] == "arg_user" and \
+        MockMyCli.connect_args["passwd"] == "arg_password" and \
+        MockMyCli.connect_args["host"] == "arg_host" and \
+        MockMyCli.connect_args["port"] == 3 and \
+        MockMyCli.connect_args["database"] == "arg_database"
+
+    MockMyCli.config = {
+        'alias_dsn': {
+            'test': 'mysql://alias_dsn_user:alias_dsn_passwd@alias_dsn_host:4/alias_dsn_database'
+        }
+    }
+    MockMyCli.connect_args = None
+
+    # When a user uses a DSN from the configuration file (alias_dsn),
+    # use these values.
+    result = runner.invoke(cli, args=['--dsn', 'test'])
+    assert result.exit_code == 0, result.output + " " + str(result.exception)
+    assert \
+        MockMyCli.connect_args["user"] == "alias_dsn_user" and \
+        MockMyCli.connect_args["passwd"] == "alias_dsn_passwd" and \
+        MockMyCli.connect_args["host"] == "alias_dsn_host" and \
+        MockMyCli.connect_args["port"] == 4 and \
+        MockMyCli.connect_args["database"] == "alias_dsn_database"
+
+    MockMyCli.config = {
+        'alias_dsn': {
+            'test': 'mysql://alias_dsn_user:alias_dsn_passwd@alias_dsn_host:4/alias_dsn_database'
+        }
+    }
+    MockMyCli.connect_args = None
+
+    # When a user uses a DSN from the configuration file (alias_dsn)
+    # and used command line arguments, use the command line arguments.
+    result = runner.invoke(cli, args=[
+        '--dsn', 'test', '',
+        "--user", "arg_user",
+        "--password", "arg_password",
+        "--host", "arg_host",
+        "--port", "5",
+        "--database", "arg_database",
+    ])
+    assert result.exit_code == 0, result.output + " " + str(result.exception)
+    assert \
+        MockMyCli.connect_args["user"] == "arg_user" and \
+        MockMyCli.connect_args["passwd"] == "arg_password" and \
+        MockMyCli.connect_args["host"] == "arg_host" and \
+        MockMyCli.connect_args["port"] == 5 and \
+        MockMyCli.connect_args["database"] == "arg_database"
