@@ -71,7 +71,7 @@ class SQLExecute(object):
             '\tcharset: %r'
             '\tlocal_infile: %r'
             '\tssl: %r',
-            database, user, host, port, socket, charset, local_infile, ssl)
+            db, user, host, port, socket, charset, local_infile, ssl)
         conv = conversions.copy()
         conv.update({
             FIELD_TYPE.TIMESTAMP: lambda obj: (convert_mysql_timestamp(obj) or obj),
@@ -85,7 +85,7 @@ class SQLExecute(object):
                 use_unicode=True, charset=charset, autocommit=True,
                 client_flag=pymysql.constants.CLIENT.INTERACTIVE,
                 local_infile=local_infile,
-                conv=conv, ssl=ssl)
+                conv=conv, ssl=ssl, program_name="mycli")
         if hasattr(self, 'conn'):
             self.conn.close()
         self.conn = conn
@@ -174,7 +174,7 @@ class SQLExecute(object):
                 yield row
 
     def table_columns(self):
-        """Yields column names"""
+        """Yields (table name, column name) pairs"""
         with self.conn.cursor() as cur:
             _logger.debug('Columns Query. sql: %r', self.table_columns_query)
             cur.execute(self.table_columns_query % self.dbname)
