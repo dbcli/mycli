@@ -8,6 +8,7 @@ to call the step in "*.feature" file.
 from __future__ import unicode_literals
 
 from behave import when
+from textwrap import dedent
 import tempfile
 import wrappers
 
@@ -51,6 +52,26 @@ def step_send_source_command(context):
             context, context.conf['pager_boundary'] + '\r\n', timeout=5)
 
 
+@when(u'we run query to check application_name')
+def step_check_application_name(context):
+    context.cli.sendline(
+        "SELECT 'found' FROM performance_schema.session_connect_attrs WHERE attr_name = 'program_name' AND attr_value = 'mycli'"
+    )
+
+
+@then(u'we see found')
+def step_see_found(context):
+    wrappers.expect_exact(
+        context,
+        context.conf['pager_boundary'] + '\r' + dedent('''
+            +-------+\r
+            | found |\r
+            +-------+\r
+            | found |\r
+            +-------+\r
+        ''') + context.conf['pager_boundary'],
+        timeout=5
+    )
 @then(u'we confirm the destructive warning')
 def step_confirm_destructive_command(context):
     """Confirm destructive command."""
