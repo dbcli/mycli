@@ -1,6 +1,11 @@
 TBD
 ===
 
+Features:
+---------
+
+* Display server version in welcome message (Thanks: [Irina Truong]).
+
 Internal:
 ---------
 
