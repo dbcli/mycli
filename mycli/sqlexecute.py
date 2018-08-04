@@ -85,7 +85,7 @@ class SQLExecute(object):
                 use_unicode=True, charset=charset, autocommit=True,
                 client_flag=pymysql.constants.CLIENT.INTERACTIVE,
                 local_infile=local_infile,
-                conv=conv, ssl=ssl)
+                conv=conv, ssl=ssl, program_name="mycli")
         if hasattr(self, 'conn'):
             self.conn.close()
         self.conn = conn

@@ -8,6 +8,8 @@ python:
 install:
   - pip install -r requirements-dev.txt
   - pip install -e .
+  - sudo rm -f /etc/mysql/conf.d/performance-schema.cnf
+  - sudo service mysql restart
 
 script:
   - ./setup.py test -c lint
