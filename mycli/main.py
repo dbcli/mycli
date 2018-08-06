@@ -396,7 +396,7 @@ class MyCli(object):
             self.sshserver = SSHTunnelForwarder(
                         (host,self.sshport),
                         ssh_username=self.sshusername,
-                        sshkey = self.sshkey,
+                        #sshkey = self.sshkey,
                         remote_bind_address=('127.0.0.1',port)
                         )
             self.sshserver.start()
