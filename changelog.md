@@ -6,6 +6,10 @@ Features:
 
 * Display server version in welcome message (Thanks: [Irina Truong]).
 
+Bug Fixes:
+----------
+* Convert `sql_format` to unicode strings for py27 compatibility (Thanks: [Dick Marinus]).
+
 Internal:
 ---------
 
