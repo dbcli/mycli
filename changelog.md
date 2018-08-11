@@ -9,6 +9,7 @@ Features:
 Bug Fixes:
 ----------
 
+* Convert `sql_format` to unicode strings for py27 compatibility (Thanks: [Dick Marinus]).
 * Fixes mycli compatibility with pbr (Thanks [Thomas Roten]).
 
 Internal:
