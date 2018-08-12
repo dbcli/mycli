@@ -59,9 +59,10 @@ class test(TestCommand):
         self.pytest_args = ''
 
     def run_tests(self):
-        import shlex
-        import pytest
-        unit_test_errno = pytest.main(shlex.split(self.pytest_args))
+        unit_test_errno = subprocess.call(
+            'pytest ' + self.pytest_args,
+            shell=True
+        )
         cli_errno = subprocess.call('behave test/features', shell=True)
         sys.exit(unit_test_errno or cli_errno)
 
