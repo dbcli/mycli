@@ -21,6 +21,7 @@ install_requirements = [
     'configobj >= 5.0.5',
     'cryptography >= 1.0.0',
     'cli_helpers[styles] >= 1.0.1',
+    'sshtunnel >= 0.1.0',
 ]
 
 setup(

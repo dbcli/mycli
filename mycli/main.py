@@ -91,7 +91,7 @@ class MyCli(object):
     def __init__(self, sqlexecute=None, prompt=None,
             logfile=None, defaults_suffix=None, defaults_file=None,
             login_path=None, auto_vertical_output=False, warn=None,
-            jump=None, sshport=22, sshusername = "root", sshkey = None,
+            ssh=None, ssh_port=None, ssh_user=None, ssh_key=None, ssh_password=None,
             myclirc="~/.myclirc"):
         self.sqlexecute = sqlexecute
         self.logfile = logfile
@@ -179,10 +179,15 @@ class MyCli(object):
 
         self.cli = None
         self.sshserver = None
-        self.jump = jump
-        self.sshport = sshport
-        self.sshusername= sshusername
-        self.sshkey = sshkey
+        self.ssh = ssh
+        if ssh_port == None:
+            ssh_port = 22
+        self.ssh_port = ssh_port
+        if ssh_user == None:
+            ssh_user = 'root'
+        self.ssh_user = ssh_user
+        self.ssh_key = ssh_key
+        self.ssh_password = ssh_password
 
     def register_special_commands(self):
         special.register_special_command(self.change_db, 'use',
@@ -342,6 +347,7 @@ class MyCli(object):
     def connect(self, database='', user='', passwd='', host='', port='',
             socket='', charset='', local_infile='', ssl=''):
 
+
         cnf = {'database': None,
                'user': None,
                'password': None,
@@ -389,22 +395,42 @@ class MyCli(object):
         if not any(v for v in ssl.values()):
             ssl = None
 
-        # Connect to the database.
-
-        if self.jump :
-            print("using ssh connect ")
-            self.sshserver = SSHTunnelForwarder(
-                        (host,self.sshport),
-                        ssh_username=self.sshusername,
-                        #sshkey = self.sshkey,
+        if self.ssh and self.ssh_port and self.ssh_user:
+            if self.ssh_key:
+                self.sshserver = SSHTunnelForwarder(
+                        (host,self.ssh_port),
+                        ssh_username=self.ssh_user,
+                        ssh_private_key = self.ssh_key,
                         remote_bind_address=('127.0.0.1',port)
                         )
-            self.sshserver.start()
+            elif self.ssh_password:
+                self.sshserver = SSHTunnelForwarder(
+                        (host,self.ssh_port),
+                        ssh_username=self.ssh_user,
+                        ssh_password = self.ssh_password,
+                        remote_bind_address=('127.0.0.1',port)
+                        )
+            else :
+                self.sshserver = SSHTunnelForwarder(
+                        (host,self.ssh_port),
+                        ssh_username=self.ssh_user,
+                        remote_bind_address=('127.0.0.1',port)
+                        )
 
-            port=int(self.sshserver.local_bind_port)
-            host='127.0.0.1'
-            print(port)
 
+            try:
+                self.sshserver.start()
+            except Exception as e:
+                self.logger.debug('ssh connection failed: %r.', e)
+ 
+            if self.sshserver.check_tunnels():
+                host='127.0.0.1'
+                port=int(self.sshserver.local_bind_port)
+            else :
+                self.ssh = False
+                self.sshserver.stop()
+
+        # Connect to the database.
         def _connect():
             try:
                 self.sqlexecute = SQLExecute(database, user, passwd, host, port,
@@ -718,7 +744,7 @@ class MyCli(object):
                 iterations += 1
         except EOFError:
             special.close_tee()
-            if self.jump :
+            if self.ssh :
                     self.sshserver.close()
             if not self.less_chatty:
                 self.echo('Goodbye!')
@@ -953,10 +979,11 @@ class MyCli(object):
               help='Password to connect to the database.')
 @click.option('--pass', 'password', envvar='MYSQL_PWD', type=str,
               help='Password to connect to the database.')
-@click.option('-j', '--jump', is_flag=None, help='jump : using ssh connect remote mysql')
-@click.option('--sshport', type=int, help='SSH Port number to use for connection. Honors ' )
-@click.option('--sshusername', help='User name to connect to the linux .')
-@click.option('--sshkey', help='Privite ssh key when you use jumping .')
+@click.option('-s', '--ssh', is_flag=True, help='ssh: using ssh connect remote mysql')
+@click.option('--ssh-port', type=int, help='SSH Port number to use for connection. Honors ' )
+@click.option('--ssh-user', help='User name to connect to the linux .')
+@click.option('--ssh-password', help='password of ssh user .')
+@click.option('--ssh-key', help='Privite ssh key when you use ssh forward.')
 @click.option('--ssl-ca', help='CA file in PEM format.',
               type=click.Path(exists=True))
 @click.option('--ssl-capath', help='CA directory.')
@@ -1005,7 +1032,7 @@ def cli(database, user, host, port, socket, password, dbname,
         version, prompt, logfile, defaults_group_suffix, defaults_file,
         login_path, auto_vertical_output, local_infile, ssl_ca, ssl_capath,
         ssl_cert, ssl_key, ssl_cipher, ssl_verify_server_cert, table, csv,
-        warn, execute, myclirc, dsn, jump , sshport, sshusername, sshkey ):
+        warn, execute, myclirc, dsn, ssh , ssh_port, ssh_user, ssh_key, ssh_password):
     """A MySQL terminal client with auto-completion and syntax highlighting.
 
     \b
@@ -1025,7 +1052,7 @@ def cli(database, user, host, port, socket, password, dbname,
                   defaults_file=defaults_file, login_path=login_path,
                   auto_vertical_output=auto_vertical_output, warn=warn,
                   myclirc=myclirc,
-                  jump=jump,sshport=sshport,sshusername=sshusername,sshkey=sshkey)
+                  ssh=ssh,ssh_port=ssh_port,ssh_user=ssh_user,ssh_key=ssh_key,ssh_password=ssh_password)
 
     # Choose which ever one has a valid value.
     database = database or dbname
@@ -1069,10 +1096,15 @@ def cli(database, user, host, port, socket, password, dbname,
             elif not table:
                 mycli.formatter.format_name = 'tsv'
 
+            print('start query')
             mycli.run_query(execute)
+            if mycli.ssh:
+                mycli.sshserver.close()
             exit(0)
         except Exception as e:
             click.secho(str(e), err=True, fg='red')
+            if mycli.ssh:
+                mycli.sshserver.close()
             exit(1)
 
     if sys.stdin.isatty():
@@ -1088,6 +1120,8 @@ def cli(database, user, host, port, socket, password, dbname,
 
         if (mycli.destructive_warning and
                 confirm_destructive_query(stdin_text) is False):
+            if mycli.ssh:
+                mycli.sshserver.close()
             exit(0)
         try:
             new_line = True
@@ -1098,9 +1132,13 @@ def cli(database, user, host, port, socket, password, dbname,
                 mycli.formatter.format_name = 'tsv'
 
             mycli.run_query(stdin_text, new_line=new_line)
+            if mycli.ssh:
+                mycli.sshserver.close()
             exit(0)
         except Exception as e:
             click.secho(str(e), err=True, fg='red')
+            if mycli.ssh:
+                mycli.sshserver.close()
             exit(1)
 
 
