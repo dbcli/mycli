@@ -1096,7 +1096,6 @@ def cli(database, user, host, port, socket, password, dbname,
             elif not table:
                 mycli.formatter.format_name = 'tsv'
 
-            print('start query')
             mycli.run_query(execute)
             if mycli.ssh:
                 mycli.sshserver.close()
