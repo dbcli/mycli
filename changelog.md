@@ -10,7 +10,8 @@ Bug Fixes:
 ----------
 
 * Convert `sql_format` to unicode strings for py27 compatibility (Thanks: [Dick Marinus]).
-* Fixes mycli compatibility with pbr (Thanks [Thomas Roten]).
+* Fixes mycli compatibility with pbr (Thanks: [Thomas Roten]).
+* Don't align decimals for `sql_format` (Thanks: [Dick Marinus]).
 
 Internal:
 ---------
