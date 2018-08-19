@@ -7,6 +7,7 @@ Features:
 * Display server version in welcome message (Thanks: [Irina Truong]).
 * Set `program_name` connection attribute (Thanks: [Dick Marinus]).
 * Use `return` to terminate a generator (Thanks: [Zhongyang Guan]).
+* Connect using a SSH transport (Thanks: [Dick Marinus]).
 
 Bug Fixes:
 ----------
