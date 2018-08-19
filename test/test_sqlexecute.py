@@ -202,14 +202,15 @@ def test_system_command_not_found(executor):
 
 @dbtest
 def test_system_command_output(executor):
-    test_file_path = os.path.join(os.path.abspath('.'), 'test', 'test.txt')
+    test_dir = os.path.abspath(os.path.dirname(__file__))
+    test_file_path = os.path.join(test_dir, 'test.txt')
     results = run(executor, 'system cat {0}'.format(test_file_path))
     assert_result_equal(results, status='mycli rocks!\n')
 
 
 @dbtest
 def test_cd_command_current_dir(executor):
-    test_path = os.path.join(os.path.abspath('.'), 'test')
+    test_path = os.path.abspath(os.path.dirname(__file__))
     run(executor, 'system cd {0}'.format(test_path))
     assert os.getcwd() == test_path
 

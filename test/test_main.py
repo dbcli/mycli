@@ -169,7 +169,7 @@ def test_command_descriptions_end_with_periods():
 def output(monkeypatch, terminal_size, testdata, explicit_pager, expect_pager):
     global clickoutput
     clickoutput = ""
-    m = MyCli()
+    m = MyCli(myclirc=default_config_file)
 
     class TestOutput():
         def get_size(self):
