@@ -5,6 +5,12 @@ Features:
 ---------
 
 * Display server version in welcome message (Thanks: [Irina Truong]).
+* Set `program_name` connection attribute (Thanks: [Dick Marinus]).
+
+Bug Fixes:
+----------
+
+* When DSN is used allow overrides from mycli arguments (Thanks: [Dick Marinus]).
 
 Bug Fixes:
 ----------
@@ -28,7 +34,6 @@ Features:
 * Do not quit when aborting a confirmation prompt (Thanks: [Thomas Roten]).
 * Add option list-dsn (Thanks: [Frederic Aoustin]).
 * Add verbose option for list-dsn, add tests and clean up code (Thanks: [Dick Marinus]).
-* Set `program_name` connection attribute (Thanks: [Dick Marinus]).
 
 Bug Fixes:
 ----------

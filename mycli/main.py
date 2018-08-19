@@ -287,11 +287,6 @@ class MyCli(object):
         root_logger.debug('Initializing mycli logging.')
         root_logger.debug('Log file %r.', log_file)
 
-    def connect_uri(self, uri, local_infile=None, ssl=None):
-        uri = urlparse(uri)
-        database = uri.path[1:]  # ignore the leading fwd slash
-        self.connect(database, unquote(uri.username), unquote(uri.password),
-                     uri.hostname, uri.port, local_infile=local_infile, ssl=ssl)
 
     def read_my_cnf_files(self, files, keys):
         """
@@ -1044,7 +1039,7 @@ def cli(database, user, host, port, socket, password, dbname,
                 click.secho(alias)
         sys.exit(0)
     # Choose which ever one has a valid value.
-    database = database or dbname
+    database = dbname or database
 
     ssl = {
             'ca': ssl_ca and os.path.expanduser(ssl_ca),
@@ -1057,19 +1052,45 @@ def cli(database, user, host, port, socket, password, dbname,
 
     # remove empty ssl options
     ssl = {k: v for k, v in ssl.items() if v is not None}
+
+    dsn_uri = None
+
+    if database and '://' in database:
+        dsn_uri = database
+        database = ''
+
     if dsn is not '':
         try:
-            database = mycli.config['alias_dsn'][dsn]
-        except:
+            dsn_uri = mycli.config['alias_dsn'][dsn]
+        except KeyError as err:
             click.secho('Invalid DSNs found in the config file. '
                         'Please check the "[alias_dsn]" section in myclirc.',
                         err=True, fg='red')
             exit(1)
-    if database and '://' in database:
-        mycli.connect_uri(database, local_infile, ssl)
-    else:
-        mycli.connect(database, user, password, host, port, socket,
-                      local_infile=local_infile, ssl=ssl)
+
+    if dsn_uri:
+        uri = urlparse(dsn_uri)
+        if not database:
+            database = uri.path[1:]  # ignore the leading fwd slash
+        if not user:
+            user = unquote(uri.username)
+        if not password:
+            password = unquote(uri.password)
+        if not host:
+            host = uri.hostname
+        if not port:
+            port = uri.port
+
+    mycli.connect(
+        database=database,
+        user=user,
+        passwd=password,
+        host=host,
+        port=port,
+        socket=socket,
+        local_infile=local_infile,
+        ssl=ssl
+    )
 
     mycli.logger.debug('Launch Params: \n'
             '\tdatabase: %r'
