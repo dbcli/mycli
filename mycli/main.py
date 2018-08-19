@@ -888,9 +888,11 @@ class MyCli(object):
             'dialect': 'unix',
             'disable_numparse': True,
             'preserve_whitespace': True,
-            'preprocessors': (preprocessors.align_decimals, ),
             'style': self.output_style
         }
+
+        if not self.formatter.format_name in sql_format.supported_formats:
+            output_kwargs["preprocessors"] = (preprocessors.align_decimals, )
 
         if title:  # Only print the title if it's not None.
             output = itertools.chain(output, [title])
