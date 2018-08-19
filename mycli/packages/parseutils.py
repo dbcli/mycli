@@ -80,7 +80,7 @@ def extract_from_part(parsed, stop_at_punctuation=True):
                 for x in extract_from_part(item, stop_at_punctuation):
                     yield x
             elif stop_at_punctuation and item.ttype is Punctuation:
-                raise StopIteration
+                return
             # An incomplete nested select won't be recognized correctly as a
             # sub-select. eg: 'SELECT * FROM (SELECT id FROM user'. This causes
             # the second FROM to trigger this elif condition resulting in a
@@ -92,7 +92,7 @@ def extract_from_part(parsed, stop_at_punctuation=True):
             elif item.ttype is Keyword and (
                     not item.value.upper() == 'FROM') and (
                     not item.value.upper().endswith('JOIN')):
-                raise StopIteration
+                return
             else:
                 yield item
         elif ((item.ttype is Keyword or item.ttype is Keyword.DML) and
