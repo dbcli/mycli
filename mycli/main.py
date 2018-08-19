@@ -1108,6 +1108,8 @@ def cli(database, user, host, port, socket, password, dbname,
         )
         exit(1)
 
+    ssh_key_filename = os.path.expanduser(ssh_key_filename)
+
     mycli.connect(
         database=database,
         user=user,
