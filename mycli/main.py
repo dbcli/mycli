@@ -966,7 +966,7 @@ class MyCli(object):
 @click.option('--ssh-host', help='Host name to connect to ssh server.')
 @click.option('--ssh-port', default=22, help='Port to connect to ssh server.')
 @click.option('--ssh-password', help='Password to connect to ssh server.')
-@click.option('--ssh-key-filename', help='Password to connect to ssh server.')
+@click.option('--ssh-key-filename', help='Private key filename (identify file) for the ssh connection.')
 @click.option('--ssl-ca', help='CA file in PEM format.',
               type=click.Path(exists=True))
 @click.option('--ssl-capath', help='CA directory.')
