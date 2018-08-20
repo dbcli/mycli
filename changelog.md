@@ -24,6 +24,7 @@ Internal:
 ---------
 
 * Use fileinput (Thanks: [Dick Marinus]).
+* Enable tests for Python 3.7 (Thanks: [Thomas Roten]).
 
 1.17.0:
 =======
