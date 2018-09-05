@@ -7,6 +7,7 @@ Features:
 * Display server version in welcome message (Thanks: [Irina Truong]).
 * Set `program_name` connection attribute (Thanks: [Dick Marinus]).
 * Use `return` to terminate a generator (Thanks: [Zhongyang Guan]).
+* Add `SAVEPOINT` to SQLCompleter (Thanks: [Huachao Mao]).
 * Connect using a SSH transport (Thanks: [Dick Marinus]).
 
 Bug Fixes:
@@ -25,6 +26,7 @@ Internal:
 ---------
 
 * Use fileinput (Thanks: [Dick Marinus]).
+* Enable tests for Python 3.7 (Thanks: [Thomas Roten]).
 
 1.17.0:
 =======
