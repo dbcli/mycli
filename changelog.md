@@ -1,6 +1,11 @@
 TBD
 ===
 
+Bug Fixes:
+---------
+
+* use 'return' when auto-complete raies StopIterator (Thanks: [QiaoHou Peng])
+
 Features:
 ---------
 

@@ -110,29 +110,33 @@ def extract_from_part(parsed, stop_at_punctuation=True):
 def extract_table_identifiers(token_stream):
     """yields tuples of (schema_name, table_name, table_alias)"""
 
-    for item in token_stream:
-        if isinstance(item, IdentifierList):
-            for identifier in item.get_identifiers():
-                # Sometimes Keywords (such as FROM ) are classified as
-                # identifiers which don't have the get_real_name() method.
-                try:
-                    schema_name = identifier.get_parent_name()
-                    real_name = identifier.get_real_name()
-                except AttributeError:
-                    continue
-                if real_name:
-                    yield (schema_name, real_name, identifier.get_alias())
-        elif isinstance(item, Identifier):
-            real_name = item.get_real_name()
-            schema_name = item.get_parent_name()
+    try:
+        for item in token_stream:
+            if isinstance(item, IdentifierList):
+                for identifier in item.get_identifiers():
+                    # Sometimes Keywords (such as FROM ) are classified as
+                    # identifiers which don't have the get_real_name() method.
+                    try:
+                        schema_name = identifier.get_parent_name()
+                        real_name = identifier.get_real_name()
+                    except AttributeError:
+                        continue
+                    if real_name:
+                        yield (schema_name, real_name, identifier.get_alias())
+            elif isinstance(item, Identifier):
+                real_name = item.get_real_name()
+                schema_name = item.get_parent_name()
 
-            if real_name:
-                yield (schema_name, real_name, item.get_alias())
-            else:
-                name = item.get_name()
-                yield (None, name, item.get_alias() or name)
-        elif isinstance(item, Function):
-            yield (None, item.get_name(), item.get_name())
+                if real_name:
+                    yield (schema_name, real_name, item.get_alias())
+                else:
+                    name = item.get_name()
+                    yield (None, name, item.get_alias() or name)
+            elif isinstance(item, Function):
+                yield (None, item.get_name(), item.get_name())
+    except StopIteration as e:
+        return
+
 
 # extract_tables is inspired from examples in the sqlparse lib.
 def extract_tables(sql):
