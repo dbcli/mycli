@@ -1100,6 +1100,7 @@ def cli(database, user, host, port, socket, password, dbname,
             '\tport: %r', database, user, host, port)
 
     def output_in_format(new_line=False):
+        nonlocal mycli
         try:
             if csv:
                 mycli.formatter.format_name = 'csv'
