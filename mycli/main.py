@@ -54,6 +54,7 @@ click.disable_unicode_literals_warning = True
 try:
     from urlparse import urlparse
     from urlparse import unquote
+
     FileNotFoundError = OSError
 except ImportError:
     from urllib.parse import urlparse
@@ -660,7 +661,7 @@ class MyCli(object):
                 # Refresh the table names and column names if necessary.
                 if need_completion_refresh(document.text):
                     self.refresh_completions(
-                            reset=need_completion_reset(document.text))
+                        reset=need_completion_reset(document.text))
             finally:
                 if self.logfile is False:
                     self.echo("Warning: This query was not logged.",
@@ -1098,19 +1099,22 @@ def cli(database, user, host, port, socket, password, dbname,
             '\thost: %r'
             '\tport: %r', database, user, host, port)
 
-    #  --execute argument
-    if execute:
+    def output_in_format(new_line=False):
         try:
             if csv:
                 mycli.formatter.format_name = 'csv'
             elif not table:
                 mycli.formatter.format_name = 'tsv'
 
-            mycli.run_query(execute)
+            mycli.run_query(execute, new_line=new_line)
             exit(0)
-        except Exception as e:
-            click.secho(str(e), err=True, fg='red')
+        except Exception as _e:
+            click.secho(str(_e), err=True, fg='red')
             exit(1)
+
+    #  --execute argument
+    if execute:
+        output_in_format(new_line=False)
 
     if sys.stdin.isatty():
         mycli.run_cli()
@@ -1126,19 +1130,8 @@ def cli(database, user, host, port, socket, password, dbname,
         if (mycli.destructive_warning and
                 confirm_destructive_query(stdin_text) is False):
             exit(0)
-        try:
-            new_line = True
 
-            if csv:
-                mycli.formatter.format_name = 'csv'
-            elif not table:
-                mycli.formatter.format_name = 'tsv'
-
-            mycli.run_query(stdin_text, new_line=new_line)
-            exit(0)
-        except Exception as e:
-            click.secho(str(e), err=True, fg='red')
-            exit(1)
+        output_in_format(new_line=True)
 
 
 def need_completion_refresh(queries):
