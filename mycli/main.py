@@ -1013,10 +1013,10 @@ def cli(database, user, host, port, socket, password, dbname,
         print('Version:', __version__)
         sys.exit(0)
 
-    # check if .myclirc local exists in directory
-    myclirc_in_local_path = os.path.join(os.getcwd(), ".myclirc")
-    if os.path.exists(myclirc_in_local_path):
-        myclirc = myclirc_in_local_path
+    # search ./.myclirc
+    myclirc_in_pwd = os.path.join(os.getcwd(), ".myclirc")
+    if os.path.exists(myclirc_in_pwd):
+        myclirc = myclirc_in_pwd
 
     mycli = MyCli(prompt=prompt, logfile=logfile,
                   defaults_suffix=defaults_group_suffix,
