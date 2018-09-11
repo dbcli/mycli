@@ -1016,6 +1016,11 @@ def cli(database, user, host, port, socket, password, dbname,
         print('Version:', __version__)
         sys.exit(0)
 
+    # search ./.myclirc
+    myclirc_in_pwd = os.path.join(os.getcwd(), ".myclirc")
+    if os.path.exists(myclirc_in_pwd):
+        myclirc = myclirc_in_pwd
+
     mycli = MyCli(prompt=prompt, logfile=logfile,
                   defaults_suffix=defaults_group_suffix,
                   defaults_file=defaults_file, login_path=login_path,
