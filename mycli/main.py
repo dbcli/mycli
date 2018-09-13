@@ -46,6 +46,7 @@ from .lexer import MyCliLexer
 from .__init__ import __version__
 from mycli.compat import WIN
 from mycli.packages.filepaths import dir_path_exists
+from mycli.packages.parseutils import last_word, extract_tables, find_prev_keyword
 
 import itertools
 
@@ -566,10 +567,36 @@ class MyCli(object):
 
                 successful = False
                 start = time()
-                res = sqlexecute.run(document.text)
+
+                sql = document.text
+                if special.export_insert_command(document.text):
+                    sql = document.text.strip("\\epi")
+                    tbs = extract_tables(sql)
+                    if len(tbs) > 1:
+                        raise Exception("Cannot export more than one table")
+
+                    tb = tbs[0][1]
+
+                    res = sqlexecute.run(sql)
+                    for title, cur, headers, status in res:
+                        lines = []
+                        conn = cur._get_db()
+                        for line in cur.fetchall():
+                            dics = ",".join(cur._escape_args(line, conn))
+
+                            line = """\
+INSERT INTO `%s`.`%s` (%s) VALUES (%s);\
+""" % (conn.db.decode("utf-8"), tb, ",".join(["`" + h + "`" for h in headers]), dics)
+                            lines.append(line)
+
+                        special.copy_to_clipboard("\n".join(lines))
+                        return
+
+                res = sqlexecute.run(sql)
                 self.formatter.query = document.text
                 successful = True
                 result_count = 0
+
                 for title, cur, headers, status in res:
                     logger.debug("headers: %r", headers)
                     logger.debug("rows: %r", cur)
@@ -665,6 +692,7 @@ class MyCli(object):
                 if self.logfile is False:
                     self.echo("Warning: This query was not logged.",
                               err=True, fg='red')
+
             query = Query(document.text, successful, mutating)
             self.query_history.append(query)
 

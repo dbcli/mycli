@@ -15,12 +15,17 @@ from .main import special_command, NO_QUERY, PARSED_QUERY
 from .favoritequeries import favoritequeries
 from .utils import handle_cd_command
 from mycli.packages.prompt_utils import confirm_destructive_query
+import clipboard
 
 TIMING_ENABLED = False
 use_expanded_output = False
 PAGER_ENABLED = True
 tee_file = None
 once_file = written_to_once_file = None
+
+@export
+def copy_to_clipboard(val):
+    return clipboard.copy(val)
 
 @export
 def set_timing_enabled(val):
@@ -84,6 +89,20 @@ def is_expanded_output():
     return use_expanded_output
 
 _logger = logging.getLogger(__name__)
+
+@export
+def export_insert_command(command):
+    """
+    is export insert command from select sql
+    """
+    return command.strip().endswith('\\epi') or command.strip().startswith('\\epi')
+
+@export
+def get_select_export_data(command):
+    """
+    get export data from select sql
+    """
+
 
 @export
 def editor_command(command):
