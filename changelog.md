@@ -8,6 +8,7 @@ Features:
 * Set `program_name` connection attribute (Thanks: [Dick Marinus]).
 * Use `return` to terminate a generator (Thanks: [Zhongyang Guan]).
 * Add `SAVEPOINT` to SQLCompleter (Thanks: [Huachao Mao]).
+* Add `FROM_UNIXTIME` and `UNIX_TIMESTAMP` to SQLCompleter (Thanks: [QiaoHou Peng])
 
 Bug Fixes:
 ----------
