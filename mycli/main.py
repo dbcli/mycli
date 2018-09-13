@@ -89,7 +89,7 @@ class MyCli(object):
     ]
 
     default_config_file = os.path.join(PACKAGE_ROOT, 'myclirc')
-    pwd_config_file = os.path.join(os.getcwd(), "")
+    pwd_config_file = os.path.join(os.getcwd(), ".myclirc")
 
     def __init__(self, sqlexecute=None, prompt=None,
             logfile=None, defaults_suffix=None, defaults_file=None,
