@@ -8,6 +8,7 @@ Features:
 * Set `program_name` connection attribute (Thanks: [Dick Marinus]).
 * Use `return` to terminate a generator (Thanks: [Zhongyang Guan]).
 * Add `SAVEPOINT` to SQLCompleter (Thanks: [Huachao Mao]).
+* Seach `${PWD}/.myclirc`, then `${HOME}/.myclirc`, last `/etc/.myclirc` (Thanks: [QiaoHao Peng])
 
 Bug Fixes:
 ----------

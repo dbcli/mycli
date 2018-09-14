@@ -89,7 +89,7 @@ class MyCli(object):
     ]
 
     default_config_file = os.path.join(PACKAGE_ROOT, 'myclirc')
-
+    pwd_config_file = os.path.join(os.getcwd(), ".myclirc")
 
     def __init__(self, sqlexecute=None, prompt=None,
             logfile=None, defaults_suffix=None, defaults_file=None,
@@ -109,7 +109,7 @@ class MyCli(object):
 
         # Load config.
         config_files = ([self.default_config_file] + self.system_config_files +
-                        [myclirc])
+                        [myclirc] + [self.pwd_config_file])
         c = self.config = read_config_files(config_files)
         self.multi_line = c['main'].as_bool('multi_line')
         self.key_bindings = c['main']['key_bindings']
