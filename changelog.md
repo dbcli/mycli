@@ -9,6 +9,7 @@ Features:
 * Use `return` to terminate a generator (Thanks: [Zhongyang Guan]).
 * Add `SAVEPOINT` to SQLCompleter (Thanks: [Huachao Mao]).
 * Add `FROM_UNIXTIME` and `UNIX_TIMESTAMP` to SQLCompleter (Thanks: [QiaoHou Peng])
+* Seach `${PWD}/.myclirc`, then `${HOME}/.myclirc`, last `/etc/myclirc` (Thanks: [QiaoHao Peng])
 
 Bug Fixes:
 ----------
