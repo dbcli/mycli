@@ -386,3 +386,15 @@ def test_dsn(monkeypatch):
         MockMyCli.connect_args["host"] == "arg_host" and \
         MockMyCli.connect_args["port"] == 5 and \
         MockMyCli.connect_args["database"] == "arg_database"
+
+    # Use a DNS without password
+    result = runner.invoke(mycli.main.cli, args=[
+        "mysql://dsn_user@dsn_host:6/dsn_database"]
+    )
+    assert result.exit_code == 0, result.output + " " + str(result.exception)
+    assert \
+        MockMyCli.connect_args["user"] == "dsn_user" and \
+        MockMyCli.connect_args["passwd"] is None and \
+        MockMyCli.connect_args["host"] == "dsn_host" and \
+        MockMyCli.connect_args["port"] == 6 and \
+        MockMyCli.connect_args["database"] == "dsn_database"

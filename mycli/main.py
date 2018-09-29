@@ -1074,7 +1074,7 @@ def cli(database, user, host, port, socket, password, dbname,
             database = uri.path[1:]  # ignore the leading fwd slash
         if not user:
             user = unquote(uri.username)
-        if not password:
+        if not password and uri.password is not None:
             password = unquote(uri.password)
         if not host:
             host = uri.hostname
