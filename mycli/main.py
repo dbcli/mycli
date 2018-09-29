@@ -64,6 +64,11 @@ from collections import namedtuple
 import re
 import fileinput
 
+try:
+    import paramiko
+except:
+    paramiko = False
+
 # Query tuples are used for maintaining history
 Query = namedtuple('Query', ['query', 'successful', 'mutating'])
 
@@ -337,7 +342,9 @@ class MyCli(object):
         return merged
 
     def connect(self, database='', user='', passwd='', host='', port='',
-            socket='', charset='', local_infile='', ssl=''):
+                socket='', charset='', local_infile='', ssl='',
+                ssh_user='', ssh_host='', ssh_port='',
+                ssh_password='', ssh_key_filename=''):
 
         cnf = {'database': None,
                'user': None,
@@ -390,14 +397,20 @@ class MyCli(object):
 
         def _connect():
             try:
-                self.sqlexecute = SQLExecute(database, user, passwd, host, port,
-                                             socket, charset, local_infile, ssl)
+                self.sqlexecute = SQLExecute(
+                    database, user, passwd, host, port, socket, charset,
+                    local_infile, ssl, ssh_user, ssh_host, ssh_port,
+                    ssh_password, ssh_key_filename
+                )
             except OperationalError as e:
                 if ('Access denied for user' in e.args[1]):
                     new_passwd = click.prompt('Password', hide_input=True,
                                               show_default=False, type=str, err=True)
-                    self.sqlexecute = SQLExecute(database, user, new_passwd, host, port,
-                                                 socket, charset, local_infile, ssl)
+                    self.sqlexecute = SQLExecute(
+                        database, user, new_passwd, host, port, socket,
+                        charset, local_infile, ssl, ssh_user, ssh_host,
+                        ssh_port, ssh_password, ssh_key_filename
+                    )
                 else:
                     raise e
 
@@ -949,6 +962,11 @@ class MyCli(object):
               help='Password to connect to the database.')
 @click.option('--pass', 'password', envvar='MYSQL_PWD', type=str,
               help='Password to connect to the database.')
+@click.option('--ssh-user', help='User name to connect to ssh server.')
+@click.option('--ssh-host', help='Host name to connect to ssh server.')
+@click.option('--ssh-port', default=22, help='Port to connect to ssh server.')
+@click.option('--ssh-password', help='Password to connect to ssh server.')
+@click.option('--ssh-key-filename', help='Private key filename (identify file) for the ssh connection.')
 @click.option('--ssl-ca', help='CA file in PEM format.',
               type=click.Path(exists=True))
 @click.option('--ssl-capath', help='CA directory.')
@@ -1001,7 +1019,8 @@ def cli(database, user, host, port, socket, password, dbname,
         defaults_file, login_path, auto_vertical_output, local_infile,
         ssl_ca, ssl_capath, ssl_cert, ssl_key, ssl_cipher,
         ssl_verify_server_cert, table, csv, warn, execute, myclirc, dsn,
-        list_dsn):
+        list_dsn, ssh_user, ssh_host, ssh_port, ssh_password,
+        ssh_key_filename):
     """A MySQL terminal client with auto-completion and syntax highlighting.
 
     \b
@@ -1081,6 +1100,16 @@ def cli(database, user, host, port, socket, password, dbname,
         if not port:
             port = uri.port
 
+    if not paramiko and ssh_host:
+        click.secho(
+            "Cannot use SSH transport because paramiko isn't installed, "
+            "please install paramiko or don't use --ssh-host=",
+            err=True, fg="red"
+        )
+        exit(1)
+
+    ssh_key_filename = ssh_key_filename and os.path.expanduser(ssh_key_filename)
+
     mycli.connect(
         database=database,
         user=user,
@@ -1089,7 +1118,12 @@ def cli(database, user, host, port, socket, password, dbname,
         port=port,
         socket=socket,
         local_infile=local_infile,
-        ssl=ssl
+        ssl=ssl,
+        ssh_user=ssh_user,
+        ssh_host=ssh_host,
+        ssh_port=ssh_port,
+        ssh_password=ssh_password,
+        ssh_key_filename=ssh_key_filename
     )
 
     mycli.logger.debug('Launch Params: \n'

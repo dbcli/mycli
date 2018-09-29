@@ -8,8 +8,9 @@ Features:
 * Set `program_name` connection attribute (Thanks: [Dick Marinus]).
 * Use `return` to terminate a generator (Thanks: [Zhongyang Guan]).
 * Add `SAVEPOINT` to SQLCompleter (Thanks: [Huachao Mao]).
+* Connect using a SSH transport (Thanks: [Dick Marinus]).
 * Add `FROM_UNIXTIME` and `UNIX_TIMESTAMP` to SQLCompleter (Thanks: [QiaoHou Peng])
-* Seach `${PWD}/.myclirc`, then `${HOME}/.myclirc`, last `/etc/myclirc` (Thanks: [QiaoHao Peng])
+* Search `${PWD}/.myclirc`, then `${HOME}/.myclirc`, lastly `/etc/myclirc` (Thanks: [QiaoHao Peng])
 
 Bug Fixes:
 ----------
