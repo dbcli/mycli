@@ -15,6 +15,7 @@ Bug Fixes:
 ----------
 
 * When DSN is used allow overrides from mycli arguments (Thanks: [Dick Marinus]).
+* A DSN without password should be allowed (Thanks: [Dick Marinus])
 
 Bug Fixes:
 ----------
