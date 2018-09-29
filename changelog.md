@@ -9,11 +9,14 @@ Features:
 * Use `return` to terminate a generator (Thanks: [Zhongyang Guan]).
 * Add `SAVEPOINT` to SQLCompleter (Thanks: [Huachao Mao]).
 * Connect using a SSH transport (Thanks: [Dick Marinus]).
+* Add `FROM_UNIXTIME` and `UNIX_TIMESTAMP` to SQLCompleter (Thanks: [QiaoHou Peng])
+* Search `${PWD}/.myclirc`, then `${HOME}/.myclirc`, lastly `/etc/myclirc` (Thanks: [QiaoHao Peng])
 
 Bug Fixes:
 ----------
 
 * When DSN is used allow overrides from mycli arguments (Thanks: [Dick Marinus]).
+* A DSN without password should be allowed (Thanks: [Dick Marinus])
 
 Bug Fixes:
 ----------
@@ -27,6 +30,7 @@ Internal:
 
 * Use fileinput (Thanks: [Dick Marinus]).
 * Enable tests for Python 3.7 (Thanks: [Thomas Roten]).
+* Remove `*.swp` from gitignore (Thanks: [Dick Marinus]).
 
 1.17.0:
 =======

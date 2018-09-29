@@ -36,7 +36,7 @@ class SQLCompleter(Completer):
 
     functions = ['AVG', 'CONCAT', 'COUNT', 'DISTINCT', 'FIRST', 'FORMAT', 'LAST',
                  'LCASE', 'LEN', 'MAX', 'MIN', 'MID', 'NOW', 'ROUND', 'SUM',
-                 'TOP', 'UCASE']
+                 'TOP', 'UCASE','FROM_UNIXTIME', 'UNIX_TIMESTAMP']
 
     show_items = []
 
