@@ -57,6 +57,12 @@ $ sudo apt-get install mycli # Only on debian or ubuntu
       -S, --socket TEXT             The socket file to use for connection.
       -p, --password TEXT           Password to connect to the database.
       --pass TEXT                   Password to connect to the database.
+      --ssh-user TEXT               User name to connect to ssh server.
+      --ssh-host TEXT               Host name to connect to ssh server.
+      --ssh-port INTEGER            Port to connect to ssh server.
+      --ssh-password TEXT           Password to connect to ssh server.
+      --ssh-key-filename TEXT       Private key filename (identify file) for the
+                                    ssh connection.
       --ssl-ca PATH                 CA file in PEM format.
       --ssl-capath TEXT             CA directory.
       --ssl-cert PATH               X509 cert in PEM format.
