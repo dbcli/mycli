@@ -61,6 +61,12 @@ from pymysql import OperationalError
 
 from collections import namedtuple
 import re
+import fileinput
+
+try:
+    import paramiko
+except:
+    paramiko = False
 
 # Query tuples are used for maintaining history
 Query = namedtuple('Query', ['query', 'successful', 'mutating'])
@@ -245,11 +251,6 @@ class MyCli(object):
         root_logger.debug('Initializing mycli logging.')
         root_logger.debug('Log file %r.', log_file)
 
-    def connect_uri(self, uri, local_infile=None, ssl=None):
-        uri = urlparse(uri)
-        database = uri.path[1:]  # ignore the leading fwd slash
-        self.connect(database, unquote(uri.username), unquote(uri.password),
-                     uri.hostname, uri.port, local_infile=local_infile, ssl=ssl)
 
     def merge_ssl_with_cnf(self, ssl, cnf):
         """Merge SSL configuration dict with cnf dict"""
@@ -275,7 +276,10 @@ class MyCli(object):
         return merged
 
     def connect(self, database='', user='', passwd='', host='', port='',
-            socket='', charset='', local_infile='', ssl=''):
+                socket='', charset='', local_infile='', ssl='',
+                ssh_user='', ssh_host='', ssh_port='',
+                ssh_password='', ssh_key_filename=''):
+
         if port or host:
             socket = ''
         user = user or os.getenv('USER')
@@ -291,14 +295,20 @@ class MyCli(object):
 
         def _connect():
             try:
-                self.sqlexecute = SQLExecute(database, user, passwd, host, port,
-                                             socket, charset, local_infile, ssl)
+                self.sqlexecute = SQLExecute(
+                    database, user, passwd, host, port, socket, charset,
+                    local_infile, ssl, ssh_user, ssh_host, ssh_port,
+                    ssh_password, ssh_key_filename
+                )
             except OperationalError as e:
                 if ('Access denied for user' in e.args[1]):
                     new_passwd = click.prompt('Password', hide_input=True,
                                               show_default=False, type=str, err=True)
-                    self.sqlexecute = SQLExecute(database, user, new_passwd, host, port,
-                                                 socket, charset, local_infile, ssl)
+                    self.sqlexecute = SQLExecute(
+                        database, user, new_passwd, host, port, socket,
+                        charset, local_infile, ssl, ssh_user, ssh_host,
+                        ssh_port, ssh_password, ssh_key_filename
+                    )
                 else:
                     raise e
 
@@ -404,7 +414,8 @@ class MyCli(object):
         key_binding_manager = mycli_bindings()
 
         if not self.less_chatty:
-            print('Version:', __version__)
+            print(' '.join(sqlexecute.server_type()))
+            print('mycli', __version__)
             print('Chat: https://gitter.im/dbcli/mycli')
             print('Mail: https://groups.google.com/forum/#!forum/mycli-users')
             print('Home: http://mycli.net')
@@ -779,11 +790,14 @@ class MyCli(object):
         output = []
 
         output_kwargs = {
+            'dialect': 'unix',
             'disable_numparse': True,
             'preserve_whitespace': True,
-            'preprocessors': (preprocessors.align_decimals, ),
             'style': self.output_style
         }
+
+        if not self.formatter.format_name in sql_format.supported_formats:
+            output_kwargs["preprocessors"] = (preprocessors.align_decimals, )
 
         if title:  # Only print the title if it's not None.
             output = itertools.chain(output, [title])
@@ -852,6 +866,11 @@ class MyCli(object):
               help='Password to connect to the database.')
 @click.option('--pass', 'password', envvar='MYSQL_PWD', type=str,
               help='Password to connect to the database.')
+@click.option('--ssh-user', help='User name to connect to ssh server.')
+@click.option('--ssh-host', help='Host name to connect to ssh server.')
+@click.option('--ssh-port', default=22, help='Port to connect to ssh server.')
+@click.option('--ssh-password', help='Password to connect to ssh server.')
+@click.option('--ssh-key-filename', help='Private key filename (identify file) for the ssh connection.')
 @click.option('--ssl-ca', help='CA file in PEM format.',
               type=click.Path(exists=True))
 @click.option('--ssl-capath', help='CA directory.')
@@ -903,7 +922,8 @@ def cli(database, user, host, port, socket, password, dbname,
         defaults_file, login_path, auto_vertical_output, local_infile,
         ssl_ca, ssl_capath, ssl_cert, ssl_key, ssl_cipher,
         ssl_verify_server_cert, table, csv, warn, execute, myclirc, dsn,
-        list_dsn):
+        list_dsn, ssh_user, ssh_host, ssh_port, ssh_password,
+        ssh_key_filename):
     """A MySQL terminal client with auto-completion and syntax highlighting.
 
     \b
@@ -941,7 +961,7 @@ def cli(database, user, host, port, socket, password, dbname,
                 click.secho(alias)
         sys.exit(0)
     # Choose which ever one has a valid value.
-    database = database or dbname
+    database = dbname or database
 
     ssl = {
             'ca': ssl_ca and os.path.expanduser(ssl_ca),
@@ -954,19 +974,60 @@ def cli(database, user, host, port, socket, password, dbname,
 
     # remove empty ssl options
     ssl = {k: v for k, v in ssl.items() if v is not None}
+
+    dsn_uri = None
+
+    if database and '://' in database:
+        dsn_uri = database
+        database = ''
+
     if dsn is not '':
         try:
-            database = mycli.config['alias_dsn'][dsn]
-        except:
+            dsn_uri = mycli.config['alias_dsn'][dsn]
+        except KeyError as err:
             click.secho('Invalid DSNs found in the config file. '
                         'Please check the "[alias_dsn]" section in myclirc.',
                         err=True, fg='red')
             exit(1)
-    if database and '://' in database:
-        mycli.connect_uri(database, local_infile, ssl)
-    else:
-        mycli.connect(database, user, password, host, port, socket,
-                      local_infile=local_infile, ssl=ssl)
+
+    if dsn_uri:
+        uri = urlparse(dsn_uri)
+        if not database:
+            database = uri.path[1:]  # ignore the leading fwd slash
+        if not user:
+            user = unquote(uri.username)
+        if not password and uri.password is not None:
+            password = unquote(uri.password)
+        if not host:
+            host = uri.hostname
+        if not port:
+            port = uri.port
+
+    if not paramiko and ssh_host:
+        click.secho(
+            "Cannot use SSH transport because paramiko isn't installed, "
+            "please install paramiko or don't use --ssh-host=",
+            err=True, fg="red"
+        )
+        exit(1)
+
+    ssh_key_filename = ssh_key_filename and os.path.expanduser(ssh_key_filename)
+
+    mycli.connect(
+        database=database,
+        user=user,
+        passwd=password,
+        host=host,
+        port=port,
+        socket=socket,
+        local_infile=local_infile,
+        ssl=ssl,
+        ssh_user=ssh_user,
+        ssh_host=ssh_host,
+        ssh_port=ssh_port,
+        ssh_password=ssh_password,
+        ssh_key_filename=ssh_key_filename
+    )
 
     mycli.logger.debug('Launch Params: \n'
             '\tdatabase: %r'
@@ -1085,12 +1146,10 @@ def is_select(status):
 
 def thanks_picker(files=()):
     contents = []
-    for filename in files:
-        with open(filename, encoding='utf-8') as f:
-            for line in f:
-                m = re.match('^ *\* (.*)', line)
-                if m:
-                    contents.append(m.group(1))
+    for line in fileinput.input(files=files):
+        m = re.match('^ *\* (.*)', line)
+        if m:
+            contents.append(m.group(1))
     return choice(contents)
 
 

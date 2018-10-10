@@ -374,7 +374,7 @@ def watch_query(arg, **kwargs):
 """
     if not arg:
         yield (None, None, None, usage)
-        raise StopIteration
+        return
     seconds = 5
     clear_screen = False
     statement = None
@@ -383,7 +383,7 @@ def watch_query(arg, **kwargs):
         if not arg:
             # Oops, we parsed all the arguments without finding a statement
             yield (None, None, None, usage)
-            raise StopIteration
+            return
         (current_arg, _, arg) = arg.partition(' ')
         try:
             seconds = float(current_arg)
@@ -397,7 +397,7 @@ def watch_query(arg, **kwargs):
     destructive_prompt = confirm_destructive_query(statement)
     if destructive_prompt is False:
         click.secho("Wise choice!")
-        raise StopIteration
+        return
     elif destructive_prompt is True:
         click.secho("Your call!")
     cur = kwargs['cur']
@@ -425,6 +425,6 @@ def watch_query(arg, **kwargs):
             # This prints the Ctrl-C character in its own line, which prevents
             # to print a line with the cursor positioned behind the prompt
             click.secho("", nl=True)
-            raise StopIteration
+            return
         finally:
             set_pager_enabled(old_pager_enabled)
