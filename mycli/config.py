@@ -29,3 +29,7 @@ class MyCliConfig(Config):
         """Check if the legacy config file was loaded."""
         return (self.config_filenames and
                 self.config_filenames[-1] == self.legacy_config_file())
+
+    def all_config_files(self):
+        pwd_config_file = os.path.join(os.getcwd(), ".myclirc")
+        return super(MyCliConfig, self).all_config_files() + [pwd_config_file]
