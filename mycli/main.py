@@ -77,6 +77,7 @@ class MyCli(object):
 
     max_len_prompt = 45
     defaults_suffix = None
+    default_prompt = '\\t \\u@\\h:\\d> '
 
     def __init__(self, sqlexecute=None, prompt=None,
             logfile=None, defaults_suffix=None, defaults_file=None,
