@@ -15,7 +15,7 @@ class MyCliConfig(Config):
     def __init__(self, app_name, app_author, filename, **kwargs):
         self.filename = filename
 
-        kwargs['default'] = self.default_config_file()
+        kwargs['default'] = kwargs.get('default') or self.default_config_file()
         super(MyCliConfig, self).__init__(app_name, app_author, filename,
                                           **kwargs)
 
