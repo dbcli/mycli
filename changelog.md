@@ -31,6 +31,7 @@ Internal:
 * Use fileinput (Thanks: [Dick Marinus]).
 * Enable tests for Python 3.7 (Thanks: [Thomas Roten]).
 * Remove `*.swp` from gitignore (Thanks: [Dick Marinus]).
+* Update prompt toolkit (Thanks: [Jonathan Slenders], [Irina Truong], [Dick Marinus]).
 
 1.17.0:
 =======
