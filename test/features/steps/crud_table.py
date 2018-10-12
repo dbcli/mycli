@@ -76,7 +76,7 @@ def step_see_data_selected(context):
             +-----+\r
             | yyy |\r
             +-----+\r
-            """), timeout=2)
+            """), timeout=1)
     wrappers.expect_exact(context, '1 row in set', timeout=2)
 
 
@@ -108,5 +108,5 @@ def step_see_null_selected(context):
             +--------+\r
             | <null> |\r
             +--------+\r
-            """), timeout=2)
+            """), timeout=1)
     wrappers.expect_exact(context, '1 row in set', timeout=2)
