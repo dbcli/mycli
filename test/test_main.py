@@ -186,10 +186,10 @@ def output(monkeypatch, terminal_size, testdata, explicit_pager, expect_pager):
         def server_type(self):
             return ['test']
 
-    class PromptBuffer():
+    class CommandLineInterface():
         output = TestOutput()
 
-    m.prompt_app = PromptBuffer()
+    m.cli = CommandLineInterface()
     m.sqlexecute = TestExecute()
     m.explicit_pager = explicit_pager
 

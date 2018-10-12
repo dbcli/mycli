@@ -209,14 +209,6 @@ def is_destructive(queries):
     return queries_start_with(queries, keywords)
 
 
-def is_open_quote(sql):
-    """Returns true if the query contains an unclosed quote."""
-
-    # parsed can contain one or more semi-colon separated commands
-    parsed = sqlparse.parse(sql)
-    return any(_parsed_is_open_quote(p) for p in parsed)
-
-
 if __name__ == '__main__':
     sql = 'select * from (select t. from tabl t'
     print (extract_tables(sql))
