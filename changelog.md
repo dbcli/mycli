@@ -4,8 +4,8 @@ TBD
 Internal:
 ---------
 
+* Update prompt toolkit (Thanks: [Jonathan Slenders], [Irina Truong], [Dick Marinus]).
 * Clean up and add behave logging (Thanks: [Dick Marinus]).
-
 
 1.18.0
 ======
