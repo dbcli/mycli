@@ -1,3 +1,12 @@
+TBD
+===
+
+Internal:
+---------
+
+* Clean up and add behave logging (Thanks: [Dick Marinus]).
+
+
 1.18.0
 ======
 
