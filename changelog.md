@@ -5,19 +5,27 @@ Internal:
 ---------
 
 * Use `ImgBog` to reduce size. (Thanks: [Vast Peng]).
+* Update prompt toolkit (Thanks: [Jonathan Slenders], [Irina Truong], [Dick Marinus]).
+
+1.18.0
+======
 
 Features:
 ---------
 
 * Display server version in welcome message (Thanks: [Irina Truong]).
 * Set `program_name` connection attribute (Thanks: [Dick Marinus]).
-* Use `return` to terminate a generator (Thanks: [Zhongyang Guan]).
+* Use `return` to terminate a generator for better Python 3.7 support (Thanks: [Zhongyang Guan]).
 * Add `SAVEPOINT` to SQLCompleter (Thanks: [Huachao Mao]).
+* Connect using a SSH transport (Thanks: [Dick Marinus]).
+* Add `FROM_UNIXTIME` and `UNIX_TIMESTAMP` to SQLCompleter (Thanks: [QiaoHou Peng])
+* Search `${PWD}/.myclirc`, then `${HOME}/.myclirc`, lastly `/etc/myclirc` (Thanks: [QiaoHao Peng])
 
 Bug Fixes:
 ----------
 
-* When DSN is used allow overrides from mycli arguments (Thanks: [Dick Marinus]).
+* When DSN is used, allow overrides from mycli arguments (Thanks: [Dick Marinus]).
+* A DSN without password should be allowed (Thanks: [Dick Marinus])
 
 Bug Fixes:
 ----------
