@@ -1,6 +1,11 @@
 TBD
 ===
 
+Internal:
+---------
+
+* Use `ImgBog` to reduce size. (Thanks: [Vast Peng]).
+
 Features:
 ---------
 
