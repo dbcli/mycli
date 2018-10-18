@@ -1,10 +1,14 @@
 TBD
 ===
 
+Features:
+---------
+
+* Add Keywords: TINYINT, SMALLINT, MEDIUMINT, INT, BIGINT (Thanks: [QiaoHou Peng]).
+
 Internal:
 ---------
 
-* Use `ImgBog` to reduce size. (Thanks: [Vast Peng]).
 * Update prompt toolkit (Thanks: [Jonathan Slenders], [Irina Truong], [Dick Marinus]).
 
 1.18.0
