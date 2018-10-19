@@ -1,6 +1,11 @@
 TBD
 ===
 
+Features:
+---------
+
+* Add Keywords: TINYINT, SMALLINT, MEDIUMINT, INT, BIGINT (Thanks: [QiaoHou Peng]).
+
 Internal:
 ---------
 
