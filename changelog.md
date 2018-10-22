@@ -1,3 +1,11 @@
+TBD
+===
+
+Internal:
+---------
+
+* Update Twine version to 1.12.1 (Thanks: [Thomas Roten]).
+
 1.18.1
 ======
 
@@ -10,7 +18,6 @@ Internal:
 ---------
 
 * Update prompt toolkit (Thanks: [Jonathan Slenders], [Irina Truong], [Dick Marinus]).
-* Update Twine version to 1.12.1 (Thanks: [Thomas Roten]).
 
 1.18.0
 ======
