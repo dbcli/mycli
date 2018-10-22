@@ -1,3 +1,11 @@
+TBD
+===
+
+Internal:
+---------
+
+* Update Twine version to 1.12.1 (Thanks: [Thomas Roten]).
+
 1.18.1
 ======
 
