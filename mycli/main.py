@@ -659,7 +659,7 @@ class MyCli(object):
                     try:
                         sqlexecute.connect()
                         logger.debug('Reconnected successfully.')
-                        one_iteration(document)
+                        one_iteration(text)
                         return  # OK to just return, cuz the recursion call runs to the end.
                     except OperationalError as e:
                         logger.debug('Reconnect failed. e: %r', e)
