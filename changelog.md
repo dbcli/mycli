@@ -5,6 +5,7 @@ Internal:
 ---------
 
 * Update Twine version to 1.12.1 (Thanks: [Thomas Roten]).
+* Fix warnings for running tests on Python 3.7 (Thanks: [Dick Marinus]).
 
 1.18.1
 ======
