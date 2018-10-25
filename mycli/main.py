@@ -53,7 +53,6 @@ click.disable_unicode_literals_warning = True
 try:
     from urlparse import urlparse
     from urlparse import unquote
-    FileNotFoundError = OSError
 except ImportError:
     from urllib.parse import urlparse
     from urllib.parse import unquote
@@ -1160,7 +1159,7 @@ def cli(database, user, host, port, socket, password, dbname,
 
         try:
             sys.stdin = open('/dev/tty')
-        except FileNotFoundError:
+        except (IOError, OSError):
             mycli.logger.warning('Unable to open TTY as stdin.')
 
         if (mycli.destructive_warning and
