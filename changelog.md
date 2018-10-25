@@ -1,5 +1,10 @@
-TBD
-===
+1.18.2
+======
+
+Bug Fixes:
+----------
+
+* Fixes database reconnecting feature (Thanks: [Yang Zou]).
 
 Internal:
 ---------
@@ -7,11 +12,6 @@ Internal:
 * Update Twine version to 1.12.1 (Thanks: [Thomas Roten]).
 * Fix warnings for running tests on Python 3.7 (Thanks: [Dick Marinus]).
 * Clean up and add behave logging (Thanks: [Dick Marinus]).
-
-Bug Fixes:
-----------
-
-* Fixes database reconnecting feature (Thanks: [Yang Zou]).
 
 1.18.1
 ======
