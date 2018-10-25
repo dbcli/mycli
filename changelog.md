@@ -1,3 +1,11 @@
+TBD
+===
+
+Internal:
+---------
+
+* Add Python 3.7 trove classifier (Thanks: [Thomas Roten]).
+
 1.18.2
 ======
 
