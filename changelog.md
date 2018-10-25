@@ -6,6 +6,7 @@ Internal:
 
 * Update Twine version to 1.12.1 (Thanks: [Thomas Roten]).
 * Fix warnings for running tests on Python 3.7 (Thanks: [Dick Marinus]).
+* Clean up and add behave logging (Thanks: [Dick Marinus]).
 
 1.18.1
 ======
@@ -19,7 +20,6 @@ Internal:
 ---------
 
 * Update prompt toolkit (Thanks: [Jonathan Slenders], [Irina Truong], [Dick Marinus]).
-* Clean up and add behave logging (Thanks: [Dick Marinus]).
 
 1.18.0
 ======
