@@ -1,4 +1,6 @@
 # -*- coding: utf-8
+from __future__ import unicode_literals
+from mycli.encodingutils import text_type
 import os
 
 
@@ -60,10 +62,10 @@ def suggest_path(root_dir):
 
     """
     if not root_dir:
-        return [os.path.abspath(os.sep), '~', os.curdir, os.pardir]
+        return [text_type(os.path.abspath(os.sep)), text_type('~'), text_type(os.curdir), text_type(os.pardir)]
 
     if '~' in root_dir:
-        root_dir = os.path.expanduser(root_dir)
+        root_dir = text_type(os.path.expanduser(root_dir))
 
     if not os.path.exists(root_dir):
         root_dir, _ = os.path.split(root_dir)

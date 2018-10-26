@@ -85,41 +85,33 @@ pager = option('on', 'off', 'auto', default='auto')
 
 pager_command = string(default='')
 
-# disabled pager on startup
-enable_pager = True
-
 # Custom colors for the completion menu, toolbar, etc.
 [colors]
-# Completion menus.
-Token.Menu.Completions.Completion.Current = string(default='bg:#00aaaa #000000')
-Token.Menu.Completions.Completion = string(default='bg:#008888 #ffffff')
-Token.Menu.Completions.MultiColumnMeta = string(default='bg:#aaffff #000000')
-Token.Menu.Completions.ProgressButton = string(default='bg:#003333')
-Token.Menu.Completions.ProgressBar = string(default='bg:#00aaaa')
+completion-menu.completion.current = string(default=''bg:#ffffff #000000')
+completion-menu.completion = string(default='bg:#008888 #ffffff')
+completion-menu.meta.completion.current = string(default='bg:#44aaaa #000000')
+completion-menu.meta.completion = string(default='bg:#448888 #ffffff')
+completion-menu.multi-column-meta = string(default='bg:#aaffff #000000')
+scrollbar.arrow = string(default='bg:#003333')
+scrollbar = string(default='bg:#00aaaa')
+selected = string(default='#ffffff bg:#6666aa')
+search = string(default='#ffffff bg:#4444aa')
+search.current = string(default='#ffffff bg:#44aa44')
+bottom-toolbar = string(default='bg:#222222 #aaaaaa')
+bottom-toolbar.off = string(default='bg:#222222 #888888')
+bottom-toolbar.on = string(default='bg:#222222 #ffffff')
+search-toolbar = string(default='noinherit bold')
+search-toolbar.text = string(default='nobold')
+system-toolbar = string(default='noinherit bold')
+arg-toolbar = string(default='noinherit bold')
+arg-toolbar.text = string(default='nobold')
+bottom-toolbar.transaction.valid = string(default='bg:#222222 #00ff5f bold')
+bottom-toolbar.transaction.failed = string(default='bg:#222222 #ff005f bold')
 
-# Query results
-Token.Output.Header = string(default='bold')
-Token.Output.OddRow = string(default='')
-Token.Output.EvenRow = string(default='')
-
-# Selected text.
-Token.SelectedText = string(default='#ffffff bg:#6666aa')
-
-# Search matches. (reverse-i-search)
-Token.SearchMatch = string(default='#ffffff bg:#4444aa')
-Token.SearchMatch.Current = string(default='#ffffff bg:#44aa44')
-
-# The bottom toolbar.
-Token.Toolbar = string(default='bg:#222222 #aaaaaa')
-Token.Toolbar.Off = string(default='bg:#222222 #888888')
-Token.Toolbar.On = string(default='bg:#222222 #ffffff')
-
-# Search/arg/system toolbars.
-Token.Toolbar.Search = string(default='noinherit bold')
-Token.Toolbar.Search.Text = string(default='nobold')
-Token.Toolbar.System = string(default='noinherit bold')
-Token.Toolbar.Arg = string(default='noinherit bold')
-Token.Toolbar.Arg.Text = string(default='nobold')
+# style classes for colored table output
+output.header = string(default='#00ff5f bold')
+output.odd-row = string(default='')
+output.even-row = string(default='')
 
 # Favorite queries.
 [favorite_queries]
