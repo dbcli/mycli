@@ -217,11 +217,14 @@ class MyCli(object):
             yield (None, None, None, msg)
 
     def change_db(self, arg, **_):
-        if arg is None:
-            self.sqlexecute.change_db()
-        else:
-            self.sqlexecute.change_db(arg)
+        if arg is '':
+            click.secho(
+                "No database selected",
+                err=True, fg="red"
+            )
+            return
 
+        self.sqlexecute.change_db(arg)
         self.refresh_completions()
 
         yield (None, None, None, 'You are now connected to database "%s" as '
