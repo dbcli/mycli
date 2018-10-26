@@ -218,9 +218,11 @@ class MyCli(object):
 
     def change_db(self, arg, **_):
         if arg is None:
-            self.sqlexecute.connect()
+            self.sqlexecute.change_db()
         else:
-            self.sqlexecute.connect(database=arg)
+            self.sqlexecute.change_db(arg)
+
+        self.refresh_completions()
 
         yield (None, None, None, 'You are now connected to database "%s" as '
                 'user "%s"' % (self.sqlexecute.dbname, self.sqlexecute.user))
