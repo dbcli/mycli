@@ -7,6 +7,12 @@ Internal:
 * Add Python 3.7 trove classifier (Thanks: [Thomas Roten]).
 * Fix pytest in Fedora mock (Thanks: [Dick Marinus]).
 
+
+Features:
+---------
+
+* Add Token.Prompt/Continuation (Thanks: [Dick Marinus]).
+
 1.18.2
 ======
 
