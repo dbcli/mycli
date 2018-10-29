@@ -225,7 +225,6 @@ class MyCli(object):
             return
 
         self.sqlexecute.change_db(arg)
-        self.refresh_completions()
 
         yield (None, None, None, 'You are now connected to database "%s" as '
                 'user "%s"' % (self.sqlexecute.dbname, self.sqlexecute.user))
