@@ -310,3 +310,7 @@ class SQLExecute(object):
         for title, cur, headers, status in res:
             self.connection_id = cur.fetchone()[0]
         _logger.debug('Current connection id: %s', self.connection_id)
+
+    def change_db(self, db):
+        self.conn.select_db(db)
+        self.dbname = db
