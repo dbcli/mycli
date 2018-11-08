@@ -6,6 +6,7 @@ Internal:
 
 * Add Python 3.7 trove classifier (Thanks: [Thomas Roten]).
 * Fix pytest in Fedora mock (Thanks: [Dick Marinus]).
+* Require `prompt_toolkit>=2.0.6` (Thanks: [Dick Marinus]).
 
 Features:
 ---------
