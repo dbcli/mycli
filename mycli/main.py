@@ -87,17 +87,23 @@ class MyCli(object):
         '~/.my.cnf'
     ]
 
+    default_config_file = os.path.join(PACKAGE_ROOT, 'myclirc')
+
     system_config_files = [
         '/etc/myclirc',
     ]
 
-    default_config_file = os.path.join(PACKAGE_ROOT, 'myclirc')
     pwd_config_file = os.path.join(os.getcwd(), ".myclirc")
 
     def __init__(self, sqlexecute=None, prompt=None,
             logfile=None, defaults_suffix=None, defaults_file=None,
             login_path=None, auto_vertical_output=False, warn=None,
-            myclirc="~/.myclirc"):
+            myclirc="~/.myclirc", multi_line=None, key_bindings=None,
+            set_timing_enabled=None, table_formatter=None, syntax_style=None,
+            less_chatty=None, colors=None, wider_completion_menu=None,
+            login_path_as_host=None, audit_log=None, prompt_continuation=None,
+            keyword_casing=None, smart_completion=None, log_file=None,
+            log_level=None, enable_pager=None):
         self.sqlexecute = sqlexecute
         self.logfile = logfile
         self.defaults_suffix = defaults_suffix
@@ -110,41 +116,36 @@ class MyCli(object):
         if defaults_file:
             self.cnf_files = [defaults_file]
 
-        # Load config.
-        config_files = ([self.default_config_file] + self.system_config_files +
-                        [myclirc] + [self.pwd_config_file])
-        c = self.config = read_config_files(config_files)
-        self.multi_line = c['main'].as_bool('multi_line')
-        self.key_bindings = c['main']['key_bindings']
-        special.set_timing_enabled(c['main'].as_bool('timing'))
+        self.multi_line = multi_line
+        self.key_bindings = key_bindings
+        special.set_timing_enabled(set_timing_enabled)
+
         self.formatter = TabularOutputFormatter(
-            format_name=c['main']['table_format'])
+            format_name=table_formatter)
         sql_format.register_new_formatter(self.formatter)
         self.formatter.mycli = self
-        self.syntax_style = c['main']['syntax_style']
-        self.less_chatty = c['main'].as_bool('less_chatty')
-        self.cli_style = c['colors']
+        self.syntax_style = syntax_style
+        self.less_chatty = less_chatty
+        self.cli_style = colors
         self.output_style = style_factory_output(
             self.syntax_style,
             self.cli_style
         )
-        self.wider_completion_menu = c['main'].as_bool('wider_completion_menu')
-        c_dest_warning = c['main'].as_bool('destructive_warning')
-        self.destructive_warning = c_dest_warning if warn is None else warn
-        self.login_path_as_host = c['main'].as_bool('login_path_as_host')
+        self.wider_completion_menu = wider_completion_menu
+        self.destructive_warning = warn
+        self.login_path_as_host = login_path_as_host
 
         # read from cli argument or user config file
-        self.auto_vertical_output = auto_vertical_output or \
-                                c['main'].as_bool('auto_vertical_output')
+        self.auto_vertical_output = auto_vertical_output
 
         # Write user config if system config wasn't the last config loaded.
-        if c.filename not in self.system_config_files:
+        if myclirc not in self.system_config_files:
             write_default_config(self.default_config_file, myclirc)
 
         # audit log
-        if self.logfile is None and 'audit_log' in c['main']:
+        if self.logfile is None and audit_log:
             try:
-                self.logfile = open(os.path.expanduser(c['main']['audit_log']), 'a')
+                self.logfile = open(os.path.expanduser(audit_log), 'a')
             except (IOError, OSError) as e:
                 self.echo('Error: Unable to open the audit log file. Your queries will not be logged.',
                           err=True, fg='red')
@@ -153,22 +154,24 @@ class MyCli(object):
         self.completion_refresher = CompletionRefresher()
 
         self.logger = logging.getLogger(__name__)
+        self.log_level = log_level
+        self.log_file = log_file
         self.initialize_logging()
 
         prompt_cnf = self.read_my_cnf_files(self.cnf_files, ['prompt'])['prompt']
-        self.prompt_format = prompt or prompt_cnf or c['main']['prompt'] or \
-                             self.default_prompt
-        self.prompt_continuation_format = c['main']['prompt_continuation']
-        keyword_casing = c['main'].get('keyword_casing', 'auto')
+        self.prompt_format = prompt
+        self.prompt_continuation_format = prompt_continuation
+        keyword_casing = keyword_casing
 
         self.query_history = []
 
         # Initialize completer.
-        self.smart_completion = c['main'].as_bool('smart_completion')
+        self.smart_completion = smart_completion
         self.completer = SQLCompleter(
             self.smart_completion,
             supported_formats=self.formatter.supported_formats,
             keyword_casing=keyword_casing)
+        self.enable_pager = enable_pager
         self._completer_lock = threading.Lock()
 
         # Register custom special commands.
@@ -259,8 +262,8 @@ class MyCli(object):
 
     def initialize_logging(self):
 
-        log_file = os.path.expanduser(self.config['main']['log_file'])
-        log_level = self.config['main']['log_level']
+        log_file = os.path.expanduser(self.log_file)
+        log_level = self.log_level
 
         level_map = {'CRITICAL': logging.CRITICAL,
                      'ERROR': logging.ERROR,
@@ -835,7 +838,7 @@ class MyCli(object):
         else:
             self.explicit_pager = False
 
-        if cnf['skip-pager'] or not self.config['main'].as_bool('enable_pager'):
+        if cnf['skip-pager'] or not self.enable_pager:
             special.disable_pager()
 
     def refresh_completions(self, reset=False):
@@ -960,8 +963,58 @@ class MyCli(object):
         """Get the last query executed or None."""
         return self.query_history[-1][0] if self.query_history else None
 
+def CommandWithConfigFile(config_file_param_name):
 
-@click.command()
+    class CustomCommandClass(click.Command):
+
+        def invoke(self, ctx):
+            myclirc = ctx.params[config_file_param_name]
+            if myclirc is not None:
+                # Load config.
+                config_files = ([MyCli.default_config_file] + MyCli.system_config_files +
+                                [myclirc] + [MyCli.pwd_config_file])
+                c = read_config_files(config_files)
+
+                # map myclirc to click.commands
+                parsed = {
+                    'multi_line': c['main'].as_bool('multi_line'),
+                    'key_bindings': c['main']['key_bindings'],
+                    'set_timing_enabled': c['main'].as_bool('timing'),
+                    'table_formatter': c['main']['table_format'],
+                    'syntax_style': c['main']['syntax_style'],
+                    'less_chatty': c['main'].as_bool('less_chatty'),
+                    'colors': c['colors'],
+                    'wider_completion_menu': c['main'].as_bool('wider_completion_menu'),
+                    'warn': c['main'].as_bool('destructive_warning'),
+                    'login_path_as_host': c['main'].as_bool('login_path_as_host'),
+                    'auto_vertical_output': c['main'].as_bool('auto_vertical_output'),
+                    'audit_log': c['main'].get('audit_log'),
+                    'prompt': c['main'].get('prompt', MyCli.default_prompt),
+                    'prompt_continuation': c['main']['prompt_continuation'],
+                    'keyword_casing': c['main'].get('keyword_casing', 'auto'),
+                    'smart_completion': c['main'].as_bool('smart_completion'),
+                    'log_file': c['main']['log_file'],
+                    'log_level': c['main']['log_level'],
+                    'enable_pager': c['main'].as_bool('enable_pager'),
+                    'alias_dsn': c['alias_dsn'],
+                }
+                import json
+                print(json.dumps(parsed, indent=4))
+                print(json.dumps(ctx.params, indent=4))
+                for k, v in parsed.items():
+                    if k in ctx.params:
+                        if not ctx.params[k]:
+                            ctx.params[k] = v
+                    else:
+                        ctx.params[k] = v
+                print(json.dumps(ctx.params, indent=4))
+
+            return super(CustomCommandClass, self).invoke(ctx)
+
+    return CustomCommandClass
+
+
+@click.command(cls=CommandWithConfigFile('myclirc'))
 @click.option('-h', '--host', envvar='MYSQL_HOST', help='Host address of the database.')
 @click.option('-P', '--port', envvar='MYSQL_TCP_PORT', type=int, help='Port number to use for connection. Honors '
               '$MYSQL_TCP_PORT.')
@@ -1029,7 +1082,11 @@ def cli(database, user, host, port, socket, password, dbname,
         ssl_ca, ssl_capath, ssl_cert, ssl_key, ssl_cipher,
         ssl_verify_server_cert, table, csv, warn, execute, myclirc, dsn,
         list_dsn, ssh_user, ssh_host, ssh_port, ssh_password,
-        ssh_key_filename):
+        ssh_key_filename, multi_line, key_bindings, set_timing_enabled,
+        table_formatter, syntax_style, less_chatty, colors,
+        wider_completion_menu, login_path_as_host, audit_log,
+        prompt_continuation, keyword_casing, smart_completion, log_file,
+        log_level, enable_pager, alias_dsn):
     """A MySQL terminal client with auto-completion and syntax highlighting.
 
     \b
@@ -1048,18 +1105,18 @@ def cli(database, user, host, port, socket, password, dbname,
                   defaults_suffix=defaults_group_suffix,
                   defaults_file=defaults_file, login_path=login_path,
                   auto_vertical_output=auto_vertical_output, warn=warn,
-                  myclirc=myclirc)
+                  myclirc=myclirc, multi_line=multi_line,
+                  key_bindings=key_bindings,
+                  set_timing_enabled=set_timing_enabled,
+                  table_formatter=table_formatter, syntax_style=syntax_style,
+                  less_chatty=less_chatty, colors=colors,
+                  wider_completion_menu=wider_completion_menu,
+                  login_path_as_host=login_path_as_host, audit_log=audit_log,
+                  prompt_continuation=prompt_continuation,
+                  keyword_casing=keyword_casing,
+                  smart_completion=smart_completion, log_file=log_file,
+                  log_level=log_level, enable_pager=enable_pager)
     if list_dsn:
-        try:
-            alias_dsn = mycli.config['alias_dsn']
-        except KeyError as err:
-            click.secho('Invalid DSNs found in the config file. '\
-                'Please check the "[alias_dsn]" section in myclirc.',
-                 err=True, fg='red')
-            exit(1)
-        except Exception as e:
-            click.secho(str(e), err=True, fg='red')
-            exit(1)
         for alias, value in alias_dsn.items():
             if verbose:
                 click.secho("{} : {}".format(alias, value))
@@ -1089,7 +1146,7 @@ def cli(database, user, host, port, socket, password, dbname,
 
     if dsn is not '':
         try:
-            dsn_uri = mycli.config['alias_dsn'][dsn]
+            dsn_uri = alias_dsn[dsn]
         except KeyError as err:
             click.secho('Invalid DSNs found in the config file. '
                         'Please check the "[alias_dsn]" section in myclirc.',
