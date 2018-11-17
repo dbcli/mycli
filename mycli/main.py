@@ -1159,7 +1159,13 @@ def cli(database, user, host, port, socket, password, dbname,
         mycli.run_cli()
     else:
         stdin = click.get_text_stream('stdin')
-        stdin_text = stdin.read()
+        try:
+            stdin_text = stdin.read()
+        except MemoryError:
+            click.secho('Failed! Ran out of memory.' ,err=True, fg='red')
+            click.secho('You might want to try the official mysql client.' ,err=True, fg='red')
+            click.secho('Sorry... :(' ,err=True, fg='red')
+            exit(1)
 
         try:
             sys.stdin = open('/dev/tty')
