@@ -38,7 +38,7 @@ def step_edit_quit(context):
 @then('we see the sql in prompt')
 def step_edit_done_sql(context):
     for match in 'select * from abc'.split(' '):
-        wrappers.expect_exact(context, match, timeout=5)
+        wrappers.expect_exact(context, match, timeout=1)
     # Cleanup the command line.
     context.cli.sendcontrol('c')
     # Cleanup the edited file.

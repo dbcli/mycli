@@ -1,50 +1,65 @@
-from __future__ import unicode_literals
 import logging
 from prompt_toolkit.enums import EditingMode
-from prompt_toolkit.filters import completion_is_selected
-from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.keys import Keys
+from prompt_toolkit.key_binding.manager import KeyBindingManager
+from .filters import HasSelectedCompletion
 
 _logger = logging.getLogger(__name__)
 
 
-def mycli_bindings(mycli):
-    """Custom key bindings for mycli."""
-    kb = KeyBindings()
+def mycli_bindings():
+    """
+    Custom key bindings for mycli.
+    """
+    key_binding_manager = KeyBindingManager(
+        enable_open_in_editor=True,
+        enable_system_bindings=True,
+        enable_auto_suggest_bindings=True,
+        enable_search=True,
+        enable_abort_and_exit_bindings=True)
 
-    @kb.add('f2')
+    @key_binding_manager.registry.add_binding(Keys.F2)
     def _(event):
-        """Enable/Disable SmartCompletion Mode."""
+        """
+        Enable/Disable SmartCompletion Mode.
+        """
         _logger.debug('Detected F2 key.')
-        mycli.completer.smart_completion = not mycli.completer.smart_completion
+        buf = event.cli.current_buffer
+        buf.completer.smart_completion = not buf.completer.smart_completion
 
-    @kb.add('f3')
+    @key_binding_manager.registry.add_binding(Keys.F3)
     def _(event):
-        """Enable/Disable Multiline Mode."""
+        """
+        Enable/Disable Multiline Mode.
+        """
         _logger.debug('Detected F3 key.')
-        mycli.multi_line = not mycli.multi_line
+        buf = event.cli.current_buffer
+        buf.always_multiline = not buf.always_multiline
 
-    @kb.add('f4')
+    @key_binding_manager.registry.add_binding(Keys.F4)
     def _(event):
-        """Toggle between Vi and Emacs mode."""
+        """
+        Toggle between Vi and Emacs mode.
+        """
         _logger.debug('Detected F4 key.')
-        if mycli.key_bindings == "vi":
-            event.app.editing_mode = EditingMode.EMACS
-            mycli.key_bindings = "emacs"
+        if event.cli.editing_mode == EditingMode.VI:
+            event.cli.editing_mode = EditingMode.EMACS
         else:
-            event.app.editing_mode = EditingMode.VI
-            mycli.key_bindings = "vi"
+            event.cli.editing_mode = EditingMode.VI
 
-    @kb.add('tab')
+    @key_binding_manager.registry.add_binding(Keys.Tab)
     def _(event):
-        """Force autocompletion at cursor."""
+        """
+        Force autocompletion at cursor.
+        """
         _logger.debug('Detected <Tab> key.')
-        b = event.app.current_buffer
+        b = event.cli.current_buffer
         if b.complete_state:
             b.complete_next()
         else:
-            b.start_completion(select_first=True)
+            event.cli.start_completion(select_first=True)
 
-    @kb.add('c-space')
+    @key_binding_manager.registry.add_binding(Keys.ControlSpace)
     def _(event):
         """
         Initialize autocompletion at cursor.
@@ -56,25 +71,21 @@ def mycli_bindings(mycli):
         """
         _logger.debug('Detected <C-Space> key.')
 
-        b = event.app.current_buffer
+        b = event.cli.current_buffer
         if b.complete_state:
             b.complete_next()
         else:
-            b.start_completion(select_first=False)
+            event.cli.start_completion(select_first=False)
 
-    @kb.add('enter', filter=completion_is_selected)
+    @key_binding_manager.registry.add_binding(Keys.ControlJ, filter=HasSelectedCompletion())
     def _(event):
-        """Makes the enter key work as the tab key only when showing the menu.
-
-        In other words, don't execute query when enter is pressed in
-        the completion dropdown menu, instead close the dropdown menu
-        (accept current selection).
-
         """
-        _logger.debug('Detected enter key.')
+        Makes the enter key work as the tab key only when showing the menu.
+        """
+        _logger.debug('Detected <C-J> key.')
 
         event.current_buffer.complete_state = None
-        b = event.app.current_buffer
+        b = event.cli.current_buffer
         b.complete_state = None
 
-    return kb
+    return key_binding_manager
