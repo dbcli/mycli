@@ -13,7 +13,8 @@ Features:
 
 * Add Token.Prompt/Continuation (Thanks: [Dick Marinus]).
 * Don't reconnect when switching databases using use (Thanks: [Angelo Lupo]).
-* 
+* Handle MemoryErrors while trying to pipe in large files and exit gracefully with an error (Thanks: [Amjith Ramanujam])
+ 
 Bug Fixes:
 ----------
 
