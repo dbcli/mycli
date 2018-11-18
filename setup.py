@@ -33,20 +33,25 @@ class lint(Command):
 
     user_options = [
         ('branch=', 'b', 'branch/revision to compare against (e.g. master)'),
-        ('fix', 'f', 'fix the violations in place')
+        ('fix', 'f', 'fix the violations in place'),
+        ('error-status', 'e', 'return an error code on failed PEP check'),
     ]
 
     def initialize_options(self):
         """Set the default options."""
         self.branch = 'master'
         self.fix = False
+        self.error_status = True
 
     def finalize_options(self):
         pass
 
     def run(self):
-        cmd = 'pep8radius {} {}'.format(
-            self.branch, '--in-place' if self.fix else '')
+        cmd = 'pep8radius {}'.format(self.branch)
+        if self.fix:
+            cmd += ' --in-place'
+        if self.error_status:
+            cmd += ' --error-status'
         sys.exit(subprocess.call(cmd, shell=True))
 
 
