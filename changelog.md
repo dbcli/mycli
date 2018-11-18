@@ -6,6 +6,7 @@ Internal:
 
 * Add Python 3.7 trove classifier (Thanks: [Thomas Roten]).
 * Fix pytest in Fedora mock (Thanks: [Dick Marinus]).
+* Require `prompt_toolkit>=2.0.6` (Thanks: [Dick Marinus]).
 
 Features:
 ---------
@@ -13,6 +14,11 @@ Features:
 * Add Token.Prompt/Continuation (Thanks: [Dick Marinus]).
 * Don't reconnect when switching databases using use (Thanks: [Angelo Lupo]).
 * Handle MemoryErrors while trying to pipe in large files and exit gracefully with an error (Thanks: [Amjith Ramanujam])
+ 
+Bug Fixes:
+----------
+
+* Enable Ctrl-Z to suspend the app (Thanks: [Amjith Ramanujam]).
 
 1.18.2
 ======
@@ -656,6 +662,7 @@ Bug Fixes:
 
 [Daniel West]: http://github.com/danieljwest
 [Irina Truong]: https://github.com/j-bennet
+[Amjith Ramanujam]: https://blog.amjith.com
 [Kacper Kwapisz]: https://github.com/KKKas
 [Martijn Engler]: https://github.com/martijnengler
 [Matheus Rosa]:  https://github.com/mdsrosa

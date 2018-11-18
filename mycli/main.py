@@ -486,13 +486,10 @@ class MyCli(object):
                 raise RuntimeError(message)
             while True:
                 try:
-                    text = self.prompt_app.prompt(
-                        default=sql,
-                        vi_mode=self.key_bindings == 'vi'
-                    )
+                    text = self.prompt_app.prompt(default=sql)
                     break
                 except KeyboardInterrupt:
-                    sql = None
+                    sql = ""
 
             continue
         return text
@@ -546,9 +543,7 @@ class MyCli(object):
         def one_iteration(text=None):
             if text is None:
                 try:
-                    text = self.prompt_app.prompt(
-                        vi_mode=self.key_bindings == 'vi'
-                    )
+                    text = self.prompt_app.prompt()
                 except KeyboardInterrupt:
                     return
 
@@ -730,6 +725,7 @@ class MyCli(object):
                 key_bindings=key_bindings,
                 enable_open_in_editor=True,
                 enable_system_prompt=True,
+                enable_suspend=True,
                 editing_mode=editing_mode,
                 search_ignore_case=True
             )
