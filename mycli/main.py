@@ -43,8 +43,8 @@ from .key_bindings import mycli_bindings
 from .encodingutils import utf8tounicode, text_type
 from .lexer import MyCliLexer
 from .__init__ import __version__
-from mycli.compat import WIN
-from mycli.packages.filepaths import dir_path_exists
+from .compat import WIN
+from .packages.filepaths import dir_path_exists
 
 import itertools
 
