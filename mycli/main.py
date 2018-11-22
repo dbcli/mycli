@@ -6,11 +6,15 @@ import sys
 import traceback
 import logging
 import threading
+import re
+import fileinput
+from collections import namedtuple
 from time import time
 from datetime import datetime
 from random import choice
 from io import open
 
+from pymysql import OperationalError
 from cli_helpers.tabular_output import TabularOutputFormatter
 from cli_helpers.tabular_output import preprocessors
 import click
@@ -18,7 +22,6 @@ import sqlparse
 from prompt_toolkit.completion import DynamicCompleter
 from prompt_toolkit.enums import DEFAULT_BUFFER, EditingMode
 from prompt_toolkit.shortcuts import PromptSession, CompleteStyle
-from prompt_toolkit.styles.pygments import style_from_pygments_cls
 from prompt_toolkit.document import Document
 from prompt_toolkit.filters import HasFocus, IsDone
 from prompt_toolkit.layout.processors import (HighlightMatchingBracketProcessor,
@@ -28,9 +31,9 @@ from prompt_toolkit.history import FileHistory
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 
 from .packages.special.main import NO_QUERY
-from .packages.prompt_utils import confirm, confirm_destructive_query, prompt
+from .packages.prompt_utils import confirm, confirm_destructive_query
 from .packages.tabular_output import sql_format
-import mycli.packages.special as special
+from .packages import special
 from .sqlcompleter import SQLCompleter
 from .clitoolbar import create_toolbar_tokens_func
 from .clistyle import style_factory, style_factory_output
@@ -56,15 +59,11 @@ try:
 except ImportError:
     from urllib.parse import urlparse
     from urllib.parse import unquote
-from pymysql import OperationalError
 
-from collections import namedtuple
-import re
-import fileinput
 
 try:
     import paramiko
-except:
+except ImportError:
     paramiko = False
 
 # Query tuples are used for maintaining history
