@@ -24,7 +24,7 @@ install_requirements = [
     'sqlparse>=0.2.2,<0.3.0',
     'configobj >= 5.0.5',
     'cryptography >= 1.0.0',
-    'cli_helpers[styles] >= 1.0.1',
+    'cli_helpers[styles] > 1.1.0',
 ]
 
 
