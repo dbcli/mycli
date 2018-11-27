@@ -52,3 +52,12 @@ def test_column_name_completion(completer, complete_event):
         Document(text=text, cursor_position=position),
         complete_event))
     assert result == set(map(Completion, completer.all_completions))
+
+def test_special_name_completion(completer, complete_event):
+    text = '\\'
+    position = len('\\')
+    result = set(completer.get_completions(
+        Document(text=text, cursor_position=position),
+        complete_event))
+    # Special commands will NOT be suggested during naive completion mode.
+    assert result == set()

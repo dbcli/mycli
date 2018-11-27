@@ -4,6 +4,7 @@ import pytest
 from mock import patch
 from prompt_toolkit.completion import Completion
 from prompt_toolkit.document import Document
+import mycli.packages.special.main as special
 
 metadata = {
     'users': ['id', 'email', 'first_name', 'last_name'],
@@ -29,6 +30,7 @@ def completer():
     comp.extend_schemata('test')
     comp.extend_relations(tables, kind='tables')
     comp.extend_columns(columns, kind='tables')
+    comp.extend_special_commands(special.COMMANDS)
 
     return comp
 
@@ -37,6 +39,14 @@ def completer():
 def complete_event():
     from mock import Mock
     return Mock()
+
+def test_special_name_completion(completer, complete_event):
+    text = '\\d'
+    position = len('\\d')
+    result = completer.get_completions(
+        Document(text=text, cursor_position=position),
+        complete_event)
+    assert result == [Completion(text='\\dt', start_position=-2)]
 
 
 def test_empty_string_completion(completer, complete_event):
