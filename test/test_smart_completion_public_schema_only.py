@@ -57,7 +57,8 @@ def test_empty_string_completion(completer, complete_event):
         completer.get_completions(
             Document(text=text, cursor_position=position),
             complete_event))
-    assert set(map(Completion, completer.keywords)) == result
+    assert set(map(Completion, completer.keywords +
+                   completer.special_commands)) == result
 
 
 def test_select_keyword_completion(completer, complete_event):
