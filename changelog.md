@@ -1,3 +1,12 @@
+TBD
+====
+
+Bug Fixes:
+----------
+
+* Fix the missing completion for special commands (Thanks: [Amjith Ramanujam]).
+
+
 1.19.0
 ======
 
