@@ -40,6 +40,7 @@ def complete_event():
     from mock import Mock
     return Mock()
 
+
 def test_special_name_completion(completer, complete_event):
     text = '\\d'
     position = len('\\d')

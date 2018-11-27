@@ -53,6 +53,7 @@ def test_column_name_completion(completer, complete_event):
         complete_event))
     assert result == set(map(Completion, completer.all_completions))
 
+
 def test_special_name_completion(completer, complete_event):
     text = '\\'
     position = len('\\')
