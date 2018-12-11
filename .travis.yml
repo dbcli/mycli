@@ -21,7 +21,7 @@ script:
   - ./setup.py test --pytest-args="--cov-report= --cov=mycli"
   - coverage combine
   - coverage report
-  - ./setup.py lint
+  - ./setup.py lint --branch=$TRAVIS_BRANCH
 
 after_success:
   - codecov
