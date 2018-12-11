@@ -116,6 +116,9 @@ class MyCli(object):
         self.multi_line = c['main'].as_bool('multi_line')
         self.key_bindings = c['main']['key_bindings']
         special.set_timing_enabled(c['main'].as_bool('timing'))
+
+        special.set_favorite_queries(self.config)
+
         self.formatter = TabularOutputFormatter(
             format_name=c['main']['table_format'])
         sql_format.register_new_formatter(self.formatter)

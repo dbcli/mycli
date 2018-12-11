@@ -8,7 +8,6 @@ from prompt_toolkit.completion import Completer, Completion
 
 from .packages.completion_engine import suggest_type
 from .packages.parseutils import last_word
-from .packages.special.favoritequeries import favoritequeries
 from .packages.filepaths import parse_path, complete_path, suggest_path
 
 _logger = logging.getLogger(__name__)
@@ -351,6 +350,7 @@ class SQLCompleter(Completer):
                                             fuzzy=False)
                 completions.extend(special)
             elif suggestion['type'] == 'favoritequery':
+                from .packages.special.iocommands import favoritequeries
                 queries = self.find_matches(word_before_cursor,
                                             favoritequeries.list(),
                                             start_only=False, fuzzy=True)
