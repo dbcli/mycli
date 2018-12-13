@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import os
 import re
 import locale
@@ -9,10 +10,11 @@ from time import sleep
 
 import click
 import sqlparse
+from configobj import ConfigObj
 
 from . import export
 from .main import special_command, NO_QUERY, PARSED_QUERY
-from .favoritequeries import favoritequeries
+from .favoritequeries import FavoriteQueries
 from .utils import handle_cd_command
 from mycli.packages.prompt_utils import confirm_destructive_query
 
@@ -21,6 +23,7 @@ use_expanded_output = False
 PAGER_ENABLED = True
 tee_file = None
 once_file = written_to_once_file = None
+favoritequeries = FavoriteQueries(ConfigObj())
 
 @export
 def set_timing_enabled(val):
@@ -31,6 +34,12 @@ def set_timing_enabled(val):
 def set_pager_enabled(val):
     global PAGER_ENABLED
     PAGER_ENABLED = val
+
+
+@export
+def set_favorite_queries(config):
+    global favoritequeries
+    favoritequeries = FavoriteQueries(config)
 
 @export
 def is_pager_enabled():

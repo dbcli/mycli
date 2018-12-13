@@ -6,11 +6,15 @@ import sys
 import traceback
 import logging
 import threading
+import re
+import fileinput
+from collections import namedtuple
 from time import time
 from datetime import datetime
 from random import choice
 from io import open
 
+from pymysql import OperationalError
 from cli_helpers.tabular_output import TabularOutputFormatter
 from cli_helpers.tabular_output import preprocessors
 import click
@@ -18,7 +22,6 @@ import sqlparse
 from prompt_toolkit.completion import DynamicCompleter
 from prompt_toolkit.enums import DEFAULT_BUFFER, EditingMode
 from prompt_toolkit.shortcuts import PromptSession, CompleteStyle
-from prompt_toolkit.styles.pygments import style_from_pygments_cls
 from prompt_toolkit.document import Document
 from prompt_toolkit.filters import HasFocus, IsDone
 from prompt_toolkit.layout.processors import (HighlightMatchingBracketProcessor,
@@ -28,9 +31,9 @@ from prompt_toolkit.history import FileHistory
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 
 from .packages.special.main import NO_QUERY
-from .packages.prompt_utils import confirm, confirm_destructive_query, prompt
+from .packages.prompt_utils import confirm, confirm_destructive_query
 from .packages.tabular_output import sql_format
-import mycli.packages.special as special
+from .packages import special
 from .sqlcompleter import SQLCompleter
 from .clitoolbar import create_toolbar_tokens_func
 from .clistyle import style_factory, style_factory_output
@@ -43,8 +46,8 @@ from .key_bindings import mycli_bindings
 from .encodingutils import utf8tounicode, text_type
 from .lexer import MyCliLexer
 from .__init__ import __version__
-from mycli.compat import WIN
-from mycli.packages.filepaths import dir_path_exists
+from .compat import WIN
+from .packages.filepaths import dir_path_exists
 
 import itertools
 
@@ -56,15 +59,11 @@ try:
 except ImportError:
     from urllib.parse import urlparse
     from urllib.parse import unquote
-from pymysql import OperationalError
 
-from collections import namedtuple
-import re
-import fileinput
 
 try:
     import paramiko
-except:
+except ImportError:
     paramiko = False
 
 # Query tuples are used for maintaining history
@@ -117,6 +116,9 @@ class MyCli(object):
         self.multi_line = c['main'].as_bool('multi_line')
         self.key_bindings = c['main']['key_bindings']
         special.set_timing_enabled(c['main'].as_bool('timing'))
+
+        special.set_favorite_queries(self.config)
+
         self.formatter = TabularOutputFormatter(
             format_name=c['main']['table_format'])
         sql_format.register_new_formatter(self.formatter)
@@ -486,13 +488,10 @@ class MyCli(object):
                 raise RuntimeError(message)
             while True:
                 try:
-                    text = self.prompt_app.prompt(
-                        default=sql,
-                        vi_mode=self.key_bindings == 'vi'
-                    )
+                    text = self.prompt_app.prompt(default=sql)
                     break
                 except KeyboardInterrupt:
-                    sql = None
+                    sql = ""
 
             continue
         return text
@@ -546,9 +545,7 @@ class MyCli(object):
         def one_iteration(text=None):
             if text is None:
                 try:
-                    text = self.prompt_app.prompt(
-                        vi_mode=self.key_bindings == 'vi'
-                    )
+                    text = self.prompt_app.prompt()
                 except KeyboardInterrupt:
                     return
 
@@ -730,6 +727,7 @@ class MyCli(object):
                 key_bindings=key_bindings,
                 enable_open_in_editor=True,
                 enable_system_prompt=True,
+                enable_suspend=True,
                 editing_mode=editing_mode,
                 search_ignore_case=True
             )
@@ -1163,7 +1161,13 @@ def cli(database, user, host, port, socket, password, dbname,
         mycli.run_cli()
     else:
         stdin = click.get_text_stream('stdin')
-        stdin_text = stdin.read()
+        try:
+            stdin_text = stdin.read()
+        except MemoryError:
+            click.secho('Failed! Ran out of memory.', err=True, fg='red')
+            click.secho('You might want to try the official mysql client.', err=True, fg='red')
+            click.secho('Sorry... :(', err=True, fg='red')
+            exit(1)
 
         try:
             sys.stdin = open('/dev/tty')

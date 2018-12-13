@@ -19,7 +19,7 @@ description = 'CLI for MySQL Database. With auto-completion and syntax highlight
 install_requirements = [
     'click >= 4.1',
     'Pygments >= 1.6',
-    'prompt_toolkit>=2.0.0,<2.0.5',
+    'prompt_toolkit>=2.0.6',
     'PyMySQL >= 0.9.2',
     'sqlparse>=0.2.2,<0.3.0',
     'configobj >= 5.0.5',
@@ -33,20 +33,25 @@ class lint(Command):
 
     user_options = [
         ('branch=', 'b', 'branch/revision to compare against (e.g. master)'),
-        ('fix', 'f', 'fix the violations in place')
+        ('fix', 'f', 'fix the violations in place'),
+        ('error-status', 'e', 'return an error code on failed PEP check'),
     ]
 
     def initialize_options(self):
         """Set the default options."""
         self.branch = 'master'
         self.fix = False
+        self.error_status = True
 
     def finalize_options(self):
         pass
 
     def run(self):
-        cmd = 'pep8radius {} {}'.format(
-            self.branch, '--in-place' if self.fix else '')
+        cmd = 'pep8radius {}'.format(self.branch)
+        if self.fix:
+            cmd += ' --in-place'
+        if self.error_status:
+            cmd += ' --error-status'
         sys.exit(subprocess.call(cmd, shell=True))
 
 
