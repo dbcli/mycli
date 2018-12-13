@@ -1087,6 +1087,10 @@ def cli(database, user, host, port, socket, password, dbname,
         dsn_uri = database
         database = ''
 
+    if database and not '://' in database:
+        dsn = database
+        database = ''
+
     if dsn is not '':
         try:
             dsn_uri = mycli.config['alias_dsn'][dsn]
