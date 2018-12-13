@@ -12,6 +12,7 @@ Features:
 
 * Add Token.Prompt/Continuation (Thanks: [Dick Marinus]).
 * Don't reconnect when switching databases using use (Thanks: [Angelo Lupo]).
+* Auto find alias dsn when `://` not in `database` (Thanks: [QiaoHou Peng]).
 
 1.18.2
 ======
