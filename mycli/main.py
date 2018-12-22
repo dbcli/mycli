@@ -811,8 +811,10 @@ class MyCli(object):
 
             if buf:
                 if output_via_pager:
-                    # sadly click.echo_via_pager doesn't accept generators
-                    click.echo_via_pager("\n".join(buf))
+                    def newlinewrapper(text):
+                        for line in text:
+                            yield line + "\n"
+                    click.echo_via_pager(newlinewrapper(buf))
                 else:
                     for line in buf:
                         click.secho(line)

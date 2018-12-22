@@ -17,7 +17,7 @@ with open('mycli/__init__.py', 'rb') as f:
 description = 'CLI for MySQL Database. With auto-completion and syntax highlighting.'
 
 install_requirements = [
-    'click >= 4.1',
+    'click >= 7.0',
     'Pygments >= 1.6',
     'prompt_toolkit>=2.0.6',
     'PyMySQL >= 0.9.2',

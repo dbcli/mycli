@@ -31,6 +31,7 @@ def step_see_small_results(context):
         +---+\r
         | 1 |\r
         +---+\r
+        \r
         """), timeout=5)
     wrappers.expect_exact(context, '1 row in set', timeout=2)
 
@@ -40,7 +41,7 @@ def step_see_large_results(context):
     rows = ['{n:3}| {n}'.format(n=str(n)) for n in range(1, 50)]
     expected = ('***************************[ 1. row ]'
                 '***************************\r\n' +
-                '{}\r\n'.format('\r\n'.join(rows)))
+                '{}\r\n'.format('\r\n'.join(rows) + '\r\n'))
 
     wrappers.expect_pager(context, expected, timeout=5)
     wrappers.expect_exact(context, '1 row in set', timeout=2)

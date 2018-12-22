@@ -69,6 +69,7 @@ def step_see_found(context):
             +-------+\r
             | found |\r
             +-------+\r
+            \r
         ''') + context.conf['pager_boundary'],
         timeout=5
     )

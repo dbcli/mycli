@@ -196,7 +196,7 @@ def output(monkeypatch, terminal_size, testdata, explicit_pager, expect_pager):
     def echo_via_pager(s):
         assert expect_pager
         global clickoutput
-        clickoutput += s
+        clickoutput += "".join(s)
 
     def secho(s):
         assert not expect_pager
