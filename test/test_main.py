@@ -297,6 +297,7 @@ def test_dsn(monkeypatch):
         def warning(self, *args, **args_dict):
             pass
     class MockMyCli:
+        config = {'alias_dsn': {}}
         def __init__(self, **args):
             self.logger = Logger()
             self.destructive_warning = False
