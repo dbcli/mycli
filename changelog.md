@@ -7,6 +7,11 @@ Bug Fixes:
 * Fix the missing completion for special commands (Thanks: [Amjith Ramanujam]).
 * Fix favorites queries being loaded/stored only from/in default config file and not --myclirc (Thanks: [Matheus Rosa])
 
+Features:
+---------
+
+* Use a generator to stream the output to the pager (Thanks: [Dick Marinus]).
+
 
 1.19.0
 ======
