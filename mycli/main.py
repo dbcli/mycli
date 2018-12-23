@@ -1083,6 +1083,10 @@ def cli(database, user, host, port, socket, password, dbname,
 
     dsn_uri = None
 
+    if database and '://' not in database and not any([user, password, host, port]):
+        dsn = database
+        database = ''
+
     if database and '://' in database:
         dsn_uri = database
         database = ''

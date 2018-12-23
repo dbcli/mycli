@@ -1,6 +1,10 @@
 TBD
 ====
 
+Features:
+----------
+* Auto find alias dsn when `://` not in `database` (Thanks: [QiaoHou Peng]).
+
 Bug Fixes:
 ----------
 
