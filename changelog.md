@@ -4,6 +4,7 @@ TBD
 Features:
 ----------
 * Auto find alias dsn when `://` not in `database` (Thanks: [QiaoHou Peng]).
+* Mention URL encoding as escaping technique for special characters in connection DSN (Thanks: [Aljosha Papsch]).
 
 Bug Fixes:
 ----------
