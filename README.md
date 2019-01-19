@@ -154,6 +154,10 @@ Once that is installed, you can install mycli as follows:
 $ sudo pip install mycli
 ```
 
+### Windows
+
+Follow the instructions on this blogpost: https://www.codewall.co.uk/installing-using-mycli-on-windows/
+
 ### Cygwin
 
 1. Make sure the following Cygwin packages are installed:
