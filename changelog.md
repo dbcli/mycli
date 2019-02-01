@@ -17,6 +17,10 @@ Features:
 
 * Use a generator to stream the output to the pager (Thanks: [Dick Marinus]).
 
+Internal:
+---------
+* fix unhashable FormattedText from prompt toolkit in unit tests (Thanks: [Dick Marinus]).
+
 
 1.19.0
 ======
