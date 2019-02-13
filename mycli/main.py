@@ -17,6 +17,7 @@ from io import open
 from pymysql import OperationalError
 from cli_helpers.tabular_output import TabularOutputFormatter
 from cli_helpers.tabular_output import preprocessors
+from cli_helpers.utils import strip_ansi
 import click
 import sqlparse
 from prompt_toolkit.completion import DynamicCompleter
@@ -934,7 +935,7 @@ class MyCli(object):
                 formatted = formatted.splitlines()
             formatted = iter(formatted)
 
-            first_line = next(formatted)
+            first_line = strip_ansi(next(formatted))
             formatted = itertools.chain([first_line], formatted)
 
             if (not expanded and max_width and headers and cur and

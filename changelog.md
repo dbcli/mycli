@@ -11,6 +11,7 @@ Bug Fixes:
 
 * Fix the missing completion for special commands (Thanks: [Amjith Ramanujam]).
 * Fix favorites queries being loaded/stored only from/in default config file and not --myclirc (Thanks: [Matheus Rosa])
+* Fix automatic vertical output with native syntax style (Thanks: [Thomas Roten]).
 
 Features:
 ---------
@@ -34,7 +35,7 @@ Features:
 * Add Token.Prompt/Continuation (Thanks: [Dick Marinus]).
 * Don't reconnect when switching databases using use (Thanks: [Angelo Lupo]).
 * Handle MemoryErrors while trying to pipe in large files and exit gracefully with an error (Thanks: [Amjith Ramanujam])
- 
+
 Bug Fixes:
 ----------
 
