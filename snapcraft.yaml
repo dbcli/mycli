@@ -1,0 +1,17 @@
+name: mycli
+version: git
+summary: mycli
+description: |
+    A Terminal Client for MySQL with AutoCompletion and Syntax Highlighting.
+confinement: devmode
+base: core18
+parts:
+    mycli:
+        plugin: python
+        python-version: python2
+        source: .
+        source-type: git
+apps:
+    mycli:
+        command: mycli
+
