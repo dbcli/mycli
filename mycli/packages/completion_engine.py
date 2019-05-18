@@ -84,7 +84,7 @@ def suggest_type(full_text, text_before_cursor):
         # Be careful here because trivial whitespace is parsed as a statement,
         # but the statement won't have a first token
         tok1 = statement.token_first()
-        if tok1 and tok1.value in ['\\', 'source']:
+        if tok1 and (tok1.value == 'source' or tok1.value.startswith('\\')):
             return suggest_special(text_before_cursor)
 
     last_token = statement and statement.token_prev(len(statement.tokens))[1] or ''
