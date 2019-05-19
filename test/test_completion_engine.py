@@ -523,3 +523,9 @@ def test_after_as(expression):
 def test_source_is_file(expression):
     suggestions = suggest_type(expression, expression)
     assert suggestions == [{'type': 'file_name'}]
+
+
+def test_order_by():
+    text = 'select * from foo order by '
+    suggestions = suggest_type(text, text)
+    assert suggestions == [{'tables': [(None, 'foo', None)], 'type': 'column'}]
