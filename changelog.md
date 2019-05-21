@@ -14,6 +14,7 @@ Bug Fixes:
 * Fix automatic vertical output with native syntax style (Thanks: [Thomas Roten]).
 * Update `cli_helpers` version, this will remove quotes from batch output like the official client (Thanks: [Dick Marinus])
 * Update `setup.py` to no longer require `sqlparse` to be less than 0.3.0 as that just came out and there are no notable changes. ([VVelox])
+* workaround for ConfigObj parsing strings containing "," as lists (Thanks: [Mike Palandra])
 
 Features:
 ---------
