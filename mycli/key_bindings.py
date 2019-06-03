@@ -77,4 +77,10 @@ def mycli_bindings(mycli):
         b = event.app.current_buffer
         b.complete_state = None
 
+    @kb.add('escape', 'enter')
+    def _(event):
+        """Introduces a line break regardless of multi-line mode or not."""
+        _logger.debug('Detected alt-enter key.')
+        event.app.current_buffer.insert_text('\n')
+
     return kb
