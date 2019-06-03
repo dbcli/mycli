@@ -5,6 +5,7 @@ Features:
 ----------
 * Auto find alias dsn when `://` not in `database` (Thanks: [QiaoHou Peng]).
 * Mention URL encoding as escaping technique for special characters in connection DSN (Thanks: [Aljosha Papsch]).
+* Pressing Alt-Enter will introduce a line break. This is a way to break up the query into multiple lines without switching to multi-line mode. (Thanks: [Amjith Ramanujam]).
 
 Bug Fixes:
 ----------
