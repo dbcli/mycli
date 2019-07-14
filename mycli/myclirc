@@ -83,6 +83,9 @@ keyword_casing = auto
 # disabled pager on startup
 enable_pager = True
 
+# Disable shell commands (bash, sh, tcsh, etc) with SYSTEM query 
+disable_system_shell = False
+
 # Custom colors for the completion menu, toolbar, etc.
 [colors]
 completion-menu.completion.current = 'bg:#ffffff #000000'

@@ -134,6 +134,7 @@ class MyCli(object):
         self.wider_completion_menu = c['main'].as_bool('wider_completion_menu')
         c_dest_warning = c['main'].as_bool('destructive_warning')
         self.destructive_warning = c_dest_warning if warn is None else warn
+        self.disable_system_shell = c['main'].as_bool('disable_system_shell')
         self.login_path_as_host = c['main'].as_bool('login_path_as_host')
 
         # read from cli argument or user config file
@@ -577,6 +578,13 @@ class MyCli(object):
                 else:
                     self.echo('Wise choice!')
                     return
+
+            if self.disable_system_shell:
+	            for query in sqlparse.split(text):
+	                if query.split()[0].lower() == "system":
+		                click.secho("SYSTEM Shell not allowed",
+                                    err=True, fg='red')
+		                return
 
             # Keep track of whether or not the query is mutating. In case
             # of a multi-statement query, the overall query is considered
