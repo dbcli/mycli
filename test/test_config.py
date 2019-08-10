@@ -143,19 +143,19 @@ def test_str_to_bool():
 def test_read_config_file_list_values_default():
     """Test that reading a config file uses list_values by default."""
 
-    f = StringIO("[main]\nweather='cloudy with a chance of meatballs'\n")
+    f = StringIO(u"[main]\nweather='cloudy with a chance of meatballs'\n")
     config = read_config_file(f)
 
-    assert config['main']['weather'] == "cloudy with a chance of meatballs"
+    assert config['main']['weather'] == u"cloudy with a chance of meatballs"
 
 
 def test_read_config_file_list_values_off():
     """Test that you can disable list_values when reading a config file."""
 
-    f = StringIO("[main]\nweather='cloudy with a chance of meatballs'\n")
+    f = StringIO(u"[main]\nweather='cloudy with a chance of meatballs'\n")
     config = read_config_file(f, list_values=False)
 
-    assert config['main']['weather'] == "'cloudy with a chance of meatballs'"
+    assert config['main']['weather'] == u"'cloudy with a chance of meatballs'"
 
 
 def test_strip_quotes_with_matching_quotes():
