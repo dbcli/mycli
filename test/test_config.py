@@ -1,5 +1,5 @@
 """Unit tests for the mycli.config module."""
-from io import BytesIO, TextIOWrapper
+from io import BytesIO, StringIO, TextIOWrapper
 import os
 import struct
 import sys
@@ -7,7 +7,8 @@ import tempfile
 import pytest
 
 from mycli.config import (get_mylogin_cnf_path, open_mylogin_cnf,
-                          read_and_decrypt_mylogin_cnf, str_to_bool)
+                          read_and_decrypt_mylogin_cnf, read_config_file,
+                          str_to_bool, strip_matching_quotes)
 
 LOGIN_PATH_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                'mylogin.cnf'))
@@ -19,7 +20,6 @@ def open_bmylogin_cnf(name):
         buf = BytesIO()
         buf.write(f.read())
     return buf
-
 
 def test_read_mylogin_cnf():
     """Tests that a login path file can be read and decrypted."""
@@ -138,3 +138,59 @@ def test_str_to_bool():
 
     with pytest.raises(TypeError):
         str_to_bool(None)
+
+
+def test_read_config_file_list_values_default():
+    """Test that reading a config file uses list_values by default."""
+
+    f = StringIO("[main]\nweather='cloudy with a chance of meatballs'\n")
+    config = read_config_file(f)
+
+    assert config['main']['weather'] == "cloudy with a chance of meatballs"
+
+
+def test_read_config_file_list_values_off():
+    """Test that you can disable list_values when reading a config file."""
+
+    f = StringIO("[main]\nweather='cloudy with a chance of meatballs'\n")
+    config = read_config_file(f, list_values=False)
+
+    assert config['main']['weather'] == "'cloudy with a chance of meatballs'"
+
+
+def test_strip_quotes_with_matching_quotes():
+    """Test that a string with matching quotes is unquoted."""
+
+    s = "May the force be with you."
+    assert s == strip_matching_quotes('"{}"'.format(s))
+    assert s == strip_matching_quotes("'{}'".format(s))
+
+
+def test_strip_quotes_with_unmatching_quotes():
+    """Test that a string with unmatching quotes is not unquoted."""
+
+    s = "May the force be with you."
+    assert '"' + s == strip_matching_quotes('"{}'.format(s))
+    assert s + "'" == strip_matching_quotes("{}'".format(s))
+
+
+def test_strip_quotes_with_empty_string():
+    """Test that an empty string is handled during unquoting."""
+
+    assert '' == strip_matching_quotes('')
+
+
+def test_strip_quotes_with_none():
+    """Test that None is handled during unquoting."""
+
+    assert None is strip_matching_quotes(None)
+
+
+def test_strip_quotes_with_quotes():
+    """Test that strings with quotes in them are handled during unquoting."""
+
+    s1 = 'Darth Vader said, "Luke, I am your father."'
+    assert s1 == strip_matching_quotes(s1)
+
+    s2 = '"Darth Vader said, "Luke, I am your father.""'
+    assert s2[1:-1] == strip_matching_quotes(s2)
