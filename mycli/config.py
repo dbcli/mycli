@@ -30,7 +30,14 @@ def log(logger, level, message):
 
 
 def read_config_file(f, list_values=True):
-    """Read a config file."""
+    """Read a config file.
+
+    *list_values* set to `True` is the default behavior of ConfigObj.
+    Disabling it causes values to not be parsed for lists,
+    (e.g. 'a,b,c' -> ['a', 'b', 'c']. Additionally, the config values are
+    not unquoted. We are disabling list_values when reading MySQL config files
+    so we can correctly interpret commas in passwords.
+    """
 
     if isinstance(f, basestring):
         f = os.path.expanduser(f)
@@ -201,7 +208,10 @@ def str_to_bool(s):
 
 
 def strip_matching_quotes(s):
-    """Remove matching, surrounding quotes from a string."""
+    """Remove matching, surrounding quotes from a string.
+
+    This is the same logic that ConfigObj uses when parsing config values.
+    """
     if (isinstance(s, basestring) and len(s) >= 2 and
             s[0] == s[-1] and s[0] in ('"', "'")):
         s = s[1:-1]
