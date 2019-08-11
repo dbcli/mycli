@@ -37,6 +37,7 @@ def read_config_file(f, list_values=True):
     (e.g. 'a,b,c' -> ['a', 'b', 'c']. Additionally, the config values are
     not unquoted. We are disabling list_values when reading MySQL config files
     so we can correctly interpret commas in passwords.
+
     """
 
     if isinstance(f, basestring):
@@ -210,7 +211,9 @@ def str_to_bool(s):
 def strip_matching_quotes(s):
     """Remove matching, surrounding quotes from a string.
 
-    This is the same logic that ConfigObj uses when parsing config values.
+    This is the same logic that ConfigObj uses when parsing config
+    values.
+
     """
     if (isinstance(s, basestring) and len(s) >= 2 and
             s[0] == s[-1] and s[0] in ('"', "'")):
