@@ -1,5 +1,118 @@
-TBD:
+TBD
 ====
+
+Features:
+----------
+* Auto find alias dsn when `://` not in `database` (Thanks: [QiaoHou Peng]).
+* Mention URL encoding as escaping technique for special characters in connection DSN (Thanks: [Aljosha Papsch]).
+* Pressing Alt-Enter will introduce a line break. This is a way to break up the query into multiple lines without switching to multi-line mode. (Thanks: [Amjith Ramanujam]).
+
+Bug Fixes:
+----------
+
+* Fix the missing completion for special commands (Thanks: [Amjith Ramanujam]).
+* Fix favorites queries being loaded/stored only from/in default config file and not --myclirc (Thanks: [Matheus Rosa])
+* Fix automatic vertical output with native syntax style (Thanks: [Thomas Roten]).
+* Update `cli_helpers` version, this will remove quotes from batch output like the official client (Thanks: [Dick Marinus])
+* Update `setup.py` to no longer require `sqlparse` to be less than 0.3.0 as that just came out and there are no notable changes. ([VVelox])
+* workaround for ConfigObj parsing strings containing "," as lists (Thanks: [Mike Palandra])
+
+Features:
+---------
+
+* Use a generator to stream the output to the pager (Thanks: [Dick Marinus]).
+
+Internal:
+---------
+* fix unhashable FormattedText from prompt toolkit in unit tests (Thanks: [Dick Marinus]).
+
+
+1.19.0
+======
+
+Internal:
+---------
+
+* Add Python 3.7 trove classifier (Thanks: [Thomas Roten]).
+* Fix pytest in Fedora mock (Thanks: [Dick Marinus]).
+* Require `prompt_toolkit>=2.0.6` (Thanks: [Dick Marinus]).
+
+Features:
+---------
+
+* Add Token.Prompt/Continuation (Thanks: [Dick Marinus]).
+* Don't reconnect when switching databases using use (Thanks: [Angelo Lupo]).
+* Handle MemoryErrors while trying to pipe in large files and exit gracefully with an error (Thanks: [Amjith Ramanujam])
+
+Bug Fixes:
+----------
+
+* Enable Ctrl-Z to suspend the app (Thanks: [Amjith Ramanujam]).
+
+1.18.2
+======
+
+Bug Fixes:
+----------
+
+* Fixes database reconnecting feature (Thanks: [Yang Zou]).
+
+Internal:
+---------
+
+* Update Twine version to 1.12.1 (Thanks: [Thomas Roten]).
+* Fix warnings for running tests on Python 3.7 (Thanks: [Dick Marinus]).
+* Clean up and add behave logging (Thanks: [Dick Marinus]).
+
+1.18.1
+======
+
+Features:
+---------
+
+* Add Keywords: TINYINT, SMALLINT, MEDIUMINT, INT, BIGINT (Thanks: [QiaoHou Peng]).
+
+Internal:
+---------
+
+* Update prompt toolkit (Thanks: [Jonathan Slenders], [Irina Truong], [Dick Marinus]).
+
+1.18.0
+======
+
+Features:
+---------
+
+* Display server version in welcome message (Thanks: [Irina Truong]).
+* Set `program_name` connection attribute (Thanks: [Dick Marinus]).
+* Use `return` to terminate a generator for better Python 3.7 support (Thanks: [Zhongyang Guan]).
+* Add `SAVEPOINT` to SQLCompleter (Thanks: [Huachao Mao]).
+* Connect using a SSH transport (Thanks: [Dick Marinus]).
+* Add `FROM_UNIXTIME` and `UNIX_TIMESTAMP` to SQLCompleter (Thanks: [QiaoHou Peng])
+* Search `${PWD}/.myclirc`, then `${HOME}/.myclirc`, lastly `/etc/myclirc` (Thanks: [QiaoHao Peng])
+
+Bug Fixes:
+----------
+
+* When DSN is used, allow overrides from mycli arguments (Thanks: [Dick Marinus]).
+* A DSN without password should be allowed (Thanks: [Dick Marinus])
+
+Bug Fixes:
+----------
+
+* Convert `sql_format` to unicode strings for py27 compatibility (Thanks: [Dick Marinus]).
+* Fixes mycli compatibility with pbr (Thanks: [Thomas Roten]).
+* Don't align decimals for `sql_format` (Thanks: [Dick Marinus]).
+
+Internal:
+---------
+
+* Use fileinput (Thanks: [Dick Marinus]).
+* Enable tests for Python 3.7 (Thanks: [Thomas Roten]).
+* Remove `*.swp` from gitignore (Thanks: [Dick Marinus]).
+
+1.17.0:
+=======
 
 Features:
 ----------
@@ -18,6 +131,13 @@ Bug Fixes:
 * Unquote dsn username and password (Thanks: [Dick Marinus]).
 * Output `Password:` prompt to stderr (Thanks: [ushuz]).
 * Mark `alter` as a destructive query (Thanks: [Dick Marinus]).
+* Quote CSV fields (Thanks: [Thomas Roten]).
+* Fix `thanks_picker` (Thanks: [Dick Marinus]).
+
+Internal:
+---------
+
+* Refactor Destructive Warning behave tests (Thanks: [Dick Marinus]).
 
 
 1.16.0:
@@ -571,6 +691,7 @@ Bug Fixes:
 
 [Daniel West]: http://github.com/danieljwest
 [Irina Truong]: https://github.com/j-bennet
+[Amjith Ramanujam]: https://blog.amjith.com
 [Kacper Kwapisz]: https://github.com/KKKas
 [Martijn Engler]: https://github.com/martijnengler
 [Matheus Rosa]:  https://github.com/mdsrosa

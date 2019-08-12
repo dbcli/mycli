@@ -81,16 +81,10 @@ $ ./setup.py test
 ```
 
 Mycli supports Python 2.7 and 3.4+. You can test against multiple versions of
-Python by running:
+Python by running tox:
 
 ```bash
-$ ./setup.py test --all
-```
-
-You can also measure mycli's test coverage by running:
-
-```bash
-$ ./setup.py test --coverage
+$ tox
 ```
 
 
@@ -115,7 +109,7 @@ You only need to set the values that differ from the defaults.
 
 Some CLI tests expect the program `ex` to be a symbolic link to `vim`.
 
-In some systems (e.g. Archlinux) `ex` is a symbolic link to `vi`, which will
+In some systems (e.g. Arch Linux) `ex` is a symbolic link to `vi`, which will
 change the output and therefore make some tests fail.
 
 You can check this by running:

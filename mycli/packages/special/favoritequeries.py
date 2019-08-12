@@ -44,6 +44,7 @@ Examples:
         return self.config.get(self.section_name, {}).get(name, None)
 
     def save(self, name, query):
+        self.config.encoding = 'utf-8'
         if self.section_name not in self.config:
             self.config[self.section_name] = {}
         self.config[self.section_name][name] = query
@@ -56,6 +57,3 @@ Examples:
             return '%s: Not Found.' % name
         self.config.write()
         return '%s: Deleted' % name
-
-from ...config import read_config_file
-favoritequeries = FavoriteQueries(read_config_file('~/.myclirc'))

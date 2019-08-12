@@ -5,12 +5,23 @@ python:
   - "3.5"
   - "3.6"
 
+matrix:
+  include:
+    - python: 3.7
+      dist: xenial
+      sudo: true
+
 install:
   - pip install -r requirements-dev.txt
   - pip install -e .
+  - sudo rm -f /etc/mysql/conf.d/performance-schema.cnf
+  - sudo service mysql restart
 
 script:
-  - ./setup.py test -c lint
+  - ./setup.py test --pytest-args="--cov-report= --cov=mycli"
+  - coverage combine
+  - coverage report
+  - ./setup.py lint --branch=$TRAVIS_BRANCH
 
 after_success:
   - codecov
