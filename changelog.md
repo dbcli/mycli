@@ -1,11 +1,12 @@
-TBD
-====
+1.20.0
+======
 
 Features:
 ----------
 * Auto find alias dsn when `://` not in `database` (Thanks: [QiaoHou Peng]).
 * Mention URL encoding as escaping technique for special characters in connection DSN (Thanks: [Aljosha Papsch]).
 * Pressing Alt-Enter will introduce a line break. This is a way to break up the query into multiple lines without switching to multi-line mode. (Thanks: [Amjith Ramanujam]).
+* Use a generator to stream the output to the pager (Thanks: [Dick Marinus]).
 
 Bug Fixes:
 ----------
@@ -17,15 +18,9 @@ Bug Fixes:
 * Update `setup.py` to no longer require `sqlparse` to be less than 0.3.0 as that just came out and there are no notable changes. ([VVelox])
 * workaround for ConfigObj parsing strings containing "," as lists (Thanks: [Mike Palandra])
 
-Features:
----------
-
-* Use a generator to stream the output to the pager (Thanks: [Dick Marinus]).
-
 Internal:
 ---------
 * fix unhashable FormattedText from prompt toolkit in unit tests (Thanks: [Dick Marinus]).
-
 
 1.19.0
 ======
