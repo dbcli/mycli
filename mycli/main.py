@@ -42,7 +42,8 @@ from .sqlexecute import FIELD_TYPES, SQLExecute
 from .clibuffer import cli_is_multiline
 from .completion_refresher import CompletionRefresher
 from .config import (write_default_config, get_mylogin_cnf_path,
-                     open_mylogin_cnf, read_config_files, str_to_bool)
+                     open_mylogin_cnf, read_config_files, str_to_bool,
+                     strip_matching_quotes)
 from .key_bindings import mycli_bindings
 from .encodingutils import utf8tounicode, text_type
 from .lexer import MyCliLexer
@@ -308,7 +309,7 @@ class MyCli(object):
         :param keys: list of keys to retrieve
         :returns: tuple, with None for missing keys.
         """
-        cnf = read_config_files(files)
+        cnf = read_config_files(files, list_values=False)
 
         sections = ['client']
         if self.login_path and self.login_path != 'client':
@@ -321,12 +322,7 @@ class MyCli(object):
             result = None
             for sect in cnf:
                 if sect in sections and key in cnf[sect]:
-                    result = cnf[sect][key]
-            # HACK: if result is a list, then ConfigObj() probably decoded from
-            # string by splitting on comma, so reconstruct string by joining on
-            # comma.
-            if isinstance(result, list):
-                result = ','.join(result)
+                    result = strip_matching_quotes(cnf[sect][key])
             return result
 
         return {x: get(x) for x in keys}

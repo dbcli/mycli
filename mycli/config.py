@@ -29,14 +29,23 @@ def log(logger, level, message):
         print(message, file=sys.stderr)
 
 
-def read_config_file(f):
-    """Read a config file."""
+def read_config_file(f, list_values=True):
+    """Read a config file.
+
+    *list_values* set to `True` is the default behavior of ConfigObj.
+    Disabling it causes values to not be parsed for lists,
+    (e.g. 'a,b,c' -> ['a', 'b', 'c']. Additionally, the config values are
+    not unquoted. We are disabling list_values when reading MySQL config files
+    so we can correctly interpret commas in passwords.
+
+    """
 
     if isinstance(f, basestring):
         f = os.path.expanduser(f)
 
     try:
-        config = ConfigObj(f, interpolation=False, encoding='utf8')
+        config = ConfigObj(f, interpolation=False, encoding='utf8',
+                           list_values=list_values)
     except ConfigObjError as e:
         log(logger, logging.ERROR, "Unable to parse line {0} of config file "
             "'{1}'.".format(e.line_number, f))
@@ -50,13 +59,13 @@ def read_config_file(f):
     return config
 
 
-def read_config_files(files):
+def read_config_files(files, list_values=True):
     """Read and merge a list of config files."""
 
-    config = ConfigObj()
+    config = ConfigObj(list_values=list_values)
 
     for _file in files:
-        _config = read_config_file(_file)
+        _config = read_config_file(_file, list_values=list_values)
         if bool(_config) is True:
             config.merge(_config)
             config.filename = _config.filename
@@ -197,6 +206,19 @@ def str_to_bool(s):
         return False
     else:
         raise ValueError('not a recognized boolean value: %s'.format(s))
+
+
+def strip_matching_quotes(s):
+    """Remove matching, surrounding quotes from a string.
+
+    This is the same logic that ConfigObj uses when parsing config
+    values.
+
+    """
+    if (isinstance(s, basestring) and len(s) >= 2 and
+            s[0] == s[-1] and s[0] in ('"', "'")):
+        s = s[1:-1]
+    return s
 
 
 def _get_decryptor(key):
