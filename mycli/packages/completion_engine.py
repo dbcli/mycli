@@ -84,7 +84,7 @@ def suggest_type(full_text, text_before_cursor):
         # Be careful here because trivial whitespace is parsed as a statement,
         # but the statement won't have a first token
         tok1 = statement.token_first()
-        if tok1 and (tok1.value == 'source' or tok1.value.startswith('\\')):
+        if tok1 and tok1.value in ['\\', 'source']:
             return suggest_special(text_before_cursor)
 
     last_token = statement and statement.token_prev(len(statement.tokens))[1] or ''
@@ -199,7 +199,7 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
 
         # We're probably in a function argument list
         return [{'type': 'column', 'tables': extract_tables(full_text)}]
-    elif token_v in ('set', 'order by', 'distinct'):
+    elif token_v in ('set', 'by', 'distinct'):
         return [{'type': 'column', 'tables': extract_tables(full_text)}]
     elif token_v == 'as':
         # Don't suggest anything for an alias
