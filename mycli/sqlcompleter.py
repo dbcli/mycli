@@ -37,11 +37,23 @@ class SQLCompleter(Completer):
                 'SLAVE', 'SMALLINT', 'SMALLINT', 'START', 'STOP', 'TABLE',
                 'THEN', 'TINYINT', 'TO', 'TRANSACTION', 'TRIGGER', 'TRUNCATE',
                 'UNION', 'UNIQUE', 'UNSIGNED', 'UPDATE', 'USE', 'USER',
-                'USING', 'VALUES', 'VARCHAR', 'VIEW', 'WHEN', 'WHERE', 'WITH']
+                'USING', 'VALUES', 'VARCHAR', 'VIEW', 'WHEN', 'WHERE', 'WITH',
+                'JSON', 'ISNULL', 'GREATEST', 'LEAST', 'BLOB', 'BIT', 'OPAQUE',
+                'DATETIME', 'BOOLEAN', 'ARRAY', 'OBJECT', 'STRING', 'DOUBLE', 'NULL',
+                'ENUM', 'TEXT']
 
     functions = ['AVG', 'CONCAT', 'COUNT', 'DISTINCT', 'FIRST', 'FORMAT',
                  'FROM_UNIXTIME', 'LAST', 'LCASE', 'LEN', 'MAX', 'MID',
-                 'MIN', 'NOW', 'ROUND', 'SUM', 'TOP', 'UCASE', 'UNIX_TIMESTAMP']
+                 'MIN', 'NOW', 'ROUND', 'SUM', 'TOP', 'UCASE', 'UNIX_TIMESTAMP',
+                 'JSON_APPEND', 'JSON_ARRAY', 'JSON_ARRAY_APPEND', 'JSON_ARRAY_INSERT',
+                 'JSON_CONTAINS', 'JSON_CONTAINS_PATH', 'JSON_DEPTH', 'JSON_EXTRACT',
+                 'JSON_INSERT', 'JSON_KEYS', 'JSON_LENGTH', 'JSON_MERGE',
+                 'JSON_MERGE_PATCH', 'JSON_MERGE_PRESERVE', 'JSON_OBJECT', 'JSON_PRETTY',
+                 'JSON_QUOTE', 'JSON_REMOVE', 'JSON_REPLACE', 'JSON_SEARCH', 'JSON_SET',
+                 'JSON_STORAGE_SIZE', 'JSON_TYPE', 'JSON_UNQUOTE', 'JSON_VALID',
+                 'JSON_ARRAYAVG', 'JSON_OBJECTAVG', 'JSON_OVERLAPS', 'JSON_SCHEMA_VALID',
+                 'JSON_SCHEMA_VALIDATION_REPORT', 'JSON_STORAGE_FREE', 'JSON_TABLE',
+                 'MEMBER_OF']
 
     show_items = []
 
