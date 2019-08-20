@@ -1,3 +1,11 @@
+1.20.1
+======
+
+Bug Fixes:
+----------
+
+* Fix an error when using login paths with an explicit database name (Thanks: [Thomas Roten]).
+
 1.20.0
 ======
 
