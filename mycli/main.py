@@ -1085,21 +1085,22 @@ def cli(database, user, host, port, socket, password, dbname,
 
     dsn_uri = None
 
-    if database and '://' not in database and not any([user, password, host, port]):
-        dsn = database
-        database = ''
+    # Treat the database argument as a DSN alias if we're missing
+    # other connection information.
+    if (mycli.config['alias_dsn'] and database and '://' not in database
+            and not any([user, password, host, port, login_path])):
+        dsn, database = database, ''
 
     if database and '://' in database:
-        dsn_uri = database
-        database = ''
+        dsn_uri, database = database, ''
 
-    if dsn is not '':
+    if dsn:
         try:
             dsn_uri = mycli.config['alias_dsn'][dsn]
-        except KeyError as err:
-            click.secho('Invalid DSNs found in the config file. '
-                        'Please check the "[alias_dsn]" section in myclirc.',
-                        err=True, fg='red')
+        except KeyError:
+            click.secho('Could not find the specified DSN in the config file. '
+                        'Please check the "[alias_dsn]" section in your '
+                        'myclirc.', err=True, fg='red')
             exit(1)
 
     if dsn_uri:
