@@ -63,6 +63,7 @@ wider_completion_menu = False
 # \r - The current time, standard 12-hour time (1–12)
 # \s - Seconds of the current time
 # \t - Product type (Percona, MySQL, MariaDB)
+# \A - DSN alias name (from the [alias_dsn] section)
 # \u - Username
 prompt = '\t \u@\h:\d> '
 prompt_continuation = '-> '
