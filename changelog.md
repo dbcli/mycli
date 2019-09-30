@@ -1,3 +1,11 @@
+TBD
+===
+
+Features:
+---------
+* Added DSN alias name as a format specifier to the prompt (Thanks: [Georgy Frolov]).
+
+
 1.20.1
 ======
 
@@ -5,6 +13,7 @@ Bug Fixes:
 ----------
 
 * Fix an error when using login paths with an explicit database name (Thanks: [Thomas Roten]).
+
 
 1.20.0
 ======
