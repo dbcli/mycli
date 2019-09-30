@@ -631,7 +631,7 @@ class MyCli(object):
 
                     start = time()
                     result_count += 1
-                    mutating = mutating or is_mutating(status)
+                    mutating = mutating or destroy or is_mutating(status)
                 special.unset_once_if_written()
             except EOFError as e:
                 raise e
@@ -1204,7 +1204,7 @@ def need_completion_refresh(queries):
         try:
             first_token = query.split()[0]
             if first_token.lower() in ('alter', 'create', 'use', '\\r',
-                    '\\u', 'connect', 'drop'):
+                                       '\\u', 'connect', 'drop', 'rename'):
                 return True
         except Exception:
             return False
@@ -1253,7 +1253,7 @@ def is_mutating(status):
         return False
 
     mutating = set(['insert', 'update', 'delete', 'alter', 'create', 'drop',
-                    'replace', 'truncate', 'load'])
+                    'replace', 'truncate', 'load', 'rename'])
     return status.split(None, 1)[0].lower() in mutating
 
 def is_select(status):
