@@ -936,15 +936,15 @@ class MyCli(object):
                 formatted = formatted.splitlines()
             formatted = iter(formatted)
 
-            first_line = strip_ansi(next(formatted))
-            formatted = itertools.chain([first_line], formatted)
-
-            if (not expanded and max_width and headers and cur and
-                    len(first_line) > max_width):
-                formatted = self.formatter.format_output(
-                    cur, headers, format_name='vertical', column_types=column_types, **output_kwargs)
-                if isinstance(formatted, (text_type)):
-                    formatted = iter(formatted.splitlines())
+            if (not expanded and max_width and headers and cur):
+                first_line = next(formatted)
+                if len(strip_ansi(first_line)) > max_width:
+                    formatted = self.formatter.format_output(
+                        cur, headers, format_name='vertical', column_types=column_types, **output_kwargs)
+                    if isinstance(formatted, (text_type)):
+                        formatted = iter(formatted.splitlines())
+                else:
+                    formatted = itertools.chain([first_line], formatted)
 
             output = itertools.chain(output, formatted)
 
