@@ -121,6 +121,7 @@ class MyCli(object):
 
         special.set_favorite_queries(self.config)
 
+        self.dsn_alias = None
         self.formatter = TabularOutputFormatter(
             format_name=c['main']['table_format'])
         sql_format.register_new_formatter(self.formatter)
@@ -885,6 +886,7 @@ class MyCli(object):
         string = string.replace('\\r', now.strftime('%I'))
         string = string.replace('\\s', now.strftime('%S'))
         string = string.replace('\\p', str(sqlexecute.port))
+        string = string.replace('\\A', self.dsn_alias or '(none)')
         string = string.replace('\\_', ' ')
         return string
 
@@ -1102,6 +1104,8 @@ def cli(database, user, host, port, socket, password, dbname,
                         'Please check the "[alias_dsn]" section in your '
                         'myclirc.', err=True, fg='red')
             exit(1)
+        else:
+            mycli.dsn_alias = dsn
 
     if dsn_uri:
         uri = urlparse(dsn_uri)
