@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 from prompt_toolkit.key_binding.vi_state import InputMode
 from prompt_toolkit.application import get_app
 from prompt_toolkit.enums import EditingMode
+from .packages import special
 
 
 def create_toolbar_tokens_func(mycli, show_fish_help):
@@ -12,8 +13,13 @@ def create_toolbar_tokens_func(mycli, show_fish_help):
         result.append(('class:bottom-toolbar', ' '))
 
         if mycli.multi_line:
+            delimiter = special.delimiter.current
             result.append(
-                ('class:bottom-toolbar', ' (Semi-colon [;] will end the line) '))
+                (
+                    'class:bottom-toolbar',
+                    ' ({} [{}] will end the line) '.format(
+                        'Semi-colon' if delimiter == ';' else 'Delimiter', delimiter)
+                ))
 
         if mycli.multi_line:
             result.append(('class:bottom-toolbar.on', '[F3] Multiline: ON  '))

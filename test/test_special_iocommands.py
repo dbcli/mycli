@@ -1,4 +1,6 @@
 # coding: utf-8
+from __future__ import unicode_literals
+
 import os
 import stat
 import tempfile
@@ -232,3 +234,44 @@ def test_watch_query_interval_clear(clear_mock):
                                  cur=cur))
         test_asserts(watch_query('-c {0!s} select 1;'.format(seconds),
                                  cur=cur))
+
+
+def test_split_sql_by_delimiter():
+    delimiter = mycli.packages.special.delimiter
+    for delimiter_str in (';', '$', '😀'):
+        delimiter.set(delimiter_str)
+        sql_input = "select 1{} select \ufffc2".format(delimiter_str)
+        queries = (
+            "select 1",
+            "select \ufffc2"
+        )
+        for query, parsed_query in zip(
+                queries, delimiter.queries_iter(sql_input)):
+            assert(query == parsed_query)
+
+
+def test_switch_delimiter_within_query():
+    delimiter = mycli.packages.special.delimiter
+    delimiter.set(';')
+    sql_input = "select 1; delimiter $$ select 2 $$ select 3 $$"
+    queries = (
+        "select 1",
+        "delimiter $$ select 2 $$ select 3 $$",
+        "select 2",
+        "select 3"
+    )
+    for query, parsed_query in zip(
+            queries, delimiter.queries_iter(sql_input)):
+        assert(query == parsed_query)
+
+
+def test_set_delimiter():
+    delimiter = mycli.packages.special.delimiter
+    for delim in ('foo', 'bar'):
+        delimiter.set(delim)
+        assert delimiter.current == delim
+
+
+def teardown_function():
+    delimiter = mycli.packages.special.delimiter
+    delimiter.set(';')

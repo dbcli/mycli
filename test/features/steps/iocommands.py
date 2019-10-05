@@ -21,10 +21,10 @@ def step_edit_file(context):
     wrappers.expect_exact(context, '\r\n:', timeout=2)
 
 
-@when('we type sql in the editor')
-def step_edit_type_sql(context):
+@when('we type "{query}" in the editor')
+def step_edit_type_sql(context, query):
     context.cli.sendline('i')
-    context.cli.sendline('select * from abc')
+    context.cli.sendline(query)
     context.cli.sendline('.')
     wrappers.expect_exact(context, '\r\n:', timeout=2)
 
@@ -35,9 +35,9 @@ def step_edit_quit(context):
     wrappers.expect_exact(context, "written", timeout=2)
 
 
-@then('we see the sql in prompt')
-def step_edit_done_sql(context):
-    for match in 'select * from abc'.split(' '):
+@then('we see "{query}" in prompt')
+def step_edit_done_sql(context, query):
+    for match in query.split(' '):
         wrappers.expect_exact(context, match, timeout=5)
     # Cleanup the command line.
     context.cli.sendcontrol('c')
@@ -56,18 +56,33 @@ def step_tee_ouptut(context):
         os.path.basename(context.tee_file_name)))
 
 
-@when(u'we query "select 123456"')
-def step_query_select_123456(context):
-    context.cli.sendline('select 123456')
-    wrappers.expect_pager(context, dedent("""\
-        +--------+\r
-        | 123456 |\r
-        +--------+\r
-        | 123456 |\r
-        +--------+\r
+@when(u'we select "select {param}"')
+def step_query_select_number(context, param):
+    context.cli.sendline(u'select {}'.format(param))
+    wrappers.expect_pager(context, dedent(u"""\
+        +{dashes}+\r
+        | {param} |\r
+        +{dashes}+\r
+        | {param} |\r
+        +{dashes}+\r
         \r
-        """), timeout=5)
+        """.format(param=param, dashes='-' * (len(param) + 2))
+    ), timeout=5)
     wrappers.expect_exact(context, '1 row in set', timeout=2)
+
+
+@then(u'we see result "{result}"')
+def step_see_result(context, result):
+    wrappers.expect_exact(
+        context,
+        u"| {} |".format(result),
+        timeout=2
+    )
+
+
+@when(u'we query "{query}"')
+def step_query(context, query):
+    context.cli.sendline(query)
 
 
 @when(u'we notee output')
@@ -81,3 +96,12 @@ def step_see_123456_in_ouput(context):
         assert '123456' in f.read()
     if os.path.exists(context.tee_file_name):
         os.remove(context.tee_file_name)
+
+
+@then(u'delimiter is set to "{delimiter}"')
+def delimiter_is_set(context, delimiter):
+    wrappers.expect_exact(
+        context,
+        u'Changed delimiter to {}'.format(delimiter),
+        timeout=2
+    )

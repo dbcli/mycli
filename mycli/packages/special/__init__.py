@@ -8,3 +8,5 @@ def export(defn):
 
 from . import dbcommands
 from . import iocommands
+
+delimiter = iocommands.delimiter_command
