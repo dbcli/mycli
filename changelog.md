@@ -4,6 +4,7 @@ TBD
 Features:
 ---------
 * Added DSN alias name as a format specifier to the prompt (Thanks: [Georgy Frolov]).
+* Mark `update` without `where`-clause as destructive query (Thanks: [Klaus Wünschel]).
 
 
 1.20.1
