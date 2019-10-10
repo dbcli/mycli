@@ -37,7 +37,7 @@ def _multiline_exception(text):
         text.lower().startswith('delimiter') or
 
         # Ended with the current delimiter (usually a semi-column)
-        text.endswith(special.delimiter.current) or
+        text.endswith(special.get_current_delimiter()) or
 
         text.endswith('\\g') or
         text.endswith('\\G') or

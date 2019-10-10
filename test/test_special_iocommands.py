@@ -237,22 +237,20 @@ def test_watch_query_interval_clear(clear_mock):
 
 
 def test_split_sql_by_delimiter():
-    delimiter = mycli.packages.special.delimiter
     for delimiter_str in (';', '$', '😀'):
-        delimiter.set(delimiter_str)
+        mycli.packages.special.set_delimiter(delimiter_str)
         sql_input = "select 1{} select \ufffc2".format(delimiter_str)
         queries = (
             "select 1",
             "select \ufffc2"
         )
         for query, parsed_query in zip(
-                queries, delimiter.queries_iter(sql_input)):
+                queries, mycli.packages.special.split_queries(sql_input)):
             assert(query == parsed_query)
 
 
 def test_switch_delimiter_within_query():
-    delimiter = mycli.packages.special.delimiter
-    delimiter.set(';')
+    mycli.packages.special.set_delimiter(';')
     sql_input = "select 1; delimiter $$ select 2 $$ select 3 $$"
     queries = (
         "select 1",
@@ -261,17 +259,17 @@ def test_switch_delimiter_within_query():
         "select 3"
     )
     for query, parsed_query in zip(
-            queries, delimiter.queries_iter(sql_input)):
+            queries,
+            mycli.packages.special.split_queries(sql_input)):
         assert(query == parsed_query)
 
 
 def test_set_delimiter():
-    delimiter = mycli.packages.special.delimiter
+
     for delim in ('foo', 'bar'):
-        delimiter.set(delim)
-        assert delimiter.current == delim
+        mycli.packages.special.set_delimiter(delim)
+        assert mycli.packages.special.get_current_delimiter() == delim
 
 
 def teardown_function():
-    delimiter = mycli.packages.special.delimiter
-    delimiter.set(';')
+    mycli.packages.special.set_delimiter(';')

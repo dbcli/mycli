@@ -168,7 +168,7 @@ class SQLExecute(object):
         if statement.startswith('\\fs'):
             components = [statement]
         else:
-            components = special.delimiter.queries_iter(statement)
+            components = special.split_queries(statement)
 
         for sql in components:
             # \G is treated specially since we have to set the expanded output.

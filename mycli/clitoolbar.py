@@ -13,7 +13,7 @@ def create_toolbar_tokens_func(mycli, show_fish_help):
         result.append(('class:bottom-toolbar', ' '))
 
         if mycli.multi_line:
-            delimiter = special.delimiter.current
+            delimiter = special.get_current_delimiter()
             result.append(
                 (
                     'class:bottom-toolbar',
