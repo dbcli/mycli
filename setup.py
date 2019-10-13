@@ -57,18 +57,25 @@ class lint(Command):
 
 class test(TestCommand):
 
-    user_options = [('pytest-args=', 'a', 'Arguments to pass to pytest')]
+    user_options = [
+        ('pytest-args=', 'a', 'Arguments to pass to pytest'),
+        ('behave-args=', 'b', 'Arguments to pass to pytest')
+    ]
 
     def initialize_options(self):
         TestCommand.initialize_options(self)
         self.pytest_args = ''
+        self.behave_args = ''
 
     def run_tests(self):
         unit_test_errno = subprocess.call(
             'pytest ' + self.pytest_args,
             shell=True
         )
-        cli_errno = subprocess.call('behave test/features', shell=True)
+        cli_errno = subprocess.call(
+            'behave test/features ' + self.behave_args,
+            shell=True
+        )
         sys.exit(unit_test_errno or cli_errno)
 
 
