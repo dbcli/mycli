@@ -4,6 +4,7 @@ from prompt_toolkit.enums import DEFAULT_BUFFER
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.application import get_app
 from .packages.parseutils import is_open_quote
+from .packages import special
 
 
 def cli_is_multiline(mycli):
@@ -17,6 +18,7 @@ def cli_is_multiline(mycli):
             return not _multiline_exception(doc.text)
     return cond
 
+
 def _multiline_exception(text):
     orig = text
     text = text.strip()
@@ -27,12 +29,28 @@ def _multiline_exception(text):
     if text.startswith('\\fs'):
         return orig.endswith('\n')
 
-    return (text.startswith('\\') or   # Special Command
-            text.endswith(';') or      # Ended with a semi-colon
-            text.endswith('\\g') or    # Ended with \g
-            text.endswith('\\G') or    # Ended with \G
-            (text == 'exit') or        # Exit doesn't need semi-colon
-            (text == 'quit') or        # Quit doesn't need semi-colon
-            (text == ':q') or          # To all the vim fans out there
-            (text == '')               # Just a plain enter without any text
-            )
+    return (
+        # Special Command
+        text.startswith('\\') or
+
+        # Delimiter declaration
+        text.lower().startswith('delimiter') or
+
+        # Ended with the current delimiter (usually a semi-column)
+        text.endswith(special.get_current_delimiter()) or
+
+        text.endswith('\\g') or
+        text.endswith('\\G') or
+
+        # Exit doesn't need semi-column`
+        (text == 'exit') or
+
+        # Quit doesn't need semi-column
+        (text == 'quit') or
+
+        # To all teh vim fans out there
+        (text == ':q') or
+
+        # just a plain enter without any text
+        (text == '')
+    )

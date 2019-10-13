@@ -15,6 +15,7 @@ from configobj import ConfigObj
 from . import export
 from .main import special_command, NO_QUERY, PARSED_QUERY
 from .favoritequeries import FavoriteQueries
+from .delimitercommand import DelimiterCommand
 from .utils import handle_cd_command
 from mycli.packages.prompt_utils import confirm_destructive_query
 
@@ -24,6 +25,8 @@ PAGER_ENABLED = True
 tee_file = None
 once_file = written_to_once_file = None
 favoritequeries = FavoriteQueries(ConfigObj())
+delimiter_command = DelimiterCommand()
+
 
 @export
 def set_timing_enabled(val):
@@ -437,3 +440,20 @@ def watch_query(arg, **kwargs):
             return
         finally:
             set_pager_enabled(old_pager_enabled)
+
+
+@export
+@special_command('delimiter', None, 'Change SQL delimiter.')
+def set_delimiter(arg, **_):
+    return delimiter_command.set(arg)
+
+
+@export
+def get_current_delimiter():
+    return delimiter_command.current
+
+
+@export
+def split_queries(input):
+    for query in delimiter_command.queries_iter(input):
+        yield query

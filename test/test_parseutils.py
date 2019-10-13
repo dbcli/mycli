@@ -1,6 +1,6 @@
 import pytest
 from mycli.packages.parseutils import (
-    extract_tables, query_starts_with, queries_start_with, is_destructive
+    extract_tables, query_starts_with, queries_start_with, is_destructive,
 )
 
 

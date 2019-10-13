@@ -21,7 +21,7 @@ class SQLCompleter(Completer):
                 'CHARACTER SET', 'CHECK', 'COLLATE', 'COLUMN', 'COMMENT',
                 'COMMIT', 'CONSTRAINT', 'CREATE', 'CURRENT',
                 'CURRENT_TIMESTAMP', 'DATABASE', 'DATE', 'DECIMAL', 'DEFAULT',
-                'DELETE FROM', 'DELIMITER', 'DESC', 'DESCRIBE', 'DROP',
+                'DELETE FROM', 'DESC', 'DESCRIBE', 'DROP',
                 'ELSE', 'END', 'ENGINE', 'ESCAPE', 'EXISTS', 'FILE', 'FLOAT',
                 'FOR', 'FOREIGN KEY', 'FORMAT', 'FROM', 'FULL', 'FUNCTION',
                 'GRANT', 'GROUP BY', 'HAVING', 'HOST', 'IDENTIFIED', 'IN',

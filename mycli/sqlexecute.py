@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import logging
 import pymysql
 import sqlparse
@@ -166,12 +168,9 @@ class SQLExecute(object):
         if statement.startswith('\\fs'):
             components = [statement]
         else:
-            components = sqlparse.split(statement)
+            components = special.split_queries(statement)
 
         for sql in components:
-            # Remove spaces, eol and semi-colons.
-            sql = sql.rstrip(';')
-
             # \G is treated specially since we have to set the expanded output.
             if sql.endswith('\\G'):
                 special.set_expanded_output(True)
@@ -193,6 +192,7 @@ class SQLExecute(object):
                     # description).
                     if not cur.nextset() or (not cur.rowcount and cur.description is None):
                         break
+
 
     def get_result(self, cursor):
         """Get the current result's data from the cursor."""
