@@ -6,6 +6,8 @@ Features:
 * Added DSN alias name as a format specifier to the prompt (Thanks: [Georgy Frolov]).
 * Mark `update` without `where`-clause as destructive query (Thanks: [Klaus Wünschel]).
 
+* Added DELIMITER command (Thanks: [Georgy Frolov])
+
 
 1.20.1
 ======
@@ -724,3 +726,4 @@ Bug Fixes:
 [Dick Marinus]: https://github.com/meeuw
 [François Pietka]: https://github.com/fpietka
 [Frederic Aoustin]: https://github.com/fraoustin
+[Georgy Frolov]: https://github.com/pasenor

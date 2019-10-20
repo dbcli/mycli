@@ -85,11 +85,13 @@ def run_cli(context, run_args=None):
     context.currentdb = context.conf['dbname']
 
 
-def wait_prompt(context):
+def wait_prompt(context, prompt=None):
     """Make sure prompt is displayed."""
-    user = context.conf['user']
-    host = context.conf['host']
-    dbname = context.currentdb
-    expect_exact(context, '{0}@{1}:{2}> '.format(
-        user, host, dbname), timeout=5)
+    if prompt is None:
+        user = context.conf['user']
+        host = context.conf['host']
+        dbname = context.currentdb
+        prompt = '{0}@{1}:{2}> '.format(
+            user, host, dbname),
+    expect_exact(context, prompt, timeout=5)
     context.atprompt = True
