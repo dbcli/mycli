@@ -439,7 +439,7 @@ class MyCli(object):
                             "traceback: %r", traceback.format_exc())
                         self.logger.debug('Retrying over TCP/IP')
                         self.echo(
-                                "Failed to connect to local MySQL server through socket '{}':".format(socket))
+                            "Failed to connect to local MySQL server through socket '{}':".format(socket))
                         self.echo(str(e), err=True)
                         self.echo(
                             'Retrying over TCP/IP', err=True)
