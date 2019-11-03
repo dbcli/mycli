@@ -5,8 +5,8 @@ Features:
 ---------
 * Added DSN alias name as a format specifier to the prompt (Thanks: [Georgy Frolov]).
 * Mark `update` without `where`-clause as destructive query (Thanks: [Klaus Wünschel]).
-
 * Added DELIMITER command (Thanks: [Georgy Frolov])
+* Added clearer error message when failing to connect to the default socket.
 
 
 1.20.1
