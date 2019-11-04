@@ -49,7 +49,7 @@ from .encodingutils import utf8tounicode, text_type
 from .lexer import MyCliLexer
 from .__init__ import __version__
 from .compat import WIN
-from .packages.filepaths import dir_path_exists
+from .packages.filepaths import dir_path_exists, guess_socket_location
 
 import itertools
 
@@ -429,7 +429,7 @@ class MyCli(object):
                 # Try a sensible default socket first (simplifies auth)
                 # If we get a connection error, try tcp/ip localhost
                 try:
-                    socket = '/var/run/mysqld/mysqld.sock'
+                    socket = guess_socket_location()
                     _connect()
                 except OperationalError as e:
                     # These are "Can't open socket" and 2x "Can't connect"

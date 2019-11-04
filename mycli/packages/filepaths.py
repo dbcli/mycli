@@ -3,11 +3,13 @@ from __future__ import unicode_literals
 from mycli.encodingutils import text_type
 import os
 
+DEFAULT_SOCKET_DIRS = ('/var/run/', '/var/lib/', '/tmp')
+
 
 def list_path(root_dir):
     """List directory if exists.
 
-    :param dir: str
+    :param root_dir: str
     :return: list
 
     """
@@ -84,3 +86,15 @@ def dir_path_exists(path):
 
     """
     return os.path.exists(os.path.dirname(path))
+
+
+def guess_socket_location():
+    """Try to guess the location of the default mysql socket file."""
+    socket_dirs = filter(os.path.exists, DEFAULT_SOCKET_DIRS)
+    for directory in socket_dirs:
+        for r, dirs, files in os.walk(directory, topdown=True):
+            for filename in files:
+                if filename.startswith('mysql') and filename.endswith('.socket'):
+                    return os.path.join(r, filename)
+            dirs[:] = [d for d in dirs if d.startswith('mysql')]
+    return ''
