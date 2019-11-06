@@ -3,7 +3,7 @@ import os
 import click
 from click.testing import CliRunner
 
-from mycli.main import MyCli, cli, thanks_picker, PACKAGE_ROOT
+from mycli.main import MyCli, cli, thanks_picker, is_dropping_database, PACKAGE_ROOT
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
 from utils import USER, HOST, PORT, PASSWORD, dbtest, run
 
@@ -149,6 +149,13 @@ def test_thanks_picker_utf8():
 
     name = thanks_picker((author_file, sponsor_file))
     assert isinstance(name, text_type)
+
+
+def test_is_dropping_database():
+    is_dropping_text = "DROP DATABASE foo; USE sys;"
+    assert is_dropping_database(is_dropping_text, 'foo')
+    is_not_dropping_text = "DROP DATABASE foo; CREATE DATABASE foo; USE foo;"
+    assert not is_dropping_database(is_not_dropping_text, 'foo')
 
 
 def test_help_strings_end_with_periods():
