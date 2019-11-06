@@ -156,6 +156,10 @@ def test_is_dropping_database():
     assert is_dropping_database(is_dropping_text, 'foo')
     is_not_dropping_text = "DROP DATABASE foo; CREATE DATABASE foo; USE foo;"
     assert not is_dropping_database(is_not_dropping_text, 'foo')
+    is_dropping_other_text = "DROP DATABASE bar; USE sys;"
+    assert not is_dropping_database(is_dropping_other_text, 'foo')
+    is_not_dropping_other_text = "DROP DATABASE foo; CREATE DATABASE bar; USE foo;"
+    assert is_dropping_database(is_not_dropping_other_text, 'foo')
 
 
 def test_help_strings_end_with_periods():
