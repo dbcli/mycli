@@ -1218,6 +1218,7 @@ def need_completion_refresh(queries):
 
 def is_dropping_database(queries, dbname):
     """Determine if the query is dropping a specific database."""
+    result = False
     if dbname is None:
         return False
 
@@ -1236,7 +1237,13 @@ def is_dropping_database(queries, dbname):
         if (first_token.value.lower() == 'drop' and
                 second_token.value.lower() in ('database', 'schema') and
                 database_name == dbname):
-            return True
+            result = True
+        elif (first_token.value.lower() == 'create' and
+                second_token.value.lower() in ('database', 'schema') and
+                database_name == dbname):
+            result = False
+
+    return result
 
 
 def need_completion_reset(queries):
