@@ -152,13 +152,13 @@ def test_thanks_picker_utf8():
 
 
 def test_is_dropping_database():
-    is_dropping_text = "DROP DATABASE foo; USE sys;"
+    is_dropping_text = "DROP DATABASE foo;"
     assert is_dropping_database(is_dropping_text, 'foo')
-    is_not_dropping_text = "DROP DATABASE foo; CREATE DATABASE foo; USE foo;"
+    is_not_dropping_text = "DROP DATABASE foo; CREATE DATABASE foo;"
     assert not is_dropping_database(is_not_dropping_text, 'foo')
-    is_dropping_other_text = "DROP DATABASE bar; USE sys;"
+    is_dropping_other_text = "DROP DATABASE bar;"
     assert not is_dropping_database(is_dropping_other_text, 'foo')
-    is_not_dropping_other_text = "DROP DATABASE foo; CREATE DATABASE bar; USE foo;"
+    is_not_dropping_other_text = "DROP DATABASE foo; CREATE DATABASE bar;"
     assert is_dropping_database(is_not_dropping_other_text, 'foo')
 
 
