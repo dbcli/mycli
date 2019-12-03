@@ -23,7 +23,8 @@ TIMING_ENABLED = False
 use_expanded_output = False
 PAGER_ENABLED = True
 tee_file = None
-once_file = written_to_once_file = None
+once_file = None
+written_to_once_file = False
 favoritequeries = FavoriteQueries(ConfigObj())
 delimiter_command = DelimiterCommand()
 
@@ -341,9 +342,10 @@ def write_tee(output):
                  'Append next result to an output file (overwrite using -o).',
                  aliases=('\\o', ))
 def set_once(arg, **_):
-    global once_file
+    global once_file, written_to_once_file
 
     once_file = parseargfile(arg)
+    written_to_once_file = False
 
     return [(None, None, None, "")]
 
@@ -358,7 +360,6 @@ def write_once(output):
             once_file = None
             raise OSError("Cannot write to file '{}': {}".format(
                 e.filename, e.strerror))
-
         with f:
             click.echo(output, file=f, nl=False)
             click.echo(u"\n", file=f, nl=False)

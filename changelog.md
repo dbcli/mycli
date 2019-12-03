@@ -16,6 +16,7 @@ Bug Fixes:
 ----------
 
 * Fix an error when using login paths with an explicit database name (Thanks: [Thomas Roten]).
+* The \o command could only be used once per session (Thanks: [Georgy Frolov])
 
 
 1.20.0
