@@ -240,7 +240,7 @@ def _remove_pad(line):
 
     if pad_length > len(line) or len(set(line[-pad_length:])) != 1:
         # Pad length should be less than or equal to the length of the
-        # plaintext. The pad should have a single unqiue byte.
+        # plaintext. The pad should have a single unique byte.
         logger.warning('Invalid pad found in login path file.')
         return False
 
