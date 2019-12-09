@@ -8,5 +8,6 @@ pexpect
 coverage==4.3.4
 codecov==2.0.9
 autopep8==1.3.3
+colorama==0.4.1
 git+https://github.com/hayd/pep8radius.git  # --error-status option not released
 click>=7.0
