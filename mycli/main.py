@@ -22,6 +22,7 @@ import click
 import sqlparse
 from prompt_toolkit.completion import DynamicCompleter
 from prompt_toolkit.enums import DEFAULT_BUFFER, EditingMode
+from prompt_toolkit.key_binding.bindings.named_commands import register as prompt_register
 from prompt_toolkit.shortcuts import PromptSession, CompleteStyle
 from prompt_toolkit.document import Document
 from prompt_toolkit.filters import HasFocus, IsDone
@@ -1276,6 +1277,14 @@ def thanks_picker(files=()):
         if m:
             contents.append(m.group(1))
     return choice(contents)
+
+
+@prompt_register('edit-and-execute-command')
+def edit_and_execute(event):
+    """Different from the prompt-toolkit default, we want to have a choice not
+    to execute a query after editing, hence validate_and_handle=False."""
+    buff = event.current_buffer
+    buff.open_in_editor(validate_and_handle=False)
 
 
 if __name__ == "__main__":
