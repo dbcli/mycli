@@ -91,6 +91,8 @@ class MyCli(object):
 
     system_config_files = [
         '/etc/myclirc',
+        os.path.join(
+            os.environ.get("XDG_CONFIG_HOME", "~/.config"), "mycli", "myclirc")
     ]
 
     default_config_file = os.path.join(PACKAGE_ROOT, 'myclirc')
