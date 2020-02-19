@@ -5,7 +5,7 @@ from click.testing import CliRunner
 
 from mycli.main import MyCli, cli, thanks_picker, PACKAGE_ROOT
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
-from utils import USER, HOST, PORT, PASSWORD, dbtest, run
+from .utils import USER, HOST, PORT, PASSWORD, dbtest, run
 
 from textwrap import dedent
 from collections import namedtuple
@@ -388,7 +388,7 @@ def test_dsn(monkeypatch):
         MockMyCli.connect_args["port"] == 5 and \
         MockMyCli.connect_args["database"] == "arg_database"
 
-    # Use a DNS without password
+    # Use a DSN without password
     result = runner.invoke(mycli.main.cli, args=[
         "mysql://dsn_user@dsn_host:6/dsn_database"]
     )

@@ -5,7 +5,7 @@ import os
 import pytest
 import pymysql
 
-from utils import run, dbtest, set_expanded_output, is_expanded_output
+from .utils import run, dbtest, set_expanded_output, is_expanded_output
 
 
 def assert_result_equal(result, title=None, rows=None, headers=None,
