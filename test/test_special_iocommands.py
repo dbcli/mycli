@@ -12,7 +12,7 @@ from pymysql import ProgrammingError
 
 import mycli.packages.special
 
-from utils import dbtest, db_connection, send_ctrl_c
+from .utils import dbtest, db_connection, send_ctrl_c
 
 
 def test_set_get_pager():
