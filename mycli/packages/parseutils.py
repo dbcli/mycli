@@ -203,30 +203,6 @@ def queries_start_with(queries, prefixes):
     return False
 
 
-def query_has_where_clause(query):
-    """Check if the query contains a where-clause."""
-    return any(
-        isinstance(token, sqlparse.sql.Where)
-        for token_list in sqlparse.parse(query)
-        for token in token_list
-    )
-
-
-def is_destructive(queries):
-    """Returns if any of the queries in *queries* is destructive."""
-    keywords = ('drop', 'shutdown', 'delete', 'truncate', 'alter')
-    for query in sqlparse.split(queries):
-        if query:
-            if query_starts_with(query, keywords) is True:
-                return True
-            elif query_starts_with(
-                query, ['update']
-            ) is True and not query_has_where_clause(query):
-                return True
-
-    return False
-
-
 if __name__ == '__main__':
     sql = 'select * from (select t. from tabl t'
-    print (extract_tables(sql))
+    print(extract_tables(sql))
