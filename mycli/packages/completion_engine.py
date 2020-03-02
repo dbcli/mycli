@@ -188,7 +188,7 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
         idx, prev_tok = p.token_prev(len(p.tokens) - 1)
         if prev_tok and prev_tok.value and prev_tok.value.lower() == 'using':
             # tbl1 INNER JOIN tbl2 USING (col1, col2)
-            tables = extract_tables(full_text)
+            tables = list(extract_tables(full_text))
 
             # suggest columns that are present in more than one table
             return [{'type': 'column', 'tables': tables, 'drop_unique': True}]
@@ -202,9 +202,9 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
             return [{'type': 'show'}]
 
         # We're probably in a function argument list
-        return [{'type': 'column', 'tables': extract_tables(full_text)}]
+        return [{'type': 'column', 'tables': list(extract_tables(full_text))}]
     elif token_v in ('set', 'order by', 'distinct'):
-        return [{'type': 'column', 'tables': extract_tables(full_text)}]
+        return [{'type': 'column', 'tables': list(extract_tables(full_text))}]
     elif token_v == 'as':
         # Don't suggest anything for an alias
         return []
@@ -222,7 +222,7 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
         # Check for a table alias or schema qualification
         parent = (identifier and identifier.get_parent_name()) or []
 
-        tables = extract_tables(full_text)
+        tables = list(extract_tables(full_text))
         if parent:
             tables = [t for t in tables if identifies(parent, t)]
             return [{'type': 'column', 'tables': tables},
@@ -230,7 +230,7 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
                     {'type': 'view', 'schema': parent},
                     {'type': 'function', 'schema': parent}]
         else:
-            aliases = [t.alias or t.rel for t in tables]
+            aliases = [t.alias or t.ref for t in tables]
             return [{'type': 'column', 'tables': tables},
                     {'type': 'function', 'schema': []},
                     {'type': 'alias', 'aliases': aliases},
@@ -263,7 +263,7 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
         else:
             return [{'type': 'schema'}, {'type': rel_type, 'schema': []}]
     elif token_v == 'on':
-        tables = extract_tables(full_text)  # [(schema, table, alias), ...]
+        tables = list(extract_tables(full_text))  # List[TableReference]
         parent = (identifier and identifier.get_parent_name()) or []
         if parent:
             # "ON parent.<suggestion>"
@@ -276,7 +276,7 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
         else:
             # ON <suggestion>
             # Use table alias if there is one, otherwise the table name
-            aliases = [t.alias or t.rel for t in tables]
+            aliases = [t.alias or t.ref for t in tables]
             suggest = [{'type': 'alias', 'aliases': aliases}]
 
             # The lists of 'aliases' could be empty if we're trying to complete
