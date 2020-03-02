@@ -168,7 +168,7 @@ def test_favorite_query_expanded_output(executor):
     results = run(executor, "\\fs test-ae select * from test")
     assert_result_equal(results, status='Saved.')
 
-    results = run(executor, "\\f test-ae \G")
+    results = run(executor, r"\\f test-ae \G")
     assert is_expanded_output() is True
     assert_result_equal(results, title='> select * from test',
                         headers=['a'], rows=[('abc',)], auto_status=False)

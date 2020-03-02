@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 
 import sys
 import click
-from .parseutils import is_destructive
+from sqlcomplete.parseutils import is_destructive
 
 
 class ConfirmBoolParamType(click.ParamType):

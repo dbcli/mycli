@@ -4,6 +4,9 @@ import sys
 import sqlparse
 from sqlparse.sql import Comparison, Identifier, Where
 from sqlparse.compat import text_type
+from sqlcomplete.parseutils.utils import last_word
+from sqlcomplete.parseutils.tables import extract_tables
+
 from .parseutils import last_word, extract_tables, find_prev_keyword
 from .special import parse_special_command
 

@@ -6,8 +6,9 @@ from collections import Counter
 
 from prompt_toolkit.completion import Completer, Completion
 
+from sqlcomplete.parseutils.utils import last_word
+
 from .packages.completion_engine import suggest_type
-from .packages.parseutils import last_word
 from .packages.filepaths import parse_path, complete_path, suggest_path
 from .packages.special.iocommands import favoritequeries
 
