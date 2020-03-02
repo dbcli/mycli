@@ -397,9 +397,9 @@ class SQLCompleter(Completer):
         for tbl in scoped_tbls:
             # A fully qualified schema.relname reference or default_schema
             # DO NOT escape schema names.
-            schema = tbl[0] or self.dbname
-            relname = tbl[1]
-            escaped_relname = self.escape_name(tbl[1])
+            schema = tbl.schema or self.dbname
+            relname = tbl.ref
+            escaped_relname = self.escape_name(relname)
 
             # We don't know if schema.relname is a table or view. Since
             # tables and views cannot share the same name, we can check one

@@ -7,8 +7,9 @@ from sqlparse.compat import text_type
 from sqlcomplete.parseutils.utils import last_word
 from sqlcomplete.parseutils.tables import extract_tables
 
-from .parseutils import last_word, extract_tables, find_prev_keyword
+from .parseutils import find_prev_keyword
 from .special import parse_special_command
+
 
 PY2 = sys.version_info[0] == 2
 PY3 = sys.version_info[0] == 3
@@ -223,13 +224,13 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
 
         tables = extract_tables(full_text)
         if parent:
-            tables = [t for t in tables if identifies(parent, *t)]
+            tables = [t for t in tables if identifies(parent, t)]
             return [{'type': 'column', 'tables': tables},
                     {'type': 'table', 'schema': parent},
                     {'type': 'view', 'schema': parent},
                     {'type': 'function', 'schema': parent}]
         else:
-            aliases = [alias or table for (schema, table, alias) in tables]
+            aliases = [t.alias or t.rel for t in tables]
             return [{'type': 'column', 'tables': tables},
                     {'type': 'function', 'schema': []},
                     {'type': 'alias', 'aliases': aliases},
@@ -267,7 +268,7 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
         if parent:
             # "ON parent.<suggestion>"
             # parent can be either a schema name or table alias
-            tables = [t for t in tables if identifies(parent, *t)]
+            tables = [t for t in tables if identifies(parent, t)]
             return [{'type': 'column', 'tables': tables},
                     {'type': 'table', 'schema': parent},
                     {'type': 'view', 'schema': parent},
@@ -275,7 +276,7 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
         else:
             # ON <suggestion>
             # Use table alias if there is one, otherwise the table name
-            aliases = [alias or table for (schema, table, alias) in tables]
+            aliases = [t.alias or t.rel for t in tables]
             suggest = [{'type': 'alias', 'aliases': aliases}]
 
             # The lists of 'aliases' could be empty if we're trying to complete
@@ -302,6 +303,6 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
         return [{'type': 'keyword'}]
 
 
-def identifies(id, schema, table, alias):
-    return id == alias or id == table or (
-        schema and (id == schema + '.' + table))
+def identifies(id, table):
+    return id == table.alias or id == table.name or (
+        table.schema and (id == table.schema + '.' + table.name))
