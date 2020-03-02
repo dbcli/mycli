@@ -21,7 +21,7 @@ install_requirements = [
     'Pygments >= 1.6',
     'prompt_toolkit>=2.0.6,<3.0.0',
     'PyMySQL >= 0.9.2',
-    'sqlparse>=0.3.0,<0.4.0',
+    'sqlparse>=0.3.0,<0.3.1',
     'configobj >= 5.0.5',
     'cryptography >= 1.0.0',
     'cli_helpers[styles] > 1.1.0',
