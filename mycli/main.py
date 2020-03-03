@@ -9,6 +9,7 @@ import threading
 import re
 import fileinput
 from collections import namedtuple
+from pwd import getpwuid
 from time import time
 from datetime import datetime
 from random import choice
@@ -451,6 +452,11 @@ class MyCli(object):
                         _connect()
                     else:
                         raise e
+                else:
+                    socket_owner = getpwuid(os.stat(socket).st_uid).pw_name
+                    self.echo(
+                        "Using socket {}, owned by user {}".format(socket, socket_owner)
+                    )
             else:
                 host = host or 'localhost'
                 port = port or 3306

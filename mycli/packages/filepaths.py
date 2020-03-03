@@ -2,8 +2,16 @@
 from __future__ import unicode_literals
 from mycli.encodingutils import text_type
 import os
+import platform
 
-DEFAULT_SOCKET_DIRS = ('/var/run/', '/var/lib/', '/tmp')
+
+if os.name == "posix":
+    if platform.system() == "Darwin":
+        DEFAULT_SOCKET_DIRS = ("/tmp",)
+    else:
+        DEFAULT_SOCKET_DIRS = ("/var/run", "/var/lib")
+else:
+    DEFAULT_SOCKET_DIRS = ()
 
 
 def list_path(root_dir):
@@ -94,7 +102,7 @@ def guess_socket_location():
     for directory in socket_dirs:
         for r, dirs, files in os.walk(directory, topdown=True):
             for filename in files:
-                if filename.startswith('mysql') and filename.endswith('.socket'):
+                if filename.startswith("mysql") and filename.endswith(".socket"):
                     return os.path.join(r, filename)
-            dirs[:] = [d for d in dirs if d.startswith('mysql')]
-    return ''
+            dirs[:] = [d for d in dirs if d.startswith("mysql")]
+    return ""
