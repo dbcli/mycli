@@ -426,11 +426,11 @@ class MyCli(object):
                     raise e
 
         try:
-            if (socket is host is port is None) and not WIN:
+            if (host is None) and not WIN:
                 # Try a sensible default socket first (simplifies auth)
                 # If we get a connection error, try tcp/ip localhost
                 try:
-                    socket = guess_socket_location()
+                    socket = socket or guess_socket_location()
                     _connect()
                 except OperationalError as e:
                     # These are "Can't open socket" and 2x "Can't connect"
