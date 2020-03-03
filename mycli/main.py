@@ -20,6 +20,7 @@ from cli_helpers.tabular_output import preprocessors
 from cli_helpers.utils import strip_ansi
 import click
 import sqlparse
+from mycli.packages.parseutils import is_dropping_database
 from prompt_toolkit.completion import DynamicCompleter
 from prompt_toolkit.enums import DEFAULT_BUFFER, EditingMode
 from prompt_toolkit.key_binding.bindings.named_commands import register as prompt_register
@@ -1215,29 +1216,6 @@ def need_completion_refresh(queries):
                 return True
         except Exception:
             return False
-
-
-def is_dropping_database(queries, dbname):
-    """Determine if the query is dropping a specific database."""
-    if dbname is None:
-        return False
-
-    def normalize_db_name(db):
-        return db.lower().strip('`"')
-
-    dbname = normalize_db_name(dbname)
-
-    for query in sqlparse.parse(queries):
-        if query.get_name() is None:
-            continue
-
-        first_token = query.token_first(skip_cm=True)
-        _, second_token = query.token_next(0, skip_cm=True)
-        database_name = normalize_db_name(query.get_name())
-        if (first_token.value.lower() == 'drop' and
-                second_token.value.lower() in ('database', 'schema') and
-                database_name == dbname):
-            return True
 
 
 def need_completion_reset(queries):
