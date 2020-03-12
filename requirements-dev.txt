@@ -13,4 +13,4 @@ git+https://github.com/hayd/pep8radius.git  # --error-status option not released
 click>=7.0
 
 # temporary dependency until sqlcomplete goes to pypi
-git+https://github.com/pasenor/sqlcomplete2#egg=sqlcomplete
+git+https://github.com/pasenor/sqlcomplete#egg=sqlcomplete
