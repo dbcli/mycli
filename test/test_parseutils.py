@@ -1,7 +1,7 @@
 import pytest
 from mycli.packages.parseutils import (
-    extract_tables, query_starts_with, queries_start_with, is_destructive, query_has_where_clause
-)
+    extract_tables, query_starts_with, queries_start_with, is_destructive, query_has_where_clause,
+    is_dropping_database)
 
 
 def test_empty_string():
@@ -164,3 +164,25 @@ def test_is_destructive_update_without_where_clause():
 )
 def test_query_has_where_clause(sql, has_where_clause):
     assert query_has_where_clause(sql) is has_where_clause
+
+
+@pytest.mark.parametrize(
+    ('sql', 'dbname', 'is_dropping'),
+    [
+        ('select bar from foo', 'foo', False),
+        ('drop database "foo";', '`foo`', True),
+        ('drop schema foo', 'foo', True),
+        ('drop schema foo', 'bar', False),
+        ('drop database bar', 'foo', False),
+        ('drop database foo', None, False),
+        ('select bar from foo; drop database bazz', 'foo', False),
+        ('select bar from foo; drop database bazz', 'bazz', True),
+        ('-- dropping database \n '
+         'drop -- really dropping \n '
+         'schema abc -- now it is dropped',
+         'abc',
+         True)
+    ]
+)
+def test_is_dropping_database(sql, dbname, is_dropping):
+    assert is_dropping_database(sql, dbname) == is_dropping

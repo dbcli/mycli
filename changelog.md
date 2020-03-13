@@ -12,6 +12,7 @@ Bug Fixes:
 ----------
 
 * Allow \o command more than once per session (Thanks: [Georgy Frolov])
+* Fixed crash when the query dropping the current database starts with a comment (Thanks: [Georgy Frolov])
 
 1.20.1
 ======
