@@ -223,7 +223,7 @@ class MyCli(object):
             yield (None, None, None, msg)
 
     def change_db(self, arg, **_):
-        if arg is '':
+        if not arg:
             click.secho(
                 "No database selected",
                 err=True, fg="red"
