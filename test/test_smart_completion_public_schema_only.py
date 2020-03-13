@@ -18,7 +18,7 @@ metadata = {
 def completer():
 
     import mycli.sqlcompleter as sqlcompleter
-    comp = sqlcompleter.SQLCompleter(smart_completion=True)
+    comp = sqlcompleter.MySQLCompleter(smart_completion=True)
 
     tables, columns = [], []
 

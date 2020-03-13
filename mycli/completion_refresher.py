@@ -2,7 +2,7 @@ import threading
 from .packages.special.main import COMMANDS
 from collections import OrderedDict
 
-from .sqlcompleter import SQLCompleter
+from .sqlcompleter import MySQLCompleter
 from .sqlexecute import SQLExecute
 
 class CompletionRefresher(object):
@@ -44,8 +44,14 @@ class CompletionRefresher(object):
     def is_refreshing(self):
         return self._completer_thread and self._completer_thread.is_alive()
 
+    def copy_executor(self, e):
+        return SQLExecute(e.dbname, e.user, e.password, e.host, e.port,
+                              e.socket, e.charset, e.local_infile, e.ssl,
+                              e.ssh_user, e.ssh_host, e.ssh_port,
+                              e.ssh_password, e.ssh_key_filename)
+
     def _bg_refresh(self, sqlexecute, callbacks, completer_options):
-        completer = SQLCompleter(**completer_options)
+        completer = MySQLCompleter(**completer_options)
 
         # Create a new pgexecute method to popoulate the completions.
         e = sqlexecute
@@ -85,21 +91,22 @@ def refresher(name, refreshers=CompletionRefresher.refreshers):
         return wrapped
     return wrapper
 
-@refresher('databases')
-def refresh_databases(completer, executor):
-    completer.extend_database_names(executor.databases())
+# @refresher('databases')
+# def refresh_databases(completer, executor):
+#     completer.extend_database_names(executor.databases())
 
 @refresher('schemata')
 def refresh_schemata(completer, executor):
     # schemata - In MySQL Schema is the same as database. But for mycli
     # schemata will be the name of the current database.
-    completer.extend_schemata(executor.dbname)
+    completer.extend_schemata(executor.schemata)
     completer.set_dbname(executor.dbname)
 
 @refresher('tables')
 def refresh_tables(completer, executor):
-    completer.extend_relations(executor.tables(), kind='tables')
-    completer.extend_columns(executor.table_columns(), kind='tables')
+    if completer.dbname:
+        completer.extend_relations(executor.tables(), kind='tables')
+        completer.extend_columns(executor.table_columns(), kind='tables')
 
 @refresher('users')
 def refresh_users(completer, executor):

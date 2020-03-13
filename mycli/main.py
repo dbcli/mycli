@@ -36,7 +36,7 @@ from .packages.special.main import NO_QUERY
 from .packages.prompt_utils import confirm, confirm_destructive_query
 from .packages.tabular_output import sql_format
 from .packages import special
-from .sqlcompleter import SQLCompleter
+from .sqlcompleter import MySQLCompleter
 from .clitoolbar import create_toolbar_tokens_func
 from .clistyle import style_factory, style_factory_output
 from .sqlexecute import FIELD_TYPES, SQLExecute
@@ -171,7 +171,7 @@ class MyCli(object):
 
         # Initialize completer.
         self.smart_completion = c['main'].as_bool('smart_completion')
-        self.completer = SQLCompleter(
+        self.completer = MySQLCompleter(
             self.smart_completion,
             supported_formats=self.formatter.supported_formats,
             keyword_casing=keyword_casing)

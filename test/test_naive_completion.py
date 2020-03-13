@@ -7,7 +7,7 @@ from prompt_toolkit.document import Document
 @pytest.fixture
 def completer():
     import mycli.sqlcompleter as sqlcompleter
-    return sqlcompleter.SQLCompleter(smart_completion=False)
+    return sqlcompleter.MySQLCompleter(smart_completion=False)
 
 
 @pytest.fixture

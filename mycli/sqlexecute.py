@@ -24,7 +24,9 @@ class SQLExecute(object):
 
     databases_query = '''SHOW DATABASES'''
 
-    tables_query = '''SHOW TABLES'''
+    schemata_query = '''SELECT DISTINCT TABLE_SCHEMA FROM information_schema.tables'''
+
+    tables_query = '''SELECT table_schema, table_name FROM information_schema.tables'''
 
     version_query = '''SELECT @@VERSION'''
 
@@ -35,12 +37,25 @@ class SQLExecute(object):
 
     users_query = '''SELECT CONCAT("'", user, "'@'",host,"'") FROM mysql.user'''
 
-    functions_query = '''SELECT ROUTINE_NAME FROM INFORMATION_SCHEMA.ROUTINES
+    functions_query = '''
+    
+    SELECT ROUTINE_SCHEMA, ROUTINE_NAME FROM INFORMATION_SCHEMA.ROUTINES
+    
     WHERE ROUTINE_TYPE="FUNCTION" AND ROUTINE_SCHEMA = "%s"'''
 
-    table_columns_query = '''select TABLE_NAME, COLUMN_NAME from information_schema.columns
-                                    where table_schema = '%s'
-                                    order by table_name,ordinal_position'''
+    table_columns_query = '''SELECT TABLE_SCHEMA,
+       TABLE_NAME,
+       COLUMN_NAME,
+       DATA_TYPE,
+       CASE
+           WHEN COLUMN_DEFAULT IS NULL THEN 0
+           ELSE 1
+       END,
+       COLUMN_DEFAULT
+FROM information_schema.columns
+WHERE table_schema = '%s'
+ORDER BY TABLE_NAME,
+         ordinal_position'''
 
     def __init__(self, database, user, password, host, port, socket, charset,
                  local_infile, ssl, ssh_user, ssh_host, ssh_port, ssh_password,
@@ -228,10 +243,11 @@ class SQLExecute(object):
             for row in cur:
                 yield row
 
-    def databases(self):
+    @property
+    def schemata(self):
         with self.conn.cursor() as cur:
-            _logger.debug('Databases Query. sql: %r', self.databases_query)
-            cur.execute(self.databases_query)
+            _logger.debug('Schemata Query. sql: %r', self.schemata_query)
+            cur.execute(self.schemata_query)
             return [x[0] for x in cur.fetchall()]
 
     def functions(self):
