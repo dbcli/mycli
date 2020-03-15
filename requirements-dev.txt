@@ -1,6 +1,6 @@
 mock
 pytest!=3.3.0
-pytest-cov==2.4.0
+pytest-cov==2.8.1
 tox
 twine==1.12.1
 behave
