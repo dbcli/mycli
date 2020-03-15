@@ -13,10 +13,6 @@ from collections import namedtuple
 from tempfile import NamedTemporaryFile
 from textwrap import dedent
 
-try:
-    text_type = basestring
-except NameError:
-    text_type = str
 
 test_dir = os.path.abspath(os.path.dirname(__file__))
 project_dir = os.path.dirname(test_dir)
@@ -148,7 +144,7 @@ def test_thanks_picker_utf8():
     sponsor_file = os.path.join(PACKAGE_ROOT, 'SPONSORS')
 
     name = thanks_picker((author_file, sponsor_file))
-    assert isinstance(name, text_type)
+    assert name and isinstance(name, str)
 
 
 def test_help_strings_end_with_periods():

@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 import os
 import re
 import locale
@@ -152,7 +151,7 @@ def open_external_editor(filename=None, sql=None):
 
     if filename:
         try:
-            with open(filename, encoding='utf-8') as f:
+            with open(filename) as f:
                 query = f.read()
         except IOError:
             message = 'Error reading file: %s.' % filename
