@@ -17,14 +17,14 @@ with open('mycli/__init__.py', 'rb') as f:
 description = 'CLI for MySQL Database. With auto-completion and syntax highlighting.'
 
 install_requirements = [
-    'click >= 7.0',
-    'Pygments >= 1.6',
+    'click >= 7.0,<=7.1.1',
+    'Pygments >= 1.6,<=2.6.1',
     'prompt_toolkit>=2.0.6,<3.0.0',
-    'PyMySQL >= 0.9.2',
+    'PyMySQL >= 0.9.2,<=0.9.3',
     'sqlparse>=0.3.0,<0.4.0',
-    'configobj >= 5.0.5',
-    'cryptography >= 1.0.0',
-    'cli_helpers[styles] > 1.1.0',
+    'configobj >= 5.0.5,<=5.0.6',
+    'cryptography >= 1.0.0,<2.8',
+    'cli_helpers[styles] > 1.1.0,<=1.2.1',
 ]
 
 
