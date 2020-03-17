@@ -1,4 +1,3 @@
-from __future__ import print_function
 import os
 import sys
 import sqlparse
@@ -6,14 +5,6 @@ from sqlparse.sql import Comparison, Identifier, Where
 from sqlparse.compat import text_type
 from .parseutils import last_word, extract_tables, find_prev_keyword
 from .special import parse_special_command
-
-PY2 = sys.version_info[0] == 2
-PY3 = sys.version_info[0] == 3
-
-if PY3:
-    string_types = str
-else:
-    string_types = basestring
 
 
 def suggest_type(full_text, text_before_cursor):
@@ -123,7 +114,7 @@ def suggest_special(text):
 
 
 def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier):
-    if isinstance(token, string_types):
+    if isinstance(token, str):
         token_v = token.lower()
     elif isinstance(token, Comparison):
         # If 'token' is a Comparison type such as

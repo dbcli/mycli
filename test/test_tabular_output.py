@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
 """Test the sql output adapter."""
 
-from __future__ import unicode_literals
 from textwrap import dedent
 
 from mycli.packages.tabular_output import sql_format

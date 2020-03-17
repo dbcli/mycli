@@ -1,6 +1,3 @@
-from __future__ import unicode_literals
-from __future__ import print_function
-
 import os
 import sys
 import traceback
@@ -47,7 +44,6 @@ from .config import (write_default_config, get_mylogin_cnf_path,
                      open_mylogin_cnf, read_config_files, str_to_bool,
                      strip_matching_quotes)
 from .key_bindings import mycli_bindings
-from .encodingutils import utf8tounicode, text_type
 from .lexer import MyCliLexer
 from .__init__ import __version__
 from .compat import WIN
@@ -241,7 +237,7 @@ class MyCli(object):
             message = 'Missing required argument, filename.'
             return [(None, None, None, message)]
         try:
-            with open(os.path.expanduser(arg), encoding='utf-8') as f:
+            with open(os.path.expanduser(arg)) as f:
                 query = f.read()
         except IOError as e:
             return [(None, None, None, str(e))]
@@ -751,7 +747,7 @@ class MyCli(object):
     def log_output(self, output):
         """Log the output in the audit log, if it's enabled."""
         if self.logfile:
-            click.echo(utf8tounicode(output), file=self.logfile)
+            click.echo(output, file=self.logfile)
 
     def echo(self, s, **kwargs):
         """Print a message to stdout.
@@ -926,8 +922,8 @@ class MyCli(object):
             column_types = None
             if hasattr(cur, 'description'):
                 def get_col_type(col):
-                    col_type = FIELD_TYPES.get(col[1], text_type)
-                    return col_type if type(col_type) is type else text_type
+                    col_type = FIELD_TYPES.get(col[1], str)
+                    return col_type if type(col_type) is type else str
                 column_types = [get_col_type(col) for col in cur.description]
 
             if max_width is not None:
@@ -938,7 +934,7 @@ class MyCli(object):
                 column_types=column_types,
                 **output_kwargs)
 
-            if isinstance(formatted, (text_type)):
+            if isinstance(formatted, str):
                 formatted = formatted.splitlines()
             formatted = iter(formatted)
 
@@ -947,7 +943,7 @@ class MyCli(object):
                 if len(strip_ansi(first_line)) > max_width:
                     formatted = self.formatter.format_output(
                         cur, headers, format_name='vertical', column_types=column_types, **output_kwargs)
-                    if isinstance(formatted, (text_type)):
+                    if isinstance(formatted, str):
                         formatted = iter(formatted.splitlines())
                 else:
                     formatted = itertools.chain([first_line], formatted)

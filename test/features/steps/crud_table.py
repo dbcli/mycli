@@ -1,11 +1,9 @@
-# -*- coding: utf-8
 """Steps for behavioral style tests are defined in this module.
 
 Each step is defined by the string decorating it. This string is used
 to call the step in "*.feature" file.
 
 """
-from __future__ import unicode_literals
 
 import wrappers
 from behave import when, then

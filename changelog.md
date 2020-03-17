@@ -14,6 +14,10 @@ Bug Fixes:
 * Allow \o command more than once per session (Thanks: [Georgy Frolov])
 * Fixed crash when the query dropping the current database starts with a comment (Thanks: [Georgy Frolov])
 
+Internal:
+---------
+* deprecate python versions 2.7, 3.4, 3.5
+
 1.20.1
 ======
 
