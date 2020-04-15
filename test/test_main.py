@@ -283,6 +283,24 @@ def test_list_dsn():
         assert result.output == "test : mysql://test/test\n"
 
 
+def test_list_ssh_config():
+    runner = CliRunner()
+    with NamedTemporaryFile(mode="w") as ssh_config:
+        ssh_config.write(dedent("""\
+            Host test
+                Hostname test.example.com
+                User joe
+                Port 22222
+                IdentityFile ~/.ssh/gateway
+        """))
+        ssh_config.flush()
+        args = ['--list-ssh-config', '--ssh-config-path', ssh_config.name]
+        result = runner.invoke(cli, args=args)
+        assert "test\n" in result.output
+        result = runner.invoke(cli, args=args + ['--verbose'])
+        assert "test : test.example.com\n" in result.output
+
+
 def test_dsn(monkeypatch):
     # Setup classes to mock mycli.main.MyCli
     class Formatter:
