@@ -1005,7 +1005,7 @@ class MyCli(object):
 @click.option('--list-dsn', 'list_dsn', is_flag=True,
         help='list of DSN configured into the [alias_dsn] section of myclirc file.')
 @click.option('--list-ssh-config', 'list_ssh_config', is_flag=True,
-        help='list of ssh configuration in the ssh config.')
+        help='list of ssh configurations in the ssh config.')
 @click.option('-R', '--prompt', 'prompt',
               help='Prompt format (Default: "{0}").'.format(
                   MyCli.default_prompt))
@@ -1158,7 +1158,6 @@ def cli(database, user, host, port, socket, password, dbname,
                 err=True, fg='red'
             )
             exit(1)
-        ssh_config = paramiko.config.SSHConfig().from_path(ssh_config_path)
         try:
             ssh_config = paramiko.config.SSHConfig().from_path(ssh_config_path)
         except paramiko.ssh_exception.ConfigParseError as err:
