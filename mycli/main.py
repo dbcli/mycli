@@ -1172,7 +1172,7 @@ def cli(database, user, host, port, socket, password, dbname,
         ssh_config = ssh_config.lookup(ssh_config_host)
         ssh_host = ssh_host if ssh_host else ssh_config.get('hostname')
         ssh_user = ssh_user if ssh_user else ssh_config.get('user')
-        if ssh_config.get('port') and ssh_port != 22:
+        if ssh_config.get('port') and ssh_port == 22:
             # port has a default value, overwrite it if it's in the config
             ssh_port = int(ssh_config.get('port'))
         ssh_key_filename = ssh_key_filename if ssh_key_filename else ssh_config.get('identityfile', [''])[0]
