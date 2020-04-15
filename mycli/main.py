@@ -982,6 +982,7 @@ class MyCli(object):
 @click.option('--ssh-key-filename', help='Private key filename (identify file) for the ssh connection.')
 @click.option('--ssh-config-path', help='Path to ssh configuration.',
               default=os.getenv('HOME') + '/.ssh/config')
+@click.option('--ssh-config-host', help='Host to connect to ssh server reading from ssh configuration.')
 @click.option('--ssl-ca', help='CA file in PEM format.',
               type=click.Path(exists=True))
 @click.option('--ssl-capath', help='CA directory.')
@@ -1037,7 +1038,7 @@ def cli(database, user, host, port, socket, password, dbname,
         ssl_ca, ssl_capath, ssl_cert, ssl_key, ssl_cipher,
         ssl_verify_server_cert, table, csv, warn, execute, myclirc, dsn,
         list_dsn, ssh_user, ssh_host, ssh_port, ssh_password,
-        ssh_key_filename, list_ssh_config, ssh_config_path):
+        ssh_key_filename, list_ssh_config, ssh_config_path, ssh_config_host):
     """A MySQL terminal client with auto-completion and syntax highlighting.
 
     \b
@@ -1148,6 +1149,33 @@ def cli(database, user, host, port, socket, password, dbname,
             host = uri.hostname
         if not port:
             port = uri.port
+
+    if ssh_config_host:
+        if not paramiko:
+            click.secho(
+                "Cannot use SSH transport because paramiko isn't installed, "
+                "please install paramiko or don't use --ssh-config_host=",
+                err=True, fg='red'
+            )
+            exit(1)
+        ssh_config = paramiko.config.SSHConfig().from_path(ssh_config_path)
+        try:
+            ssh_config = paramiko.config.SSHConfig().from_path(ssh_config_path)
+        except paramiko.ssh_exception.ConfigParseError as err:
+            click.secho('Invalid SSH configuration file. '\
+                'Please check the SSH configuration file.',
+                err=True, fg='red')
+            exit(1)
+        except FileNotFoundError as e:
+            click.secho(str(e), err=True, fg='red')
+            exit(1)
+        ssh_config = ssh_config.lookup(ssh_config_host)
+        ssh_host = ssh_host if ssh_host else ssh_config.get('hostname')
+        ssh_user = ssh_user if ssh_user else ssh_config.get('user')
+        if ssh_config.get('port'):
+            # port has a default value, overwrite it if it's in the config
+            ssh_port = int(ssh_config.get('port'))
+        ssh_key_filename = ssh_key_filename if ssh_key_filename else ssh_config.get('identityfile', [''])[0]
 
     if not paramiko and ssh_host:
         click.secho(
