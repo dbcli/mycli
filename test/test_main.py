@@ -413,3 +413,73 @@ def test_dsn(monkeypatch):
         MockMyCli.connect_args["host"] == "dsn_host" and \
         MockMyCli.connect_args["port"] == 6 and \
         MockMyCli.connect_args["database"] == "dsn_database"
+
+
+def test_ssh_config(monkeypatch):
+    # Setup classes to mock mycli.main.MyCli
+    class Formatter:
+        format_name = None
+    class Logger:
+        def debug(self, *args, **args_dict):
+            pass
+        def warning(self, *args, **args_dict):
+            pass
+    class MockMyCli:
+        config = {'alias_dsn': {}}
+        def __init__(self, **args):
+            self.logger = Logger()
+            self.destructive_warning = False
+            self.formatter = Formatter()
+        def connect(self, **args):
+            MockMyCli.connect_args = args
+        def run_query(self, query, new_line=True):
+            pass
+
+    import mycli.main
+    monkeypatch.setattr(mycli.main, 'MyCli', MockMyCli)
+    runner = CliRunner()
+
+    # Setup temporary configuration
+    with NamedTemporaryFile(mode="w") as ssh_config:
+        ssh_config.write(dedent("""\
+            Host test
+                Hostname test.example.com
+                User joe
+                Port 22222
+                IdentityFile ~/.ssh/gateway
+        """))
+        ssh_config.flush()
+
+        # When a user supplies a ssh config.
+        result = runner.invoke(mycli.main.cli, args=[
+            "--ssh-config-path",
+            ssh_config.name,
+            "--ssh-config-host",
+            "test"
+        ])
+        assert result.exit_code == 0, result.output + " " + str(result.exception)
+        assert \
+            MockMyCli.connect_args["ssh_user"] == "joe" and \
+            MockMyCli.connect_args["ssh_host"] == "test.example.com" and \
+            MockMyCli.connect_args["ssh_port"] == 22222 and \
+            MockMyCli.connect_args["ssh_key_filename"] == os.getenv("HOME") + "/.ssh/gateway"
+
+        # When a user supplies a ssh config host as argument to mycli,
+        # and used command line arguments, use the command line
+        # arguments.
+        result = runner.invoke(mycli.main.cli, args=[
+            "--ssh-config-path",
+            ssh_config.name,
+            "--ssh-config-host",
+            "test",
+            "--ssh-user", "arg_user",
+            "--ssh-host", "arg_host",
+            "--ssh-port", "3",
+            "--ssh-key-filename", "/path/to/key"
+        ])
+        assert result.exit_code == 0, result.output + " " + str(result.exception)
+        assert \
+            MockMyCli.connect_args["ssh_user"] == "arg_user" and \
+            MockMyCli.connect_args["ssh_host"] == "arg_host" and \
+            MockMyCli.connect_args["ssh_port"] == 3 and \
+            MockMyCli.connect_args["ssh_key_filename"] == "/path/to/key"
