@@ -6,7 +6,7 @@
 
 A command line client for MySQL that can do auto-completion and syntax highlighting.
 
-HomePage: [http://mycli.net](http://mycli.net)  
+HomePage: [http://mycli.net](http://mycli.net)
 Documentation: [http://mycli.net/docs](http://mycli.net/docs)
 
 ![Completion](screenshots/tables.png)
@@ -63,6 +63,8 @@ $ sudo apt-get install mycli # Only on debian or ubuntu
       --ssh-password TEXT           Password to connect to ssh server.
       --ssh-key-filename TEXT       Private key filename (identify file) for the
                                     ssh connection.
+      --ssh-config-path TEXT        Path to ssh configuation
+      --ssh-config-host TEXT        Host for ssh server in ssh configuations
       --ssl-ca PATH                 CA file in PEM format.
       --ssl-capath TEXT             CA directory.
       --ssl-cert PATH               X509 cert in PEM format.
