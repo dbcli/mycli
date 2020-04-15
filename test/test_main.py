@@ -419,19 +419,25 @@ def test_ssh_config(monkeypatch):
     # Setup classes to mock mycli.main.MyCli
     class Formatter:
         format_name = None
+
     class Logger:
         def debug(self, *args, **args_dict):
             pass
+
         def warning(self, *args, **args_dict):
             pass
+
     class MockMyCli:
         config = {'alias_dsn': {}}
+
         def __init__(self, **args):
             self.logger = Logger()
             self.destructive_warning = False
             self.formatter = Formatter()
+
         def connect(self, **args):
             MockMyCli.connect_args = args
+
         def run_query(self, query, new_line=True):
             pass
 
