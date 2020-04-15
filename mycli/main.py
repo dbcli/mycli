@@ -1086,7 +1086,7 @@ def cli(database, user, host, port, socket, password, dbname,
         try:
             ssh_config = paramiko.config.SSHConfig().from_path(ssh_config_path)
         except paramiko.ssh_exception.ConfigParseError as err:
-            click.secho('Invalid SSH configuration file. '\
+            click.secho('Invalid SSH configuration file. '
                         'Please check the SSH configuration file.',
                         err=True, fg='red')
             exit(1)
@@ -1162,7 +1162,7 @@ def cli(database, user, host, port, socket, password, dbname,
         try:
             ssh_config = paramiko.config.SSHConfig().from_path(ssh_config_path)
         except paramiko.ssh_exception.ConfigParseError as err:
-            click.secho('Invalid SSH configuration file. '\
+            click.secho('Invalid SSH configuration file. '
                         'Please check the SSH configuration file.',
                         err=True, fg='red')
             exit(1)
