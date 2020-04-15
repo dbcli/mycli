@@ -1005,7 +1005,7 @@ class MyCli(object):
 @click.option('--list-dsn', 'list_dsn', is_flag=True,
         help='list of DSN configured into the [alias_dsn] section of myclirc file.')
 @click.option('--list-ssh-config', 'list_ssh_config', is_flag=True,
-        help='list of ssh configurations in the ssh config.')
+              help='list of ssh configurations in the ssh config.')
 @click.option('-R', '--prompt', 'prompt',
               help='Prompt format (Default: "{0}").'.format(
                   MyCli.default_prompt))
@@ -1087,8 +1087,8 @@ def cli(database, user, host, port, socket, password, dbname,
             ssh_config = paramiko.config.SSHConfig().from_path(ssh_config_path)
         except paramiko.ssh_exception.ConfigParseError as err:
             click.secho('Invalid SSH configuration file. '\
-                'Please check the SSH configuration file.',
-                err=True, fg='red')
+                        'Please check the SSH configuration file.',
+                        err=True, fg='red')
             exit(1)
         except FileNotFoundError as e:
             click.secho(str(e), err=True, fg='red')
@@ -1096,7 +1096,8 @@ def cli(database, user, host, port, socket, password, dbname,
         for host in ssh_config.get_hostnames():
             if verbose:
                 host_config = ssh_config.lookup(host)
-                click.secho("{} : {}".format(host, host_config.get('hostname')))
+                click.secho("{} : {}".format(
+                    host, host_config.get('hostname')))
             else:
                 click.secho(host)
         sys.exit(0)
@@ -1162,8 +1163,8 @@ def cli(database, user, host, port, socket, password, dbname,
             ssh_config = paramiko.config.SSHConfig().from_path(ssh_config_path)
         except paramiko.ssh_exception.ConfigParseError as err:
             click.secho('Invalid SSH configuration file. '\
-                'Please check the SSH configuration file.',
-                err=True, fg='red')
+                        'Please check the SSH configuration file.',
+                        err=True, fg='red')
             exit(1)
         except FileNotFoundError as e:
             click.secho(str(e), err=True, fg='red')
@@ -1174,7 +1175,8 @@ def cli(database, user, host, port, socket, password, dbname,
         if ssh_config.get('port') and ssh_port == 22:
             # port has a default value, overwrite it if it's in the config
             ssh_port = int(ssh_config.get('port'))
-        ssh_key_filename = ssh_key_filename if ssh_key_filename else ssh_config.get('identityfile', [''])[0]
+        ssh_key_filename = ssh_key_filename if ssh_key_filename else ssh_config.get(
+            'identityfile', [''])[0]
 
     if not paramiko and ssh_host:
         click.secho(

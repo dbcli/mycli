@@ -457,12 +457,14 @@ def test_ssh_config(monkeypatch):
             "--ssh-config-host",
             "test"
         ])
-        assert result.exit_code == 0, result.output + " " + str(result.exception)
+        assert result.exit_code == 0, result.output + \
+            " " + str(result.exception)
         assert \
             MockMyCli.connect_args["ssh_user"] == "joe" and \
             MockMyCli.connect_args["ssh_host"] == "test.example.com" and \
             MockMyCli.connect_args["ssh_port"] == 22222 and \
-            MockMyCli.connect_args["ssh_key_filename"] == os.getenv("HOME") + "/.ssh/gateway"
+            MockMyCli.connect_args["ssh_key_filename"] == os.getenv(
+                "HOME") + "/.ssh/gateway"
 
         # When a user supplies a ssh config host as argument to mycli,
         # and used command line arguments, use the command line
@@ -477,7 +479,8 @@ def test_ssh_config(monkeypatch):
             "--ssh-port", "3",
             "--ssh-key-filename", "/path/to/key"
         ])
-        assert result.exit_code == 0, result.output + " " + str(result.exception)
+        assert result.exit_code == 0, result.output + \
+            " " + str(result.exception)
         assert \
             MockMyCli.connect_args["ssh_user"] == "arg_user" and \
             MockMyCli.connect_args["ssh_host"] == "arg_host" and \
