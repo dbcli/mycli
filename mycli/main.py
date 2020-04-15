@@ -980,6 +980,8 @@ class MyCli(object):
 @click.option('--ssh-port', default=22, help='Port to connect to ssh server.')
 @click.option('--ssh-password', help='Password to connect to ssh server.')
 @click.option('--ssh-key-filename', help='Private key filename (identify file) for the ssh connection.')
+@click.option('--ssh-config-path', help='Path to ssh configuration.',
+              default=os.getenv('HOME') + '/.ssh/config')
 @click.option('--ssl-ca', help='CA file in PEM format.',
               type=click.Path(exists=True))
 @click.option('--ssl-capath', help='CA directory.')
@@ -1001,6 +1003,8 @@ class MyCli(object):
               help='Use DSN configured into the [alias_dsn] section of myclirc file.')
 @click.option('--list-dsn', 'list_dsn', is_flag=True,
         help='list of DSN configured into the [alias_dsn] section of myclirc file.')
+@click.option('--list-ssh-config', 'list_ssh_config', is_flag=True,
+        help='list of ssh configuration in the ssh config.')
 @click.option('-R', '--prompt', 'prompt',
               help='Prompt format (Default: "{0}").'.format(
                   MyCli.default_prompt))
@@ -1033,7 +1037,7 @@ def cli(database, user, host, port, socket, password, dbname,
         ssl_ca, ssl_capath, ssl_cert, ssl_key, ssl_cipher,
         ssl_verify_server_cert, table, csv, warn, execute, myclirc, dsn,
         list_dsn, ssh_user, ssh_host, ssh_port, ssh_password,
-        ssh_key_filename):
+        ssh_key_filename, list_ssh_config, ssh_config_path):
     """A MySQL terminal client with auto-completion and syntax highlighting.
 
     \b
@@ -1069,6 +1073,31 @@ def cli(database, user, host, port, socket, password, dbname,
                 click.secho("{} : {}".format(alias, value))
             else:
                 click.secho(alias)
+        sys.exit(0)
+    if list_ssh_config:
+        if not paramiko:
+            click.secho(
+                "Cannot use SSH transport because paramiko isn't installed, "
+                "please install paramiko or don't use --list-ssh-config=",
+                err=True, fg='red'
+            )
+            exit(1)
+        try:
+            ssh_config = paramiko.config.SSHConfig().from_path(ssh_config_path)
+        except paramiko.ssh_exception.ConfigParseError as err:
+            click.secho('Invalid SSH configuration file. '\
+                'Please check the SSH configuration file.',
+                err=True, fg='red')
+            exit(1)
+        except FileNotFoundError as e:
+            click.secho(str(e), err=True, fg='red')
+            exit(1)
+        for host in ssh_config.get_hostnames():
+            if verbose:
+                host_config = ssh_config.lookup(host)
+                click.secho("{} : {}".format(host, host_config.get('hostname')))
+            else:
+                click.secho(host)
         sys.exit(0)
     # Choose which ever one has a valid value.
     database = dbname or database
