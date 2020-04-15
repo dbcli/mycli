@@ -3,6 +3,16 @@ TBD
 
 Features:
 ---------
+* Add an option `--ssh-config-host` to read ssh configuration from OpenSSH configuration file.
+* Add an option `--list-ssh-config` to list ssh configurations.
+* Add an option `--ssh-config-path` to choose ssh configuration path.
+---------
+
+1.20.2
+======
+
+Features:
+---------
 * Added DSN alias name as a format specifier to the prompt (Thanks: [Georgy Frolov]).
 * Mark `update` without `where`-clause as destructive query (Thanks: [Klaus Wünschel]).
 * Added DELIMITER command (Thanks: [Georgy Frolov])
