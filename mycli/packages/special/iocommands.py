@@ -170,7 +170,7 @@ def execute_favorite_query(cur, arg, **_):
     name, _, arg_str = arg.partition(' ')
     args = shlex.split(arg_str)
 
-    query = FavoriteQueries.instnace.get(name)
+    query = FavoriteQueries.instance.get(name)
     if query is None:
         message = "No favorite query: %s" % (name)
         yield (None, None, None, message)
@@ -223,7 +223,7 @@ def save_favorite_query(arg, **_):
     """Save a new favorite query.
     Returns (title, rows, headers, status)"""
 
-    usage = 'Syntax: \\fs name query.\n\n' + FavoriteQueries.instnace.usage
+    usage = 'Syntax: \\fs name query.\n\n' + FavoriteQueries.instance.usage
     if not arg:
         return [(None, None, None, usage)]
 
@@ -234,18 +234,18 @@ def save_favorite_query(arg, **_):
         return [(None, None, None,
             usage + 'Err: Both name and query are required.')]
 
-    FavoriteQueries.instnace.save(name, query)
+    FavoriteQueries.instance.save(name, query)
     return [(None, None, None, "Saved.")]
 
 @special_command('\\fd', '\\fd [name]', 'Delete a favorite query.')
 def delete_favorite_query(arg, **_):
     """Delete an existing favorite query.
     """
-    usage = 'Syntax: \\fd name.\n\n' + FavoriteQueries.instnace.usage
+    usage = 'Syntax: \\fd name.\n\n' + FavoriteQueries.instance.usage
     if not arg:
         return [(None, None, None, usage)]
 
-    status = FavoriteQueries.instnace.delete(arg)
+    status = FavoriteQueries.instance.delete(arg)
 
     return [(None, None, None, status)]
 
