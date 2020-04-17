@@ -1,5 +1,4 @@
 from mycli.packages.completion_engine import suggest_type
-import os
 import pytest
 
 
@@ -524,6 +523,12 @@ def test_source_is_file(expression):
     suggestions = suggest_type(expression, expression)
     assert suggestions == [{'type': 'file_name'}]
 
+@pytest.mark.parametrize("expression", [
+            "\\f ",
+    ])
+def test_favorite_name_suggestion(expression):
+    suggestions = suggest_type(expression, expression)
+    assert suggestions == [{'type': 'favoritequery'}]
 
 def test_order_by():
     text = 'select * from foo order by '
