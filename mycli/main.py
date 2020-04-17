@@ -981,7 +981,7 @@ class MyCli(object):
 @click.option('--ssh-password', help='Password to connect to ssh server.')
 @click.option('--ssh-key-filename', help='Private key filename (identify file) for the ssh connection.')
 @click.option('--ssh-config-path', help='Path to ssh configuration.',
-              default=os.getenv('HOME') + '/.ssh/config')
+              default=os.path.expanduser('~') + '/.ssh/config')
 @click.option('--ssh-config-host', help='Host to connect to ssh server reading from ssh configuration.')
 @click.option('--ssl-ca', help='CA file in PEM format.',
               type=click.Path(exists=True))
