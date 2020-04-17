@@ -194,7 +194,8 @@ def list_favorite_queries():
     Returns (title, rows, headers, status)"""
 
     headers = ["Name", "Query"]
-    rows = [(r, FavoriteQueries.instance.get(r)) for r in FavoriteQueries.instance.list()]
+    rows = [(r, FavoriteQueries.instance.get(r))
+            for r in FavoriteQueries.instance.list()]
 
     if not rows:
         status = '\nNo favorite queries found.' + FavoriteQueries.instance.usage
@@ -237,10 +238,10 @@ def save_favorite_query(arg, **_):
     FavoriteQueries.instance.save(name, query)
     return [(None, None, None, "Saved.")]
 
+
 @special_command('\\fd', '\\fd [name]', 'Delete a favorite query.')
 def delete_favorite_query(arg, **_):
-    """Delete an existing favorite query.
-    """
+    """Delete an existing favorite query."""
     usage = 'Syntax: \\fd name.\n\n' + FavoriteQueries.instance.usage
     if not arg:
         return [(None, None, None, usage)]
