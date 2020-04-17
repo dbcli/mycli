@@ -9,7 +9,6 @@ from time import sleep
 
 import click
 import sqlparse
-from configobj import ConfigObj
 
 from . import export
 from .main import special_command, NO_QUERY, PARSED_QUERY
@@ -24,7 +23,6 @@ PAGER_ENABLED = True
 tee_file = None
 once_file = None
 written_to_once_file = False
-favoritequeries = FavoriteQueries(ConfigObj())
 delimiter_command = DelimiterCommand()
 
 
@@ -38,11 +36,6 @@ def set_pager_enabled(val):
     global PAGER_ENABLED
     PAGER_ENABLED = val
 
-
-@export
-def set_favorite_queries(config):
-    global favoritequeries
-    favoritequeries = FavoriteQueries(config)
 
 @export
 def is_pager_enabled():
@@ -177,7 +170,7 @@ def execute_favorite_query(cur, arg, **_):
     name, _, arg_str = arg.partition(' ')
     args = shlex.split(arg_str)
 
-    query = favoritequeries.get(name)
+    query = FavoriteQueries.instnace.get(name)
     if query is None:
         message = "No favorite query: %s" % (name)
         yield (None, None, None, message)
@@ -201,10 +194,10 @@ def list_favorite_queries():
     Returns (title, rows, headers, status)"""
 
     headers = ["Name", "Query"]
-    rows = [(r, favoritequeries.get(r)) for r in favoritequeries.list()]
+    rows = [(r, FavoriteQueries.instance.get(r)) for r in FavoriteQueries.instance.list()]
 
     if not rows:
-        status = '\nNo favorite queries found.' + favoritequeries.usage
+        status = '\nNo favorite queries found.' + FavoriteQueries.instance.usage
     else:
         status = ''
     return [('', rows, headers, status)]
@@ -230,7 +223,7 @@ def save_favorite_query(arg, **_):
     """Save a new favorite query.
     Returns (title, rows, headers, status)"""
 
-    usage = 'Syntax: \\fs name query.\n\n' + favoritequeries.usage
+    usage = 'Syntax: \\fs name query.\n\n' + FavoriteQueries.instnace.usage
     if not arg:
         return [(None, None, None, usage)]
 
@@ -241,18 +234,18 @@ def save_favorite_query(arg, **_):
         return [(None, None, None,
             usage + 'Err: Both name and query are required.')]
 
-    favoritequeries.save(name, query)
+    FavoriteQueries.instnace.save(name, query)
     return [(None, None, None, "Saved.")]
 
 @special_command('\\fd', '\\fd [name]', 'Delete a favorite query.')
 def delete_favorite_query(arg, **_):
     """Delete an existing favorite query.
     """
-    usage = 'Syntax: \\fd name.\n\n' + favoritequeries.usage
+    usage = 'Syntax: \\fd name.\n\n' + FavoriteQueries.instnace.usage
     if not arg:
         return [(None, None, None, usage)]
 
-    status = favoritequeries.delete(arg)
+    status = FavoriteQueries.instnace.delete(arg)
 
     return [(None, None, None, status)]
 
