@@ -1,3 +1,16 @@
+TBD
+===
+
+Features:
+---------
+
+
+Bug Fixes:
+----------
+
+* Fix broken auto-completion for favorite queries (Thanks: [Amjith]).
+
+
 1.21.0
 ======
 
