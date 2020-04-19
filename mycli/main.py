@@ -455,7 +455,8 @@ class MyCli(object):
                 else:
                     socket_owner = getpwuid(os.stat(socket).st_uid).pw_name
                     self.echo(
-                        "Using socket {}, owned by user {}".format(socket, socket_owner)
+                        "Using socket {}, owned by user {}".format(
+                            socket, socket_owner)
                     )
             else:
                 host = host or 'localhost'
