@@ -66,7 +66,7 @@ wider_completion_menu = False
 # \A - DSN alias name (from the [alias_dsn] section)
 # \u - Username
 prompt = '\t \u@\h:\d> '
-prompt_continuation = ' '
+prompt_continuation = '->'
 
 # Skip intro info on startup and outro info on exit
 less_chatty = False

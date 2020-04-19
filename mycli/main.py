@@ -538,8 +538,12 @@ class MyCli(object):
                 prompt = self.get_prompt('\\d> ')
             return [('class:prompt', prompt)]
 
-        def get_continuation(width, line_number, is_soft_wrap):
-            continuation = self.multiline_continuation_char * (width - 1) + ' '
+        def get_continuation(width, *_):
+            if self.multiline_continuation_char:
+                left_padding = width - len(self.multiline_continuation_char)
+                continuation = " " * max((left_padding - 1), 0) + self.multiline_continuation_char + " "
+            else:
+                continuation = " "
             return [('class:continuation', continuation)]
 
         def show_suggestion_tip():
