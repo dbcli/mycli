@@ -587,6 +587,8 @@ class MyCli(object):
                 else:
                     self.echo('Wise choice!')
                     return
+            else:
+                destroy = True
 
             # Keep track of whether or not the query is mutating. In case
             # of a multi-statement query, the overall query is considered
