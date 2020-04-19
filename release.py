@@ -1,7 +1,5 @@
-#!/usr/bin/env python
 """A script to publish a release of mycli to PyPI."""
 
-from __future__ import print_function
 import io
 from optparse import OptionParser
 import re
@@ -49,7 +47,7 @@ def version(version_file):
     _version_re = re.compile(
         r'__version__\s+=\s+(?P<quote>[\'"])(?P<version>.*)(?P=quote)')
 
-    with io.open(version_file, encoding='utf-8') as f:
+    with open(version_file) as f:
         ver = _version_re.search(f.read()).group('version')
 
     return ver
@@ -91,12 +89,6 @@ def checklist(questions):
 if __name__ == '__main__':
     if DEBUG:
         subprocess.check_output = lambda x: x
-
-    checks = ['Have you created the debian package?',
-              'Have you updated the AUTHORS file?',
-              'Have you updated the `Usage` section of the README?',
-              ]
-    checklist(checks)
 
     ver = version('mycli/__init__.py')
     print('Releasing Version:', ver)

@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import print_function
-
 import os
 import io
 
@@ -13,7 +10,7 @@ def read_fixture_lines(filename):
 
     """
     lines = []
-    for line in io.open(filename, 'r', encoding='utf8'):
+    for line in open(filename):
         lines.append(line.strip())
     return lines
 

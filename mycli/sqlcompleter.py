@@ -1,5 +1,3 @@
-from __future__ import print_function
-from __future__ import unicode_literals
 import logging
 from re import compile, escape
 from collections import Counter
@@ -9,7 +7,7 @@ from prompt_toolkit.completion import Completer, Completion
 from .packages.completion_engine import suggest_type
 from .packages.parseutils import last_word
 from .packages.filepaths import parse_path, complete_path, suggest_path
-from .packages.special.iocommands import favoritequeries
+from .packages.special.favoritequeries import FavoriteQueries
 
 _logger = logging.getLogger(__name__)
 
@@ -357,7 +355,7 @@ class SQLCompleter(Completer):
                 completions.extend(special)
             elif suggestion['type'] == 'favoritequery':
                 queries = self.find_matches(word_before_cursor,
-                                            favoritequeries.list(),
+                                            FavoriteQueries.instance.list(),
                                             start_only=False, fuzzy=True)
                 completions.extend(queries)
             elif suggestion['type'] == 'table_format':

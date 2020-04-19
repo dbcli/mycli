@@ -3,6 +3,19 @@ TBD
 
 Features:
 ---------
+
+
+Bug Fixes:
+----------
+
+* Fix broken auto-completion for favorite queries (Thanks: [Amjith]).
+
+
+1.21.0
+======
+
+Features:
+---------
 * Added DSN alias name as a format specifier to the prompt (Thanks: [Georgy Frolov]).
 * Mark `update` without `where`-clause as destructive query (Thanks: [Klaus Wünschel]).
 * Added DELIMITER command (Thanks: [Georgy Frolov])
@@ -13,6 +26,11 @@ Bug Fixes:
 ----------
 
 * Allow \o command more than once per session (Thanks: [Georgy Frolov])
+* Fixed crash when the query dropping the current database starts with a comment (Thanks: [Georgy Frolov])
+
+Internal:
+---------
+* deprecate python versions 2.7, 3.4, 3.5; support python 3.8
 
 1.20.1
 ======

@@ -5,7 +5,7 @@ from click.testing import CliRunner
 
 from mycli.main import MyCli, cli, thanks_picker, PACKAGE_ROOT
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
-from utils import USER, HOST, PORT, PASSWORD, dbtest, run
+from .utils import USER, HOST, PORT, PASSWORD, dbtest, run
 
 from textwrap import dedent
 from collections import namedtuple
@@ -13,10 +13,6 @@ from collections import namedtuple
 from tempfile import NamedTemporaryFile
 from textwrap import dedent
 
-try:
-    text_type = basestring
-except NameError:
-    text_type = str
 
 test_dir = os.path.abspath(os.path.dirname(__file__))
 project_dir = os.path.dirname(test_dir)
@@ -148,7 +144,7 @@ def test_thanks_picker_utf8():
     sponsor_file = os.path.join(PACKAGE_ROOT, 'SPONSORS')
 
     name = thanks_picker((author_file, sponsor_file))
-    assert isinstance(name, text_type)
+    assert name and isinstance(name, str)
 
 
 def test_help_strings_end_with_periods():
@@ -388,7 +384,7 @@ def test_dsn(monkeypatch):
         MockMyCli.connect_args["port"] == 5 and \
         MockMyCli.connect_args["database"] == "arg_database"
 
-    # Use a DNS without password
+    # Use a DSN without password
     result = runner.invoke(mycli.main.cli, args=[
         "mysql://dsn_user@dsn_host:6/dsn_database"]
     )

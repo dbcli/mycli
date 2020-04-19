@@ -1,4 +1,3 @@
-from __future__ import print_function
 import shutil
 from io import BytesIO, TextIOWrapper
 import logging
