@@ -9,7 +9,7 @@ Bug Fixes:
 ----------
 
 * Fix broken auto-completion for favorite queries (Thanks: [Amjith]).
-
+* Fix undefined variable exception when running with --no-warn (Thanks: [Georgy Frolov])
 
 1.21.0
 ======
