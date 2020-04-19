@@ -541,7 +541,9 @@ class MyCli(object):
         def get_continuation(width, *_):
             if self.multiline_continuation_char:
                 left_padding = width - len(self.multiline_continuation_char)
-                continuation = " " * max((left_padding - 1), 0) + self.multiline_continuation_char + " "
+                continuation = " " * \
+                    max((left_padding - 1), 0) + \
+                    self.multiline_continuation_char + " "
             else:
                 continuation = " "
             return [('class:continuation', continuation)]
