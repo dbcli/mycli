@@ -34,6 +34,7 @@ from .packages.special.main import NO_QUERY
 from .packages.prompt_utils import confirm, confirm_destructive_query
 from .packages.tabular_output import sql_format
 from .packages import special
+from .packages.special.favoritequeries import FavoriteQueries
 from .sqlcompleter import SQLCompleter
 from .clitoolbar import create_toolbar_tokens_func
 from .clistyle import style_factory, style_factory_output
@@ -117,7 +118,7 @@ class MyCli(object):
         self.key_bindings = c['main']['key_bindings']
         special.set_timing_enabled(c['main'].as_bool('timing'))
 
-        special.set_favorite_queries(self.config)
+        FavoriteQueries.instance = FavoriteQueries.from_config(self.config)
 
         self.dsn_alias = None
         self.formatter = TabularOutputFormatter(

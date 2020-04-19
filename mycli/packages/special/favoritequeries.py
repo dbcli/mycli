@@ -31,8 +31,15 @@ Examples:
     simple: Deleted
 '''
 
+    # Class-level variable, for convenience to use as a singleton.
+    instance = None
+
     def __init__(self, config):
         self.config = config
+
+    @classmethod
+    def from_config(cls, config):
+        return FavoriteQueries(config)
 
     def list(self):
         return self.config.get(self.section_name, [])
