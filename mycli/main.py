@@ -87,8 +87,14 @@ class MyCli(object):
         '~/.my.cnf'
     ]
 
+    # check XDG_CONFIG_HOME exists and not an empty string
+    if os.environ.get("XDG_CONFIG_HOME"):
+        xdg_config_home = os.environ.get("XDG_CONFIG_HOME")
+    else:
+        xdg_config_home = "~/.config"
     system_config_files = [
         '/etc/myclirc',
+        os.path.join(xdg_config_home, "mycli", "myclirc")
     ]
 
     default_config_file = os.path.join(PACKAGE_ROOT, 'myclirc')
