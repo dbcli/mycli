@@ -63,8 +63,8 @@ $ sudo apt-get install mycli # Only on debian or ubuntu
       --ssh-password TEXT           Password to connect to ssh server.
       --ssh-key-filename TEXT       Private key filename (identify file) for the
                                     ssh connection.
-      --ssh-config-path TEXT        Path to ssh configuation
-      --ssh-config-host TEXT        Host for ssh server in ssh configuations
+      --ssh-config-path TEXT        Path to ssh configuation.
+      --ssh-config-host TEXT        Host for ssh server in ssh configuations (requires paramiko).
       --ssl-ca PATH                 CA file in PEM format.
       --ssl-capath TEXT             CA directory.
       --ssl-cert PATH               X509 cert in PEM format.
@@ -80,7 +80,7 @@ $ sudo apt-get install mycli # Only on debian or ubuntu
                                     section of myclirc file.
       --list-dsn                    list of DSN configured into the [alias_dsn]
                                     section of myclirc file.
-      --list-ssh-config             list of ssh configuration in the ssh config.
+      --list-ssh-config             list ssh configurations in the ssh config (requires paramiko).
       -R, --prompt TEXT             Prompt format (Default: "\t \u@\h:\d> ").
       -l, --logfile FILENAME        Log every query and its results to a file.
       --defaults-group-suffix TEXT  Read MySQL config groups with the specified

@@ -1006,7 +1006,7 @@ class MyCli(object):
 @click.option('--list-dsn', 'list_dsn', is_flag=True,
         help='list of DSN configured into the [alias_dsn] section of myclirc file.')
 @click.option('--list-ssh-config', 'list_ssh_config', is_flag=True,
-              help='list of ssh configurations in the ssh config.')
+              help='list ssh configurations in the ssh config (requires paramiko).')
 @click.option('-R', '--prompt', 'prompt',
               help='Prompt format (Default: "{0}").'.format(
                   MyCli.default_prompt))
@@ -1079,8 +1079,7 @@ def cli(database, user, host, port, socket, password, dbname,
     if list_ssh_config:
         if not paramiko:
             click.secho(
-                "Cannot use SSH transport because paramiko isn't installed, "
-                "please install paramiko or don't use --list-ssh-config=",
+                "This features requires paramiko. Please install paramiko and try again.",
                 err=True, fg='red'
             )
             exit(1)
@@ -1155,8 +1154,7 @@ def cli(database, user, host, port, socket, password, dbname,
     if ssh_config_host:
         if not paramiko:
             click.secho(
-                "Cannot use SSH transport because paramiko isn't installed, "
-                "please install paramiko or don't use --ssh-config_host=",
+                "This features requires paramiko. Please install paramiko and try again.",
                 err=True, fg='red'
             )
             exit(1)
