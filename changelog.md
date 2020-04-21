@@ -1,5 +1,14 @@
-TBD
-===
+1.21.1
+======
+
+Bug Fixes:
+----------
+
+* Fix broken auto-completion for favorite queries (Thanks: [Amjith]).
+* Fix undefined variable exception when running with --no-warn (Thanks: [Georgy Frolov])
+
+1.21.0
+======
 
 Features:
 ---------
@@ -8,7 +17,17 @@ Features:
 * Added DELIMITER command (Thanks: [Georgy Frolov])
 * Added clearer error message when failing to connect to the default socket.
 * Extend main.is_dropping_database check with create after delete statement.
+* Search `${XDG_CONFIG_HOME}/mycli/myclirc` after `${HOME}/.myclirc` and before `/etc/myclirc` (Thanks: [Takeshi D. Itoh])
 
+Bug Fixes:
+----------
+
+* Allow \o command more than once per session (Thanks: [Georgy Frolov])
+* Fixed crash when the query dropping the current database starts with a comment (Thanks: [Georgy Frolov])
+
+Internal:
+---------
+* deprecate python versions 2.7, 3.4, 3.5; support python 3.8
 
 1.20.1
 ======
@@ -17,7 +36,6 @@ Bug Fixes:
 ----------
 
 * Fix an error when using login paths with an explicit database name (Thanks: [Thomas Roten]).
-
 
 1.20.0
 ======

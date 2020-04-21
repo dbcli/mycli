@@ -1,6 +1,3 @@
-from __future__ import unicode_literals
-from __future__ import print_function
-
 import os
 import sys
 import traceback
@@ -20,8 +17,10 @@ from cli_helpers.tabular_output import preprocessors
 from cli_helpers.utils import strip_ansi
 import click
 import sqlparse
+from mycli.packages.parseutils import is_dropping_database
 from prompt_toolkit.completion import DynamicCompleter
 from prompt_toolkit.enums import DEFAULT_BUFFER, EditingMode
+from prompt_toolkit.key_binding.bindings.named_commands import register as prompt_register
 from prompt_toolkit.shortcuts import PromptSession, CompleteStyle
 from prompt_toolkit.document import Document
 from prompt_toolkit.filters import HasFocus, IsDone
@@ -35,6 +34,7 @@ from .packages.special.main import NO_QUERY
 from .packages.prompt_utils import confirm, confirm_destructive_query
 from .packages.tabular_output import sql_format
 from .packages import special
+from .packages.special.favoritequeries import FavoriteQueries
 from .sqlcompleter import SQLCompleter
 from .clitoolbar import create_toolbar_tokens_func
 from .clistyle import style_factory, style_factory_output
@@ -45,7 +45,6 @@ from .config import (write_default_config, get_mylogin_cnf_path,
                      open_mylogin_cnf, read_config_files, str_to_bool,
                      strip_matching_quotes)
 from .key_bindings import mycli_bindings
-from .encodingutils import utf8tounicode, text_type
 from .lexer import MyCliLexer
 from .__init__ import __version__
 from .compat import WIN
@@ -88,8 +87,14 @@ class MyCli(object):
         '~/.my.cnf'
     ]
 
+    # check XDG_CONFIG_HOME exists and not an empty string
+    if os.environ.get("XDG_CONFIG_HOME"):
+        xdg_config_home = os.environ.get("XDG_CONFIG_HOME")
+    else:
+        xdg_config_home = "~/.config"
     system_config_files = [
         '/etc/myclirc',
+        os.path.join(xdg_config_home, "mycli", "myclirc")
     ]
 
     default_config_file = os.path.join(PACKAGE_ROOT, 'myclirc')
@@ -119,7 +124,7 @@ class MyCli(object):
         self.key_bindings = c['main']['key_bindings']
         special.set_timing_enabled(c['main'].as_bool('timing'))
 
-        special.set_favorite_queries(self.config)
+        FavoriteQueries.instance = FavoriteQueries.from_config(self.config)
 
         self.dsn_alias = None
         self.formatter = TabularOutputFormatter(
@@ -163,7 +168,7 @@ class MyCli(object):
         prompt_cnf = self.read_my_cnf_files(self.cnf_files, ['prompt'])['prompt']
         self.prompt_format = prompt or prompt_cnf or c['main']['prompt'] or \
                              self.default_prompt
-        self.prompt_continuation_format = c['main']['prompt_continuation']
+        self.multiline_continuation_char = c['main']['prompt_continuation']
         keyword_casing = c['main'].get('keyword_casing', 'auto')
 
         self.query_history = []
@@ -222,7 +227,7 @@ class MyCli(object):
             yield (None, None, None, msg)
 
     def change_db(self, arg, **_):
-        if arg is '':
+        if not arg:
             click.secho(
                 "No database selected",
                 err=True, fg="red"
@@ -239,7 +244,7 @@ class MyCli(object):
             message = 'Missing required argument, filename.'
             return [(None, None, None, message)]
         try:
-            with open(os.path.expanduser(arg), encoding='utf-8') as f:
+            with open(os.path.expanduser(arg)) as f:
                 query = f.read()
         except IOError as e:
             return [(None, None, None, str(e))]
@@ -540,8 +545,14 @@ class MyCli(object):
                 prompt = self.get_prompt('\\d> ')
             return [('class:prompt', prompt)]
 
-        def get_continuation(width, line_number, is_soft_wrap):
-            continuation = ' ' * (width - 1) + ' '
+        def get_continuation(width, *_):
+            if self.multiline_continuation_char:
+                left_padding = width - len(self.multiline_continuation_char)
+                continuation = " " * \
+                    max((left_padding - 1), 0) + \
+                    self.multiline_continuation_char + " "
+            else:
+                continuation = " "
             return [('class:continuation', continuation)]
 
         def show_suggestion_tip():
@@ -576,6 +587,8 @@ class MyCli(object):
                 else:
                     self.echo('Wise choice!')
                     return
+            else:
+                destroy = True
 
             # Keep track of whether or not the query is mutating. In case
             # of a multi-statement query, the overall query is considered
@@ -749,7 +762,7 @@ class MyCli(object):
     def log_output(self, output):
         """Log the output in the audit log, if it's enabled."""
         if self.logfile:
-            click.echo(utf8tounicode(output), file=self.logfile)
+            click.echo(output, file=self.logfile)
 
     def echo(self, s, **kwargs):
         """Print a message to stdout.
@@ -924,8 +937,8 @@ class MyCli(object):
             column_types = None
             if hasattr(cur, 'description'):
                 def get_col_type(col):
-                    col_type = FIELD_TYPES.get(col[1], text_type)
-                    return col_type if type(col_type) is type else text_type
+                    col_type = FIELD_TYPES.get(col[1], str)
+                    return col_type if type(col_type) is type else str
                 column_types = [get_col_type(col) for col in cur.description]
 
             if max_width is not None:
@@ -936,7 +949,7 @@ class MyCli(object):
                 column_types=column_types,
                 **output_kwargs)
 
-            if isinstance(formatted, (text_type)):
+            if isinstance(formatted, str):
                 formatted = formatted.splitlines()
             formatted = iter(formatted)
 
@@ -945,7 +958,7 @@ class MyCli(object):
                 if len(strip_ansi(first_line)) > max_width:
                     formatted = self.formatter.format_output(
                         cur, headers, format_name='vertical', column_types=column_types, **output_kwargs)
-                    if isinstance(formatted, (text_type)):
+                    if isinstance(formatted, str):
                         formatted = iter(formatted.splitlines())
                 else:
                     formatted = itertools.chain([first_line], formatted)
@@ -1216,36 +1229,6 @@ def need_completion_refresh(queries):
             return False
 
 
-def is_dropping_database(queries, dbname):
-    """Determine if the query is dropping a specific database."""
-    result = False
-    if dbname is None:
-        return False
-
-    def normalize_db_name(db):
-        return db.lower().strip('`"')
-
-    dbname = normalize_db_name(dbname)
-
-    for query in sqlparse.parse(queries):
-        if query.get_name() is None:
-            continue
-
-        first_token = query.token_first(skip_cm=True)
-        _, second_token = query.token_next(0, skip_cm=True)
-        database_name = normalize_db_name(query.get_name())
-        if (first_token.value.lower() == 'drop' and
-                second_token.value.lower() in ('database', 'schema') and
-                database_name == dbname):
-            result = True
-        elif (first_token.value.lower() == 'create' and
-                second_token.value.lower() in ('database', 'schema') and
-                database_name == dbname):
-            result = False
-
-    return result
-
-
 def need_completion_reset(queries):
     """Determines if the statement is a database switch such as 'use' or '\\u'.
     When a database is changed the existing completions must be reset before we
@@ -1283,6 +1266,14 @@ def thanks_picker(files=()):
         if m:
             contents.append(m.group(1))
     return choice(contents)
+
+
+@prompt_register('edit-and-execute-command')
+def edit_and_execute(event):
+    """Different from the prompt-toolkit default, we want to have a choice not
+    to execute a query after editing, hence validate_and_handle=False."""
+    buff = event.current_buffer
+    buff.open_in_editor(validate_and_handle=False)
 
 
 if __name__ == "__main__":

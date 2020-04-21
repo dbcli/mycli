@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 import os
 import re
 import locale
@@ -10,7 +9,6 @@ from time import sleep
 
 import click
 import sqlparse
-from configobj import ConfigObj
 
 from . import export
 from .main import special_command, NO_QUERY, PARSED_QUERY
@@ -23,8 +21,8 @@ TIMING_ENABLED = False
 use_expanded_output = False
 PAGER_ENABLED = True
 tee_file = None
-once_file = written_to_once_file = None
-favoritequeries = FavoriteQueries(ConfigObj())
+once_file = None
+written_to_once_file = False
 delimiter_command = DelimiterCommand()
 
 
@@ -38,11 +36,6 @@ def set_pager_enabled(val):
     global PAGER_ENABLED
     PAGER_ENABLED = val
 
-
-@export
-def set_favorite_queries(config):
-    global favoritequeries
-    favoritequeries = FavoriteQueries(config)
 
 @export
 def is_pager_enabled():
@@ -151,7 +144,7 @@ def open_external_editor(filename=None, sql=None):
 
     if filename:
         try:
-            with open(filename, encoding='utf-8') as f:
+            with open(filename) as f:
                 query = f.read()
         except IOError:
             message = 'Error reading file: %s.' % filename
@@ -177,7 +170,7 @@ def execute_favorite_query(cur, arg, **_):
     name, _, arg_str = arg.partition(' ')
     args = shlex.split(arg_str)
 
-    query = favoritequeries.get(name)
+    query = FavoriteQueries.instance.get(name)
     if query is None:
         message = "No favorite query: %s" % (name)
         yield (None, None, None, message)
@@ -201,10 +194,11 @@ def list_favorite_queries():
     Returns (title, rows, headers, status)"""
 
     headers = ["Name", "Query"]
-    rows = [(r, favoritequeries.get(r)) for r in favoritequeries.list()]
+    rows = [(r, FavoriteQueries.instance.get(r))
+            for r in FavoriteQueries.instance.list()]
 
     if not rows:
-        status = '\nNo favorite queries found.' + favoritequeries.usage
+        status = '\nNo favorite queries found.' + FavoriteQueries.instance.usage
     else:
         status = ''
     return [('', rows, headers, status)]
@@ -230,7 +224,7 @@ def save_favorite_query(arg, **_):
     """Save a new favorite query.
     Returns (title, rows, headers, status)"""
 
-    usage = 'Syntax: \\fs name query.\n\n' + favoritequeries.usage
+    usage = 'Syntax: \\fs name query.\n\n' + FavoriteQueries.instance.usage
     if not arg:
         return [(None, None, None, usage)]
 
@@ -241,18 +235,18 @@ def save_favorite_query(arg, **_):
         return [(None, None, None,
             usage + 'Err: Both name and query are required.')]
 
-    favoritequeries.save(name, query)
+    FavoriteQueries.instance.save(name, query)
     return [(None, None, None, "Saved.")]
+
 
 @special_command('\\fd', '\\fd [name]', 'Delete a favorite query.')
 def delete_favorite_query(arg, **_):
-    """Delete an existing favorite query.
-    """
-    usage = 'Syntax: \\fd name.\n\n' + favoritequeries.usage
+    """Delete an existing favorite query."""
+    usage = 'Syntax: \\fd name.\n\n' + FavoriteQueries.instance.usage
     if not arg:
         return [(None, None, None, usage)]
 
-    status = favoritequeries.delete(arg)
+    status = FavoriteQueries.instance.delete(arg)
 
     return [(None, None, None, status)]
 
@@ -341,9 +335,10 @@ def write_tee(output):
                  'Append next result to an output file (overwrite using -o).',
                  aliases=('\\o', ))
 def set_once(arg, **_):
-    global once_file
+    global once_file, written_to_once_file
 
     once_file = parseargfile(arg)
+    written_to_once_file = False
 
     return [(None, None, None, "")]
 
@@ -358,7 +353,6 @@ def write_once(output):
             once_file = None
             raise OSError("Cannot write to file '{}': {}".format(
                 e.filename, e.strerror))
-
         with f:
             click.echo(output, file=f, nl=False)
             click.echo(u"\n", file=f, nl=False)

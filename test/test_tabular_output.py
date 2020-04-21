@@ -1,13 +1,11 @@
-# -*- coding: utf-8 -*-
 """Test the sql output adapter."""
 
-from __future__ import unicode_literals
 from textwrap import dedent
 
 from mycli.packages.tabular_output import sql_format
 from cli_helpers.tabular_output import TabularOutputFormatter
 
-from utils import USER, PASSWORD, HOST, PORT, dbtest
+from .utils import USER, PASSWORD, HOST, PORT, dbtest
 
 import pytest
 from mycli.main import MyCli

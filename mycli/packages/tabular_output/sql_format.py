@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
 """Format adapter for sql."""
 
-from __future__ import unicode_literals
 from cli_helpers.utils import filter_dict_by_key
 from mycli.packages.parseutils import extract_tables
 

@@ -1,4 +1,3 @@
-from __future__ import print_function
 import re
 import sqlparse
 from sqlparse.sql import IdentifierList, Identifier, Function
@@ -238,3 +237,31 @@ def is_open_quote(sql):
 if __name__ == '__main__':
     sql = 'select * from (select t. from tabl t'
     print (extract_tables(sql))
+
+
+def is_dropping_database(queries, dbname):
+    """Determine if the query is dropping a specific database."""
+    result = False
+    if dbname is None:
+        return False
+
+    def normalize_db_name(db):
+        return db.lower().strip('`"')
+
+    dbname = normalize_db_name(dbname)
+
+    for query in sqlparse.parse(queries):
+        keywords = [t for t in query.tokens if t.is_keyword]
+        if len(keywords) < 2:
+            continue
+        if keywords[0].normalized in ("DROP", "CREATE") and keywords[1].value.lower() in (
+            "database",
+            "schema",
+        ):
+            database_token = next(
+                (t for t in query.tokens if isinstance(t, Identifier)), None
+            )
+            if database_token is not None and normalize_db_name(database_token.get_name()) == dbname:
+                result = keywords[0].normalized == "DROP"
+    else:
+        return result
