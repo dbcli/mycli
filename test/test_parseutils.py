@@ -175,6 +175,8 @@ def test_query_has_where_clause(sql, has_where_clause):
         ('drop schema foo', 'bar', False),
         ('drop database bar', 'foo', False),
         ('drop database foo', None, False),
+        ('drop database foo; create database foo', 'foo', False),
+        ('drop database foo; create database bar', 'foo', True),
         ('select bar from foo; drop database bazz', 'foo', False),
         ('select bar from foo; drop database bazz', 'bazz', True),
         ('-- dropping database \n '
