@@ -241,6 +241,7 @@ if __name__ == '__main__':
 
 def is_dropping_database(queries, dbname):
     """Determine if the query is dropping a specific database."""
+    result = False
     if dbname is None:
         return False
 
@@ -253,16 +254,14 @@ def is_dropping_database(queries, dbname):
         keywords = [t for t in query.tokens if t.is_keyword]
         if len(keywords) < 2:
             continue
-        if keywords[0].normalized == "DROP" and keywords[1].value.lower() in (
+        if keywords[0].normalized in ("DROP", "CREATE") and keywords[1].value.lower() in (
             "database",
             "schema",
         ):
             database_token = next(
                 (t for t in query.tokens if isinstance(t, Identifier)), None
             )
-            return (
-                database_token is not None
-                and normalize_db_name(database_token.get_name()) == dbname
-            )
+            if database_token is not None and normalize_db_name(database_token.get_name()) == dbname:
+                result = keywords[0].normalized == "DROP"
     else:
-        return False
+        return result

@@ -16,6 +16,7 @@ Features:
 * Mark `update` without `where`-clause as destructive query (Thanks: [Klaus Wünschel]).
 * Added DELIMITER command (Thanks: [Georgy Frolov])
 * Added clearer error message when failing to connect to the default socket.
+* Extend main.is_dropping_database check with create after delete statement.
 * Search `${XDG_CONFIG_HOME}/mycli/myclirc` after `${HOME}/.myclirc` and before `/etc/myclirc` (Thanks: [Takeshi D. Itoh])
 
 Bug Fixes:
