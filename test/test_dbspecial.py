@@ -1,5 +1,5 @@
 from mycli.packages.completion_engine import suggest_type
-from test_completion_engine import sorted_dicts
+from .test_completion_engine import sorted_dicts
 from mycli.packages.special.utils import format_uptime
 
 

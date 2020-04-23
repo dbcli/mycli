@@ -30,3 +30,18 @@ Feature: I/O commands
       then we see result "123"
       and we see result "456"
       and delimiter is set to "%"
+
+   Scenario: send output to file
+      When we query "\o /tmp/output1.sql"
+      and we query "select 123"
+      and we query "system cat /tmp/output1.sql"
+      then we see result "123"
+
+   Scenario: send output to file two times
+      When we query "\o /tmp/output1.sql"
+      and we query "select 123"
+      and we query "\o /tmp/output2.sql"
+      and we query "select 456"
+      and we query "system cat /tmp/output2.sql"
+      then we see result "456"
+  

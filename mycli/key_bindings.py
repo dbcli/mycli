@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 import logging
 from prompt_toolkit.enums import EditingMode
 from prompt_toolkit.filters import completion_is_selected
