@@ -430,6 +430,17 @@ class MyCli(object):
                 else:
                     raise e
 
+        def _fallback_to_tcp_ip():
+            self.echo(
+                'Retrying over TCP/IP', err=True)
+
+            # Else fall back to TCP/IP localhost
+            nonlocal socket, host, port
+            socket = ""
+            host = 'localhost'
+            port = 3306
+            _connect()
+
         try:
             if (host is None) and not WIN:
                 # Try a sensible default socket first (simplifies auth)
@@ -437,6 +448,9 @@ class MyCli(object):
                 try:
                     socket = socket or guess_socket_location()
                     _connect()
+                except FileNotFoundError:
+                    self.echo('Failed to find socket file at default locations')
+                    _fallback_to_tcp_ip()
                 except OperationalError as e:
                     # These are "Can't open socket" and 2x "Can't connect"
                     if [code for code in (2001, 2002, 2003) if code == e.args[0]]:
@@ -447,14 +461,7 @@ class MyCli(object):
                         self.echo(
                             "Failed to connect to local MySQL server through socket '{}':".format(socket))
                         self.echo(str(e), err=True)
-                        self.echo(
-                            'Retrying over TCP/IP', err=True)
-
-                        # Else fall back to TCP/IP localhost
-                        socket = ""
-                        host = 'localhost'
-                        port = 3306
-                        _connect()
+                        _fallback_to_tcp_ip()
                     else:
                         raise e
                 else:
