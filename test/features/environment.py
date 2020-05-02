@@ -17,6 +17,7 @@ def before_all(context):
     os.environ['COLUMNS'] = "100"
     os.environ['EDITOR'] = 'ex'
     os.environ['LC_ALL'] = 'en_US.utf8'
+    os.environ['PROMPT_TOOLKIT_NO_CPR'] = '1'
 
     test_dir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
     login_path_file = os.path.join(test_dir, 'mylogin.cnf')
