@@ -1,5 +1,16 @@
+TBD
+===
+
+Features:
+---------
+* Add an option `--ssh-config-host` to read ssh configuration from OpenSSH configuration file.
+* Add an option `--list-ssh-config` to list ssh configurations.
+* Add an option `--ssh-config-path` to choose ssh configuration path.
+
+
 1.21.1
 ======
+
 
 Bug Fixes:
 ----------
