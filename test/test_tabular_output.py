@@ -23,13 +23,21 @@ def mycli():
 @dbtest
 def test_sql_output(mycli):
     """Test the sql output adapter."""
-    headers = ['letters', 'number', 'optional', 'float']
+    headers = ['letters', 'number', 'optional', 'float', 'binary']
 
     class FakeCursor(object):
         def __init__(self):
-            self.data = [('abc', 1, None, 10.0), ('d', 456, '1', 0.5)]
-            self.description = [(None, FIELD_TYPE.VARCHAR), (None, FIELD_TYPE.LONG),
-                                (None, FIELD_TYPE.LONG), (None, FIELD_TYPE.FLOAT)]
+            self.data = [
+                ('abc', 1, None, 10.0, b'\xAA'),
+                ('d', 456, '1', 0.5, b'\xAA\xBB')
+            ]
+            self.description = [
+                (None, FIELD_TYPE.VARCHAR),
+                (None, FIELD_TYPE.LONG),
+                (None, FIELD_TYPE.LONG),
+                (None, FIELD_TYPE.FLOAT),
+                (None, FIELD_TYPE.BLOB)
+            ]
 
         def __iter__(self):
             return self
@@ -39,8 +47,6 @@ def test_sql_output(mycli):
                 return self.data.pop(0)
             else:
                 raise StopIteration()
-
-        next = __next__  # Python 2
 
         def description(self):
             return self.description
@@ -55,11 +61,13 @@ def test_sql_output(mycli):
               `number` = 1
             , `optional` = NULL
             , `float` = 10
+            , `binary` = X'aa'
             WHERE `letters` = 'abc';
             UPDATE `DUAL` SET
               `number` = 456
             , `optional` = '1'
             , `float` = 0.5
+            , `binary` = X'aabb'
             WHERE `letters` = 'd';''')
     # Test sql-update-2 output format
     assert list(mycli.change_table_format("sql-update-2")) == \
@@ -70,10 +78,12 @@ def test_sql_output(mycli):
             UPDATE `DUAL` SET
               `optional` = NULL
             , `float` = 10
+            , `binary` = X'aa'
             WHERE `letters` = 'abc' AND `number` = 1;
             UPDATE `DUAL` SET
               `optional` = '1'
             , `float` = 0.5
+            , `binary` = X'aabb'
             WHERE `letters` = 'd' AND `number` = 456;''')
     # Test sql-insert output format (without table name)
     assert list(mycli.change_table_format("sql-insert")) == \
@@ -81,9 +91,9 @@ def test_sql_output(mycli):
     mycli.formatter.query = ""
     output = mycli.format_output(None, FakeCursor(), headers)
     assert "\n".join(output) == dedent('''\
-            INSERT INTO `DUAL` (`letters`, `number`, `optional`, `float`) VALUES
-              ('abc', 1, NULL, 10)
-            , ('d', 456, '1', 0.5)
+            INSERT INTO `DUAL` (`letters`, `number`, `optional`, `float`, `binary`) VALUES
+              ('abc', 1, NULL, 10, X'aa')
+            , ('d', 456, '1', 0.5, X'aabb')
             ;''')
     # Test sql-insert output format (with table name)
     assert list(mycli.change_table_format("sql-insert")) == \
@@ -91,9 +101,9 @@ def test_sql_output(mycli):
     mycli.formatter.query = "SELECT * FROM `table`"
     output = mycli.format_output(None, FakeCursor(), headers)
     assert "\n".join(output) == dedent('''\
-            INSERT INTO `table` (`letters`, `number`, `optional`, `float`) VALUES
-              ('abc', 1, NULL, 10)
-            , ('d', 456, '1', 0.5)
+            INSERT INTO `table` (`letters`, `number`, `optional`, `float`, `binary`) VALUES
+              ('abc', 1, NULL, 10, X'aa')
+            , ('d', 456, '1', 0.5, X'aabb')
             ;''')
     # Test sql-insert output format (with database + table name)
     assert list(mycli.change_table_format("sql-insert")) == \
@@ -101,7 +111,7 @@ def test_sql_output(mycli):
     mycli.formatter.query = "SELECT * FROM `database`.`table`"
     output = mycli.format_output(None, FakeCursor(), headers)
     assert "\n".join(output) == dedent('''\
-            INSERT INTO `database`.`table` (`letters`, `number`, `optional`, `float`) VALUES
-              ('abc', 1, NULL, 10)
-            , ('d', 456, '1', 0.5)
+            INSERT INTO `database`.`table` (`letters`, `number`, `optional`, `float`, `binary`) VALUES
+              ('abc', 1, NULL, 10, X'aa')
+            , ('d', 456, '1', 0.5, X'aabb')
             ;''')
