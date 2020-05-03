@@ -6,6 +6,7 @@ Features:
 * Add an option `--ssh-config-host` to read ssh configuration from OpenSSH configuration file.
 * Add an option `--list-ssh-config` to list ssh configurations.
 * Add an option `--ssh-config-path` to choose ssh configuration path.
+* Try list of known socket file locations by default
 
 
 1.21.1

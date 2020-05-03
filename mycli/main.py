@@ -1,4 +1,5 @@
 import os
+import os.path
 import sys
 import traceback
 import logging
@@ -434,8 +435,21 @@ class MyCli(object):
                 # Try a sensible default socket first (simplifies auth)
                 # If we get a connection error, try tcp/ip localhost
                 try:
-                    socket = '/var/run/mysqld/mysqld.sock'
-                    _connect()
+                    sockets = (
+                        '/var/run/mysqld/mysqld.sock',  # Debian family
+                        '/var/lib/mysql/mysql.sock',   # Red Hat family
+                        '/tmp/mysql.sock',             # Default for tarball
+                    )
+                    sockets = [
+                        sock for sock in sockets if os.path.exists(sock)]
+                    if sockets:
+                        socket = sockets[0]
+                        _connect()
+                    else:
+                        socket = ""
+                        host = 'localhost'
+                        port = 3306
+                        _connect()
                 except OperationalError as e:
                     # These are "Can't open socket" and 2x "Can't connect"
                     if [code for code in (2001, 2002, 2003) if code == e.args[0]]:
