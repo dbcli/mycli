@@ -8,6 +8,8 @@ import pexpect
 
 from steps.wrappers import run_cli, wait_prompt
 
+test_log_file = os.path.join(os.environ['HOME'], '.mycli.test.log')
+
 
 def before_all(context):
     """Set env parameters."""
@@ -15,6 +17,7 @@ def before_all(context):
     os.environ['COLUMNS'] = "100"
     os.environ['EDITOR'] = 'ex'
     os.environ['LC_ALL'] = 'en_US.utf8'
+    os.environ['PROMPT_TOOLKIT_NO_CPR'] = '1'
 
     test_dir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
     login_path_file = os.path.join(test_dir, 'mylogin.cnf')
@@ -95,12 +98,18 @@ def before_step(context, _):
 
 
 def before_scenario(context, _):
+    with open(test_log_file, 'w') as f:
+        f.write('')
     run_cli(context)
     wait_prompt(context)
 
 
 def after_scenario(context, _):
     """Cleans up after each test complete."""
+    with open(test_log_file) as f:
+        for line in f:
+            if 'error' in line.lower():
+                raise RuntimeError(f'Error in log file: {line}')
 
     if hasattr(context, 'cli') and not context.exit_sent:
         # Quit nicely.

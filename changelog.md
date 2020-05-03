@@ -7,15 +7,16 @@ Features:
 * Add an option `--list-ssh-config` to list ssh configurations.
 * Add an option `--ssh-config-path` to choose ssh configuration path.
 
-1.20.2
-=======
+
+1.21.1
+======
 
 
 Bug Fixes:
 ----------
 
 * Fix broken auto-completion for favorite queries (Thanks: [Amjith]).
-
+* Fix undefined variable exception when running with --no-warn (Thanks: [Georgy Frolov])
 
 1.21.0
 ======
@@ -26,6 +27,8 @@ Features:
 * Mark `update` without `where`-clause as destructive query (Thanks: [Klaus Wünschel]).
 * Added DELIMITER command (Thanks: [Georgy Frolov])
 * Added clearer error message when failing to connect to the default socket.
+* Extend main.is_dropping_database check with create after delete statement.
+* Search `${XDG_CONFIG_HOME}/mycli/myclirc` after `${HOME}/.myclirc` and before `/etc/myclirc` (Thanks: [Takeshi D. Itoh])
 
 Bug Fixes:
 ----------

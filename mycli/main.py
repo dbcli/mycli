@@ -87,8 +87,14 @@ class MyCli(object):
         '~/.my.cnf'
     ]
 
+    # check XDG_CONFIG_HOME exists and not an empty string
+    if os.environ.get("XDG_CONFIG_HOME"):
+        xdg_config_home = os.environ.get("XDG_CONFIG_HOME")
+    else:
+        xdg_config_home = "~/.config"
     system_config_files = [
         '/etc/myclirc',
+        os.path.join(xdg_config_home, "mycli", "myclirc")
     ]
 
     default_config_file = os.path.join(PACKAGE_ROOT, 'myclirc')
@@ -162,7 +168,7 @@ class MyCli(object):
         prompt_cnf = self.read_my_cnf_files(self.cnf_files, ['prompt'])['prompt']
         self.prompt_format = prompt or prompt_cnf or c['main']['prompt'] or \
                              self.default_prompt
-        self.prompt_continuation_format = c['main']['prompt_continuation']
+        self.multiline_continuation_char = c['main']['prompt_continuation']
         keyword_casing = c['main'].get('keyword_casing', 'auto')
 
         self.query_history = []
@@ -539,8 +545,14 @@ class MyCli(object):
                 prompt = self.get_prompt('\\d> ')
             return [('class:prompt', prompt)]
 
-        def get_continuation(width, line_number, is_soft_wrap):
-            continuation = ' ' * (width - 1) + ' '
+        def get_continuation(width, *_):
+            if self.multiline_continuation_char:
+                left_padding = width - len(self.multiline_continuation_char)
+                continuation = " " * \
+                    max((left_padding - 1), 0) + \
+                    self.multiline_continuation_char + " "
+            else:
+                continuation = " "
             return [('class:continuation', continuation)]
 
         def show_suggestion_tip():
@@ -575,6 +587,8 @@ class MyCli(object):
                 else:
                     self.echo('Wise choice!')
                     return
+            else:
+                destroy = True
 
             # Keep track of whether or not the query is mutating. In case
             # of a multi-statement query, the overall query is considered
