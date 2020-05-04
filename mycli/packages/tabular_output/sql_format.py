@@ -31,7 +31,8 @@ def adapter(data, headers, table_format=None, **kwargs):
         yield "INSERT INTO {} (`{}`) VALUES".format(table_name, h)
         prefix = "  "
         for d in data:
-            values = ", ".join(escape_for_sql_statement(v) for i, v in enumerate(d))
+            values = ", ".join(escape_for_sql_statement(v)
+                               for i, v in enumerate(d))
             yield "{}({})".format(prefix, values)
             if prefix == "  ":
                 prefix = ", "
@@ -49,7 +50,8 @@ def adapter(data, headers, table_format=None, **kwargs):
                 if prefix == "  ":
                     prefix = ", "
             f = "`{}` = {}"
-            where = (f.format(headers[i], escape_for_sql_statement(d[i])) for i in range(keys))
+            where = (f.format(headers[i], escape_for_sql_statement(
+                d[i])) for i in range(keys))
             yield "WHERE {};".format(" AND ".join(where))
 
 
