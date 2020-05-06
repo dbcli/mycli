@@ -103,4 +103,4 @@ def guess_socket_location():
                 if name.startswith("mysql") and ext in ('.socket', '.sock'):
                     return os.path.join(r, filename)
             dirs[:] = [d for d in dirs if d.startswith("mysql")]
-    raise FileNotFoundError
+    return None
