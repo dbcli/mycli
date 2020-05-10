@@ -318,7 +318,7 @@ class MyCli(object):
         """
         cnf = read_config_files(files, list_values=False)
 
-        sections = ['client']
+        sections = ['client', 'mysqld']
         if self.login_path and self.login_path != 'client':
             sections.append(self.login_path)
 
