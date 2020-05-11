@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import ast
+import os
 import re
 import subprocess
 import sys
@@ -14,18 +15,11 @@ with open('mycli/__init__.py') as f:
     version = ast.literal_eval(_version_re.search(
         f.read()).group(1))
 
-description = 'CLI for MySQL Database. With auto-completion and syntax highlighting.'
+install_requirements = []
+with open('requirements/dist.txt') as f:
+    install_requirements += [line.strip() for line in f.readlines()]
 
-install_requirements = [
-    'click >= 7.0',
-    'Pygments >= 1.6',
-    'prompt_toolkit>=3.0.0,<4.0.0',
-    'PyMySQL >= 0.9.2',
-    'sqlparse>=0.3.0,<0.4.0',
-    'configobj >= 5.0.5',
-    'cryptography >= 1.0.0',
-    'cli_helpers[styles] > 1.1.0',
-]
+description = 'CLI for MySQL Database. With auto-completion and syntax highlighting.'
 
 
 class lint(Command):

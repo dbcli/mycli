@@ -45,7 +45,7 @@ You'll always get credit for your work.
 5. Install the dependencies and development tools:
 
     ```bash
-    $ pip install -r requirements-dev.txt
+    $ pip install -r ./requirements/dev.txt
     $ pip install --editable .
     ```
 

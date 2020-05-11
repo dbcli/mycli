@@ -7,8 +7,7 @@ import struct
 import sys
 
 from configobj import ConfigObj, ConfigObjError
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.hazmat.backends import default_backend
+import pyaes
 
 try:
     basestring
@@ -161,11 +160,10 @@ def read_and_decrypt_mylogin_cnf(f):
             return None
     rkey = struct.pack('16B', *rkey)
 
-    # Create a decryptor object using the key.
-    decryptor = _get_decryptor(rkey)
-
     # Create a bytes buffer to hold the plaintext.
     plaintext = BytesIO()
+
+    aes = pyaes.AESModeOfOperationECB(rkey)
 
     while True:
         # Read the length of the ciphertext.
@@ -173,10 +171,14 @@ def read_and_decrypt_mylogin_cnf(f):
         if len(len_buf) < MAX_CIPHER_STORE_LEN:
             break
         cipher_len, = struct.unpack("<i", len_buf)
+        if cipher_len % 16:
+            logger.error(f'Login file incorrectly encrypted: wrong cipher length {cipher_len}')
 
         # Read cipher_len bytes from the file and decrypt.
         cipher = f.read(cipher_len)
-        plain = _remove_pad(decryptor.update(cipher))
+        plain = _remove_pad(
+            b''.join([aes.decrypt(cipher[i:i + 16]) for i in range(0, cipher_len, 16)])
+        )
         if plain is False:
             continue
         plaintext.write(plain)
@@ -218,12 +220,6 @@ def strip_matching_quotes(s):
             s[0] == s[-1] and s[0] in ('"', "'")):
         s = s[1:-1]
     return s
-
-
-def _get_decryptor(key):
-    """Get the AES decryptor."""
-    c = Cipher(algorithms.AES(key), modes.ECB(), backend=default_backend())
-    return c.decryptor()
 
 
 def _remove_pad(line):

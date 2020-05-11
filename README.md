@@ -22,7 +22,7 @@ If you already know how to install python packages, then you can install it via 
 You might need sudo on linux.
 
 ```
-$ pip install -U mycli
+$ pip3 install -U mycli
 ```
 
 or

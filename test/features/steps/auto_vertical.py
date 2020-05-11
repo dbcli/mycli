@@ -18,7 +18,7 @@ def step_execute_small_query(context):
 @when('we execute a large query')
 def step_execute_large_query(context):
     context.cli.sendline(
-        'select {}'.format(','.join([str(n) for n in range(1, 50)])))
+        'select {};'.format(','.join([str(n) for n in range(1, 50)])))
 
 
 @then('we see small results in horizontal format')

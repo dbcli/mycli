@@ -7,6 +7,9 @@ Features:
 * Add an option `--list-ssh-config` to list ssh configurations.
 * Add an option `--ssh-config-path` to choose ssh configuration path.
 
+Internal:
+---------
+* Binary builds with PyOxidizer (Thanks: [Georgy Frolov])
 
 1.21.1
 ======

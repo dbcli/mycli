@@ -46,7 +46,7 @@ from .config import (write_default_config, get_mylogin_cnf_path,
                      strip_matching_quotes)
 from .key_bindings import mycli_bindings
 from .lexer import MyCliLexer
-from .__init__ import __version__
+from . import __version__
 from .compat import WIN
 from .packages.filepaths import dir_path_exists
 
@@ -466,14 +466,14 @@ class MyCli(object):
                 except ValueError as e:
                     self.echo("Error: Invalid port number: '{0}'.".format(port),
                               err=True, fg='red')
-                    exit(1)
+                    sys.exit(1)
 
                 _connect()
         except Exception as e:  # Connecting to a database could fail.
             self.logger.debug('Database connection failed: %r.', e)
             self.logger.error("traceback: %r", traceback.format_exc())
             self.echo(str(e), err=True, fg='red')
-            exit(1)
+            sys.exit(1)
 
     def handle_editor_command(self, text):
         """Editor command is any query that is prefixed or suffixed by a '\e'.
@@ -1080,10 +1080,10 @@ def cli(database, user, host, port, socket, password, dbname,
             click.secho('Invalid DSNs found in the config file. '\
                 'Please check the "[alias_dsn]" section in myclirc.',
                  err=True, fg='red')
-            exit(1)
+            sys.exit(1)
         except Exception as e:
             click.secho(str(e), err=True, fg='red')
-            exit(1)
+            sys.exit(1)
         for alias, value in alias_dsn.items():
             if verbose:
                 click.secho("{} : {}".format(alias, value))
@@ -1096,17 +1096,17 @@ def cli(database, user, host, port, socket, password, dbname,
                 "This features requires paramiko. Please install paramiko and try again.",
                 err=True, fg='red'
             )
-            exit(1)
+            sys.exit(1)
         try:
             ssh_config = paramiko.config.SSHConfig().from_path(ssh_config_path)
         except paramiko.ssh_exception.ConfigParseError as err:
             click.secho('Invalid SSH configuration file. '
                         'Please check the SSH configuration file.',
                         err=True, fg='red')
-            exit(1)
+            sys.exit(1)
         except FileNotFoundError as e:
             click.secho(str(e), err=True, fg='red')
-            exit(1)
+            sys.exit(1)
         for host in ssh_config.get_hostnames():
             if verbose:
                 host_config = ssh_config.lookup(host)
@@ -1148,7 +1148,7 @@ def cli(database, user, host, port, socket, password, dbname,
             click.secho('Could not find the specified DSN in the config file. '
                         'Please check the "[alias_dsn]" section in your '
                         'myclirc.', err=True, fg='red')
-            exit(1)
+            sys.exit(1)
         else:
             mycli.dsn_alias = dsn
 
@@ -1171,17 +1171,17 @@ def cli(database, user, host, port, socket, password, dbname,
                 "This features requires paramiko. Please install paramiko and try again.",
                 err=True, fg='red'
             )
-            exit(1)
+            sys.exit(1)
         try:
             ssh_config = paramiko.config.SSHConfig().from_path(ssh_config_path)
         except paramiko.ssh_exception.ConfigParseError as err:
             click.secho('Invalid SSH configuration file. '
                         'Please check the SSH configuration file.',
                         err=True, fg='red')
-            exit(1)
+            sys.exit(1)
         except FileNotFoundError as e:
             click.secho(str(e), err=True, fg='red')
-            exit(1)
+            sys.exit(1)
         ssh_config = ssh_config.lookup(ssh_config_host)
         ssh_host = ssh_host if ssh_host else ssh_config.get('hostname')
         ssh_user = ssh_user if ssh_user else ssh_config.get('user')
@@ -1197,7 +1197,7 @@ def cli(database, user, host, port, socket, password, dbname,
             "please install paramiko or don't use --ssh-host=",
             err=True, fg="red"
         )
-        exit(1)
+        sys.exit(1)
 
     ssh_key_filename = ssh_key_filename and os.path.expanduser(ssh_key_filename)
 
@@ -1232,10 +1232,10 @@ def cli(database, user, host, port, socket, password, dbname,
                 mycli.formatter.format_name = 'tsv'
 
             mycli.run_query(execute)
-            exit(0)
+            sys.exit(0)
         except Exception as e:
             click.secho(str(e), err=True, fg='red')
-            exit(1)
+            sys.exit(1)
 
     if sys.stdin.isatty():
         mycli.run_cli()
@@ -1247,7 +1247,7 @@ def cli(database, user, host, port, socket, password, dbname,
             click.secho('Failed! Ran out of memory.', err=True, fg='red')
             click.secho('You might want to try the official mysql client.', err=True, fg='red')
             click.secho('Sorry... :(', err=True, fg='red')
-            exit(1)
+            sys.exit(1)
 
         try:
             sys.stdin = open('/dev/tty')
@@ -1256,7 +1256,7 @@ def cli(database, user, host, port, socket, password, dbname,
 
         if (mycli.destructive_warning and
                 confirm_destructive_query(stdin_text) is False):
-            exit(0)
+            sys.exit(0)
         try:
             new_line = True
 
@@ -1266,10 +1266,10 @@ def cli(database, user, host, port, socket, password, dbname,
                 mycli.formatter.format_name = 'tsv'
 
             mycli.run_query(stdin_text, new_line=new_line)
-            exit(0)
+            sys.exit(0)
         except Exception as e:
             click.secho(str(e), err=True, fg='red')
-            exit(1)
+            sys.exit(1)
 
 
 def need_completion_refresh(queries):

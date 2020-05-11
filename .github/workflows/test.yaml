@@ -1,0 +1,44 @@
+name: Test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - pyoxidizer
+
+jobs:
+  test:
+    name: Tests
+    strategy:
+      matrix:
+        os: [ubuntu-18.04]
+        python: ['3.6', '3.7', '3.8']
+        mysql: ['5.7', '8.0']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: mirromutth/mysql-action@v1.1
+        with:
+          mysql version: ${{ matrix.mysql }}
+          mysql root password: 'root'
+      - uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python }}
+          architecture: 'x64'
+      - name: Install Dependencies
+        run: |
+          python3 -m venv venv
+          . venv/bin/activate
+          pip install -U pip
+          pip install -r requirements/dev.txt
+          python setup.py install
+      - name: Test
+        env:
+          PYTEST_HOST: 'localhost'
+          PYTEST_PORT: 3306
+          PYTEST_USER: 'root'
+          PYTEST_PASSWORD: 'root'
+        run: |
+          . venv/bin/activate
+          python setup.py test

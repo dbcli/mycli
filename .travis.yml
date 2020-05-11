@@ -11,7 +11,8 @@ matrix:
       sudo: true
 
 install:
-  - pip install -r requirements-dev.txt
+  - pip install -r requirements/dev.txt
+  - pip install -r requirements/dist.txt
   - pip install -e .
   - sudo rm -f /etc/mysql/conf.d/performance-schema.cnf
   - sudo service mysql restart
