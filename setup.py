@@ -94,6 +94,7 @@ setup(
         'console_scripts': ['mycli = mycli.main:cli'],
     },
     cmdclass={'lint': lint, 'test': test},
+    python_requires=">=3.6",
     classifiers=[
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
