@@ -6,6 +6,7 @@ import threading
 import re
 import fileinput
 from collections import namedtuple
+from pwd import getpwuid
 from time import time
 from datetime import datetime
 from random import choice
@@ -48,7 +49,7 @@ from .key_bindings import mycli_bindings
 from .lexer import MyCliLexer
 from .__init__ import __version__
 from .compat import WIN
-from .packages.filepaths import dir_path_exists
+from .packages.filepaths import dir_path_exists, guess_socket_location
 
 import itertools
 
@@ -317,7 +318,7 @@ class MyCli(object):
         """
         cnf = read_config_files(files, list_values=False)
 
-        sections = ['client']
+        sections = ['client', 'mysqld']
         if self.login_path and self.login_path != 'client':
             sections.append(self.login_path)
 
@@ -382,10 +383,11 @@ class MyCli(object):
         # Fall back to config values only if user did not specify a value.
 
         database = database or cnf['database']
-        if port or host:
+        # Socket interface not supported for SSH connections
+        if port or host or ssh_host or ssh_port:
             socket = ''
         else:
-            socket = socket or cnf['socket']
+            socket = socket or cnf['socket'] or guess_socket_location()
         user = user or cnf['user'] or os.getenv('USER')
         host = host or cnf['host']
         port = port or cnf['port']
@@ -430,11 +432,11 @@ class MyCli(object):
                     raise e
 
         try:
-            if (socket is host is port is None) and not WIN:
-                # Try a sensible default socket first (simplifies auth)
-                # If we get a connection error, try tcp/ip localhost
+            if not WIN and socket:
+                socket_owner = getpwuid(os.stat(socket).st_uid).pw_name
+                self.echo(
+                    f"Connecting to socket {socket}, owned by user {socket_owner}")
                 try:
-                    socket = '/var/run/mysqld/mysqld.sock'
                     _connect()
                 except OperationalError as e:
                     # These are "Can't open socket" and 2x "Can't connect"

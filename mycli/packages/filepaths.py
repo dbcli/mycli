@@ -1,10 +1,20 @@
 import os
+import platform
+
+
+if os.name == "posix":
+    if platform.system() == "Darwin":
+        DEFAULT_SOCKET_DIRS = ("/tmp",)
+    else:
+        DEFAULT_SOCKET_DIRS = ("/var/run", "/var/lib")
+else:
+    DEFAULT_SOCKET_DIRS = ()
 
 
 def list_path(root_dir):
     """List directory if exists.
 
-    :param dir: str
+    :param root_dir: str
     :return: list
 
     """
@@ -81,3 +91,16 @@ def dir_path_exists(path):
 
     """
     return os.path.exists(os.path.dirname(path))
+
+
+def guess_socket_location():
+    """Try to guess the location of the default mysql socket file."""
+    socket_dirs = filter(os.path.exists, DEFAULT_SOCKET_DIRS)
+    for directory in socket_dirs:
+        for r, dirs, files in os.walk(directory, topdown=True):
+            for filename in files:
+                name, ext = os.path.splitext(filename)
+                if name.startswith("mysql") and ext in ('.socket', '.sock'):
+                    return os.path.join(r, filename)
+            dirs[:] = [d for d in dirs if d.startswith("mysql")]
+    return None

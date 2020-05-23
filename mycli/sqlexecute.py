@@ -191,7 +191,6 @@ class SQLExecute(object):
                     if not cur.nextset() or (not cur.rowcount and cur.description is None):
                         break
 
-
     def get_result(self, cursor):
         """Get the current result's data from the cursor."""
         title = headers = None
