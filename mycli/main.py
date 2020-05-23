@@ -383,7 +383,8 @@ class MyCli(object):
         # Fall back to config values only if user did not specify a value.
 
         database = database or cnf['database']
-        if port or host:
+        # Socket interface not supported for SSH connections
+        if port or host or ssh_host or ssh_port:
             socket = ''
         else:
             socket = socket or cnf['socket'] or guess_socket_location()
