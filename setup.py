@@ -69,7 +69,7 @@ class test(TestCommand):
 
     def run_tests(self):
         unit_test_errno = subprocess.call(
-            'pytest ' + self.pytest_args,
+            'pytest test/ ' + self.pytest_args,
             shell=True
         )
         cli_errno = subprocess.call(
