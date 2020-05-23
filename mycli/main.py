@@ -65,7 +65,7 @@ except ImportError:
 try:
     import paramiko
 except ImportError:
-    paramiko = False
+    from mycli.packages.paramiko_stub import paramiko
 
 # Query tuples are used for maintaining history
 Query = namedtuple('Query', ['query', 'successful', 'mutating'])
@@ -1091,22 +1091,7 @@ def cli(database, user, host, port, socket, password, dbname,
                 click.secho(alias)
         sys.exit(0)
     if list_ssh_config:
-        if not paramiko:
-            click.secho(
-                "This features requires paramiko. Please install paramiko and try again.",
-                err=True, fg='red'
-            )
-            exit(1)
-        try:
-            ssh_config = paramiko.config.SSHConfig().from_path(ssh_config_path)
-        except paramiko.ssh_exception.ConfigParseError as err:
-            click.secho('Invalid SSH configuration file. '
-                        'Please check the SSH configuration file.',
-                        err=True, fg='red')
-            exit(1)
-        except FileNotFoundError as e:
-            click.secho(str(e), err=True, fg='red')
-            exit(1)
+        ssh_config = read_ssh_config(ssh_config_path)
         for host in ssh_config.get_hostnames():
             if verbose:
                 host_config = ssh_config.lookup(host)
@@ -1166,38 +1151,16 @@ def cli(database, user, host, port, socket, password, dbname,
             port = uri.port
 
     if ssh_config_host:
-        if not paramiko:
-            click.secho(
-                "This features requires paramiko. Please install paramiko and try again.",
-                err=True, fg='red'
-            )
-            exit(1)
-        try:
-            ssh_config = paramiko.config.SSHConfig().from_path(ssh_config_path)
-        except paramiko.ssh_exception.ConfigParseError as err:
-            click.secho('Invalid SSH configuration file. '
-                        'Please check the SSH configuration file.',
-                        err=True, fg='red')
-            exit(1)
-        except FileNotFoundError as e:
-            click.secho(str(e), err=True, fg='red')
-            exit(1)
-        ssh_config = ssh_config.lookup(ssh_config_host)
+        ssh_config = read_ssh_config(
+            ssh_config_path
+        ).lookup(ssh_config_host)
         ssh_host = ssh_host if ssh_host else ssh_config.get('hostname')
         ssh_user = ssh_user if ssh_user else ssh_config.get('user')
         if ssh_config.get('port') and ssh_port == 22:
             # port has a default value, overwrite it if it's in the config
             ssh_port = int(ssh_config.get('port'))
         ssh_key_filename = ssh_key_filename if ssh_key_filename else ssh_config.get(
-            'identityfile', [''])[0]
-
-    if not paramiko and ssh_host:
-        click.secho(
-            "Cannot use SSH transport because paramiko isn't installed, "
-            "please install paramiko or don't use --ssh-host=",
-            err=True, fg="red"
-        )
-        exit(1)
+            'identityfile', [None])[0]
 
     ssh_key_filename = ssh_key_filename and os.path.expanduser(ssh_key_filename)
 
@@ -1308,6 +1271,7 @@ def is_mutating(status):
                     'replace', 'truncate', 'load', 'rename'])
     return status.split(None, 1)[0].lower() in mutating
 
+
 def is_select(status):
     """Returns true if the first word in status is 'select'."""
     if not status:
@@ -1330,6 +1294,27 @@ def edit_and_execute(event):
     to execute a query after editing, hence validate_and_handle=False."""
     buff = event.current_buffer
     buff.open_in_editor(validate_and_handle=False)
+
+
+def read_ssh_config(ssh_config_path):
+    ssh_config = paramiko.config.SSHConfig()
+    try:
+        with open(ssh_config_path) as f:
+            ssh_config.parse(f)
+    # Paramiko prior to version 2.7 raises Exception on parse errors.
+    # In 2.7 it has become paramiko.ssh_exception.SSHException,
+    # but let's catch everything for compatibility
+    except Exception as err:
+        click.secho(
+            f'Could not parse SSH configuration file {ssh_config_path}:\n{err} ',
+            err=True, fg='red'
+        )
+        sys.exit(1)
+    except FileNotFoundError as e:
+        click.secho(str(e), err=True, fg='red')
+        sys.exit(1)
+    else:
+        return ssh_config
 
 
 if __name__ == "__main__":
