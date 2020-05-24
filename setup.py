@@ -63,7 +63,7 @@ class test(TestCommand):
 
     def run_tests(self):
         unit_test_errno = subprocess.call(
-            'pytest ' + self.pytest_args,
+            'pytest test/ ' + self.pytest_args,
             shell=True
         )
         cli_errno = subprocess.call(
@@ -88,6 +88,7 @@ setup(
         'console_scripts': ['mycli = mycli.main:cli'],
     },
     cmdclass={'lint': lint, 'test': test},
+    python_requires=">=3.6",
     classifiers=[
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',

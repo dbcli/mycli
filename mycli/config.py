@@ -1,10 +1,13 @@
+import io
 import shutil
+from copy import copy
 from io import BytesIO, TextIOWrapper
 import logging
 import os
 from os.path import exists
 import struct
 import sys
+from typing import Union
 
 from configobj import ConfigObj, ConfigObjError
 import pyaes
@@ -57,13 +60,50 @@ def read_config_file(f, list_values=True):
     return config
 
 
+def get_included_configs(config_file: Union[str, io.TextIOWrapper]) -> list:
+    """Get a list of configuration files that are included into config_path
+    with !includedir directive.
+
+    "Normal" configs should be passed as file paths. The only exception
+    is .mylogin which is decoded into a stream. However, it never
+    contains include directives and so will be ignored by this
+    function.
+
+    """
+    if not isinstance(config_file, str) or not os.path.isfile(config_file):
+        return []
+    included_configs = []
+
+    try:
+        with open(config_file) as f:
+            include_directives = filter(
+                lambda s: s.startswith('!includedir'),
+                f
+            )
+            dirs = map(lambda s: s.strip().split()[-1], include_directives)
+            dirs = filter(os.path.isdir, dirs)
+            for dir in dirs:
+                for filename in os.listdir(dir):
+                    if filename.endswith('.cnf'):
+                        included_configs.append(os.path.join(dir, filename))
+    except (PermissionError, UnicodeDecodeError):
+        pass
+    return included_configs
+
+
 def read_config_files(files, list_values=True):
     """Read and merge a list of config files."""
 
     config = ConfigObj(list_values=list_values)
-
-    for _file in files:
+    _files = copy(files)
+    while _files:
+        _file = _files.pop(0)
         _config = read_config_file(_file, list_values=list_values)
+
+        # expand includes only if we were able to parse config
+        # (otherwise we'll just encounter the same errors again)
+        if config is not None:
+            _files = get_included_configs(_file) + _files
         if bool(_config) is True:
             config.merge(_config)
             config.filename = _config.filename

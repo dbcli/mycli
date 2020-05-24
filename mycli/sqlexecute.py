@@ -8,8 +8,8 @@ from pymysql.converters import (convert_mysql_timestamp, convert_datetime,
                                 decoders)
 try:
     import paramiko
-except:
-    paramiko = False
+except ImportError:
+    from mycli.packages.paramiko_stub import paramiko
 
 _logger = logging.getLogger(__name__)
 
@@ -118,7 +118,7 @@ class SQLExecute(object):
             defer_connect=defer_connect
         )
 
-        if ssh_host and paramiko:
+        if ssh_host:
             client = paramiko.SSHClient()
             client.load_system_host_keys()
             client.set_missing_host_key_policy(paramiko.WarningPolicy())
@@ -190,7 +190,6 @@ class SQLExecute(object):
                     # description).
                     if not cur.nextset() or (not cur.rowcount and cur.description is None):
                         break
-
 
     def get_result(self, cursor):
         """Get the current result's data from the cursor."""
