@@ -1,4 +1,6 @@
 import pytest
+
+from mycli.packages.ssh_client import create_ssh_client
 from .utils import (HOST, USER, PASSWORD, PORT, CHARSET, create_db,
                     db_connection, SSH_USER, SSH_HOST, SSH_PORT)
 import mycli.sqlexecute
@@ -21,9 +23,13 @@ def cursor(connection):
 
 @pytest.fixture
 def executor(connection):
+    if SSH_HOST:
+        ssh_client = create_ssh_client(SSH_HOST, SSH_PORT, SSH_USER)
+    else:
+        ssh_client = None
+
     return mycli.sqlexecute.SQLExecute(
         database='_test_db', user=USER,
         host=HOST, password=PASSWORD, port=PORT, socket=None, charset=CHARSET,
-        local_infile=False, ssl=None, ssh_user=SSH_USER, ssh_host=SSH_HOST,
-        ssh_port=SSH_PORT, ssh_password=None, ssh_key_filename=None
+        local_infile=False, ssl=None, ssh_client=ssh_client
     )

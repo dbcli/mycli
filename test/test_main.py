@@ -434,6 +434,7 @@ def test_ssh_config(monkeypatch):
             self.logger = Logger()
             self.destructive_warning = False
             self.formatter = Formatter()
+            self._ssh_client = None
 
         def connect(self, **args):
             MockMyCli.connect_args = args
@@ -441,8 +442,24 @@ def test_ssh_config(monkeypatch):
         def run_query(self, query, new_line=True):
             pass
 
+        @property
+        def ssh_client(self):
+            pass
+
+        @ssh_client.setter
+        def ssh_client(self, client):
+            MockMyCli._ssh_client = client
+
+    def mock_create_ssh_client(*args):
+        return namedtuple(
+            'SSHConf',
+            ('host', 'port', 'user', 'password', 'key_filename')
+        )(*args)
+
     import mycli.main
     monkeypatch.setattr(mycli.main, 'MyCli', MockMyCli)
+    monkeypatch.setattr(mycli.main, 'create_ssh_client',
+                        mock_create_ssh_client)
     runner = CliRunner()
 
     # Setup temporary configuration
@@ -466,10 +483,10 @@ def test_ssh_config(monkeypatch):
         assert result.exit_code == 0, result.output + \
             " " + str(result.exception)
         assert \
-            MockMyCli.connect_args["ssh_user"] == "joe" and \
-            MockMyCli.connect_args["ssh_host"] == "test.example.com" and \
-            MockMyCli.connect_args["ssh_port"] == 22222 and \
-            MockMyCli.connect_args["ssh_key_filename"] == os.getenv(
+            MockMyCli._ssh_client.user == "joe" and \
+            MockMyCli._ssh_client.host == "test.example.com" and \
+            MockMyCli._ssh_client.port == 22222 and \
+            MockMyCli._ssh_client.key_filename == os.getenv(
                 "HOME") + "/.ssh/gateway"
 
         # When a user supplies a ssh config host as argument to mycli,
@@ -488,7 +505,7 @@ def test_ssh_config(monkeypatch):
         assert result.exit_code == 0, result.output + \
             " " + str(result.exception)
         assert \
-            MockMyCli.connect_args["ssh_user"] == "arg_user" and \
-            MockMyCli.connect_args["ssh_host"] == "arg_host" and \
-            MockMyCli.connect_args["ssh_port"] == 3 and \
-            MockMyCli.connect_args["ssh_key_filename"] == "/path/to/key"
+            MockMyCli._ssh_client.user == "arg_user" and \
+            MockMyCli._ssh_client.host == "arg_host" and \
+            MockMyCli._ssh_client.port == 3 and \
+            MockMyCli._ssh_client.key_filename == "/path/to/key"

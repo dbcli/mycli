@@ -6,10 +6,7 @@ from pymysql.constants import FIELD_TYPE
 from pymysql.converters import (convert_mysql_timestamp, convert_datetime,
                                 convert_timedelta, convert_date, conversions,
                                 decoders)
-try:
-    import paramiko
-except ImportError:
-    from mycli.packages.paramiko_stub import paramiko
+
 
 _logger = logging.getLogger(__name__)
 
@@ -17,6 +14,7 @@ FIELD_TYPES = decoders.copy()
 FIELD_TYPES.update({
     FIELD_TYPE.NULL: type(None)
 })
+
 
 class SQLExecute(object):
 
@@ -41,8 +39,8 @@ class SQLExecute(object):
                                     order by table_name,ordinal_position'''
 
     def __init__(self, database, user, password, host, port, socket, charset,
-                 local_infile, ssl, ssh_user, ssh_host, ssh_port, ssh_password,
-                 ssh_key_filename):
+                 local_infile, ssl,
+                 ssh_client=None):
         self.dbname = database
         self.user = user
         self.password = password
@@ -54,17 +52,12 @@ class SQLExecute(object):
         self.ssl = ssl
         self._server_type = None
         self.connection_id = None
-        self.ssh_user = ssh_user
-        self.ssh_host = ssh_host
-        self.ssh_port = ssh_port
-        self.ssh_password = ssh_password
-        self.ssh_key_filename = ssh_key_filename
+        self.ssh_client = ssh_client
+
         self.connect()
 
     def connect(self, database=None, user=None, password=None, host=None,
-                port=None, socket=None, charset=None, local_infile=None,
-                ssl=None, ssh_host=None, ssh_port=None, ssh_user=None,
-                ssh_password=None, ssh_key_filename=None):
+                port=None, socket=None, charset=None, local_infile=None, ssl=None):
         db = (database or self.dbname)
         user = (user or self.user)
         password = (password or self.password)
@@ -74,11 +67,6 @@ class SQLExecute(object):
         charset = (charset or self.charset)
         local_infile = (local_infile or self.local_infile)
         ssl = (ssl or self.ssl)
-        ssh_user = (ssh_user or self.ssh_user)
-        ssh_host = (ssh_host or self.ssh_host)
-        ssh_port = (ssh_port or self.ssh_port)
-        ssh_password = (ssh_password or self.ssh_password)
-        ssh_key_filename = (ssh_key_filename or self.ssh_key_filename)
         _logger.debug(
             'Connection DB Params: \n'
             '\tdatabase: %r'
@@ -88,14 +76,8 @@ class SQLExecute(object):
             '\tsocket: %r'
             '\tcharset: %r'
             '\tlocal_infile: %r'
-            '\tssl: %r'
-            '\tssh_user: %r'
-            '\tssh_host: %r'
-            '\tssh_port: %r'
-            '\tssh_password: %r'
-            '\tssh_key_filename: %r',
+            '\tssl: %r',
             db, user, host, port, socket, charset, local_infile, ssl,
-            ssh_user, ssh_host, ssh_port, ssh_password, ssh_key_filename
         )
         conv = conversions.copy()
         conv.update({
@@ -107,26 +89,16 @@ class SQLExecute(object):
 
         defer_connect = False
 
-        if ssh_host:
-            defer_connect = True
-
         conn = pymysql.connect(
             database=db, user=user, password=password, host=host, port=port,
             unix_socket=socket, use_unicode=True, charset=charset,
             autocommit=True, client_flag=pymysql.constants.CLIENT.INTERACTIVE,
             local_infile=local_infile, conv=conv, ssl=ssl, program_name="mycli",
-            defer_connect=defer_connect
+            defer_connect=self.ssh_client is not None
         )
 
-        if ssh_host:
-            client = paramiko.SSHClient()
-            client.load_system_host_keys()
-            client.set_missing_host_key_policy(paramiko.WarningPolicy())
-            client.connect(
-                ssh_host, ssh_port, ssh_user, ssh_password,
-                key_filename=ssh_key_filename
-            )
-            chan = client.get_transport().open_channel(
+        if self.ssh_client:
+            chan = self.ssh_client.get_transport().open_channel(
                 'direct-tcpip',
                 (host, port),
                 ('0.0.0.0', 0),

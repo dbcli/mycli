@@ -3,9 +3,10 @@ TBD
 
 Features:
 ---------
-* Add an option `--ssh-config-host` to read ssh configuration from OpenSSH configuration file.
-* Add an option `--list-ssh-config` to list ssh configurations.
-* Add an option `--ssh-config-path` to choose ssh configuration path.
+* Add an option `--ssh-config-host` to read ssh configuration from OpenSSH configuration file (Thanks: [Nathan Huang]).
+* Add an option `--list-ssh-config` to list ssh configurations (Thanks: [Nathan Huang]).
+* Add an option `--ssh-config-path` to choose ssh configuration path (Thanks: [Nathan Huang]).
+* Reuse the same SSH connection in both main thread and completion thread (Thanks: [Georgy Frolov]).
 
 
 1.21.1
@@ -757,3 +758,4 @@ Bug Fixes:
 [François Pietka]: https://github.com/fpietka
 [Frederic Aoustin]: https://github.com/fraoustin
 [Georgy Frolov]: https://github.com/pasenor
+[Nathan Huang]: https://github.com/hxueh

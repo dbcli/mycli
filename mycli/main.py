@@ -31,10 +31,11 @@ from prompt_toolkit.lexers import PygmentsLexer
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 
+from mycli.packages.ssh_client import create_ssh_client
 from .packages.special.main import NO_QUERY
 from .packages.prompt_utils import confirm, confirm_destructive_query
 from .packages.tabular_output import sql_format
-from .packages import special
+from .packages import special, ssh_client
 from .packages.special.favoritequeries import FavoriteQueries
 from .sqlcompleter import SQLCompleter
 from .clitoolbar import create_toolbar_tokens_func
@@ -62,11 +63,6 @@ except ImportError:
     from urllib.parse import urlparse
     from urllib.parse import unquote
 
-
-try:
-    import paramiko
-except ImportError:
-    from mycli.packages.paramiko_stub import paramiko
 
 # Query tuples are used for maintaining history
 Query = namedtuple('Query', ['query', 'successful', 'mutating'])
@@ -197,6 +193,8 @@ class MyCli(object):
                 print('Error: Unable to read login path file.')
 
         self.prompt_app = None
+
+        self.ssh_client = None
 
     def register_special_commands(self):
         special.register_special_command(self.change_db, 'use',
@@ -358,9 +356,7 @@ class MyCli(object):
         return merged
 
     def connect(self, database='', user='', passwd='', host='', port='',
-                socket='', charset='', local_infile='', ssl='',
-                ssh_user='', ssh_host='', ssh_port='',
-                ssh_password='', ssh_key_filename=''):
+                socket='', charset='', local_infile='', ssl=None):
 
         cnf = {'database': None,
                'user': None,
@@ -384,7 +380,7 @@ class MyCli(object):
 
         database = database or cnf['database']
         # Socket interface not supported for SSH connections
-        if port or host or ssh_host or ssh_port:
+        if port or host or self.ssh_client:
             socket = ''
         else:
             socket = socket or cnf['socket'] or guess_socket_location()
@@ -416,8 +412,7 @@ class MyCli(object):
             try:
                 self.sqlexecute = SQLExecute(
                     database, user, passwd, host, port, socket, charset,
-                    local_infile, ssl, ssh_user, ssh_host, ssh_port,
-                    ssh_password, ssh_key_filename
+                    local_infile, ssl, ssh_client=self.ssh_client
                 )
             except OperationalError as e:
                 if ('Access denied for user' in e.args[1]):
@@ -425,8 +420,7 @@ class MyCli(object):
                                               show_default=False, type=str, err=True)
                     self.sqlexecute = SQLExecute(
                         database, user, new_passwd, host, port, socket,
-                        charset, local_infile, ssl, ssh_user, ssh_host,
-                        ssh_port, ssh_password, ssh_key_filename
+                        charset, local_infile, ssl, ssh_client=self.ssh_client
                     )
                 else:
                     raise e
@@ -1092,16 +1086,17 @@ def cli(database, user, host, port, socket, password, dbname,
             else:
                 click.secho(alias)
         sys.exit(0)
+
     if list_ssh_config:
-        ssh_config = read_ssh_config(ssh_config_path)
-        for host in ssh_config.get_hostnames():
+        hosts = ssh_client.get_config_hosts(ssh_config_path)
+        for host, hostname in hosts.items():
             if verbose:
-                host_config = ssh_config.lookup(host)
                 click.secho("{} : {}".format(
-                    host, host_config.get('hostname')))
+                    host, hostname))
             else:
                 click.secho(host)
         sys.exit(0)
+
     # Choose which ever one has a valid value.
     database = dbname or database
 
@@ -1153,7 +1148,7 @@ def cli(database, user, host, port, socket, password, dbname,
             port = uri.port
 
     if ssh_config_host:
-        ssh_config = read_ssh_config(
+        ssh_config = ssh_client.read_config_file(
             ssh_config_path
         ).lookup(ssh_config_host)
         ssh_host = ssh_host if ssh_host else ssh_config.get('hostname')
@@ -1164,7 +1159,10 @@ def cli(database, user, host, port, socket, password, dbname,
         ssh_key_filename = ssh_key_filename if ssh_key_filename else ssh_config.get(
             'identityfile', [None])[0]
 
-    ssh_key_filename = ssh_key_filename and os.path.expanduser(ssh_key_filename)
+    if ssh_host:
+        mycli.ssh_client = create_ssh_client(
+            ssh_host, ssh_port, ssh_user, ssh_password, ssh_key_filename
+        )
 
     mycli.connect(
         database=database,
@@ -1175,11 +1173,6 @@ def cli(database, user, host, port, socket, password, dbname,
         socket=socket,
         local_infile=local_infile,
         ssl=ssl,
-        ssh_user=ssh_user,
-        ssh_host=ssh_host,
-        ssh_port=ssh_port,
-        ssh_password=ssh_password,
-        ssh_key_filename=ssh_key_filename
     )
 
     mycli.logger.debug('Launch Params: \n'
@@ -1296,27 +1289,6 @@ def edit_and_execute(event):
     to execute a query after editing, hence validate_and_handle=False."""
     buff = event.current_buffer
     buff.open_in_editor(validate_and_handle=False)
-
-
-def read_ssh_config(ssh_config_path):
-    ssh_config = paramiko.config.SSHConfig()
-    try:
-        with open(ssh_config_path) as f:
-            ssh_config.parse(f)
-    # Paramiko prior to version 2.7 raises Exception on parse errors.
-    # In 2.7 it has become paramiko.ssh_exception.SSHException,
-    # but let's catch everything for compatibility
-    except Exception as err:
-        click.secho(
-            f'Could not parse SSH configuration file {ssh_config_path}:\n{err} ',
-            err=True, fg='red'
-        )
-        sys.exit(1)
-    except FileNotFoundError as e:
-        click.secho(str(e), err=True, fg='red')
-        sys.exit(1)
-    else:
-        return ssh_config
 
 
 if __name__ == "__main__":
