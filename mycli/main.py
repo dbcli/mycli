@@ -1088,7 +1088,12 @@ def cli(database, user, host, port, socket, password, dbname,
         sys.exit(0)
 
     if list_ssh_config:
-        hosts = ssh_client.get_config_hosts(ssh_config_path)
+        try:
+            hosts = ssh_client.get_config_hosts(ssh_config_path)
+        except ssh_client.SSHException as e:
+            click.secho(str(e), err=True, fg='red')
+            sys.exit(1)
+
         for host, hostname in hosts.items():
             if verbose:
                 click.secho("{} : {}".format(
@@ -1148,9 +1153,14 @@ def cli(database, user, host, port, socket, password, dbname,
             port = uri.port
 
     if ssh_config_host:
-        ssh_config = ssh_client.read_config_file(
-            ssh_config_path
-        ).lookup(ssh_config_host)
+        try:
+            ssh_config = ssh_client.read_config_file(
+                ssh_config_path
+            ).lookup(ssh_config_host)
+        except ssh_client.SSHException as e:
+            click.secho(str(e), err=True, fg='red')
+            sys.exit(1)
+
         ssh_host = ssh_host if ssh_host else ssh_config.get('hostname')
         ssh_user = ssh_user if ssh_user else ssh_config.get('user')
         if ssh_config.get('port') and ssh_port == 22:
