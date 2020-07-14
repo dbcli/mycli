@@ -393,7 +393,7 @@ class MyCli(object):
         port = port or cnf['port']
         ssl = ssl or {}
 
-        passwd = passwd or cnf['password']
+        passwd = passwd if isinstance(passwd, str) else cnf['password']
         charset = charset or cnf['default-character-set'] or 'utf8'
 
         # Favor whichever local_infile option is set.
