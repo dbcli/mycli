@@ -3,7 +3,7 @@ import pymysql
 import sqlparse
 from .packages import special
 from pymysql.constants import FIELD_TYPE
-from pymysql.converters import (convert_mysql_timestamp, convert_datetime,
+from pymysql.converters import (convert_datetime,
                                 convert_timedelta, convert_date, conversions,
                                 decoders)
 try:
@@ -99,7 +99,7 @@ class SQLExecute(object):
         )
         conv = conversions.copy()
         conv.update({
-            FIELD_TYPE.TIMESTAMP: lambda obj: (convert_mysql_timestamp(obj) or obj),
+            FIELD_TYPE.TIMESTAMP: lambda obj: (convert_datetime(obj) or obj),
             FIELD_TYPE.DATETIME: lambda obj: (convert_datetime(obj) or obj),
             FIELD_TYPE.TIME: lambda obj: (convert_timedelta(obj) or obj),
             FIELD_TYPE.DATE: lambda obj: (convert_date(obj) or obj),
