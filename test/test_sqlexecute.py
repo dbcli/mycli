@@ -82,7 +82,7 @@ def test_invalid_syntax(executor):
 
 @dbtest
 def test_invalid_column_name(executor):
-    with pytest.raises(pymysql.InternalError) as excinfo:
+    with pytest.raises(pymysql.err.OperationalError) as excinfo:
         run(executor, 'select invalid command')
     assert "Unknown column 'invalid' in 'field list'" in str(excinfo.value)
 

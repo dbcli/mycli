@@ -1,6 +1,10 @@
 TBD
 ===
 
+Bug Fixes:
+----------
+* Fix the breaking change introduced in PyMySQL 0.10.0. (Thanks: [Amjith]).
+
 Features:
 ---------
 * Add an option `--ssh-config-host` to read ssh configuration from OpenSSH configuration file.
