@@ -3,6 +3,13 @@ TBD
 
 Bug Fixes:
 ----------
+*  Make the `pwd` module optional. 
+
+1.22.1
+======
+
+Bug Fixes:
+----------
 * Fix the breaking change introduced in PyMySQL 0.10.0. (Thanks: [Amjith]).
 
 Features:
