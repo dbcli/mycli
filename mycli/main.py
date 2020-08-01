@@ -6,7 +6,10 @@ import threading
 import re
 import fileinput
 from collections import namedtuple
-from pwd import getpwuid
+try:
+    from pwd import getpwuid
+except ImportError:
+    pass
 from time import time
 from datetime import datetime
 from random import choice
