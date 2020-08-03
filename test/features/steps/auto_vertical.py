@@ -41,5 +41,5 @@ def step_see_large_results(context):
                 '***************************\r\n' +
                 '{}\r\n'.format('\r\n'.join(rows) + '\r\n'))
 
-    wrappers.expect_pager(context, expected, timeout=5)
+    wrappers.expect_pager(context, expected, timeout=10)
     wrappers.expect_exact(context, '1 row in set', timeout=2)

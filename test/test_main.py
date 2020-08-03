@@ -492,3 +492,37 @@ def test_ssh_config(monkeypatch):
             MockMyCli.connect_args["ssh_host"] == "arg_host" and \
             MockMyCli.connect_args["ssh_port"] == 3 and \
             MockMyCli.connect_args["ssh_key_filename"] == "/path/to/key"
+
+
+@dbtest
+def test_init_command_arg(executor):
+    init_command = "set sql_select_limit=1000"
+    sql = 'show variables like "sql_select_limit";'
+    runner = CliRunner()
+    result = runner.invoke(
+        cli, args=CLI_ARGS + ["--init-command", init_command], input=sql
+    )
+
+    expected = "sql_select_limit\t1000\n"
+    assert result.exit_code == 0
+    assert expected in result.output
+
+
+@dbtest
+def test_init_command_multiple_arg(executor):
+    init_command = 'set sql_select_limit=2000; set max_join_size=20000'
+    sql = (
+        'show variables like "sql_select_limit";\n'
+        'show variables like "max_join_size"'
+    )
+    runner = CliRunner()
+    result = runner.invoke(
+        cli, args=CLI_ARGS + ['--init-command', init_command], input=sql
+    )
+
+    expected_sql_select_limit = 'sql_select_limit\t2000\n'
+    expected_max_join_size = 'max_join_size\t20000\n'
+
+    assert result.exit_code == 0
+    assert expected_sql_select_limit in result.output
+    assert expected_max_join_size in result.output

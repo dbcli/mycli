@@ -3,6 +3,26 @@ TBD
 
 Features:
 ---------
+
+* Add an option `--init-command` to execute SQL after connecting (Thanks: [KITAGAWA Yasutaka]).
+
+1.22.2
+======
+
+Bug Fixes:
+----------
+
+*  Make the `pwd` module optional. 
+
+1.22.1
+======
+
+Bug Fixes:
+----------
+* Fix the breaking change introduced in PyMySQL 0.10.0. (Thanks: [Amjith]).
+
+Features:
+---------
 * Add an option `--ssh-config-host` to read ssh configuration from OpenSSH configuration file.
 * Add an option `--list-ssh-config` to list ssh configurations.
 * Add an option `--ssh-config-path` to choose ssh configuration path.
@@ -22,6 +42,7 @@ Bug Fixes:
 
 * Fix broken auto-completion for favorite queries (Thanks: [Amjith]).
 * Fix undefined variable exception when running with --no-warn (Thanks: [Georgy Frolov])
+* Support setting color for null value (Thanks: [laixintao])
 
 1.21.0
 ======
@@ -763,3 +784,4 @@ Bug Fixes:
 [Frederic Aoustin]: https://github.com/fraoustin
 [Georgy Frolov]: https://github.com/pasenor
 [Zach DeCook]: https://zachdecook.com
+[laixintao]: https://github.com/laixintao
