@@ -96,6 +96,7 @@ $ sudo apt-get install mycli # Only on debian or ubuntu
       --local-infile BOOLEAN        Enable/disable LOAD DATA LOCAL INFILE.
       --login-path TEXT             Read this path from the login file.
       -e, --execute TEXT            Execute command and quit.
+      --init-command TEXT           SQL statement to execute after connecting.
       --help                        Show this message and exit.
 
 Features

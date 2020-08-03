@@ -16,7 +16,7 @@ from pymysql.constants import FIELD_TYPE
 @pytest.fixture
 def mycli():
     cli = MyCli()
-    cli.connect(None, USER, PASSWORD, HOST, PORT, None)
+    cli.connect(None, USER, PASSWORD, HOST, PORT, None, init_command=None)
     return cli
 
 
