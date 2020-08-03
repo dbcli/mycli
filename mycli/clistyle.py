@@ -34,6 +34,7 @@ TOKEN_TO_PROMPT_STYLE = {
     Token.Output.Header: 'output.header',
     Token.Output.OddRow: 'output.odd-row',
     Token.Output.EvenRow: 'output.even-row',
+    Token.Output.Null: 'output.null',
     Token.Prompt: 'prompt',
     Token.Continuation: 'continuation',
 }
