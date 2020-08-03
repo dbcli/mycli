@@ -1,8 +1,17 @@
+TBD
+===
+
+Features:
+---------
+
+* Add an option `--init-command` to execute SQL after connecting (Thanks: [KITAGAWA Yasutaka]).
+
 1.22.2
 ======
 
 Bug Fixes:
 ----------
+
 *  Make the `pwd` module optional. 
 
 1.22.1
@@ -17,7 +26,6 @@ Features:
 * Add an option `--ssh-config-host` to read ssh configuration from OpenSSH configuration file.
 * Add an option `--list-ssh-config` to list ssh configurations.
 * Add an option `--ssh-config-path` to choose ssh configuration path.
-* Add an option `--init-command` to execute SQL after connecting (Thanks: [KITAGAWA Yasutaka]).
 
 
 1.21.1
