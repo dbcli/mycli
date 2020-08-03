@@ -27,6 +27,11 @@ Features:
 * Add an option `--list-ssh-config` to list ssh configurations.
 * Add an option `--ssh-config-path` to choose ssh configuration path.
 
+Bug Fixes:
+----------
+
+* Fix specifying empty password with `--password=''` when config file has a password set (Thanks: [Zach DeCook]).
+
 
 1.21.1
 ======
@@ -778,4 +783,5 @@ Bug Fixes:
 [François Pietka]: https://github.com/fpietka
 [Frederic Aoustin]: https://github.com/fraoustin
 [Georgy Frolov]: https://github.com/pasenor
+[Zach DeCook]: https://zachdecook.com
 [laixintao]: https://github.com/laixintao
