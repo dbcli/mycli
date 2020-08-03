@@ -3,7 +3,7 @@ import pymysql
 import sqlparse
 from .packages import special
 from pymysql.constants import FIELD_TYPE
-from pymysql.converters import (convert_mysql_timestamp, convert_datetime,
+from pymysql.converters import (convert_datetime,
                                 convert_timedelta, convert_date, conversions,
                                 decoders)
 
@@ -39,7 +39,7 @@ class SQLExecute(object):
                                     order by table_name,ordinal_position'''
 
     def __init__(self, database, user, password, host, port, socket, charset,
-                 local_infile, ssl,
+                 local_infile, ssl, init_command=None,
                  ssh_client=None):
         self.dbname = database
         self.user = user
@@ -52,12 +52,14 @@ class SQLExecute(object):
         self.ssl = ssl
         self._server_type = None
         self.connection_id = None
+        self.init_command = init_command
         self.ssh_client = ssh_client
 
         self.connect()
 
     def connect(self, database=None, user=None, password=None, host=None,
-                port=None, socket=None, charset=None, local_infile=None, ssl=None):
+                port=None, socket=None, charset=None, local_infile=None, ssl=None,
+                ssh_client=None, init_command=None):
         db = (database or self.dbname)
         user = (user or self.user)
         password = (password or self.password)
@@ -67,6 +69,7 @@ class SQLExecute(object):
         charset = (charset or self.charset)
         local_infile = (local_infile or self.local_infile)
         ssl = (ssl or self.ssl)
+        init_command = (init_command or self.init_command)
         _logger.debug(
             'Connection DB Params: \n'
             '\tdatabase: %r'
@@ -77,11 +80,13 @@ class SQLExecute(object):
             '\tcharset: %r'
             '\tlocal_infile: %r'
             '\tssl: %r',
+            '\tinit_command: %r',
             db, user, host, port, socket, charset, local_infile, ssl,
+            init_command
         )
         conv = conversions.copy()
         conv.update({
-            FIELD_TYPE.TIMESTAMP: lambda obj: (convert_mysql_timestamp(obj) or obj),
+            FIELD_TYPE.TIMESTAMP: lambda obj: (convert_datetime(obj) or obj),
             FIELD_TYPE.DATETIME: lambda obj: (convert_datetime(obj) or obj),
             FIELD_TYPE.TIME: lambda obj: (convert_timedelta(obj) or obj),
             FIELD_TYPE.DATE: lambda obj: (convert_date(obj) or obj),
@@ -89,12 +94,17 @@ class SQLExecute(object):
 
         defer_connect = False
 
+        client_flag = pymysql.constants.CLIENT.INTERACTIVE
+        if init_command and len(list(special.split_queries(init_command))) > 1:
+            client_flag |= pymysql.constants.CLIENT.MULTI_STATEMENTS
+
         conn = pymysql.connect(
             database=db, user=user, password=password, host=host, port=port,
             unix_socket=socket, use_unicode=True, charset=charset,
-            autocommit=True, client_flag=pymysql.constants.CLIENT.INTERACTIVE,
+            autocommit=True, client_flag=client_flag,
             local_infile=local_infile, conv=conv, ssl=ssl, program_name="mycli",
-            defer_connect=self.ssh_client is not None
+            defer_connect=self.ssh_client is not None,
+            init_command=init_command
         )
 
         if self.ssh_client:
@@ -118,6 +128,7 @@ class SQLExecute(object):
         self.socket = socket
         self.charset = charset
         self.ssl = ssl
+        self.init_command = init_command
         # retrieve connection id
         self.reset_connection_id()
 

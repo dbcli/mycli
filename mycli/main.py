@@ -6,7 +6,10 @@ import threading
 import re
 import fileinput
 from collections import namedtuple
-from pwd import getpwuid
+try:
+    from pwd import getpwuid
+except ImportError:
+    pass
 from time import time
 from datetime import datetime
 from random import choice
@@ -91,7 +94,7 @@ class MyCli(object):
         xdg_config_home = "~/.config"
     system_config_files = [
         '/etc/myclirc',
-        os.path.join(xdg_config_home, "mycli", "myclirc")
+        os.path.join(os.path.expanduser(xdg_config_home), "mycli", "myclirc")
     ]
 
     default_config_file = os.path.join(PACKAGE_ROOT, 'myclirc')
@@ -356,7 +359,7 @@ class MyCli(object):
         return merged
 
     def connect(self, database='', user='', passwd='', host='', port='',
-                socket='', charset='', local_infile='', ssl=None):
+                socket='', charset='', local_infile='', ssl=None, init_command=''):
 
         cnf = {'database': None,
                'user': None,
@@ -389,7 +392,7 @@ class MyCli(object):
         port = port or cnf['port']
         ssl = ssl or {}
 
-        passwd = passwd or cnf['password']
+        passwd = passwd if isinstance(passwd, str) else cnf['password']
         charset = charset or cnf['default-character-set'] or 'utf8'
 
         # Favor whichever local_infile option is set.
@@ -412,7 +415,7 @@ class MyCli(object):
             try:
                 self.sqlexecute = SQLExecute(
                     database, user, passwd, host, port, socket, charset,
-                    local_infile, ssl, ssh_client=self.ssh_client
+                    local_infile, ssl, init_command, ssh_client=self.ssh_client
                 )
             except OperationalError as e:
                 if ('Access denied for user' in e.args[1]):
@@ -420,7 +423,8 @@ class MyCli(object):
                                               show_default=False, type=str, err=True)
                     self.sqlexecute = SQLExecute(
                         database, user, new_passwd, host, port, socket,
-                        charset, local_infile, ssl, ssh_client=self.ssh_client
+                        charset, local_infile, ssl, init_command,
+                        ssh_client=self.ssh_client
                     )
                 else:
                     raise e
@@ -1042,6 +1046,8 @@ class MyCli(object):
               help='Read this path from the login file.')
 @click.option('-e', '--execute',  type=str,
               help='Execute command and quit.')
+@click.option('--init-command', type=str,
+              help='SQL statement to execute after connecting.')
 @click.argument('database', default='', nargs=1)
 def cli(database, user, host, port, socket, password, dbname,
         version, verbose, prompt, logfile, defaults_group_suffix,
@@ -1049,7 +1055,8 @@ def cli(database, user, host, port, socket, password, dbname,
         ssl_ca, ssl_capath, ssl_cert, ssl_key, ssl_cipher,
         ssl_verify_server_cert, table, csv, warn, execute, myclirc, dsn,
         list_dsn, ssh_user, ssh_host, ssh_port, ssh_password,
-        ssh_key_filename, list_ssh_config, ssh_config_path, ssh_config_host):
+        ssh_key_filename, list_ssh_config, ssh_config_path, ssh_config_host,
+        init_command):
     """A MySQL terminal client with auto-completion and syntax highlighting.
 
     \b
@@ -1183,6 +1190,7 @@ def cli(database, user, host, port, socket, password, dbname,
         socket=socket,
         local_infile=local_infile,
         ssl=ssl,
+        init_command=init_command,
     )
 
     mycli.logger.debug('Launch Params: \n'

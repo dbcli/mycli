@@ -51,7 +51,7 @@ class CompletionRefresher(object):
         e = sqlexecute
         executor = SQLExecute(e.dbname, e.user, e.password, e.host, e.port,
                               e.socket, e.charset, e.local_infile, e.ssl,
-                              e.ssh_client)
+                              ssh_client=e.ssh_client)
 
         # If callbacks is a single function then push it into a list.
         if callable(callbacks):
