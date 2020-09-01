@@ -6,6 +6,14 @@ Features:
 
 * Add an option `--init-command` to execute SQL after connecting (Thanks: [KITAGAWA Yasutaka]).
 
+1.22.3
+======
+
+Features:
+---------
+
+* Add support to colored prompt
+
 1.22.2
 ======
 
