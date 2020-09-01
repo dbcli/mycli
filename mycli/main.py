@@ -54,6 +54,8 @@ from .__init__ import __version__
 from .compat import WIN
 from .packages.filepaths import dir_path_exists, guess_socket_location
 
+from .colored_prompt import ColoredPrompt
+
 import itertools
 
 click.disable_unicode_literals_warning = True
@@ -545,10 +547,15 @@ class MyCli(object):
             print('Thanks to the contributor -', thanks_picker([author_file, sponsor_file]))
 
         def get_message():
-            prompt = self.get_prompt(self.prompt_format)
+            cp = ColoredPrompt(self)
+            prompt = cp.get_prompt(self.prompt_format)
             if self.prompt_format == self.default_prompt and len(prompt) > self.max_len_prompt:
-                prompt = self.get_prompt('\\d> ')
-            return [('class:prompt', prompt)]
+                prompt = cp.get_prompt('\\d> ')
+
+            try:
+                return cp.get_prompt(self.prompt_format, colored=True)
+            except Exception:
+                return [('class:prompt', prompt)]
 
         def get_continuation(width, *_):
             if self.multiline_continuation_char:

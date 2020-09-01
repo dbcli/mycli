@@ -81,6 +81,8 @@ def style_factory(name, cli_style):
             else:
                 # we don't want to support tokens anymore
                 logger.error('Unhandled style / class name: %s', token)
+        elif token.startswith('prompt.'):
+            prompt_styles.append((token[7:], cli_style[token]))
         else:
             # treat as prompt style name (2.0). See default style names here:
             # https://github.com/jonathanslenders/python-prompt-toolkit/blob/master/prompt_toolkit/styles/defaults.py
@@ -105,6 +107,8 @@ def style_factory_output(name, cli_style):
             token_type, style_value = parse_pygments_style(
                 token, style, cli_style)
             style.update({token_type: style_value})
+        elif token.startswith('prompt.'):
+            pass
         elif token in PROMPT_STYLE_TO_TOKEN:
             token_type = PROMPT_STYLE_TO_TOKEN[token]
             style.update({token_type: cli_style[token]})
