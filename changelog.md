@@ -5,6 +5,7 @@ Features:
 ---------
 
 * Add an option `--init-command` to execute SQL after connecting (Thanks: [KITAGAWA Yasutaka]).
+* Add `-g` shortcut to option `--login-path`.
 
 1.22.2
 ======
@@ -12,7 +13,7 @@ Features:
 Bug Fixes:
 ----------
 
-*  Make the `pwd` module optional. 
+*  Make the `pwd` module optional.
 
 1.22.1
 ======
