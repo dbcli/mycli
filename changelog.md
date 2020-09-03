@@ -13,6 +13,7 @@ Bug Fixes:
 ----------
 
 *  Make the `pwd` module optional. 
+*  Fixed iPython magic
 
 1.22.1
 ======
