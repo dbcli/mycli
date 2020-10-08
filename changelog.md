@@ -6,13 +6,17 @@ Features:
 
 * Add an option `--init-command` to execute SQL after connecting (Thanks: [KITAGAWA Yasutaka]).
 
+Bug Fixes:
+----------
+* Fixed compatibility with sqlparse 0.4 (Thanks: [mtorromeo]).
+
 1.22.2
 ======
 
 Bug Fixes:
 ----------
 
-*  Make the `pwd` module optional. 
+*  Make the `pwd` module optional.
 
 1.22.1
 ======
@@ -785,3 +789,4 @@ Bug Fixes:
 [Georgy Frolov]: https://github.com/pasenor
 [Zach DeCook]: https://zachdecook.com
 [laixintao]: https://github.com/laixintao
+[mtorromeo]: https://github.com/mtorromeo
