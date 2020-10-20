@@ -88,7 +88,7 @@ class MyCli(object):
         '/etc/my.cnf',
         '/etc/mysql/my.cnf',
         '/usr/local/etc/my.cnf',
-        '~/.my.cnf'
+        os.path.expanduser('~/.my.cnf'),
     ]
 
     # check XDG_CONFIG_HOME exists and not an empty string
