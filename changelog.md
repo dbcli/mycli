@@ -1,6 +1,10 @@
 TBD
 ===
 
+Bug Fixes:
+----------
+* Fix config file include logic
+
 Features:
 ---------
 
