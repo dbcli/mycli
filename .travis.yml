@@ -12,7 +12,7 @@ matrix:
 
 install:
   - pip install -r requirements-dev.txt
-  - pip install -e .
+  - pip install --no-cache-dir -e .
   - sudo rm -f /etc/mysql/conf.d/performance-schema.cnf
   - sudo service mysql restart
 
