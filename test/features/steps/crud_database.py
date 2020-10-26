@@ -64,15 +64,13 @@ def step_see_prompt(context):
     user = context.conf['user']
     host = context.conf['host']
     dbname = context.currentdb
-    wrappers.expect_exact(context, '{0}@{1}:{2}> '.format(
-        user, host, dbname), timeout=5)
-    context.atprompt = True
+    wrappers.wait_prompt(context, '{0}@{1}:{2}> '.format(user, host, dbname))
 
 
 @then('we see help output')
 def step_see_help(context):
     for expected_line in context.fixture_data['help_commands.txt']:
-        wrappers.expect_exact(context, expected_line + '\r\n', timeout=1)
+        wrappers.expect_exact(context, expected_line, timeout=1)
 
 
 @then('we see database created')
@@ -96,10 +94,7 @@ def step_see_db_dropped_no_default(context):
     context.currentdb = None
 
     wrappers.expect_exact(context, 'Query OK, 0 rows affected', timeout=2)
-    wrappers.expect_exact(context, '{0}@{1}:{2}> '.format(
-        user, host, database), timeout=5)
-
-    context.atprompt = True
+    wrappers.wait_prompt(context, '{0}@{1}:{2}>'.format(user, host, database))
 
 
 @then('we see database connected')

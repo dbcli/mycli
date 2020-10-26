@@ -88,7 +88,7 @@ def wait_prompt(context, prompt=None):
         user = context.conf['user']
         host = context.conf['host']
         dbname = context.currentdb
-        prompt = '{0}@{1}:{2}> '.format(
+        prompt = '{0}@{1}:{2}>'.format(
             user, host, dbname),
     expect_exact(context, prompt, timeout=5)
     context.atprompt = True
