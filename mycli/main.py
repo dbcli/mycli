@@ -4,6 +4,7 @@ import traceback
 import logging
 import threading
 import re
+import stat
 import fileinput
 from collections import namedtuple
 try:
@@ -424,8 +425,15 @@ class MyCli(object):
                 )
             except OperationalError as e:
                 if ('Access denied for user' in e.args[1]):
-                    new_passwd = click.prompt('Password', hide_input=True,
-                                              show_default=False, type=str, err=True)
+                    passwd_in_file = passwd
+                    if (os.path.isfile(passwd_in_file) or \
+                        stat.S_ISFIFO(os.stat(passwd_in_file).st_mode)) \
+                        and os.access(passwd_in_file, os.R_OK):
+                        with open(passwd_in_file) as fp:
+                            new_passwd = fp.read()
+                    else:
+                        new_passwd = click.prompt('Password', hide_input=True,
+                                                  show_default=False, type=str, err=True)
                     self.sqlexecute = SQLExecute(
                         database, user, new_passwd, host, port, socket,
                         charset, local_infile, ssl, ssh_user, ssh_host,
@@ -994,7 +1002,7 @@ class MyCli(object):
 @click.option('-p', '--password', 'password', envvar='MYSQL_PWD', type=str,
               help='Password to connect to the database.')
 @click.option('--pass', 'password', envvar='MYSQL_PWD', type=str,
-              help='Password to connect to the database.')
+              help='Password or file|FIFO path conntaining password to connect to the database.')
 @click.option('--ssh-user', help='User name to connect to ssh server.')
 @click.option('--ssh-host', help='Host name to connect to ssh server.')
 @click.option('--ssh-port', default=22, help='Port to connect to ssh server.')
