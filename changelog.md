@@ -5,6 +5,7 @@ Features:
 ---------
 
 * Add an option `--init-command` to execute SQL after connecting (Thanks: [KITAGAWA Yasutaka]).
+* Allow to pass a file or FIFO path with --pass instead of a password text as suggested in this best-practice https://www.netmeister.org/blog/passing-passwords.html article
 
 Bug Fixes:
 ----------
