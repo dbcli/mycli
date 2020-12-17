@@ -16,7 +16,7 @@ def before_all(context):
     os.environ['LINES'] = "100"
     os.environ['COLUMNS'] = "100"
     os.environ['EDITOR'] = 'ex'
-    os.environ['LC_ALL'] = 'en_US.utf8'
+    os.environ['LC_ALL'] = 'en_US.UTF-8'
     os.environ['PROMPT_TOOLKIT_NO_CPR'] = '1'
 
     test_dir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
@@ -118,11 +118,12 @@ def after_scenario(context, _):
             host = context.conf['host']
             dbname = context.currentdb
             context.cli.expect_exact(
-                '{0}@{1}:{2}> '.format(
+                '{0}@{1}:{2}>'.format(
                     user, host, dbname
                 ),
                 timeout=5
             )
+        context.cli.sendcontrol('c')
         context.cli.sendcontrol('d')
         context.cli.expect_exact(pexpect.EOF, timeout=5)
 
