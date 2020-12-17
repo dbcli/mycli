@@ -9,6 +9,7 @@ Features:
 Bug Fixes:
 ----------
 * Fixed compatibility with sqlparse 0.4 (Thanks: [mtorromeo]).
+*  Fixed iPython magic (Thanks: [mwcm]).
 
 1.22.2
 ======
@@ -16,7 +17,7 @@ Bug Fixes:
 Bug Fixes:
 ----------
 
-*  Make the `pwd` module optional.
+*  Make the `pwd` module optional. 
 
 1.22.1
 ======
@@ -790,3 +791,4 @@ Bug Fixes:
 [Zach DeCook]: https://zachdecook.com
 [laixintao]: https://github.com/laixintao
 [mtorromeo]: https://github.com/mtorromeo
+[mwcm]: https://github.com/mwcm
