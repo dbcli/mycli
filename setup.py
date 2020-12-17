@@ -65,7 +65,7 @@ class test(TestCommand):
     def initialize_options(self):
         TestCommand.initialize_options(self)
         self.pytest_args = ''
-        self.behave_args = ''
+        self.behave_args = '--no-capture'
 
     def run_tests(self):
         unit_test_errno = subprocess.call(

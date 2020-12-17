@@ -7,6 +7,11 @@ Features:
 * Add an option `--init-command` to execute SQL after connecting (Thanks: [KITAGAWA Yasutaka]).
 * Use InputMode.REPLACE_SINGLE
 
+Bug Fixes:
+----------
+* Fixed compatibility with sqlparse 0.4 (Thanks: [mtorromeo]).
+*  Fixed iPython magic (Thanks: [mwcm]).
+
 1.22.2
 ======
 
@@ -786,3 +791,5 @@ Bug Fixes:
 [Georgy Frolov]: https://github.com/pasenor
 [Zach DeCook]: https://zachdecook.com
 [laixintao]: https://github.com/laixintao
+[mtorromeo]: https://github.com/mtorromeo
+[mwcm]: https://github.com/mwcm

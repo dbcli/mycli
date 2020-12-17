@@ -152,7 +152,7 @@ class MyCli(object):
                                 c['main'].as_bool('auto_vertical_output')
 
         # Write user config if system config wasn't the last config loaded.
-        if c.filename not in self.system_config_files:
+        if c.filename not in self.system_config_files and not os.path.exists(myclirc):
             write_default_config(self.default_config_file, myclirc)
 
         # audit log
