@@ -109,6 +109,20 @@ def test_once_command():
         assert f.read() == b"hello world\n"
 
 
+def test_pipe_once_command():
+    with pytest.raises(IOError):
+        mycli.packages.special.execute(None, u"\\pipe_once")
+
+    with pytest.raises(OSError):
+        mycli.packages.special.execute(
+            None, u"\\pipe_once /proc/access-denied")
+
+    mycli.packages.special.execute(None, u"\\pipe_once wc")
+    mycli.packages.special.write_once(u"hello world")
+    mycli.packages.special.unset_pipe_once_if_written()
+    # how to assert on wc output?
+
+
 def test_parseargfile():
     """Test that parseargfile expands the user directory."""
     expected = {'file': os.path.join(os.path.expanduser('~'), 'filename'),

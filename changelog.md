@@ -6,6 +6,7 @@ Features:
 
 * Add an option `--init-command` to execute SQL after connecting (Thanks: [KITAGAWA Yasutaka]).
 * Use InputMode.REPLACE_SINGLE
+* Add a special command `\pipe_once` to pipe output to a subprocess.
 
 Bug Fixes:
 ----------

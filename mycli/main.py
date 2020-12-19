@@ -654,6 +654,7 @@ class MyCli(object):
                     result_count += 1
                     mutating = mutating or destroy or is_mutating(status)
                 special.unset_once_if_written()
+                special.unset_pipe_once_if_written()
             except EOFError as e:
                 raise e
             except KeyboardInterrupt:
@@ -814,6 +815,7 @@ class MyCli(object):
                 self.log_output(line)
                 special.write_tee(line)
                 special.write_once(line)
+                special.write_pipe_once(line)
 
                 if fits or output_via_pager:
                     # buffering
