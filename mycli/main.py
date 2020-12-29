@@ -1053,6 +1053,7 @@ class MyCli(object):
               help='Execute command and quit.')
 @click.option('--init-command', type=str,
               help='SQL statement to execute after connecting.')
+@click.option('--charset', help='Character set for MySQL Client.')
 @click.argument('database', default='', nargs=1)
 def cli(database, user, host, port, socket, password, dbname,
         version, verbose, prompt, logfile, defaults_group_suffix,
@@ -1061,7 +1062,7 @@ def cli(database, user, host, port, socket, password, dbname,
         ssl_verify_server_cert, table, csv, warn, execute, myclirc, dsn,
         list_dsn, ssh_user, ssh_host, ssh_port, ssh_password,
         ssh_key_filename, list_ssh_config, ssh_config_path, ssh_config_host,
-        init_command):
+        init_command, charset):
     """A MySQL terminal client with auto-completion and syntax highlighting.
 
     \b
@@ -1186,7 +1187,8 @@ def cli(database, user, host, port, socket, password, dbname,
         ssh_port=ssh_port,
         ssh_password=ssh_password,
         ssh_key_filename=ssh_key_filename,
-        init_command=init_command
+        init_command=init_command,
+        charset=charset
     )
 
     mycli.logger.debug('Launch Params: \n'
