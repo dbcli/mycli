@@ -6,6 +6,7 @@ Features:
 
 * Add an option `--init-command` to execute SQL after connecting (Thanks: [KITAGAWA Yasutaka]).
 * Use InputMode.REPLACE_SINGLE
+* Add an option `--charset` to set the default charset when connect database.
 
 Bug Fixes:
 ----------
@@ -18,7 +19,7 @@ Bug Fixes:
 Bug Fixes:
 ----------
 
-*  Make the `pwd` module optional. 
+*  Make the `pwd` module optional.
 
 1.22.1
 ======
