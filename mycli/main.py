@@ -1053,7 +1053,8 @@ class MyCli(object):
               help='Execute command and quit.')
 @click.option('--init-command', type=str,
               help='SQL statement to execute after connecting.')
-@click.option('--charset', help='Character set for MySQL Client.')
+@click.option('--charset', type=str,
+              help='Character set for MySQL session.')
 @click.argument('database', default='', nargs=1)
 def cli(database, user, host, port, socket, password, dbname,
         version, verbose, prompt, logfile, defaults_group_suffix,

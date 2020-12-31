@@ -97,6 +97,7 @@ $ sudo apt-get install mycli # Only on debian or ubuntu
       --login-path TEXT             Read this path from the login file.
       -e, --execute TEXT            Execute command and quit.
       --init-command TEXT           SQL statement to execute after connecting.
+      --charset TEXT                Character set for MySQL session.
       --help                        Show this message and exit.
 
 Features
