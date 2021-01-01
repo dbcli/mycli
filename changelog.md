@@ -11,6 +11,7 @@ Bug Fixes:
 ----------
 * Fixed compatibility with sqlparse 0.4 (Thanks: [mtorromeo]).
 *  Fixed iPython magic (Thanks: [mwcm]).
+* Fix \once -o to overwrite output whole, instead of line-by-line.
 
 1.22.2
 ======

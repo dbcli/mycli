@@ -337,7 +337,11 @@ def write_tee(output):
 def set_once(arg, **_):
     global once_file, written_to_once_file
 
-    once_file = parseargfile(arg)
+    try:
+        once_file = open(**parseargfile(arg))
+    except (IOError, OSError) as e:
+        raise OSError("Cannot write to file '{}': {}".format(
+            e.filename, e.strerror))
     written_to_once_file = False
 
     return [(None, None, None, "")]
@@ -347,23 +351,18 @@ def set_once(arg, **_):
 def write_once(output):
     global once_file, written_to_once_file
     if output and once_file:
-        try:
-            f = open(**once_file)
-        except (IOError, OSError) as e:
-            once_file = None
-            raise OSError("Cannot write to file '{}': {}".format(
-                e.filename, e.strerror))
-        with f:
-            click.echo(output, file=f, nl=False)
-            click.echo(u"\n", file=f, nl=False)
+        click.echo(output, file=once_file, nl=False)
+        click.echo(u"\n", file=once_file, nl=False)
+        once_file.flush()
         written_to_once_file = True
 
 
 @export
 def unset_once_if_written():
     """Unset the once file, if it has been written to."""
-    global once_file
-    if written_to_once_file:
+    global once_file, written_to_once_file
+    if written_to_once_file and once_file:
+        once_file.close()
         once_file = None
 
 

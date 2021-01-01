@@ -93,9 +93,8 @@ def test_once_command():
     with pytest.raises(TypeError):
         mycli.packages.special.execute(None, u"\\once")
 
-    mycli.packages.special.execute(None, u"\\once /proc/access-denied")
     with pytest.raises(OSError):
-        mycli.packages.special.write_once(u"hello world")
+        mycli.packages.special.execute(None, u"\\once /proc/access-denied")
 
     mycli.packages.special.write_once(u"hello world")  # write without file set
     with tempfile.NamedTemporaryFile() as f:
@@ -104,9 +103,10 @@ def test_once_command():
         assert f.read() == b"hello world\n"
 
         mycli.packages.special.execute(None, u"\\once -o " + f.name)
-        mycli.packages.special.write_once(u"hello world")
+        mycli.packages.special.write_once(u"hello world line 1")
+        mycli.packages.special.write_once(u"hello world line 2")
         f.seek(0)
-        assert f.read() == b"hello world\n"
+        assert f.read() == b"hello world line 1\nhello world line 2\n"
 
 
 def test_parseargfile():
