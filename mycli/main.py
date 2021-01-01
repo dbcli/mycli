@@ -511,6 +511,24 @@ class MyCli(object):
             continue
         return text
 
+    def handle_clip_command(self, text):
+        """A clip command is any query that is prefixed or suffixed by a
+        '\clip'.
+
+        :param text: Document
+        :return: Boolean
+
+        """
+
+        if special.clip_command(text):
+            query = (special.get_clip_query(text) or
+                     self.get_last_query())
+            message = special.copy_query_to_clipboard(sql=query)
+            if message:
+                raise RuntimeError(message)
+            return True
+        return False
+
     def run_cli(self):
         iterations = 0
         sqlexecute = self.sqlexecute
@@ -574,6 +592,15 @@ class MyCli(object):
 
                 try:
                     text = self.handle_editor_command(text)
+                except RuntimeError as e:
+                    logger.error("sql: %r, error: %r", text, e)
+                    logger.error("traceback: %r", traceback.format_exc())
+                    self.echo(str(e), err=True, fg='red')
+                    return
+
+                try:
+                    if self.handle_clip_command(text):
+                        return
                 except RuntimeError as e:
                     logger.error("sql: %r, error: %r", text, e)
                     logger.error("traceback: %r", traceback.format_exc())

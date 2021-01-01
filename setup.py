@@ -25,6 +25,7 @@ install_requirements = [
     'configobj >= 5.0.5',
     'cryptography >= 1.0.0',
     'cli_helpers[styles] >= 2.0.1',
+    'pyperclip >= 1.8.1'
 ]
 
 
