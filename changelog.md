@@ -11,6 +11,7 @@ Bug Fixes:
 ----------
 * Fixed compatibility with sqlparse 0.4 (Thanks: [mtorromeo]).
 *  Fixed iPython magic (Thanks: [mwcm]).
+* Respect `prompt_continuation = ''` in `.myclirc`
 
 1.22.2
 ======

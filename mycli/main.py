@@ -551,7 +551,9 @@ class MyCli(object):
             return [('class:prompt', prompt)]
 
         def get_continuation(width, *_):
-            if self.multiline_continuation_char:
+            if self.multiline_continuation_char == '':
+                continuation = ''
+            elif self.multiline_continuation_char:
                 left_padding = width - len(self.multiline_continuation_char)
                 continuation = " " * \
                     max((left_padding - 1), 0) + \
