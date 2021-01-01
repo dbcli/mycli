@@ -438,7 +438,7 @@ class MyCli(object):
             if not WIN and socket:
                 socket_owner = getpwuid(os.stat(socket).st_uid).pw_name
                 self.echo(
-                    f"Connecting to socket {socket}, owned by user {socket_owner}")
+                    f"Connecting to socket {socket}, owned by user {socket_owner}", err=True)
                 try:
                     _connect()
                 except OperationalError as e:

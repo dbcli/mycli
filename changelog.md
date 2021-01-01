@@ -11,6 +11,7 @@ Bug Fixes:
 ----------
 * Fixed compatibility with sqlparse 0.4 (Thanks: [mtorromeo]).
 *  Fixed iPython magic (Thanks: [mwcm]).
+* Send "Connecting to socket" message to the standard error.
 
 1.22.2
 ======
