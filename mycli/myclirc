@@ -66,6 +66,7 @@ wider_completion_menu = False
 # \t - Product type (Percona, MySQL, MariaDB)
 # \A - DSN alias name (from the [alias_dsn] section)
 # \u - Username
+# \x1b[...m - insert ANSI escape sequence
 prompt = '\t \u@\h:\d> '
 prompt_continuation = '->'
 
