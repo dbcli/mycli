@@ -23,6 +23,8 @@ PAGER_ENABLED = True
 tee_file = None
 once_file = None
 written_to_once_file = False
+pipe_once_process = None
+written_to_pipe_once_process = False
 delimiter_command = DelimiterCommand()
 
 
@@ -337,7 +339,11 @@ def write_tee(output):
 def set_once(arg, **_):
     global once_file, written_to_once_file
 
-    once_file = parseargfile(arg)
+    try:
+        once_file = open(**parseargfile(arg))
+    except (IOError, OSError) as e:
+        raise OSError("Cannot write to file '{}': {}".format(
+            e.filename, e.strerror))
     written_to_once_file = False
 
     return [(None, None, None, "")]
@@ -347,24 +353,66 @@ def set_once(arg, **_):
 def write_once(output):
     global once_file, written_to_once_file
     if output and once_file:
-        try:
-            f = open(**once_file)
-        except (IOError, OSError) as e:
-            once_file = None
-            raise OSError("Cannot write to file '{}': {}".format(
-                e.filename, e.strerror))
-        with f:
-            click.echo(output, file=f, nl=False)
-            click.echo(u"\n", file=f, nl=False)
+        click.echo(output, file=once_file, nl=False)
+        click.echo(u"\n", file=once_file, nl=False)
+        once_file.flush()
         written_to_once_file = True
 
 
 @export
 def unset_once_if_written():
     """Unset the once file, if it has been written to."""
-    global once_file
-    if written_to_once_file:
+    global once_file, written_to_once_file
+    if written_to_once_file and once_file:
+        once_file.close()
         once_file = None
+
+
+@special_command('\\pipe_once', '\\| command',
+                 'Send next result to a subprocess.',
+                 aliases=('\\|', ))
+def set_pipe_once(arg, **_):
+    global pipe_once_process, written_to_pipe_once_process
+    pipe_once_cmd = shlex.split(arg)
+    if len(pipe_once_cmd) == 0:
+        raise OSError("pipe_once requires a command")
+    written_to_pipe_once_process = False
+    pipe_once_process = subprocess.Popen(pipe_once_cmd,
+                                         stdin=subprocess.PIPE,
+                                         stdout=subprocess.PIPE,
+                                         stderr=subprocess.PIPE,
+                                         bufsize=1,
+                                         encoding='UTF-8',
+                                         universal_newlines=True)
+    return [(None, None, None, "")]
+
+
+@export
+def write_pipe_once(output):
+    global pipe_once_process, written_to_pipe_once_process
+    if output and pipe_once_process:
+        try:
+            click.echo(output, file=pipe_once_process.stdin, nl=False)
+            click.echo(u"\n", file=pipe_once_process.stdin, nl=False)
+        except (IOError, OSError) as e:
+            pipe_once_process.terminate()
+            raise OSError(
+                "Failed writing to pipe_once subprocess: {}".format(e.strerror))
+        written_to_pipe_once_process = True
+
+
+@export
+def unset_pipe_once_if_written():
+    """Unset the pipe_once cmd, if it has been written to."""
+    global pipe_once_process, written_to_pipe_once_process
+    if written_to_pipe_once_process:
+        (stdout_data, stderr_data) = pipe_once_process.communicate()
+        if len(stdout_data) > 0:
+            print(stdout_data.rstrip(u"\n"))
+        if len(stderr_data) > 0:
+            print(stderr_data.rstrip(u"\n"))
+        pipe_once_process = None
+        written_to_pipe_once_process = False
 
 
 @special_command(
