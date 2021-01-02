@@ -41,6 +41,7 @@ table_format = ascii
 # friendly, monokai, paraiso, colorful, murphy, bw, pastie, paraiso, trac, default,
 # fruity.
 # Screenshots at http://mycli.net/syntax
+# Can be further modified in [colors]
 syntax_style = default
 
 # Keybindings: Possible values: emacs, vi.
@@ -112,6 +113,35 @@ output.header = "#00ff5f bold"
 output.odd-row = ""
 output.even-row = ""
 output.null = "#808080"
+
+# SQL syntax highlighting overrides
+# sql.comment = 'italic #408080'
+# sql.comment.multi-line = ''
+# sql.comment.single-line = ''
+# sql.comment.optimizer-hint = ''
+# sql.escape = 'border:#FF0000'
+# sql.keyword = 'bold #008000'
+# sql.datatype = 'nobold #B00040'
+# sql.literal = ''
+# sql.literal.date = ''
+# sql.symbol = ''
+# sql.quoted-schema-object = ''
+# sql.quoted-schema-object.escape = ''
+# sql.constant = '#880000'
+# sql.function = '#0000FF'
+# sql.variable = '#19177C'
+# sql.number = '#666666'
+# sql.number.binary = ''
+# sql.number.float = ''
+# sql.number.hex = ''
+# sql.number.integer = ''
+# sql.operator = '#666666'
+# sql.punctuation = ''
+# sql.string = '#BA2121'
+# sql.string.double-quouted = ''
+# sql.string.escape = 'bold #BB6622'
+# sql.string.single-quoted = ''
+# sql.whitespace = ''
 
 # Favorite queries.
 [favorite_queries]

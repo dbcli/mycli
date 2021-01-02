@@ -6,6 +6,7 @@ Features:
 
 * Add an option `--init-command` to execute SQL after connecting (Thanks: [KITAGAWA Yasutaka]).
 * Use InputMode.REPLACE_SINGLE
+* Allow customization of Pygments SQL syntax-highlighting styles.
 
 Bug Fixes:
 ----------
