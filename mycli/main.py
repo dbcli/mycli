@@ -438,7 +438,7 @@ class MyCli(object):
             if not WIN and socket:
                 socket_owner = getpwuid(os.stat(socket).st_uid).pw_name
                 self.echo(
-                    f"Connecting to socket {socket}, owned by user {socket_owner}")
+                    f"Connecting to socket {socket}, owned by user {socket_owner}", err=True)
                 try:
                     _connect()
                 except OperationalError as e:
@@ -569,7 +569,9 @@ class MyCli(object):
             return [('class:prompt', prompt)]
 
         def get_continuation(width, *_):
-            if self.multiline_continuation_char:
+            if self.multiline_continuation_char == '':
+                continuation = ''
+            elif self.multiline_continuation_char:
                 left_padding = width - len(self.multiline_continuation_char)
                 continuation = " " * \
                     max((left_padding - 1), 0) + \
@@ -681,6 +683,7 @@ class MyCli(object):
                     result_count += 1
                     mutating = mutating or destroy or is_mutating(status)
                 special.unset_once_if_written()
+                special.unset_pipe_once_if_written()
             except EOFError as e:
                 raise e
             except KeyboardInterrupt:
@@ -841,6 +844,7 @@ class MyCli(object):
                 self.log_output(line)
                 special.write_tee(line)
                 special.write_once(line)
+                special.write_pipe_once(line)
 
                 if fits or output_via_pager:
                     # buffering
@@ -1318,7 +1322,7 @@ def is_select(status):
 def thanks_picker(files=()):
     contents = []
     for line in fileinput.input(files=files):
-        m = re.match('^ *\* (.*)', line)
+        m = re.match(r'^ *\* (.*)', line)
         if m:
             contents.append(m.group(1))
     return choice(contents)
