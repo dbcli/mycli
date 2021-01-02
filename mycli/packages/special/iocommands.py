@@ -8,6 +8,7 @@ from io import open
 from time import sleep
 
 import click
+import pyperclip
 import sqlparse
 
 from . import export
@@ -159,6 +160,47 @@ def open_external_editor(filename=None, sql=None):
         query = sql
 
     return (query, message)
+
+
+@export
+def clip_command(command):
+    """Is this a clip command?
+
+    :param command: string
+
+    """
+    # It is possible to have `\clip` or `SELECT * FROM \clip`. So we check
+    # for both conditions.
+    return command.strip().endswith('\\clip') or command.strip().startswith('\\clip')
+
+
+@export
+def get_clip_query(sql):
+    """Get the query part of a clip command."""
+    sql = sql.strip()
+
+    # The reason we can't simply do .strip('\clip') is that it strips characters,
+    # not a substring. So it'll strip "c" in the end of the sql also!
+    pattern = re.compile('(^\\\clip|\\\clip$)')
+    while pattern.search(sql):
+        sql = pattern.sub('', sql)
+
+    return sql
+
+
+@export
+def copy_query_to_clipboard(sql=None):
+    """Send query to the clipboard."""
+
+    sql = sql or ''
+    message = None
+
+    try:
+        pyperclip.copy(u'{sql}'.format(sql=sql))
+    except RuntimeError as e:
+        message = 'Error clipping query: %s.' % e.strerror
+
+    return message
 
 
 @special_command('\\f', '\\f [name [args..]]', 'List or execute favorite queries.', arg_type=PARSED_QUERY, case_sensitive=True)

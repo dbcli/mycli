@@ -2,6 +2,7 @@
 | Command     | Shortcut                   | Description                                                |
 +-------------+----------------------------+------------------------------------------------------------+
 | \G          | \G                         | Display current query results vertically.                  |
+| \clip       | \clip                      | Copy query to the system clipboard.                        |
 | \dt         | \dt[+] [table]             | List or describe tables.                                   |
 | \e          | \e                         | Edit command with editor (uses $EDITOR).                   |
 | \f          | \f [name [args..]]         | List or execute favorite queries.                          |
