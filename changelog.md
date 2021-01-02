@@ -12,6 +12,7 @@ Bug Fixes:
 ----------
 * Fixed compatibility with sqlparse 0.4 (Thanks: [mtorromeo]).
 *  Fixed iPython magic (Thanks: [mwcm]).
+* Send "Connecting to socket" message to the standard error.
 * Respect empty string for prompt_continuation via `prompt_continuation = ''` in `.myclirc`
 * Fix \once -o to overwrite output whole, instead of line-by-line.
 
