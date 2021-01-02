@@ -1295,7 +1295,7 @@ def is_select(status):
 def thanks_picker(files=()):
     contents = []
     for line in fileinput.input(files=files):
-        m = re.match('^ *\* (.*)', line)
+        m = re.match(r'^ *\* (.*)', line)
         if m:
             contents.append(m.group(1))
     return choice(contents)
