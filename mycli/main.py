@@ -28,6 +28,7 @@ from prompt_toolkit.key_binding.bindings.named_commands import register as promp
 from prompt_toolkit.shortcuts import PromptSession, CompleteStyle
 from prompt_toolkit.document import Document
 from prompt_toolkit.filters import HasFocus, IsDone
+from prompt_toolkit.formatted_text import ANSI
 from prompt_toolkit.layout.processors import (HighlightMatchingBracketProcessor,
                                               ConditionalProcessor)
 from prompt_toolkit.lexers import PygmentsLexer
@@ -548,7 +549,8 @@ class MyCli(object):
             prompt = self.get_prompt(self.prompt_format)
             if self.prompt_format == self.default_prompt and len(prompt) > self.max_len_prompt:
                 prompt = self.get_prompt('\\d> ')
-            return [('class:prompt', prompt)]
+            prompt = prompt.replace("\\x1b", "\x1b")
+            return ANSI(prompt)
 
         def get_continuation(width, *_):
             if self.multiline_continuation_char:

@@ -6,6 +6,7 @@ Features:
 
 * Add an option `--init-command` to execute SQL after connecting (Thanks: [KITAGAWA Yasutaka]).
 * Use InputMode.REPLACE_SINGLE
+* Add support for ANSI escape sequences for coloring the prompt.
 
 Bug Fixes:
 ----------
