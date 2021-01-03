@@ -28,6 +28,7 @@ from prompt_toolkit.key_binding.bindings.named_commands import register as promp
 from prompt_toolkit.shortcuts import PromptSession, CompleteStyle
 from prompt_toolkit.document import Document
 from prompt_toolkit.filters import HasFocus, IsDone
+from prompt_toolkit.formatted_text import ANSI
 from prompt_toolkit.layout.processors import (HighlightMatchingBracketProcessor,
                                               ConditionalProcessor)
 from prompt_toolkit.lexers import PygmentsLexer
@@ -438,7 +439,7 @@ class MyCli(object):
             if not WIN and socket:
                 socket_owner = getpwuid(os.stat(socket).st_uid).pw_name
                 self.echo(
-                    f"Connecting to socket {socket}, owned by user {socket_owner}")
+                    f"Connecting to socket {socket}, owned by user {socket_owner}", err=True)
                 try:
                     _connect()
                 except OperationalError as e:
@@ -511,6 +512,24 @@ class MyCli(object):
             continue
         return text
 
+    def handle_clip_command(self, text):
+        """A clip command is any query that is prefixed or suffixed by a
+        '\clip'.
+
+        :param text: Document
+        :return: Boolean
+
+        """
+
+        if special.clip_command(text):
+            query = (special.get_clip_query(text) or
+                     self.get_last_query())
+            message = special.copy_query_to_clipboard(sql=query)
+            if message:
+                raise RuntimeError(message)
+            return True
+        return False
+
     def run_cli(self):
         iterations = 0
         sqlexecute = self.sqlexecute
@@ -548,10 +567,13 @@ class MyCli(object):
             prompt = self.get_prompt(self.prompt_format)
             if self.prompt_format == self.default_prompt and len(prompt) > self.max_len_prompt:
                 prompt = self.get_prompt('\\d> ')
-            return [('class:prompt', prompt)]
+            prompt = prompt.replace("\\x1b", "\x1b")
+            return ANSI(prompt)
 
         def get_continuation(width, *_):
-            if self.multiline_continuation_char:
+            if self.multiline_continuation_char == '':
+                continuation = ''
+            elif self.multiline_continuation_char:
                 left_padding = width - len(self.multiline_continuation_char)
                 continuation = " " * \
                     max((left_padding - 1), 0) + \
@@ -574,6 +596,15 @@ class MyCli(object):
 
                 try:
                     text = self.handle_editor_command(text)
+                except RuntimeError as e:
+                    logger.error("sql: %r, error: %r", text, e)
+                    logger.error("traceback: %r", traceback.format_exc())
+                    self.echo(str(e), err=True, fg='red')
+                    return
+
+                try:
+                    if self.handle_clip_command(text):
+                        return
                 except RuntimeError as e:
                     logger.error("sql: %r, error: %r", text, e)
                     logger.error("traceback: %r", traceback.format_exc())
@@ -654,6 +685,7 @@ class MyCli(object):
                     result_count += 1
                     mutating = mutating or destroy or is_mutating(status)
                 special.unset_once_if_written()
+                special.unset_pipe_once_if_written()
             except EOFError as e:
                 raise e
             except KeyboardInterrupt:
@@ -814,6 +846,7 @@ class MyCli(object):
                 self.log_output(line)
                 special.write_tee(line)
                 special.write_once(line)
+                special.write_pipe_once(line)
 
                 if fits or output_via_pager:
                     # buffering
@@ -1294,7 +1327,7 @@ def is_select(status):
 def thanks_picker(files=()):
     contents = []
     for line in fileinput.input(files=files):
-        m = re.match('^ *\* (.*)', line)
+        m = re.match(r'^ *\* (.*)', line)
         if m:
             contents.append(m.group(1))
     return choice(contents)

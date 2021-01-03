@@ -6,12 +6,19 @@ Features:
 
 * Add an option `--init-command` to execute SQL after connecting (Thanks: [KITAGAWA Yasutaka]).
 * Use InputMode.REPLACE_SINGLE
+* Add support for ANSI escape sequences for coloring the prompt.
+* Allow customization of Pygments SQL syntax-highlighting styles.
+* Add a `\clip` special command to copy queries to the system clipboard.
+* Add a special command `\pipe_once` to pipe output to a subprocess.
 * Add an option `--charset` to set the default charset when connect database.
 
 Bug Fixes:
 ----------
 * Fixed compatibility with sqlparse 0.4 (Thanks: [mtorromeo]).
 *  Fixed iPython magic (Thanks: [mwcm]).
+* Send "Connecting to socket" message to the standard error.
+* Respect empty string for prompt_continuation via `prompt_continuation = ''` in `.myclirc`
+* Fix \once -o to overwrite output whole, instead of line-by-line.
 
 1.22.2
 ======
