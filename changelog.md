@@ -10,6 +10,7 @@ Features:
 * Allow customization of Pygments SQL syntax-highlighting styles.
 * Add a `\clip` special command to copy queries to the system clipboard.
 * Add a special command `\pipe_once` to pipe output to a subprocess.
+* More complete and up-to-date set of MySQL reserved words for completions.
 
 
 Bug Fixes:

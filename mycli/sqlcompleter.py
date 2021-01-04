@@ -3,6 +3,10 @@ from re import compile, escape
 from collections import Counter
 
 from prompt_toolkit.completion import Completer, Completion
+from pygments.lexers._mysql_builtins import \
+    MYSQL_DATATYPES, \
+    MYSQL_FUNCTIONS, \
+    MYSQL_KEYWORDS
 
 from .packages.completion_engine import suggest_type
 from .packages.parseutils import last_word
@@ -13,33 +17,11 @@ _logger = logging.getLogger(__name__)
 
 
 class SQLCompleter(Completer):
-    keywords = ['ACCESS', 'ADD', 'ALL', 'ALTER TABLE', 'AND', 'ANY', 'AS',
-                'ASC', 'AUTO_INCREMENT', 'BEFORE', 'BEGIN', 'BETWEEN',
-                'BIGINT', 'BINARY', 'BY', 'CASE', 'CHANGE MASTER TO', 'CHAR',
-                'CHARACTER SET', 'CHECK', 'COLLATE', 'COLUMN', 'COMMENT',
-                'COMMIT', 'CONSTRAINT', 'CREATE', 'CURRENT',
-                'CURRENT_TIMESTAMP', 'DATABASE', 'DATE', 'DECIMAL', 'DEFAULT',
-                'DELETE FROM', 'DESC', 'DESCRIBE', 'DROP',
-                'ELSE', 'END', 'ENGINE', 'ESCAPE', 'EXISTS', 'FILE', 'FLOAT',
-                'FOR', 'FOREIGN KEY', 'FORMAT', 'FROM', 'FULL', 'FUNCTION',
-                'GRANT', 'GROUP BY', 'HAVING', 'HOST', 'IDENTIFIED', 'IN',
-                'INCREMENT', 'INDEX', 'INSERT INTO', 'INT', 'INTEGER',
-                'INTERVAL', 'INTO', 'IS', 'JOIN', 'KEY', 'LEFT', 'LEVEL',
-                'LIKE', 'LIMIT', 'LOCK', 'LOGS', 'LONG', 'MASTER',
-                'MEDIUMINT', 'MODE', 'MODIFY', 'NOT', 'NULL', 'NUMBER',
-                'OFFSET', 'ON', 'OPTION', 'OR', 'ORDER BY', 'OUTER', 'OWNER',
-                'PASSWORD', 'PORT', 'PRIMARY', 'PRIVILEGES', 'PROCESSLIST',
-                'PURGE', 'REFERENCES', 'REGEXP', 'RENAME', 'REPAIR', 'RESET',
-                'REVOKE', 'RIGHT', 'ROLLBACK', 'ROW', 'ROWS', 'ROW_FORMAT',
-                'SAVEPOINT', 'SELECT', 'SESSION', 'SET', 'SHARE', 'SHOW',
-                'SLAVE', 'SMALLINT', 'SMALLINT', 'START', 'STOP', 'TABLE',
-                'THEN', 'TINYINT', 'TO', 'TRANSACTION', 'TRIGGER', 'TRUNCATE',
-                'UNION', 'UNIQUE', 'UNSIGNED', 'UPDATE', 'USE', 'USER',
-                'USING', 'VALUES', 'VARCHAR', 'VIEW', 'WHEN', 'WHERE', 'WITH']
+    keywords = [x.upper() for x in list(MYSQL_DATATYPES) + list(MYSQL_KEYWORDS) +
+                ['ALTER TABLE', 'CHANGE MASTER TO', 'CHARACTER SET', 'DELETE FROM',
+                 'FOREIGN KEY', 'GROUP BY', 'INSERT INTO', 'ORDER BY']]
 
-    functions = ['AVG', 'CONCAT', 'COUNT', 'DISTINCT', 'FIRST', 'FORMAT',
-                 'FROM_UNIXTIME', 'LAST', 'LCASE', 'LEN', 'MAX', 'MID',
-                 'MIN', 'NOW', 'ROUND', 'SUM', 'TOP', 'UCASE', 'UNIX_TIMESTAMP']
+    functions = [x.upper() for x in MYSQL_FUNCTIONS]
 
     show_items = []
 
