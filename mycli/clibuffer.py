@@ -39,6 +39,8 @@ def _multiline_exception(text):
 
         text.endswith('\\g') or
         text.endswith('\\G') or
+        text.endswith(r'\e') or
+        text.endswith(r'\clip') or
 
         # Exit doesn't need semi-column`
         (text == 'exit') or
