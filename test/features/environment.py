@@ -42,6 +42,10 @@ def before_all(context):
             'my_test_host',
             os.getenv('PYTEST_HOST', 'localhost')
         ),
+        'port': context.config.userdata.get(
+            'my_test_port',
+            int(os.getenv('PYTEST_PORT', '3306'))
+        ),
         'user': context.config.userdata.get(
             'my_test_user',
             os.getenv('PYTEST_USER', 'root')
@@ -72,7 +76,8 @@ def before_all(context):
     context.conf['myclirc'] = os.path.join(context.package_root, 'test',
                                            'myclirc')
 
-    context.cn = dbutils.create_db(context.conf['host'], context.conf['user'],
+    context.cn = dbutils.create_db(context.conf['host'], context.conf['port'],
+                                   context.conf['user'],
                                    context.conf['pass'],
                                    context.conf['dbname'])
 
@@ -82,8 +87,9 @@ def before_all(context):
 def after_all(context):
     """Unset env parameters."""
     dbutils.close_cn(context.cn)
-    dbutils.drop_db(context.conf['host'], context.conf['user'],
-                    context.conf['pass'], context.conf['dbname'])
+    dbutils.drop_db(context.conf['host'], context.conf['port'],
+                    context.conf['user'], context.conf['pass'],
+                    context.conf['dbname'])
 
     # Restore env vars.
     #for k, v in context.pgenv.items():
