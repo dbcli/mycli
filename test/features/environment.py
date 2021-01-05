@@ -18,6 +18,7 @@ def before_all(context):
     os.environ['EDITOR'] = 'ex'
     os.environ['LC_ALL'] = 'en_US.UTF-8'
     os.environ['PROMPT_TOOLKIT_NO_CPR'] = '1'
+    os.environ['MYCLI_HISTFILE'] = os.devnull
 
     test_dir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
     login_path_file = os.path.join(test_dir, 'mylogin.cnf')
@@ -41,6 +42,10 @@ def before_all(context):
         'host': context.config.userdata.get(
             'my_test_host',
             os.getenv('PYTEST_HOST', 'localhost')
+        ),
+        'port': context.config.userdata.get(
+            'my_test_port',
+            int(os.getenv('PYTEST_PORT', '3306'))
         ),
         'user': context.config.userdata.get(
             'my_test_user',
@@ -72,7 +77,8 @@ def before_all(context):
     context.conf['myclirc'] = os.path.join(context.package_root, 'test',
                                            'myclirc')
 
-    context.cn = dbutils.create_db(context.conf['host'], context.conf['user'],
+    context.cn = dbutils.create_db(context.conf['host'], context.conf['port'],
+                                   context.conf['user'],
                                    context.conf['pass'],
                                    context.conf['dbname'])
 
@@ -82,8 +88,9 @@ def before_all(context):
 def after_all(context):
     """Unset env parameters."""
     dbutils.close_cn(context.cn)
-    dbutils.drop_db(context.conf['host'], context.conf['user'],
-                    context.conf['pass'], context.conf['dbname'])
+    dbutils.drop_db(context.conf['host'], context.conf['port'],
+                    context.conf['user'], context.conf['pass'],
+                    context.conf['dbname'])
 
     # Restore env vars.
     #for k, v in context.pgenv.items():
