@@ -49,7 +49,8 @@ def test_editor_command():
     assert mycli.packages.special.get_filename(r'\e filename') == "filename"
 
     os.environ['EDITOR'] = 'true'
-    mycli.packages.special.open_external_editor(r'select 1') == "select 1"
+    os.environ['VISUAL'] = 'true'
+    mycli.packages.special.open_external_editor(sql=r'select 1') == "select 1"
 
 
 def test_tee_command():
