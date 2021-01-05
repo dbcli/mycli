@@ -1,0 +1,60 @@
+name: mycli
+
+on:
+  push:
+    branches-ignore:
+      - 'master'
+    paths-ignore:
+      - '**.md'
+
+jobs:
+  linux:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8]
+
+    steps:
+
+      - uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Start MySQL
+        run: |
+          sudo /etc/init.d/mysql start
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+          pip install --no-cache-dir -e .
+
+      - name: Wait for MySQL connection
+        run: |
+          while ! mysqladmin ping --host=localhost --port=3306 --user=root --password=root --silent; do
+            sleep 5
+          done
+
+      - name: Pytest / behave
+        env:
+          PYTEST_PASSWORD: root
+        run: |
+          ./setup.py test --pytest-args="--cov-report= --cov=mycli"
+
+      - name: Lint
+        env:
+          GIT_BRANCH: ${{ github.ref }}
+        run: |
+          ./setup.py lint --branch="$GIT_BRANCH"
+
+      - name: Coverage
+        run: |
+          coverage combine
+          coverage report
+          codecov
