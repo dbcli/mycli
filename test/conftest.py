@@ -4,7 +4,7 @@ from .utils import (HOST, USER, PASSWORD, PORT, CHARSET, create_db,
 import mycli.sqlexecute
 
 
-@pytest.yield_fixture(scope="function")
+@pytest.fixture(scope="function")
 def connection():
     create_db('_test_db')
     connection = db_connection('_test_db')
