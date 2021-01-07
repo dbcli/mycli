@@ -21,6 +21,7 @@ Bug Fixes:
 * Fix \once -o to overwrite output whole, instead of line-by-line.
 * Dispatch lines ending with `\e` or `\clip` on return, even in multiline mode.
 * Restore working local `--socket=<UDS>` (Thanks: [xeron]).
+* Avoid opening `/dev/tty` when `--no-warn` is given.
 
 1.22.2
 ======

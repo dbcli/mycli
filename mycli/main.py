@@ -21,7 +21,7 @@ from cli_helpers.tabular_output import preprocessors
 from cli_helpers.utils import strip_ansi
 import click
 import sqlparse
-from mycli.packages.parseutils import is_dropping_database
+from mycli.packages.parseutils import is_dropping_database, is_destructive
 from prompt_toolkit.completion import DynamicCompleter
 from prompt_toolkit.enums import DEFAULT_BUFFER, EditingMode
 from prompt_toolkit.key_binding.bindings.named_commands import register as prompt_register
@@ -1254,14 +1254,15 @@ def cli(database, user, host, port, socket, password, dbname,
             click.secho('Sorry... :(', err=True, fg='red')
             exit(1)
 
-        try:
-            sys.stdin = open('/dev/tty')
-        except (IOError, OSError):
-            mycli.logger.warning('Unable to open TTY as stdin.')
+        if mycli.destructive_warning and is_destructive(stdin_text):
+            try:
+                sys.stdin = open('/dev/tty')
+                warn_confirmed = confirm_destructive_query(stdin_text)
+            except (IOError, OSError):
+                mycli.logger.warning('Unable to open TTY as stdin.')
+            if not warn_confirmed:
+                exit(0)
 
-        if (mycli.destructive_warning and
-                confirm_destructive_query(stdin_text) is False):
-            exit(0)
         try:
             new_line = True
 
