@@ -19,6 +19,8 @@ Bug Fixes:
 * Send "Connecting to socket" message to the standard error.
 * Respect empty string for prompt_continuation via `prompt_continuation = ''` in `.myclirc`
 * Fix \once -o to overwrite output whole, instead of line-by-line.
+* Dispatch lines ending with `\e` or `\clip` on return, even in multiline mode.
+* Restore working local `--socket=<UDS>` (Thanks: [xeron]).
 
 1.22.2
 ======
@@ -801,3 +803,4 @@ Bug Fixes:
 [laixintao]: https://github.com/laixintao
 [mtorromeo]: https://github.com/mtorromeo
 [mwcm]: https://github.com/mwcm
+[xeron]: https://github.com/xeron

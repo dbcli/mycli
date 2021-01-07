@@ -388,7 +388,7 @@ class MyCli(object):
 
         database = database or cnf['database']
         # Socket interface not supported for SSH connections
-        if port or host or ssh_host or ssh_port:
+        if (port and host) or (ssh_host and ssh_port):
             socket = ''
         else:
             socket = socket or cnf['socket'] or guess_socket_location()
@@ -482,7 +482,7 @@ class MyCli(object):
             exit(1)
 
     def handle_editor_command(self, text):
-        """Editor command is any query that is prefixed or suffixed by a '\e'.
+        r"""Editor command is any query that is prefixed or suffixed by a '\e'.
         The reason for a while loop is because a user might edit a query
         multiple times. For eg:
 
@@ -513,7 +513,7 @@ class MyCli(object):
         return text
 
     def handle_clip_command(self, text):
-        """A clip command is any query that is prefixed or suffixed by a
+        r"""A clip command is any query that is prefixed or suffixed by a
         '\clip'.
 
         :param text: Document

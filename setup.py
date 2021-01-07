@@ -77,6 +77,7 @@ class test(TestCommand):
             'behave test/features ' + self.behave_args,
             shell=True
         )
+        subprocess.run(['git', 'checkout', '--', 'test/myclirc'], check=False)
         sys.exit(unit_test_errno or cli_errno)
 
 

@@ -15,7 +15,7 @@ cleanup_regex = {
         }
 
 def last_word(text, include='alphanum_underscore'):
-    """
+    r"""
     Find the last word in a sentence.
 
     >>> last_word('abc')

@@ -181,7 +181,7 @@ def get_clip_query(sql):
 
     # The reason we can't simply do .strip('\clip') is that it strips characters,
     # not a substring. So it'll strip "c" in the end of the sql also!
-    pattern = re.compile('(^\\\clip|\\\clip$)')
+    pattern = re.compile(r'(^\\clip|\\clip$)')
     while pattern.search(sql):
         sql = pattern.sub('', sql)
 
@@ -257,7 +257,7 @@ def subst_favorite_query_args(query, args):
 
         query = query.replace(subst_var, val)
 
-    match = re.search('\\$\d+', query)
+    match = re.search(r'\$\d+', query)
     if match:
         return[None, 'missing substitution for ' + match.group(0) + ' in query:\n  ' + query]
 
