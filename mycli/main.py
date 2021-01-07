@@ -239,6 +239,9 @@ class MyCli(object):
             )
             return
 
+        if arg.startswith('`') and arg.endswith('`'):
+            arg = re.sub(r'^`(.*)`$', r'\1', arg)
+            arg = re.sub(r'``', r'`', arg)
         self.sqlexecute.change_db(arg)
 
         yield (None, None, None, 'You are now connected to database "%s" as '
