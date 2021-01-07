@@ -129,6 +129,9 @@ enable_pager = True
 # Choose a specific pager
 pager = less
 
+# character set for connections without --charset being set at the CLI
+default_character_set = utf8mb4
+
 [keys]
 # possible values: auto, fzf, reverse_isearch
 control_r = auto

@@ -514,7 +514,7 @@ class MyCli:
                 socket = socket or cnf["socket"] or cnf["default_socket"] or guess_socket_location()
 
         passwd = passwd if isinstance(passwd, str) else cnf["password"]
-        charset = charset or cnf["default-character-set"] or "utf8"
+        charset = charset or self.config["main"].get("default_character_set") or cnf["default-character-set"] or "utf8mb4"
 
         # Favor whichever local_infile option is set.
         use_local_infile = False
