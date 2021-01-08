@@ -401,7 +401,7 @@ class MyCli(object):
         ssl = ssl or {}
 
         passwd = passwd if isinstance(passwd, str) else cnf['password']
-        charset = charset or cnf['default-character-set'] or 'utf8'
+        charset = charset or cnf['default-character-set'] or 'utf8mb4'
 
         # Favor whichever local_infile option is set.
         for local_infile_option in (local_infile, cnf['local-infile'],

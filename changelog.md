@@ -10,7 +10,7 @@ Features:
 * Allow customization of Pygments SQL syntax-highlighting styles.
 * Add a `\clip` special command to copy queries to the system clipboard.
 * Add a special command `\pipe_once` to pipe output to a subprocess.
-
+* Default to standards-compliant `utf8mb4` character set.
 
 Bug Fixes:
 ----------
