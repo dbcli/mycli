@@ -1,9 +1,7 @@
 name: mycli
 
 on:
-  push:
-    branches-ignore:
-      - 'master'
+  pull_request:
     paths-ignore:
       - '**.md'
 
@@ -14,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8]
+        python-version: [3.6, 3.7, 3.8, 3.9]
 
     steps:
 
@@ -48,10 +46,8 @@ jobs:
           ./setup.py test --pytest-args="--cov-report= --cov=mycli"
 
       - name: Lint
-        env:
-          GIT_BRANCH: ${{ github.ref }}
         run: |
-          ./setup.py lint --branch="$GIT_BRANCH"
+          ./setup.py lint --branch=HEAD
 
       - name: Coverage
         run: |

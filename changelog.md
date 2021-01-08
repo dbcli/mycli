@@ -22,6 +22,8 @@ Bug Fixes:
 * Dispatch lines ending with `\e` or `\clip` on return, even in multiline mode.
 * Restore working local `--socket=<UDS>` (Thanks: [xeron]).
 * Allow backtick quoting around the database argument to the `use` command.
+* Avoid opening `/dev/tty` when `--no-warn` is given.
+* Fixed some typo errors in `README.md`.
 
 1.22.2
 ======
