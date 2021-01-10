@@ -22,9 +22,9 @@ FIELD_TYPES.update({
 
 
 class ServerSpecies(enum.Enum):
-    MySQL = enum.auto()
-    MariaDB = enum.auto()
-    Percona = enum.auto()
+    MySQL = 'MySQL'
+    MariaDB = 'MariaDB'
+    Percona = 'Percona'
 
 
 class ServerInfo:
@@ -68,9 +68,9 @@ class ServerInfo:
 
         return cls(species, parsed_version_str)
 
-    def __repr__(self):
+    def __str__(self):
         if self.species:
-            return f'{self.species}  {self.version}'
+            return f'{self.species.value} {self.version_str}'
         else:
             return self.version_str
 

@@ -934,7 +934,7 @@ class MyCli(object):
         string = string.replace('\\h', host or '(none)')
         string = string.replace('\\d', sqlexecute.dbname or '(none)')
         string = string.replace(
-            '\\t', sqlexecute.server_info.species or 'mycli')
+            '\\t', str(sqlexecute.server_info) or 'mycli')
         string = string.replace('\\n', "\n")
         string = string.replace('\\D', now.strftime('%a %b %d %H:%M:%S %Y'))
         string = string.replace('\\m', now.strftime('%M'))
