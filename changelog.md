@@ -10,7 +10,7 @@ Features:
 * Allow customization of Pygments SQL syntax-highlighting styles.
 * Add a `\clip` special command to copy queries to the system clipboard.
 * Add a special command `\pipe_once` to pipe output to a subprocess.
-
+* Add an option `--charset` to set the default charset when connect database.
 
 Bug Fixes:
 ----------
@@ -31,7 +31,7 @@ Bug Fixes:
 Bug Fixes:
 ----------
 
-*  Make the `pwd` module optional. 
+*  Make the `pwd` module optional.
 
 1.22.1
 ======
