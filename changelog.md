@@ -1,4 +1,11 @@
-TBD
+1.23.1
+===
+
+Bug Fixes:
+----------
+* Allow `--host` without `--port` to make a TCP connection.
+
+1.23.0
 ===
 
 Features:
