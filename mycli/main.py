@@ -391,7 +391,7 @@ class MyCli(object):
 
         database = database or cnf['database']
         # Socket interface not supported for SSH connections
-        if (port and host) or (ssh_host and ssh_port):
+        if port or (host and host != 'localhost') or (ssh_host and ssh_port):
             socket = ''
         else:
             socket = socket or cnf['socket'] or guess_socket_location()
