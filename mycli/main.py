@@ -397,11 +397,7 @@ class MyCli(object):
             socket = socket or cnf['socket'] or guess_socket_location()
         user = user or cnf['user'] or os.getenv('USER')
         host = host or cnf['host']
-        try:
-            port = port or int(cnf['port'])
-        except ValueError as e:
-            self.echo("Error: Invalid port number: '{0}'.".format(cnf['port']),
-                      err=True, fg='red')
+        port = int(port or cnf['port'] or 3306)
         ssl = ssl or {}
 
         passwd = passwd if isinstance(passwd, str) else cnf['password']
