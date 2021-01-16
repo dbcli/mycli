@@ -15,6 +15,10 @@ Bug Fixes:
 1.23.0
 ===
 
+Bug Fixes:
+----------
+* Fix config file include logic
+
 Features:
 ---------
 
