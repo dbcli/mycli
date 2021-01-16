@@ -397,7 +397,7 @@ class MyCli(object):
             socket = socket or cnf['socket'] or guess_socket_location()
         user = user or cnf['user'] or os.getenv('USER')
         host = host or cnf['host']
-        port = port or cnf['port']
+        port = int(port or cnf['port'] or 3306)
         ssl = ssl or {}
 
         passwd = passwd if isinstance(passwd, str) else cnf['password']

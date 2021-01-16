@@ -1,3 +1,10 @@
+1.23.2
+===
+
+Bug Fixes:
+----------
+* Ensure `--port` is always an int.
+ 
 1.23.1
 ===
 
