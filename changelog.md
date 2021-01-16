@@ -1,3 +1,10 @@
+TBD
+===
+
+Bug Fixes:
+----------
+* Allow `FileNotFound` exception for SSH config files.
+
 1.23.1
 ===
 
