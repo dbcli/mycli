@@ -124,12 +124,15 @@ def create_default_config(list_values=True):
     return read_config_file(default_config_file, list_values=list_values)
 
 
-def write_default_config(source, destination, overwrite=False):
+def write_default_config(destination, overwrite=False):
+    import mycli
+    default_config = resources.read_text(mycli, 'myclirc')
     destination = os.path.expanduser(destination)
     if not overwrite and exists(destination):
         return
 
-    shutil.copyfile(source, destination)
+    with open(destination, 'w') as f:
+        f.write(default_config)
 
 
 def get_mylogin_cnf_path():
