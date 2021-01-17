@@ -28,6 +28,9 @@ install_requirements = [
     'pyperclip >= 1.8.1'
 ]
 
+if sys.version_info.minor < 9:
+    install_requirements.append('importlib_resources >= 5.0.0')
+
 
 class lint(Command):
     description = 'check code against PEP 8 (and fix violations)'

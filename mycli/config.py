@@ -1,7 +1,7 @@
 import io
 import shutil
 from copy import copy
-from io import BytesIO, TextIOWrapper
+from io import BytesIO, TextIOWrapper, StringIO
 import logging
 import os
 from os.path import exists
@@ -12,6 +12,12 @@ from typing import Union
 from configobj import ConfigObj, ConfigObjError
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
+
+try:
+    import importlib.resources as resources
+except ImportError:
+    # Python < 3.7
+    import importlib_resources as resources
 
 try:
     basestring
@@ -95,7 +101,7 @@ def get_included_configs(config_file: Union[str, io.TextIOWrapper]) -> list:
 def read_config_files(files, list_values=True):
     """Read and merge a list of config files."""
 
-    config = ConfigObj(list_values=list_values)
+    config = create_default_config(list_values=list_values)
     _files = copy(files)
     while _files:
         _file = _files.pop(0)
@@ -110,6 +116,12 @@ def read_config_files(files, list_values=True):
             config.filename = _config.filename
 
     return config
+
+
+def create_default_config(list_values=True):
+    import mycli
+    default_config_file = resources.open_text(mycli, 'myclirc')
+    return read_config_file(default_config_file, list_values=list_values)
 
 
 def write_default_config(source, destination, overwrite=False):

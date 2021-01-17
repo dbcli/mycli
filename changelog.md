@@ -1,3 +1,10 @@
+TODO:
+===
+
+Internal
+--------
+* Use importlib, instead of file links, to locate resources
+
 1.23.2
 ===
 
