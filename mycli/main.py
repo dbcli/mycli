@@ -52,7 +52,7 @@ from .key_bindings import mycli_bindings
 from .lexer import MyCliLexer
 from . import __version__
 from .compat import WIN
-from .packages.filepaths import dir_path_exists, guess_socket_location, get_default_config_path
+from .packages.filepaths import dir_path_exists, guess_socket_location
 
 import itertools
 
@@ -94,11 +94,14 @@ class MyCli(object):
         os.path.expanduser('~/.my.cnf'),
     ]
 
-    default_user_config_file = get_default_config_path()
-
+    # check XDG_CONFIG_HOME exists and not an empty string
+    if os.environ.get("XDG_CONFIG_HOME"):
+        xdg_config_home = os.environ.get("XDG_CONFIG_HOME")
+    else:
+        xdg_config_home = "~/.config"
     system_config_files = [
         '/etc/myclirc',
-        default_user_config_file
+        os.path.join(os.path.expanduser(xdg_config_home), "mycli", "myclirc")
     ]
 
     pwd_config_file = os.path.join(os.getcwd(), ".myclirc")
