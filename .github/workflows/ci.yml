@@ -7,13 +7,20 @@ on:
 
 jobs:
   linux:
-
-    runs-on: ubuntu-latest
-
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8, 3.9]
+        include:
+          - python-version: 3.6
+            os: ubuntu-16.04 # MySQL 5.7.32
+          - python-version: 3.7
+            os: ubuntu-18.04 # MySQL 5.7.32
+          - python-version: 3.8
+            os: ubuntu-18.04 # MySQL 5.7.32
+          - python-version: 3.9
+            os: ubuntu-20.04  # MySQL 8.0.22
 
+    runs-on: ${{ matrix.os }}
     steps:
 
       - uses: actions/checkout@v2
