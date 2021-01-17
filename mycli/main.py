@@ -96,17 +96,16 @@ class MyCli(object):
 
     # check XDG_CONFIG_HOME exists and not an empty string
     if os.environ.get("XDG_CONFIG_HOME"):
-        xdg_config_home = os.environ.get("XDG_CONFIG_HOME")
+        xdg_config_home = os.path.expanduser(os.environ.get("XDG_CONFIG_HOME"))
     elif WIN:
-        xdg_config_home = "~/AppData/Local"
+        xdg_config_home = os.path.expanduser("~/AppData/Local")
     else:
-        xdg_config_home = "~/.config"
+        xdg_config_home = os.path.expanduser("~/.config")
 
-    default_user_config_file = os.path.join(
-        os.path.expanduser(xdg_config_home),
-        "mycli",
-        "myclirc"
-    )
+    if not os.path.exists(xdg_config_home):
+        os.mkdir(xdg_config_home)
+
+    default_user_config_file = os.path.join(xdg_config_home, "mycli", "myclirc")
 
     system_config_files = [
         '/etc/myclirc',
