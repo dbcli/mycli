@@ -5,6 +5,7 @@ from click.testing import CliRunner
 
 from mycli.main import MyCli, cli, thanks_picker, PACKAGE_ROOT
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
+from mycli.compat import WIN
 from .utils import USER, HOST, PORT, PASSWORD, dbtest, run
 
 from textwrap import dedent
@@ -270,7 +271,7 @@ def test_reserved_space_is_integer():
 
 def test_list_dsn():
     runner = CliRunner()
-    with NamedTemporaryFile(mode="w") as myclirc:
+    with NamedTemporaryFile(mode="w", delete=False) as myclirc:
         myclirc.write(dedent("""\
             [alias_dsn]
             test = mysql://test/test
@@ -285,7 +286,7 @@ def test_list_dsn():
 
 def test_list_ssh_config():
     runner = CliRunner()
-    with NamedTemporaryFile(mode="w") as ssh_config:
+    with NamedTemporaryFile(mode="w", delete=False) as ssh_config:
         ssh_config.write(dedent("""\
             Host test
                 Hostname test.example.com
@@ -446,7 +447,7 @@ def test_ssh_config(monkeypatch):
     runner = CliRunner()
 
     # Setup temporary configuration
-    with NamedTemporaryFile(mode="w") as ssh_config:
+    with NamedTemporaryFile(mode="w", delete=False) as ssh_config:
         ssh_config.write(dedent("""\
             Host test
                 Hostname test.example.com
@@ -465,12 +466,12 @@ def test_ssh_config(monkeypatch):
         ])
         assert result.exit_code == 0, result.output + \
             " " + str(result.exception)
-        assert \
-            MockMyCli.connect_args["ssh_user"] == "joe" and \
-            MockMyCli.connect_args["ssh_host"] == "test.example.com" and \
-            MockMyCli.connect_args["ssh_port"] == 22222 and \
-            MockMyCli.connect_args["ssh_key_filename"] == os.getenv(
-                "HOME") + "/.ssh/gateway"
+        assert MockMyCli.connect_args["ssh_user"] == "joe"
+        assert MockMyCli.connect_args["ssh_host"] == "test.example.com"
+        assert MockMyCli.connect_args["ssh_port"] == 22222
+        assert MockMyCli.connect_args["ssh_key_filename"] == os.path.expanduser(
+                "~/.ssh/gateway"
+        )
 
         # When a user supplies a ssh config host as argument to mycli,
         # and used command line arguments, use the command line
@@ -487,11 +488,10 @@ def test_ssh_config(monkeypatch):
         ])
         assert result.exit_code == 0, result.output + \
             " " + str(result.exception)
-        assert \
-            MockMyCli.connect_args["ssh_user"] == "arg_user" and \
-            MockMyCli.connect_args["ssh_host"] == "arg_host" and \
-            MockMyCli.connect_args["ssh_port"] == 3 and \
-            MockMyCli.connect_args["ssh_key_filename"] == "/path/to/key"
+        assert MockMyCli.connect_args["ssh_user"] == "arg_user"
+        assert MockMyCli.connect_args["ssh_host"] == "arg_host"
+        assert MockMyCli.connect_args["ssh_port"] == 3
+        assert MockMyCli.connect_args["ssh_key_filename"] == "/path/to/key"
 
 
 @dbtest

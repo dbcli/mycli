@@ -8,8 +8,9 @@ import pytest
 from pymysql import ProgrammingError
 
 import mycli.packages.special
+from mycli.compat import WIN
 
-from .utils import dbtest, db_connection, send_ctrl_c
+from .utils import dbtest, db_connection, send_ctrl_c, assert_file_contents
 
 
 def test_set_get_pager():
@@ -55,20 +56,22 @@ def test_editor_command():
 
 def test_tee_command():
     mycli.packages.special.write_tee(u"hello world")  # write without file set
-    with tempfile.NamedTemporaryFile() as f:
-        mycli.packages.special.execute(None, u"tee " + f.name)
-        mycli.packages.special.write_tee(u"hello world")
-        assert f.read() == b"hello world\n"
+    tee_file_handle, tee_file_path = tempfile.mkstemp()
+    # On Windows, an open temp file cannot be opened again, 
+    # so that the tee command will fail unless we close it
+    os.close(tee_file_handle)
 
-        mycli.packages.special.execute(None, u"tee -o " + f.name)
-        mycli.packages.special.write_tee(u"hello world")
-        f.seek(0)
-        assert f.read() == b"hello world\n"
+    mycli.packages.special.execute(None, u"tee " + tee_file_path)
+    mycli.packages.special.write_tee(u"hello world")
+    assert_file_contents(tee_file_path, "hello world\n")
 
-        mycli.packages.special.execute(None, u"notee")
-        mycli.packages.special.write_tee(u"hello world")
-        f.seek(0)
-        assert f.read() == b"hello world\n"
+    mycli.packages.special.execute(None, u"tee -o " + tee_file_path)
+    mycli.packages.special.write_tee(u"hello world")
+    assert_file_contents(tee_file_path, "hello world\n")
+
+    mycli.packages.special.execute(None, u"notee")
+    mycli.packages.special.write_tee(u"hello world")
+    assert_file_contents(tee_file_path, "hello world\n")
 
 
 def test_tee_command_error():
@@ -97,17 +100,19 @@ def test_once_command():
     with pytest.raises(OSError):
         mycli.packages.special.execute(None, u"\\once /proc/access-denied")
 
-    mycli.packages.special.write_once(u"hello world")  # write without file set
-    with tempfile.NamedTemporaryFile() as f:
-        mycli.packages.special.execute(None, u"\\once " + f.name)
-        mycli.packages.special.write_once(u"hello world")
-        assert f.read() == b"hello world\n"
 
-        mycli.packages.special.execute(None, u"\\once -o " + f.name)
-        mycli.packages.special.write_once(u"hello world line 1")
-        mycli.packages.special.write_once(u"hello world line 2")
-        f.seek(0)
-        assert f.read() == b"hello world line 1\nhello world line 2\n"
+    mycli.packages.special.write_once(u"hello world")  # write without file set
+    once_file_handle, once_file_path = tempfile.mkstemp()
+    os.close(once_file_handle)  # if it remains open, `once` will fail on Windows
+
+    mycli.packages.special.execute(None, u"\\once " + once_file_path)
+    mycli.packages.special.write_once(u"hello world")
+    assert_file_contents(once_file_path, 'hello world\n')
+
+    mycli.packages.special.execute(None, u"\\once -o " + once_file_path)
+    mycli.packages.special.write_once(u"hello world line 1")
+    mycli.packages.special.write_once(u"hello world line 2")
+    assert_file_contents(once_file_path, "hello world line 1\nhello world line 2\n")
 
 
 def test_pipe_once_command():
@@ -128,13 +133,14 @@ def test_parseargfile():
     """Test that parseargfile expands the user directory."""
     expected = {'file': os.path.join(os.path.expanduser('~'), 'filename'),
                 'mode': 'a'}
+    SEP = os.path.sep
     assert expected == mycli.packages.special.iocommands.parseargfile(
-        '~/filename')
+        f'~{SEP}filename')
 
     expected = {'file': os.path.join(os.path.expanduser('~'), 'filename'),
                 'mode': 'w'}
     assert expected == mycli.packages.special.iocommands.parseargfile(
-        '-o ~/filename')
+        f'-o ~{SEP}filename')
 
 
 def test_parseargfile_no_file():
@@ -166,18 +172,23 @@ def test_watch_query_full():
     """Test that `watch_query`:
 
     * Returns the expected results.
-    * Executes the defined times inside the given interval, in this case with
-      a 0.3 seconds wait, it should execute 4 times inside a 1 seconds
-      interval.
+    * Executes the defined times inside the given interval
     * Stops at Ctrl-C
 
     """
-    watch_seconds = 0.3
-    wait_interval = 1
+    if WIN:
+        # Timing of ctrl_c sending on Windows seems very approximate.
+        # We basically just check that there are "a lot of queries"
+        watch_seconds = 0.3
+        wait_interval = 3
+        expected_results = (9, 15)
+    else:
+        watch_seconds = 0.3
+        wait_interval = 1
+        expected_results = (4, 4)
     expected_value = "1"
     query = "SELECT {0!s}".format(expected_value)
     expected_title = '> {0!s}'.format(query)
-    expected_results = 4
     ctrl_c_process = send_ctrl_c(wait_interval)
     with db_connection().cursor() as cur:
         results = list(
@@ -186,7 +197,8 @@ def test_watch_query_full():
             )
         )
     ctrl_c_process.join(1)
-    assert len(results) == expected_results
+    low, high = expected_results
+    assert low <= len(results) <= high
     for result in results:
         assert result[0] == expected_title
         assert result[2][0] == expected_value

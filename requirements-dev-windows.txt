@@ -1,0 +1,8 @@
+mock
+pytest!=3.3.0
+twine==1.12.1
+behave>=1.2.4
+colorama==0.4.1
+git+https://github.com/hayd/pep8radius.git  # --error-status option not released
+click>=7.0
+paramiko==2.7.1

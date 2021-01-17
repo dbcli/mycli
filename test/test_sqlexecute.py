@@ -5,6 +5,8 @@ import pymysql
 
 from .utils import run, dbtest, set_expanded_output, is_expanded_output
 
+from mycli.compat import WIN
+
 
 def assert_result_equal(result, title=None, rows=None, headers=None,
                         status=None, auto_status=True, assert_contains=False):
@@ -77,14 +79,20 @@ def test_database_list(executor):
 def test_invalid_syntax(executor):
     with pytest.raises(pymysql.ProgrammingError) as excinfo:
         run(executor, 'invalid syntax!')
-    assert 'You have an error in your SQL syntax;' in str(excinfo.value)
+    assert (
+        'You have an error in your SQL syntax;' in str(excinfo.value) or
+        '1064' in str(excinfo.value)
+    )
 
 
 @dbtest
 def test_invalid_column_name(executor):
     with pytest.raises(pymysql.err.OperationalError) as excinfo:
         run(executor, 'select invalid command')
-    assert "Unknown column 'invalid' in 'field list'" in str(excinfo.value)
+    assert (
+        "Unknown column 'invalid' in 'field list'" in str(excinfo.value) or
+        '1054' in str(excinfo.value)
+    )
 
 
 @dbtest
@@ -112,7 +120,10 @@ def test_multiple_queries_same_line(executor):
 def test_multiple_queries_same_line_syntaxerror(executor):
     with pytest.raises(pymysql.ProgrammingError) as excinfo:
         run(executor, "select 'foo'; invalid syntax")
-    assert 'You have an error in your SQL syntax;' in str(excinfo.value)
+    assert (
+        'You have an error in your SQL syntax;' in str(excinfo.value) or 
+        '1064' in str(excinfo.value)
+    )
 
 
 @dbtest
@@ -194,11 +205,17 @@ def test_cd_command_without_a_folder_name(executor):
 @dbtest
 def test_system_command_not_found(executor):
     results = run(executor, 'system xyz')
-    assert_result_equal(results, status='OSError: No such file or directory',
+    if WIN:
+        status = 'OSError: The system cannot find the file specified'
+    else:
+        status = 'OSError: No such file or directory' 
+
+    assert_result_equal(results, status=status,
                         assert_contains=True)
 
 
 @dbtest
+@pytest.mark.xfail(WIN, reason='system command does not work on Windows')
 def test_system_command_output(executor):
     test_dir = os.path.abspath(os.path.dirname(__file__))
     test_file_path = os.path.join(test_dir, 'test.txt')

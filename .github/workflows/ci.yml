@@ -4,15 +4,70 @@ on:
   pull_request:
     paths-ignore:
       - '**.md'
+  push:
+    branches:
+      - pasenor/ci-windows
 
 jobs:
-  linux:
+  # linux:
 
-    runs-on: ubuntu-latest
+  #   runs-on: ubuntu-latest
+
+  #   strategy:
+  #     matrix:
+  #       python-version: [3.6, 3.7, 3.8, 3.9]
+
+  #   steps:
+
+  #     - uses: actions/checkout@v2
+
+  #     - name: Set up Python ${{ matrix.python-version }}
+  #       uses: actions/setup-python@v2
+  #       with:
+  #         python-version: ${{ matrix.python-version }}
+
+  #     - name: Start MySQL
+  #       run: |
+  #         sudo /etc/init.d/mysql start
+
+  #     - name: Install dependencies
+  #       run: |
+  #         python -m pip install --upgrade pip
+  #         pip install -r requirements-dev.txt
+  #         pip install --no-cache-dir -e .
+
+  #     - name: Wait for MySQL connection
+  #       run: |
+  #         while ! mysqladmin ping --host=localhost --port=3306 --user=root --password=root --silent; do
+  #           sleep 5
+  #         done
+
+  #     - name: Pytest / behave
+  #       env:
+  #         PYTEST_PASSWORD: root
+  #       run: |
+  #         ./setup.py test --pytest-args="--cov-report= --cov=mycli"
+
+  #     - name: Lint
+  #       run: |
+  #         ./setup.py lint --branch=HEAD
+
+  #     - name: Coverage
+  #       run: |
+  #         coverage combine
+  #         coverage report
+  #         codecov
+
+  windows:
+
+    runs-on: windows-2019
 
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9]
+        python-version: [3.9]
+
+    env:
+      MYSQL_ARCHIVE_NAME: 'mysql-8.0.22-winx64'
 
     steps:
 
@@ -23,34 +78,45 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Start MySQL
-        run: |
-          sudo /etc/init.d/mysql start
-
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements-dev.txt
+          pip install requests
+          pip install -r requirements-dev-windows.txt
           pip install --no-cache-dir -e .
 
-      - name: Wait for MySQL connection
-        run: |
-          while ! mysqladmin ping --host=localhost --port=3306 --user=root --password=root --silent; do
-            sleep 5
-          done
-
-      - name: Pytest / behave
+      - name: Cache MySQL
+        id: cache-mysql
+        uses: actions/cache@v2
         env:
-          PYTEST_PASSWORD: root
+          cache-name: 'cache-mysql-distrib'
+        with:
+            path: D:/mysql
+            key: ${{ runner.os }}-${{ env.MYSQL_ARCHIVE_NAME }}
+      - name: Download MySQL
+        if: steps.cache-mysql.outputs.cache-hit != 'true'
         run: |
-          ./setup.py test --pytest-args="--cov-report= --cov=mycli"
+          mkdir D:/mysql
+          mkdir D:/mysql/share
+          cd D:/mysql
+          python $Env:GITHUB_WORKSPACE/.github/workflows/windows/download_mysql.py
 
-      - name: Lint
+      - name: Start MySQL Server
         run: |
-          ./setup.py lint --branch=HEAD
+          mkdir D:/mysqldata
+          cd D:/mysql
+          mv $Env:GITHUB_WORKSPACE/.github/workflows/windows/my.ini $Env:WINDIR
+          unzip ${Env:MYSQL_ARCHIVE_NAME}.zip
+          cd ${Env:MYSQL_ARCHIVE_NAME}\bin
+          mysqld --initialize-insecure --console
+          mysqld --install MySQL --defaults-file=$Env:WINDIR/my.ini
+          net start MySQL 
+          echo status | mysql -uroot
 
-      - name: Coverage
+      - name: Pytest
+        env:
+          PYTEST_USER: root
+          PYTEST_PASSWORD: ''
         run: |
-          coverage combine
-          coverage report
-          codecov
+          python -c"import sys, pytest; sys.exit(pytest.main())" -vv test 
+

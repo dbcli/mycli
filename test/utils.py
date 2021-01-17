@@ -30,8 +30,9 @@ def db_connection(dbname=None):
 try:
     db_connection()
     CAN_CONNECT_TO_DB = True
-except:
+except Exception as e:
     CAN_CONNECT_TO_DB = False
+    raise e
 
 dbtest = pytest.mark.skipif(
     not CAN_CONNECT_TO_DB,
@@ -92,3 +93,10 @@ def send_ctrl_c(wait_seconds):
     )
     ctrl_c_process.start()
     return ctrl_c_process
+
+
+def assert_file_contents(file_path, expected_contents):
+    with open(file_path) as f:
+        file_contents = f.read()
+        assert file_contents == expected_contents
+
