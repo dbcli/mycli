@@ -1,6 +1,7 @@
 import os
 import platform
 
+from mycli.compat import WIN
 
 if os.name == "posix":
     if platform.system() == "Darwin":
@@ -104,3 +105,19 @@ def guess_socket_location():
                     return os.path.join(r, filename)
             dirs[:] = [d for d in dirs if d.startswith("mysql")]
     return None
+
+
+def get_default_config_path():
+    # check XDG_CONFIG_HOME exists and not an empty string
+    if os.environ.get("XDG_CONFIG_HOME"):
+        xdg_config_home = os.path.expanduser(os.environ.get("XDG_CONFIG_HOME"))
+    elif WIN:
+        xdg_config_home = os.path.expanduser("~/AppData/Local")
+    else:
+        xdg_config_home = os.path.expanduser("~/.config/")
+
+    config_root = os.path.join(xdg_config_home, 'mycli')
+    if not os.path.exists(config_root):
+        os.makedirs(config_root)
+
+    return os.path.join(config_root, 'myclirc')

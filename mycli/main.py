@@ -1,4 +1,4 @@
-from io import open, StringIO
+from io import open
 import os
 import sys
 import traceback
@@ -52,7 +52,7 @@ from .key_bindings import mycli_bindings
 from .lexer import MyCliLexer
 from . import __version__
 from .compat import WIN
-from .packages.filepaths import dir_path_exists, guess_socket_location
+from .packages.filepaths import dir_path_exists, guess_socket_location, get_default_config_path
 
 import itertools
 
@@ -94,18 +94,7 @@ class MyCli(object):
         os.path.expanduser('~/.my.cnf'),
     ]
 
-    # check XDG_CONFIG_HOME exists and not an empty string
-    if os.environ.get("XDG_CONFIG_HOME"):
-        xdg_config_home = os.path.expanduser(os.environ.get("XDG_CONFIG_HOME"))
-    elif WIN:
-        xdg_config_home = os.path.expanduser("~/AppData/Local")
-    else:
-        xdg_config_home = os.path.expanduser("~/.config")
-
-    if not os.path.exists(xdg_config_home):
-        os.mkdir(xdg_config_home)
-
-    default_user_config_file = os.path.join(xdg_config_home, "mycli", "myclirc")
+    default_user_config_file = get_default_config_path()
 
     system_config_files = [
         '/etc/myclirc',
@@ -323,7 +312,6 @@ class MyCli(object):
 
         root_logger.debug('Initializing mycli logging.')
         root_logger.debug('Log file %r.', log_file)
-
 
     def read_my_cnf_files(self, files, keys):
         """
