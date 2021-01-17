@@ -1,10 +1,17 @@
 TBD
-===
+=======
 
 Bug Fixes:
 ----------
 * Allow `FileNotFound` exception for SSH config files.
 
+1.23.2
+===
+
+Bug Fixes:
+----------
+* Ensure `--port` is always an int.
+ 
 1.23.1
 ===
 
@@ -14,6 +21,10 @@ Bug Fixes:
 
 1.23.0
 ===
+
+Bug Fixes:
+----------
+* Fix config file include logic
 
 Features:
 ---------
