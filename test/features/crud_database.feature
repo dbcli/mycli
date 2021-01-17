@@ -16,6 +16,10 @@ Feature: manipulate databases:
       when we connect to dbserver
       then we see database connected
 
+  Scenario: connect and disconnect from quoted test database
+     When we connect to quoted test database
+      then we see database connected
+
   Scenario: create and drop default database
      When we create database
       then we see database created
