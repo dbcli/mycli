@@ -42,6 +42,7 @@ jobs:
       - name: Pytest / behave
         env:
           PYTEST_PASSWORD: root
+          PYTEST_HOST: 127.0.0.1
         run: |
           ./setup.py test --pytest-args="--cov-report= --cov=mycli"
 
