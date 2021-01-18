@@ -119,4 +119,4 @@ jobs:
           PYTEST_PASSWORD: ''
         run: |
           python -c"import sys, pytest; sys.exit(pytest.main())" -vv test 
-
+          python -c"import sys; print('done'); sys.exit(0)"
