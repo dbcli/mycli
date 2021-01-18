@@ -1350,6 +1350,9 @@ def read_ssh_config(ssh_config_path):
     try:
         with open(ssh_config_path) as f:
             ssh_config.parse(f)
+    except FileNotFoundError as e:
+        click.secho(str(e), err=True, fg='red')
+        sys.exit(1)
     # Paramiko prior to version 2.7 raises Exception on parse errors.
     # In 2.7 it has become paramiko.ssh_exception.SSHException,
     # but let's catch everything for compatibility
@@ -1358,9 +1361,6 @@ def read_ssh_config(ssh_config_path):
             f'Could not parse SSH configuration file {ssh_config_path}:\n{err} ',
             err=True, fg='red'
         )
-        sys.exit(1)
-    except FileNotFoundError as e:
-        click.secho(str(e), err=True, fg='red')
         sys.exit(1)
     else:
         return ssh_config

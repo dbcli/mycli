@@ -1,5 +1,9 @@
-TODO
-===
+TBD
+=======
+
+Bug Fixes:
+----------
+* Allow `FileNotFound` exception for SSH config files.
 
 Features:
 ---------
