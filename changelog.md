@@ -5,6 +5,11 @@ Bug Fixes:
 ----------
 * Allow `FileNotFound` exception for SSH config files.
 
+Features:
+---------
+* Add `-g` shortcut to option `--login-path`.
+
+
 1.23.2
 ===
 
