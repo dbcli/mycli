@@ -118,5 +118,6 @@ jobs:
           PYTEST_USER: root
           PYTEST_PASSWORD: ''
         run: |
-          python -c"import sys, pytest; sys.exit(pytest.console_main())" test 
-          python -c"import sys; print('done'); sys.exit(0)"
+          pytest test
+          $Env:PYTEST_PASSWORD = "fake_password"
+
