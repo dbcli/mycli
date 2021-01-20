@@ -118,6 +118,6 @@ jobs:
           PYTEST_USER: root
           PYTEST_PASSWORD: ''
         run: |
-          pytest test
+          python -c "import sys, pytest; res = pytest.main(); print(f'returning {res}'); sys.exit(res)" test 
           
 
