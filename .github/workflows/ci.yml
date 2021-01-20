@@ -118,6 +118,6 @@ jobs:
           PYTEST_USER: root
           PYTEST_PASSWORD: ''
         run: |
-          python -c "print('done')"
+          pytest test -k "test_execute_arg"
           
 
