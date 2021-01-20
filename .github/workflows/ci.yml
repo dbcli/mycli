@@ -118,6 +118,6 @@ jobs:
           PYTEST_USER: root
           PYTEST_PASSWORD: ''
         run: |
-          pytest test -k "test_execute_arg"
+          pytest test -k "test_sub_select_multiple_col_name_completion"
           
 
