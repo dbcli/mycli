@@ -34,6 +34,8 @@ def read_config_file(config_path) -> paramiko.SSHConfig:
     try:
         with open(config_path) as f:
             ssh_config.parse(f)
+    except FileNotFoundError as e:
+        raise SSHException(str(e))
     # Paramiko prior to version 2.7 raises Exception on parse errors.
     # In 2.7 it has become paramiko.ssh_exception.SSHException,
     # but let's catch everything for compatibility
@@ -41,6 +43,4 @@ def read_config_file(config_path) -> paramiko.SSHConfig:
         raise SSHException(
             f"Could not parse SSH configuration file {config_path}:\n{err} ",
         )
-    except FileNotFoundError as e:
-        raise SSHException(str(e))
     return ssh_config
