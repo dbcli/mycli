@@ -44,6 +44,36 @@ PROMPT_STYLE_TO_TOKEN = {
     v: k for k, v in TOKEN_TO_PROMPT_STYLE.items()
 }
 
+# all tokens that the Pygments MySQL lexer can produce
+OVERRIDE_STYLE_TO_TOKEN = {
+    'sql.comment': Token.Comment,
+    'sql.comment.multi-line': Token.Comment.Multiline,
+    'sql.comment.single-line': Token.Comment.Single,
+    'sql.comment.optimizer-hint': Token.Comment.Special,
+    'sql.escape': Token.Error,
+    'sql.keyword': Token.Keyword,
+    'sql.datatype': Token.Keyword.Type,
+    'sql.literal': Token.Literal,
+    'sql.literal.date': Token.Literal.Date,
+    'sql.symbol': Token.Name,
+    'sql.quoted-schema-object': Token.Name.Quoted,
+    'sql.quoted-schema-object.escape': Token.Name.Quoted.Escape,
+    'sql.constant': Token.Name.Constant,
+    'sql.function': Token.Name.Function,
+    'sql.variable': Token.Name.Variable,
+    'sql.number': Token.Number,
+    'sql.number.binary': Token.Number.Bin,
+    'sql.number.float': Token.Number.Float,
+    'sql.number.hex': Token.Number.Hex,
+    'sql.number.integer': Token.Number.Integer,
+    'sql.operator': Token.Operator,
+    'sql.punctuation': Token.Punctuation,
+    'sql.string': Token.String,
+    'sql.string.double-quouted': Token.String.Double,
+    'sql.string.escape': Token.String.Escape,
+    'sql.string.single-quoted': Token.String.Single,
+    'sql.whitespace': Token.Text,
+}
 
 def parse_pygments_style(token_name, style_object, style_dict):
     """Parse token type and style string.
@@ -107,6 +137,9 @@ def style_factory_output(name, cli_style):
             style.update({token_type: style_value})
         elif token in PROMPT_STYLE_TO_TOKEN:
             token_type = PROMPT_STYLE_TO_TOKEN[token]
+            style.update({token_type: cli_style[token]})
+        elif token in OVERRIDE_STYLE_TO_TOKEN:
+            token_type = OVERRIDE_STYLE_TO_TOKEN[token]
             style.update({token_type: cli_style[token]})
         else:
             # TODO: cli helpers will have to switch to ptk.Style

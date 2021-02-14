@@ -1,11 +1,12 @@
 import pymysql
 
 
-def create_db(hostname='localhost', username=None, password=None,
-              dbname=None):
+def create_db(hostname='localhost', port=3306, username=None,
+              password=None, dbname=None):
     """Create test database.
 
     :param hostname: string
+    :param port: int
     :param username: string
     :param password: string
     :param dbname: string
@@ -14,6 +15,7 @@ def create_db(hostname='localhost', username=None, password=None,
     """
     cn = pymysql.connect(
         host=hostname,
+        port=port,
         user=username,
         password=password,
         charset='utf8mb4',
@@ -26,14 +28,15 @@ def create_db(hostname='localhost', username=None, password=None,
 
     cn.close()
 
-    cn = create_cn(hostname, password, username, dbname)
+    cn = create_cn(hostname, port, password, username, dbname)
     return cn
 
 
-def create_cn(hostname, password, username, dbname):
+def create_cn(hostname, port, password, username, dbname):
     """Open connection to database.
 
     :param hostname:
+    :param port:
     :param password:
     :param username:
     :param dbname: string
@@ -42,6 +45,7 @@ def create_cn(hostname, password, username, dbname):
     """
     cn = pymysql.connect(
         host=hostname,
+        port=port,
         user=username,
         password=password,
         db=dbname,
@@ -52,11 +56,12 @@ def create_cn(hostname, password, username, dbname):
     return cn
 
 
-def drop_db(hostname='localhost', username=None, password=None,
-            dbname=None):
+def drop_db(hostname='localhost', port=3306, username=None,
+            password=None, dbname=None):
     """Drop database.
 
     :param hostname: string
+    :param port: int
     :param username: string
     :param password: string
     :param dbname: string
@@ -64,6 +69,7 @@ def drop_db(hostname='localhost', username=None, password=None,
     """
     cn = pymysql.connect(
         host=hostname,
+        port=port,
         user=username,
         password=password,
         db=dbname,

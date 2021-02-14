@@ -21,13 +21,14 @@ from cli_helpers.tabular_output import preprocessors
 from cli_helpers.utils import strip_ansi
 import click
 import sqlparse
-from mycli.packages.parseutils import is_dropping_database
+from mycli.packages.parseutils import is_dropping_database, is_destructive
 from prompt_toolkit.completion import DynamicCompleter
 from prompt_toolkit.enums import DEFAULT_BUFFER, EditingMode
 from prompt_toolkit.key_binding.bindings.named_commands import register as prompt_register
 from prompt_toolkit.shortcuts import PromptSession, CompleteStyle
 from prompt_toolkit.document import Document
 from prompt_toolkit.filters import HasFocus, IsDone
+from prompt_toolkit.formatted_text import ANSI
 from prompt_toolkit.layout.processors import (HighlightMatchingBracketProcessor,
                                               ConditionalProcessor)
 from prompt_toolkit.lexers import PygmentsLexer
@@ -84,7 +85,7 @@ class MyCli(object):
         '/etc/my.cnf',
         '/etc/mysql/my.cnf',
         '/usr/local/etc/my.cnf',
-        '~/.my.cnf'
+        os.path.expanduser('~/.my.cnf'),
     ]
 
     # check XDG_CONFIG_HOME exists and not an empty string
@@ -148,7 +149,7 @@ class MyCli(object):
                                 c['main'].as_bool('auto_vertical_output')
 
         # Write user config if system config wasn't the last config loaded.
-        if c.filename not in self.system_config_files:
+        if c.filename not in self.system_config_files and not os.path.exists(myclirc):
             write_default_config(self.default_config_file, myclirc)
 
         # audit log
@@ -236,6 +237,9 @@ class MyCli(object):
             )
             return
 
+        if arg.startswith('`') and arg.endswith('`'):
+            arg = re.sub(r'^`(.*)`$', r'\1', arg)
+            arg = re.sub(r'``', r'`', arg)
         self.sqlexecute.change_db(arg)
 
         yield (None, None, None, 'You are now connected to database "%s" as '
@@ -383,13 +387,13 @@ class MyCli(object):
 
         database = database or cnf['database']
         # Socket interface not supported for SSH connections
-        if port or host or self.ssh_client:
+        if port or (host and host != 'localhost') or self.ssh_client:
             socket = ''
         else:
             socket = socket or cnf['socket'] or guess_socket_location()
         user = user or cnf['user'] or os.getenv('USER')
         host = host or cnf['host']
-        port = port or cnf['port']
+        port = int(port or cnf['port'] or 3306)
         ssl = ssl or {}
 
         passwd = passwd if isinstance(passwd, str) else cnf['password']
@@ -433,7 +437,7 @@ class MyCli(object):
             if not WIN and socket:
                 socket_owner = getpwuid(os.stat(socket).st_uid).pw_name
                 self.echo(
-                    f"Connecting to socket {socket}, owned by user {socket_owner}")
+                    f"Connecting to socket {socket}, owned by user {socket_owner}", err=True)
                 try:
                     _connect()
                 except OperationalError as e:
@@ -476,7 +480,7 @@ class MyCli(object):
             exit(1)
 
     def handle_editor_command(self, text):
-        """Editor command is any query that is prefixed or suffixed by a '\e'.
+        r"""Editor command is any query that is prefixed or suffixed by a '\e'.
         The reason for a while loop is because a user might edit a query
         multiple times. For eg:
 
@@ -505,6 +509,24 @@ class MyCli(object):
 
             continue
         return text
+
+    def handle_clip_command(self, text):
+        r"""A clip command is any query that is prefixed or suffixed by a
+        '\clip'.
+
+        :param text: Document
+        :return: Boolean
+
+        """
+
+        if special.clip_command(text):
+            query = (special.get_clip_query(text) or
+                     self.get_last_query())
+            message = special.copy_query_to_clipboard(sql=query)
+            if message:
+                raise RuntimeError(message)
+            return True
+        return False
 
     def run_cli(self):
         iterations = 0
@@ -543,10 +565,13 @@ class MyCli(object):
             prompt = self.get_prompt(self.prompt_format)
             if self.prompt_format == self.default_prompt and len(prompt) > self.max_len_prompt:
                 prompt = self.get_prompt('\\d> ')
-            return [('class:prompt', prompt)]
+            prompt = prompt.replace("\\x1b", "\x1b")
+            return ANSI(prompt)
 
         def get_continuation(width, *_):
-            if self.multiline_continuation_char:
+            if self.multiline_continuation_char == '':
+                continuation = ''
+            elif self.multiline_continuation_char:
                 left_padding = width - len(self.multiline_continuation_char)
                 continuation = " " * \
                     max((left_padding - 1), 0) + \
@@ -569,6 +594,15 @@ class MyCli(object):
 
                 try:
                     text = self.handle_editor_command(text)
+                except RuntimeError as e:
+                    logger.error("sql: %r, error: %r", text, e)
+                    logger.error("traceback: %r", traceback.format_exc())
+                    self.echo(str(e), err=True, fg='red')
+                    return
+
+                try:
+                    if self.handle_clip_command(text):
+                        return
                 except RuntimeError as e:
                     logger.error("sql: %r, error: %r", text, e)
                     logger.error("traceback: %r", traceback.format_exc())
@@ -649,6 +683,7 @@ class MyCli(object):
                     result_count += 1
                     mutating = mutating or destroy or is_mutating(status)
                 special.unset_once_if_written()
+                special.unset_pipe_once_if_written()
             except EOFError as e:
                 raise e
             except KeyboardInterrupt:
@@ -809,6 +844,7 @@ class MyCli(object):
                 self.log_output(line)
                 special.write_tee(line)
                 special.write_once(line)
+                special.write_pipe_once(line)
 
                 if fits or output_via_pager:
                     # buffering
@@ -1042,12 +1078,14 @@ class MyCli(object):
               help='Warn before running a destructive query.')
 @click.option('--local-infile', type=bool,
               help='Enable/disable LOAD DATA LOCAL INFILE.')
-@click.option('--login-path', type=str,
+@click.option('-g', '--login-path', type=str,
               help='Read this path from the login file.')
 @click.option('-e', '--execute',  type=str,
               help='Execute command and quit.')
 @click.option('--init-command', type=str,
               help='SQL statement to execute after connecting.')
+@click.option('--charset', type=str,
+              help='Character set for MySQL session.')
 @click.argument('database', default='', nargs=1)
 def cli(database, user, host, port, socket, password, dbname,
         version, verbose, prompt, logfile, defaults_group_suffix,
@@ -1056,7 +1094,7 @@ def cli(database, user, host, port, socket, password, dbname,
         ssl_verify_server_cert, table, csv, warn, execute, myclirc, dsn,
         list_dsn, ssh_user, ssh_host, ssh_port, ssh_password,
         ssh_key_filename, list_ssh_config, ssh_config_path, ssh_config_host,
-        init_command):
+        init_command, charset):
     """A MySQL terminal client with auto-completion and syntax highlighting.
 
     \b
@@ -1191,6 +1229,7 @@ def cli(database, user, host, port, socket, password, dbname,
         local_infile=local_infile,
         ssl=ssl,
         init_command=init_command,
+        charset=charset,
     )
 
     mycli.logger.debug('Launch Params: \n'
@@ -1225,14 +1264,15 @@ def cli(database, user, host, port, socket, password, dbname,
             click.secho('Sorry... :(', err=True, fg='red')
             exit(1)
 
-        try:
-            sys.stdin = open('/dev/tty')
-        except (IOError, OSError):
-            mycli.logger.warning('Unable to open TTY as stdin.')
+        if mycli.destructive_warning and is_destructive(stdin_text):
+            try:
+                sys.stdin = open('/dev/tty')
+                warn_confirmed = confirm_destructive_query(stdin_text)
+            except (IOError, OSError):
+                mycli.logger.warning('Unable to open TTY as stdin.')
+            if not warn_confirmed:
+                exit(0)
 
-        if (mycli.destructive_warning and
-                confirm_destructive_query(stdin_text) is False):
-            exit(0)
         try:
             new_line = True
 
@@ -1295,7 +1335,7 @@ def is_select(status):
 def thanks_picker(files=()):
     contents = []
     for line in fileinput.input(files=files):
-        m = re.match('^ *\* (.*)', line)
+        m = re.match(r'^ *\* (.*)', line)
         if m:
             contents.append(m.group(1))
     return choice(contents)
@@ -1307,6 +1347,28 @@ def edit_and_execute(event):
     to execute a query after editing, hence validate_and_handle=False."""
     buff = event.current_buffer
     buff.open_in_editor(validate_and_handle=False)
+
+
+def read_ssh_config(ssh_config_path):
+    ssh_config = paramiko.config.SSHConfig()
+    try:
+        with open(ssh_config_path) as f:
+            ssh_config.parse(f)
+    except FileNotFoundError as e:
+        click.secho(str(e), err=True, fg='red')
+        sys.exit(1)
+
+    # Paramiko prior to version 2.7 raises Exception on parse errors.
+    # In 2.7 it has become paramiko.ssh_exception.SSHException,
+    # but let's catch everything for compatibility
+    except Exception as err:
+        click.secho(
+            f'Could not parse SSH configuration file {ssh_config_path}:\n{err} ',
+            err=True, fg='red'
+        )
+        sys.exit(1)
+    else:
+        return ssh_config
 
 
 if __name__ == "__main__":

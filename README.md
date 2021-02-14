@@ -63,8 +63,8 @@ $ sudo apt-get install mycli # Only on debian or ubuntu
       --ssh-password TEXT           Password to connect to ssh server.
       --ssh-key-filename TEXT       Private key filename (identify file) for the
                                     ssh connection.
-      --ssh-config-path TEXT        Path to ssh configuation.
-      --ssh-config-host TEXT        Host for ssh server in ssh configuations (requires paramiko).
+      --ssh-config-path TEXT        Path to ssh configuration.
+      --ssh-config-host TEXT        Host for ssh server in ssh configurations (requires paramiko).
       --ssl-ca PATH                 CA file in PEM format.
       --ssl-capath TEXT             CA directory.
       --ssl-cert PATH               X509 cert in PEM format.
@@ -97,6 +97,7 @@ $ sudo apt-get install mycli # Only on debian or ubuntu
       --login-path TEXT             Read this path from the login file.
       -e, --execute TEXT            Execute command and quit.
       --init-command TEXT           SQL statement to execute after connecting.
+      --charset TEXT                Character set for MySQL session.
       --help                        Show this message and exit.
 
 Features
@@ -113,7 +114,7 @@ Features
 * Support for multiline queries.
 * Favorite queries with optional positional parameters. Save a query using
   `\fs alias query` and execute it with `\f alias` whenever you need.
-* Timing of sql statments and table rendering.
+* Timing of sql statements and table rendering.
 * Config file is automatically created at ``~/.myclirc`` at first launch.
 * Log every query and its results to a file (disabled by default).
 * Pretty prints tabular data (with colors!)

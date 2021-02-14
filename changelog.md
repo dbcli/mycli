@@ -1,11 +1,60 @@
 TBD
+=======
+
+Bug Fixes:
+----------
+* Allow `FileNotFound` exception for SSH config files.
+
+Features:
+---------
+* Add `-g` shortcut to option `--login-path`.
+* Reuse the same SSH connection for both main thread and completion thread.
+
+
+1.23.2
 ===
+
+Bug Fixes:
+----------
+* Ensure `--port` is always an int.
+ 
+1.23.1
+===
+
+Bug Fixes:
+----------
+* Allow `--host` without `--port` to make a TCP connection.
+
+1.23.0
+===
+
+Bug Fixes:
+----------
+* Fix config file include logic
 
 Features:
 ---------
 
 * Add an option `--init-command` to execute SQL after connecting (Thanks: [KITAGAWA Yasutaka]).
-* Reuse the same SSH connection in both main thread and completion thread (Thanks: [Georgy Frolov]).
+* Use InputMode.REPLACE_SINGLE
+* Add support for ANSI escape sequences for coloring the prompt.
+* Allow customization of Pygments SQL syntax-highlighting styles.
+* Add a `\clip` special command to copy queries to the system clipboard.
+* Add a special command `\pipe_once` to pipe output to a subprocess.
+* Add an option `--charset` to set the default charset when connect database.
+
+Bug Fixes:
+----------
+* Fixed compatibility with sqlparse 0.4 (Thanks: [mtorromeo]).
+*  Fixed iPython magic (Thanks: [mwcm]).
+* Send "Connecting to socket" message to the standard error.
+* Respect empty string for prompt_continuation via `prompt_continuation = ''` in `.myclirc`
+* Fix \once -o to overwrite output whole, instead of line-by-line.
+* Dispatch lines ending with `\e` or `\clip` on return, even in multiline mode.
+* Restore working local `--socket=<UDS>` (Thanks: [xeron]).
+* Allow backtick quoting around the database argument to the `use` command.
+* Avoid opening `/dev/tty` when `--no-warn` is given.
+* Fixed some typo errors in `README.md`.
 
 1.22.2
 ======
@@ -13,7 +62,7 @@ Features:
 Bug Fixes:
 ----------
 
-*  Make the `pwd` module optional. 
+*  Make the `pwd` module optional.
 
 1.22.1
 ======
@@ -787,3 +836,6 @@ Bug Fixes:
 [Zach DeCook]: https://zachdecook.com
 [laixintao]: https://github.com/laixintao
 [Nathan Huang]: https://github.com/hxueh
+[mtorromeo]: https://github.com/mtorromeo
+[mwcm]: https://github.com/mwcm
+[xeron]: https://github.com/xeron
