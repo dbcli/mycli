@@ -79,10 +79,11 @@ class SQLExecute(object):
             '\tsocket: %r'
             '\tcharset: %r'
             '\tlocal_infile: %r'
-            '\tssl: %r',
-            '\tinit_command: %r',
+            '\tssl: %r'
+            '\tinit_command: %r'
+            '\tusing ssh: %r',
             db, user, host, port, socket, charset, local_infile, ssl,
-            init_command
+            init_command, bool(ssh_client)
         )
         conv = conversions.copy()
         conv.update({

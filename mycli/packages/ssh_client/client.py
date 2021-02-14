@@ -1,6 +1,9 @@
 """A very thin wrapper around paramiko, mostly to keep all SSH-related
 functionality in one place."""
 from io import open
+import logging
+
+_logger = logging.getLogger(__name__)
 
 try:
     import paramiko
@@ -23,6 +26,14 @@ def create_ssh_client(ssh_host, ssh_port, ssh_user, ssh_password=None, ssh_key_f
     client = paramiko.SSHClient()
     client.load_system_host_keys()
     client.set_missing_host_key_policy(paramiko.WarningPolicy())
+    _logger.debug(
+        f'Connecting to ssh server with \n'
+        '  host = {ssh_host}\n'
+        '  port = {ssh_port}\n'
+        '  user = {ssh_user}\n'
+        '  password = {ssh_password}\n'
+        '  key_filename = {ssh_key_filename}\n'
+    )
     client.connect(
         ssh_host, ssh_port, ssh_user, password=ssh_password, key_filename=ssh_key_filename
     )
