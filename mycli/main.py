@@ -77,6 +77,11 @@ Query = namedtuple('Query', ['query', 'successful', 'mutating'])
 
 PACKAGE_ROOT = os.path.abspath(os.path.dirname(__file__))
 
+SUPPORT_INFO = (
+    'Home: http://mycli.net\n'
+    'Bug tracker: https://github.com/dbcli/mycli/issues'
+)
+
 
 class MyCli(object):
 
@@ -561,9 +566,7 @@ class MyCli(object):
         if not self.less_chatty:
             print(' '.join(sqlexecute.server_type()))
             print('mycli', __version__)
-            print('Chat: https://gitter.im/dbcli/mycli')
-            print('Mail: https://groups.google.com/forum/#!forum/mycli-users')
-            print('Home: http://mycli.net')
+            print(SUPPORT_INFO)
             print('Thanks to the contributor -', thanks_picker([author_file, sponsor_file]))
 
         def get_message():
