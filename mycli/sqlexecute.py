@@ -26,8 +26,11 @@ class SQLExecute(object):
 
     version_query = '''SELECT @@VERSION'''
 
+    # System variables cannot be SELECTed (e.g. @@version_comment)
+    # this MySQL bug was fixed on `5.0.22`
+    # Bug #15684 https://bugs.mysql.com/bug.php?id=15684
     version_comment_query = '''SELECT @@VERSION_COMMENT'''
-    version_comment_query_mysql4 = '''SHOW VARIABLES LIKE "version_comment"'''
+    version_comment_query_alter = '''SHOW VARIABLES LIKE "version_comment"'''
 
     show_candidates_query = '''SELECT name from mysql.help_topic WHERE name like "SHOW %"'''
 
@@ -280,10 +283,10 @@ class SQLExecute(object):
             _logger.debug('Version Query. sql: %r', self.version_query)
             cur.execute(self.version_query)
             version = cur.fetchone()[0]
-            if version[0] == '4':
+            if float(version[:3]) < 5.1:
                 _logger.debug('Version Comment. sql: %r',
-                              self.version_comment_query_mysql4)
-                cur.execute(self.version_comment_query_mysql4)
+                              self.version_comment_query_alter)
+                cur.execute(self.version_comment_query_alter)
                 version_comment = cur.fetchone()[1].lower()
                 if isinstance(version_comment, bytes):
                     # with python3 this query returns bytes
