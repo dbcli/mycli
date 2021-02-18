@@ -4,6 +4,7 @@ TBD
 Bug Fixes:
 ----------
 * Allow `FileNotFound` exception for SSH config files.
+* Fix Unknown system variable 'VERSION_COMMENT'.
 
 Features:
 ---------
@@ -825,6 +826,7 @@ Bug Fixes:
 [Phil Cohen]: https://github.com/phlipper
 [Terseus]: https://github.com/Terseus
 [William GARCIA]: https://github.com/willgarcia
+[Jeffrey Tse]: https://github.com/jeffreytse
 [Jonathan Slenders]: https://github.com/jonathanslenders
 [Casper Langemeijer]: https://github.com/langemeijer
 [Scrappy Soft]: https://github.com/scrappysoft
