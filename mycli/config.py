@@ -244,7 +244,7 @@ def str_to_bool(s):
     elif s.lower() in false_values:
         return False
     else:
-        raise ValueError('not a recognized boolean value: %s'.format(s))
+        raise ValueError('not a recognized boolean value: {0}'.format(s))
 
 
 def strip_matching_quotes(s):
