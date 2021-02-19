@@ -77,6 +77,11 @@ Query = namedtuple('Query', ['query', 'successful', 'mutating'])
 
 PACKAGE_ROOT = os.path.abspath(os.path.dirname(__file__))
 
+SUPPORT_INFO = (
+    'Home: http://mycli.net\n'
+    'Bug tracker: https://github.com/dbcli/mycli/issues'
+)
+
 
 class MyCli(object):
 
@@ -89,7 +94,7 @@ class MyCli(object):
         '/etc/my.cnf',
         '/etc/mysql/my.cnf',
         '/usr/local/etc/my.cnf',
-        '~/.my.cnf'
+        os.path.expanduser('~/.my.cnf'),
     ]
 
     # check XDG_CONFIG_HOME exists and not an empty string
@@ -391,13 +396,13 @@ class MyCli(object):
 
         database = database or cnf['database']
         # Socket interface not supported for SSH connections
-        if (port and host) or (ssh_host and ssh_port):
+        if port or (host and host != 'localhost') or (ssh_host and ssh_port):
             socket = ''
         else:
             socket = socket or cnf['socket'] or guess_socket_location()
         user = user or cnf['user'] or os.getenv('USER')
         host = host or cnf['host']
-        port = port or cnf['port']
+        port = int(port or cnf['port'] or 3306)
         ssl = ssl or {}
 
         passwd = passwd if isinstance(passwd, str) else cnf['password']
@@ -561,9 +566,7 @@ class MyCli(object):
         if not self.less_chatty:
             print(sqlexecute.server_info)
             print('mycli', __version__)
-            print('Chat: https://gitter.im/dbcli/mycli')
-            print('Mail: https://groups.google.com/forum/#!forum/mycli-users')
-            print('Home: http://mycli.net')
+            print(SUPPORT_INFO)
             print('Thanks to the contributor -', thanks_picker([author_file, sponsor_file]))
 
         def get_message():
@@ -862,8 +865,8 @@ class MyCli(object):
 
                         if not output_via_pager:
                             # doesn't fit, flush buffer
-                            for line in buf:
-                                click.secho(line)
+                            for buf_line in buf:
+                                click.secho(buf_line)
                             buf = []
                 else:
                     click.secho(line)
@@ -1085,7 +1088,7 @@ class MyCli(object):
               help='Warn before running a destructive query.')
 @click.option('--local-infile', type=bool,
               help='Enable/disable LOAD DATA LOCAL INFILE.')
-@click.option('--login-path', type=str,
+@click.option('-g', '--login-path', type=str,
               help='Read this path from the login file.')
 @click.option('-e', '--execute',  type=str,
               help='Execute command and quit.')
@@ -1352,6 +1355,9 @@ def read_ssh_config(ssh_config_path):
     try:
         with open(ssh_config_path) as f:
             ssh_config.parse(f)
+    except FileNotFoundError as e:
+        click.secho(str(e), err=True, fg='red')
+        sys.exit(1)
     # Paramiko prior to version 2.7 raises Exception on parse errors.
     # In 2.7 it has become paramiko.ssh_exception.SSHException,
     # but let's catch everything for compatibility
@@ -1360,9 +1366,6 @@ def read_ssh_config(ssh_config_path):
             f'Could not parse SSH configuration file {ssh_config_path}:\n{err} ',
             err=True, fg='red'
         )
-        sys.exit(1)
-    except FileNotFoundError as e:
-        click.secho(str(e), err=True, fg='red')
         sys.exit(1)
     else:
         return ssh_config

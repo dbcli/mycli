@@ -1,5 +1,3 @@
-import os
-import sys
 import sqlparse
 from sqlparse.sql import Comparison, Identifier, Where
 from .parseutils import last_word, extract_tables, find_prev_keyword

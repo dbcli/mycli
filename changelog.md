@@ -1,5 +1,39 @@
 TBD
+=======
+
+Bug Fixes:
+----------
+* Allow `FileNotFound` exception for SSH config files.
+
+Features:
+---------
+* Add `-g` shortcut to option `--login-path`.
+
+Internal:
+---------
+* Remove unused function is_open_quote()
+
+
+1.23.2
 ===
+
+Bug Fixes:
+----------
+* Ensure `--port` is always an int.
+ 
+1.23.1
+===
+
+Bug Fixes:
+----------
+* Allow `--host` without `--port` to make a TCP connection.
+
+1.23.0
+===
+
+Bug Fixes:
+----------
+* Fix config file include logic
 
 Features:
 ---------
