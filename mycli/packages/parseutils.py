@@ -255,5 +255,4 @@ def is_dropping_database(queries, dbname):
             )
             if database_token is not None and normalize_db_name(database_token.get_name()) == dbname:
                 result = keywords[0].normalized == "DROP"
-    else:
-        return result
+    return result

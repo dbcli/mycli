@@ -1,6 +1,5 @@
 """A script to publish a release of mycli to PyPI."""
 
-import io
 from optparse import OptionParser
 import re
 import subprocess
