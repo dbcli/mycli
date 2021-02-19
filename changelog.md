@@ -9,6 +9,10 @@ Features:
 ---------
 * Add `-g` shortcut to option `--login-path`.
 
+Internal:
+---------
+* Remove unused function is_open_quote()
+
 
 1.23.2
 ===
