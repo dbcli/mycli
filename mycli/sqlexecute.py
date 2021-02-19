@@ -283,6 +283,16 @@ class SQLExecute(object):
             _logger.debug('Version Query. sql: %r', self.version_query)
             cur.execute(self.version_query)
             version = cur.fetchone()[0]
+
+            # It's better to use the precise version, but we also known,
+            # there are some versions have the alpha suffix, such as
+            # 5.0.18-nt, 5.0.20a and so on, new complexity will be
+            # introduced here, so here we use an imprecise method to check
+            # and determine the way to retrieve the VERSION_COMMENT, and
+            # the alternative query is also valid for the versions like
+            # 5.0.45b and so on, only when the version is >=5.1, we use
+            # the simple `SELECT @@VERSION_COMMENT`.
+
             if float(version[:3]) < 5.1:
                 _logger.debug('Version Comment. sql: %r',
                               self.version_comment_query_alter)
