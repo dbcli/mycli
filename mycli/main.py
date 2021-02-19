@@ -865,8 +865,8 @@ class MyCli(object):
 
                         if not output_via_pager:
                             # doesn't fit, flush buffer
-                            for line in buf:
-                                click.secho(line)
+                            for buf_line in buf:
+                                click.secho(buf_line)
                             buf = []
                 else:
                     click.secho(line)

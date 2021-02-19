@@ -11,6 +11,7 @@ Features:
 
 Internal:
 ---------
+* Remove unused function is_open_quote()
 * Test various host-port combinations in command line arguments
 
 
