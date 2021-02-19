@@ -3,7 +3,7 @@ import os
 import pytest
 import pymysql
 
-from mycli.sqlexecute import ServerInfo
+from mycli.sqlexecute import ServerInfo, ServerSpecies
 from .utils import run, dbtest, set_expanded_output, is_expanded_output
 
 
@@ -276,14 +276,18 @@ def test_multiple_results(executor):
 @pytest.mark.parametrize(
     'version_string, species, parsed_version_string, version',
     (
-        ('5.7.32-35', 'Percona', '35', 35),
+        ('5.7.32-35', 'Percona', '5.7.32', 50732),
         ('5.7.32-0ubuntu0.18.04.1', 'MySQL', '5.7.32', 50732),
         ('10.5.8-MariaDB-1:10.5.8+maria~focal', 'MariaDB', '10.5.8', 100508),
-        ('unexpected version string', None, 'unexpected version string', 0),
+        ('5.5.5-10.5.8-MariaDB-1:10.5.8+maria~focal', 'MariaDB', '10.5.8', 100508),
+        ('5.0.16-pro-nt-log', 'MySQL', '5.0.16', 50016),
+        ('unexpected version string', None, '', 0),
+        ('', None, '', 0),
+        (None, None, '', 0),
     )
 )
 def test_version_parsing(version_string, species, parsed_version_string, version):
     server_info = ServerInfo.from_version_string(version_string)
-    assert (server_info.species and server_info.species.name) == species
+    assert (server_info.species and server_info.species.name) == species or ServerSpecies.Unknown
     assert server_info.version_str == parsed_version_string
     assert server_info.version == version

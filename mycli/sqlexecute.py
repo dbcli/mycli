@@ -25,19 +25,19 @@ class ServerSpecies(enum.Enum):
     MySQL = 'MySQL'
     MariaDB = 'MariaDB'
     Percona = 'Percona'
+    Unknown = 'Unknown'
 
 
 class ServerInfo:
     def __init__(self, species, version_str):
         self.species = species
         self.version_str = version_str
-        if species == ServerSpecies.Percona:
-            self.version = int(version_str)
-        else:
-            self.version = self.calc_mysql_version_value(version_str)
+        self.version = self.calc_mysql_version_value(version_str)
 
     @staticmethod
-    def calc_mysql_version_value(version_str):
+    def calc_mysql_version_value(version_str) -> int:
+        if not version_str or not isinstance(version_str, str):
+            return 0
         try:
             major, minor, patch = version_str.split('.')
         except ValueError:
@@ -47,26 +47,25 @@ class ServerInfo:
 
     @classmethod
     def from_version_string(cls, version_string):
-        version_re = r'(?P<version>[0-9\.]+)-(?P<comment>[A-Za-z0-9_]+)'
-        match = re.match(version_re, version_string)
+        if not version_string:
+            return cls(ServerSpecies.Unknown, '')
 
-        if match is not None:
-            comment = match.group('comment')
-            mysql_version = match.group('version')
-            if 'MariaDB' in comment:
-                species = ServerSpecies.MariaDB
-                parsed_version_str = mysql_version
-            elif comment.isdigit():
-                species = ServerSpecies.Percona
-                parsed_version_str = comment
-            else:
-                species = ServerSpecies.MySQL
-                parsed_version_str = mysql_version
+        re_species = (
+            (r'(?P<version>[0-9\.]+)-MariaDB', ServerSpecies.MariaDB),
+            (r'(?P<version>[0-9\.]+)-(?P<comment>[0-9]+$)', ServerSpecies.Percona),
+            (r'(?P<version>[0-9\.]+)-(?P<comment>[A-Za-z0-9_]+)', ServerSpecies.MySQL),
+        )
+        for regexp, species in re_species:
+            match = re.search(regexp, version_string)
+            if match is not None:
+                parsed_version = match.group('version')
+                detected_species = species
+                break
         else:
-            species = None
-            parsed_version_str = version_string
+            detected_species = ServerSpecies.Unknown
+            parsed_version = ''
 
-        return cls(species, parsed_version_str)
+        return cls(detected_species, parsed_version)
 
     def __str__(self):
         if self.species:
