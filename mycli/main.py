@@ -257,7 +257,7 @@ class MyCli(object):
             message = 'Missing required argument, filename.'
             return [(None, None, None, message)]
         try:
-            with open(os.path.expanduser(arg)) as f:
+            with open(os.path.expanduser(arg), encoding=self.sqlexecute.charset) as f:
                 query = f.read()
         except IOError as e:
             return [(None, None, None, str(e))]

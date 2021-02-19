@@ -4,6 +4,7 @@ TBD
 Bug Fixes:
 ----------
 * Allow `FileNotFound` exception for SSH config files.
+* When opening files for execution, use the same encoding as in the database connection
 
 Features:
 ---------
