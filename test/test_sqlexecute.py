@@ -281,6 +281,7 @@ def test_multiple_results(executor):
         ('10.5.8-MariaDB-1:10.5.8+maria~focal', 'MariaDB', '10.5.8', 100508),
         ('5.5.5-10.5.8-MariaDB-1:10.5.8+maria~focal', 'MariaDB', '10.5.8', 100508),
         ('5.0.16-pro-nt-log', 'MySQL', '5.0.16', 50016),
+        ('5.1.5a-alpha', 'MySQL', '5.1.5', 50105),
         ('unexpected version string', None, '', 0),
         ('', None, '', 0),
         (None, None, '', 0),
