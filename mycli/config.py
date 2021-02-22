@@ -1,4 +1,3 @@
-import io
 import shutil
 from copy import copy
 from io import BytesIO, TextIOWrapper
@@ -61,7 +60,7 @@ def read_config_file(f, list_values=True):
     return config
 
 
-def get_included_configs(config_file: Union[str, io.TextIOWrapper]) -> list:
+def get_included_configs(config_file: Union[str, TextIOWrapper]) -> list:
     """Get a list of configuration files that are included into config_path
     with !includedir directive.
 
@@ -244,7 +243,7 @@ def str_to_bool(s):
     elif s.lower() in false_values:
         return False
     else:
-        raise ValueError('not a recognized boolean value: %s'.format(s))
+        raise ValueError('not a recognized boolean value: {0}'.format(s))
 
 
 def strip_matching_quotes(s):
@@ -268,7 +267,6 @@ def _get_decryptor(key):
 
 def _remove_pad(line):
     """Remove the pad from the *line*."""
-    pad_length = ord(line[-1:])
     try:
         # Determine pad length.
         pad_length = ord(line[-1:])

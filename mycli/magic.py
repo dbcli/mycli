@@ -19,7 +19,7 @@ def load_ipython_extension(ipython):
 def mycli_line_magic(line):
     _logger.debug('mycli magic called: %r', line)
     parsed = sql.parse.parse(line, {})
-    conn = sql.connection.Connection.get(parsed['connection'])
+    conn = sql.connection.Connection(parsed['connection'])
 
     try:
         # A corresponding mycli object already exists

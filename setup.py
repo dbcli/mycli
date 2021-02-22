@@ -19,12 +19,13 @@ description = 'CLI for MySQL Database. With auto-completion and syntax highlight
 install_requirements = [
     'click >= 7.0',
     'Pygments >= 1.6',
-    'prompt_toolkit>=3.0.0,<4.0.0',
+    'prompt_toolkit>=3.0.6,<4.0.0',
     'PyMySQL >= 0.9.2',
     'sqlparse>=0.3.0,<0.4.0',
     'configobj >= 5.0.5',
     'cryptography >= 1.0.0',
     'cli_helpers[styles] >= 2.0.1',
+    'pyperclip >= 1.8.1'
 ]
 
 
@@ -76,6 +77,7 @@ class test(TestCommand):
             'behave test/features ' + self.behave_args,
             shell=True
         )
+        subprocess.run(['git', 'checkout', '--', 'test/myclirc'], check=False)
         sys.exit(unit_test_errno or cli_errno)
 
 

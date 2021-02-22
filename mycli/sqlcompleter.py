@@ -59,7 +59,7 @@ class SQLCompleter(Completer):
         self.reserved_words = set()
         for x in self.keywords:
             self.reserved_words.update(x.split())
-        self.name_pattern = compile("^[_a-z][_a-z0-9\$]*$")
+        self.name_pattern = compile(r"^[_a-z][_a-z0-9\$]*$")
 
         self.special_commands = []
         self.table_formats = supported_formats
@@ -72,7 +72,7 @@ class SQLCompleter(Completer):
         if name and ((not self.name_pattern.match(name))
                 or (name.upper() in self.reserved_words)
                 or (name.upper() in self.functions)):
-                    name = '`%s`' % name
+            name = '`%s`' % name
 
         return name
 

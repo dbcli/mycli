@@ -1,7 +1,6 @@
 from prompt_toolkit.enums import DEFAULT_BUFFER
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.application import get_app
-from .packages.parseutils import is_open_quote
 from .packages import special
 
 
@@ -39,6 +38,8 @@ def _multiline_exception(text):
 
         text.endswith('\\g') or
         text.endswith('\\G') or
+        text.endswith(r'\e') or
+        text.endswith(r'\clip') or
 
         # Exit doesn't need semi-column`
         (text == 'exit') or

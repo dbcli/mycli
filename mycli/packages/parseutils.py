@@ -11,11 +11,11 @@ cleanup_regex = {
         # This matches everything except spaces, parens, colon, comma, and period
         'most_punctuations': re.compile(r'([^\.():,\s]+)$'),
         # This matches everything except a space.
-        'all_punctuations': re.compile('([^\s]+)$'),
+        'all_punctuations': re.compile(r'([^\s]+)$'),
         }
 
 def last_word(text, include='alphanum_underscore'):
-    """
+    r"""
     Find the last word in a sentence.
 
     >>> last_word('abc')
@@ -226,14 +226,6 @@ def is_destructive(queries):
     return False
 
 
-def is_open_quote(sql):
-    """Returns true if the query contains an unclosed quote."""
-
-    # parsed can contain one or more semi-colon separated commands
-    parsed = sqlparse.parse(sql)
-    return any(_parsed_is_open_quote(p) for p in parsed)
-
-
 if __name__ == '__main__':
     sql = 'select * from (select t. from tabl t'
     print (extract_tables(sql))
@@ -263,5 +255,4 @@ def is_dropping_database(queries, dbname):
             )
             if database_token is not None and normalize_db_name(database_token.get_name()) == dbname:
                 result = keywords[0].normalized == "DROP"
-    else:
-        return result
+    return result
