@@ -1,5 +1,5 @@
-TBD
-=======
+TODO
+====
 
 Bug Fixes:
 ----------
@@ -13,6 +13,7 @@ Features:
 Internal:
 ---------
 * Remove unused function is_open_quote()
+* Test various host-port combinations in command line arguments
 
 
 1.23.2
