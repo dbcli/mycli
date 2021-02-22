@@ -1,7 +1,6 @@
 from prompt_toolkit.enums import DEFAULT_BUFFER
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.application import get_app
-from .packages.parseutils import is_open_quote
 from .packages import special
 
 

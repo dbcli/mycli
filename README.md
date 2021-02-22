@@ -1,8 +1,8 @@
 # mycli
 
-[![Build Status](https://travis-ci.org/dbcli/mycli.svg?branch=master)](https://travis-ci.org/dbcli/mycli)
+[![Build Status](https://github.com/dbcli/mycli/workflows/mycli/badge.svg)](https://github.com/dbcli/mycli/actions?query=workflow%3Amycli)
 [![PyPI](https://img.shields.io/pypi/v/mycli.svg?style=plastic)](https://pypi.python.org/pypi/mycli)
-[![Join the chat at https://gitter.im/dbcli/mycli](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/dbcli/mycli?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![LGTM](https://img.shields.io/lgtm/grade/python/github/dbcli/mycli.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/dbcli/mycli/context:python)
 
 A command line client for MySQL that can do auto-completion and syntax highlighting.
 
@@ -53,6 +53,7 @@ $ sudo apt-get install mycli # Only on debian or ubuntu
       -h, --host TEXT               Host address of the database.
       -P, --port INTEGER            Port number to use for connection. Honors
                                     $MYSQL_TCP_PORT.
+
       -u, --user TEXT               User name to connect to the database.
       -S, --socket TEXT             The socket file to use for connection.
       -p, --password TEXT           Password to connect to the database.
@@ -63,8 +64,11 @@ $ sudo apt-get install mycli # Only on debian or ubuntu
       --ssh-password TEXT           Password to connect to ssh server.
       --ssh-key-filename TEXT       Private key filename (identify file) for the
                                     ssh connection.
+
       --ssh-config-path TEXT        Path to ssh configuration.
-      --ssh-config-host TEXT        Host for ssh server in ssh configurations (requires paramiko).
+      --ssh-config-host TEXT        Host to connect to ssh server reading from ssh
+                                    configuration.
+
       --ssl-ca PATH                 CA file in PEM format.
       --ssl-capath TEXT             CA directory.
       --ssl-cert PATH               X509 cert in PEM format.
@@ -73,32 +77,40 @@ $ sudo apt-get install mycli # Only on debian or ubuntu
       --ssl-verify-server-cert      Verify server's "Common Name" in its cert
                                     against hostname used when connecting. This
                                     option is disabled by default.
+
       -V, --version                 Output mycli's version.
       -v, --verbose                 Verbose output.
       -D, --database TEXT           Database to use.
       -d, --dsn TEXT                Use DSN configured into the [alias_dsn]
                                     section of myclirc file.
+
       --list-dsn                    list of DSN configured into the [alias_dsn]
                                     section of myclirc file.
-      --list-ssh-config             list ssh configurations in the ssh config (requires paramiko).
+
+      --list-ssh-config             list ssh configurations in the ssh config
+                                    (requires paramiko).
+
       -R, --prompt TEXT             Prompt format (Default: "\t \u@\h:\d> ").
       -l, --logfile FILENAME        Log every query and its results to a file.
       --defaults-group-suffix TEXT  Read MySQL config groups with the specified
                                     suffix.
+
       --defaults-file PATH          Only read MySQL options from the given file.
       --myclirc PATH                Location of myclirc file.
       --auto-vertical-output        Automatically switch to vertical output mode
                                     if the result is wider than the terminal
                                     width.
+
       -t, --table                   Display batch output in table format.
       --csv                         Display batch output in CSV format.
       --warn / --no-warn            Warn before running a destructive query.
       --local-infile BOOLEAN        Enable/disable LOAD DATA LOCAL INFILE.
-      --login-path TEXT             Read this path from the login file.
+      -g, --login-path TEXT         Read this path from the login file.
       -e, --execute TEXT            Execute command and quit.
       --init-command TEXT           SQL statement to execute after connecting.
       --charset TEXT                Character set for MySQL session.
       --help                        Show this message and exit.
+
 
 Features
 --------

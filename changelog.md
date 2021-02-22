@@ -1,9 +1,19 @@
-TODO:
-===
+TBD
+=======
 
-Internal
---------
+Bug Fixes:
+----------
+* Allow `FileNotFound` exception for SSH config files.
+
+Features:
+---------
+* Add `-g` shortcut to option `--login-path`.
+
+Internal:
+---------
+* Remove unused function is_open_quote()
 * Use importlib, instead of file links, to locate resources
+
 
 1.23.2
 ===

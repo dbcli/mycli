@@ -1,6 +1,5 @@
 import logging
 import pymysql
-import sqlparse
 from .packages import special
 from pymysql.constants import FIELD_TYPE
 from pymysql.converters import (convert_datetime,

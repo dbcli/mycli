@@ -1,4 +1,3 @@
-import io
 import shutil
 from copy import copy
 from io import BytesIO, TextIOWrapper, StringIO
@@ -67,7 +66,7 @@ def read_config_file(f, list_values=True):
     return config
 
 
-def get_included_configs(config_file: Union[str, io.TextIOWrapper]) -> list:
+def get_included_configs(config_file: Union[str, TextIOWrapper]) -> list:
     """Get a list of configuration files that are included into config_path
     with !includedir directive.
 
@@ -283,7 +282,6 @@ def _get_decryptor(key):
 
 def _remove_pad(line):
     """Remove the pad from the *line*."""
-    pad_length = ord(line[-1:])
     try:
         # Determine pad length.
         pad_length = ord(line[-1:])

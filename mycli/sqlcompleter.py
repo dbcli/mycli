@@ -72,7 +72,7 @@ class SQLCompleter(Completer):
         if name and ((not self.name_pattern.match(name))
                 or (name.upper() in self.reserved_words)
                 or (name.upper() in self.functions)):
-                    name = '`%s`' % name
+            name = '`%s`' % name
 
         return name
 

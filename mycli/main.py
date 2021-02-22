@@ -5,6 +5,7 @@ import traceback
 import logging
 import threading
 import re
+import fileinput
 from collections import namedtuple
 try:
     from pwd import getpwuid
@@ -78,6 +79,11 @@ except ImportError:
 
 # Query tuples are used for maintaining history
 Query = namedtuple('Query', ['query', 'successful', 'mutating'])
+
+SUPPORT_INFO = (
+    'Home: http://mycli.net\n'
+    'Bug tracker: https://github.com/dbcli/mycli/issues'
+)
 
 
 class MyCli(object):
@@ -315,6 +321,7 @@ class MyCli(object):
 
         root_logger.debug('Initializing mycli logging.')
         root_logger.debug('Log file %r.', log_file)
+
 
     def read_my_cnf_files(self, files, keys):
         """
@@ -558,10 +565,8 @@ class MyCli(object):
         if not self.less_chatty:
             print(' '.join(sqlexecute.server_type()))
             print('mycli', __version__)
-            print('Chat: https://gitter.im/dbcli/mycli')
-            print('Mail: https://groups.google.com/forum/#!forum/mycli-users')
-            print('Home: http://mycli.net')
-            print('Thanks to the contributor -', thanks_picker())
+            print(SUPPORT_INFO)
+            print('Thanks to the contributor -', thanks_picker([author_file, sponsor_file]))
 
         def get_message():
             prompt = self.get_prompt(self.prompt_format)
@@ -859,8 +864,8 @@ class MyCli(object):
 
                         if not output_via_pager:
                             # doesn't fit, flush buffer
-                            for line in buf:
-                                click.secho(line)
+                            for buf_line in buf:
+                                click.secho(buf_line)
                             buf = []
                 else:
                     click.secho(line)
@@ -1080,7 +1085,7 @@ class MyCli(object):
               help='Warn before running a destructive query.')
 @click.option('--local-infile', type=bool,
               help='Enable/disable LOAD DATA LOCAL INFILE.')
-@click.option('--login-path', type=str,
+@click.option('-g', '--login-path', type=str,
               help='Read this path from the login file.')
 @click.option('-e', '--execute',  type=str,
               help='Execute command and quit.')
@@ -1353,6 +1358,9 @@ def read_ssh_config(ssh_config_path):
     try:
         with open(ssh_config_path) as f:
             ssh_config.parse(f)
+    except FileNotFoundError as e:
+        click.secho(str(e), err=True, fg='red')
+        sys.exit(1)
     # Paramiko prior to version 2.7 raises Exception on parse errors.
     # In 2.7 it has become paramiko.ssh_exception.SSHException,
     # but let's catch everything for compatibility
@@ -1361,9 +1369,6 @@ def read_ssh_config(ssh_config_path):
             f'Could not parse SSH configuration file {ssh_config_path}:\n{err} ',
             err=True, fg='red'
         )
-        sys.exit(1)
-    except FileNotFoundError as e:
-        click.secho(str(e), err=True, fg='red')
         sys.exit(1)
     else:
         return ssh_config
