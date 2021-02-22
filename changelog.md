@@ -4,6 +4,7 @@ TBD
 Bug Fixes:
 ----------
 * Allow `FileNotFound` exception for SSH config files.
+* Fix startup error on MySQL < 5.0.22
 
 Features:
 ---------
@@ -58,11 +59,6 @@ Bug Fixes:
 * Allow backtick quoting around the database argument to the `use` command.
 * Avoid opening `/dev/tty` when `--no-warn` is given.
 * Fixed some typo errors in `README.md`.
-
-Internal:
----------
-
-* Use server info from pymysql connection object.
 
 1.22.2
 ======
