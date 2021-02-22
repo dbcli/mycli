@@ -4,6 +4,7 @@ TBD
 Bug Fixes:
 ----------
 * Allow `FileNotFound` exception for SSH config files.
+* Check error code rather than message for Access Denied error
 
 Features:
 ---------
