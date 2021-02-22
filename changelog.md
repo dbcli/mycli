@@ -59,6 +59,11 @@ Bug Fixes:
 * Avoid opening `/dev/tty` when `--no-warn` is given.
 * Fixed some typo errors in `README.md`.
 
+Internal:
+---------
+
+* Use server info from pymysql connection object.
+
 1.22.2
 ======
 
