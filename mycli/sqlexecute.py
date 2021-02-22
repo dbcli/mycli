@@ -17,6 +17,10 @@ FIELD_TYPES.update({
     FIELD_TYPE.NULL: type(None)
 })
 
+
+ERROR_CODE_ACCESS_DENIED = 1045
+
+
 class SQLExecute(object):
 
     databases_query = '''SHOW DATABASES'''
