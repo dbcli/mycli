@@ -21,9 +21,9 @@ FIELD_TYPES.update({
 })
 
 
-<<<<<<< HEAD
 ERROR_CODE_ACCESS_DENIED = 1045
-=======
+
+
 class ServerSpecies(enum.Enum):
     MySQL = 'MySQL'
     MariaDB = 'MariaDB'
@@ -77,7 +77,6 @@ class ServerInfo:
             return f'{self.species.value} {self.version_str}'
         else:
             return self.version_str
->>>>>>> master
 
 
 class SQLExecute(object):
