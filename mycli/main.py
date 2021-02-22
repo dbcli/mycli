@@ -564,7 +564,7 @@ class MyCli(object):
         key_bindings = mycli_bindings(self)
 
         if not self.less_chatty:
-            print(' '.join(sqlexecute.server_type()))
+            print(sqlexecute.server_info)
             print('mycli', __version__)
             print(SUPPORT_INFO)
             print('Thanks to the contributor -', thanks_picker([author_file, sponsor_file]))
@@ -936,7 +936,7 @@ class MyCli(object):
         string = string.replace('\\u', sqlexecute.user or '(none)')
         string = string.replace('\\h', host or '(none)')
         string = string.replace('\\d', sqlexecute.dbname or '(none)')
-        string = string.replace('\\t', sqlexecute.server_type()[0] or 'mycli')
+        string = string.replace('\\t', sqlexecute.server_info.species.name)
         string = string.replace('\\n', "\n")
         string = string.replace('\\D', now.strftime('%a %b %d %H:%M:%S %Y'))
         string = string.replace('\\m', now.strftime('%M'))
