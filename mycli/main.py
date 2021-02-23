@@ -1,10 +1,10 @@
+from io import open
 import os
 import sys
 import traceback
 import logging
 import threading
 import re
-import fileinput
 from collections import namedtuple
 try:
     from pwd import getpwuid
@@ -13,7 +13,6 @@ except ImportError:
 from time import time
 from datetime import datetime
 from random import choice
-from io import open
 
 from pymysql import OperationalError
 from cli_helpers.tabular_output import TabularOutputFormatter
@@ -51,7 +50,7 @@ from .config import (write_default_config, get_mylogin_cnf_path,
                      strip_matching_quotes)
 from .key_bindings import mycli_bindings
 from .lexer import MyCliLexer
-from .__init__ import __version__
+from . import __version__
 from .compat import WIN
 from .packages.filepaths import dir_path_exists, guess_socket_location
 
@@ -66,6 +65,11 @@ except ImportError:
     from urllib.parse import urlparse
     from urllib.parse import unquote
 
+try:
+    import importlib.resources as resources
+except ImportError:
+    # Python < 3.7
+    import importlib_resources as resources
 
 try:
     import paramiko
@@ -74,8 +78,6 @@ except ImportError:
 
 # Query tuples are used for maintaining history
 Query = namedtuple('Query', ['query', 'successful', 'mutating'])
-
-PACKAGE_ROOT = os.path.abspath(os.path.dirname(__file__))
 
 SUPPORT_INFO = (
     'Home: http://mycli.net\n'
@@ -107,7 +109,6 @@ class MyCli(object):
         os.path.join(os.path.expanduser(xdg_config_home), "mycli", "myclirc")
     ]
 
-    default_config_file = os.path.join(PACKAGE_ROOT, 'myclirc')
     pwd_config_file = os.path.join(os.getcwd(), ".myclirc")
 
     def __init__(self, sqlexecute=None, prompt=None,
@@ -127,7 +128,7 @@ class MyCli(object):
             self.cnf_files = [defaults_file]
 
         # Load config.
-        config_files = ([self.default_config_file] + self.system_config_files +
+        config_files = (self.system_config_files +
                         [myclirc] + [self.pwd_config_file])
         c = self.config = read_config_files(config_files)
         self.multi_line = c['main'].as_bool('multi_line')
@@ -159,7 +160,7 @@ class MyCli(object):
 
         # Write user config if system config wasn't the last config loaded.
         if c.filename not in self.system_config_files and not os.path.exists(myclirc):
-            write_default_config(self.default_config_file, myclirc)
+            write_default_config(myclirc)
 
         # audit log
         if self.logfile is None and 'audit_log' in c['main']:
@@ -547,9 +548,6 @@ class MyCli(object):
         if self.smart_completion:
             self.refresh_completions()
 
-        author_file = os.path.join(PACKAGE_ROOT, 'AUTHORS')
-        sponsor_file = os.path.join(PACKAGE_ROOT, 'SPONSORS')
-
         history_file = os.path.expanduser(
             os.environ.get('MYCLI_HISTFILE', '~/.mycli-history'))
         if dir_path_exists(history_file):
@@ -567,7 +565,7 @@ class MyCli(object):
             print(sqlexecute.server_info)
             print('mycli', __version__)
             print(SUPPORT_INFO)
-            print('Thanks to the contributor -', thanks_picker([author_file, sponsor_file]))
+            print('Thanks to the contributor -', thanks_picker())
 
         def get_message():
             prompt = self.get_prompt(self.prompt_format)
@@ -1331,9 +1329,15 @@ def is_select(status):
     return status.split(None, 1)[0].lower() == 'select'
 
 
-def thanks_picker(files=()):
+def thanks_picker():
+    import mycli
+    lines = (
+        resources.read_text(mycli, 'AUTHORS') +
+        resources.read_text(mycli, 'SPONSORS')
+    ).split('\n')
+
     contents = []
-    for line in fileinput.input(files=files):
+    for line in lines:
         m = re.match(r'^ *\* (.*)', line)
         if m:
             contents.append(m.group(1))

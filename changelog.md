@@ -14,8 +14,10 @@ Features:
 Internal:
 ---------
 * Remove unused function is_open_quote()
+* Use importlib, instead of file links, to locate resources
 * Test various host-port combinations in command line arguments
-* switched from Cryptography to pyaes for decrypting mylogin.cnf
+* Switched from Cryptography to pyaes for decrypting mylogin.cnf
+
 
 1.23.2
 ===

@@ -1,4 +1,3 @@
-import shutil
 from copy import copy
 from io import BytesIO, TextIOWrapper
 import logging
@@ -10,6 +9,12 @@ from typing import Union
 
 from configobj import ConfigObj, ConfigObjError
 import pyaes
+
+try:
+    import importlib.resources as resources
+except ImportError:
+    # Python < 3.7
+    import importlib_resources as resources
 
 try:
     basestring
@@ -93,7 +98,7 @@ def get_included_configs(config_file: Union[str, TextIOWrapper]) -> list:
 def read_config_files(files, list_values=True):
     """Read and merge a list of config files."""
 
-    config = ConfigObj(list_values=list_values)
+    config = create_default_config(list_values=list_values)
     _files = copy(files)
     while _files:
         _file = _files.pop(0)
@@ -110,12 +115,21 @@ def read_config_files(files, list_values=True):
     return config
 
 
-def write_default_config(source, destination, overwrite=False):
+def create_default_config(list_values=True):
+    import mycli
+    default_config_file = resources.open_text(mycli, 'myclirc')
+    return read_config_file(default_config_file, list_values=list_values)
+
+
+def write_default_config(destination, overwrite=False):
+    import mycli
+    default_config = resources.read_text(mycli, 'myclirc')
     destination = os.path.expanduser(destination)
     if not overwrite and exists(destination):
         return
 
-    shutil.copyfile(source, destination)
+    with open(destination, 'w') as f:
+        f.write(default_config)
 
 
 def get_mylogin_cnf_path():
@@ -213,7 +227,8 @@ def read_and_decrypt_mylogin_cnf(f):
         # Read cipher_len bytes from the file and decrypt.
         cipher = f.read(cipher_len)
         plain = _remove_pad(
-            b''.join([aes.decrypt(cipher[i: i + 16]) for i in range(0, cipher_len, 16)])
+            b''.join([aes.decrypt(cipher[i: i + 16])
+                      for i in range(0, cipher_len, 16)])
         )
         if plain is False:
             continue
