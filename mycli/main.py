@@ -331,7 +331,13 @@ class MyCli(object):
         """
         cnf = read_config_files(files, list_values=False)
 
-        sections = ['client', 'mysqld']
+        # keys are config sections and values are settings to read from them.
+        # An empty list means "read all settings from this section"
+        sections = {
+            'client': [],
+            'mysqld': ['socket'],
+        }
+
         if self.login_path and self.login_path != 'client':
             sections.append(self.login_path)
 
@@ -341,7 +347,11 @@ class MyCli(object):
         def get(key):
             result = None
             for sect in cnf:
-                if sect in sections and key in cnf[sect]:
+                if (
+                        sect in sections and
+                        (not sections[sect] or key in sections[sect]) and
+                        key in cnf[sect]
+                ):
                     result = strip_matching_quotes(cnf[sect][key])
             return result
 
