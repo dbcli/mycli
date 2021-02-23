@@ -1,5 +1,5 @@
-TODO
-====
+TBD
+===
 
 Bug Fixes:
 ----------
@@ -15,7 +15,7 @@ Internal:
 ---------
 * Remove unused function is_open_quote()
 * Test various host-port combinations in command line arguments
-
+* switched from Cryptography to pyaes for decrypting mylogin.cnf
 
 1.23.2
 ===
