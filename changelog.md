@@ -5,6 +5,7 @@ Bug Fixes:
 ----------
 * Allow `FileNotFound` exception for SSH config files.
 * Fix startup error on MySQL < 5.0.22
+* Check error code rather than message for Access Denied error
 
 Features:
 ---------

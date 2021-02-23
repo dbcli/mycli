@@ -21,6 +21,9 @@ FIELD_TYPES.update({
 })
 
 
+ERROR_CODE_ACCESS_DENIED = 1045
+
+
 class ServerSpecies(enum.Enum):
     MySQL = 'MySQL'
     MariaDB = 'MariaDB'
