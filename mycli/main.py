@@ -5,7 +5,6 @@ import traceback
 import logging
 import threading
 import re
-import fileinput
 from collections import namedtuple
 try:
     from pwd import getpwuid
@@ -566,7 +565,7 @@ class MyCli(object):
             print(sqlexecute.server_info)
             print('mycli', __version__)
             print(SUPPORT_INFO)
-            print('Thanks to the contributor -', thanks_picker([author_file, sponsor_file]))
+            print('Thanks to the contributor -', thanks_picker())
 
         def get_message():
             prompt = self.get_prompt(self.prompt_format)

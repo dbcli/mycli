@@ -1,6 +1,5 @@
-import shutil
 from copy import copy
-from io import BytesIO, TextIOWrapper, StringIO
+from io import BytesIO, TextIOWrapper
 import logging
 import os
 from os.path import exists
