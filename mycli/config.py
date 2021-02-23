@@ -227,7 +227,8 @@ def read_and_decrypt_mylogin_cnf(f):
         # Read cipher_len bytes from the file and decrypt.
         cipher = f.read(cipher_len)
         plain = _remove_pad(
-            b''.join([aes.decrypt(cipher[i: i + 16]) for i in range(0, cipher_len, 16)])
+            b''.join([aes.decrypt(cipher[i: i + 16])
+                      for i in range(0, cipher_len, 16)])
         )
         if plain is False:
             continue
