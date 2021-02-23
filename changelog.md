@@ -1,9 +1,11 @@
 TBD
-=======
+===
 
 Bug Fixes:
 ----------
 * Allow `FileNotFound` exception for SSH config files.
+* Fix startup error on MySQL < 5.0.22
+* Check error code rather than message for Access Denied error
 
 Features:
 ---------
@@ -13,6 +15,8 @@ Internal:
 ---------
 * Remove unused function is_open_quote()
 * Use importlib, instead of file links, to locate resources
+* Test various host-port combinations in command line arguments
+* Switched from Cryptography to pyaes for decrypting mylogin.cnf
 
 
 1.23.2

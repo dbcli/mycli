@@ -5,6 +5,7 @@ from click.testing import CliRunner
 
 from mycli.main import MyCli, cli, thanks_picker
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
+from mycli.sqlexecute import ServerInfo
 from .utils import USER, HOST, PORT, PASSWORD, dbtest, run
 
 from textwrap import dedent
@@ -174,6 +175,7 @@ def output(monkeypatch, terminal_size, testdata, explicit_pager, expect_pager):
         host = 'test'
         user = 'test'
         dbname = 'test'
+        server_info = ServerInfo.from_version_string('unknown')
         port = 0
 
         def server_type(self):
