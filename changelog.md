@@ -10,6 +10,7 @@ Bug Fixes:
 Features:
 ---------
 * Add `-g` shortcut to option `--login-path`.
+* Alt-Enter dispatches the command in multi-line mode.
 
 Internal:
 ---------
