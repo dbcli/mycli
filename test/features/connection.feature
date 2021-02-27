@@ -21,3 +21,15 @@ Feature: connect to a database:
     When we run mycli without arguments "host port"
       When we query "status"
       Then status contains "via UNIX socket"
+
+  Scenario: run mycli with my.cnf configuration
+    When we create my.cnf file
+    When we run mycli without arguments "host port user pass defaults_file"
+      Then we are logged in
+
+  Scenario: run mycli with mylogin.cnf configuration
+    When we create mylogin.cnf file
+    When we run mycli with arguments "login_path=test_login_path" without arguments "host port user pass defaults_file"
+      Then we are logged in
+
+

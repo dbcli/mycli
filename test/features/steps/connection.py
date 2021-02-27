@@ -1,8 +1,18 @@
+import io
+import os
 import shlex
+
 from behave import when, then
+import pexpect
 
 import wrappers
 from test.features.steps.utils import parse_cli_args_to_dict
+from test.features.environment import MY_CNF_PATH, MYLOGIN_CNF_PATH, get_db_name_from_context
+from test.utils import HOST, PORT, USER, PASSWORD
+from mycli.config import encrypt_mylogin_cnf
+
+
+TEST_LOGIN_PATH = 'test_login_path'
 
 
 @when('we run mycli with arguments "{exact_args}" without arguments "{excluded_args}"')
@@ -25,3 +35,37 @@ def status_contains(context, expression):
     context.cli.expect_exact('>')
     context.atprompt = True
 
+
+@when('we create my.cnf file')
+def step_create_my_cnf_file(context):
+    my_cnf = (
+        '[client]\n'
+        f'host = {HOST}\n'
+        f'port = {PORT}\n'
+        f'user = {USER}\n'
+        f'password = {PASSWORD}\n'
+    )
+    with open(MY_CNF_PATH, 'w') as f:
+        f.write(my_cnf)
+
+
+@when('we create mylogin.cnf file')
+def step_create_mylogin_cnf_file(context):
+    os.environ.pop('MYSQL_TEST_LOGIN_FILE', None)
+    mylogin_cnf = (
+        f'[{TEST_LOGIN_PATH}]\n'
+        f'host = {HOST}\n'
+        f'port = {PORT}\n'
+        f'user = {USER}\n'
+        f'password = {PASSWORD}\n'
+    )
+    with open(MYLOGIN_CNF_PATH, 'wb') as f:
+        input_file = io.StringIO(mylogin_cnf)
+        f.write(encrypt_mylogin_cnf(input_file).read())
+
+
+@then('we are logged in')
+def we_are_logged_in(context):
+    db_name = get_db_name_from_context(context)
+    context.cli.expect_exact(f'{db_name}>', timeout=5)
+    context.atprompt = True

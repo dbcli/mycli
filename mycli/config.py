@@ -5,7 +5,7 @@ import os
 from os.path import exists
 import struct
 import sys
-from typing import Union
+from typing import Union, IO
 
 from configobj import ConfigObj, ConfigObjError
 import pyaes
@@ -52,9 +52,9 @@ def read_config_file(f, list_values=True):
         config = ConfigObj(f, interpolation=False, encoding='utf8',
                            list_values=list_values)
     except ConfigObjError as e:
-        log(logger, logging.ERROR, "Unable to parse line {0} of config file "
+        log(logger, logging.WARNING, "Unable to parse line {0} of config file "
             "'{1}'.".format(e.line_number, f))
-        log(logger, logging.ERROR, "Using successfully parsed config values.")
+        log(logger, logging.WARNING, "Using successfully parsed config values.")
         return e.config
     except (IOError, OSError) as e:
         log(logger, logging.WARNING, "You don't have permission to read "
@@ -170,6 +170,58 @@ def open_mylogin_cnf(name):
         return None
 
     return TextIOWrapper(plaintext)
+
+
+# TODO reuse code between encryption an decryption
+def encrypt_mylogin_cnf(plaintext: IO[str]):
+    """Encryption of .mylogin.cnf file, analogous to calling
+    mysql_config_editor.
+
+    Code is based on the python implementation by Kristian Koehntopp
+    https://github.com/isotopp/mysql-config-coder
+
+    """
+    def realkey(key):
+        """Create the AES key from the login key."""
+        rkey = bytearray(16)
+        for i in range(len(key)):
+            rkey[i % 16] ^= key[i]
+        return bytes(rkey)
+
+    def encode_line(plaintext, real_key, buf_len):
+        aes = pyaes.AESModeOfOperationECB(real_key)
+        text_len = len(plaintext)
+        pad_len = buf_len - text_len
+        pad_chr = bytes(chr(pad_len), "utf8")
+        plaintext = plaintext.encode() + pad_chr * pad_len
+        encrypted_text = b''.join(
+            [aes.encrypt(plaintext[i: i + 16])
+             for i in range(0, len(plaintext), 16)]
+        )
+        return encrypted_text
+
+    LOGIN_KEY_LENGTH = 20
+    key = os.urandom(LOGIN_KEY_LENGTH)
+    real_key = realkey(key)
+
+    outfile = BytesIO()
+
+    outfile.write(struct.pack("i", 0))
+    outfile.write(key)
+
+    while True:
+        line = plaintext.readline()
+        if not line:
+            break
+        real_len = len(line)
+        pad_len = (int(real_len / 16) + 1) * 16
+
+        outfile.write(struct.pack("i", pad_len))
+        x = encode_line(line, real_key, pad_len)
+        outfile.write(x)
+
+    outfile.seek(0)
+    return outfile
 
 
 def read_and_decrypt_mylogin_cnf(f):
