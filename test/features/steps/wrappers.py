@@ -14,7 +14,7 @@ def expect_exact(context, expected, timeout):
     timedout = False
     try:
         context.cli.expect_exact(expected, timeout=timeout)
-    except pexpect.exceptions.TIMEOUT:
+    except pexpect.TIMEOUT:
         timedout = True
     if timedout:
         # Strip color codes out of the output.
@@ -77,6 +77,8 @@ def run_cli(context, run_args=None, exclude_args=None):
         add_arg('defaults_file', '--defaults-file', conf['defaults-file'])
     if conf.get('myclirc', None):
         add_arg('myclirc', '--myclirc', conf['myclirc'])
+    if conf.get('login_path'):
+        add_arg('login_path', '--login-path', conf['login_path'])
 
     for arg_name, arg_value in conf.items():
         if arg_name.startswith('-'):

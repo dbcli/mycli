@@ -1,3 +1,4 @@
+from collections import defaultdict
 from io import open
 import os
 import sys
@@ -332,20 +333,33 @@ class MyCli(object):
         cnf = read_config_files(files, list_values=False)
 
         sections = ['client', 'mysqld']
+        key_transformations = {
+            'mysqld': {
+                'socket': 'default_socket',
+                'port': 'default_port',
+            },
+        }
+
         if self.login_path and self.login_path != 'client':
             sections.append(self.login_path)
 
         if self.defaults_suffix:
             sections.extend([sect + self.defaults_suffix for sect in sections])
 
-        def get(key):
-            result = None
-            for sect in cnf:
-                if sect in sections and key in cnf[sect]:
-                    result = strip_matching_quotes(cnf[sect][key])
-            return result
+        configuration = defaultdict(lambda: None)
+        for key in keys:
+            for section in cnf:
+                if (
+                    section not in sections or
+                    key not in cnf[section]
+                ):
+                    continue
+                new_key = key_transformations.get(section, {}).get(key) or key
+                configuration[new_key] = strip_matching_quotes(
+                    cnf[section][key])
 
-        return {x: get(x) for x in keys}
+        return configuration
+
 
     def merge_ssl_with_cnf(self, ssl, cnf):
         """Merge SSL configuration dict with cnf dict"""
@@ -381,6 +395,7 @@ class MyCli(object):
                'host': None,
                'port': None,
                'socket': None,
+               'default_socket': None,
                'default-character-set': None,
                'local-infile': None,
                'loose-local-infile': None,
@@ -394,17 +409,22 @@ class MyCli(object):
         cnf = self.read_my_cnf_files(self.cnf_files, cnf.keys())
 
         # Fall back to config values only if user did not specify a value.
-
         database = database or cnf['database']
-        # Socket interface not supported for SSH connections
-        if port or (host and host != 'localhost') or (ssh_host and ssh_port):
-            socket = ''
-        else:
-            socket = socket or cnf['socket'] or guess_socket_location()
         user = user or cnf['user'] or os.getenv('USER')
         host = host or cnf['host']
-        port = int(port or cnf['port'] or 3306)
+        port = port or cnf['port']
         ssl = ssl or {}
+
+        port = port and int(port)
+        if not port:
+            port = 3306
+            if not host or host == 'localhost':
+                socket = (
+                    cnf['socket'] or
+                    cnf['default_socket'] or
+                    guess_socket_location()
+                )
+
 
         passwd = passwd if isinstance(passwd, str) else cnf['password']
         charset = charset or cnf['default-character-set'] or 'utf8'
