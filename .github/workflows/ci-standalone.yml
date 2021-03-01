@@ -1,0 +1,76 @@
+name: mycli
+
+on:
+  push:
+    branches:
+      - pasenor/pyoxidizer
+  pull_request:
+    paths-ignore:
+      - '**.md'
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    # The type of runner that the job will run on
+    runs-on: ${{ matrix.os }}
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      - name: Cache cargo registry
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry
+
+      - name: Build with pyoxidizer
+        run: |
+          cargo install pyoxidizer
+          pyoxidizer build --release install
+          cd ./build/x86*/release/install
+          ls
+          tar -zcf ../../../mycli-${{ runner.os }}.tar.gz *
+          cd -
+
+      - name: Upload Release Asset to Github Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: mycli-${{ runner.os }}-${{ github.sha }}.tar.gz
+          path: ./build/mycli-${{ runner.os }}.tar.gz
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      - name: Start MySQL
+        run: |
+          sudo /etc/init.d/mysql start
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Wait for MySQL connection
+        run: |
+          while ! mysqladmin ping --host=localhost --port=3306 --user=root --password=root --silent; do
+            sleep 5
+          done
+
+      - name: Pytest / behave
+        env:
+          PYTEST_PASSWORD: root
+          PYTEST_HOST: 127.0.0.1
+        run: |
+          ./setup.py test --pytest-args="--cov-report= --cov=mycli"
+
+      - name: Lint
+        run: |
+          ./setup.py lint --branch=HEAD
+
+
