@@ -12,6 +12,7 @@ Features:
 ---------
 * Add `-g` shortcut to option `--login-path`.
 * Alt-Enter dispatches the command in multi-line mode.
+* Allow to pass a file or FIFO path with --password-file when password is not specified or is failing (as suggested in this best-practice https://www.netmeister.org/blog/passing-passwords.html)
 
 Internal:
 ---------

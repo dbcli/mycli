@@ -12,7 +12,8 @@ cleanup_regex = {
         'most_punctuations': re.compile(r'([^\.():,\s]+)$'),
         # This matches everything except a space.
         'all_punctuations': re.compile(r'([^\s]+)$'),
-        }
+}
+
 
 def last_word(text, include='alphanum_underscore'):
     r"""

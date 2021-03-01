@@ -6,6 +6,8 @@ import traceback
 import logging
 import threading
 import re
+import stat
+import fileinput
 from collections import namedtuple
 try:
     from pwd import getpwuid
@@ -387,7 +389,7 @@ class MyCli(object):
     def connect(self, database='', user='', passwd='', host='', port='',
                 socket='', charset='', local_infile='', ssl='',
                 ssh_user='', ssh_host='', ssh_port='',
-                ssh_password='', ssh_key_filename='', init_command=''):
+                ssh_password='', ssh_key_filename='', init_command='', password_file=''):
 
         cnf = {'database': None,
                'user': None,
@@ -443,6 +445,10 @@ class MyCli(object):
         if not any(v for v in ssl.values()):
             ssl = None
 
+        # if the passwd is not specfied try to set it using the password_file option
+        password_from_file = self.get_password_from_file(password_file)
+        passwd = passwd or password_from_file
+
         # Connect to the database.
 
         def _connect():
@@ -454,8 +460,11 @@ class MyCli(object):
                 )
             except OperationalError as e:
                 if e.args[0] == ERROR_CODE_ACCESS_DENIED:
-                    new_passwd = click.prompt('Password', hide_input=True,
-                                              show_default=False, type=str, err=True)
+                    if password_from_file:
+                        new_passwd = password_from_file
+                    else:
+                        new_passwd = click.prompt('Password', hide_input=True,
+                                                  show_default=False, type=str, err=True)
                     self.sqlexecute = SQLExecute(
                         database, user, new_passwd, host, port, socket,
                         charset, local_infile, ssl, ssh_user, ssh_host,
@@ -509,6 +518,17 @@ class MyCli(object):
             self.logger.error("traceback: %r", traceback.format_exc())
             self.echo(str(e), err=True, fg='red')
             exit(1)
+
+    def get_password_from_file(self, password_file):
+        password_from_file = None
+        if password_file:
+            if (os.path.isfile(password_file) or stat.S_ISFIFO(os.stat(password_file).st_mode)) \
+                    and os.access(password_file, os.R_OK):
+                with open(password_file) as fp:
+                    password_from_file = fp.readline()
+                    password_from_file = password_from_file.rstrip().lstrip()
+
+        return password_from_file
 
     def handle_editor_command(self, text):
         r"""Editor command is any query that is prefixed or suffixed by a '\e'.
@@ -1112,6 +1132,8 @@ class MyCli(object):
               help='SQL statement to execute after connecting.')
 @click.option('--charset', type=str,
               help='Character set for MySQL session.')
+@click.option('--password-file', type=click.Path(),
+              help='File or FIFO path containing the password to connect to the db if not specified otherwise.')
 @click.argument('database', default='', nargs=1)
 def cli(database, user, host, port, socket, password, dbname,
         version, verbose, prompt, logfile, defaults_group_suffix,
@@ -1120,7 +1142,7 @@ def cli(database, user, host, port, socket, password, dbname,
         ssl_verify_server_cert, table, csv, warn, execute, myclirc, dsn,
         list_dsn, ssh_user, ssh_host, ssh_port, ssh_password,
         ssh_key_filename, list_ssh_config, ssh_config_path, ssh_config_host,
-        init_command, charset):
+        init_command, charset, password_file):
     """A MySQL terminal client with auto-completion and syntax highlighting.
 
     \b
@@ -1246,7 +1268,8 @@ def cli(database, user, host, port, socket, password, dbname,
         ssh_password=ssh_password,
         ssh_key_filename=ssh_key_filename,
         init_command=init_command,
-        charset=charset
+        charset=charset,
+        password_file=password_file
     )
 
     mycli.logger.debug('Launch Params: \n'
