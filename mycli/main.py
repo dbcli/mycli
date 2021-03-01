@@ -497,15 +497,14 @@ class MyCli(object):
             self.echo(str(e), err=True, fg='red')
             exit(1)
 
-
     def get_password_from_file(self, password_file):
         password_from_file = None
         if password_file:
-            if (os.path.isfile(password_file) or \
-                stat.S_ISFIFO(os.stat(password_file).st_mode)) \
-                and os.access(password_file, os.R_OK):
+            if (os.path.isfile(password_file) or stat.S_ISFIFO(os.stat(password_file).st_mode)) \
+                    and os.access(password_file, os.R_OK):
                 with open(password_file) as fp:
-                    password_from_file = fp.read()
+                    password_from_file = fp.readline()
+                    password_from_file = password_from_file.rstrip().lstrip()
 
         return password_from_file
 
@@ -587,7 +586,8 @@ class MyCli(object):
             print(' '.join(sqlexecute.server_type()))
             print('mycli', __version__)
             print(SUPPORT_INFO)
-            print('Thanks to the contributor -', thanks_picker([author_file, sponsor_file]))
+            print('Thanks to the contributor -',
+                  thanks_picker([author_file, sponsor_file]))
 
         def get_message():
             prompt = self.get_prompt(self.prompt_format)
@@ -1106,7 +1106,7 @@ class MyCli(object):
               help='Warn before running a destructive query.')
 @click.option('--local-infile', type=bool,
               help='Enable/disable LOAD DATA LOCAL INFILE.')
-@click.option('--login-path', type=str,
+@click.option('-g', '--login-path', type=str,
               help='Read this path from the login file.')
 @click.option('-e', '--execute',  type=str,
               help='Execute command and quit.')
@@ -1115,8 +1115,7 @@ class MyCli(object):
 @click.option('--charset', type=str,
               help='Character set for MySQL session.')
 @click.option('--password-file', type=click.Path(),
-              help='File or FIFO path containing the password to connect to the db if not specified otherwise')
-
+              help='File or FIFO path containing the password to connect to the db if not specified otherwise.')
 @click.argument('database', default='', nargs=1)
 def cli(database, user, host, port, socket, password, dbname,
         version, verbose, prompt, logfile, defaults_group_suffix,

@@ -8,7 +8,7 @@ Bug Fixes:
 Features:
 ---------
 * Add `-g` shortcut to option `--login-path`.
-* Allow to pass a file or FIFO path with --password_file when password is not specified or is failing (as suggested in this best-practice https://www.netmeister.org/blog/passing-passwords.html)
+* Allow to pass a file or FIFO path with --password-file when password is not specified or is failing (as suggested in this best-practice https://www.netmeister.org/blog/passing-passwords.html)
 
 Internal:
 ---------
