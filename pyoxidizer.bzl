@@ -18,7 +18,6 @@ def make_embedded_resources(exe):
 
 def make_install(exe):
     files = FileManifest()
-    exe.add_python_resources(exe.pip_install(['cryptography']))
     exe.add_python_resources(exe.pip_install(['.']))
     files.add_python_resource(".", exe)
 

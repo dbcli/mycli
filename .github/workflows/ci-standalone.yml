@@ -12,7 +12,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
     # The type of runner that the job will run on
     runs-on: ${{ matrix.os }}
 
@@ -55,6 +55,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
+          pip install -e .
 
       - name: Wait for MySQL connection
         run: |
@@ -66,11 +67,9 @@ jobs:
         env:
           PYTEST_PASSWORD: root
           PYTEST_HOST: 127.0.0.1
+          MYCLI_EXECUTABLE: ${{ env.GITHUB_WORKSPACE }}/build/i86*/release/install/mycli
         run: |
-          ./setup.py test --pytest-args="--cov-report= --cov=mycli"
+          behave test/features --no-capture
 
-      - name: Lint
-        run: |
-          ./setup.py lint --branch=HEAD
 
 
