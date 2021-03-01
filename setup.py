@@ -23,10 +23,13 @@ install_requirements = [
     'PyMySQL >= 0.9.2',
     'sqlparse>=0.3.0,<0.4.0',
     'configobj >= 5.0.5',
-    'cryptography >= 1.0.0',
     'cli_helpers[styles] >= 2.0.1',
-    'pyperclip >= 1.8.1'
+    'pyperclip >= 1.8.1',
+    'pyaes >= 1.6.1'
 ]
+
+if sys.version_info.minor < 9:
+    install_requirements.append('importlib_resources >= 5.0.0')
 
 
 class lint(Command):

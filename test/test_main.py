@@ -3,8 +3,9 @@ import os
 import click
 from click.testing import CliRunner
 
-from mycli.main import MyCli, cli, thanks_picker, PACKAGE_ROOT
+from mycli.main import MyCli, cli, thanks_picker
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
+from mycli.sqlexecute import ServerInfo
 from .utils import USER, HOST, PORT, PASSWORD, dbtest, run
 
 from textwrap import dedent
@@ -140,10 +141,7 @@ def test_batch_mode_csv(executor):
 
 
 def test_thanks_picker_utf8():
-    author_file = os.path.join(PACKAGE_ROOT, 'AUTHORS')
-    sponsor_file = os.path.join(PACKAGE_ROOT, 'SPONSORS')
-
-    name = thanks_picker((author_file, sponsor_file))
+    name = thanks_picker()
     assert name and isinstance(name, str)
 
 
@@ -177,6 +175,7 @@ def output(monkeypatch, terminal_size, testdata, explicit_pager, expect_pager):
         host = 'test'
         user = 'test'
         dbname = 'test'
+        server_info = ServerInfo.from_version_string('unknown')
         port = 0
 
         def server_type(self):

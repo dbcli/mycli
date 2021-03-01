@@ -1,3 +1,5 @@
+from collections import defaultdict
+from io import open
 import os
 import sys
 import traceback
@@ -14,7 +16,6 @@ except ImportError:
 from time import time
 from datetime import datetime
 from random import choice
-from io import open
 
 from pymysql import OperationalError
 from cli_helpers.tabular_output import TabularOutputFormatter
@@ -44,7 +45,7 @@ from .packages.special.favoritequeries import FavoriteQueries
 from .sqlcompleter import SQLCompleter
 from .clitoolbar import create_toolbar_tokens_func
 from .clistyle import style_factory, style_factory_output
-from .sqlexecute import FIELD_TYPES, SQLExecute
+from .sqlexecute import FIELD_TYPES, SQLExecute, ERROR_CODE_ACCESS_DENIED
 from .clibuffer import cli_is_multiline
 from .completion_refresher import CompletionRefresher
 from .config import (write_default_config, get_mylogin_cnf_path,
@@ -52,7 +53,7 @@ from .config import (write_default_config, get_mylogin_cnf_path,
                      strip_matching_quotes)
 from .key_bindings import mycli_bindings
 from .lexer import MyCliLexer
-from .__init__ import __version__
+from . import __version__
 from .compat import WIN
 from .packages.filepaths import dir_path_exists, guess_socket_location
 
@@ -67,6 +68,11 @@ except ImportError:
     from urllib.parse import urlparse
     from urllib.parse import unquote
 
+try:
+    import importlib.resources as resources
+except ImportError:
+    # Python < 3.7
+    import importlib_resources as resources
 
 try:
     import paramiko
@@ -75,8 +81,6 @@ except ImportError:
 
 # Query tuples are used for maintaining history
 Query = namedtuple('Query', ['query', 'successful', 'mutating'])
-
-PACKAGE_ROOT = os.path.abspath(os.path.dirname(__file__))
 
 SUPPORT_INFO = (
     'Home: http://mycli.net\n'
@@ -108,7 +112,6 @@ class MyCli(object):
         os.path.join(os.path.expanduser(xdg_config_home), "mycli", "myclirc")
     ]
 
-    default_config_file = os.path.join(PACKAGE_ROOT, 'myclirc')
     pwd_config_file = os.path.join(os.getcwd(), ".myclirc")
 
     def __init__(self, sqlexecute=None, prompt=None,
@@ -128,7 +131,7 @@ class MyCli(object):
             self.cnf_files = [defaults_file]
 
         # Load config.
-        config_files = ([self.default_config_file] + self.system_config_files +
+        config_files = (self.system_config_files +
                         [myclirc] + [self.pwd_config_file])
         c = self.config = read_config_files(config_files)
         self.multi_line = c['main'].as_bool('multi_line')
@@ -160,7 +163,7 @@ class MyCli(object):
 
         # Write user config if system config wasn't the last config loaded.
         if c.filename not in self.system_config_files and not os.path.exists(myclirc):
-            write_default_config(self.default_config_file, myclirc)
+            write_default_config(myclirc)
 
         # audit log
         if self.logfile is None and 'audit_log' in c['main']:
@@ -332,20 +335,33 @@ class MyCli(object):
         cnf = read_config_files(files, list_values=False)
 
         sections = ['client', 'mysqld']
+        key_transformations = {
+            'mysqld': {
+                'socket': 'default_socket',
+                'port': 'default_port',
+            },
+        }
+
         if self.login_path and self.login_path != 'client':
             sections.append(self.login_path)
 
         if self.defaults_suffix:
             sections.extend([sect + self.defaults_suffix for sect in sections])
 
-        def get(key):
-            result = None
-            for sect in cnf:
-                if sect in sections and key in cnf[sect]:
-                    result = strip_matching_quotes(cnf[sect][key])
-            return result
+        configuration = defaultdict(lambda: None)
+        for key in keys:
+            for section in cnf:
+                if (
+                    section not in sections or
+                    key not in cnf[section]
+                ):
+                    continue
+                new_key = key_transformations.get(section, {}).get(key) or key
+                configuration[new_key] = strip_matching_quotes(
+                    cnf[section][key])
 
-        return {x: get(x) for x in keys}
+        return configuration
+
 
     def merge_ssl_with_cnf(self, ssl, cnf):
         """Merge SSL configuration dict with cnf dict"""
@@ -381,6 +397,7 @@ class MyCli(object):
                'host': None,
                'port': None,
                'socket': None,
+               'default_socket': None,
                'default-character-set': None,
                'local-infile': None,
                'loose-local-infile': None,
@@ -394,17 +411,22 @@ class MyCli(object):
         cnf = self.read_my_cnf_files(self.cnf_files, cnf.keys())
 
         # Fall back to config values only if user did not specify a value.
-
         database = database or cnf['database']
-        # Socket interface not supported for SSH connections
-        if port or (host and host != 'localhost') or (ssh_host and ssh_port):
-            socket = ''
-        else:
-            socket = socket or cnf['socket'] or guess_socket_location()
         user = user or cnf['user'] or os.getenv('USER')
         host = host or cnf['host']
-        port = int(port or cnf['port'] or 3306)
+        port = port or cnf['port']
         ssl = ssl or {}
+
+        port = port and int(port)
+        if not port:
+            port = 3306
+            if not host or host == 'localhost':
+                socket = (
+                    cnf['socket'] or
+                    cnf['default_socket'] or
+                    guess_socket_location()
+                )
+
 
         passwd = passwd if isinstance(passwd, str) else cnf['password']
         charset = charset or cnf['default-character-set'] or 'utf8'
@@ -437,7 +459,7 @@ class MyCli(object):
                     ssh_password, ssh_key_filename, init_command
                 )
             except OperationalError as e:
-                if ('Access denied for user' in e.args[1]):
+                if e.args[0] == ERROR_CODE_ACCESS_DENIED:
                     if password_from_file:
                         new_passwd = password_from_file
                     else:
@@ -566,9 +588,6 @@ class MyCli(object):
         if self.smart_completion:
             self.refresh_completions()
 
-        author_file = os.path.join(PACKAGE_ROOT, 'AUTHORS')
-        sponsor_file = os.path.join(PACKAGE_ROOT, 'SPONSORS')
-
         history_file = os.path.expanduser(
             os.environ.get('MYCLI_HISTFILE', '~/.mycli-history'))
         if dir_path_exists(history_file):
@@ -583,11 +602,10 @@ class MyCli(object):
         key_bindings = mycli_bindings(self)
 
         if not self.less_chatty:
-            print(' '.join(sqlexecute.server_type()))
+            print(sqlexecute.server_info)
             print('mycli', __version__)
             print(SUPPORT_INFO)
-            print('Thanks to the contributor -',
-                  thanks_picker([author_file, sponsor_file]))
+            print('Thanks to the contributor -', thanks_picker())
 
         def get_message():
             prompt = self.get_prompt(self.prompt_format)
@@ -956,7 +974,7 @@ class MyCli(object):
         string = string.replace('\\u', sqlexecute.user or '(none)')
         string = string.replace('\\h', host or '(none)')
         string = string.replace('\\d', sqlexecute.dbname or '(none)')
-        string = string.replace('\\t', sqlexecute.server_type()[0] or 'mycli')
+        string = string.replace('\\t', sqlexecute.server_info.species.name)
         string = string.replace('\\n', "\n")
         string = string.replace('\\D', now.strftime('%a %b %d %H:%M:%S %Y'))
         string = string.replace('\\m', now.strftime('%M'))
@@ -1354,9 +1372,15 @@ def is_select(status):
     return status.split(None, 1)[0].lower() == 'select'
 
 
-def thanks_picker(files=()):
+def thanks_picker():
+    import mycli
+    lines = (
+        resources.read_text(mycli, 'AUTHORS') +
+        resources.read_text(mycli, 'SPONSORS')
+    ).split('\n')
+
     contents = []
-    for line in fileinput.input(files=files):
+    for line in lines:
         m = re.match(r'^ *\* (.*)', line)
         if m:
             contents.append(m.group(1))

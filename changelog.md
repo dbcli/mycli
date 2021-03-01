@@ -1,18 +1,25 @@
 TBD
-=======
+===
 
 Bug Fixes:
 ----------
 * Allow `FileNotFound` exception for SSH config files.
+* Fix startup error on MySQL < 5.0.22
+* Check error code rather than message for Access Denied error
+* Fix login with ~/.my.cnf files
 
 Features:
 ---------
 * Add `-g` shortcut to option `--login-path`.
+* Alt-Enter dispatches the command in multi-line mode.
 * Allow to pass a file or FIFO path with --password-file when password is not specified or is failing (as suggested in this best-practice https://www.netmeister.org/blog/passing-passwords.html)
 
 Internal:
 ---------
 * Remove unused function is_open_quote()
+* Use importlib, instead of file links, to locate resources
+* Test various host-port combinations in command line arguments
+* Switched from Cryptography to pyaes for decrypting mylogin.cnf
 
 
 1.23.2
