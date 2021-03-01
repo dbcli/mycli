@@ -302,7 +302,7 @@ def execute_system_command(arg, **_):
     usage = "Syntax: system [command].\n"
 
     if not arg:
-      return [(None, None, None, usage)]
+        return [(None, None, None, usage)]
 
     try:
         command = arg.strip()
