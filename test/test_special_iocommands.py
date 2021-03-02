@@ -8,6 +8,7 @@ import pytest
 from pymysql import ProgrammingError
 
 import mycli.packages.special
+from mycli.compat import WIN, MAC
 
 from .utils import dbtest, db_connection, send_ctrl_c
 
@@ -166,18 +167,24 @@ def test_watch_query_full():
     """Test that `watch_query`:
 
     * Returns the expected results.
-    * Executes the defined times inside the given interval, in this case with
-      a 0.3 seconds wait, it should execute 4 times inside a 1 seconds
-      interval.
+    * Executes the defined times inside the given interval
     * Stops at Ctrl-C
 
     """
-    watch_seconds = 0.3
-    wait_interval = 1
+    if WIN or MAC:
+        # Timing of ctrl_c sending on Windows and macOS seems
+        # more approximate than on Linux.
+        # We basically just check that there are "a lot of queries"
+        watch_seconds = 0.3
+        wait_interval = 3
+        expected_results = (9, 15)
+    else:
+        watch_seconds = 0.3
+        wait_interval = 1
+        expected_results = (4, 4)
     expected_value = "1"
     query = "SELECT {0!s}".format(expected_value)
     expected_title = '> {0!s}'.format(query)
-    expected_results = 4
     ctrl_c_process = send_ctrl_c(wait_interval)
     with db_connection().cursor() as cur:
         results = list(
@@ -186,7 +193,8 @@ def test_watch_query_full():
             )
         )
     ctrl_c_process.join(1)
-    assert len(results) == expected_results
+    low, high = expected_results
+    assert low <= len(results) <= high
     for result in results:
         assert result[0] == expected_title
         assert result[2][0] == expected_value

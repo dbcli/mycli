@@ -1,9 +1,11 @@
 import os
 import platform
 
+from mycli.compat import MAC
+
 
 if os.name == "posix":
-    if platform.system() == "Darwin":
+    if MAC:
         DEFAULT_SOCKET_DIRS = ("/tmp",)
     else:
         DEFAULT_SOCKET_DIRS = ("/var/run", "/var/lib")

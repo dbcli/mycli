@@ -39,6 +39,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          python -c"import sys; print(sys.platform)"
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
           pip install --no-cache-dir -e .
@@ -105,19 +106,15 @@ jobs:
 
       - name: Pytest
         env:
-          PYTEST_USER: root
           PYTEST_PASSWORD: root
           PYTEST_HOST: 127.0.0.1
-          PYTEST_PORT: 3306
         run: |
           pytest test
 
       - name: Behave
         env:
-          PYTEST_USER: root
           PYTEST_PASSWORD: root
           PYTEST_HOST: 127.0.0.1
-          PYTEST_PORT: 3306
         run: |
           behave test/features --no-capture
 
