@@ -20,6 +20,7 @@ Internal:
 * Use importlib, instead of file links, to locate resources
 * Test various host-port combinations in command line arguments
 * Switched from Cryptography to pyaes for decrypting mylogin.cnf
+* Added MacOS to CI
 
 
 1.23.2

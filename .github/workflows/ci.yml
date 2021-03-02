@@ -4,9 +4,12 @@ on:
   pull_request:
     paths-ignore:
       - '**.md'
+  push:
+    branches:
+      - 'pasenor/ci-macos'
 
 jobs:
-  linux:
+  ci-pip-linux:
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8, 3.9]
@@ -62,3 +65,59 @@ jobs:
           coverage combine
           coverage report
           codecov
+
+
+  ci-pip-macos:
+    strategy:
+      matrix:
+        python-version: [3.9]
+        include:
+          - python-version: 3.9
+            os: macos-latest
+
+    runs-on: ${{ matrix.os }}
+    steps:
+
+      - uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install MySQL
+        run: |
+          brew install mysql
+
+      - name: Start MySQL
+        run: |
+          brew services start mysql
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+          pip install --no-cache-dir -e .
+
+      - name: Set up MySQL password
+        run: |
+          mysqladmin -u root password 'root'
+
+      - name: Pytest
+        env:
+          PYTEST_USER: root
+          PYTEST_PASSWORD: root
+          PYTEST_HOST: 127.0.0.1
+          PYTEST_PORT: 3306
+        run: |
+          pytest test
+
+      - name: Behave
+        env:
+          PYTEST_USER: root
+          PYTEST_PASSWORD: root
+          PYTEST_HOST: 127.0.0.1
+          PYTEST_PORT: 3306
+        run: |
+          behave test/features --no-capture
+
