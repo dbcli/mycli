@@ -1,6 +1,11 @@
 TBD:
 ====
 
+* 
+
+1.24.1:
+=======
+
 Bug Fixes:
 ---------
 * Restore dependency on cryptography for the interactive password prompt
