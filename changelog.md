@@ -1,7 +1,9 @@
 TBD:
 ====
 
-* 
+Bug Fixes:
+---------
+* Restore dependency on cryptography for the interactive password prompt
 
 
 1.24.0
