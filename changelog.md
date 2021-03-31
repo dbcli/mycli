@@ -43,7 +43,7 @@ Internal:
 Bug Fixes:
 ----------
 * Ensure `--port` is always an int.
- 
+
 1.23.1
 ======
 
@@ -836,32 +836,31 @@ Bug Fixes:
 ----------
 * Fixed the installation issues with PyMySQL dependency on case-sensitive file systems.
 
-[Daniel West]: http://github.com/danieljwest
-[Irina Truong]: https://github.com/j-bennet
 [Amjith Ramanujam]: https://blog.amjith.com
-[Kacper Kwapisz]: https://github.com/KKKas
-[Martijn Engler]: https://github.com/martijnengler
-[Matheus Rosa]:  https://github.com/mdsrosa
-[Shoma Suzuki]: https://github.com/shoma
-[spacewander]: https://github.com/spacewander
-[Thomas Roten]: https://github.com/tsroten
 [Artem Bezsmertnyi]: https://github.com/mrdeathless
 [Carlos Afonso]: https://github.com/afonsocarlos
-[Mikhail Borisov]: https://github.com/borman
-[Casper Langemeijer]: Casper Langemeijer
-[Lennart Weller]: https://github.com/lhw
-[Phil Cohen]: https://github.com/phlipper
-[Terseus]: https://github.com/Terseus
-[William GARCIA]: https://github.com/willgarcia
-[Jonathan Slenders]: https://github.com/jonathanslenders
 [Casper Langemeijer]: https://github.com/langemeijer
-[Scrappy Soft]: https://github.com/scrappysoft
+[Daniel West]: http://github.com/danieljwest
 [Dick Marinus]: https://github.com/meeuw
 [François Pietka]: https://github.com/fpietka
 [Frederic Aoustin]: https://github.com/fraoustin
 [Georgy Frolov]: https://github.com/pasenor
-[Zach DeCook]: https://zachdecook.com
+[Irina Truong]: https://github.com/j-bennet
+[Jonathan Slenders]: https://github.com/jonathanslenders
+[Kacper Kwapisz]: https://github.com/KKKas
 [laixintao]: https://github.com/laixintao
+[Lennart Weller]: https://github.com/lhw
+[Martijn Engler]: https://github.com/martijnengler
+[Matheus Rosa]:  https://github.com/mdsrosa
+[Mikhail Borisov]: https://github.com/borman
 [mtorromeo]: https://github.com/mtorromeo
 [mwcm]: https://github.com/mwcm
+[Phil Cohen]: https://github.com/phlipper
+[Scrappy Soft]: https://github.com/scrappysoft
+[Shoma Suzuki]: https://github.com/shoma
+[spacewander]: https://github.com/spacewander
+[Terseus]: https://github.com/Terseus
+[Thomas Roten]: https://github.com/tsroten
+[William GARCIA]: https://github.com/willgarcia
 [xeron]: https://github.com/xeron
+[Zach DeCook]: https://zachdecook.com
