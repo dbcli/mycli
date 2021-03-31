@@ -26,6 +26,7 @@ Features:
 * Add `-g` shortcut to option `--login-path`.
 * Alt-Enter dispatches the command in multi-line mode.
 * Allow to pass a file or FIFO path with --password-file when password is not specified or is failing (as suggested in this best-practice https://www.netmeister.org/blog/passing-passwords.html)
+* Reuse the same SSH connection for both main thread and completion thread.
 
 Internal:
 ---------
@@ -859,6 +860,7 @@ Bug Fixes:
 [Georgy Frolov]: https://github.com/pasenor
 [Zach DeCook]: https://zachdecook.com
 [laixintao]: https://github.com/laixintao
+[Nathan Huang]: https://github.com/hxueh
 [mtorromeo]: https://github.com/mtorromeo
 [mwcm]: https://github.com/mwcm
 [xeron]: https://github.com/xeron
