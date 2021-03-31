@@ -1,7 +1,9 @@
 TBD:
 ====
 
-* 
+Bug Fixes:
+---------
+* Fix autocompletion for more than one JOIN
 
 1.24.1:
 =======
@@ -844,6 +846,7 @@ Bug Fixes:
 [spacewander]: https://github.com/spacewander
 [Thomas Roten]: https://github.com/tsroten
 [Artem Bezsmertnyi]: https://github.com/mrdeathless
+[Carlos Afonso]: https://github.com/afonsocarlos
 [Mikhail Borisov]: https://github.com/borman
 [Casper Langemeijer]: Casper Langemeijer
 [Lennart Weller]: https://github.com/lhw
