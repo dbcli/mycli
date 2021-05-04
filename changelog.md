@@ -10,6 +10,10 @@ Bug Fixes:
 ---------
 * Restore dependency on cryptography for the interactive password prompt
 
+Internal:
+---------
+* Deprecate Python mock
+
 
 1.24.0
 ======
