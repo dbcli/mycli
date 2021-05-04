@@ -2,7 +2,7 @@ import os
 import stat
 import tempfile
 from time import time
-from mock import patch
+from unittest.mock import patch
 
 import pytest
 from pymysql import ProgrammingError

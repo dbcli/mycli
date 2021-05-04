@@ -81,6 +81,13 @@ def extract_from_part(parsed, stop_at_punctuation=True):
                     yield x
             elif stop_at_punctuation and item.ttype is Punctuation:
                 return
+            # Multiple JOINs in the same query won't work properly since
+            # "ON" is a keyword and will trigger the next elif condition.
+            # So instead of stooping the loop when finding an "ON" skip it
+            # eg: 'SELECT * FROM abc JOIN def ON abc.id = def.abc_id JOIN ghi'
+            elif item.ttype is Keyword and item.value.upper() == 'ON':
+                tbl_prefix_seen = False
+                continue
             # An incomplete nested select won't be recognized correctly as a
             # sub-select. eg: 'SELECT * FROM (SELECT id FROM user'. This causes
             # the second FROM to trigger this elif condition resulting in a
