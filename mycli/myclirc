@@ -60,8 +60,8 @@ wider_completion_menu = False
 # \n - Newline
 # \P - AM/PM
 # \p - Port
-# \R - The current time, in 24-hour military time (0–23)
-# \r - The current time, standard 12-hour time (1–12)
+# \R - The current time, in 24-hour military time (0-23)
+# \r - The current time, standard 12-hour time (1-12)
 # \s - Seconds of the current time
 # \t - Product type (Percona, MySQL, MariaDB)
 # \A - DSN alias name (from the [alias_dsn] section)
