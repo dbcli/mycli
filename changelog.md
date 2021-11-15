@@ -4,6 +4,7 @@ TBD:
 Bug Fixes:
 ---------
 * Fix autocompletion for more than one JOIN
+* Fix the status command when connected to TiDB or other servers that don't implement 'Threads\_connected'
 
 1.24.1:
 =======

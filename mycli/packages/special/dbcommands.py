@@ -135,23 +135,25 @@ def status(cur, **_):
     else:
         output.append(('UNIX socket:', variables['socket']))
 
-    output.append(('Uptime:', format_uptime(status['Uptime'])))
+    if 'Uptime' in status:
+        output.append(('Uptime:', format_uptime(status['Uptime'])))
 
-    # Print the current server statistics.
-    stats = []
-    stats.append('Connections: {0}'.format(status['Threads_connected']))
-    if 'Queries' in status:
-        stats.append('Queries: {0}'.format(status['Queries']))
-    stats.append('Slow queries: {0}'.format(status['Slow_queries']))
-    stats.append('Opens: {0}'.format(status['Opened_tables']))
-    stats.append('Flush tables: {0}'.format(status['Flush_commands']))
-    stats.append('Open tables: {0}'.format(status['Open_tables']))
-    if 'Queries' in status:
-        queries_per_second = int(status['Queries']) / int(status['Uptime'])
-        stats.append('Queries per second avg: {:.3f}'.format(
-            queries_per_second))
-    stats = '  '.join(stats)
-    footer.append('\n' + stats)
+    if 'Threads_connected' in status:
+        # Print the current server statistics.
+        stats = []
+        stats.append('Connections: {0}'.format(status['Threads_connected']))
+        if 'Queries' in status:
+            stats.append('Queries: {0}'.format(status['Queries']))
+        stats.append('Slow queries: {0}'.format(status['Slow_queries']))
+        stats.append('Opens: {0}'.format(status['Opened_tables']))
+        stats.append('Flush tables: {0}'.format(status['Flush_commands']))
+        stats.append('Open tables: {0}'.format(status['Open_tables']))
+        if 'Queries' in status:
+            queries_per_second = int(status['Queries']) / int(status['Uptime'])
+            stats.append('Queries per second avg: {:.3f}'.format(
+                queries_per_second))
+        stats = '  '.join(stats)
+        footer.append('\n' + stats)
 
     footer.append('--------------')
     return [('\n'.join(title), output, '', '\n'.join(footer))]
