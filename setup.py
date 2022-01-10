@@ -19,7 +19,7 @@ description = 'CLI for MySQL Database. With auto-completion and syntax highlight
 install_requirements = [
     'click >= 7.0',
     'cryptography >= 1.0.0',
-    'Pygments >= 1.6',
+    'Pygments>=1.6,<=2.11.1'
     'prompt_toolkit>=3.0.6,<4.0.0',
     'PyMySQL >= 0.9.2',
     'sqlparse>=0.3.0,<0.5.0',
