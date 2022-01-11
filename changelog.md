@@ -1,10 +1,11 @@
-TBD:
-====
+1.24.2 (2022/01/11)
+===================
 
 Bug Fixes:
----------
+----------
 * Fix autocompletion for more than one JOIN
 * Fix the status command when connected to TiDB or other servers that don't implement 'Threads\_connected'
+* Pin pygments version to avoid a breaking change
 
 1.24.1:
 =======
