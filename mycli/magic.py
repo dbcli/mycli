@@ -30,7 +30,7 @@ def mycli_line_magic(line):
         u = conn.session.engine.url
         _logger.debug('New mycli: %r', str(u))
 
-        mycli.connect(u.database, u.host, u.username, u.port, u.password)
+        mycli.connect(host=u.host, port=u.port, passwd=u.password, database=u.database, user=u.username, init_command=None)
         conn._mycli = mycli
 
     # For convenience, print the connection alias
