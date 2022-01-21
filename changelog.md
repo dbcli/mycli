@@ -1,3 +1,11 @@
+TBD
+===
+
+Bug Fixes:
+----------
+* Upgrade cli_helpers to workaround Pygments regression.
+
+
 1.24.2 (2022/01/11)
 ===================
 
