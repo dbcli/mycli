@@ -1,3 +1,11 @@
+TBD
+===
+
+Bug Fixes:
+----------
+* Ignore the user of the system [myslqd] config.
+
+
 1.24.3 (2022/01/20)
 ===================
 
