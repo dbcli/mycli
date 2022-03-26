@@ -151,6 +151,22 @@ Twitter: [@amjithr](http://twitter.com/amjithr)
 
 ## Detailed Install Instructions:
 
+### Arch, Manjaro
+
+You can install the mycli package available in the AUR:
+
+```
+$ yay -S mycli
+```
+
+### Debian, Ubuntu
+
+On Debian, Ubuntu distributions, you can easily install the mycli package using apt:
+
+```
+$ sudo apt-get install mycli
+```
+
 ### Fedora
 
 Fedora has a package available for mycli, install it using dnf:
