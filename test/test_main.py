@@ -1,4 +1,5 @@
 import os
+import shutil
 
 import click
 from click.testing import CliRunner
@@ -258,13 +259,13 @@ def test_reserved_space_is_integer():
     def stub_terminal_size():
         return (5, 5)
 
-    old_func = click.get_terminal_size
+    old_func = shutil.get_terminal_size
 
-    click.get_terminal_size = stub_terminal_size
+    shutil.get_terminal_size = stub_terminal_size
     mycli = MyCli()
     assert isinstance(mycli.get_reserved_space(), int)
 
-    click.get_terminal_size = old_func
+    shutil.get_terminal_size = old_func
 
 
 def test_list_dsn():

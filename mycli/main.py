@@ -2,6 +2,7 @@ from collections import defaultdict
 from io import open
 import os
 import sys
+import shutil
 import traceback
 import logging
 import threading
@@ -1054,7 +1055,7 @@ class MyCli(object):
         """Get the number of lines to reserve for the completion menu."""
         reserved_space_ratio = .45
         max_reserved_space = 8
-        _, height = click.get_terminal_size()
+        _, height = shutil.get_terminal_size()
         return min(int(round(height * reserved_space_ratio)), max_reserved_space)
 
     def get_last_query(self):
