@@ -1,3 +1,8 @@
+Internal:
+---------
+* Upgrade Ubuntu VM for runners as Github has deprecated it
+
+
 1.24.3 (2022/01/20)
 ===================
 
