@@ -1,3 +1,11 @@
+1.24.4 (2022/03/30)
+===================
+
+Bug Fixes:
+----------
+* Change in main.py - Replace the `click.get_terminal_size()` with `shutil.get_terminal_size()`
+
+
 1.24.3 (2022/01/20)
 ===================
 
