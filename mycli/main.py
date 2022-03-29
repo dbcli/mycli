@@ -6,6 +6,7 @@ import traceback
 import logging
 import threading
 import re
+from shutil import get_terminal_size
 import stat
 import fileinput
 from collections import namedtuple
@@ -1054,7 +1055,7 @@ class MyCli(object):
         """Get the number of lines to reserve for the completion menu."""
         reserved_space_ratio = .45
         max_reserved_space = 8
-        _, height = click.get_terminal_size()
+        _, height = get_terminal_size()
         return min(int(round(height * reserved_space_ratio)), max_reserved_space)
 
     def get_last_query(self):
