@@ -1,3 +1,7 @@
+Features:
+---------
+* Add `beep_after_seconds` option to `~/.myclirc`, to ring the terminal bell after long queries.
+
 1.24.4 (2022/03/30)
 ===================
 

@@ -30,6 +30,9 @@ log_level = INFO
 # Timing of sql statments and table rendering.
 timing = True
 
+# Beep after long-running queries are completed; 0 to disable.
+beep_after_seconds = 0
+
 # Table format. Possible values: ascii, double, github,
 # psql, plain, simple, grid, fancy_grid, pipe, orgtbl, rst, mediawiki, html,
 # latex, latex_booktabs, textile, moinmoin, jira, vertical, tsv, csv.
