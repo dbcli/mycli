@@ -38,14 +38,14 @@ class lint(Command):
     description = 'check code against PEP 8 (and fix violations)'
 
     user_options = [
-        ('branch=', 'b', 'branch/revision to compare against (e.g. master)'),
+        ('branch=', 'b', 'branch/revision to compare against (e.g. main)'),
         ('fix', 'f', 'fix the violations in place'),
         ('error-status', 'e', 'return an error code on failed PEP check'),
     ]
 
     def initialize_options(self):
         """Set the default options."""
-        self.branch = 'master'
+        self.branch = 'main'
         self.fix = False
         self.error_status = True
 

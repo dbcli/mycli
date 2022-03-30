@@ -49,16 +49,16 @@ You'll always get credit for your work.
     $ pip install --editable .
     ```
 
-6. Create a branch for your bugfix or feature based off the `master` branch:
+6. Create a branch for your bugfix or feature based off the `main` branch:
 
     ```bash
-    $ git checkout -b <name-of-bugfix-or-feature> master
+    $ git checkout -b <name-of-bugfix-or-feature> main
     ```
 
 7. While you work on your bugfix or feature, be sure to pull the latest changes from `upstream`. This ensures that your local codebase is up-to-date:
 
     ```bash
-    $ git pull upstream master
+    $ git pull upstream main
     ```
 
 8. When your work is ready for the mycli team to review it, push your branch to your fork:
@@ -135,3 +135,25 @@ $ ./setup.py lint --fix
 ```
 
 Be sure to commit and push any PEP 8 fixes.
+
+## Releasing a new version of mycli
+
+You have been made the maintainer of `mycli`? Congratulations! We have a release script to help you:
+
+```sh
+> python release.py --help
+Usage: release.py [options]
+
+Options:
+  -h, --help           show this help message and exit
+  -c, --confirm-steps  Confirm every step. If the step is not confirmed, it
+                       will be skipped.
+  -d, --dry-run        Print out, but not actually run any steps.
+```
+
+To release a new version of the package:
+
+* Create and merge a PR to bump the version in the changelog ([example PR](https://github.com/dbcli/mycli/pull/1043)).
+* Pull `main` and bump the version number inside `mycli/__init__.py`. Do not check in - the release script will do that.
+* Make sure you have the dev requirements installed: `pip install -r requirements-dev.txt -U --upgrade-strategy only-if-needed`.
+* Finally, run the release script: `python release.py`.
