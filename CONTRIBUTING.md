@@ -155,4 +155,5 @@ To release a new version of the package:
 
 * Create and merge a PR to bump the version in the changelog ([example PR](https://github.com/dbcli/mycli/pull/1043)).
 * Pull `main` and bump the version number inside `mycli/__init__.py`. Do not check in - the release script will do that.
+* Make sure you have the dev requirements installed: `pip install -r requirements-dev.txt -U --upgrade-strategy only-if-needed`.
 * Finally, run the release script: `python release.py`.
