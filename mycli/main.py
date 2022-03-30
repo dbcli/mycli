@@ -138,6 +138,7 @@ class MyCli(object):
         self.multi_line = c['main'].as_bool('multi_line')
         self.key_bindings = c['main']['key_bindings']
         special.set_timing_enabled(c['main'].as_bool('timing'))
+        self.beep_after_seconds = float(c['main']['beep_after_seconds'] or 0)
 
         FavoriteQueries.instance = FavoriteQueries.from_config(self.config)
 
@@ -721,6 +722,8 @@ class MyCli(object):
                             self.output(formatted, status)
                         except KeyboardInterrupt:
                             pass
+                        if self.beep_after_seconds > 0 and t >= self.beep_after_seconds:
+                            self.echo('\a', err=True, nl=False)
                         if special.is_timing_enabled():
                             self.echo('Time: %0.03fs' % t)
                     except KeyboardInterrupt:
