@@ -11,3 +11,6 @@ colorama>=0.4.1
 git+https://github.com/hayd/pep8radius.git  # --error-status option not released
 click>=7.0
 paramiko==2.7.1
+pyperclip>=1.8.1
+importlib_resources>=5.0.0
+pyaes>=1.6.1
