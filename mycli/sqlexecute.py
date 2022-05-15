@@ -338,9 +338,12 @@ class SQLExecute(object):
     def reset_connection_id(self):
         # Remember current connection id
         _logger.debug('Get current connection id')
-        res = self.run('select connection_id()')
-        for title, cur, headers, status in res:
-            self.connection_id = cur.fetchone()[0]
+        try:
+            res = self.run('select connection_id()')
+            for title, cur, headers, status in res:
+                self.connection_id = cur.fetchone()[0]
+        except Exception as e:
+            _logger.error('Failed to get connection id: %s', e)
         _logger.debug('Current connection id: %s', self.connection_id)
 
     def change_db(self, db):
