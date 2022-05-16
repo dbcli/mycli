@@ -344,7 +344,8 @@ class SQLExecute(object):
                 self.connection_id = cur.fetchone()[0]
         except Exception as e:
             _logger.error('Failed to get connection id: %s', e)
-        _logger.debug('Current connection id: %s', self.connection_id)
+        else:
+            _logger.debug('Current connection id: %s', self.connection_id)
 
     def change_db(self, db):
         self.conn.select_db(db)
