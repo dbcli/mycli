@@ -343,6 +343,8 @@ class SQLExecute(object):
             for title, cur, headers, status in res:
                 self.connection_id = cur.fetchone()[0]
         except Exception as e:
+            # See #1054
+            self.connection_id = -1
             _logger.error('Failed to get connection id: %s', e)
         else:
             _logger.debug('Current connection id: %s', self.connection_id)
