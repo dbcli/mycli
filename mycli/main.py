@@ -739,19 +739,23 @@ class MyCli(object):
             except KeyboardInterrupt:
                 # get last connection id
                 connection_id_to_kill = sqlexecute.connection_id
-                logger.debug("connection id to kill: %r", connection_id_to_kill)
-                # Restart connection to the database
-                sqlexecute.connect()
-                try:
-                    for title, cur, headers, status in sqlexecute.run('kill %s' % connection_id_to_kill):
-                        status_str = str(status).lower()
-                        if status_str.find('ok') > -1:
-                            logger.debug("cancelled query, connection id: %r, sql: %r",
-                                         connection_id_to_kill, text)
-                            self.echo("cancelled query", err=True, fg='red')
-                except Exception as e:
-                    self.echo('Encountered error while cancelling query: {}'.format(e),
-                              err=True, fg='red')
+                # some mysql compatible databases may not implemente connection_id()
+                if connection_id_to_kill > 0:
+                    logger.debug("connection id to kill: %r", connection_id_to_kill)
+                    # Restart connection to the database
+                    sqlexecute.connect()
+                    try:
+                        for title, cur, headers, status in sqlexecute.run('kill %s' % connection_id_to_kill):
+                            status_str = str(status).lower()
+                            if status_str.find('ok') > -1:
+                                logger.debug("cancelled query, connection id: %r, sql: %r",
+                                             connection_id_to_kill, text)
+                                self.echo("cancelled query", err=True, fg='red')
+                    except Exception as e:
+                        self.echo('Encountered error while cancelling query: {}'.format(e),
+                                  err=True, fg='red')
+                else:
+                  logger.debug("Did not get a connection id, skip cancelling query")
             except NotImplementedError:
                 self.echo('Not Yet Implemented.', fg="yellow")
             except OperationalError as e:
