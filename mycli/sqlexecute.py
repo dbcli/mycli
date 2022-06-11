@@ -28,6 +28,7 @@ class ServerSpecies(enum.Enum):
     MySQL = 'MySQL'
     MariaDB = 'MariaDB'
     Percona = 'Percona'
+    TiDB = 'TiDB'
     Unknown = 'MySQL'
 
 
@@ -55,6 +56,7 @@ class ServerInfo:
 
         re_species = (
             (r'(?P<version>[0-9\.]+)-MariaDB', ServerSpecies.MariaDB),
+            (r'(?P<version>[0-9\.]+)[a-z0-9]*-TiDB', ServerSpecies.TiDB),
             (r'(?P<version>[0-9\.]+)[a-z0-9]*-(?P<comment>[0-9]+$)',
              ServerSpecies.Percona),
             (r'(?P<version>[0-9\.]+)[a-z0-9]*-(?P<comment>[A-Za-z0-9_]+)',
