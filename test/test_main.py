@@ -25,7 +25,7 @@ os.environ['MYSQL_TEST_LOGIN_FILE'] = login_path_file
 CLI_ARGS = ['--user', USER, '--host', HOST, '--port', PORT,
             '--password', PASSWORD, '--myclirc', default_config_file,
             '--defaults-file', default_config_file,
-            '_test_db']
+            'mycli_test_db']
 
 
 @dbtest
@@ -305,19 +305,25 @@ def test_dsn(monkeypatch):
     # Setup classes to mock mycli.main.MyCli
     class Formatter:
         format_name = None
+
     class Logger:
         def debug(self, *args, **args_dict):
             pass
+
         def warning(self, *args, **args_dict):
             pass
+
     class MockMyCli:
         config = {'alias_dsn': {}}
+
         def __init__(self, **args):
             self.logger = Logger()
             self.destructive_warning = False
             self.formatter = Formatter()
+
         def connect(self, **args):
             MockMyCli.connect_args = args
+
         def run_query(self, query, new_line=True):
             pass
 
