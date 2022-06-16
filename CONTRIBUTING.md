@@ -10,67 +10,66 @@ You'll always get credit for your work.
 1. [Fork the repository](https://github.com/dbcli/mycli) on GitHub.
 
 2. Clone your fork locally:
-
-   ```bash
-   $ git clone <url-for-your-fork>
-   ```
+    ```bash
+    $ git clone <url-for-your-fork>
+    ```
 
 3. Add the official repository (`upstream`) as a remote repository:
-
-   ```bash
-   $ git remote add upstream git@github.com:dbcli/mycli.git
-   ```
+    ```bash
+    $ git remote add upstream git@github.com:dbcli/mycli.git
+    ```
 
 4. Set up a [virtual environment](http://docs.python-guide.org/en/latest/dev/virtualenvs)
    for development:
 
-   ```bash
-   $ cd mycli
-   $ pip install virtualenv
-   $ virtualenv mycli_dev
-   ```
+    ```bash
+    $ cd mycli
+    $ pip install virtualenv
+    $ virtualenv mycli_dev
+    ```
 
-   We've just created a virtual environment that we'll use to install all the dependencies
-   and tools we need to work on mycli. Whenever you want to work on mycli, you
-   need to activate the virtual environment:
+    We've just created a virtual environment that we'll use to install all the dependencies
+    and tools we need to work on mycli. Whenever you want to work on mycli, you
+    need to activate the virtual environment:
 
-   ```bash
-   $ source mycli_dev/bin/activate
-   ```
+    ```bash
+    $ source mycli_dev/bin/activate
+    ```
 
-   When you're done working, you can deactivate the virtual environment:
+    When you're done working, you can deactivate the virtual environment:
 
-   ```bash
-   $ deactivate
-   ```
+    ```bash
+    $ deactivate
+    ```
 
 5. Install the dependencies and development tools:
 
-   ```bash
-   $ pip install -r requirements-dev.txt
-   $ pip install --editable .
-   ```
+    ```bash
+    $ pip install -r requirements-dev.txt
+    $ pip install --editable .
+    ```
 
 6. Create a branch for your bugfix or feature based off the `main` branch:
 
-   ```bash
-   $ git checkout -b <name-of-bugfix-or-feature> main
-   ```
+    ```bash
+    $ git checkout -b <name-of-bugfix-or-feature> main
+    ```
 
 7. While you work on your bugfix or feature, be sure to pull the latest changes from `upstream`. This ensures that your local codebase is up-to-date:
 
-   ```bash
-   $ git pull upstream main
-   ```
+    ```bash
+    $ git pull upstream main
+    ```
 
 8. When your work is ready for the mycli team to review it, push your branch to your fork:
 
-   ```bash
-   $ git push origin <name-of-bugfix-or-feature>
-   ```
+    ```bash
+    $ git push origin <name-of-bugfix-or-feature>
+    ```
 
 9. [Create a pull request](https://help.github.com/articles/creating-a-pull-request-from-a-fork/)
    on GitHub.
+
 
 ## Running the Tests
 
@@ -87,6 +86,7 @@ Python by running tox:
 ```bash
 $ tox
 ```
+
 
 ### Test Database Credentials
 
@@ -121,10 +121,10 @@ In some systems (e.g. Arch Linux) `ex` is a symbolic link to `vi`, which will
 change the output and therefore make some tests fail.
 
 You can check this by running:
-
 ```bash
 $ readlink -f $(which ex)
 ```
+
 
 ## Coding Style
 
@@ -161,7 +161,7 @@ Options:
 
 To release a new version of the package:
 
-- Create and merge a PR to bump the version in the changelog ([example PR](https://github.com/dbcli/mycli/pull/1043)).
-- Pull `main` and bump the version number inside `mycli/__init__.py`. Do not check in - the release script will do that.
-- Make sure you have the dev requirements installed: `pip install -r requirements-dev.txt -U --upgrade-strategy only-if-needed`.
-- Finally, run the release script: `python release.py`.
+* Create and merge a PR to bump the version in the changelog ([example PR](https://github.com/dbcli/mycli/pull/1043)).
+* Pull `main` and bump the version number inside `mycli/__init__.py`. Do not check in - the release script will do that.
+* Make sure you have the dev requirements installed: `pip install -r requirements-dev.txt -U --upgrade-strategy only-if-needed`.
+* Finally, run the release script: `python release.py`.
