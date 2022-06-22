@@ -71,7 +71,7 @@ def test_table_and_columns_query(executor):
 @dbtest
 def test_database_list(executor):
     databases = executor.databases()
-    assert '_test_db' in databases
+    assert 'mycli_test_db' in databases
 
 
 @dbtest

@@ -1,10 +1,13 @@
 Internal:
 ---------
 * Pin `cryptography` to suppress `paramiko` warning, helping CI complete and presumably affecting some users.
+* Upgrade some dev requirements
+* Change tests to always use databases prefixed with 'mycli_' for better security
 
 Bug Fixes:
 ----------
 * Support for some MySQL compatible databases, which may not implement connection_id().
+* Fix the status command to work with missing 'Flush_commands' (mariadb)
 
 1.25.0 (2022/04/02)
 ===================

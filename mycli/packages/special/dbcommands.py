@@ -34,6 +34,7 @@ def list_tables(cur, arg=None, arg_type=PARSED_QUERY, verbose=False):
 
     return [(None, tables, headers, status)]
 
+
 @special_command('\\l', '\\l', 'List databases.', arg_type=RAW_QUERY, case_sensitive=True)
 def list_databases(cur, **_):
     query = 'SHOW DATABASES'
@@ -44,6 +45,7 @@ def list_databases(cur, **_):
         return [(None, cur, headers, '')]
     else:
         return [(None, None, None, '')]
+
 
 @special_command('status', '\\s', 'Get status information from the server.',
                  arg_type=RAW_QUERY, aliases=('\\s', ), case_sensitive=True)
@@ -146,7 +148,8 @@ def status(cur, **_):
             stats.append('Queries: {0}'.format(status['Queries']))
         stats.append('Slow queries: {0}'.format(status['Slow_queries']))
         stats.append('Opens: {0}'.format(status['Opened_tables']))
-        stats.append('Flush tables: {0}'.format(status['Flush_commands']))
+        if 'Flush_commands' in status:
+            stats.append('Flush tables: {0}'.format(status['Flush_commands']))
         stats.append('Open tables: {0}'.format(status['Open_tables']))
         if 'Queries' in status:
             queries_per_second = int(status['Queries']) / int(status['Uptime'])
