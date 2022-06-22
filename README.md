@@ -164,13 +164,13 @@ $ sudo dnf install mycli
 I haven't built an RPM package for mycli for RHEL or Centos yet. So please use `pip` to install `mycli`. You can install pip on your system using:
 
 ```
-$ sudo yum install python-pip
+$ sudo yum install python3-pip
 ```
 
 Once that is installed, you can install mycli as follows:
 
 ```
-$ sudo pip install mycli
+$ sudo pip3 install mycli
 ```
 
 ### Windows
