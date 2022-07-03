@@ -447,7 +447,7 @@ class MyCli(object):
         if not any(v for v in ssl.values()):
             ssl = None
 
-        # if the passwd is not specfied try to set it using the password_file option
+        # if the passwd is not specified try to set it using the password_file option
         password_from_file = self.get_password_from_file(password_file)
         passwd = passwd or password_from_file
 
