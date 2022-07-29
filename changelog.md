@@ -1,3 +1,9 @@
+Features:
+---------
+
+* Detect TiDB instance and show in the prompt. 
+
+
 Internal:
 ---------
 * Pin `cryptography` to suppress `paramiko` warning, helping CI complete and presumably affecting some users.
