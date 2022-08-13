@@ -1,7 +1,8 @@
 Features:
 ---------
 
-* Detect TiDB instance and show in the prompt. 
+* Detect TiDB instance and show in the prompt and use additional keywords.
+* Fix the completion order to show more commonly use keywords in the top.
 
 
 Internal:
