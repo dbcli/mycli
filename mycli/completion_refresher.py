@@ -3,7 +3,7 @@ from .packages.special.main import COMMANDS
 from collections import OrderedDict
 
 from .sqlcompleter import SQLCompleter
-from .sqlexecute import SQLExecute
+from .sqlexecute import SQLExecute, ServerSpecies
 
 class CompletionRefresher(object):
 
@@ -121,3 +121,8 @@ def refresh_special(completer, executor):
 @refresher('show_commands')
 def refresh_show_commands(completer, executor):
     completer.extend_show_items(executor.show_candidates())
+
+@refresher('keywords')
+def refresh_keywords(completer, executor):
+    if executor.server_info.species == ServerSpecies.TiDB:
+        completer.extend_keywords(completer.tidb_keywords, replace=True)
