@@ -55,8 +55,8 @@ def test_empty_string_completion(completer, complete_event):
         completer.get_completions(
             Document(text=text, cursor_position=position),
             complete_event))
-    assert list(map(Completion, sorted(completer.keywords) +
-                    sorted(completer.special_commands))) == result
+    assert list(map(Completion, completer.keywords +
+                    completer.special_commands)) == result
 
 
 def test_select_keyword_completion(completer, complete_event):
@@ -74,10 +74,10 @@ def test_table_completion(completer, complete_event):
     result = completer.get_completions(
         Document(text=text, cursor_position=position), complete_event)
     assert list(result) == list([
-        Completion(text='`réveillé`', start_position=0),
-        Completion(text='`select`', start_position=0),
-        Completion(text='orders', start_position=0),
         Completion(text='users', start_position=0),
+        Completion(text='orders', start_position=0),
+        Completion(text='`select`', start_position=0),
+        Completion(text='`réveillé`', start_position=0),
     ])
 
 
@@ -106,9 +106,9 @@ def test_suggested_column_names(completer, complete_event):
         complete_event))
     assert result == list([
         Completion(text='*', start_position=0),
+        Completion(text='id', start_position=0),
         Completion(text='email', start_position=0),
         Completion(text='first_name', start_position=0),
-        Completion(text='id', start_position=0),
         Completion(text='last_name', start_position=0),
     ] +
         list(map(Completion, completer.functions)) +
@@ -132,9 +132,9 @@ def test_suggested_column_names_in_function(completer, complete_event):
         complete_event)
     assert list(result) == list([
         Completion(text='*', start_position=0),
+        Completion(text='id', start_position=0),
         Completion(text='email', start_position=0),
         Completion(text='first_name', start_position=0),
-        Completion(text='id', start_position=0),
         Completion(text='last_name', start_position=0)])
 
 
@@ -153,9 +153,9 @@ def test_suggested_column_names_with_table_dot(completer, complete_event):
         complete_event))
     assert result == list([
         Completion(text='*', start_position=0),
+        Completion(text='id', start_position=0),
         Completion(text='email', start_position=0),
         Completion(text='first_name', start_position=0),
-        Completion(text='id', start_position=0),
         Completion(text='last_name', start_position=0)])
 
 
@@ -174,9 +174,9 @@ def test_suggested_column_names_with_alias(completer, complete_event):
         complete_event))
     assert result == list([
         Completion(text='*', start_position=0),
+        Completion(text='id', start_position=0),
         Completion(text='email', start_position=0),
         Completion(text='first_name', start_position=0),
-        Completion(text='id', start_position=0),
         Completion(text='last_name', start_position=0)])
 
 
@@ -196,9 +196,9 @@ def test_suggested_multiple_column_names(completer, complete_event):
         complete_event))
     assert result == list([
         Completion(text='*', start_position=0),
+        Completion(text='id', start_position=0),
         Completion(text='email', start_position=0),
         Completion(text='first_name', start_position=0),
-        Completion(text='id', start_position=0),
         Completion(text='last_name', start_position=0)] +
         list(map(Completion, completer.functions)) +
         [Completion(text='u', start_position=0)] +
@@ -221,9 +221,9 @@ def test_suggested_multiple_column_names_with_alias(completer, complete_event):
         complete_event))
     assert result == list([
         Completion(text='*', start_position=0),
+        Completion(text='id', start_position=0),
         Completion(text='email', start_position=0),
         Completion(text='first_name', start_position=0),
-        Completion(text='id', start_position=0),
         Completion(text='last_name', start_position=0)])
 
 
@@ -243,9 +243,9 @@ def test_suggested_multiple_column_names_with_dot(completer, complete_event):
         complete_event))
     assert result == list([
         Completion(text='*', start_position=0),
+        Completion(text='id', start_position=0),
         Completion(text='email', start_position=0),
         Completion(text='first_name', start_position=0),
-        Completion(text='id', start_position=0),
         Completion(text='last_name', start_position=0)])
 
 
@@ -256,8 +256,9 @@ def test_suggested_aliases_after_on(completer, complete_event):
         Document(text=text, cursor_position=position),
         complete_event))
     assert result == list([
+        Completion(text='u', start_position=0),
         Completion(text='o', start_position=0),
-        Completion(text='u', start_position=0)])
+        ])
 
 
 def test_suggested_aliases_after_on_right_side(completer, complete_event):
@@ -268,8 +269,9 @@ def test_suggested_aliases_after_on_right_side(completer, complete_event):
         Document(text=text, cursor_position=position),
         complete_event))
     assert result == list([
+        Completion(text='u', start_position=0),
         Completion(text='o', start_position=0),
-        Completion(text='u', start_position=0)])
+        ])
 
 
 def test_suggested_tables_after_on(completer, complete_event):
@@ -279,8 +281,9 @@ def test_suggested_tables_after_on(completer, complete_event):
         Document(text=text, cursor_position=position),
         complete_event))
     assert result == list([
+        Completion(text='users', start_position=0),
         Completion(text='orders', start_position=0),
-        Completion(text='users', start_position=0)])
+        ])
 
 
 def test_suggested_tables_after_on_right_side(completer, complete_event):
@@ -291,8 +294,9 @@ def test_suggested_tables_after_on_right_side(completer, complete_event):
         Document(text=text, cursor_position=position),
         complete_event))
     assert result == list([
+        Completion(text='users', start_position=0),
         Completion(text='orders', start_position=0),
-        Completion(text='users', start_position=0)])
+        ])
 
 
 def test_table_names_after_from(completer, complete_event):
@@ -302,10 +306,10 @@ def test_table_names_after_from(completer, complete_event):
         Document(text=text, cursor_position=position),
         complete_event))
     assert result == list([
-        Completion(text='`réveillé`', start_position=0),
-        Completion(text='`select`', start_position=0),
-        Completion(text='orders', start_position=0),
         Completion(text='users', start_position=0),
+        Completion(text='orders', start_position=0),
+        Completion(text='`select`', start_position=0),
+        Completion(text='`réveillé`', start_position=0),
     ])
 
 
@@ -317,9 +321,9 @@ def test_auto_escaped_col_names(completer, complete_event):
         complete_event))
     assert result == [
         Completion(text='*', start_position=0),
-        Completion(text='`ABC`', start_position=0),
-        Completion(text='`insert`', start_position=0),
         Completion(text='id', start_position=0),
+        Completion(text='`insert`', start_position=0),
+        Completion(text='`ABC`', start_position=0),
     ] + \
         list(map(Completion, completer.functions)) + \
         [Completion(text='`select`', start_position=0)] + \
@@ -334,9 +338,9 @@ def test_un_escaped_table_names(completer, complete_event):
         complete_event))
     assert result == list([
         Completion(text='*', start_position=0),
-        Completion(text='`ABC`', start_position=0),
-        Completion(text='`insert`', start_position=0),
         Completion(text='id', start_position=0),
+        Completion(text='`insert`', start_position=0),
+        Completion(text='`ABC`', start_position=0),
     ] +
         list(map(Completion, completer.functions)) +
         [Completion(text='réveillé', start_position=0)] +
