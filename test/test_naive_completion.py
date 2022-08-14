@@ -40,8 +40,9 @@ def test_function_name_completion(completer, complete_event):
         Document(text=text, cursor_position=position),
         complete_event))
     assert result == list([
+        Completion(text='MAX', start_position=-2),
         Completion(text='MASTER', start_position=-2),
-        Completion(text='MAX', start_position=-2)])
+        ])
 
 
 def test_column_name_completion(completer, complete_event):
