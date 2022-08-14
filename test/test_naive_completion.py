@@ -39,10 +39,7 @@ def test_function_name_completion(completer, complete_event):
     result = list(completer.get_completions(
         Document(text=text, cursor_position=position),
         complete_event))
-    assert result == list([
-        Completion(text='MAX', start_position=-2),
-        Completion(text='MASTER', start_position=-2),
-        ])
+    assert sorted(x.text for x in result) == ["MASTER", "MAX"]
 
 
 def test_column_name_completion(completer, complete_event):
