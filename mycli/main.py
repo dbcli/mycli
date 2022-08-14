@@ -341,6 +341,7 @@ class MyCli(object):
             'mysqld': {
                 'socket': 'default_socket',
                 'port': 'default_port',
+                'user': 'default_user',
             },
         }
 

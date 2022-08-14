@@ -1,9 +1,12 @@
+
+TBD
+===
+
 Features:
 ---------
 
 * Detect TiDB instance and show in the prompt and use additional keywords.
 * Fix the completion order to show more commonly use keywords in the top.
-
 
 Internal:
 ---------
@@ -15,6 +18,8 @@ Bug Fixes:
 ----------
 * Support for some MySQL compatible databases, which may not implement connection_id().
 * Fix the status command to work with missing 'Flush_commands' (mariadb)
+* Ignore the user of the system [myslqd] config.
+
 
 1.25.0 (2022/04/02)
 ===================
@@ -34,6 +39,7 @@ Internal:
 Bug Fixes:
 ----------
 * Change in main.py - Replace the `click.get_terminal_size()` with `shutil.get_terminal_size()`
+
 
 
 1.24.3 (2022/01/20)
