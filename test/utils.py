@@ -41,8 +41,8 @@ dbtest = pytest.mark.skipif(
 def create_db(dbname):
     with db_connection().cursor() as cur:
         try:
-            cur.execute('''DROP DATABASE IF EXISTS _test_db''')
-            cur.execute('''CREATE DATABASE _test_db''')
+            cur.execute('''DROP DATABASE IF EXISTS mycli_test_db''')
+            cur.execute('''CREATE DATABASE mycli_test_db''')
         except:
             pass
 

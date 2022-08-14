@@ -47,7 +47,7 @@ class CompletionRefresher(object):
     def _bg_refresh(self, sqlexecute, callbacks, completer_options):
         completer = SQLCompleter(**completer_options)
 
-        # Create a new pgexecute method to popoulate the completions.
+        # Create a new pgexecute method to populate the completions.
         e = sqlexecute
         executor = SQLExecute(e.dbname, e.user, e.password, e.host, e.port,
                               e.socket, e.charset, e.local_infile, e.ssl,

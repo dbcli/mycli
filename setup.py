@@ -18,7 +18,9 @@ description = 'CLI for MySQL Database. With auto-completion and syntax highlight
 
 install_requirements = [
     'click >= 7.0',
-    'cryptography >= 1.0.0',
+    # Temporary to suppress paramiko Blowfish warning which breaks CI.
+    # Pinning cryptography should not be needed after paramiko 2.11.0.
+    'cryptography == 36.0.2',
     # 'Pygments>=1.6,<=2.11.1',
     'Pygments>=1.6',
     'prompt_toolkit>=3.0.6,<4.0.0',
@@ -38,14 +40,14 @@ class lint(Command):
     description = 'check code against PEP 8 (and fix violations)'
 
     user_options = [
-        ('branch=', 'b', 'branch/revision to compare against (e.g. master)'),
+        ('branch=', 'b', 'branch/revision to compare against (e.g. main)'),
         ('fix', 'f', 'fix the violations in place'),
         ('error-status', 'e', 'return an error code on failed PEP check'),
     ]
 
     def initialize_options(self):
         """Set the default options."""
-        self.branch = 'master'
+        self.branch = 'main'
         self.fix = False
         self.error_status = True
 

@@ -27,8 +27,11 @@ log_level = INFO
 # line below.
 # audit_log = ~/.mycli-audit.log
 
-# Timing of sql statments and table rendering.
+# Timing of sql statements and table rendering.
 timing = True
+
+# Beep after long-running queries are completed; 0 to disable.
+beep_after_seconds = 0
 
 # Table format. Possible values: ascii, double, github,
 # psql, plain, simple, grid, fancy_grid, pipe, orgtbl, rst, mediawiki, html,
@@ -63,7 +66,7 @@ wider_completion_menu = False
 # \R - The current time, in 24-hour military time (0-23)
 # \r - The current time, standard 12-hour time (1-12)
 # \s - Seconds of the current time
-# \t - Product type (Percona, MySQL, MariaDB)
+# \t - Product type (Percona, MySQL, MariaDB, TiDB)
 # \A - DSN alias name (from the [alias_dsn] section)
 # \u - Username
 # \x1b[...m - insert ANSI escape sequence

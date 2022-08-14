@@ -141,7 +141,7 @@ If you're interested in contributing to this project, first of all I would like
 to extend my heartfelt gratitude. I've written a small doc to describe how to
 get this running in a development setup.
 
-https://github.com/dbcli/mycli/blob/master/CONTRIBUTING.md
+https://github.com/dbcli/mycli/blob/main/CONTRIBUTING.md
 
 Please feel free to reach out to me if you need help.
 
@@ -150,6 +150,22 @@ My email: amjith.r@gmail.com
 Twitter: [@amjithr](http://twitter.com/amjithr)
 
 ## Detailed Install Instructions:
+
+### Arch, Manjaro
+
+You can install the mycli package available in the AUR:
+
+```
+$ yay -S mycli
+```
+
+### Debian, Ubuntu
+
+On Debian, Ubuntu distributions, you can easily install the mycli package using apt:
+
+```
+$ sudo apt-get install mycli
+```
 
 ### Fedora
 
@@ -164,13 +180,13 @@ $ sudo dnf install mycli
 I haven't built an RPM package for mycli for RHEL or Centos yet. So please use `pip` to install `mycli`. You can install pip on your system using:
 
 ```
-$ sudo yum install python-pip
+$ sudo yum install python3-pip
 ```
 
 Once that is installed, you can install mycli as follows:
 
 ```
-$ sudo pip install mycli
+$ sudo pip3 install mycli
 ```
 
 ### Windows

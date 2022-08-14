@@ -28,6 +28,7 @@ class ServerSpecies(enum.Enum):
     MySQL = 'MySQL'
     MariaDB = 'MariaDB'
     Percona = 'Percona'
+    TiDB = 'TiDB'
     Unknown = 'MySQL'
 
 
@@ -55,6 +56,7 @@ class ServerInfo:
 
         re_species = (
             (r'(?P<version>[0-9\.]+)-MariaDB', ServerSpecies.MariaDB),
+            (r'(?P<version>[0-9\.]+)[a-z0-9]*-TiDB', ServerSpecies.TiDB),
             (r'(?P<version>[0-9\.]+)[a-z0-9]*-(?P<comment>[0-9]+$)',
              ServerSpecies.Percona),
             (r'(?P<version>[0-9\.]+)[a-z0-9]*-(?P<comment>[A-Za-z0-9_]+)',
@@ -338,10 +340,16 @@ class SQLExecute(object):
     def reset_connection_id(self):
         # Remember current connection id
         _logger.debug('Get current connection id')
-        res = self.run('select connection_id()')
-        for title, cur, headers, status in res:
-            self.connection_id = cur.fetchone()[0]
-        _logger.debug('Current connection id: %s', self.connection_id)
+        try:
+            res = self.run('select connection_id()')
+            for title, cur, headers, status in res:
+                self.connection_id = cur.fetchone()[0]
+        except Exception as e:
+            # See #1054
+            self.connection_id = -1
+            _logger.error('Failed to get connection id: %s', e)
+        else:
+            _logger.debug('Current connection id: %s', self.connection_id)
 
     def change_db(self, db):
         self.conn.select_db(db)

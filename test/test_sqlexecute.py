@@ -71,7 +71,7 @@ def test_table_and_columns_query(executor):
 @dbtest
 def test_database_list(executor):
     databases = executor.databases()
-    assert '_test_db' in databases
+    assert 'mycli_test_db' in databases
 
 
 @dbtest
@@ -276,6 +276,7 @@ def test_multiple_results(executor):
 @pytest.mark.parametrize(
     'version_string, species, parsed_version_string, version',
     (
+        ('5.7.25-TiDB-v6.1.0','TiDB', '5.7.25', 50725),
         ('5.7.32-35', 'Percona', '5.7.32', 50732),
         ('5.7.32-0ubuntu0.18.04.1', 'MySQL', '5.7.32', 50732),
         ('10.5.8-MariaDB-1:10.5.8+maria~focal', 'MariaDB', '10.5.8', 100508),

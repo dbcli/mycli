@@ -72,7 +72,7 @@ def upload_distribution_files():
 
 
 def push_to_github():
-    run_step('git', 'push', 'origin', 'master')
+    run_step('git', 'push', 'origin', 'main')
 
 
 def push_tags_to_github():
@@ -90,7 +90,6 @@ if __name__ == '__main__':
         subprocess.check_output = lambda x: x
 
     ver = version('mycli/__init__.py')
-    print('Releasing Version:', ver)
 
     parser = OptionParser()
     parser.add_option(
@@ -106,6 +105,8 @@ if __name__ == '__main__':
     popts, pargs = parser.parse_args()
     CONFIRM_STEPS = popts.confirm_steps
     DRY_RUN = popts.dry_run
+
+    print('Releasing Version:', ver)
 
     if not click.confirm('Are you sure?', default=False):
         sys.exit(1)
