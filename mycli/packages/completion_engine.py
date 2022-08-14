@@ -130,7 +130,7 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
         return suggest_based_on_last_token(prev_keyword, text_before_cursor,
                                            full_text, identifier)
     elif token is None:
-        return [{'type': 'special'}]
+        return [{'type': 'keyword'}]
     else:
         token_v = token.value.lower()
 

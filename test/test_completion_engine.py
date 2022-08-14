@@ -552,4 +552,4 @@ def test_order_by():
 def test_quoted_where():
     text = "'where i=';"
     suggestions = suggest_type(text, text)
-    assert suggestions == [{'type': 'special'}]
+    assert suggestions == [{'type': 'keyword'}]
