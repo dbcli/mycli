@@ -2,6 +2,10 @@
 TBD
 ===
 
+Features:
+---------
+* Add `--ssl` flag to enable ssl/tls.
+
 Internal:
 ---------
 * Pin `cryptography` to suppress `paramiko` warning, helping CI complete and presumably affecting some users.
