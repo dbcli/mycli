@@ -1097,6 +1097,9 @@ class MyCli(object):
 @click.option('--ssl-key', help='X509 key in PEM format.',
               type=click.Path(exists=True))
 @click.option('--ssl-cipher', help='SSL cipher to use.')
+@click.option('--tls-version',
+              type=click.Choice(['TLSv1', 'TLSv1.1', 'TLSv1.2', 'TLSv1.3'], case_sensitive=False),
+              help='TLS protocol version for secure connection.')
 @click.option('--ssl-verify-server-cert', is_flag=True,
               help=('Verify server\'s "Common Name" in its cert against '
                     'hostname used when connecting. This option is disabled '
@@ -1148,8 +1151,8 @@ def cli(database, user, host, port, socket, password, dbname,
         version, verbose, prompt, logfile, defaults_group_suffix,
         defaults_file, login_path, auto_vertical_output, local_infile,
         ssl_ca, ssl_capath, ssl_cert, ssl_key, ssl_cipher,
-        ssl_verify_server_cert, table, csv, warn, execute, myclirc, dsn,
-        list_dsn, ssh_user, ssh_host, ssh_port, ssh_password,
+        tls_version, ssl_verify_server_cert, table, csv, warn, execute,
+        myclirc, dsn, list_dsn, ssh_user, ssh_host, ssh_port, ssh_password,
         ssh_key_filename, list_ssh_config, ssh_config_path, ssh_config_host,
         init_command, charset, password_file):
     """A MySQL terminal client with auto-completion and syntax highlighting.
@@ -1207,6 +1210,7 @@ def cli(database, user, host, port, socket, password, dbname,
             'key': ssl_key and os.path.expanduser(ssl_key),
             'capath': ssl_capath,
             'cipher': ssl_cipher,
+            'tls_version': tls_version,
             'check_hostname': ssl_verify_server_cert,
             }
 

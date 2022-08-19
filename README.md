@@ -74,6 +74,9 @@ $ sudo apt-get install mycli # Only on debian or ubuntu
       --ssl-cert PATH               X509 cert in PEM format.
       --ssl-key PATH                X509 key in PEM format.
       --ssl-cipher TEXT             SSL cipher to use.
+      --tls-version [TLSv1|TLSv1.1|TLSv1.2|TLSv1.3]
+                                    TLS protocol version for secure connection.
+
       --ssl-verify-server-cert      Verify server's "Common Name" in its cert
                                     against hostname used when connecting. This
                                     option is disabled by default.
