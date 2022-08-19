@@ -1089,6 +1089,8 @@ class MyCli(object):
 @click.option('--ssh-config-path', help='Path to ssh configuration.',
               default=os.path.expanduser('~') + '/.ssh/config')
 @click.option('--ssh-config-host', help='Host to connect to ssh server reading from ssh configuration.')
+@click.option('--ssl', 'ssl_enable', is_flag=True,
+        help='Enable SSL for connection (automatically enabled with other flags).')
 @click.option('--ssl-ca', help='CA file in PEM format.',
               type=click.Path(exists=True))
 @click.option('--ssl-capath', help='CA directory.')
@@ -1147,7 +1149,7 @@ class MyCli(object):
 def cli(database, user, host, port, socket, password, dbname,
         version, verbose, prompt, logfile, defaults_group_suffix,
         defaults_file, login_path, auto_vertical_output, local_infile,
-        ssl_ca, ssl_capath, ssl_cert, ssl_key, ssl_cipher,
+        ssl_enable, ssl_ca, ssl_capath, ssl_cert, ssl_key, ssl_cipher,
         ssl_verify_server_cert, table, csv, warn, execute, myclirc, dsn,
         list_dsn, ssh_user, ssh_host, ssh_port, ssh_password,
         ssh_key_filename, list_ssh_config, ssh_config_path, ssh_config_host,
@@ -1202,6 +1204,7 @@ def cli(database, user, host, port, socket, password, dbname,
     database = dbname or database
 
     ssl = {
+            'enable': ssl_enable,
             'ca': ssl_ca and os.path.expanduser(ssl_ca),
             'cert': ssl_cert and os.path.expanduser(ssl_cert),
             'key': ssl_key and os.path.expanduser(ssl_key),
