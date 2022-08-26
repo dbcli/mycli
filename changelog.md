@@ -4,7 +4,10 @@ TBD
 
 Features:
 ---------
+
 * Add `--ssl` flag to enable ssl/tls.
+* Add `pager` option to `~/.myclirc`, for instance `pager = 'pspg --csv'` (Thanks: [BuonOmo])
+
 
 Internal:
 ---------
@@ -894,6 +897,7 @@ Bug Fixes:
 
 [Amjith Ramanujam]: https://blog.amjith.com
 [Artem Bezsmertnyi]: https://github.com/mrdeathless
+[BuonOmo]: https://github.com/BuonOmo
 [Carlos Afonso]: https://github.com/afonsocarlos
 [Casper Langemeijer]: https://github.com/langemeijer
 [Daniel West]: http://github.com/danieljwest
