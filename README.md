@@ -69,6 +69,8 @@ $ sudo apt-get install mycli # Only on debian or ubuntu
       --ssh-config-host TEXT        Host to connect to ssh server reading from ssh
                                     configuration.
 
+      --ssl                         Enable SSL for connection (automatically
+                                    enabled with other flags).
       --ssl-ca PATH                 CA file in PEM format.
       --ssl-capath TEXT             CA directory.
       --ssl-cert PATH               X509 cert in PEM format.
