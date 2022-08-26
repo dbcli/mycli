@@ -938,8 +938,9 @@ class MyCli(object):
             os.environ['LESS'] = '-RXF'
 
         cnf = self.read_my_cnf_files(self.cnf_files, ['pager', 'skip-pager'])
-        if cnf['pager']:
-            special.set_pager(cnf['pager'])
+        cnf_pager = cnf['pager'] or self.config['main']['pager']
+        if cnf_pager:
+            special.set_pager(cnf_pager)
             self.explicit_pager = True
         else:
             self.explicit_pager = False

@@ -2,6 +2,10 @@
 TBD
 ===
 
+Features:
+---------
+* Add `pager` option to `~/.myclirc`, for instance `pager = 'pspg --csv'` (Thanks: [BuonOmo])
+
 Internal:
 ---------
 * Pin `cryptography` to suppress `paramiko` warning, helping CI complete and presumably affecting some users.
@@ -890,6 +894,7 @@ Bug Fixes:
 
 [Amjith Ramanujam]: https://blog.amjith.com
 [Artem Bezsmertnyi]: https://github.com/mrdeathless
+[BuonOmo]: https://github.com/BuonOmo
 [Carlos Afonso]: https://github.com/afonsocarlos
 [Casper Langemeijer]: https://github.com/langemeijer
 [Daniel West]: http://github.com/danieljwest
