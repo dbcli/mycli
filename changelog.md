@@ -7,6 +7,7 @@ Features:
 
 * Add `--ssl` flag to enable ssl/tls.
 * Add `pager` option to `~/.myclirc`, for instance `pager = 'pspg --csv'` (Thanks: [BuonOmo])
+* Add prettify/unprettify keybindings to format the current statement using `sqlglot`.
 
 
 Internal:

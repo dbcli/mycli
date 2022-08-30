@@ -30,6 +30,11 @@ def create_toolbar_tokens_func(mycli, show_fish_help):
                 'Vi-mode ({})'.format(_get_vi_mode())
             ))
 
+        if mycli.toolbar_error_message:
+            result.append(
+                ('class:bottom-toolbar', '  ' + mycli.toolbar_error_message))
+            mycli.toolbar_error_message = None
+
         if show_fish_help():
             result.append(
                 ('class:bottom-toolbar', '  Right-arrow to complete suggestion'))

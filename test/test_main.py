@@ -283,6 +283,20 @@ def test_list_dsn():
         assert result.output == "test : mysql://test/test\n"
 
 
+def test_prettify_statement():
+    statement = 'SELECT 1'
+    m = MyCli()
+    pretty_statement = m.handle_prettify_binding(statement)
+    assert pretty_statement == 'SELECT\n    1;'
+
+
+def test_unprettify_statement():
+    statement = 'SELECT\n    1'
+    m = MyCli()
+    unpretty_statement = m.handle_unprettify_binding(statement)
+    assert unpretty_statement == 'SELECT 1;'
+
+
 def test_list_ssh_config():
     runner = CliRunner()
     with NamedTemporaryFile(mode="w") as ssh_config:

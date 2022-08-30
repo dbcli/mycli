@@ -14,3 +14,4 @@ paramiko==2.11.0
 pyperclip>=1.8.1
 importlib_resources>=5.0.0
 pyaes>=1.6.1
+sqlglot>=5.1.3
