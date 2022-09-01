@@ -72,7 +72,7 @@ def mycli_bindings(mycli):
         _logger.debug('Detected <C-x p>/> key.')
 
         b = event.app.current_buffer
-        cursorpos_relative = b.cursor_position / len(b.text)
+        cursorpos_relative = b.cursor_position / max(1, len(b.text))
         pretty_text = mycli.handle_prettify_binding(b.text)
         if len(pretty_text) > 0:
             b.text = pretty_text
@@ -93,7 +93,7 @@ def mycli_bindings(mycli):
         _logger.debug('Detected <C-x u>/< key.')
 
         b = event.app.current_buffer
-        cursorpos_relative = b.cursor_position / len(b.text)
+        cursorpos_relative = b.cursor_position / max(1, len(b.text))
         unpretty_text = mycli.handle_unprettify_binding(b.text)
         if len(unpretty_text) > 0:
             b.text = unpretty_text
