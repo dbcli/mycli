@@ -24,6 +24,7 @@ from cli_helpers.tabular_output import preprocessors
 from cli_helpers.utils import strip_ansi
 import click
 import sqlparse
+import sqlglot
 from mycli.packages.parseutils import is_dropping_database, is_destructive
 from prompt_toolkit.completion import DynamicCompleter
 from prompt_toolkit.enums import DEFAULT_BUFFER, EditingMode
@@ -123,6 +124,7 @@ class MyCli(object):
         self.logfile = logfile
         self.defaults_suffix = defaults_suffix
         self.login_path = login_path
+        self.toolbar_error_message = None
 
         # self.cnf_files is a class variable that stores the list of mysql
         # config files to read in at launch.
@@ -582,6 +584,34 @@ class MyCli(object):
             return True
         return False
 
+    def handle_prettify_binding(self, text):
+        try:
+            statements = sqlglot.parse(text, read='mysql')
+        except Exception as e:
+            statements = []
+        if len(statements) == 1:
+            pretty_text = statements[0].sql(pretty=True, pad=4, dialect='mysql')
+        else:
+            pretty_text = ''
+            self.toolbar_error_message = 'Prettify failed to parse statement'
+        if len(pretty_text) > 0:
+            pretty_text = pretty_text + ';'
+        return pretty_text
+
+    def handle_unprettify_binding(self, text):
+        try:
+            statements = sqlglot.parse(text, read='mysql')
+        except Exception as e:
+            statements = []
+        if len(statements) == 1:
+            unpretty_text = statements[0].sql(pretty=False, dialect='mysql')
+        else:
+            unpretty_text = ''
+            self.toolbar_error_message = 'Unprettify failed to parse statement'
+        if len(unpretty_text) > 0:
+            unpretty_text = unpretty_text + ';'
+        return unpretty_text
+
     def run_cli(self):
         iterations = 0
         sqlexecute = self.sqlexecute
@@ -724,7 +754,7 @@ class MyCli(object):
                         except KeyboardInterrupt:
                             pass
                         if self.beep_after_seconds > 0 and t >= self.beep_after_seconds:
-                            self.echo('\a', err=True, nl=False)
+                            self.bell()
                         if special.is_timing_enabled():
                             self.echo('Time: %0.03fs' % t)
                     except KeyboardInterrupt:
@@ -864,6 +894,11 @@ class MyCli(object):
         """
         self.log_output(s)
         click.secho(s, **kwargs)
+
+    def bell(self):
+        """Print a bell on the stderr.
+        """
+        click.secho('\a', err=True, nl=False)
 
     def get_output_margin(self, status=None):
         """Get the output margin (number of rows for the prompt, footer and

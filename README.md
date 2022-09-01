@@ -135,6 +135,7 @@ Features
 * Log every query and its results to a file (disabled by default).
 * Pretty prints tabular data (with colors!)
 * Support for SSL connections
+* Some features are only exposed as [key bindings](doc/key_bindings.rst)
 
 Contributions:
 --------------
@@ -219,7 +220,7 @@ Thanks to [PyMysql](https://github.com/PyMySQL/PyMySQL) for a pure python adapte
 
 ### Compatibility
 
-Mycli is tested on macOS and Linux.
+Mycli is tested on macOS and Linux, and requires Python 3.7 or better.
 
 **Mycli is not tested on Windows**, but the libraries used in this app are Windows-compatible.
 This means it should work without any modifications. If you're unable to run it
