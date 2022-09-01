@@ -589,7 +589,7 @@ class MyCli(object):
             statements = sqlglot.parse(text, read='mysql')
         except Exception as e:
             statements = []
-        if len(statements) == 1:
+        if len(statements) == 1 and statements[0]:
             pretty_text = statements[0].sql(pretty=True, pad=4, dialect='mysql')
         else:
             pretty_text = ''
@@ -603,7 +603,7 @@ class MyCli(object):
             statements = sqlglot.parse(text, read='mysql')
         except Exception as e:
             statements = []
-        if len(statements) == 1:
+        if len(statements) == 1 and statements[0]:
             unpretty_text = statements[0].sql(pretty=False, dialect='mysql')
         else:
             unpretty_text = ''
