@@ -129,6 +129,8 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
         prev_keyword, text_before_cursor = find_prev_keyword(text_before_cursor)
         return suggest_based_on_last_token(prev_keyword, text_before_cursor,
                                            full_text, identifier)
+    elif token is None:
+        return [{'type': 'keyword'}]
     else:
         token_v = token.value.lower()
 

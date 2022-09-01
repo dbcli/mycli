@@ -1,12 +1,32 @@
-
-TBD
-===
+Upcoming
+========
 
 Features:
 ---------
 
 * Detect TiDB instance and show in the prompt and use additional keywords.
 * Fix the completion order to show more commonly use keywords in the top.
+
+
+1.26.1 (2022/09/01)
+===
+
+=======
+Bug Fixes:
+----------
+* Require Python 3.7 in `setup.py`
+
+
+1.26.0 (2022/09/01)
+===================
+
+Features:
+---------
+
+* Add `--ssl` flag to enable ssl/tls.
+* Add `pager` option to `~/.myclirc`, for instance `pager = 'pspg --csv'` (Thanks: [BuonOmo])
+* Add prettify/unprettify keybindings to format the current statement using `sqlglot`.
+
 
 Internal:
 ---------
@@ -896,6 +916,7 @@ Bug Fixes:
 
 [Amjith Ramanujam]: https://blog.amjith.com
 [Artem Bezsmertnyi]: https://github.com/mrdeathless
+[BuonOmo]: https://github.com/BuonOmo
 [Carlos Afonso]: https://github.com/afonsocarlos
 [Casper Langemeijer]: https://github.com/langemeijer
 [Daniel West]: http://github.com/danieljwest

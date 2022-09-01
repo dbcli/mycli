@@ -542,7 +542,14 @@ def test_favorite_name_suggestion(expression):
     suggestions = suggest_type(expression, expression)
     assert suggestions == [{'type': 'favoritequery'}]
 
+
 def test_order_by():
     text = 'select * from foo order by '
     suggestions = suggest_type(text, text)
     assert suggestions == [{'tables': [(None, 'foo', None)], 'type': 'column'}]
+
+
+def test_quoted_where():
+    text = "'where i=';"
+    suggestions = suggest_type(text, text)
+    assert suggestions == [{'type': 'keyword'}]
