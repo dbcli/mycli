@@ -1,6 +1,14 @@
 
-1.26.1 (2022/09/01)
+TBD
 ===
+
+Bug Fixes:
+----------
+* better handle empty statements in un/prettify
+
+
+1.26.1 (2022/09/01)
+===================
 
 Bug Fixes:
 ----------
