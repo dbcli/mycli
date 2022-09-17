@@ -48,17 +48,17 @@ Introduce a line break in multi-line mode, or dispatch the command in single-lin
 
 The sequence ESC-Enter is often sent by Alt-Enter.
 
-#################################
-C-x p (Emacs-mode) or > (Vi-mode)
-#################################
+##################
+C-x p (Emacs-mode)
+##################
 
 Prettify and indent current statement, usually into multiple lines.
 
 Only accepts buffers containing single SQL statements.
 
-#################################
-C-x u (Emacs-mode) or < (Vi-mode)
-#################################
+##################
+C-x u (Emacs-mode)
+##################
 
 Unprettify and dedent current statement, usually into one line.
 

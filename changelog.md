@@ -7,14 +7,10 @@ Features:
 * Detect TiDB instance and show in the prompt and use additional keywords.
 * Fix the completion order to show more commonly use keywords in the top.
 
-
-TBD
-===
-
-=======
 Bug Fixes:
 ----------
-* better handle empty statements in un/prettify
+* Better handle empty statements in un/prettify
+* Remove vi-mode bindings for prettify/unprettify.
 
 
 1.26.1 (2022/09/01)
