@@ -19,8 +19,16 @@ def load_ipython_extension(ipython):
 def mycli_line_magic(line):
     _logger.debug('mycli magic called: %r', line)
     parsed = sql.parse.parse(line, {})
-    conn = sql.connection.Connection(parsed['connection'])
-
+    # "get" was renamed to "set" in ipython-sql:
+    # https://github.com/catherinedevlin/ipython-sql/commit/f4283c65aaf68f961e84019e8b939e4a3c501d43
+    if hasattr(sql.connection.Connection, "get"):
+        conn = sql.connection.Connection.get(parsed["connection"])
+    else:
+        try:
+            conn = sql.connection.Connection.set(parsed["connection"])
+        # a new positional argument was added to Connection.set in version 0.4.0 of ipython-sql
+        except TypeError:
+            conn = sql.connection.Connection.set(parsed["connection"], False)
     try:
         # A corresponding mycli object already exists
         mycli = conn._mycli
