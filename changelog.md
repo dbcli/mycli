@@ -1,3 +1,9 @@
+Internal:
+---------
+* paramiko is newer than 2.11.0 now, remove version pinning `cryptography`.
+
+
+
 Upcoming
 ========
 
