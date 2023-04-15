@@ -9,7 +9,12 @@ jobs:
   linux:
     strategy:
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10']
+        python-version: [
+        '3.7',
+        '3.8',
+        '3.9',
+        '3.10',
+        ]
         include:
           - python-version: '3.7'
             os: ubuntu-18.04  # MySQL 5.7.32
@@ -61,4 +66,3 @@ jobs:
         run: |
           coverage combine
           coverage report
-          codecov
