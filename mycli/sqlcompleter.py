@@ -178,6 +178,14 @@ class SQLCompleter(Completer):
                  'UNIX_TIMESTAMP'
                  ]
 
+    # https://docs.pingcap.com/tidb/dev/tidb-functions
+    tidb_functions = [
+            'TIDB_BOUNDED_STALENESS', 'TIDB_DECODE_KEY', 'TIDB_DECODE_PLAN',
+            'TIDB_IS_DDL_OWNER', 'TIDB_PARSE_TSO', 'TIDB_VERSION',
+            'TIDB_DECODE_SQL_DIGESTS', 'VITESS_HASH', 'TIDB_SHARD'
+            ]
+
+
     show_items = []
 
     change_items = ['MASTER_BIND', 'MASTER_HOST', 'MASTER_USER',
@@ -312,7 +320,12 @@ class SQLCompleter(Completer):
             metadata[self.dbname][relname].append(column)
             self.all_completions.add(column)
 
-    def extend_functions(self, func_data):
+    def extend_functions(self, func_data, builtin=False):
+        # if 'builtin' is set this is extending the list of builtin functions
+        if builtin:
+            self.functions.extend(func_data)
+            return
+
         # 'func_data' is a generator object. It can throw an exception while
         # being consumed. This could happen if the user has launched the app
         # without specifying a database name. This exception must be handled to

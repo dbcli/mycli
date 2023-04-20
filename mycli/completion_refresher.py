@@ -113,6 +113,8 @@ def refresh_users(completer, executor):
 @refresher('functions')
 def refresh_functions(completer, executor):
     completer.extend_functions(executor.functions())
+    if executor.server_info.species == ServerSpecies.TiDB:
+        completer.extend_functions(completer.tidb_functions, builtin=True)
 
 @refresher('special_commands')
 def refresh_special(completer, executor):

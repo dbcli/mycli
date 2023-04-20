@@ -9,8 +9,11 @@ Features:
 
 Bug Fixes:
 ----------
+
 * Better handle empty statements in un/prettify
 * Remove vi-mode bindings for prettify/unprettify.
+* honor `\G` when executing from commandline with `-e`
+
 
 
 1.26.1 (2022/09/01)
