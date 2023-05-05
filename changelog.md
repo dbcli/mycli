@@ -13,6 +13,7 @@ Bug Fixes:
 * Better handle empty statements in un/prettify
 * Remove vi-mode bindings for prettify/unprettify.
 * honor `\G` when executing from commandline with `-e`
+* Correctly report the version of TiDB.
 
 
 

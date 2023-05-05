@@ -56,7 +56,7 @@ class ServerInfo:
 
         re_species = (
             (r'(?P<version>[0-9\.]+)-MariaDB', ServerSpecies.MariaDB),
-            (r'(?P<version>[0-9\.]+)[a-z0-9]*-TiDB', ServerSpecies.TiDB),
+            (r'[0-9\.]*-TiDB-v(?P<version>[0-9\.]+)-?(?P<comment>[a-z0-9\-]*)', ServerSpecies.TiDB),
             (r'(?P<version>[0-9\.]+)[a-z0-9]*-(?P<comment>[0-9]+$)',
              ServerSpecies.Percona),
             (r'(?P<version>[0-9\.]+)[a-z0-9]*-(?P<comment>[A-Za-z0-9_]+)',
