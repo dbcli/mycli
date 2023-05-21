@@ -77,7 +77,7 @@ def mycli_bindings(mycli):
             b.text = pretty_text
             cursorpos_abs = int(round(cursorpos_relative * len(b.text)))
             while 0 < cursorpos_abs < len(b.text) \
-                  and b.text[cursorpos_abs] in (' ', '\n'):
+                    and b.text[cursorpos_abs] in (' ', '\n'):
                 cursorpos_abs -= 1
             b.cursor_position = min(cursorpos_abs, len(b.text))
 
@@ -97,7 +97,7 @@ def mycli_bindings(mycli):
             b.text = unpretty_text
             cursorpos_abs = int(round(cursorpos_relative * len(b.text)))
             while 0 < cursorpos_abs < len(b.text) \
-                  and b.text[cursorpos_abs] in (' ', '\n'):
+                    and b.text[cursorpos_abs] in (' ', '\n'):
                 cursorpos_abs -= 1
             b.cursor_position = min(cursorpos_abs, len(b.text))
 

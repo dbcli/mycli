@@ -5,8 +5,8 @@ from collections import OrderedDict
 from .sqlcompleter import SQLCompleter
 from .sqlexecute import SQLExecute, ServerSpecies
 
-class CompletionRefresher(object):
 
+class CompletionRefresher(object):
     refreshers = OrderedDict()
 
     def __init__(self):
@@ -76,18 +76,23 @@ class CompletionRefresher(object):
         for callback in callbacks:
             callback(completer)
 
+
 def refresher(name, refreshers=CompletionRefresher.refreshers):
     """Decorator to add the decorated function to the dictionary of
     refreshers. Any function decorated with a @refresher will be executed as
     part of the completion refresh routine."""
+
     def wrapper(wrapped):
         refreshers[name] = wrapped
         return wrapped
+
     return wrapper
+
 
 @refresher('databases')
 def refresh_databases(completer, executor):
     completer.extend_database_names(executor.databases())
+
 
 @refresher('schemata')
 def refresh_schemata(completer, executor):
@@ -96,14 +101,17 @@ def refresh_schemata(completer, executor):
     completer.extend_schemata(executor.dbname)
     completer.set_dbname(executor.dbname)
 
+
 @refresher('tables')
 def refresh_tables(completer, executor):
     completer.extend_relations(executor.tables(), kind='tables')
     completer.extend_columns(executor.table_columns(), kind='tables')
 
+
 @refresher('users')
 def refresh_users(completer, executor):
     completer.extend_users(executor.users())
+
 
 # @refresher('views')
 # def refresh_views(completer, executor):
@@ -116,13 +124,16 @@ def refresh_functions(completer, executor):
     if executor.server_info.species == ServerSpecies.TiDB:
         completer.extend_functions(completer.tidb_functions, builtin=True)
 
+
 @refresher('special_commands')
 def refresh_special(completer, executor):
     completer.extend_special_commands(COMMANDS.keys())
 
+
 @refresher('show_commands')
 def refresh_show_commands(completer, executor):
     completer.extend_show_items(executor.show_candidates())
+
 
 @refresher('keywords')
 def refresh_keywords(completer, executor):

@@ -21,7 +21,6 @@ try:
 except NameError:
     basestring = str
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -53,12 +52,12 @@ def read_config_file(f, list_values=True):
                            list_values=list_values)
     except ConfigObjError as e:
         log(logger, logging.WARNING, "Unable to parse line {0} of config file "
-            "'{1}'.".format(e.line_number, f))
+                                     "'{1}'.".format(e.line_number, f))
         log(logger, logging.WARNING, "Using successfully parsed config values.")
         return e.config
     except (IOError, OSError) as e:
         log(logger, logging.WARNING, "You don't have permission to read "
-            "config file '{0}'.".format(e.filename))
+                                     "config file '{0}'.".format(e.filename))
         return None
 
     return config
@@ -181,6 +180,7 @@ def encrypt_mylogin_cnf(plaintext: IO[str]):
     https://github.com/isotopp/mysql-config-coder
 
     """
+
     def realkey(key):
         """Create the AES key from the login key."""
         rkey = bytearray(16)
@@ -258,7 +258,7 @@ def read_and_decrypt_mylogin_cnf(f):
     rkey = [0] * 16
     for i in range(LOGIN_KEY_LEN):
         try:
-            rkey[i % 16] ^= ord(key[i:i+1])
+            rkey[i % 16] ^= ord(key[i:i + 1])
         except TypeError:
             # ord() was unable to get the value of the byte.
             logger.error('Unable to generate login path AES key.')

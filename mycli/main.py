@@ -10,6 +10,7 @@ import re
 import stat
 import fileinput
 from collections import namedtuple
+
 try:
     from pwd import getpwuid
 except ImportError:
@@ -91,7 +92,6 @@ SUPPORT_INFO = (
 
 
 class MyCli(object):
-
     default_prompt = '\\t \\u@\\h:\\d> '
     max_len_prompt = 45
     defaults_suffix = None
@@ -117,9 +117,9 @@ class MyCli(object):
     pwd_config_file = os.path.join(os.getcwd(), ".myclirc")
 
     def __init__(self, sqlexecute=None, prompt=None,
-            logfile=None, defaults_suffix=None, defaults_file=None,
-            login_path=None, auto_vertical_output=False, warn=None,
-            myclirc="~/.myclirc"):
+                 logfile=None, defaults_suffix=None, defaults_file=None,
+                 login_path=None, auto_vertical_output=False, warn=None,
+                 myclirc="~/.myclirc"):
         self.sqlexecute = sqlexecute
         self.logfile = logfile
         self.defaults_suffix = defaults_suffix
@@ -163,7 +163,7 @@ class MyCli(object):
 
         # read from cli argument or user config file
         self.auto_vertical_output = auto_vertical_output or \
-                                c['main'].as_bool('auto_vertical_output')
+                                    c['main'].as_bool('auto_vertical_output')
 
         # Write user config if system config wasn't the last config loaded.
         if c.filename not in self.system_config_files and not os.path.exists(myclirc):
@@ -217,20 +217,20 @@ class MyCli(object):
 
     def register_special_commands(self):
         special.register_special_command(self.change_db, 'use',
-                '\\u', 'Change to a new database.', aliases=('\\u',))
+                                         '\\u', 'Change to a new database.', aliases=('\\u',))
         special.register_special_command(self.change_db, 'connect',
-                '\\r', 'Reconnect to the database. Optional database argument.',
-                aliases=('\\r', ), case_sensitive=True)
+                                         '\\r', 'Reconnect to the database. Optional database argument.',
+                                         aliases=('\\r',), case_sensitive=True)
         special.register_special_command(self.refresh_completions, 'rehash',
-                '\\#', 'Refresh auto-completions.', arg_type=NO_QUERY, aliases=('\\#',))
+                                         '\\#', 'Refresh auto-completions.', arg_type=NO_QUERY, aliases=('\\#',))
         special.register_special_command(
             self.change_table_format, 'tableformat', '\\T',
             'Change the table format used to output results.',
             aliases=('\\T',), case_sensitive=True)
         special.register_special_command(self.execute_from_file, 'source', '\\. filename',
-                              'Execute commands from file.', aliases=('\\.',))
+                                         'Execute commands from file.', aliases=('\\.',))
         special.register_special_command(self.change_prompt_format, 'prompt',
-                '\\R', 'Change prompt format.', aliases=('\\R',), case_sensitive=True)
+                                         '\\R', 'Change prompt format.', aliases=('\\R',), case_sensitive=True)
 
     def change_table_format(self, arg, **_):
         try:
@@ -258,7 +258,7 @@ class MyCli(object):
         self.sqlexecute.change_db(arg)
 
         yield (None, None, None, 'You are now connected to database "%s" as '
-                'user "%s"' % (self.sqlexecute.dbname, self.sqlexecute.user))
+                                 'user "%s"' % (self.sqlexecute.dbname, self.sqlexecute.user))
 
     def execute_from_file(self, arg, **_):
         if not arg:
@@ -293,12 +293,13 @@ class MyCli(object):
         log_file = os.path.expanduser(self.config['main']['log_file'])
         log_level = self.config['main']['log_level']
 
-        level_map = {'CRITICAL': logging.CRITICAL,
-                     'ERROR': logging.ERROR,
-                     'WARNING': logging.WARNING,
-                     'INFO': logging.INFO,
-                     'DEBUG': logging.DEBUG
-                     }
+        level_map = {
+            'CRITICAL': logging.CRITICAL,
+            'ERROR'   : logging.ERROR,
+            'WARNING' : logging.WARNING,
+            'INFO'    : logging.INFO,
+            'DEBUG'   : logging.DEBUG
+        }
 
         # Disable logging if value is NONE by switching to a no-op handler
         # Set log level to a high value so it doesn't even waste cycles getting called.
@@ -328,7 +329,6 @@ class MyCli(object):
         root_logger.debug('Initializing mycli logging.')
         root_logger.debug('Log file %r.', log_file)
 
-
     def read_my_cnf_files(self, files, keys):
         """
         Reads a list of config files and merges them. The last one will win.
@@ -342,8 +342,8 @@ class MyCli(object):
         key_transformations = {
             'mysqld': {
                 'socket': 'default_socket',
-                'port': 'default_port',
-                'user': 'default_user',
+                'port'  : 'default_port',
+                'user'  : 'default_user',
             },
         }
 
@@ -357,8 +357,8 @@ class MyCli(object):
         for key in keys:
             for section in cnf:
                 if (
-                    section not in sections or
-                    key not in cnf[section]
+                        section not in sections or
+                        key not in cnf[section]
                 ):
                     continue
                 new_key = key_transformations.get(section, {}).get(key) or key
@@ -366,7 +366,6 @@ class MyCli(object):
                     cnf[section][key])
 
         return configuration
-
 
     def merge_ssl_with_cnf(self, ssl, cnf):
         """Merge SSL configuration dict with cnf dict"""
@@ -396,21 +395,22 @@ class MyCli(object):
                 ssh_user='', ssh_host='', ssh_port='',
                 ssh_password='', ssh_key_filename='', init_command='', password_file=''):
 
-        cnf = {'database': None,
-               'user': None,
-               'password': None,
-               'host': None,
-               'port': None,
-               'socket': None,
-               'default_socket': None,
-               'default-character-set': None,
-               'local-infile': None,
-               'loose-local-infile': None,
-               'ssl-ca': None,
-               'ssl-cert': None,
-               'ssl-key': None,
-               'ssl-cipher': None,
-               'ssl-verify-serer-cert': None,
+        cnf = {
+            'database'             : None,
+            'user'                 : None,
+            'password'             : None,
+            'host'                 : None,
+            'port'                 : None,
+            'socket'               : None,
+            'default_socket'       : None,
+            'default-character-set': None,
+            'local-infile'         : None,
+            'loose-local-infile'   : None,
+            'ssl-ca'               : None,
+            'ssl-cert'             : None,
+            'ssl-key'              : None,
+            'ssl-cipher'           : None,
+            'ssl-verify-serer-cert': None,
         }
 
         cnf = self.read_my_cnf_files(self.cnf_files, cnf.keys())
@@ -427,11 +427,10 @@ class MyCli(object):
             port = 3306
             if not host or host == 'localhost':
                 socket = (
-                    cnf['socket'] or
-                    cnf['default_socket'] or
-                    guess_socket_location()
+                        cnf['socket'] or
+                        cnf['default_socket'] or
+                        guess_socket_location()
                 )
-
 
         passwd = passwd if isinstance(passwd, str) else cnf['password']
         charset = charset or cnf['default-character-set'] or 'utf8'
@@ -653,8 +652,8 @@ class MyCli(object):
             elif self.multiline_continuation_char:
                 left_padding = width - len(self.multiline_continuation_char)
                 continuation = " " * \
-                    max((left_padding - 1), 0) + \
-                    self.multiline_continuation_char + " "
+                               max((left_padding - 1), 0) + \
+                               self.multiline_continuation_char + " "
             else:
                 continuation = " "
             return [('class:continuation', continuation)]
@@ -786,7 +785,7 @@ class MyCli(object):
                         self.echo('Encountered error while cancelling query: {}'.format(e),
                                   err=True, fg='red')
                 else:
-                  logger.debug("Did not get a connection id, skip cancelling query")
+                    logger.debug("Did not get a connection id, skip cancelling query")
             except NotImplementedError:
                 self.echo('Not Yet Implemented.', fg="yellow")
             except OperationalError as e:
@@ -911,7 +910,6 @@ class MyCli(object):
 
         return margin
 
-
     def output(self, output, status=None):
         """Output text to stdout or a pager command.
 
@@ -958,6 +956,7 @@ class MyCli(object):
                     def newlinewrapper(text):
                         for line in text:
                             yield line + "\n"
+
                     click.echo_via_pager(newlinewrapper(buf))
                 else:
                     for line in buf:
@@ -989,12 +988,14 @@ class MyCli(object):
                 self.completer.reset_completions()
         self.completion_refresher.refresh(
             self.sqlexecute, self._on_completions_refreshed,
-            {'smart_completion': self.smart_completion,
-             'supported_formats': self.formatter.supported_formats,
-             'keyword_casing': self.completer.keyword_casing})
+            {
+                'smart_completion' : self.smart_completion,
+                'supported_formats': self.formatter.supported_formats,
+                'keyword_casing'   : self.completer.keyword_casing
+            })
 
         return [(None, None, None,
-                'Auto-completion refresh started in the background.')]
+                 'Auto-completion refresh started in the background.')]
 
     def _on_completions_refreshed(self, new_completer):
         """Swap the completer object in cli with the newly created completer.
@@ -1048,14 +1049,14 @@ class MyCli(object):
         output = []
 
         output_kwargs = {
-            'dialect': 'unix',
-            'disable_numparse': True,
+            'dialect'            : 'unix',
+            'disable_numparse'   : True,
             'preserve_whitespace': True,
-            'style': self.output_style
+            'style'              : self.output_style
         }
 
         if not self.formatter.format_name in sql_format.supported_formats:
-            output_kwargs["preprocessors"] = (preprocessors.align_decimals, )
+            output_kwargs["preprocessors"] = (preprocessors.align_decimals,)
 
         if title:  # Only print the title if it's not None.
             output = itertools.chain(output, [title])
@@ -1066,6 +1067,7 @@ class MyCli(object):
                 def get_col_type(col):
                     col_type = FIELD_TYPES.get(col[1], str)
                     return col_type if type(col_type) is type else str
+
                 column_types = [get_col_type(col) for col in cur.description]
 
             if max_width is not None:
@@ -1092,7 +1094,6 @@ class MyCli(object):
 
             output = itertools.chain(output, formatted)
 
-
         return output
 
     def get_reserved_space(self):
@@ -1110,7 +1111,7 @@ class MyCli(object):
 @click.command()
 @click.option('-h', '--host', envvar='MYSQL_HOST', help='Host address of the database.')
 @click.option('-P', '--port', envvar='MYSQL_TCP_PORT', type=int, help='Port number to use for connection. Honors '
-              '$MYSQL_TCP_PORT.')
+                                                                      '$MYSQL_TCP_PORT.')
 @click.option('-u', '--user', help='User name to connect to the database.')
 @click.option('-S', '--socket', envvar='MYSQL_UNIX_PORT', help='The socket file to use for connection.')
 @click.option('-p', '--password', 'password', envvar='MYSQL_PWD', type=str,
@@ -1126,7 +1127,7 @@ class MyCli(object):
               default=os.path.expanduser('~') + '/.ssh/config')
 @click.option('--ssh-config-host', help='Host to connect to ssh server reading from ssh configuration.')
 @click.option('--ssl', 'ssl_enable', is_flag=True,
-        help='Enable SSL for connection (automatically enabled with other flags).')
+              help='Enable SSL for connection (automatically enabled with other flags).')
 @click.option('--ssl-ca', help='CA file in PEM format.',
               type=click.Path(exists=True))
 @click.option('--ssl-capath', help='CA directory.')
@@ -1147,7 +1148,7 @@ class MyCli(object):
 @click.option('-d', '--dsn', default='', envvar='DSN',
               help='Use DSN configured into the [alias_dsn] section of myclirc file.')
 @click.option('--list-dsn', 'list_dsn', is_flag=True,
-        help='list of DSN configured into the [alias_dsn] section of myclirc file.')
+              help='list of DSN configured into the [alias_dsn] section of myclirc file.')
 @click.option('--list-ssh-config', 'list_ssh_config', is_flag=True,
               help='list ssh configurations in the ssh config (requires paramiko).')
 @click.option('-R', '--prompt', 'prompt',
@@ -1173,7 +1174,7 @@ class MyCli(object):
               help='Enable/disable LOAD DATA LOCAL INFILE.')
 @click.option('-g', '--login-path', type=str,
               help='Read this path from the login file.')
-@click.option('-e', '--execute',  type=str,
+@click.option('-e', '--execute', type=str,
               help='Execute command and quit.')
 @click.option('--init-command', type=str,
               help='SQL statement to execute after connecting.')
@@ -1213,9 +1214,9 @@ def cli(database, user, host, port, socket, password, dbname,
         try:
             alias_dsn = mycli.config['alias_dsn']
         except KeyError as err:
-            click.secho('Invalid DSNs found in the config file. '\
-                'Please check the "[alias_dsn]" section in myclirc.',
-                 err=True, fg='red')
+            click.secho('Invalid DSNs found in the config file. ' \
+                        'Please check the "[alias_dsn]" section in myclirc.',
+                        err=True, fg='red')
             exit(1)
         except Exception as e:
             click.secho(str(e), err=True, fg='red')
@@ -1240,14 +1241,14 @@ def cli(database, user, host, port, socket, password, dbname,
     database = dbname or database
 
     ssl = {
-            'enable': ssl_enable,
-            'ca': ssl_ca and os.path.expanduser(ssl_ca),
-            'cert': ssl_cert and os.path.expanduser(ssl_cert),
-            'key': ssl_key and os.path.expanduser(ssl_key),
-            'capath': ssl_capath,
-            'cipher': ssl_cipher,
-            'check_hostname': ssl_verify_server_cert,
-            }
+        'enable'        : ssl_enable,
+        'ca'            : ssl_ca and os.path.expanduser(ssl_ca),
+        'cert'          : ssl_cert and os.path.expanduser(ssl_cert),
+        'key'           : ssl_key and os.path.expanduser(ssl_key),
+        'capath'        : ssl_capath,
+        'cipher'        : ssl_cipher,
+        'check_hostname': ssl_verify_server_cert,
+    }
 
     # remove empty ssl options
     ssl = {k: v for k, v in ssl.items() if v is not None}
@@ -1321,10 +1322,10 @@ def cli(database, user, host, port, socket, password, dbname,
     )
 
     mycli.logger.debug('Launch Params: \n'
-            '\tdatabase: %r'
-            '\tuser: %r'
-            '\thost: %r'
-            '\tport: %r', database, user, host, port)
+                       '\tdatabase: %r'
+                       '\tuser: %r'
+                       '\thost: %r'
+                       '\tport: %r', database, user, host, port)
 
     #  --execute argument
     if execute:
@@ -1428,8 +1429,8 @@ def is_select(status):
 def thanks_picker():
     import mycli
     lines = (
-        resources.read_text(mycli, 'AUTHORS') +
-        resources.read_text(mycli, 'SPONSORS')
+            resources.read_text(mycli, 'AUTHORS') +
+            resources.read_text(mycli, 'SPONSORS')
     ).split('\n')
 
     contents = []

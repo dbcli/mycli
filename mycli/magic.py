@@ -5,8 +5,8 @@ import logging
 
 _logger = logging.getLogger(__name__)
 
-def load_ipython_extension(ipython):
 
+def load_ipython_extension(ipython):
     # This is called via the ipython command '%load_ext mycli.magic'.
 
     # First, load the sql magic if it isn't already loaded.
@@ -15,6 +15,7 @@ def load_ipython_extension(ipython):
 
     # Register our own magic.
     ipython.register_magic_function(mycli_line_magic, 'line', 'mycli')
+
 
 def mycli_line_magic(line):
     _logger.debug('mycli magic called: %r', line)

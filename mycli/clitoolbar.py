@@ -6,6 +6,7 @@ from .packages import special
 
 def create_toolbar_tokens_func(mycli, show_fish_help):
     """Return a function that generates the toolbar tokens."""
+
     def get_toolbar_tokens():
         result = [('class:bottom-toolbar', ' ')]
 
@@ -43,15 +44,16 @@ def create_toolbar_tokens_func(mycli, show_fish_help):
                 ('class:bottom-toolbar', '     Refreshing completions...'))
 
         return result
+
     return get_toolbar_tokens
 
 
 def _get_vi_mode():
     """Get the current vi mode for display."""
     return {
-        InputMode.INSERT: 'I',
-        InputMode.NAVIGATION: 'N',
-        InputMode.REPLACE: 'R',
-        InputMode.REPLACE_SINGLE: 'R',
+        InputMode.INSERT         : 'I',
+        InputMode.NAVIGATION     : 'N',
+        InputMode.REPLACE        : 'R',
+        InputMode.REPLACE_SINGLE : 'R',
         InputMode.INSERT_MULTIPLE: 'M',
     }[get_app().vi_state.input_mode]

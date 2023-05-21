@@ -13,6 +13,7 @@ def cli_is_multiline(mycli):
             return False
         else:
             return not _multiline_exception(doc.text)
+
     return cond
 
 
@@ -28,28 +29,28 @@ def _multiline_exception(text):
 
     return (
         # Special Command
-        text.startswith('\\') or
+            text.startswith('\\') or
 
-        # Delimiter declaration
-        text.lower().startswith('delimiter') or
+            # Delimiter declaration
+            text.lower().startswith('delimiter') or
 
-        # Ended with the current delimiter (usually a semi-column)
-        text.endswith(special.get_current_delimiter()) or
+            # Ended with the current delimiter (usually a semi-column)
+            text.endswith(special.get_current_delimiter()) or
 
-        text.endswith('\\g') or
-        text.endswith('\\G') or
-        text.endswith(r'\e') or
-        text.endswith(r'\clip') or
+            text.endswith('\\g') or
+            text.endswith('\\G') or
+            text.endswith(r'\e') or
+            text.endswith(r'\clip') or
 
-        # Exit doesn't need semi-column`
-        (text == 'exit') or
+            # Exit doesn't need semi-column`
+            (text == 'exit') or
 
-        # Quit doesn't need semi-column
-        (text == 'quit') or
+            # Quit doesn't need semi-column
+            (text == 'quit') or
 
-        # To all teh vim fans out there
-        (text == ':q') or
+            # To all teh vim fans out there
+            (text == ':q') or
 
-        # just a plain enter without any text
-        (text == '')
+            # just a plain enter without any text
+            (text == '')
     )

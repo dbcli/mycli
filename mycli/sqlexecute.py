@@ -8,6 +8,7 @@ from pymysql.constants import FIELD_TYPE
 from pymysql.converters import (convert_datetime,
                                 convert_timedelta, convert_date, conversions,
                                 decoders)
+
 try:
     import paramiko
 except ImportError:
@@ -19,7 +20,6 @@ FIELD_TYPES = decoders.copy()
 FIELD_TYPES.update({
     FIELD_TYPE.NULL: type(None)
 })
-
 
 ERROR_CODE_ACCESS_DENIED = 1045
 
@@ -82,7 +82,6 @@ class ServerInfo:
 
 
 class SQLExecute(object):
-
     databases_query = '''SHOW DATABASES'''
 
     tables_query = '''SHOW TABLES'''
@@ -162,9 +161,9 @@ class SQLExecute(object):
         conv = conversions.copy()
         conv.update({
             FIELD_TYPE.TIMESTAMP: lambda obj: (convert_datetime(obj) or obj),
-            FIELD_TYPE.DATETIME: lambda obj: (convert_datetime(obj) or obj),
-            FIELD_TYPE.TIME: lambda obj: (convert_timedelta(obj) or obj),
-            FIELD_TYPE.DATE: lambda obj: (convert_date(obj) or obj),
+            FIELD_TYPE.DATETIME : lambda obj: (convert_datetime(obj) or obj),
+            FIELD_TYPE.TIME     : lambda obj: (convert_timedelta(obj) or obj),
+            FIELD_TYPE.DATE     : lambda obj: (convert_date(obj) or obj),
         })
 
         defer_connect = False
@@ -243,7 +242,7 @@ class SQLExecute(object):
                 sql = sql[:-2].strip()
 
             cur = self.conn.cursor()
-            try:   # Special command
+            try:  # Special command
                 _logger.debug('Trying a dbspecial command. sql: %r', sql)
                 for result in special.execute(cur, sql):
                     yield result
@@ -318,7 +317,7 @@ class SQLExecute(object):
                 yield ''
             else:
                 for row in cur:
-                    yield (row[0].split(None, 1)[-1], )
+                    yield (row[0].split(None, 1)[-1],)
 
     def users(self):
         with self.conn.cursor() as cur:
