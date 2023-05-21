@@ -14,6 +14,7 @@ Bug Fixes:
 * Remove vi-mode bindings for prettify/unprettify.
 * honor `\G` when executing from commandline with `-e`
 * Correctly report the version of TiDB.
+* Revised `botton` spelling mistakes with `bottom` in `mycli/clitoolbar.py`
 
 
 
