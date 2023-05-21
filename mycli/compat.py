@@ -2,5 +2,4 @@
 
 import sys
 
-
 WIN = sys.platform in ('win32', 'cygwin')
