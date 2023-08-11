@@ -1,20 +1,19 @@
-Upcoming
-========
+1.27.0 (2023/08/11)
+===================
 
 Features:
 ---------
 
-* Detect TiDB instance and show in the prompt and use additional keywords.
-* Fix the completion order to show more commonly use keywords in the top.
+* Detect TiDB instance, show in the prompt, and use additional keywords.
+* Fix the completion order to show more commonly-used keywords at the top.
 
 Bug Fixes:
 ----------
 
 * Better handle empty statements in un/prettify
 * Remove vi-mode bindings for prettify/unprettify.
-* honor `\G` when executing from commandline with `-e`
+* Honor `\G` when executing from commandline with `-e`.
 * Correctly report the version of TiDB.
-
 
 
 1.26.1 (2022/09/01)
