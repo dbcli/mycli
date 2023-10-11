@@ -1038,7 +1038,7 @@ class MyCli(object):
         for result in results:
             title, cur, headers, status = result
             self.formatter.query = query
-            output = self.format_output(title, cur, headers)
+            output = self.format_output(title, cur, headers, special.is_expanded_output())
             for line in output:
                 click.echo(line, nl=new_line)
 
@@ -1331,7 +1331,12 @@ def cli(database, user, host, port, socket, password, dbname,
         try:
             if csv:
                 mycli.formatter.format_name = 'csv'
-            elif not table:
+                if execute.endswith(r'\G'):
+                    execute = execute[:-2]
+            elif table:
+                if execute.endswith(r'\G'):
+                    execute = execute[:-2]
+            else:
                 mycli.formatter.format_name = 'tsv'
 
             mycli.run_query(execute)

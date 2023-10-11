@@ -326,7 +326,7 @@ def test_auto_escaped_col_names(completer, complete_event):
         Completion(text='`ABC`', start_position=0),
     ] + \
         list(map(Completion, completer.functions)) + \
-        [Completion(text='`select`', start_position=0)] + \
+        [Completion(text='select', start_position=0)] + \
         list(map(Completion, completer.keywords))
 
 

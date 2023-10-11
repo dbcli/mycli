@@ -276,7 +276,8 @@ def test_multiple_results(executor):
 @pytest.mark.parametrize(
     'version_string, species, parsed_version_string, version',
     (
-        ('5.7.25-TiDB-v6.1.0','TiDB', '5.7.25', 50725),
+        ('5.7.25-TiDB-v6.1.0','TiDB', '6.1.0', 60100),
+        ('8.0.11-TiDB-v7.2.0-alpha-69-g96e9e68daa', 'TiDB', '7.2.0', 70200),
         ('5.7.32-35', 'Percona', '5.7.32', 50732),
         ('5.7.32-0ubuntu0.18.04.1', 'MySQL', '5.7.32', 50732),
         ('10.5.8-MariaDB-1:10.5.8+maria~focal', 'MariaDB', '10.5.8', 100508),
