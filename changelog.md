@@ -1,3 +1,11 @@
+1.27.1
+===================
+
+Bug Fixes:
+---------
+
+* Fix unexpected exception when using dsn without username & password (Thanks: [Will Wang])
+
 1.27.0 (2023/08/11)
 ===================
 
@@ -950,3 +958,4 @@ Bug Fixes:
 [William GARCIA]: https://github.com/willgarcia
 [xeron]: https://github.com/xeron
 [Zach DeCook]: https://zachdecook.com
+[Will Wang]: https://github.com/willww64
