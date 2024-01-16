@@ -4,6 +4,7 @@ Upcoming
 Bug Fixes:
 ----------
 * Don't install tests.
+* let the `--prompt` option act normally with its predefined default value
 
 1.27.0 (2023/08/11)
 ===================
