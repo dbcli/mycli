@@ -427,6 +427,7 @@ class MyCli(object):
             port = 3306
             if not host or host == 'localhost':
                 socket = (
+                    socket or
                     cnf['socket'] or
                     cnf['default_socket'] or
                     guess_socket_location()

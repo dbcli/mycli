@@ -4,6 +4,7 @@ Upcoming
 Bug Fixes:
 ----------
 * Don't install tests.
+* Do not ignore the socket passed with the -S option, even when no port is passed
 
 1.27.0 (2023/08/11)
 ===================
