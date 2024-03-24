@@ -12,3 +12,6 @@
 .cache/
 .coverage
 .coverage.*
+
+.venv/
+venv/

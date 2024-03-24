@@ -4,7 +4,11 @@ Upcoming
 
 Bug Fixes:
 ----------
+
 * Don't install tests.
+* Fix unexpected exception when using dsn without username & password (Thanks: [Will Wang])
+* Let the `--prompt` option act normally with its predefined default value
+
 
 
 Internal:
@@ -965,3 +969,4 @@ Bug Fixes:
 [William GARCIA]: https://github.com/willgarcia
 [xeron]: https://github.com/xeron
 [Zach DeCook]: https://zachdecook.com
+[Will Wang]: https://github.com/willww64
