@@ -94,7 +94,7 @@ setup(
     author_email='mycli-dev@googlegroups.com',
     version=version,
     url='http://mycli.net',
-    packages=find_packages(),
+    packages=find_packages(exclude=['test*']),
     package_data={'mycli': ['myclirc', 'AUTHORS', 'SPONSORS']},
     description=description,
     long_description=description,

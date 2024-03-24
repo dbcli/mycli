@@ -1,9 +1,16 @@
 Upcoming
 ========
 
+
+Bug Fixes:
+----------
+* Don't install tests.
+
+
 Internal:
 ---------
 * paramiko is newer than 2.11.0 now, remove version pinning `cryptography`.
+
 
 1.27.0 (2023/08/11)
 ===================
@@ -21,6 +28,7 @@ Bug Fixes:
 * Remove vi-mode bindings for prettify/unprettify.
 * Honor `\G` when executing from commandline with `-e`.
 * Correctly report the version of TiDB.
+* Revised `botton` spelling mistakes with `bottom` in `mycli/clitoolbar.py`
 
 
 1.26.1 (2022/09/01)
