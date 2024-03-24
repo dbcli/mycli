@@ -93,6 +93,7 @@ SUPPORT_INFO = (
 class MyCli(object):
 
     default_prompt = '\\t \\u@\\h:\\d> '
+    default_prompt_splitln = '\\u@\\h\\n(\\t):\\d>'
     max_len_prompt = 45
     defaults_suffix = None
 
@@ -643,7 +644,7 @@ class MyCli(object):
         def get_message():
             prompt = self.get_prompt(self.prompt_format)
             if self.prompt_format == self.default_prompt and len(prompt) > self.max_len_prompt:
-                prompt = self.get_prompt('\\d> ')
+                prompt = self.get_prompt(self.default_prompt_splitln)
             prompt = prompt.replace("\\x1b", "\x1b")
             return ANSI(prompt)
 
@@ -1150,7 +1151,7 @@ class MyCli(object):
         help='list of DSN configured into the [alias_dsn] section of myclirc file.')
 @click.option('--list-ssh-config', 'list_ssh_config', is_flag=True,
               help='list ssh configurations in the ssh config (requires paramiko).')
-@click.option('-R', '--prompt', 'prompt',
+@click.option('-R', '--prompt', 'prompt', default=MyCli.default_prompt,
               help='Prompt format (Default: "{0}").'.format(
                   MyCli.default_prompt))
 @click.option('-l', '--logfile', type=click.File(mode='a', encoding='utf-8'),

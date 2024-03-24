@@ -6,6 +6,8 @@ Bug Fixes:
 
 * Don't install tests.
 * Fix unexpected exception when using dsn without username & password (Thanks: [Will Wang])
+* Let the `--prompt` option act normally with its predefined default value
+
 
 1.27.0 (2023/08/11)
 ===================
