@@ -1279,7 +1279,7 @@ def cli(database, user, host, port, socket, password, dbname,
         uri = urlparse(dsn_uri)
         if not database:
             database = uri.path[1:]  # ignore the leading fwd slash
-        if not user:
+        if not user and uri.username is not None:
             user = unquote(uri.username)
         if not password and uri.password is not None:
             password = unquote(uri.password)

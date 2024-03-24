@@ -3,8 +3,11 @@ Upcoming
 
 Bug Fixes:
 ----------
+
 * Don't install tests.
-* let the `--prompt` option act normally with its predefined default value
+* Fix unexpected exception when using dsn without username & password (Thanks: [Will Wang])
+* Let the `--prompt` option act normally with its predefined default value
+
 
 1.27.0 (2023/08/11)
 ===================
@@ -959,3 +962,4 @@ Bug Fixes:
 [William GARCIA]: https://github.com/willgarcia
 [xeron]: https://github.com/xeron
 [Zach DeCook]: https://zachdecook.com
+[Will Wang]: https://github.com/willww64
