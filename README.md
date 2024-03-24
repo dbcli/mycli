@@ -1,8 +1,6 @@
 # mycli
 
 [![Build Status](https://github.com/dbcli/mycli/workflows/mycli/badge.svg)](https://github.com/dbcli/mycli/actions?query=workflow%3Amycli)
-[![PyPI](https://img.shields.io/pypi/v/mycli.svg)](https://pypi.python.org/pypi/mycli)
-[![LGTM](https://img.shields.io/lgtm/grade/python/github/dbcli/mycli.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/dbcli/mycli/context:python)
 
 A command line client for MySQL that can do auto-completion and syntax highlighting.
 
@@ -178,29 +176,10 @@ Fedora has a package available for mycli, install it using dnf:
 $ sudo dnf install mycli
 ```
 
-### RHEL, Centos
-
-I haven't built an RPM package for mycli for RHEL or Centos yet. So please use `pip` to install `mycli`. You can install pip on your system using:
-
-```
-$ sudo yum install python3-pip
-```
-
-Once that is installed, you can install mycli as follows:
-
-```
-$ sudo pip3 install mycli
-```
-
 ### Windows
 
 Follow the instructions on this blogpost: https://www.codewall.co.uk/installing-using-mycli-on-windows/
 
-### Cygwin
-
-1. Make sure the following Cygwin packages are installed:
-`python3`, `python3-pip`.
-2. Install mycli: `pip3 install mycli`
 
 ### Thanks:
 
