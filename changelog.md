@@ -1,10 +1,21 @@
 Upcoming
 ========
 
+
 Bug Fixes:
 ----------
+
 * Don't install tests.
 * Do not ignore the socket passed with the -S option, even when no port is passed
+* Fix unexpected exception when using dsn without username & password (Thanks: [Will Wang])
+* Let the `--prompt` option act normally with its predefined default value
+
+
+
+Internal:
+---------
+* paramiko is newer than 2.11.0 now, remove version pinning `cryptography`.
+
 
 1.27.0 (2023/08/11)
 ===================
@@ -959,3 +970,4 @@ Bug Fixes:
 [William GARCIA]: https://github.com/willgarcia
 [xeron]: https://github.com/xeron
 [Zach DeCook]: https://zachdecook.com
+[Will Wang]: https://github.com/willww64
