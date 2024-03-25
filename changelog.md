@@ -55,6 +55,10 @@ Features:
 * Add prettify/unprettify keybindings to format the current statement using `sqlglot`.
 
 
+Features:
+---------
+* Add `--tls-version` option to control the tls version used.
+
 Internal:
 ---------
 * Pin `cryptography` to suppress `paramiko` warning, helping CI complete and presumably affecting some users.
