@@ -270,7 +270,8 @@ def test_reserved_space_is_integer():
 
 def test_list_dsn():
     runner = CliRunner()
-    with NamedTemporaryFile(mode="w") as myclirc:
+    # keep Windows from locking the file with delete=False
+    with NamedTemporaryFile(mode="w",delete=False) as myclirc:
         myclirc.write(dedent("""\
             [alias_dsn]
             test = mysql://test/test
@@ -281,11 +282,35 @@ def test_list_dsn():
         assert result.output == "test\n"
         result = runner.invoke(cli, args=args + ['--verbose'])
         assert result.output == "test : mysql://test/test\n"
+        
+    # delete=False means we should try to clean up
+    try:
+        if os.path.exists(myclirc.name):
+            os.remove(myclirc.name)
+    except Exception as e:
+        print(f"An error occurred while attempting to delete the file: {e}")
+
+        
+
+
+def test_prettify_statement():
+    statement = 'SELECT 1'
+    m = MyCli()
+    pretty_statement = m.handle_prettify_binding(statement)
+    assert pretty_statement == 'SELECT\n    1;'
+
+
+def test_unprettify_statement():
+    statement = 'SELECT\n    1'
+    m = MyCli()
+    unpretty_statement = m.handle_unprettify_binding(statement)
+    assert unpretty_statement == 'SELECT 1;'
 
 
 def test_list_ssh_config():
     runner = CliRunner()
-    with NamedTemporaryFile(mode="w") as ssh_config:
+    # keep Windows from locking the file with delete=False
+    with NamedTemporaryFile(mode="w",delete=False) as ssh_config:
         ssh_config.write(dedent("""\
             Host test
                 Hostname test.example.com
@@ -299,6 +324,13 @@ def test_list_ssh_config():
         assert "test\n" in result.output
         result = runner.invoke(cli, args=args + ['--verbose'])
         assert "test : test.example.com\n" in result.output
+        
+    # delete=False means we should try to clean up
+    try:
+        if os.path.exists(ssh_config.name):
+            os.remove(ssh_config.name)
+    except Exception as e:
+        print(f"An error occurred while attempting to delete the file: {e}")
 
 
 def test_dsn(monkeypatch):
@@ -452,7 +484,8 @@ def test_ssh_config(monkeypatch):
     runner = CliRunner()
 
     # Setup temporary configuration
-    with NamedTemporaryFile(mode="w") as ssh_config:
+    # keep Windows from locking the file with delete=False
+    with NamedTemporaryFile(mode="w",delete=False) as ssh_config:
         ssh_config.write(dedent("""\
             Host test
                 Hostname test.example.com
@@ -475,8 +508,8 @@ def test_ssh_config(monkeypatch):
             MockMyCli.connect_args["ssh_user"] == "joe" and \
             MockMyCli.connect_args["ssh_host"] == "test.example.com" and \
             MockMyCli.connect_args["ssh_port"] == 22222 and \
-            MockMyCli.connect_args["ssh_key_filename"] == os.getenv(
-                "HOME") + "/.ssh/gateway"
+            MockMyCli.connect_args["ssh_key_filename"] == os.path.expanduser( 
+                "~") + "/.ssh/gateway"
 
         # When a user supplies a ssh config host as argument to mycli,
         # and used command line arguments, use the command line
@@ -498,6 +531,13 @@ def test_ssh_config(monkeypatch):
             MockMyCli.connect_args["ssh_host"] == "arg_host" and \
             MockMyCli.connect_args["ssh_port"] == 3 and \
             MockMyCli.connect_args["ssh_key_filename"] == "/path/to/key"
+        
+    # delete=False means we should try to clean up
+    try:
+        if os.path.exists(ssh_config.name):
+            os.remove(ssh_config.name)
+    except Exception as e:
+        print(f"An error occurred while attempting to delete the file: {e}")
 
 
 @dbtest

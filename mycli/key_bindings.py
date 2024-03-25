@@ -1,6 +1,6 @@
 import logging
 from prompt_toolkit.enums import EditingMode
-from prompt_toolkit.filters import completion_is_selected
+from prompt_toolkit.filters import completion_is_selected, emacs_mode
 from prompt_toolkit.key_binding import KeyBindings
 
 _logger = logging.getLogger(__name__)
@@ -60,6 +60,46 @@ def mycli_bindings(mycli):
             b.complete_next()
         else:
             b.start_completion(select_first=False)
+
+    @kb.add('c-x', 'p', filter=emacs_mode)
+    def _(event):
+        """
+        Prettify and indent current statement, usually into multiple lines.
+
+        Only accepts buffers containing single SQL statements.
+        """
+        _logger.debug('Detected <C-x p>/> key.')
+
+        b = event.app.current_buffer
+        cursorpos_relative = b.cursor_position / max(1, len(b.text))
+        pretty_text = mycli.handle_prettify_binding(b.text)
+        if len(pretty_text) > 0:
+            b.text = pretty_text
+            cursorpos_abs = int(round(cursorpos_relative * len(b.text)))
+            while 0 < cursorpos_abs < len(b.text) \
+                  and b.text[cursorpos_abs] in (' ', '\n'):
+                cursorpos_abs -= 1
+            b.cursor_position = min(cursorpos_abs, len(b.text))
+
+    @kb.add('c-x', 'u', filter=emacs_mode)
+    def _(event):
+        """
+        Unprettify and dedent current statement, usually into one line.
+
+        Only accepts buffers containing single SQL statements.
+        """
+        _logger.debug('Detected <C-x u>/< key.')
+
+        b = event.app.current_buffer
+        cursorpos_relative = b.cursor_position / max(1, len(b.text))
+        unpretty_text = mycli.handle_unprettify_binding(b.text)
+        if len(unpretty_text) > 0:
+            b.text = unpretty_text
+            cursorpos_abs = int(round(cursorpos_relative * len(b.text)))
+            while 0 < cursorpos_abs < len(b.text) \
+                  and b.text[cursorpos_abs] in (' ', '\n'):
+                cursorpos_abs -= 1
+            b.cursor_position = min(cursorpos_abs, len(b.text))
 
     @kb.add('enter', filter=completion_is_selected)
     def _(event):

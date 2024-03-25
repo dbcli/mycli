@@ -18,14 +18,14 @@ description = 'CLI for MySQL Database. With auto-completion and syntax highlight
 
 install_requirements = [
     'click >= 7.0',
-    # Temporary to suppress paramiko Blowfish warning which breaks CI.
-    # Pinning cryptography should not be needed after paramiko 2.11.0.
-    'cryptography == 36.0.2',
+    # Pinning cryptography is not needed after paramiko 2.11.0. Correct it
+    'cryptography >= 1.0.0',
     # 'Pygments>=1.6,<=2.11.1',
     'Pygments>=1.6',
     'prompt_toolkit>=3.0.6,<4.0.0',
     'PyMySQL >= 0.9.2',
     'sqlparse>=0.3.0,<0.5.0',
+    'sqlglot>=5.1.3',
     'configobj >= 5.0.5',
     'cli_helpers[styles] >= 2.2.1',
     'pyperclip >= 1.8.1',
@@ -94,7 +94,7 @@ setup(
     author_email='mycli-dev@googlegroups.com',
     version=version,
     url='http://mycli.net',
-    packages=find_packages(),
+    packages=find_packages(exclude=['test*']),
     package_data={'mycli': ['myclirc', 'AUTHORS', 'SPONSORS']},
     description=description,
     long_description=description,
@@ -103,16 +103,17 @@ setup(
         'console_scripts': ['mycli = mycli.main:cli'],
     },
     cmdclass={'lint': lint, 'test': test},
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     classifiers=[
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Operating System :: Unix',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         'Programming Language :: SQL',
         'Topic :: Database',
         'Topic :: Database :: Front-Ends',

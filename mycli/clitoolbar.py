@@ -7,8 +7,7 @@ from .packages import special
 def create_toolbar_tokens_func(mycli, show_fish_help):
     """Return a function that generates the toolbar tokens."""
     def get_toolbar_tokens():
-        result = []
-        result.append(('class:bottom-toolbar', ' '))
+        result = [('class:bottom-toolbar', ' ')]
 
         if mycli.multi_line:
             delimiter = special.get_current_delimiter()
@@ -26,9 +25,14 @@ def create_toolbar_tokens_func(mycli, show_fish_help):
                            '[F3] Multiline: OFF  '))
         if mycli.prompt_app.editing_mode == EditingMode.VI:
             result.append((
-                'class:botton-toolbar.on',
+                'class:bottom-toolbar.on',
                 'Vi-mode ({})'.format(_get_vi_mode())
             ))
+
+        if mycli.toolbar_error_message:
+            result.append(
+                ('class:bottom-toolbar', '  ' + mycli.toolbar_error_message))
+            mycli.toolbar_error_message = None
 
         if show_fish_help():
             result.append(

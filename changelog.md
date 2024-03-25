@@ -1,6 +1,59 @@
+Upcoming
+========
 
-TBD
-===
+
+Bug Fixes:
+----------
+
+* Don't install tests.
+* Do not ignore the socket passed with the -S option, even when no port is passed
+* Fix unexpected exception when using dsn without username & password (Thanks: [Will Wang])
+* Let the `--prompt` option act normally with its predefined default value
+
+
+
+Internal:
+---------
+* paramiko is newer than 2.11.0 now, remove version pinning `cryptography`.
+
+
+1.27.0 (2023/08/11)
+===================
+
+Features:
+---------
+
+* Detect TiDB instance, show in the prompt, and use additional keywords.
+* Fix the completion order to show more commonly-used keywords at the top.
+
+Bug Fixes:
+----------
+
+* Better handle empty statements in un/prettify
+* Remove vi-mode bindings for prettify/unprettify.
+* Honor `\G` when executing from commandline with `-e`.
+* Correctly report the version of TiDB.
+* Revised `botton` spelling mistakes with `bottom` in `mycli/clitoolbar.py`
+
+
+1.26.1 (2022/09/01)
+===================
+
+Bug Fixes:
+----------
+* Require Python 3.7 in `setup.py`
+
+
+1.26.0 (2022/09/01)
+===================
+
+Features:
+---------
+
+* Add `--ssl` flag to enable ssl/tls.
+* Add `pager` option to `~/.myclirc`, for instance `pager = 'pspg --csv'` (Thanks: [BuonOmo])
+* Add prettify/unprettify keybindings to format the current statement using `sqlglot`.
+
 
 Features:
 ---------
@@ -894,6 +947,7 @@ Bug Fixes:
 
 [Amjith Ramanujam]: https://blog.amjith.com
 [Artem Bezsmertnyi]: https://github.com/mrdeathless
+[BuonOmo]: https://github.com/BuonOmo
 [Carlos Afonso]: https://github.com/afonsocarlos
 [Casper Langemeijer]: https://github.com/langemeijer
 [Daniel West]: http://github.com/danieljwest
@@ -920,3 +974,4 @@ Bug Fixes:
 [William GARCIA]: https://github.com/willgarcia
 [xeron]: https://github.com/xeron
 [Zach DeCook]: https://zachdecook.com
+[Will Wang]: https://github.com/willww64
