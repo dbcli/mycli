@@ -6,6 +6,7 @@ Bug Fixes:
 ----------
 
 * Don't install tests.
+* Do not ignore the socket passed with the -S option, even when no port is passed
 * Fix unexpected exception when using dsn without username & password (Thanks: [Will Wang])
 * Let the `--prompt` option act normally with its predefined default value
 
