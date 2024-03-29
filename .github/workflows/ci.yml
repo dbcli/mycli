@@ -10,14 +10,13 @@ jobs:
     strategy:
       matrix:
         python-version: [
-        '3.7',
         '3.8',
         '3.9',
         '3.10',
+        '3.11',
+        '3.12',
         ]
         include:
-          - python-version: '3.7'
-            os: ubuntu-18.04  # MySQL 5.7.32
           - python-version: '3.8'
             os: ubuntu-18.04  # MySQL 5.7.32
           - python-version: '3.9'
