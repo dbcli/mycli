@@ -20,9 +20,9 @@ jobs:
           - python-version: '3.8'
             os: ubuntu-18.04  # MySQL 5.7.32
           - python-version: '3.9'
-            os: ubuntu-20.04  # MySQL 8.0.22
+            os: ubuntu-20.04  # MySQL 8.0.36
           - python-version: '3.10'
-            os: ubuntu-22.04  # MySQL 8.0.28
+            os: ubuntu-22.04  # MySQL 8.0.36
           - python-version: '3.11'
             os: ubuntu-22.04  # MySQL 8.0.36
           - python-version: '3.12'
