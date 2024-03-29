@@ -254,18 +254,14 @@ def test_conditional_pager(monkeypatch):
     SPECIAL_COMMANDS['pager'].handler('')
 
 
-def test_reserved_space_is_integer():
+def test_reserved_space_is_integer(monkeypatch):
     """Make sure that reserved space is returned as an integer."""
     def stub_terminal_size():
         return (5, 5)
 
-    old_func = shutil.get_terminal_size
-
-    shutil.get_terminal_size = stub_terminal_size
+    monkeypatch.setattr(shutil, 'get_terminal_size', stub_terminal_size)
     mycli = MyCli()
     assert isinstance(mycli.get_reserved_space(), int)
-
-    shutil.get_terminal_size = old_func
 
 
 def test_list_dsn():
