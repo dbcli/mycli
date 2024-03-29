@@ -1,4 +1,4 @@
-Upcoming
+1.27.1 (2024/03/28)
 ========
 
 
@@ -15,6 +15,7 @@ Bug Fixes:
 Internal:
 ---------
 * paramiko is newer than 2.11.0 now, remove version pinning `cryptography`.
+* Drop support for Python 3.7
 
 
 1.27.0 (2023/08/11)
