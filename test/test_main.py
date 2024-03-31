@@ -259,9 +259,10 @@ def test_reserved_space_is_integer(monkeypatch):
     def stub_terminal_size():
         return (5, 5)
 
-    monkeypatch.setattr(shutil, 'get_terminal_size', stub_terminal_size)
-    mycli = MyCli()
-    assert isinstance(mycli.get_reserved_space(), int)
+    with monkeypatch.context() as m:
+        m.setattr(shutil, 'get_terminal_size', stub_terminal_size)
+        mycli = MyCli()
+        assert isinstance(mycli.get_reserved_space(), int)
 
 
 def test_list_dsn():
