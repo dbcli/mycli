@@ -1,5 +1,28 @@
+Upcoming Release (TBD)
+======================
+
+Bug Fixes:
+----------
+
+
+Internal:
+---------
+
+Features:
+---------
+
+
+1.27.2 (2024/04/03)
+===================
+
+Bug Fixes:
+----------
+
+* Don't use default prompt when one is not supplied to the --prompt option.
+
+
 1.27.1 (2024/03/28)
-========
+===================
 
 
 Bug Fixes:
