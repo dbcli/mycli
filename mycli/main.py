@@ -1155,7 +1155,7 @@ class MyCli(object):
         help='list of DSN configured into the [alias_dsn] section of myclirc file.')
 @click.option('--list-ssh-config', 'list_ssh_config', is_flag=True,
               help='list ssh configurations in the ssh config (requires paramiko).')
-@click.option('-R', '--prompt', 'prompt', default=MyCli.default_prompt,
+@click.option('-R', '--prompt', 'prompt',
               help='Prompt format (Default: "{0}").'.format(
                   MyCli.default_prompt))
 @click.option('-l', '--logfile', type=click.File(mode='a', encoding='utf-8'),
