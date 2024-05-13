@@ -31,7 +31,7 @@ class SQLCompleter(Completer):
             'PORT', 'PRIMARY', 'PRIVILEGES', 'PROCESSLIST', 'PURGE',
             'REFERENCES', 'REGEXP', 'RENAME', 'REPAIR', 'RESET', 'REVOKE',
             'RIGHT', 'ROLLBACK', 'ROW', 'ROWS', 'ROW_FORMAT', 'SAVEPOINT',
-            'SESSION', 'SET', 'SHARE', 'SHOW', 'SLAVE', 'SMALLINT', 'SMALLINT',
+            'SESSION', 'SET', 'SHARE', 'SHOW', 'SLAVE', 'SMALLINT',
             'START', 'STOP', 'TABLE', 'THEN', 'TINYINT', 'TO', 'TRANSACTION',
             'TRIGGER', 'TRUNCATE', 'UNION', 'UNIQUE', 'UNSIGNED', 'USE',
             'USER', 'USING', 'VALUES', 'VARCHAR', 'VIEW', 'WHEN', 'WITH'
