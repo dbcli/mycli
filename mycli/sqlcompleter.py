@@ -527,8 +527,7 @@ class SQLCompleter(Completer):
                                             start_only=True, fuzzy=False)
                 matches.extend(formats)
             elif suggestion['type'] == 'file_name':
-                file_names = self.find_files(word_before_cursor)
-                matches.extend(file_names)
+                return self.find_files(word_before_cursor)
 
         return sorted_completions(matches)
 
