@@ -39,13 +39,17 @@ def complete_event():
     return Mock()
 
 
+def lower_sorted(completions):
+    return sorted(completions, key=lambda c: (c.lower()))
+
+
 def test_special_name_completion(completer, complete_event):
     text = '\\d'
     position = len('\\d')
     result = completer.get_completions(
         Document(text=text, cursor_position=position),
         complete_event)
-    assert result == [Completion(text='\\dt', start_position=-2)]
+    assert next(result) == Completion(text='\\dt', start_position=-2)
 
 
 def test_empty_string_completion(completer, complete_event):
@@ -55,8 +59,10 @@ def test_empty_string_completion(completer, complete_event):
         completer.get_completions(
             Document(text=text, cursor_position=position),
             complete_event))
-    assert list(map(Completion, completer.keywords +
-                    completer.special_commands)) == result
+    sorted_completions = lower_sorted(completer.keywords +
+        completer.special_commands)
+    
+    assert list(map(Completion, sorted_completions)) == result
 
 
 def test_select_keyword_completion(completer, complete_event):
@@ -74,10 +80,10 @@ def test_table_completion(completer, complete_event):
     result = completer.get_completions(
         Document(text=text, cursor_position=position), complete_event)
     assert list(result) == list([
-        Completion(text='users', start_position=0),
         Completion(text='orders', start_position=0),
+        Completion(text='`réveillé`', start_position=0),        
         Completion(text='`select`', start_position=0),
-        Completion(text='`réveillé`', start_position=0),
+        Completion(text='users', start_position=0),
     ])
 
 

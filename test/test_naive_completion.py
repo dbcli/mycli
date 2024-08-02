@@ -15,13 +15,18 @@ def complete_event():
     return Mock()
 
 
+def lower_sorted(completions):
+    return sorted(completions, key=lambda c: (c.lower()))
+
+
 def test_empty_string_completion(completer, complete_event):
     text = ''
     position = 0
     result = list(completer.get_completions(
         Document(text=text, cursor_position=position),
         complete_event))
-    assert result == list(map(Completion, completer.all_completions))
+    sorted_completions = lower_sorted(completer.all_completions)
+    assert result == list(map(Completion, sorted_completions))
 
 
 def test_select_keyword_completion(completer, complete_event):
@@ -48,7 +53,8 @@ def test_column_name_completion(completer, complete_event):
     result = list(completer.get_completions(
         Document(text=text, cursor_position=position),
         complete_event))
-    assert result == list(map(Completion, completer.all_completions))
+    sorted_completions = lower_sorted(completer.all_completions)
+    assert result == list(map(Completion, sorted_completions))
 
 
 def test_special_name_completion(completer, complete_event):
