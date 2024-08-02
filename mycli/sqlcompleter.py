@@ -406,7 +406,7 @@ class SQLCompleter(Completer):
 
         def sorted_completions(matches):
             # sort by match point, then match length, then item text
-            matches = sorted(matches, key=lambda m: (m[1], m[0], m[2].lower()))
+            matches = sorted(matches, key=lambda m: (m[1], m[0], m[2].lower().strip('`')))
             return (Completion(z, -len(word_before_cursor))
                     for x, y, z in matches)
 
