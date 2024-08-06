@@ -15,29 +15,6 @@ class FileHistoryWithTimestamp(FileHistory):
         self.filename = filename
         super().__init__(filename)
 
-    def load_history_strings(self) -> Iterable[str]:
-        strings: list[str] = []
-        lines: list[str] = []
-
-        def add() -> None:
-            if lines:
-                string = "".join(lines)[:-1]
-                strings.append(string)
-
-        if os.path.exists(self.filename):
-            with open(self.filename, "rb") as f:
-                for line_bytes in f:
-                    line = line_bytes.decode("utf-8", errors="replace")
-                    if line.startswith("+"):
-                        lines.append(line[1:])
-                    else:
-                        add()
-                        lines = []
-
-                add()
-
-        return reversed(strings)
-
     def load_history_with_timestamp(self) -> List[Tuple[str, str]]:
         """
         Load history entries along with their timestamps.
