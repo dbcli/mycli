@@ -406,7 +406,7 @@ class SQLCompleter(Completer):
 
         def sorted_completions(matches):
             # sort by match point, then match length, then item text
-            matches = sorted(matches, key=lambda m: (m[1], m[0], m[2].lower().strip('`')))
+            matches = sorted(list(matches), key=lambda m: (m[1], m[0], m[2].lower().strip('`')))
             return (Completion(z, -len(text))
                     for x, y, z in matches)
 
@@ -420,7 +420,7 @@ class SQLCompleter(Completer):
                                         start_only=True, fuzzy=False)
             return sorted_completions(matches)
 
-        matches = []
+        matches = set()
         suggestions = suggest_type(document.text, document.text_before_cursor)
 
         for suggestion in suggestions:
@@ -441,14 +441,14 @@ class SQLCompleter(Completer):
                     ]
 
                 cols = self.find_matches(text, scoped_cols)
-                matches.extend(cols)
+                matches.update(cols)
 
             elif suggestion['type'] == 'function':
                 # suggest user-defined functions using substring matching
                 funcs = self.populate_schema_objects(suggestion['schema'],
                                                      'functions')
                 user_funcs = self.find_matches(text, funcs)
-                matches.extend(user_funcs)
+                matches.update(user_funcs)
 
                 # suggest hardcoded functions using startswith matching only if
                 # there is no schema qualifier. If a schema qualifier is
@@ -460,35 +460,35 @@ class SQLCompleter(Completer):
                                                          start_only=True,
                                                          fuzzy=False,
                                                          casing=self.keyword_casing)
-                    matches.extend(predefined_funcs)
+                    matches.update(predefined_funcs)
 
             elif suggestion['type'] == 'table':
                 tables = self.populate_schema_objects(suggestion['schema'],
                                                       'tables')
                 tables = self.find_matches(text, tables)
-                matches.extend(tables)
+                matches.update(tables)
 
             elif suggestion['type'] == 'view':
                 views = self.populate_schema_objects(suggestion['schema'],
                                                      'views')
                 views = self.find_matches(text, views)
-                matches.extend(views)
+                matches.update(views)
 
             elif suggestion['type'] == 'alias':
                 aliases = suggestion['aliases']
                 aliases = self.find_matches(text, aliases)
-                matches.extend(aliases)
+                matches.update(aliases)
 
             elif suggestion['type'] == 'database':
                 dbs = self.find_matches(text, self.databases)
-                matches.extend(dbs)
+                matches.update(dbs)
 
             elif suggestion['type'] == 'keyword':
                 keywords = self.find_matches(text, self.keywords,
                                              start_only=True,
                                              fuzzy=False,
                                              casing=self.keyword_casing)
-                matches.extend(keywords)
+                matches.update(keywords)
 
             elif suggestion['type'] == 'show':
                 show_items = self.find_matches(text,
@@ -496,36 +496,36 @@ class SQLCompleter(Completer):
                                                start_only=False,
                                                fuzzy=True,
                                                casing=self.keyword_casing)
-                matches.extend(show_items)
+                matches.update(show_items)
 
             elif suggestion['type'] == 'change':
                 change_items = self.find_matches(text,
                                                  self.change_items,
                                                  start_only=False,
                                                  fuzzy=True)
-                matches.extend(change_items)
+                matches.update(change_items)
             elif suggestion['type'] == 'user':
                 users = self.find_matches(text, self.users,
                                           start_only=False,
                                           fuzzy=True)
-                matches.extend(users)
+                matches.update(users)
 
             elif suggestion['type'] == 'special':
                 special = self.find_matches(text,
                                             self.special_commands,
                                             start_only=True,
                                             fuzzy=False)
-                matches.extend(special)
+                matches.update(special)
             elif suggestion['type'] == 'favoritequery':
                 queries = self.find_matches(text,
                                             FavoriteQueries.instance.list(),
                                             start_only=False, fuzzy=True)
-                matches.extend(queries)
+                matches.update(queries)
             elif suggestion['type'] == 'table_format':
                 formats = self.find_matches(text,
                                             self.table_formats,
                                             start_only=True, fuzzy=False)
-                matches.extend(formats)
+                matches.update(formats)
             elif suggestion['type'] == 'file_name':
                 return self.find_files(text)
 
