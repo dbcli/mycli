@@ -371,7 +371,9 @@ class SQLCompleter(Completer):
         """
 
         if casing == 'auto':
-            casing = 'lower' if last and last[-1].islower() else 'upper'
+            casing = 'lower' if text and text[-1].islower() else 'upper'
+
+        text = text.lower()
 
         def apply_case(kw):
             if casing is None:
@@ -401,12 +403,13 @@ class SQLCompleter(Completer):
 
     def get_completions(self, document, complete_event, smart_completion=None):
         word_before_cursor = document.get_word_before_cursor(WORD=True)
-        last = last_word(word_before_cursor, include='most_punctuations')
-        text = last.lower()
+        text = last_word(word_before_cursor, include='most_punctuations')
 
         def sorted_completions(matches):
             # sort by match point, then match length, then item text
-            matches = sorted(list(matches), key=lambda m: (m[1], m[0], m[2].lower().strip('`')))
+            matches = sorted(list(matches), key=lambda m:
+                             (m[1], m[0], m[2].lower().strip('`'), m[2].startswith('`')))
+            
             return (Completion(z, -len(text))
                     for x, y, z in matches)
 
