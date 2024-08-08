@@ -370,6 +370,9 @@ class SQLCompleter(Completer):
         in the collection of available completions.
         """
 
+        if not text:
+            casing = None 
+        
         if casing == 'auto':
             casing = 'lower' if text and text[-1].islower() else 'upper'
 
