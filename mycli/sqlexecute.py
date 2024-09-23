@@ -298,6 +298,12 @@ class SQLExecute(object):
             if sql.endswith("\\G"):
                 special.set_expanded_output(True)
                 sql = sql[:-2].strip()
+            # \g is treated specially since we might want collapsed output when
+            # auto vertical output is enabled
+            elif sql.endswith('\\g'):
+                special.set_expanded_output(False)
+                special.set_forced_horizontal_output(True)
+                sql = sql[:-2].strip()
 
             cur = self.conn.cursor()
             try:  # Special command
