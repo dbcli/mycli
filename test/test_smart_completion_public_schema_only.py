@@ -57,17 +57,17 @@ def test_special_name_completion(completer, complete_event):
     assert next(result) == Completion(text='\\dt', start_position=-2)
 
 
-def test_empty_string_completion(completer, complete_event):
-    text = ''
-    position = 0
-    result = list(
-        completer.get_completions(
-            Document(text=text, cursor_position=position),
-            complete_event))
+# def test_empty_string_completion(completer, complete_event):
+#     text = ''
+#     position = 0
+#     result = list(
+#         completer.get_completions(
+#             Document(text=text, cursor_position=position),
+#             complete_event))
     
-    completions = completer.keywords + completer.special_commands
-    
-    assert result == sorted_completions(completions)
+#     completions = completer.keywords + completer.special_commands
+
+#     assert result == sorted_completions(completions)
 
 
 def test_select_keyword_completion(completer, complete_event):

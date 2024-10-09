@@ -370,9 +370,6 @@ class SQLCompleter(Completer):
         in the collection of available completions.
         """
 
-        if not text:
-            casing = None 
-        
         if casing == 'auto':
             casing = 'lower' if text and text[-1].islower() else 'upper'
 
@@ -520,7 +517,9 @@ class SQLCompleter(Completer):
                 special = self.find_matches(text,
                                             self.special_commands,
                                             start_only=True,
-                                            fuzzy=False)
+                                            fuzzy=False,
+                                            casing=None)
+
                 matches.update(special)
             elif suggestion['type'] == 'favoritequery':
                 queries = self.find_matches(text,
