@@ -181,7 +181,7 @@ $ sudo dnf install mycli
 
 ### Windows
 
-Follow the instructions on this blogpost: https://www.codewall.co.uk/installing-using-mycli-on-windows/
+Follow the instructions on this blogpost: http://web.archive.org/web/20221006045208/https://www.codewall.co.uk/installing-using-mycli-on-windows/
 
 
 ### Thanks:
