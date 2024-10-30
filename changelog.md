@@ -11,6 +11,8 @@ Internal:
 Features:
 ---------
 
+* Added fzf history search functionality. The feature can switch between the old implementation and the new one based on the presence of the fzf binary.
+
 
 1.27.2 (2024/04/03)
 ===================
@@ -23,7 +25,6 @@ Bug Fixes:
 
 1.27.1 (2024/03/28)
 ===================
-* Added fzf history search functionality. The feature can switch between the old implementation and the new one based on the presence of the fzf binary.
 
 Bug Fixes:
 ----------
