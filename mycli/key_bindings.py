@@ -3,6 +3,8 @@ from prompt_toolkit.enums import EditingMode
 from prompt_toolkit.filters import completion_is_selected, emacs_mode
 from prompt_toolkit.key_binding import KeyBindings
 
+from .packages.toolkit.fzf import search_history
+
 _logger = logging.getLogger(__name__)
 
 
@@ -100,6 +102,12 @@ def mycli_bindings(mycli):
                   and b.text[cursorpos_abs] in (' ', '\n'):
                 cursorpos_abs -= 1
             b.cursor_position = min(cursorpos_abs, len(b.text))
+
+    @kb.add('c-r', filter=emacs_mode)
+    def _(event):
+        """Search history using fzf or default reverse incremental search."""
+        _logger.debug('Detected <C-r> key.')
+        search_history(event)
 
     @kb.add('enter', filter=completion_is_selected)
     def _(event):

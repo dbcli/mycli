@@ -36,7 +36,6 @@ from prompt_toolkit.formatted_text import ANSI
 from prompt_toolkit.layout.processors import (HighlightMatchingBracketProcessor,
                                               ConditionalProcessor)
 from prompt_toolkit.lexers import PygmentsLexer
-from prompt_toolkit.history import FileHistory
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 
 from .packages.special.main import NO_QUERY
@@ -44,6 +43,7 @@ from .packages.prompt_utils import confirm, confirm_destructive_query
 from .packages.tabular_output import sql_format
 from .packages import special
 from .packages.special.favoritequeries import FavoriteQueries
+from .packages.toolkit.history import FileHistoryWithTimestamp
 from .sqlcompleter import SQLCompleter
 from .clitoolbar import create_toolbar_tokens_func
 from .clistyle import style_factory, style_factory_output
@@ -626,7 +626,7 @@ class MyCli(object):
         history_file = os.path.expanduser(
             os.environ.get('MYCLI_HISTFILE', '~/.mycli-history'))
         if dir_path_exists(history_file):
-            history = FileHistory(history_file)
+            history = FileHistoryWithTimestamp(history_file)
         else:
             history = None
             self.echo(
