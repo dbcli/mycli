@@ -475,8 +475,6 @@ class SQLCompleter(Completer):
 
             elif suggestion['type'] == 'keyword':
                 keywords = self.find_matches(word_before_cursor, self.keywords,
-                                             start_only=True,
-                                             fuzzy=False,
                                              casing=self.keyword_casing)
                 completions.extend(keywords)
 
@@ -513,8 +511,8 @@ class SQLCompleter(Completer):
                 completions.extend(queries)
             elif suggestion['type'] == 'table_format':
                 formats = self.find_matches(word_before_cursor,
-                                            self.table_formats,
-                                            start_only=True, fuzzy=False)
+                                            self.table_formats)
+
                 completions.extend(formats)
             elif suggestion['type'] == 'file_name':
                 file_names = self.find_files(word_before_cursor)

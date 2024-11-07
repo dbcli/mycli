@@ -1,32 +1,29 @@
 Upcoming Release (TBD)
 ======================
 
-Bug Fixes:
+Bug Fixes
 ----------
 
+* Fixes `Database connection failed: error('unpack requires a buffer of 4 bytes')`.
+* Only show keyword completions after *
 
-Internal:
----------
-
-Features:
+Features
 ---------
 
 * Added fzf history search functionality. The feature can switch between the old implementation and the new one based on the presence of the fzf binary.
 
-
 1.27.2 (2024/04/03)
 ===================
 
-Bug Fixes:
+Bug Fixes
 ----------
 
 * Don't use default prompt when one is not supplied to the --prompt option.
 
-
 1.27.1 (2024/03/28)
 ===================
 
-Bug Fixes:
+Bug Fixes
 ----------
 
 * Don't install tests.
@@ -34,24 +31,22 @@ Bug Fixes:
 * Fix unexpected exception when using dsn without username & password (Thanks: [Will Wang])
 * Let the `--prompt` option act normally with its predefined default value
 
-
-
-Internal:
+Internal
 ---------
+
 * paramiko is newer than 2.11.0 now, remove version pinning `cryptography`.
 * Drop support for Python 3.7
-
 
 1.27.0 (2023/08/11)
 ===================
 
-Features:
+Features
 ---------
 
 * Detect TiDB instance, show in the prompt, and use additional keywords.
 * Fix the completion order to show more commonly-used keywords at the top.
 
-Bug Fixes:
+Bug Fixes
 ----------
 
 * Better handle empty statements in un/prettify
@@ -60,139 +55,146 @@ Bug Fixes:
 * Correctly report the version of TiDB.
 * Revised `botton` spelling mistakes with `bottom` in `mycli/clitoolbar.py`
 
-
 1.26.1 (2022/09/01)
 ===================
 
-Bug Fixes:
+Bug Fixes
 ----------
-* Require Python 3.7 in `setup.py`
 
+* Require Python 3.7 in `setup.py`
 
 1.26.0 (2022/09/01)
 ===================
 
-Features:
+Features
 ---------
 
 * Add `--ssl` flag to enable ssl/tls.
 * Add `pager` option to `~/.myclirc`, for instance `pager = 'pspg --csv'` (Thanks: [BuonOmo])
 * Add prettify/unprettify keybindings to format the current statement using `sqlglot`.
 
-
-Features:
+Features
 ---------
+
 * Add `--tls-version` option to control the tls version used.
 
-Internal:
+Internal
 ---------
+
 * Pin `cryptography` to suppress `paramiko` warning, helping CI complete and presumably affecting some users.
 * Upgrade some dev requirements
 * Change tests to always use databases prefixed with 'mycli_' for better security
 
-Bug Fixes:
+Bug Fixes
 ----------
+
 * Support for some MySQL compatible databases, which may not implement connection_id().
 * Fix the status command to work with missing 'Flush_commands' (mariadb)
 * Ignore the user of the system [myslqd] config.
 
-
 1.25.0 (2022/04/02)
 ===================
 
-Features:
+Features
 ---------
-* Add `beep_after_seconds` option to `~/.myclirc`, to ring the terminal bell after long queries.
 
+* Add `beep_after_seconds` option to `~/.myclirc`, to ring the terminal bell after long queries.
 
 1.24.4 (2022/03/30)
 ===================
 
-Internal:
+Internal
 ---------
+
 * Upgrade Ubuntu VM for runners as Github has deprecated it
 
-Bug Fixes:
+Bug Fixes
 ----------
+
 * Change in main.py - Replace the `click.get_terminal_size()` with `shutil.get_terminal_size()`
-
-
 
 1.24.3 (2022/01/20)
 ===================
 
-Bug Fixes:
+Bug Fixes
 ----------
-* Upgrade cli_helpers to workaround Pygments regression.
 
+* Upgrade cli_helpers to workaround Pygments regression.
 
 1.24.2 (2022/01/11)
 ===================
 
-Bug Fixes:
+Bug Fixes
 ----------
+
 * Fix autocompletion for more than one JOIN
 * Fix the status command when connected to TiDB or other servers that don't implement 'Threads\_connected'
 * Pin pygments version to avoid a breaking change
 
-1.24.1:
+1.24.1
 =======
 
-Bug Fixes:
+Bug Fixes
 ---------
+
 * Restore dependency on cryptography for the interactive password prompt
 
-Internal:
+Internal
 ---------
-* Deprecate Python mock
 
+* Deprecate Python mock
 
 1.24.0
 ======
 
-Bug Fixes:
+Bug Fixes
 ----------
+
 * Allow `FileNotFound` exception for SSH config files.
 * Fix startup error on MySQL < 5.0.22
 * Check error code rather than message for Access Denied error
 * Fix login with ~/.my.cnf files
 
-Features:
+Features
 ---------
+
 * Add `-g` shortcut to option `--login-path`.
 * Alt-Enter dispatches the command in multi-line mode.
-* Allow to pass a file or FIFO path with --password-file when password is not specified or is failing (as suggested in this best-practice https://www.netmeister.org/blog/passing-passwords.html)
+* Allow to pass a file or FIFO path with --password-file when password is not specified or is failing (as suggested in this best-practice <https://www.netmeister.org/blog/passing-passwords.html>)
 
-Internal:
+Internal
 ---------
+
 * Remove unused function is_open_quote()
 * Use importlib, instead of file links, to locate resources
 * Test various host-port combinations in command line arguments
 * Switched from Cryptography to pyaes for decrypting mylogin.cnf
 
-
 1.23.2
 ======
 
-Bug Fixes:
+Bug Fixes
 ----------
+
 * Ensure `--port` is always an int.
 
 1.23.1
 ======
 
-Bug Fixes:
+Bug Fixes
 ----------
+
 * Allow `--host` without `--port` to make a TCP connection.
 
 1.23.0
 ======
 
-Bug Fixes:
+Bug Fixes
 ----------
+
 * Fix config file include logic
 
-Features:
+Features
 ---------
 
 * Add an option `--init-command` to execute SQL after connecting (Thanks: [KITAGAWA Yasutaka]).
@@ -203,10 +205,11 @@ Features:
 * Add a special command `\pipe_once` to pipe output to a subprocess.
 * Add an option `--charset` to set the default charset when connect database.
 
-Bug Fixes:
+Bug Fixes
 ----------
+
 * Fixed compatibility with sqlparse 0.4 (Thanks: [mtorromeo]).
-*  Fixed iPython magic (Thanks: [mwcm]).
+* Fixed iPython magic (Thanks: [mwcm]).
 * Send "Connecting to socket" message to the standard error.
 * Respect empty string for prompt_continuation via `prompt_continuation = ''` in `.myclirc`
 * Fix \once -o to overwrite output whole, instead of line-by-line.
@@ -219,35 +222,35 @@ Bug Fixes:
 1.22.2
 ======
 
-Bug Fixes:
+Bug Fixes
 ----------
 
-*  Make the `pwd` module optional.
+* Make the `pwd` module optional.
 
 1.22.1
 ======
 
-Bug Fixes:
+Bug Fixes
 ----------
+
 * Fix the breaking change introduced in PyMySQL 0.10.0. (Thanks: [Amjith]).
 
-Features:
+Features
 ---------
+
 * Add an option `--ssh-config-host` to read ssh configuration from OpenSSH configuration file.
 * Add an option `--list-ssh-config` to list ssh configurations.
 * Add an option `--ssh-config-path` to choose ssh configuration path.
 
-Bug Fixes:
+Bug Fixes
 ----------
 
 * Fix specifying empty password with `--password=''` when config file has a password set (Thanks: [Zach DeCook]).
 
-
 1.21.1
 ======
 
-
-Bug Fixes:
+Bug Fixes
 ----------
 
 * Fix broken auto-completion for favorite queries (Thanks: [Amjith]).
@@ -257,8 +260,9 @@ Bug Fixes:
 1.21.0
 ======
 
-Features:
+Features
 ---------
+
 * Added DSN alias name as a format specifier to the prompt (Thanks: [Georgy Frolov]).
 * Mark `update` without `where`-clause as destructive query (Thanks: [Klaus Wünschel]).
 * Added DELIMITER command (Thanks: [Georgy Frolov])
@@ -266,20 +270,21 @@ Features:
 * Extend main.is_dropping_database check with create after delete statement.
 * Search `${XDG_CONFIG_HOME}/mycli/myclirc` after `${HOME}/.myclirc` and before `/etc/myclirc` (Thanks: [Takeshi D. Itoh])
 
-Bug Fixes:
+Bug Fixes
 ----------
 
 * Allow \o command more than once per session (Thanks: [Georgy Frolov])
 * Fixed crash when the query dropping the current database starts with a comment (Thanks: [Georgy Frolov])
 
-Internal:
+Internal
 ---------
+
 * deprecate python versions 2.7, 3.4, 3.5; support python 3.8
 
 1.20.1
 ======
 
-Bug Fixes:
+Bug Fixes
 ----------
 
 * Fix an error when using login paths with an explicit database name (Thanks: [Thomas Roten]).
@@ -287,14 +292,15 @@ Bug Fixes:
 1.20.0
 ======
 
-Features:
+Features
 ----------
+
 * Auto find alias dsn when `://` not in `database` (Thanks: [QiaoHou Peng]).
 * Mention URL encoding as escaping technique for special characters in connection DSN (Thanks: [Aljosha Papsch]).
 * Pressing Alt-Enter will introduce a line break. This is a way to break up the query into multiple lines without switching to multi-line mode. (Thanks: [Amjith Ramanujam]).
 * Use a generator to stream the output to the pager (Thanks: [Dick Marinus]).
 
-Bug Fixes:
+Bug Fixes
 ----------
 
 * Fix the missing completion for special commands (Thanks: [Amjith Ramanujam]).
@@ -304,28 +310,29 @@ Bug Fixes:
 * Update `setup.py` to no longer require `sqlparse` to be less than 0.3.0 as that just came out and there are no notable changes. ([VVelox])
 * workaround for ConfigObj parsing strings containing "," as lists (Thanks: [Mike Palandra])
 
-Internal:
+Internal
 ---------
+
 * fix unhashable FormattedText from prompt toolkit in unit tests (Thanks: [Dick Marinus]).
 
 1.19.0
 ======
 
-Internal:
+Internal
 ---------
 
 * Add Python 3.7 trove classifier (Thanks: [Thomas Roten]).
 * Fix pytest in Fedora mock (Thanks: [Dick Marinus]).
 * Require `prompt_toolkit>=2.0.6` (Thanks: [Dick Marinus]).
 
-Features:
+Features
 ---------
 
 * Add Token.Prompt/Continuation (Thanks: [Dick Marinus]).
 * Don't reconnect when switching databases using use (Thanks: [Angelo Lupo]).
 * Handle MemoryErrors while trying to pipe in large files and exit gracefully with an error (Thanks: [Amjith Ramanujam])
 
-Bug Fixes:
+Bug Fixes
 ----------
 
 * Enable Ctrl-Z to suspend the app (Thanks: [Amjith Ramanujam]).
@@ -333,12 +340,12 @@ Bug Fixes:
 1.18.2
 ======
 
-Bug Fixes:
+Bug Fixes
 ----------
 
 * Fixes database reconnecting feature (Thanks: [Yang Zou]).
 
-Internal:
+Internal
 ---------
 
 * Update Twine version to 1.12.1 (Thanks: [Thomas Roten]).
@@ -348,12 +355,12 @@ Internal:
 1.18.1
 ======
 
-Features:
+Features
 ---------
 
 * Add Keywords: TINYINT, SMALLINT, MEDIUMINT, INT, BIGINT (Thanks: [QiaoHou Peng]).
 
-Internal:
+Internal
 ---------
 
 * Update prompt toolkit (Thanks: [Jonathan Slenders], [Irina Truong], [Dick Marinus]).
@@ -361,7 +368,7 @@ Internal:
 1.18.0
 ======
 
-Features:
+Features
 ---------
 
 * Display server version in welcome message (Thanks: [Irina Truong]).
@@ -372,30 +379,30 @@ Features:
 * Add `FROM_UNIXTIME` and `UNIX_TIMESTAMP` to SQLCompleter (Thanks: [QiaoHou Peng])
 * Search `${PWD}/.myclirc`, then `${HOME}/.myclirc`, lastly `/etc/myclirc` (Thanks: [QiaoHao Peng])
 
-Bug Fixes:
+Bug Fixes
 ----------
 
 * When DSN is used, allow overrides from mycli arguments (Thanks: [Dick Marinus]).
 * A DSN without password should be allowed (Thanks: [Dick Marinus])
 
-Bug Fixes:
+Bug Fixes
 ----------
 
 * Convert `sql_format` to unicode strings for py27 compatibility (Thanks: [Dick Marinus]).
 * Fixes mycli compatibility with pbr (Thanks: [Thomas Roten]).
 * Don't align decimals for `sql_format` (Thanks: [Dick Marinus]).
 
-Internal:
+Internal
 ---------
 
 * Use fileinput (Thanks: [Dick Marinus]).
 * Enable tests for Python 3.7 (Thanks: [Thomas Roten]).
 * Remove `*.swp` from gitignore (Thanks: [Dick Marinus]).
 
-1.17.0:
+1.17.0
 =======
 
-Features:
+Features
 ----------
 
 * Add `CONCAT` to SQLCompleter and remove unused code (Thanks: [caitinggui])
@@ -403,7 +410,7 @@ Features:
 * Add option list-dsn (Thanks: [Frederic Aoustin]).
 * Add verbose option for list-dsn, add tests and clean up code (Thanks: [Dick Marinus]).
 
-Bug Fixes:
+Bug Fixes
 ----------
 
 * Add enable_pager to the config file (Thanks: [Frederic Aoustin]).
@@ -415,51 +422,50 @@ Bug Fixes:
 * Quote CSV fields (Thanks: [Thomas Roten]).
 * Fix `thanks_picker` (Thanks: [Dick Marinus]).
 
-Internal:
+Internal
 ---------
 
 * Refactor Destructive Warning behave tests (Thanks: [Dick Marinus]).
 
-
-1.16.0:
+1.16.0
 =======
 
-Features:
+Features
 ---------
 
 * Add DSN aliases to the config file (Thanks: [Frederic Aoustin]).
 
-Bug Fixes:
+Bug Fixes
 ----------
 
 * Do not try to connect to a unix socket on Windows (Thanks: [Thomas Roten]).
 
-1.15.0:
+1.15.0
 =======
 
-Features:
+Features
 ---------
 
 * Add sql-update/insert output format. (Thanks: [Dick Marinus]).
 * Also complete aliases in WHERE. (Thanks: [Dick Marinus]).
 
-1.14.0:
+1.14.0
 =======
 
-Features:
+Features
 ---------
 
 * Add `watch [seconds] query` command to repeat a query every [seconds] seconds (by default 5). (Thanks: [David Caro](https://github.com/Terseus))
 * Default to unix socket connection if host and port are unspecified. This simplifies authentication on some systems and matches mysql behaviour.
 * Add support for positional parameters to favorite queries. (Thanks: [Scrappy Soft](https://github.com/scrappysoft))
 
-Bug Fixes:
+Bug Fixes
 ----------
 
 * Fix source command for script in current working directory. (Thanks: [Dick Marinus]).
 * Fix issue where the `tee` command did not work on Python 2.7 (Thanks: [Thomas Roten]).
 
-Internal Changes:
+Internal Changes
 -----------------
 
 * Drop support for Python 3.3 (Thanks: [Thomas Roten]).
@@ -467,64 +473,63 @@ Internal Changes:
 * Make tests more compatible between different build environments. (Thanks: [David Caro])
 * Merge `_on_completions_refreshed` and `_swap_completer_objects` functions (Thanks: [Dick Marinus]).
 
-1.13.1:
+1.13.1
 =======
 
-Bug Fixes:
+Bug Fixes
 ----------
 
 * Fix keyword completion suggestion for `SHOW` (Thanks: [Thomas Roten]).
 * Prevent mycli from crashing when failing to read login path file (Thanks: [Thomas Roten]).
 
-Internal Changes:
+Internal Changes
 -----------------
 
 * Make tests ignore user config files (Thanks: [Thomas Roten]).
 
-1.13.0:
+1.13.0
 =======
 
-Features:
+Features
 ---------
 
 * Add file name completion for source command (issue #500). (Thanks: [Irina Truong]).
 
-Bug Fixes:
+Bug Fixes
 ----------
 
 * Fix UnicodeEncodeError when editing sql command in external editor (Thanks: Klaus Wünschel).
 * Fix MySQL4 version comment retrieval (Thanks: [François Pietka])
 * Fix error that occurred when outputting JSON and NULL data (Thanks: [Thomas Roten]).
 
-1.12.1:
+1.12.1
 =======
 
-Bug Fixes:
+Bug Fixes
 ----------
 
 * Prevent missing MySQL help database from causing errors in completions (Thanks: [Thomas Roten]).
 * Fix mycli from crashing with small terminal windows under Python 2 (Thanks: [Thomas Roten]).
 * Prevent an error from displaying when you drop the current database (Thanks: [Thomas Roten]).
 
-Internal Changes:
+Internal Changes
 -----------------
 
 * Use less memory when formatting results for display (Thanks: [Dick Marinus]).
 * Preliminary work for a future change in outputting results that uses less memory (Thanks: [Dick Marinus]).
 
-1.12.0:
+1.12.0
 =======
 
-Features:
+Features
 ---------
 
 * Add fish-style auto-suggestion from history. (Thanks: [Amjith Ramanujam])
 
-
-1.11.0:
+1.11.0
 =======
 
-Features:
+Features
 ---------
 
 * Handle reserved space for completion menu better in small windows. (Thanks: [Thomas Roten]).
@@ -538,7 +543,7 @@ Features:
 * Add colored/styled headers and odd/even rows (Thanks: [Thomas Roten]).
 * Keyword completion casing (upper/lower/auto) (Thanks: [Irina Truong]).
 
-Bug Fixes:
+Bug Fixes
 ----------
 
 * Fixed incorrect timekeeping when running queries from a file. (Thanks: [Thomas Roten]).
@@ -549,7 +554,7 @@ Bug Fixes:
 * Support tilde user directory for output file names (Thanks: [Thomas Roten]).
 * Auto vertical output is a little bit better at its calculations (Thanks: [Thomas Roten]).
 
-Internal Changes:
+Internal Changes
 -----------------
 
 * Rename tests/ to test/. (Thanks: [Dick Marinus]).
@@ -568,10 +573,10 @@ Internal Changes:
 * Add missing @dbtest to tests (Thanks: [Dick Marinus]).
 * Standardizes punctuation/grammar for help strings (Thanks: [Thomas Roten]).
 
-1.10.0:
+1.10.0
 =======
 
-Features:
+Features
 ---------
 
 * Add ability to specify alternative myclirc file. (Thanks: [Dick Marinus]).
@@ -579,7 +584,7 @@ Features:
   Ramanujam], [Dick Marinus], [Thomas Roten]).
 * Add logic to shorten the default prompt if it becomes too long once generated. (Thanks: [John Sterling]).
 
-Bug Fixes:
+Bug Fixes
 ----------
 
 * Fix external editor bug (issue #377). (Thanks: [Irina Truong]).
@@ -590,7 +595,7 @@ Bug Fixes:
   (Thanks: [Thomas Roten]).
 * Use pymysql default conversions (issue #375). (Thanks: [Dick Marinus]).
 
-Internal Changes:
+Internal Changes
 -----------------
 
 * Upload mycli distributions in a safer manner (using twine). (Thanks: [Thomas
@@ -599,10 +604,10 @@ Internal Changes:
 * Run pep8 checks in travis (Thanks: [Irina Truong]).
 * Remove temporary hack for sqlparse (Thanks: [Dick Marinus]).
 
-1.9.0:
+1.9.0
 ======
 
-Features:
+Features
 ---------
 
 * Add tee/notee commands for outputing results to a file. (Thanks: [Dick Marinus]).
@@ -613,7 +618,7 @@ Features:
 * Add `auto_vertical_output` config to myclirc. (Thanks: [Matheus Rosa]).
 * Improve Fedora install instructions. (Thanks: [Dick Marinus]).
 
-Bug Fixes:
+Bug Fixes
 ----------
 
 * Fix crashes occuring from commands starting with #. (Thanks: [Zhidong]).
@@ -625,7 +630,7 @@ Bug Fixes:
 * Kill running query when interrupted via Ctrl-C. (Thanks: [chainkite]).
 * Read the `smart_completion` config from myclirc. (Thanks: [Thomas Roten]).
 
-Internal Changes:
+Internal Changes
 -----------------
 
 * Improve handling of test database credentials. (Thanks: [Dick Marinus]).
@@ -634,25 +639,27 @@ Internal Changes:
 * Swap pycrypto dependency for pycryptodome. (Thanks: [Michał Górny]).
 * Bump sqlparse version so pgcli and mycli can be installed together. (Thanks: [darikg]).
 
-1.8.1:
+1.8.1
 ======
 
-Bug Fixes:
+Bug Fixes
 ----------
+
 * Remove duplicate listing of DISTINCT keyword. (Thanks: [Amjith Ramanujam]).
 * Add an try/except for AS keyword crash. (Thanks: [Amjith Ramanujam]).
 * Support python-sqlparse 0.2. (Thanks: [Dick Marinus]).
 * Fallback to the raw object for invalid time values. (Thanks: [Amjith Ramanujam]).
 * Reset the show items when completion is refreshed. (Thanks: [Amjith Ramanujam]).
 
-Internal Changes:
+Internal Changes
 -----------------
+
 * Make the dependency of sqlparse slightly more liberal. (Thanks: [Amjith Ramanujam]).
 
-1.8.0:
+1.8.0
 ======
 
-Features:
+Features
 ---------
 
 * Add support for --execute/-e commandline arg. (Thanks: [Matheus Rosa]).
@@ -661,17 +668,17 @@ Features:
 * Add `prompt_continuation` config option to allow configuring the continuation prompt for multi-line queries. (Thanks: [Scrappy Soft]).
 * Display login-path instead of host in prompt. (Thanks: [Irina Truong]).
 
-Bug Fixes:
+Bug Fixes
 ----------
 
 * Pin sqlparse to version 0.1.19 since the new version is breaking completion. (Thanks: [Amjith Ramanujam]).
 * Remove unsupported keywords. (Thanks: [Matheus Rosa]).
 * Fix completion suggestion inside functions with operands. (Thanks: [Irina Truong]).
 
-1.7.0:
+1.7.0
 ======
 
-Features:
+Features
 ---------
 
 * Add stdin batch mode. (Thanks: [Thomas Roten]).
@@ -680,20 +687,20 @@ Features:
 * Update features list in README.md. (Thanks: [Matheus Rosa]).
 * Remove extra \n in features list in README.md. (Thanks: [Matheus Rosa]).
 
-Bug Fixes:
+Bug Fixes
 ----------
 
 * Enable history search via <C-r>. (Thanks: [Amjith Ramanujam]).
 
-Internal Changes:
+Internal Changes
 -----------------
 
 * Upgrade `prompt_toolkit` to 1.0.0. (Thanks: [Jonathan Slenders])
 
-1.6.0:
+1.6.0
 ======
 
-Features:
+Features
 ---------
 
 * Change continuation prompt for multi-line mode to match default mysql.
@@ -706,14 +713,14 @@ Features:
 * Add support for `nopager` and `\n` to turn off the pager. (Thanks: [Thomas Roten]).
 * Add support for `--local-infile` command-line option. (Thanks: [Thomas Roten]).
 
-Bug Fixes:
+Bug Fixes
 ----------
 
 * Remove -S from `less` option which was clobbering the scroll back in history. (Thanks: [Thomas Roten]).
 * Make system command work with Python 3. (Thanks: [Thomas Roten]).
 * Support \G terminator for \f queries. (Thanks: [Terseus]).
 
-Internal Changes:
+Internal Changes
 -----------------
 
 * Upgrade `prompt_toolkit` to 0.60.
@@ -724,26 +731,26 @@ Internal Changes:
 * Capture warnings to log file. (Thanks: [Mikhail Borisov]).
 * Make `syntax_style` a tiny bit more intuitive. (Thanks: [Phil Cohen]).
 
-1.5.2:
+1.5.2
 ======
 
-Bug Fixes:
+Bug Fixes
 ----------
 
 * Protect against port number being None when no port is specified in command line.
 
-1.5.1:
+1.5.1
 ======
 
-Bug Fixes:
+Bug Fixes
 ----------
 
 * Cast the value of port read from my.cnf to int.
 
-1.5.0:
+1.5.0
 ======
 
-Features:
+Features
 ---------
 
 * Make a config option to enable `audit_log`. (Thanks: [Matheus Rosa]).
@@ -752,21 +759,25 @@ Features:
 * Register the special command `prompt` with the `\R` as alias. (Thanks: [Matheus Rosa]).
   Users can now change the mysql prompt at runtime using `prompt` command.
   eg:
+
   ```
   mycli> prompt \u@\h>
   Changed prompt format to \u@\h>
   Time: 0.001s
   amjith@localhost>
   ```
+
 * Perform completion refresh in a background thread. Now mycli can handle
   databases with thousands of tables without blocking.
 * Add support for `system` command. (Thanks: [Matheus Rosa]).
   Users can now run a system command from within mycli as follows:
+
   ```
   amjith@localhost:(none)>system cat tmp.sql
   select 1;
   select * from django_migrations;
   ```
+
 * Caught and hexed binary fields in MySQL. (Thanks: [Daniel West]).
   Geometric fields stored in a database will be displayed as hexed strings.
 * Treat enter key as tab when the suggestion menu is open. (Thanks: [Matheus Rosa])
@@ -776,7 +787,7 @@ Features:
 * Add TRANSACTION related keywords.
 * Treat DESC and EXPLAIN as DESCRIBE. (Thanks: [spacewander]).
 
-Bug Fixes:
+Bug Fixes
 ----------
 
 * Fix the removal of whitespace from table output.
@@ -784,23 +795,25 @@ Bug Fixes:
 * Fix the incorrect reporting of command time.
 * Add type validation for port argument. (Thanks [Matheus Rosa])
 
-Internal Changes:
+Internal Changes
 -----------------
+
 * Make pycrypto optional and only install it in \*nix systems. (Thanks: [Irina Truong]).
 * Add badge for PyPI version to README. (Thanks: [Shoma Suzuki]).
 * Updated release script with a --dry-run and --confirm-steps option. (Thanks: [Irina Truong]).
 * Adds support for PyMySQL 0.6.2 and above. This is useful for debian package builders. (Thanks: [Thomas Roten]).
 * Disable click warning.
 
-1.4.0:
+1.4.0
 ======
 
-Features:
+Features
 ---------
 
 * Add `source` command. This allows running sql statement from a file.
 
   eg:
+
   ```
   mycli> source filename.sql
   ```
@@ -819,29 +832,33 @@ Features:
 
   Multi-line queries are automatically indented.
 
-Bug Fixes:
+Bug Fixes
 ----------
 
 * Fix keyword completion after the `WHERE` clause.
 * Add `\g` and `\G` as valid query terminators. Previously in multi-line mode
   ending a query with a `\G` wouldn't run the query. This is now fixed.
 
-1.3.0:
+1.3.0
 ======
 
-Features:
+Features
 ---------
+
 * Add a new special command (\T) to change the table format on the fly. (Thanks: [Jonathan Bruno](https://github.com/brewneaux))
   eg:
+
   ```
   mycli> \T tsv
   ```
+
 * Add `--defaults-group-suffix` to the command line. This lets the user specify
   a group to use in the my.cnf files. (Thanks: [Irina Truong](http://github.com/j-bennet))
 
   In the my.cnf file a user can specify credentials for different databases and
   invoke mycli with the group name to use the appropriate credentials.
   eg:
+
   ```
   # my.cnf
   [client]
@@ -863,79 +880,77 @@ Features:
 * Make `-p` and `--password` take the password in commandline. This makes mycli
   a drop in replacement for mysql.
 
-1.2.0:
+1.2.0
 ======
 
-Features:
+Features
 ---------
 
 * Add support for wider completion menus in the config file.
 
   Add `wider_completion_menu = True` in the config file (~/.myclirc) to enable this feature.
 
-Bug Fixes:
+Bug Fixes
 ---------
 
 * Prevent Ctrl-C from quitting mycli while the pager is active.
 * Refresh auto-completions after the database is changed via a CONNECT command.
 
-Internal Changes:
+Internal Changes
 -----------------
 
 * Upgrade `prompt_toolkit` dependency version to 0.45.
 * Added Travis CI to run the tests automatically.
 
-1.1.1:
+1.1.1
 ======
 
-Bug Fixes:
+Bug Fixes
 ----------
 
 * Change dictonary comprehension used in mycnf reader to list comprehension to make it compatible with Python 2.6.
 
-
-1.1.0:
+1.1.0
 ======
 
-Features:
+Features
 ---------
 
 * Fuzzy completion is now case-insensitive. (Thanks: [bjarnagin](https://github.com/bjarnagin))
 * Added new-line (`\n`) to the list of special characters to use in prompt. (Thanks: [brewneaux](https://github.com/brewneaux))
 * Honor the `pager` setting in my.cnf files. (Thanks: [Irina Truong](http://github.com/j-bennet))
 
-Bug Fixes:
+Bug Fixes
 ----------
 
 * Fix a crashing bug in completion engine for cross joins.
 * Make `<null>` value consistent between tabular and vertical output.
 
-Internal Changes:
+Internal Changes
 -----------------
 
 * Changed pymysql version to be greater than 0.6.6.
 * Upgrade `prompt_toolkit` version to 0.42. (Thanks: [Yasuhiro Matsumoto](https://github.com/mattn))
 * Removed the explicit dependency on six.
 
-2015/06/10:
+2015/06/10
 ===========
 
-Features:
+Features
 ---------
 
 * Customizable prompt. (Thanks [Steve Robbins](https://github.com/steverobbins))
 * Make `\G` formatting to behave more like mysql.
 
-Bug Fixes:
+Bug Fixes
 ----------
 
 * Formatting issue in \G for really long column values.
 
-
-2015/06/07:
+2015/06/07
 ===========
 
-Features:
+Features
 ---------
 
 * Upgrade `prompt_toolkit` to 0.38. This improves the performance of pasting long queries.
@@ -946,18 +961,17 @@ Features:
 * Add fuzzy completion for table names and column names.
 * Automatically reconnect when connection is lost to the database.
 
-Bug Fixes:
+Bug Fixes
 ----------
 
 * Fix a bug with reconnect failure.
 * Fix the issue with `use` command not changing the prompt.
 * Fix the issue where `\\r` shortcut was not recognized.
 
-
 2015/05/24
 ==========
 
-Features:
+Features
 ---------
 
 * Add support for connecting via socket.
@@ -966,15 +980,14 @@ Features:
 * Made the timing of sql statements human friendly.
 * Automatically prompt for a password if needed.
 
-Bug Fixes:
+Bug Fixes
 ----------
+
 * Fixed the installation issues with PyMySQL dependency on case-sensitive file systems.
 
 [Amjith Ramanujam]: https://blog.amjith.com
 [Artem Bezsmertnyi]: https://github.com/mrdeathless
 [BuonOmo]: https://github.com/BuonOmo
-[Carlos Afonso]: https://github.com/afonsocarlos
-[Casper Langemeijer]: https://github.com/langemeijer
 [Daniel West]: http://github.com/danieljwest
 [Dick Marinus]: https://github.com/meeuw
 [François Pietka]: https://github.com/fpietka
@@ -982,9 +995,7 @@ Bug Fixes:
 [Georgy Frolov]: https://github.com/pasenor
 [Irina Truong]: https://github.com/j-bennet
 [Jonathan Slenders]: https://github.com/jonathanslenders
-[Kacper Kwapisz]: https://github.com/KKKas
 [laixintao]: https://github.com/laixintao
-[Lennart Weller]: https://github.com/lhw
 [Martijn Engler]: https://github.com/martijnengler
 [Matheus Rosa]:  https://github.com/mdsrosa
 [Mikhail Borisov]: https://github.com/borman
@@ -996,7 +1007,6 @@ Bug Fixes:
 [spacewander]: https://github.com/spacewander
 [Terseus]: https://github.com/Terseus
 [Thomas Roten]: https://github.com/tsroten
-[William GARCIA]: https://github.com/willgarcia
 [xeron]: https://github.com/xeron
 [Zach DeCook]: https://zachdecook.com
 [Will Wang]: https://github.com/willww64

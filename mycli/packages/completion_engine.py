@@ -138,6 +138,8 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
 
     if not token:
         return [{'type': 'keyword'}, {'type': 'special'}]
+    elif token_v == "*":
+        return [{'type': 'keyword'}]
     elif token_v.endswith('('):
         p = sqlparse.parse(text_before_cursor)[0]
 
