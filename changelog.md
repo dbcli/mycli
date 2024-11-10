@@ -1,16 +1,17 @@
-Upcoming Release (TBD)
+1.28.0 (2024/11/10)
 ======================
-
-Bug Fixes
-----------
-
-* Fixes `Database connection failed: error('unpack requires a buffer of 4 bytes')`.
-* Only show keyword completions after *
 
 Features
 ---------
 
 * Added fzf history search functionality. The feature can switch between the old implementation and the new one based on the presence of the fzf binary.
+
+Bug Fixes
+----------
+
+* Fixes `Database connection failed: error('unpack requires a buffer of 4 bytes')`
+* Only show keyword completions after *
+* Enable fuzzy matching for keywords
 
 1.27.2 (2024/04/03)
 ===================
