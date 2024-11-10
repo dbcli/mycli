@@ -105,7 +105,14 @@ def test_function_name_completion(completer, complete_event):
     assert list(result) == list(
         [
             Completion(text="MAX", start_position=-2),
+            Completion(text="CHANGE MASTER TO", start_position=-2),
+            Completion(text="CURRENT_TIMESTAMP", start_position=-2),
+            Completion(text="DECIMAL", start_position=-2),
+            Completion(text="FORMAT", start_position=-2),
             Completion(text="MASTER", start_position=-2),
+            Completion(text="PRIMARY", start_position=-2),
+            Completion(text="ROW_FORMAT", start_position=-2),
+            Completion(text="SMALLINT", start_position=-2),
         ]
     )
 
