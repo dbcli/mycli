@@ -10,6 +10,7 @@ from pymysql.converters import (convert_datetime,
                                 decoders)
 try:
     import paramiko
+    import sshtunnel
 except ImportError:
     from mycli.packages.paramiko_stub import paramiko
 
@@ -139,7 +140,7 @@ class SQLExecute(object):
         ssh_password = (ssh_password or self.ssh_password)
         ssh_key_filename = (ssh_key_filename or self.ssh_key_filename)
         init_command = (init_command or self.init_command)
-        _logger.debug(
+        _logger.info(
             'Connection DB Params: \n'
             '\tdatabase: %r'
             '\tuser: %r'
@@ -189,19 +190,24 @@ class SQLExecute(object):
         )
 
         if ssh_host:
-            client = paramiko.SSHClient()
-            client.load_system_host_keys()
-            client.set_missing_host_key_policy(paramiko.WarningPolicy())
-            client.connect(
-                ssh_host, ssh_port, ssh_user, ssh_password,
-                key_filename=ssh_key_filename
-            )
-            chan = client.get_transport().open_channel(
-                'direct-tcpip',
-                (host, port),
-                ('0.0.0.0', 0),
-            )
-            conn.connect(chan)
+            ##### paramiko.Channel is a bad socket implementation overall if you want SSL through an SSH tunnel
+            #####
+            # instead let's open a tunnel and rewrite host:port to local bind
+            try:
+                chan = sshtunnel.SSHTunnelForwarder(
+                    (ssh_host, ssh_port),
+                    ssh_username=ssh_user,
+                    ssh_pkey=ssh_key_filename,
+                    ssh_password=ssh_password,
+                    remote_bind_address=(host, port)
+                )
+                chan.start()
+
+                conn.host=chan.local_bind_host
+                conn.port=chan.local_bind_port                                                                                                                                   
+                conn.connect()
+            except Exception as e:
+                raise e
 
         if hasattr(self, 'conn'):
             self.conn.close()

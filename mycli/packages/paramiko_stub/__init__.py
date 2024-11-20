@@ -13,9 +13,9 @@ class Paramiko:
         import sys
         from textwrap import dedent
         print(dedent("""
-            To enable certain SSH features you need to install paramiko:
+            To enable certain SSH features you need to install paramiko and sshtunnel:
             
-               pip install paramiko
+               pip install paramiko sshtunnel
                
             It is required for the following configuration options:
                 --list-ssh-config
