@@ -1,3 +1,18 @@
+Upcoming Release (TBD)
+======================
+
+Bug Fixes:
+----------
+
+* fix SSL through SSH jump host by using a true python socket for a tunnel
+
+Internal:
+---------
+
+Features:
+---------
+
+
 1.28.0 (2024/11/10)
 ======================
 
