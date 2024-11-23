@@ -54,7 +54,7 @@ def test_editor_command():
     if os.name != 'nt':
         mycli.packages.special.open_external_editor(sql=r'select 1') == "select 1"
     else:
-        pytest.skip('Skipping on Windows platform.')    
+        pytest.skip('Skipping on Windows platform.')
 
 
 
@@ -92,7 +92,7 @@ def test_tee_command():
             os.remove(f.name)
     except Exception as e:
         print(f"An error occurred while attempting to delete the file: {e}")
-    
+
 
 
 def test_tee_command_error():
@@ -106,7 +106,7 @@ def test_tee_command_error():
 
 
 @dbtest
- 
+
 @pytest.mark.skipif(os.name == "nt", reason="Bug: fails on Windows, needs fixing, singleton of FQ not working right")
 def test_favorite_query():
     with db_connection().cursor() as cur:
@@ -162,17 +162,19 @@ def test_pipe_once_command():
         mycli.packages.special.write_once(u"hello world")
         mycli.packages.special.unset_pipe_once_if_written()
     else:
-        mycli.packages.special.execute(None, u"\\pipe_once wc")
-        mycli.packages.special.write_once(u"hello world")
-        mycli.packages.special.unset_pipe_once_if_written()
-    # how to assert on wc output?
+        with tempfile.NamedTemporaryFile() as f:
+            mycli.packages.special.execute(None, "\\pipe_once tee " + f.name)
+            mycli.packages.special.write_pipe_once(u"hello world")
+            mycli.packages.special.unset_pipe_once_if_written()
+            f.seek(0)
+            assert f.read() == b"hello world\n"
 
 
 def test_parseargfile():
     """Test that parseargfile expands the user directory."""
     expected = {'file': os.path.join(os.path.expanduser('~'), 'filename'),
                 'mode': 'a'}
-    
+
     if os.name=='nt':
         assert expected == mycli.packages.special.iocommands.parseargfile(
             '~\\filename')
