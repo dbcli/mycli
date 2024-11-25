@@ -1188,7 +1188,7 @@ class MyCli(object):
               help='File or FIFO path containing the password to connect to the db if not specified otherwise.')
 @click.argument('database', default='', nargs=1)
 def cli(database, user, host, port, socket, password, dbname,
-        version, verbose, prompt, logfile, defaults_group_suffix,
+        verbose, prompt, logfile, defaults_group_suffix,
         defaults_file, login_path, auto_vertical_output, local_infile,
         ssl_enable, ssl_ca, ssl_capath, ssl_cert, ssl_key, ssl_cipher,
         tls_version, ssl_verify_server_cert, table, csv, warn, execute,
@@ -1204,11 +1204,6 @@ def cli(database, user, host, port, socket, password, dbname,
       - mycli mysql://my_user@my_host.com:3306/my_database
 
     """
-
-    if version:
-        print('Version:', __version__)
-        sys.exit(0)
-
     mycli = MyCli(prompt=prompt, logfile=logfile,
                   defaults_suffix=defaults_group_suffix,
                   defaults_file=defaults_file, login_path=login_path,
