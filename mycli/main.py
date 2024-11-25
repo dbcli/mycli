@@ -1146,7 +1146,7 @@ class MyCli(object):
                     'by default.'))
 # as of 2016-02-15 revocation list is not supported by underling PyMySQL
 # library (--ssl-crl and --ssl-crlpath options in vanilla mysql client)
-@click.option('-V', '--version', is_flag=True, help='Output mycli\'s version.')
+@click.version_option(__version__, '-V', '--version', help='Output mycli\'s version.')
 @click.option('-v', '--verbose', is_flag=True, help='Verbose output.')
 @click.option('-D', '--database', 'dbname', help='Database to use.')
 @click.option('-d', '--dsn', default='', envvar='DSN',
