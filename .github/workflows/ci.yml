@@ -44,7 +44,6 @@ jobs:
           PYTEST_HOST: 127.0.0.1
         run: |
           uv run tox -e py${{ matrix.python-version }}
-          git checkout test/myclirc
 
       - name: Run Style Checks
         run: uv run tox -e style
