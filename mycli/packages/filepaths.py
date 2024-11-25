@@ -38,7 +38,7 @@ def complete_path(curr_dir, last_dir):
     """
     if not last_dir or curr_dir.startswith(last_dir):
         return curr_dir
-    elif last_dir == '~':
+    elif last_dir == "~":
         return os.path.join(last_dir, curr_dir)
 
 
@@ -51,7 +51,7 @@ def parse_path(root_dir):
     :return: tuple of (string, string, int)
 
     """
-    base_dir, last_dir, position = '', '', 0
+    base_dir, last_dir, position = "", "", 0
     if root_dir:
         base_dir, last_dir = os.path.split(root_dir)
         position = -len(last_dir) if last_dir else 0
@@ -69,9 +69,9 @@ def suggest_path(root_dir):
 
     """
     if not root_dir:
-        return [os.path.abspath(os.sep), '~', os.curdir, os.pardir]
+        return [os.path.abspath(os.sep), "~", os.curdir, os.pardir]
 
-    if '~' in root_dir:
+    if "~" in root_dir:
         root_dir = os.path.expanduser(root_dir)
 
     if not os.path.exists(root_dir):
@@ -100,7 +100,7 @@ def guess_socket_location():
         for r, dirs, files in os.walk(directory, topdown=True):
             for filename in files:
                 name, ext = os.path.splitext(filename)
-                if name.startswith("mysql") and name != "mysqlx" and ext in ('.socket', '.sock'):
+                if name.startswith("mysql") and name != "mysqlx" and ext in (".socket", ".sock"):
                     return os.path.join(r, filename)
             dirs[:] = [d for d in dirs if d.startswith("mysql")]
     return None

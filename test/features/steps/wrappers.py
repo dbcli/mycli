@@ -18,10 +18,9 @@ def expect_exact(context, expected, timeout):
         timedout = True
     if timedout:
         # Strip color codes out of the output.
-        actual = re.sub(r'\x1b\[([0-9A-Za-z;?])+[m|K]?',
-                        '', context.cli.before)
+        actual = re.sub(r"\x1b\[([0-9A-Za-z;?])+[m|K]?", "", context.cli.before)
         raise Exception(
-            textwrap.dedent('''\
+            textwrap.dedent("""\
                 Expected:
                 ---
                 {0!r}
@@ -34,17 +33,12 @@ def expect_exact(context, expected, timeout):
                 ---
                 {2!r}
                 ---
-            ''').format(
-                expected,
-                actual,
-                context.logfile.getvalue()
-            )
+            """).format(expected, actual, context.logfile.getvalue())
         )
 
 
 def expect_pager(context, expected, timeout):
-    expect_exact(context, "{0}\r\n{1}{0}\r\n".format(
-        context.conf['pager_boundary'], expected), timeout=timeout)
+    expect_exact(context, "{0}\r\n{1}{0}\r\n".format(context.conf["pager_boundary"], expected), timeout=timeout)
 
 
 def run_cli(context, run_args=None, exclude_args=None):
@@ -63,55 +57,49 @@ def run_cli(context, run_args=None, exclude_args=None):
             else:
                 rendered_args.append(key)
 
-    if conf.get('host', None):
-        add_arg('host', '-h', conf['host'])
-    if conf.get('user', None):
-        add_arg('user', '-u', conf['user'])
-    if conf.get('pass', None):
-        add_arg('pass', '-p', conf['pass'])
-    if conf.get('port', None):
-        add_arg('port', '-P', str(conf['port']))
-    if conf.get('dbname', None):
-        add_arg('dbname', '-D', conf['dbname'])
-    if conf.get('defaults-file', None):
-        add_arg('defaults_file', '--defaults-file', conf['defaults-file'])
-    if conf.get('myclirc', None):
-        add_arg('myclirc', '--myclirc', conf['myclirc'])
-    if conf.get('login_path'):
-        add_arg('login_path', '--login-path', conf['login_path'])
+    if conf.get("host", None):
+        add_arg("host", "-h", conf["host"])
+    if conf.get("user", None):
+        add_arg("user", "-u", conf["user"])
+    if conf.get("pass", None):
+        add_arg("pass", "-p", conf["pass"])
+    if conf.get("port", None):
+        add_arg("port", "-P", str(conf["port"]))
+    if conf.get("dbname", None):
+        add_arg("dbname", "-D", conf["dbname"])
+    if conf.get("defaults-file", None):
+        add_arg("defaults_file", "--defaults-file", conf["defaults-file"])
+    if conf.get("myclirc", None):
+        add_arg("myclirc", "--myclirc", conf["myclirc"])
+    if conf.get("login_path"):
+        add_arg("login_path", "--login-path", conf["login_path"])
 
     for arg_name, arg_value in conf.items():
-        if arg_name.startswith('-'):
+        if arg_name.startswith("-"):
             add_arg(arg_name, arg_name, arg_value)
 
     try:
-        cli_cmd = context.conf['cli_command']
+        cli_cmd = context.conf["cli_command"]
     except KeyError:
-        cli_cmd = (
-            '{0!s} -c "'
-            'import coverage ; '
-            'coverage.process_startup(); '
-            'import mycli.main; '
-            'mycli.main.cli()'
-            '"'
-        ).format(sys.executable)
+        cli_cmd = ('{0!s} -c "' "import coverage ; " "coverage.process_startup(); " "import mycli.main; " "mycli.main.cli()" '"').format(
+            sys.executable
+        )
 
     cmd_parts = [cli_cmd] + rendered_args
-    cmd = ' '.join(cmd_parts)
+    cmd = " ".join(cmd_parts)
     context.cli = pexpect.spawnu(cmd, cwd=context.package_root)
     context.logfile = StringIO()
     context.cli.logfile = context.logfile
     context.exit_sent = False
-    context.currentdb = context.conf['dbname']
+    context.currentdb = context.conf["dbname"]
 
 
 def wait_prompt(context, prompt=None):
     """Make sure prompt is displayed."""
     if prompt is None:
-        user = context.conf['user']
-        host = context.conf['host']
+        user = context.conf["user"]
+        host = context.conf["host"]
         dbname = context.currentdb
-        prompt = '{0}@{1}:{2}>'.format(
-            user, host, dbname),
+        prompt = ("{0}@{1}:{2}>".format(user, host, dbname),)
     expect_exact(context, prompt, timeout=5)
     context.atprompt = True

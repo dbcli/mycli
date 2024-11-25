@@ -4,20 +4,20 @@ from .parseutils import is_destructive
 
 
 class ConfirmBoolParamType(click.ParamType):
-    name = 'confirmation'
+    name = "confirmation"
 
     def convert(self, value, param, ctx):
         if isinstance(value, bool):
             return bool(value)
         value = value.lower()
-        if value in ('yes', 'y'):
+        if value in ("yes", "y"):
             return True
-        elif value in ('no', 'n'):
+        elif value in ("no", "n"):
             return False
-        self.fail('%s is not a valid boolean' % value, param, ctx)
+        self.fail("%s is not a valid boolean" % value, param, ctx)
 
     def __repr__(self):
-        return 'BOOL'
+        return "BOOL"
 
 
 BOOLEAN_TYPE = ConfirmBoolParamType()
@@ -32,8 +32,7 @@ def confirm_destructive_query(queries):
     * False if the query is destructive and the user doesn't want to proceed.
 
     """
-    prompt_text = ("You're about to run a destructive command.\n"
-                   "Do you want to proceed? (y/n)")
+    prompt_text = "You're about to run a destructive command.\n" "Do you want to proceed? (y/n)"
     if is_destructive(queries) and sys.stdin.isatty():
         return prompt(prompt_text, type=BOOLEAN_TYPE)
 

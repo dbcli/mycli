@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 def log(logger, level, message):
     """Logs message to stderr if logging isn't initialized."""
 
-    if logger.parent.name != 'root':
+    if logger.parent.name != "root":
         logger.log(level, message)
     else:
         print(message, file=sys.stderr)
@@ -49,16 +49,13 @@ def read_config_file(f, list_values=True):
         f = os.path.expanduser(f)
 
     try:
-        config = ConfigObj(f, interpolation=False, encoding='utf8',
-                           list_values=list_values)
+        config = ConfigObj(f, interpolation=False, encoding="utf8", list_values=list_values)
     except ConfigObjError as e:
-        log(logger, logging.WARNING, "Unable to parse line {0} of config file "
-            "'{1}'.".format(e.line_number, f))
+        log(logger, logging.WARNING, "Unable to parse line {0} of config file " "'{1}'.".format(e.line_number, f))
         log(logger, logging.WARNING, "Using successfully parsed config values.")
         return e.config
     except (IOError, OSError) as e:
-        log(logger, logging.WARNING, "You don't have permission to read "
-            "config file '{0}'.".format(e.filename))
+        log(logger, logging.WARNING, "You don't have permission to read " "config file '{0}'.".format(e.filename))
         return None
 
     return config
@@ -80,15 +77,12 @@ def get_included_configs(config_file: Union[str, TextIOWrapper]) -> list:
 
     try:
         with open(config_file) as f:
-            include_directives = filter(
-                lambda s: s.startswith('!includedir'),
-                f
-            )
+            include_directives = filter(lambda s: s.startswith("!includedir"), f)
             dirs = map(lambda s: s.strip().split()[-1], include_directives)
             dirs = filter(os.path.isdir, dirs)
             for dir in dirs:
                 for filename in os.listdir(dir):
-                    if filename.endswith('.cnf'):
+                    if filename.endswith(".cnf"):
                         included_configs.append(os.path.join(dir, filename))
     except (PermissionError, UnicodeDecodeError):
         pass
@@ -117,29 +111,31 @@ def read_config_files(files, list_values=True):
 
 def create_default_config(list_values=True):
     import mycli
-    default_config_file = resources.open_text(mycli, 'myclirc')
+
+    default_config_file = resources.open_text(mycli, "myclirc")
     return read_config_file(default_config_file, list_values=list_values)
 
 
 def write_default_config(destination, overwrite=False):
     import mycli
-    default_config = resources.read_text(mycli, 'myclirc')
+
+    default_config = resources.read_text(mycli, "myclirc")
     destination = os.path.expanduser(destination)
     if not overwrite and exists(destination):
         return
 
-    with open(destination, 'w') as f:
+    with open(destination, "w") as f:
         f.write(default_config)
 
 
 def get_mylogin_cnf_path():
     """Return the path to the login path file or None if it doesn't exist."""
-    mylogin_cnf_path = os.getenv('MYSQL_TEST_LOGIN_FILE')
+    mylogin_cnf_path = os.getenv("MYSQL_TEST_LOGIN_FILE")
 
     if mylogin_cnf_path is None:
-        app_data = os.getenv('APPDATA')
-        default_dir = os.path.join(app_data, 'MySQL') if app_data else '~'
-        mylogin_cnf_path = os.path.join(default_dir, '.mylogin.cnf')
+        app_data = os.getenv("APPDATA")
+        default_dir = os.path.join(app_data, "MySQL") if app_data else "~"
+        mylogin_cnf_path = os.path.join(default_dir, ".mylogin.cnf")
 
     mylogin_cnf_path = os.path.expanduser(mylogin_cnf_path)
 
@@ -159,14 +155,14 @@ def open_mylogin_cnf(name):
     """
 
     try:
-        with open(name, 'rb') as f:
+        with open(name, "rb") as f:
             plaintext = read_and_decrypt_mylogin_cnf(f)
     except (OSError, IOError, ValueError):
-        logger.error('Unable to open login path file.')
+        logger.error("Unable to open login path file.")
         return None
 
     if not isinstance(plaintext, BytesIO):
-        logger.error('Unable to read login path file.')
+        logger.error("Unable to read login path file.")
         return None
 
     return TextIOWrapper(plaintext)
@@ -181,6 +177,7 @@ def encrypt_mylogin_cnf(plaintext: IO[str]):
     https://github.com/isotopp/mysql-config-coder
 
     """
+
     def realkey(key):
         """Create the AES key from the login key."""
         rkey = bytearray(16)
@@ -194,10 +191,7 @@ def encrypt_mylogin_cnf(plaintext: IO[str]):
         pad_len = buf_len - text_len
         pad_chr = bytes(chr(pad_len), "utf8")
         plaintext = plaintext.encode() + pad_chr * pad_len
-        encrypted_text = b''.join(
-            [aes.encrypt(plaintext[i: i + 16])
-             for i in range(0, len(plaintext), 16)]
-        )
+        encrypted_text = b"".join([aes.encrypt(plaintext[i : i + 16]) for i in range(0, len(plaintext), 16)])
         return encrypted_text
 
     LOGIN_KEY_LENGTH = 20
@@ -248,7 +242,7 @@ def read_and_decrypt_mylogin_cnf(f):
     buf = f.read(4)
 
     if not buf or len(buf) != 4:
-        logger.error('Login path file is blank or incomplete.')
+        logger.error("Login path file is blank or incomplete.")
         return None
 
     # Read the login key.
@@ -258,12 +252,12 @@ def read_and_decrypt_mylogin_cnf(f):
     rkey = [0] * 16
     for i in range(LOGIN_KEY_LEN):
         try:
-            rkey[i % 16] ^= ord(key[i:i+1])
+            rkey[i % 16] ^= ord(key[i : i + 1])
         except TypeError:
             # ord() was unable to get the value of the byte.
-            logger.error('Unable to generate login path AES key.')
+            logger.error("Unable to generate login path AES key.")
             return None
-    rkey = struct.pack('16B', *rkey)
+    rkey = struct.pack("16B", *rkey)
 
     # Create a bytes buffer to hold the plaintext.
     plaintext = BytesIO()
@@ -274,20 +268,17 @@ def read_and_decrypt_mylogin_cnf(f):
         len_buf = f.read(MAX_CIPHER_STORE_LEN)
         if len(len_buf) < MAX_CIPHER_STORE_LEN:
             break
-        cipher_len, = struct.unpack("<i", len_buf)
+        (cipher_len,) = struct.unpack("<i", len_buf)
 
         # Read cipher_len bytes from the file and decrypt.
         cipher = f.read(cipher_len)
-        plain = _remove_pad(
-            b''.join([aes.decrypt(cipher[i: i + 16])
-                      for i in range(0, cipher_len, 16)])
-        )
+        plain = _remove_pad(b"".join([aes.decrypt(cipher[i : i + 16]) for i in range(0, cipher_len, 16)]))
         if plain is False:
             continue
         plaintext.write(plain)
 
     if plaintext.tell() == 0:
-        logger.error('No data successfully decrypted from login path file.')
+        logger.error("No data successfully decrypted from login path file.")
         return None
 
     plaintext.seek(0)
@@ -299,17 +290,17 @@ def str_to_bool(s):
     if isinstance(s, bool):
         return s
     elif not isinstance(s, basestring):
-        raise TypeError('argument must be a string')
+        raise TypeError("argument must be a string")
 
-    true_values = ('true', 'on', '1')
-    false_values = ('false', 'off', '0')
+    true_values = ("true", "on", "1")
+    false_values = ("false", "off", "0")
 
     if s.lower() in true_values:
         return True
     elif s.lower() in false_values:
         return False
     else:
-        raise ValueError('not a recognized boolean value: {0}'.format(s))
+        raise ValueError("not a recognized boolean value: {0}".format(s))
 
 
 def strip_matching_quotes(s):
@@ -319,8 +310,7 @@ def strip_matching_quotes(s):
     values.
 
     """
-    if (isinstance(s, basestring) and len(s) >= 2 and
-            s[0] == s[-1] and s[0] in ('"', "'")):
+    if isinstance(s, basestring) and len(s) >= 2 and s[0] == s[-1] and s[0] in ('"', "'"):
         s = s[1:-1]
     return s
 
@@ -332,13 +322,13 @@ def _remove_pad(line):
         pad_length = ord(line[-1:])
     except TypeError:
         # ord() was unable to get the value of the byte.
-        logger.warning('Unable to remove pad.')
+        logger.warning("Unable to remove pad.")
         return False
 
     if pad_length > len(line) or len(set(line[-pad_length:])) != 1:
         # Pad length should be less than or equal to the length of the
         # plaintext. The pad should have a single unique byte.
-        logger.warning('Invalid pad found in login path file.')
+        logger.warning("Invalid pad found in login path file.")
         return False
 
     return line[:-pad_length]

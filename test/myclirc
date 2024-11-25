@@ -153,6 +153,7 @@ output.null = "#808080"
 # Favorite queries.
 [favorite_queries]
 check = 'select "✔"'
+foo_args = 'SELECT $1, "$2", "$3"'
 
 # Use the -d option to reference a DSN.
 # Special characters in passwords and other strings can be escaped with URL encoding.

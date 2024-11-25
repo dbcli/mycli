@@ -1,17 +1,15 @@
-Upcoming Release (TBD)
-======================
+1.29.0 (TBD)
+============
 
-Bug Fixes:
+Bug Fixes
 ----------
 
 * fix SSL through SSH jump host by using a true python socket for a tunnel
 
-Internal:
+Internal
 ---------
 
-Features:
----------
-
+* Modernize to use PEP-621. Use `uv` instead of `pip` in GH actions.
 
 1.28.0 (2024/11/10)
 ======================
