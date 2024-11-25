@@ -10,6 +10,7 @@ Internal
 ---------
 
 * Modernize to use PEP-621. Use `uv` instead of `pip` in GH actions.
+* Remove Python 3.8 and add Python 3.13 in test matrix.
 
 1.28.0 (2024/11/10)
 ======================
