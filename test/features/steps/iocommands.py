@@ -11,7 +11,7 @@ def step_edit_file(context):
     context.editor_file_name = os.path.join(context.package_root, "test_file_{0}.sql".format(context.conf["vi"]))
     if os.path.exists(context.editor_file_name):
         os.remove(context.editor_file_name)
-    context.cli.sendline("\e {0}".format(os.path.basename(context.editor_file_name)))
+    context.cli.sendline("\\e {0}".format(os.path.basename(context.editor_file_name)))
     wrappers.expect_exact(context, 'Entering Ex mode.  Type "visual" to go to Normal mode.', timeout=2)
     wrappers.expect_exact(context, "\r\n:", timeout=2)
 
