@@ -5,7 +5,7 @@ to call the step in "*.feature" file.
 
 """
 
-from behave import when
+from behave import when, then
 from textwrap import dedent
 import tempfile
 import wrappers
@@ -28,9 +28,9 @@ def step_ctrl_d(context):
     context.exit_sent = True
 
 
-@when('we send "\?" command')
+@when(r'we send "\?" command')
 def step_send_help(context):
-    """Send \?
+    r"""Send \?
 
     to see help.
 
@@ -42,9 +42,9 @@ def step_send_help(context):
 @when("we send source command")
 def step_send_source_command(context):
     with tempfile.NamedTemporaryFile() as f:
-        f.write(b"\?")
+        f.write(b"\\?")
         f.flush()
-        context.cli.sendline("\. {0}".format(f.name))
+        context.cli.sendline("\\. {0}".format(f.name))
         wrappers.expect_exact(context, context.conf["pager_boundary"] + "\r\n", timeout=5)
 
 
@@ -75,21 +75,21 @@ def step_see_found(context):
 
 
 @then("we confirm the destructive warning")
-def step_confirm_destructive_command(context):
+def step_confirm_destructive_command(context):  # noqa
     """Confirm destructive command."""
     wrappers.expect_exact(context, "You're about to run a destructive command.\r\nDo you want to proceed? (y/n):", timeout=2)
     context.cli.sendline("y")
 
 
 @when('we answer the destructive warning with "{confirmation}"')
-def step_confirm_destructive_command(context, confirmation):
+def step_confirm_destructive_command(context, confirmation):  # noqa
     """Confirm destructive command."""
     wrappers.expect_exact(context, "You're about to run a destructive command.\r\nDo you want to proceed? (y/n):", timeout=2)
     context.cli.sendline(confirmation)
 
 
 @then('we answer the destructive warning with invalid "{confirmation}" and see text "{text}"')
-def step_confirm_destructive_command(context, confirmation, text):
+def step_confirm_destructive_command(context, confirmation, text):  # noqa
     """Confirm destructive command."""
     wrappers.expect_exact(context, "You're about to run a destructive command.\r\nDo you want to proceed? (y/n):", timeout=2)
     context.cli.sendline(confirmation)

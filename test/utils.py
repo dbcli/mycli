@@ -28,7 +28,7 @@ def db_connection(dbname=None):
 try:
     db_connection()
     CAN_CONNECT_TO_DB = True
-except:
+except Exception:
     CAN_CONNECT_TO_DB = False
 
 dbtest = pytest.mark.skipif(not CAN_CONNECT_TO_DB, reason="Need a mysql instance at localhost accessible by user 'root'")
@@ -39,7 +39,7 @@ def create_db(dbname):
         try:
             cur.execute("""DROP DATABASE IF EXISTS mycli_test_db""")
             cur.execute("""CREATE DATABASE mycli_test_db""")
-        except:
+        except Exception:
             pass
 
 

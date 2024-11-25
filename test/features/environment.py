@@ -34,8 +34,8 @@ def before_all(context):
     os.environ["PROMPT_TOOLKIT_NO_CPR"] = "1"
     os.environ["MYCLI_HISTFILE"] = os.devnull
 
-    test_dir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
-    login_path_file = os.path.join(test_dir, "mylogin.cnf")
+    # test_dir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+    # login_path_file = os.path.join(test_dir, "mylogin.cnf")
     #    os.environ['MYSQL_TEST_LOGIN_FILE'] = login_path_file
 
     context.package_root = os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))

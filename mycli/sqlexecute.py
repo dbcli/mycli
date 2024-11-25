@@ -8,7 +8,7 @@ from pymysql.constants import FIELD_TYPE
 from pymysql.converters import convert_datetime, convert_timedelta, convert_date, conversions, decoders
 
 try:
-    import paramiko
+    import paramiko  # noqa: F401
     import sshtunnel
 except ImportError:
     pass

@@ -59,5 +59,5 @@ def mycli_line_magic(line):
         return
 
     if q.successful:
-        ipython = get_ipython()
+        ipython = get_ipython()  # noqa: F821
         return ipython.run_cell_magic("sql", line, q.query)

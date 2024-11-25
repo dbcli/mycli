@@ -8,5 +8,5 @@ def export(defn):
     return defn
 
 
-from . import dbcommands
-from . import iocommands
+from . import dbcommands  # noqa: E402 F401
+from . import iocommands  # noqa: E402 F401
