@@ -25,8 +25,14 @@ dependencies = [
 ]
 
 [build-system]
-requires = ["setuptools>=64.0", "setuptools-scm>=8"]
+requires = [
+    "setuptools>=64.0",
+    "setuptools-scm>=8;python_version>='3.8'",
+    "setuptools-scm<8;python_version<'3.8'",
+]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
 
 [project.optional-dependencies]
 ssh = ["paramiko", "sshtunnel"]
