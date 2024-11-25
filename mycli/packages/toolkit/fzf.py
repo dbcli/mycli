@@ -29,7 +29,7 @@ def search_history(event: KeyPressEvent):
         formatted_history_items = []
         original_history_items = []
         for item, timestamp in history_items_with_timestamp:
-            formatted_item = item.replace('\n', ' ')
+            formatted_item = item.replace("\n", " ")
             timestamp = timestamp.split(".")[0] if "." in timestamp else timestamp
             formatted_history_items.append(f"{timestamp}  {formatted_item}")
             original_history_items.append(item)

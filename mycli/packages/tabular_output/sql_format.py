@@ -2,8 +2,12 @@
 
 from mycli.packages.parseutils import extract_tables
 
-supported_formats = ('sql-insert', 'sql-update', 'sql-update-1',
-                     'sql-update-2', )
+supported_formats = (
+    "sql-insert",
+    "sql-update",
+    "sql-update-1",
+    "sql-update-2",
+)
 
 preprocessors = ()
 
@@ -25,19 +29,18 @@ def adapter(data, headers, table_format=None, **kwargs):
             table_name = table[1]
     else:
         table_name = "`DUAL`"
-    if table_format == 'sql-insert':
+    if table_format == "sql-insert":
         h = "`, `".join(headers)
         yield "INSERT INTO {} (`{}`) VALUES".format(table_name, h)
         prefix = "  "
         for d in data:
-            values = ", ".join(escape_for_sql_statement(v)
-                               for i, v in enumerate(d))
+            values = ", ".join(escape_for_sql_statement(v) for i, v in enumerate(d))
             yield "{}({})".format(prefix, values)
             if prefix == "  ":
                 prefix = ", "
         yield ";"
-    if table_format.startswith('sql-update'):
-        s = table_format.split('-')
+    if table_format.startswith("sql-update"):
+        s = table_format.split("-")
         keys = 1
         if len(s) > 2:
             keys = int(s[-1])
@@ -49,8 +52,7 @@ def adapter(data, headers, table_format=None, **kwargs):
                 if prefix == "  ":
                     prefix = ", "
             f = "`{}` = {}"
-            where = (f.format(headers[i], escape_for_sql_statement(
-                d[i])) for i in range(keys))
+            where = (f.format(headers[i], escape_for_sql_statement(d[i])) for i in range(keys))
             yield "WHERE {};".format(" AND ".join(where))
 
 
@@ -58,5 +60,4 @@ def register_new_formatter(TabularOutputFormatter):
     global formatter
     formatter = TabularOutputFormatter
     for sql_format in supported_formats:
-        TabularOutputFormatter.register_new_formatter(
-            sql_format, adapter, preprocessors, {'table_format': sql_format})
+        TabularOutputFormatter.register_new_formatter(sql_format, adapter, preprocessors, {"table_format": sql_format})

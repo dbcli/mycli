@@ -1,8 +1,7 @@
 class FavoriteQueries(object):
+    section_name = "favorite_queries"
 
-    section_name = 'favorite_queries'
-
-    usage = '''
+    usage = """
 Favorite Queries are a way to save frequently used queries
 with a short name.
 Examples:
@@ -29,7 +28,7 @@ Examples:
     # Delete a favorite query.
     > \\fd simple
     simple: Deleted
-'''
+"""
 
     # Class-level variable, for convenience to use as a singleton.
     instance = None
@@ -48,7 +47,7 @@ Examples:
         return self.config.get(self.section_name, {}).get(name, None)
 
     def save(self, name, query):
-        self.config.encoding = 'utf-8'
+        self.config.encoding = "utf-8"
         if self.section_name not in self.config:
             self.config[self.section_name] = {}
         self.config[self.section_name][name] = query
@@ -58,6 +57,6 @@ Examples:
         try:
             del self.config[self.section_name][name]
         except KeyError:
-            return '%s: Not Found.' % name
+            return "%s: Not Found." % name
         self.config.write()
-        return '%s: Deleted' % name
+        return "%s: Deleted" % name
