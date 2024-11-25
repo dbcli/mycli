@@ -1,5 +1,4 @@
 import os
-import io
 
 
 def read_fixture_lines(filename):

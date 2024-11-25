@@ -11,7 +11,7 @@ try:
     import paramiko
     import sshtunnel
 except ImportError:
-    from mycli.packages.paramiko_stub import paramiko
+    pass
 
 _logger = logging.getLogger(__name__)
 

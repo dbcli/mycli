@@ -1,9 +1,7 @@
 import io
 import os
-import shlex
 
 from behave import when, then
-import pexpect
 
 import wrappers
 from test.features.steps.utils import parse_cli_args_to_dict

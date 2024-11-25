@@ -86,7 +86,7 @@ def parse_pygments_style(token_name, style_object, style_dict):
     try:
         other_token_type = string_to_tokentype(style_dict[token_name])
         return token_type, style_object.styles[other_token_type]
-    except AttributeError as err:
+    except AttributeError:
         return token_type, style_dict[token_name]
 
 

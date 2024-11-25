@@ -13,7 +13,6 @@ from textwrap import dedent
 from collections import namedtuple
 
 from tempfile import NamedTemporaryFile
-from textwrap import dedent
 
 
 test_dir = os.path.abspath(os.path.dirname(__file__))

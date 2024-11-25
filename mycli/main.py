@@ -8,7 +8,6 @@ import logging
 import threading
 import re
 import stat
-import fileinput
 from collections import namedtuple
 
 try:
@@ -167,7 +166,7 @@ class MyCli(object):
         if self.logfile is None and "audit_log" in c["main"]:
             try:
                 self.logfile = open(os.path.expanduser(c["main"]["audit_log"]), "a")
-            except (IOError, OSError) as e:
+            except (IOError, OSError):
                 self.echo("Error: Unable to open the audit log file. Your queries will not be logged.", err=True, fg="red")
                 self.logfile = False
 
@@ -523,7 +522,7 @@ class MyCli(object):
                 # Bad ports give particularly daft error messages
                 try:
                     port = int(port)
-                except ValueError as e:
+                except ValueError:
                     self.echo("Error: Invalid port number: '{0}'.".format(port), err=True, fg="red")
                     exit(1)
 
@@ -594,7 +593,7 @@ class MyCli(object):
     def handle_prettify_binding(self, text):
         try:
             statements = sqlglot.parse(text, read="mysql")
-        except Exception as e:
+        except Exception:
             statements = []
         if len(statements) == 1 and statements[0]:
             pretty_text = statements[0].sql(pretty=True, pad=4, dialect="mysql")
@@ -608,7 +607,7 @@ class MyCli(object):
     def handle_unprettify_binding(self, text):
         try:
             statements = sqlglot.parse(text, read="mysql")
-        except Exception as e:
+        except Exception:
             statements = []
         if len(statements) == 1 and statements[0]:
             unpretty_text = statements[0].sql(pretty=False, dialect="mysql")
@@ -1044,7 +1043,7 @@ class MyCli(object):
 
         output_kwargs = {"dialect": "unix", "disable_numparse": True, "preserve_whitespace": True, "style": self.output_style}
 
-        if not self.formatter.format_name in sql_format.supported_formats:
+        if self.formatter.format_name not in sql_format.supported_formats:
             output_kwargs["preprocessors"] = (preprocessors.align_decimals,)
 
         if title:  # Only print the title if it's not None.
@@ -1223,7 +1222,7 @@ def cli(
     if list_dsn:
         try:
             alias_dsn = mycli.config["alias_dsn"]
-        except KeyError as err:
+        except KeyError:
             click.secho("Invalid DSNs found in the config file. " 'Please check the "[alias_dsn]" section in myclirc.', err=True, fg="red")
             exit(1)
         except Exception as e:
