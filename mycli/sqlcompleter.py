@@ -1010,6 +1010,9 @@ class SQLCompleter(Completer):
 
         metadata = self.dbmetadata[kind]
         for relname, column in column_data:
+            if relname not in metadata[self.dbname]:
+                _logger.error("relname '%s' was not found in db '%s'", relname, self.dbname)
+                continue
             metadata[self.dbname][relname].append(column)
             self.all_completions.add(column)
 

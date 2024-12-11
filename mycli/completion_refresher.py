@@ -114,8 +114,9 @@ def refresh_schemata(completer, executor):
 
 @refresher("tables")
 def refresh_tables(completer, executor):
-    completer.extend_relations(executor.tables(), kind="tables")
-    completer.extend_columns(executor.table_columns(), kind="tables")
+    table_columns_dbresult = list(executor.table_columns())
+    completer.extend_relations(table_columns_dbresult, kind="tables")
+    completer.extend_columns(table_columns_dbresult, kind="tables")
 
 
 @refresher("users")
