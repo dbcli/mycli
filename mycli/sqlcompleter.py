@@ -1012,6 +1012,10 @@ class SQLCompleter(Completer):
         for relname, column in column_data:
             if relname not in metadata[self.dbname]:
                 _logger.error("relname '%s' was not found in db '%s'", relname, self.dbname)
+                # this could happen back when the completer populated via two calls:
+                # SHOW TABLES then SELECT table_name, column_name from information_schema.columns
+                # it's a slight race, but much more likely on Vitess picking random shards for each.
+                # see discussion in https://github.com/dbcli/mycli/pull/1182 (tl;dr - let's keep it)
                 continue
             metadata[self.dbname][relname].append(column)
             self.all_completions.add(column)
