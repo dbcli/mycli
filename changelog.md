@@ -1,5 +1,13 @@
-1.29.0 (2024/12/11)
-============
+1.29.1 (2024/12/11)
+===================
+
+Internal
+--------
+
+* Fix the GH actions to publish a new version.
+
+1.29.0 (NEVER RELEASED)
+=======================
 
 Bug Fixes
 ----------
