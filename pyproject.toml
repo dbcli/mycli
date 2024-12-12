@@ -53,7 +53,7 @@ mycli = "mycli.main:cli"
 mycli = ["myclirc", "AUTHORS", "SPONSORS"]
 
 [tool.setuptools.packages.find]
-exclude = ["screenshots", "tests*"]
+include = ["mycli*"]
 
 [tool.ruff]
 line-length = 140
