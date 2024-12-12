@@ -1,10 +1,11 @@
-1.29.0 (TBD)
+1.29.0 (2024/12/11)
 ============
 
 Bug Fixes
 ----------
 
 * fix SSL through SSH jump host by using a true python socket for a tunnel
+* Fix mycli crash when connecting to Vitess
 
 Internal
 ---------
