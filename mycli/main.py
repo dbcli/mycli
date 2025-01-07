@@ -524,14 +524,14 @@ class MyCli(object):
                     port = int(port)
                 except ValueError:
                     self.echo("Error: Invalid port number: '{0}'.".format(port), err=True, fg="red")
-                    exit(1)
+                    sys.exit(1)
 
                 _connect()
         except Exception as e:  # Connecting to a database could fail.
             self.logger.debug("Database connection failed: %r.", e)
             self.logger.error("traceback: %r", traceback.format_exc())
             self.echo(str(e), err=True, fg="red")
-            exit(1)
+            sys.exit(1)
 
     def get_password_from_file(self, password_file):
         password_from_file = None
@@ -1224,16 +1224,16 @@ def cli(
             alias_dsn = mycli.config["alias_dsn"]
         except KeyError:
             click.secho("Invalid DSNs found in the config file. " 'Please check the "[alias_dsn]" section in myclirc.', err=True, fg="red")
-            exit(1)
+            sys.exit(1)
         except Exception as e:
             click.secho(str(e), err=True, fg="red")
-            exit(1)
+            sys.exit(1)
         for alias, value in alias_dsn.items():
             if verbose:
                 click.secho("{} : {}".format(alias, value))
             else:
                 click.secho(alias)
-        sys.exit(0)
+        sys.exit(1)
     if list_ssh_config:
         ssh_config = read_ssh_config(ssh_config_path)
         for host in ssh_config.get_hostnames():
@@ -1242,7 +1242,7 @@ def cli(
                 click.secho("{} : {}".format(host, host_config.get("hostname")))
             else:
                 click.secho(host)
-        sys.exit(0)
+        sys.exit(1)
     # Choose which ever one has a valid value.
     database = dbname or database
 
@@ -1279,7 +1279,7 @@ def cli(
                 err=True,
                 fg="red",
             )
-            exit(1)
+            sys.exit(1)
         else:
             mycli.dsn_alias = dsn
 
@@ -1342,10 +1342,10 @@ def cli(
                 mycli.formatter.format_name = "tsv"
 
             mycli.run_query(execute)
-            exit(0)
+            sys.exit(1)
         except Exception as e:
             click.secho(str(e), err=True, fg="red")
-            exit(1)
+            sys.exit(1)
 
     if sys.stdin.isatty():
         mycli.run_cli()
@@ -1357,7 +1357,7 @@ def cli(
             click.secho("Failed! Ran out of memory.", err=True, fg="red")
             click.secho("You might want to try the official mysql client.", err=True, fg="red")
             click.secho("Sorry... :(", err=True, fg="red")
-            exit(1)
+            sys.exit(1)
 
         if mycli.destructive_warning and is_destructive(stdin_text):
             try:
@@ -1366,7 +1366,7 @@ def cli(
             except (IOError, OSError):
                 mycli.logger.warning("Unable to open TTY as stdin.")
             if not warn_confirmed:
-                exit(0)
+                sys.exit(1)
 
         try:
             new_line = True
@@ -1377,10 +1377,10 @@ def cli(
                 mycli.formatter.format_name = "tsv"
 
             mycli.run_query(stdin_text, new_line=new_line)
-            exit(0)
+            sys.exit(1)
         except Exception as e:
             click.secho(str(e), err=True, fg="red")
-            exit(1)
+            sys.exit(1)
 
 
 def need_completion_refresh(queries):
