@@ -1233,7 +1233,7 @@ def cli(
                 click.secho("{} : {}".format(alias, value))
             else:
                 click.secho(alias)
-        sys.exit(1)
+        sys.exit(0)
     if list_ssh_config:
         ssh_config = read_ssh_config(ssh_config_path)
         for host in ssh_config.get_hostnames():
@@ -1242,7 +1242,7 @@ def cli(
                 click.secho("{} : {}".format(host, host_config.get("hostname")))
             else:
                 click.secho(host)
-        sys.exit(1)
+        sys.exit(0)
     # Choose which ever one has a valid value.
     database = dbname or database
 
@@ -1342,7 +1342,7 @@ def cli(
                 mycli.formatter.format_name = "tsv"
 
             mycli.run_query(execute)
-            sys.exit(1)
+            sys.exit(0)
         except Exception as e:
             click.secho(str(e), err=True, fg="red")
             sys.exit(1)
@@ -1366,7 +1366,7 @@ def cli(
             except (IOError, OSError):
                 mycli.logger.warning("Unable to open TTY as stdin.")
             if not warn_confirmed:
-                sys.exit(1)
+                sys.exit(0)
 
         try:
             new_line = True
@@ -1377,7 +1377,7 @@ def cli(
                 mycli.formatter.format_name = "tsv"
 
             mycli.run_query(stdin_text, new_line=new_line)
-            sys.exit(1)
+            sys.exit(0)
         except Exception as e:
             click.secho(str(e), err=True, fg="red")
             sys.exit(1)
