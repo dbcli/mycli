@@ -233,7 +233,7 @@ class SQLExecute(object):
             ssl=ssl_context,
             program_name="mycli",
             defer_connect=defer_connect,
-            init_command=init_command,
+            init_command=init_cmd or None,
         )
 
         if init_command:
