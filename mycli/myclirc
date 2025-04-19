@@ -151,9 +151,22 @@ output.null = "#808080"
 # sql.whitespace = ''
 
 # Favorite queries.
+# You can add your favorite queries here. They will be available in the
+# REPL when you type `\f` or `\f <query_name>`.
 [favorite_queries]
+# example = "SELECT * FROM example_table WHERE id = 1"
+
+# Initial commands to execute when connecting to any database.
+[init-commands]
+# read_only = "SET SESSION TRANSACTION READ ONLY"
+
 
 # Use the -d option to reference a DSN.
 # Special characters in passwords and other strings can be escaped with URL encoding.
 [alias_dsn]
 # example_dsn = mysql://[user[:password]@][host][:port][/dbname]
+
+# Initial commands to execute when connecting to a DSN alias.
+[alias_dsn.init-commands]
+# Define one or more SQL statements per alias (semicolon-separated).
+# example_dsn = "SET sql_select_limit=1000; SET time_zone='+00:00'"

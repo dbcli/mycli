@@ -10,6 +10,8 @@ import re
 import stat
 from collections import namedtuple
 
+from pygments.lexer import combined
+
 try:
     from pwd import getpwuid
 except ImportError:
@@ -1262,9 +1264,13 @@ def cli(
 
     dsn_uri = None
 
-    # Treat the database argument as a DSN alias if we're missing
-    # other connection information.
-    if mycli.config["alias_dsn"] and database and "://" not in database and not any([user, password, host, port, login_path]):
+    # Treat the database argument as a DSN alias only if it matches a configured alias
+    if (
+        database
+        and "://" not in database
+        and not any([user, password, host, port, login_path])
+        and database in mycli.config.get("alias_dsn", {})
+    ):
         dsn, database = database, ""
 
     if database and "://" in database:
@@ -1306,6 +1312,29 @@ def cli(
         ssh_key_filename = ssh_key_filename if ssh_key_filename else ssh_config.get("identityfile", [None])[0]
 
     ssh_key_filename = ssh_key_filename and os.path.expanduser(ssh_key_filename)
+    # Merge init-commands: global, DSN-specific, then CLI
+    init_cmds = []
+    # 1) Global init-commands
+    global_section = mycli.config.get("init-commands", {})
+    for _, val in global_section.items():
+        if isinstance(val, (list, tuple)):
+            init_cmds.extend(val)
+        elif val:
+            init_cmds.append(val)
+    # 2) DSN-specific init-commands
+    if dsn:
+        alias_section = mycli.config.get("alias_dsn.init-commands", {})
+        if dsn in alias_section:
+            val = alias_section.get(dsn)
+            if isinstance(val, (list, tuple)):
+                init_cmds.extend(val)
+            elif val:
+                init_cmds.append(val)
+    # 3) CLI-provided init_command
+    if init_command:
+        init_cmds.append(init_command)
+
+    combined_init_cmd = "; ".join(cmd.strip() for cmd in init_cmds if cmd)
 
     mycli.connect(
         database=database,
@@ -1321,10 +1350,13 @@ def cli(
         ssh_port=ssh_port,
         ssh_password=ssh_password,
         ssh_key_filename=ssh_key_filename,
-        init_command=init_command,
+        init_command=combined_init_cmd,
         charset=charset,
         password_file=password_file,
     )
+
+    if combined_init_cmd:
+        click.echo("Executing init-command: %s" % combined_init_cmd, err=True)
 
     mycli.logger.debug("Launch Params: \n" "\tdatabase: %r" "\tuser: %r" "\thost: %r" "\tport: %r", database, user, host, port)
 

@@ -9,7 +9,7 @@ authors = [{ name = "Mycli Core Team", email = "mycli-dev@googlegroups.com" }]
 urls = { homepage = "http://mycli.net" }
 
 dependencies = [
-    "click >= 7.0",
+    "click >= 7.0,<8.1.8",
     "cryptography >= 1.0.0",
     "Pygments>=1.6",
     "prompt_toolkit>=3.0.6,<4.0.0",

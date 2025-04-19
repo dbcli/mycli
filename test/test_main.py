@@ -553,3 +553,14 @@ def test_init_command_multiple_arg(executor):
     assert result.exit_code == 0
     assert expected_sql_select_limit in result.output
     assert expected_max_join_size in result.output
+
+@dbtest
+def test_global_init_commands(executor):
+    """Tests that global init-commands from config are executed by default."""
+    # The global init-commands section in test/myclirc sets sql_select_limit=9999
+    sql = 'show variables like "sql_select_limit";'
+    runner = CliRunner()
+    result = runner.invoke(cli, args=CLI_ARGS, input=sql)
+    expected = "sql_select_limit\t9999\n"
+    assert result.exit_code == 0
+    assert expected in result.output
