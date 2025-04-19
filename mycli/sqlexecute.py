@@ -233,11 +233,8 @@ class SQLExecute(object):
             ssl=ssl_context,
             program_name="mycli",
             defer_connect=defer_connect,
-            init_command=init_cmd or None,
+            init_command=init_command or None,
         )
-
-        if init_command:
-            print("Running init commands:\n", init_command)
 
         if ssh_host:
             ##### paramiko.Channel is a bad socket implementation overall if you want SSL through an SSH tunnel

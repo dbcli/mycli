@@ -10,6 +10,8 @@ import re
 import stat
 from collections import namedtuple
 
+from pygments.lexer import combined
+
 try:
     from pwd import getpwuid
 except ImportError:
@@ -1352,6 +1354,9 @@ def cli(
         charset=charset,
         password_file=password_file,
     )
+
+    if combined_init_cmd:
+        click.echo("Executing init-command: %s" % combined_init_cmd, err=True)
 
     mycli.logger.debug("Launch Params: \n" "\tdatabase: %r" "\tuser: %r" "\thost: %r" "\tport: %r", database, user, host, port)
 
