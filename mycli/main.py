@@ -1262,9 +1262,9 @@ def cli(
 
     dsn_uri = None
 
-    # Treat the database argument as a DSN alias if we're missing
-    # other connection information.
-    if mycli.config["alias_dsn"] and database and "://" not in database and not any([user, password, host, port, login_path]):
+    # Treat the database argument as a DSN alias only if it matches a configured alias
+    if database and "://" not in database and not any([user, password, host, port, login_path]) \
+       and database in mycli.config.get("alias_dsn", {}):
         dsn, database = database, ""
 
     if database and "://" in database:
