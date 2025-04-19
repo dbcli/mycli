@@ -1263,8 +1263,12 @@ def cli(
     dsn_uri = None
 
     # Treat the database argument as a DSN alias only if it matches a configured alias
-    if database and "://" not in database and not any([user, password, host, port, login_path]) \
-       and database in mycli.config.get("alias_dsn", {}):
+    if (
+        database
+        and "://" not in database
+        and not any([user, password, host, port, login_path])
+        and database in mycli.config.get("alias_dsn", {})
+    ):
         dsn, database = database, ""
 
     if database and "://" in database:
@@ -1309,17 +1313,16 @@ def cli(
     # Merge init-commands: global, DSN-specific, then CLI
     init_cmds = []
     # 1) Global init-commands
-    global_section = mycli.config.get('init-commands', {})
-    if isinstance(global_section, dict):
-        for _, val in global_section.items():
-            if isinstance(val, (list, tuple)):
-                init_cmds.extend(val)
-            elif val:
-                init_cmds.append(val)
+    global_section = mycli.config.get("init-commands", {})
+    for _, val in global_section.items():
+        if isinstance(val, (list, tuple)):
+            init_cmds.extend(val)
+        elif val:
+            init_cmds.append(val)
     # 2) DSN-specific init-commands
     if dsn:
-        alias_section = mycli.config.get('alias_dsn.init-commands', {})
-        if isinstance(alias_section, dict) and dsn in alias_section:
+        alias_section = mycli.config.get("alias_dsn.init-commands", {})
+        if dsn in alias_section:
             val = alias_section.get(dsn)
             if isinstance(val, (list, tuple)):
                 init_cmds.extend(val)
@@ -1328,10 +1331,7 @@ def cli(
     # 3) CLI-provided init_command
     if init_command:
         init_cmds.append(init_command)
-    # Compose into single semicolon-separated string
-    if init_cmds:
-        init_command = '; '.join(cmd.strip() for cmd in init_cmds if cmd)
-    
+
     mycli.connect(
         database=database,
         user=user,
@@ -1350,6 +1350,14 @@ def cli(
         charset=charset,
         password_file=password_file,
     )
+
+    if init_cmds:
+        init_command = "; ".join(cmd.strip() for cmd in init_cmds if cmd)
+        # Provide user feedback on which init commands are executed
+        mycli.echo("Running init commands:", err=True)
+        for cmd in init_cmds:
+            # Display each SQL init command
+            mycli.echo(cmd.strip(), err=True)
 
     mycli.logger.debug("Launch Params: \n" "\tdatabase: %r" "\tuser: %r" "\thost: %r" "\tport: %r", database, user, host, port)
 
