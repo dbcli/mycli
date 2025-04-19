@@ -151,9 +151,18 @@ output.null = "#808080"
 # sql.whitespace = ''
 
 # Favorite queries.
+# You can add your favorite queries here. They will be available in the
+# REPL when you type `\f` or `\f <query_name>`.
 [favorite_queries]
 check = 'select "✔"'
 foo_args = 'SELECT $1, "$2", "$3"'
+# example = "SELECT * FROM example_table WHERE id = 1"
+
+# Initial commands to execute when connecting to any database.
+[init-commands]
+global_limit = set sql_select_limit=9999
+# read_only = "SET SESSION TRANSACTION READ ONLY"
+
 
 # Use the -d option to reference a DSN.
 # Special characters in passwords and other strings can be escaped with URL encoding.
@@ -162,7 +171,5 @@ foo_args = 'SELECT $1, "$2", "$3"'
 
 # Initial commands to execute when connecting to a DSN alias.
 [alias_dsn.init-commands]
-[init-commands]
-global_limit = set sql_select_limit=9999
 # Define one or more SQL statements per alias (semicolon-separated).
 # example_dsn = "SET sql_select_limit=1000; SET time_zone='+00:00'"

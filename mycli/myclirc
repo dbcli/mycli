@@ -158,8 +158,7 @@ output.null = "#808080"
 
 # Initial commands to execute when connecting to any database.
 [init-commands]
-# "SET SESSION TRANSACTION READ ONLY"
-# "SELECT version()"
+# read_only = "SET SESSION TRANSACTION READ ONLY"
 
 
 # Use the -d option to reference a DSN.

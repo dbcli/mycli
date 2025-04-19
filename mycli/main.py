@@ -1332,6 +1332,8 @@ def cli(
     if init_command:
         init_cmds.append(init_command)
 
+    combined_init_cmd = "; ".join(cmd.strip() for cmd in init_cmds if cmd)
+
     mycli.connect(
         database=database,
         user=user,
@@ -1346,18 +1348,10 @@ def cli(
         ssh_port=ssh_port,
         ssh_password=ssh_password,
         ssh_key_filename=ssh_key_filename,
-        init_command=init_command,
+        init_command=combined_init_cmd,
         charset=charset,
         password_file=password_file,
     )
-
-    if init_cmds:
-        init_command = "; ".join(cmd.strip() for cmd in init_cmds if cmd)
-        # Provide user feedback on which init commands are executed
-        mycli.echo("Running init commands:", err=True)
-        for cmd in init_cmds:
-            # Display each SQL init command
-            mycli.echo(cmd.strip(), err=True)
 
     mycli.logger.debug("Launch Params: \n" "\tdatabase: %r" "\tuser: %r" "\thost: %r" "\tport: %r", database, user, host, port)
 
