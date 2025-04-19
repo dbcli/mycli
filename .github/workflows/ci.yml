@@ -42,6 +42,7 @@ jobs:
         env:
           PYTEST_PASSWORD: root
           PYTEST_HOST: 127.0.0.1
+          TERM: xterm
         run: |
           uv run tox -e py${{ matrix.python-version }}
 
