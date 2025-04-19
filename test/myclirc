@@ -159,3 +159,10 @@ foo_args = 'SELECT $1, "$2", "$3"'
 # Special characters in passwords and other strings can be escaped with URL encoding.
 [alias_dsn]
 # example_dsn = mysql://[user[:password]@][host][:port][/dbname]
+
+# Initial commands to execute when connecting to a DSN alias.
+[alias_dsn.init-commands]
+[init-commands]
+global_limit = set sql_select_limit=9999
+# Define one or more SQL statements per alias (semicolon-separated).
+# example_dsn = "SET sql_select_limit=1000; SET time_zone='+00:00'"

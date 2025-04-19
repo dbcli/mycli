@@ -1306,7 +1306,32 @@ def cli(
         ssh_key_filename = ssh_key_filename if ssh_key_filename else ssh_config.get("identityfile", [None])[0]
 
     ssh_key_filename = ssh_key_filename and os.path.expanduser(ssh_key_filename)
-
+    # Merge init-commands: global, DSN-specific, then CLI
+    init_cmds = []
+    # 1) Global init-commands
+    global_section = mycli.config.get('init-commands', {})
+    if isinstance(global_section, dict):
+        for _, val in global_section.items():
+            if isinstance(val, (list, tuple)):
+                init_cmds.extend(val)
+            elif val:
+                init_cmds.append(val)
+    # 2) DSN-specific init-commands
+    if dsn:
+        alias_section = mycli.config.get('alias_dsn.init-commands', {})
+        if isinstance(alias_section, dict) and dsn in alias_section:
+            val = alias_section.get(dsn)
+            if isinstance(val, (list, tuple)):
+                init_cmds.extend(val)
+            elif val:
+                init_cmds.append(val)
+    # 3) CLI-provided init_command
+    if init_command:
+        init_cmds.append(init_command)
+    # Compose into single semicolon-separated string
+    if init_cmds:
+        init_command = '; '.join(cmd.strip() for cmd in init_cmds if cmd)
+    
     mycli.connect(
         database=database,
         user=user,
