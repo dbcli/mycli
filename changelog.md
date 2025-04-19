@@ -1,3 +1,13 @@
+Upcoming Release (TBD)
+======================
+
+Features
+--------
+
+* DSN specific init-command in myclirc. Fixes (#1195)
+
+
+
 1.29.2 (2024/12/11)
 ===================
 
