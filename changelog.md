@@ -1,11 +1,11 @@
-Upcoming Release (TBD)
-======================
+1.30.0 (2025/04/19)
+===================
 
 Features
 --------
 
 * DSN specific init-command in myclirc. Fixes (#1195)
-
+* Add `\\g` to force the horizontal output.
 
 
 1.29.2 (2024/12/11)
