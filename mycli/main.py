@@ -676,6 +676,7 @@ class MyCli(object):
                     return
 
                 special.set_expanded_output(False)
+                special.set_forced_horizontal_output(False)
 
                 try:
                     text = self.handle_editor_command(text)
@@ -743,6 +744,9 @@ class MyCli(object):
                     if self.auto_vertical_output:
                         max_width = self.prompt_app.output.get_size().columns
                     else:
+                        max_width = None
+
+                    if special.forced_horizontal():
                         max_width = None
 
                     formatted = self.format_output(title, cur, headers, special.is_expanded_output(), max_width)

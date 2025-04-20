@@ -20,6 +20,7 @@ from mycli.packages.prompt_utils import confirm_destructive_query
 
 TIMING_ENABLED = False
 use_expanded_output = False
+force_horizontal_output = False
 PAGER_ENABLED = True
 tee_file = None
 once_file = None
@@ -97,6 +98,14 @@ def set_expanded_output(val):
 def is_expanded_output():
     return use_expanded_output
 
+@export
+def set_forced_horizontal_output(val):
+    global force_horizontal_output
+    force_horizontal_output = val
+
+@export
+def forced_horizontal():
+    return force_horizontal_output
 
 _logger = logging.getLogger(__name__)
 
