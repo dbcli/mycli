@@ -172,11 +172,13 @@ def test_favorite_query_expanded_output(executor):
     results = run(executor, "\\fd test-ae")
     assert_result_equal(results, status="test-ae: Deleted")
 
+
 @dbtest
 def test_collapsed_output_special_command(executor):
     set_expanded_output(True)
-    results = run(executor, 'select 1\\g')
+    run(executor, "select 1\\g")
     assert is_expanded_output() is False
+
 
 @dbtest
 def test_special_command(executor):
