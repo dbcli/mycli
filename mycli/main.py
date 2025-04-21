@@ -85,6 +85,9 @@ Query = namedtuple("Query", ["query", "successful", "mutating"])
 
 SUPPORT_INFO = "Home: http://mycli.net\n" "Bug tracker: https://github.com/dbcli/mycli/issues"
 
+class PasswordFileError(Exception):
+    """Base exception for errors related to reading password files."""
+    pass
 
 class MyCli(object):
     default_prompt = "\\t \\u@\\h:\\d> "
@@ -536,14 +539,21 @@ class MyCli(object):
             sys.exit(1)
 
     def get_password_from_file(self, password_file):
-        password_from_file = None
         if password_file:
-            if (os.path.isfile(password_file) or stat.S_ISFIFO(os.stat(password_file).st_mode)) and os.access(password_file, os.R_OK):
+            try:
                 with open(password_file) as fp:
-                    password_from_file = fp.readline()
-                    password_from_file = password_from_file.rstrip().lstrip()
-
-        return password_from_file
+                    password = fp.readline().strip()
+                    if not password:
+                        raise PasswordFileError(f"Password file '{password_file}' is empty or contains only whitespace")
+                    return password
+            except FileNotFoundError:
+                raise PasswordFileError(f"Password file '{password_file}' not found") from None
+            except PermissionError:
+                raise PasswordFileError(f"Permission denied reading password file '{password_file}'") from None
+            except IsADirectoryError:
+                raise PasswordFileError(f"Path '{password_file}' is a directory, not a file") from None
+            except OSError as e:
+                raise PasswordFileError(f"Error reading password file '{password_file}': {str(e)}") from None
 
     def handle_editor_command(self, text):
         r"""Editor command is any query that is prefixed or suffixed by a '\e'.

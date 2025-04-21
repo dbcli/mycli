@@ -1,3 +1,11 @@
+Upcoming Release (TBD)
+======================
+
+Features
+--------
+* Added explicit error handle to get_password_from_file with EAFP.
+
+
 1.30.0 (2025/04/19)
 ===================
 
