@@ -543,8 +543,6 @@ class MyCli(object):
             try:
                 with open(password_file) as fp:
                     password = fp.readline().strip()
-                    if not password:
-                        raise PasswordFileError(f"Password file '{password_file}' is empty or contains only whitespace")
                     return password
             except FileNotFoundError:
                 raise PasswordFileError(f"Password file '{password_file}' not found") from None
@@ -552,7 +550,7 @@ class MyCli(object):
                 raise PasswordFileError(f"Permission denied reading password file '{password_file}'") from None
             except IsADirectoryError:
                 raise PasswordFileError(f"Path '{password_file}' is a directory, not a file") from None
-            except OSError as e:
+            except Exception as e:
                 raise PasswordFileError(f"Error reading password file '{password_file}': {str(e)}") from None
 
     def handle_editor_command(self, text):
