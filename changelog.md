@@ -5,6 +5,11 @@ Features
 --------
 * Added explicit error handle to get_password_from_file with EAFP.
 
+Internal
+--------
+
+* Update sqlparse to <=0.6.0
+
 
 1.30.0 (2025/04/19)
 ===================
