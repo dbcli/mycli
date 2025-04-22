@@ -45,6 +45,3 @@ jobs:
           TERM: xterm
         run: |
           uv run tox -e py${{ matrix.python-version }}
-
-      - name: Run Style Checks
-        run: uv run tox -e style

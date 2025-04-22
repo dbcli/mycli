@@ -98,14 +98,17 @@ def set_expanded_output(val):
 def is_expanded_output():
     return use_expanded_output
 
+
 @export
 def set_forced_horizontal_output(val):
     global force_horizontal_output
     force_horizontal_output = val
 
+
 @export
 def forced_horizontal():
     return force_horizontal_output
+
 
 _logger = logging.getLogger(__name__)
 

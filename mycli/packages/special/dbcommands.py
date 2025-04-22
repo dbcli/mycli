@@ -116,7 +116,7 @@ def status(cur, **_):
 
     output.append(("Connection:", host_info))
 
-    query = "SELECT @@character_set_server, @@character_set_database, " "@@character_set_client, @@character_set_connection LIMIT 1;"
+    query = "SELECT @@character_set_server, @@character_set_database, @@character_set_client, @@character_set_connection LIMIT 1;"
     log.debug(query)
     cur.execute(query)
     charset = cur.fetchone()

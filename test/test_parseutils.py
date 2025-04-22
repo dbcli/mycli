@@ -122,24 +122,24 @@ def test_query_starts_with_comment():
 
 
 def test_queries_start_with():
-    sql = "# comment\n" "show databases;" "use foo;"
+    sql = "# comment\nshow databases;use foo;"
     assert queries_start_with(sql, ("show", "select")) is True
     assert queries_start_with(sql, ("use", "drop")) is True
     assert queries_start_with(sql, ("delete", "update")) is False
 
 
 def test_is_destructive():
-    sql = "use test;\n" "show databases;\n" "drop database foo;"
+    sql = "use test;\nshow databases;\ndrop database foo;"
     assert is_destructive(sql) is True
 
 
 def test_is_destructive_update_with_where_clause():
-    sql = "use test;\n" "show databases;\n" "UPDATE test SET x = 1 WHERE id = 1;"
+    sql = "use test;\nshow databases;\nUPDATE test SET x = 1 WHERE id = 1;"
     assert is_destructive(sql) is False
 
 
 def test_is_destructive_update_without_where_clause():
-    sql = "use test;\n" "show databases;\n" "UPDATE test SET x = 1;"
+    sql = "use test;\nshow databases;\nUPDATE test SET x = 1;"
     assert is_destructive(sql) is True
 
 
@@ -167,7 +167,7 @@ def test_query_has_where_clause(sql, has_where_clause):
         ("drop database foo; create database bar", "foo", True),
         ("select bar from foo; drop database bazz", "foo", False),
         ("select bar from foo; drop database bazz", "bazz", True),
-        ("-- dropping database \n " "drop -- really dropping \n " "schema abc -- now it is dropped", "abc", True),
+        ("-- dropping database \n drop -- really dropping \n schema abc -- now it is dropped", "abc", True),
     ],
 )
 def test_is_dropping_database(sql, dbname, is_dropping):

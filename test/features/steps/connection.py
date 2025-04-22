@@ -32,7 +32,7 @@ def status_contains(context, expression):
 
 @when("we create my.cnf file")
 def step_create_my_cnf_file(context):
-    my_cnf = "[client]\n" f"host = {HOST}\n" f"port = {PORT}\n" f"user = {USER}\n" f"password = {PASSWORD}\n"
+    my_cnf = f"[client]\nhost = {HOST}\nport = {PORT}\nuser = {USER}\npassword = {PASSWORD}\n"
     with open(MY_CNF_PATH, "w") as f:
         f.write(my_cnf)
 
@@ -40,7 +40,7 @@ def step_create_my_cnf_file(context):
 @when("we create mylogin.cnf file")
 def step_create_mylogin_cnf_file(context):
     os.environ.pop("MYSQL_TEST_LOGIN_FILE", None)
-    mylogin_cnf = f"[{TEST_LOGIN_PATH}]\n" f"host = {HOST}\n" f"port = {PORT}\n" f"user = {USER}\n" f"password = {PASSWORD}\n"
+    mylogin_cnf = f"[{TEST_LOGIN_PATH}]\nhost = {HOST}\nport = {PORT}\nuser = {USER}\npassword = {PASSWORD}\n"
     with open(MYLOGIN_CNF_PATH, "wb") as f:
         input_file = io.StringIO(mylogin_cnf)
         f.write(encrypt_mylogin_cnf(input_file).read())

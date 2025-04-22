@@ -57,3 +57,29 @@ include = ["mycli*"]
 
 [tool.ruff]
 line-length = 140
+
+[tool.ruff.lint]
+select = [
+    'A',
+    'I',
+    'E',
+    'W',
+    'F',
+    'C4',
+    'PIE',
+    'TID',
+]
+ignore = [
+    'E401',   # Multiple imports on one line
+    'E402',   # Module level import not at top of file
+    'E501',   # Line too long
+    'F541',   # f-string without placeholders
+    'PIE808', # range() starting with 0
+]
+
+[tool.ruff.format]
+quote-style = 'preserve'
+exclude = [
+    'build',
+    'mycli_dev',
+]
