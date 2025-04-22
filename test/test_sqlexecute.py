@@ -44,7 +44,7 @@ def test_bools(executor):
 @dbtest
 def test_binary(executor):
     run(executor, """create table bt(geom linestring NOT NULL)""")
-    run(executor, "INSERT INTO bt VALUES " "(ST_GeomFromText('LINESTRING(116.37604 39.73979,116.375 39.73965)'));")
+    run(executor, "INSERT INTO bt VALUES (ST_GeomFromText('LINESTRING(116.37604 39.73979,116.375 39.73965)'));")
     results = run(executor, """select * from bt""")
 
     geom = (
@@ -139,7 +139,7 @@ def test_favorite_query_multiple_statement(executor):
     run(executor, "insert into test values('abc')")
     run(executor, "insert into test values('def')")
 
-    results = run(executor, "\\fs test-ad select * from test where a like 'a%'; " "select * from test where a like 'd%'")
+    results = run(executor, "\\fs test-ad select * from test where a like 'a%'; select * from test where a like 'd%'")
     assert_result_equal(results, status="Saved.")
 
     results = run(executor, "\\f test-ad")

@@ -65,7 +65,7 @@ def before_all(context):
     _, my_cnf = mkstemp()
     with open(my_cnf, "w") as f:
         f.write(
-            "[client]\n" "pager={0} {1} {2}\n".format(
+            "[client]\npager={0} {1} {2}\n".format(
                 sys.executable, os.path.join(context.package_root, "test/features/wrappager.py"), context.conf["pager_boundary"]
             )
         )

@@ -93,7 +93,7 @@ def test_batch_mode(executor):
     run(executor, """create table test(a text)""")
     run(executor, """insert into test values('abc'), ('def'), ('ghi')""")
 
-    sql = "select count(*) from test;\n" "select * from test limit 1;"
+    sql = "select count(*) from test;\nselect * from test limit 1;"
 
     runner = CliRunner()
     result = runner.invoke(cli, args=CLI_ARGS, input=sql)
@@ -107,7 +107,7 @@ def test_batch_mode_table(executor):
     run(executor, """create table test(a text)""")
     run(executor, """insert into test values('abc'), ('def'), ('ghi')""")
 
-    sql = "select count(*) from test;\n" "select * from test limit 1;"
+    sql = "select count(*) from test;\nselect * from test limit 1;"
 
     runner = CliRunner()
     result = runner.invoke(cli, args=CLI_ARGS + ["-t"], input=sql)
@@ -543,7 +543,7 @@ def test_init_command_arg(executor):
 @dbtest
 def test_init_command_multiple_arg(executor):
     init_command = "set sql_select_limit=2000; set max_join_size=20000"
-    sql = 'show variables like "sql_select_limit";\n' 'show variables like "max_join_size"'
+    sql = 'show variables like "sql_select_limit";\nshow variables like "max_join_size"'
     runner = CliRunner()
     result = runner.invoke(cli, args=CLI_ARGS + ["--init-command", init_command], input=sql)
 
@@ -553,6 +553,7 @@ def test_init_command_multiple_arg(executor):
     assert result.exit_code == 0
     assert expected_sql_select_limit in result.output
     assert expected_max_join_size in result.output
+
 
 @dbtest
 def test_global_init_commands(executor):

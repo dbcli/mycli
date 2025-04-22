@@ -83,11 +83,14 @@ except ImportError:
 # Query tuples are used for maintaining history
 Query = namedtuple("Query", ["query", "successful", "mutating"])
 
-SUPPORT_INFO = "Home: http://mycli.net\n" "Bug tracker: https://github.com/dbcli/mycli/issues"
+SUPPORT_INFO = "Home: http://mycli.net\nBug tracker: https://github.com/dbcli/mycli/issues"
+
 
 class PasswordFileError(Exception):
     """Base exception for errors related to reading password files."""
+
     pass
+
 
 class MyCli(object):
     default_prompt = "\\t \\u@\\h:\\d> "
@@ -256,7 +259,7 @@ class MyCli(object):
             arg = re.sub(r"``", r"`", arg)
         self.sqlexecute.change_db(arg)
 
-        yield (None, None, None, 'You are now connected to database "%s" as ' 'user "%s"' % (self.sqlexecute.dbname, self.sqlexecute.user))
+        yield (None, None, None, 'You are now connected to database "%s" as user "%s"' % (self.sqlexecute.dbname, self.sqlexecute.user))
 
     def execute_from_file(self, arg, **_):
         if not arg:
@@ -308,7 +311,7 @@ class MyCli(object):
             self.echo('Error: Unable to open the log file "{}".'.format(log_file), err=True, fg="red")
             return
 
-        formatter = logging.Formatter("%(asctime)s (%(process)d/%(threadName)s) " "%(name)s %(levelname)s - %(message)s")
+        formatter = logging.Formatter("%(asctime)s (%(process)d/%(threadName)s) %(name)s %(levelname)s - %(message)s")
 
         handler.setFormatter(formatter)
 
@@ -643,7 +646,7 @@ class MyCli(object):
         else:
             history = None
             self.echo(
-                'Error: Unable to open the history file "{}". ' "Your query history will not be saved.".format(history_file),
+                'Error: Unable to open the history file "{}". Your query history will not be saved.'.format(history_file),
                 err=True,
                 fg="red",
             )
@@ -1113,7 +1116,7 @@ class MyCli(object):
 
 @click.command()
 @click.option("-h", "--host", envvar="MYSQL_HOST", help="Host address of the database.")
-@click.option("-P", "--port", envvar="MYSQL_TCP_PORT", type=int, help="Port number to use for connection. Honors " "$MYSQL_TCP_PORT.")
+@click.option("-P", "--port", envvar="MYSQL_TCP_PORT", type=int, help="Port number to use for connection. Honors $MYSQL_TCP_PORT.")
 @click.option("-u", "--user", help="User name to connect to the database.")
 @click.option("-S", "--socket", envvar="MYSQL_UNIX_PORT", help="The socket file to use for connection.")
 @click.option("-p", "--password", "password", envvar="MYSQL_PWD", type=str, help="Password to connect to the database.")
@@ -1139,7 +1142,7 @@ class MyCli(object):
 @click.option(
     "--ssl-verify-server-cert",
     is_flag=True,
-    help=('Verify server\'s "Common Name" in its cert against ' "hostname used when connecting. This option is disabled " "by default."),
+    help=('Verify server\'s "Common Name" in its cert against hostname used when connecting. This option is disabled by default.'),
 )
 # as of 2016-02-15 revocation list is not supported by underling PyMySQL
 # library (--ssl-crl and --ssl-crlpath options in vanilla mysql client)
@@ -1237,7 +1240,7 @@ def cli(
         try:
             alias_dsn = mycli.config["alias_dsn"]
         except KeyError:
-            click.secho("Invalid DSNs found in the config file. " 'Please check the "[alias_dsn]" section in myclirc.', err=True, fg="red")
+            click.secho("Invalid DSNs found in the config file. Please check the \"[alias_dsn]\" section in myclirc.", err=True, fg="red")
             sys.exit(1)
         except Exception as e:
             click.secho(str(e), err=True, fg="red")
@@ -1293,7 +1296,7 @@ def cli(
             dsn_uri = mycli.config["alias_dsn"][dsn]
         except KeyError:
             click.secho(
-                "Could not find the specified DSN in the config file. " 'Please check the "[alias_dsn]" section in your ' "myclirc.",
+                "Could not find the specified DSN in the config file. Please check the \"[alias_dsn]\" section in your myclirc.",
                 err=True,
                 fg="red",
             )
@@ -1370,7 +1373,7 @@ def cli(
     if combined_init_cmd:
         click.echo("Executing init-command: %s" % combined_init_cmd, err=True)
 
-    mycli.logger.debug("Launch Params: \n" "\tdatabase: %r" "\tuser: %r" "\thost: %r" "\tport: %r", database, user, host, port)
+    mycli.logger.debug("Launch Params: \n\tdatabase: %r\tuser: %r\thost: %r\tport: %r", database, user, host, port)
 
     #  --execute argument
     if execute:
