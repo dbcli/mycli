@@ -4,11 +4,11 @@ import platform
 
 if os.name == "posix":
     if platform.system() == "Darwin":
-        DEFAULT_SOCKET_DIRS = ("/tmp",)
+        DEFAULT_SOCKET_DIRS = ["/tmp"]
     else:
-        DEFAULT_SOCKET_DIRS = ("/var/run", "/var/lib")
+        DEFAULT_SOCKET_DIRS = ["/var/run", "/var/lib"]
 else:
-    DEFAULT_SOCKET_DIRS = ()
+    DEFAULT_SOCKET_DIRS = []
 
 
 def list_path(root_dir):

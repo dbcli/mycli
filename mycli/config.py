@@ -1,4 +1,5 @@
 from copy import copy
+from importlib import resources
 from io import BytesIO, TextIOWrapper
 import logging
 import os
@@ -9,12 +10,6 @@ from typing import Union, IO
 
 from configobj import ConfigObj, ConfigObjError
 import pyaes
-
-try:
-    import importlib.resources as resources
-except ImportError:
-    # Python < 3.7
-    import importlib_resources as resources
 
 try:
     basestring
@@ -78,12 +73,12 @@ def get_included_configs(config_file: Union[str, TextIOWrapper]) -> list:
     try:
         with open(config_file) as f:
             include_directives = filter(lambda s: s.startswith("!includedir"), f)
-            dirs = map(lambda s: s.strip().split()[-1], include_directives)
-            dirs = filter(os.path.isdir, dirs)
-            for dir in dirs:
-                for filename in os.listdir(dir):
+            dirs_split = map(lambda s: s.strip().split()[-1], include_directives)
+            dirs = filter(os.path.isdir, dirs_split)
+            for dir_ in dirs:
+                for filename in os.listdir(dir_):
                     if filename.endswith(".cnf"):
-                        included_configs.append(os.path.join(dir, filename))
+                        included_configs.append(os.path.join(dir_, filename))
     except (PermissionError, UnicodeDecodeError):
         pass
     return included_configs

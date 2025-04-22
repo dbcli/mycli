@@ -10,6 +10,7 @@ Internal
 --------
 
 * Update sqlparse to <=0.6.0
+* Typing/lint fixes.
 
 
 1.30.0 (2025/04/19)
