@@ -19,7 +19,7 @@ You'll always get credit for your work.
     $ git remote add upstream git@github.com:dbcli/mycli.git
     ```
 
-4. Set up a [uv](https://docs.astral.sh/uv/getting-started/installation/)
+4. Set up [uv](https://docs.astral.sh/uv/getting-started/installation/)
    for development:
 
     ```bash
@@ -32,13 +32,7 @@ You'll always get credit for your work.
     need to activate the virtual environment:
 
     ```bash
-    $ source ./bin/activate
-    ```
-
-    When you're done working, you can deactivate the virtual environment:
-
-    ```bash
-    $ deactivate
+    $ source .venv/bin/activate
     ```
 
 5. Install the dependencies and development tools:
