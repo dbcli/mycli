@@ -34,7 +34,7 @@ def search_history(event: KeyPressEvent):
             formatted_history_items.append(f"{timestamp}  {formatted_item}")
             original_history_items.append(item)
 
-        result = fzf.prompt(formatted_history_items, fzf_options="--tiebreak=index")
+        result = fzf.prompt(formatted_history_items, fzf_options="--scheme=history --tiebreak=index")
 
         if result:
             selected_index = formatted_history_items.index(result[0])

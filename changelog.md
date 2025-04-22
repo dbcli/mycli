@@ -4,6 +4,7 @@ Upcoming Release (TBD)
 Features
 --------
 * Added explicit error handle to get_password_from_file with EAFP.
+* Use the "history" scheme for fzf searches.
 
 Internal
 --------
