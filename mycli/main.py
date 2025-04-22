@@ -104,10 +104,7 @@ class MyCli(object):
     ]
 
     # check XDG_CONFIG_HOME exists and not an empty string
-    if os.environ.get("XDG_CONFIG_HOME"):
-        xdg_config_home = os.environ.get("XDG_CONFIG_HOME")
-    else:
-        xdg_config_home = "~/.config"
+    xdg_config_home = os.environ.get("XDG_CONFIG_HOME", "~/.config")
     system_config_files = ["/etc/myclirc", os.path.join(os.path.expanduser(xdg_config_home), "mycli", "myclirc")]
 
     pwd_config_file = os.path.join(os.getcwd(), ".myclirc")
