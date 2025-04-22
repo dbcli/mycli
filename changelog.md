@@ -1,9 +1,9 @@
-Upcoming (TBD)
-==============
+Upcoming Release (TBD)
+======================
 
 Features
 --------
-
+* Added explicit error handle to get_password_from_file with EAFP.
 
 Internal
 --------
