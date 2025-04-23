@@ -19,13 +19,12 @@ You'll always get credit for your work.
     $ git remote add upstream git@github.com:dbcli/mycli.git
     ```
 
-4. Set up a [virtual environment](http://docs.python-guide.org/en/latest/dev/virtualenvs)
+4. Set up [uv](https://docs.astral.sh/uv/getting-started/installation/)
    for development:
 
     ```bash
     $ cd mycli
-    $ pip install virtualenv
-    $ virtualenv mycli_dev
+    $ uv venv
     ```
 
     We've just created a virtual environment that we'll use to install all the dependencies
@@ -33,20 +32,14 @@ You'll always get credit for your work.
     need to activate the virtual environment:
 
     ```bash
-    $ source mycli_dev/bin/activate
-    ```
-
-    When you're done working, you can deactivate the virtual environment:
-
-    ```bash
-    $ deactivate
+    $ source .venv/bin/activate
     ```
 
 5. Install the dependencies and development tools:
 
     ```bash
-    $ pip install -r requirements-dev.txt
-    $ pip install --editable .
+    $ uv pip install -r requirements-dev.txt
+    $ uv pip install --editable .
     ```
 
 6. Create a branch for your bugfix or feature based off the `main` branch:
@@ -77,16 +70,8 @@ While you work on mycli, it's important to run the tests to make sure your code
 hasn't broken any existing functionality. To run the tests, just type in:
 
 ```bash
-$ ./setup.py test
-```
-
-Mycli supports Python 2.7 and 3.4+. You can test against multiple versions of
-Python by running tox:
-
-```bash
 $ tox
 ```
-
 
 ### Test Database Credentials
 
@@ -126,42 +111,6 @@ $ readlink -f $(which ex)
 ```
 
 
-## Coding Style
-
-Mycli requires code submissions to adhere to
-[PEP 8](https://www.python.org/dev/peps/pep-0008/).
-It's easy to check the style of your code, just run:
-
-```bash
-$ ./setup.py lint
-```
-
-If you see any PEP 8 style issues, you can automatically fix them by running:
-
-```bash
-$ ./setup.py lint --fix
-```
-
-Be sure to commit and push any PEP 8 fixes.
-
 ## Releasing a new version of mycli
 
-You have been made the maintainer of `mycli`? Congratulations! We have a release script to help you:
-
-```sh
-> python release.py --help
-Usage: release.py [options]
-
-Options:
-  -h, --help           show this help message and exit
-  -c, --confirm-steps  Confirm every step. If the step is not confirmed, it
-                       will be skipped.
-  -d, --dry-run        Print out, but not actually run any steps.
-```
-
-To release a new version of the package:
-
-* Create and merge a PR to bump the version in the changelog ([example PR](https://github.com/dbcli/mycli/pull/1043)).
-* Pull `main` and bump the version number inside `mycli/__init__.py`. Do not check in - the release script will do that.
-* Make sure you have the dev requirements installed: `pip install -r requirements-dev.txt -U --upgrade-strategy only-if-needed`.
-* Finally, run the release script: `python release.py`.
+Create a new [release](https://github.com/dbcli/mycli/releases) in Github. This will trigger a Github action which will run all the tests, build the wheel and upload it to PyPI.

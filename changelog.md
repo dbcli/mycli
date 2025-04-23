@@ -10,6 +10,7 @@ Features
 Internal
 --------
 
+* New Project Lead: [Roland Walker](https://github.com/rolandwalker)
 * Update sqlparse to <=0.6.0
 * Typing/lint fixes.
 

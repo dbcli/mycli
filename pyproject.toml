@@ -3,7 +3,7 @@ name = "mycli"
 dynamic = ["version"]
 description = "CLI for MySQL Database. With auto-completion and syntax highlighting."
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.9"
 license = { text = "BSD" }
 authors = [{ name = "Mycli Core Team", email = "mycli-dev@googlegroups.com" }]
 urls = { homepage = "http://mycli.net" }

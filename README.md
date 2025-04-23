@@ -147,13 +147,10 @@ get this running in a development setup.
 
 https://github.com/dbcli/mycli/blob/main/CONTRIBUTING.md
 
-Please feel free to reach out to me if you need help.
 
-My email: amjith.r@gmail.com
+## Additional Install Instructions:
 
-Twitter: [@amjithr](http://twitter.com/amjithr)
-
-## Detailed Install Instructions:
+These are some alternative ways to install mycli that are not managed by our team but provided by OS package maintainers. These packages could be slightly out of date and take time to release the latest version. 
 
 ### Arch, Manjaro
 
@@ -202,7 +199,7 @@ Thanks to [PyMysql](https://github.com/PyMySQL/PyMySQL) for a pure python adapte
 
 ### Compatibility
 
-Mycli is tested on macOS and Linux, and requires Python 3.7 or better.
+Mycli is tested on macOS and Linux, and requires Python 3.9 or better.
 
 **Mycli is not tested on Windows**, but the libraries used in this app are Windows-compatible.
 This means it should work without any modifications. If you're unable to run it
