@@ -195,14 +195,12 @@ class SQLExecute(object):
             init_command,
         )
         conv = conversions.copy()
-        conv.update(
-            {
-                FIELD_TYPE.TIMESTAMP: lambda obj: (convert_datetime(obj) or obj),
-                FIELD_TYPE.DATETIME: lambda obj: (convert_datetime(obj) or obj),
-                FIELD_TYPE.TIME: lambda obj: (convert_timedelta(obj) or obj),
-                FIELD_TYPE.DATE: lambda obj: (convert_date(obj) or obj),
-            }
-        )
+        conv.update({
+            FIELD_TYPE.TIMESTAMP: lambda obj: (convert_datetime(obj) or obj),
+            FIELD_TYPE.DATETIME: lambda obj: (convert_datetime(obj) or obj),
+            FIELD_TYPE.TIME: lambda obj: (convert_timedelta(obj) or obj),
+            FIELD_TYPE.DATE: lambda obj: (convert_date(obj) or obj),
+        })
 
         defer_connect = False
 
