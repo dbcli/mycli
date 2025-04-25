@@ -56,6 +56,7 @@ mycli = ["myclirc", "AUTHORS", "SPONSORS"]
 include = ["mycli*"]
 
 [tool.ruff]
+target-version = 'py39'
 line-length = 140
 
 [tool.ruff.lint]
@@ -72,12 +73,22 @@ select = [
 ignore = [
     'E401',   # Multiple imports on one line
     'E402',   # Module level import not at top of file
-    'E501',   # Line too long
-    'F541',   # f-string without placeholders
     'PIE808', # range() starting with 0
+    # https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
+    'E111',   # indentation-with-invalid-multiple
+    'E114',   # indentation-with-invalid-multiple-comment
+    'E117',   # over-indented
+    'W191',   # tab-indentation
+]
+
+[tool.ruff.lint.isort]
+force-sort-within-sections = true
+known-first-party = [
+    'mycli',
 ]
 
 [tool.ruff.format]
+preview = true
 quote-style = 'preserve'
 exclude = [
     'build',

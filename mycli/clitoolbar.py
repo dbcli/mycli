@@ -12,12 +12,10 @@ def create_toolbar_tokens_func(mycli, show_fish_help):
 
         if mycli.multi_line:
             delimiter = special.get_current_delimiter()
-            result.append(
-                (
-                    "class:bottom-toolbar",
-                    " ({} [{}] will end the line) ".format("Semi-colon" if delimiter == ";" else "Delimiter", delimiter),
-                )
-            )
+            result.append((
+                "class:bottom-toolbar",
+                " ({} [{}] will end the line) ".format("Semi-colon" if delimiter == ";" else "Delimiter", delimiter),
+            ))
 
         if mycli.multi_line:
             result.append(("class:bottom-toolbar.on", "[F3] Multiline: ON  "))
