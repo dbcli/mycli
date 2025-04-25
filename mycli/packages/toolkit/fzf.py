@@ -1,3 +1,4 @@
+import re
 from shutil import which
 
 from pyfzf import FzfPrompt
@@ -30,7 +31,7 @@ def search_history(event: KeyPressEvent):
         original_history_items = []
         seen = {}
         for item, timestamp in history_items_with_timestamp:
-            formatted_item = item.replace("\n", " ")
+            formatted_item = re.sub(r'\s+', ' ', item)
             timestamp = timestamp.split(".")[0] if "." in timestamp else timestamp
             if formatted_item in seen:
                 continue
@@ -38,7 +39,10 @@ def search_history(event: KeyPressEvent):
             formatted_history_items.append(f"{timestamp}  {formatted_item}")
             original_history_items.append(item)
 
-        result = fzf.prompt(formatted_history_items, fzf_options="--scheme=history --tiebreak=index")
+        result = fzf.prompt(
+            formatted_history_items,
+            fzf_options="--scheme=history --tiebreak=index --preview-window=down:wrap --preview=\"printf '%s' {}\"",
+        )
 
         if result:
             selected_index = formatted_history_items.index(result[0])

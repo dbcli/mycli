@@ -6,6 +6,7 @@ Features
 * Added explicit error handle to get_password_from_file with EAFP.
 * Use the "history" scheme for fzf searches.
 * Deduplicate history in fzf searches.
+* Add a preview window to fzf history searches.
 
 Internal
 --------
