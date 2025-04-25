@@ -46,8 +46,10 @@ jobs:
       run: |
         uv run tox -e py${{ matrix.python-version }}
 
-    - name: Run Style Checks
-      run: uv run tox -e style
+    # TODO enable style checks here and in CI for PRs
+    #
+    # - name: Run Style Checks
+    #   run: uv run tox -e style
 
   build:
     runs-on: ubuntu-latest

@@ -1,4 +1,13 @@
-1.31.0 (2025/04/25)
+1.31.1 (2025/04/25)
+===================
+
+Internal
+--------
+
+* skip style checks on Publish action
+
+
+1.31.0 (NEVER RELEASED)
 ===================
 
 Features
