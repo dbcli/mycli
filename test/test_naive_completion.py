@@ -28,7 +28,7 @@ def test_select_keyword_completion(completer, complete_event):
     text = "SEL"
     position = len("SEL")
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
-    assert result == list([Completion(text="SELECT", start_position=-3)])
+    assert result == [Completion(text="SELECT", start_position=-3)]
 
 
 def test_function_name_completion(completer, complete_event):
