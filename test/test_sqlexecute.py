@@ -290,6 +290,6 @@ def test_multiple_results(executor):
 )
 def test_version_parsing(version_string, species, parsed_version_string, version):
     server_info = ServerInfo.from_version_string(version_string)
-    assert (server_info.species and server_info.species.name) == species or ServerSpecies.Unknown
+    assert (server_info.species and server_info.species.name) == species or ServerSpecies.MySQL
     assert server_info.version_str == parsed_version_string
     assert server_info.version == version
