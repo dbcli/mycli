@@ -7,10 +7,7 @@ import traceback
 import logging
 import threading
 import re
-import stat
 from collections import namedtuple
-
-from pygments.lexer import combined
 
 try:
     from pwd import getpwuid
