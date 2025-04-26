@@ -26,10 +26,10 @@ class DelimiterCommand(object):
 
         return [stmt.replace(";", self._delimiter).replace(placeholder, ";") for stmt in split]
 
-    def queries_iter(self, input):
+    def queries_iter(self, input_str):
         """Iterate over queries in the input string."""
 
-        queries = self._split(input)
+        queries = self._split(input_str)
         while queries:
             for sql in queries:
                 delimiter = self._delimiter
