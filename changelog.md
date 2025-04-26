@@ -5,6 +5,7 @@ Internal
 --------
 * Work on passing `ruff check` linting.
 * Remove backward-compatibility hacks.
+* Pin more GitHub Actions and add Dependabot support.
 
 
 1.31.1 (2025/04/25)
