@@ -11,11 +11,6 @@ from typing import Union, IO
 from configobj import ConfigObj, ConfigObjError
 import pyaes
 
-try:
-    basestring
-except NameError:
-    basestring = str
-
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +35,7 @@ def read_config_file(f, list_values=True):
 
     """
 
-    if isinstance(f, basestring):
+    if isinstance(f, str):
         f = os.path.expanduser(f)
 
     try:
@@ -284,7 +279,7 @@ def str_to_bool(s):
     """Convert a string value to its corresponding boolean value."""
     if isinstance(s, bool):
         return s
-    elif not isinstance(s, basestring):
+    elif not isinstance(s, str):
         raise TypeError("argument must be a string")
 
     true_values = ("true", "on", "1")
@@ -305,7 +300,7 @@ def strip_matching_quotes(s):
     values.
 
     """
-    if isinstance(s, basestring) and len(s) >= 2 and s[0] == s[-1] and s[0] in ('"', "'"):
+    if isinstance(s, str) and len(s) >= 2 and s[0] == s[-1] and s[0] in ('"', "'"):
         s = s[1:-1]
     return s
 
