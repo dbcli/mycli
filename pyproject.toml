@@ -62,7 +62,7 @@ line-length = 140
 [tool.ruff.lint]
 select = [
     'A',
-    'I',
+#   'I',      # todo enableme imports
     'E',
     'W',
     'F',
@@ -79,12 +79,19 @@ ignore = [
     'E114',   # indentation-with-invalid-multiple-comment
     'E117',   # over-indented
     'W191',   # tab-indentation
+    # TODO
+    'A001',   # todo enableme variable shadowing builtin
+    'A002',   # todo enableme function argument shadowing builtin
+    'A004',   # todo enableme import shadowing builtin
+    'PIE796', # todo enableme Enum contains duplicate value
 ]
 
 [tool.ruff.lint.isort]
 force-sort-within-sections = true
 known-first-party = [
     'mycli',
+    'test',
+    'steps',
 ]
 
 [tool.ruff.format]

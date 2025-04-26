@@ -15,12 +15,11 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-        # todo
         # remember to sync the ruff-check version number with pyproject.toml
-        # - name: Run ruff check
-        #   uses: astral-sh/ruff-action@9828f49eb4cadf267b40eaa330295c412c68c1f9 # v3.2.2
-        #   with:
-        #     version: 0.11.5
+      - name: Run ruff check
+        uses: astral-sh/ruff-action@9828f49eb4cadf267b40eaa330295c412c68c1f9 # v3.2.2
+        with:
+          version: 0.11.5
 
         # remember to sync the ruff-check version number with pyproject.toml
       - name: Run ruff format

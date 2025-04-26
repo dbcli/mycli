@@ -7,10 +7,7 @@ import traceback
 import logging
 import threading
 import re
-import stat
 from collections import namedtuple
-
-from pygments.lexer import combined
 
 try:
     from pwd import getpwuid
@@ -88,8 +85,6 @@ SUPPORT_INFO = "Home: http://mycli.net\nBug tracker: https://github.com/dbcli/my
 
 class PasswordFileError(Exception):
     """Base exception for errors related to reading password files."""
-
-    pass
 
 
 class MyCli(object):
@@ -1458,7 +1453,7 @@ def is_mutating(status):
     if not status:
         return False
 
-    mutating = set(["insert", "update", "delete", "alter", "create", "drop", "replace", "truncate", "load", "rename"])
+    mutating = {"insert", "update", "delete", "alter", "create", "drop", "replace", "truncate", "load", "rename"}
     return status.split(None, 1)[0].lower() in mutating
 
 

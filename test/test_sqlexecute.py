@@ -61,8 +61,8 @@ def test_table_and_columns_query(executor):
     run(executor, "create table a(x text, y text)")
     run(executor, "create table b(z text)")
 
-    assert set(executor.tables()) == set([("a",), ("b",)])
-    assert set(executor.table_columns()) == set([("a", "x"), ("a", "y"), ("b", "z")])
+    assert set(executor.tables()) == {("a",), ("b",)}
+    assert set(executor.table_columns()) == {("a", "x"), ("a", "y"), ("b", "z")}
 
 
 @dbtest

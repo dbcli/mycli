@@ -58,7 +58,7 @@ def test_select_keyword_completion(completer, complete_event):
     text = "SEL"
     position = len("SEL")
     result = completer.get_completions(Document(text=text, cursor_position=position), complete_event)
-    assert list(result) == list([Completion(text="SELECT", start_position=-3)])
+    assert list(result) == [Completion(text="SELECT", start_position=-3)]
 
 
 def test_select_star(completer, complete_event):
@@ -72,19 +72,19 @@ def test_table_completion(completer, complete_event):
     text = "SELECT * FROM "
     position = len(text)
     result = completer.get_completions(Document(text=text, cursor_position=position), complete_event)
-    assert list(result) == list([
+    assert list(result) == [
         Completion(text="users", start_position=0),
         Completion(text="orders", start_position=0),
         Completion(text="`select`", start_position=0),
         Completion(text="`réveillé`", start_position=0),
-    ])
+    ]
 
 
 def test_function_name_completion(completer, complete_event):
     text = "SELECT MA"
     position = len("SELECT MA")
     result = completer.get_completions(Document(text=text, cursor_position=position), complete_event)
-    assert list(result) == list([
+    assert list(result) == [
         Completion(text="MAX", start_position=-2),
         Completion(text="CHANGE MASTER TO", start_position=-2),
         Completion(text="CURRENT_TIMESTAMP", start_position=-2),
@@ -94,7 +94,7 @@ def test_function_name_completion(completer, complete_event):
         Completion(text="PRIMARY", start_position=-2),
         Completion(text="ROW_FORMAT", start_position=-2),
         Completion(text="SMALLINT", start_position=-2),
-    ])
+    ]
 
 
 def test_suggested_column_names(completer, complete_event):
@@ -134,13 +134,13 @@ def test_suggested_column_names_in_function(completer, complete_event):
     text = "SELECT MAX( from users"
     position = len("SELECT MAX(")
     result = completer.get_completions(Document(text=text, cursor_position=position), complete_event)
-    assert list(result) == list([
+    assert list(result) == [
         Completion(text="*", start_position=0),
         Completion(text="id", start_position=0),
         Completion(text="email", start_position=0),
         Completion(text="first_name", start_position=0),
         Completion(text="last_name", start_position=0),
-    ])
+    ]
 
 
 def test_suggested_column_names_with_table_dot(completer, complete_event):
@@ -154,13 +154,13 @@ def test_suggested_column_names_with_table_dot(completer, complete_event):
     text = "SELECT users. from users"
     position = len("SELECT users.")
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
-    assert result == list([
+    assert result == [
         Completion(text="*", start_position=0),
         Completion(text="id", start_position=0),
         Completion(text="email", start_position=0),
         Completion(text="first_name", start_position=0),
         Completion(text="last_name", start_position=0),
-    ])
+    ]
 
 
 def test_suggested_column_names_with_alias(completer, complete_event):
@@ -174,13 +174,13 @@ def test_suggested_column_names_with_alias(completer, complete_event):
     text = "SELECT u. from users u"
     position = len("SELECT u.")
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
-    assert result == list([
+    assert result == [
         Completion(text="*", start_position=0),
         Completion(text="id", start_position=0),
         Completion(text="email", start_position=0),
         Completion(text="first_name", start_position=0),
         Completion(text="last_name", start_position=0),
-    ])
+    ]
 
 
 def test_suggested_multiple_column_names(completer, complete_event):
@@ -221,13 +221,13 @@ def test_suggested_multiple_column_names_with_alias(completer, complete_event):
     text = "SELECT u.id, u. from users u"
     position = len("SELECT u.id, u.")
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
-    assert result == list([
+    assert result == [
         Completion(text="*", start_position=0),
         Completion(text="id", start_position=0),
         Completion(text="email", start_position=0),
         Completion(text="first_name", start_position=0),
         Completion(text="last_name", start_position=0),
-    ])
+    ]
 
 
 def test_suggested_multiple_column_names_with_dot(completer, complete_event):
@@ -242,65 +242,65 @@ def test_suggested_multiple_column_names_with_dot(completer, complete_event):
     text = "SELECT users.id, users. from users u"
     position = len("SELECT users.id, users.")
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
-    assert result == list([
+    assert result == [
         Completion(text="*", start_position=0),
         Completion(text="id", start_position=0),
         Completion(text="email", start_position=0),
         Completion(text="first_name", start_position=0),
         Completion(text="last_name", start_position=0),
-    ])
+    ]
 
 
 def test_suggested_aliases_after_on(completer, complete_event):
     text = "SELECT u.name, o.id FROM users u JOIN orders o ON "
     position = len("SELECT u.name, o.id FROM users u JOIN orders o ON ")
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
-    assert result == list([
+    assert result == [
         Completion(text="u", start_position=0),
         Completion(text="o", start_position=0),
-    ])
+    ]
 
 
 def test_suggested_aliases_after_on_right_side(completer, complete_event):
     text = "SELECT u.name, o.id FROM users u JOIN orders o ON o.user_id = "
     position = len("SELECT u.name, o.id FROM users u JOIN orders o ON o.user_id = ")
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
-    assert result == list([
+    assert result == [
         Completion(text="u", start_position=0),
         Completion(text="o", start_position=0),
-    ])
+    ]
 
 
 def test_suggested_tables_after_on(completer, complete_event):
     text = "SELECT users.name, orders.id FROM users JOIN orders ON "
     position = len("SELECT users.name, orders.id FROM users JOIN orders ON ")
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
-    assert result == list([
+    assert result == [
         Completion(text="users", start_position=0),
         Completion(text="orders", start_position=0),
-    ])
+    ]
 
 
 def test_suggested_tables_after_on_right_side(completer, complete_event):
     text = "SELECT users.name, orders.id FROM users JOIN orders ON orders.user_id = "
     position = len("SELECT users.name, orders.id FROM users JOIN orders ON orders.user_id = ")
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
-    assert result == list([
+    assert result == [
         Completion(text="users", start_position=0),
         Completion(text="orders", start_position=0),
-    ])
+    ]
 
 
 def test_table_names_after_from(completer, complete_event):
     text = "SELECT * FROM "
     position = len("SELECT * FROM ")
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
-    assert result == list([
+    assert result == [
         Completion(text="users", start_position=0),
         Completion(text="orders", start_position=0),
         Completion(text="`select`", start_position=0),
         Completion(text="`réveillé`", start_position=0),
-    ])
+    ]
 
 
 def test_auto_escaped_col_names(completer, complete_event):
@@ -369,5 +369,5 @@ def dummy_list_path(dir_name):
 def test_file_name_completion(completer, complete_event, text, expected):
     position = len(text)
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
-    expected = list((Completion(txt, pos) for txt, pos in expected))
+    expected = [Completion(txt, pos) for txt, pos in expected]
     assert result == expected

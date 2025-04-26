@@ -223,9 +223,7 @@ def test_watch_query_full():
     expected_results = 4
     ctrl_c_process = send_ctrl_c(wait_interval)
     with db_connection().cursor() as cur:
-        results = list(
-            result for result in mycli.packages.special.iocommands.watch_query(arg="{0!s} {1!s}".format(watch_seconds, query), cur=cur)
-        )
+        results = list(mycli.packages.special.iocommands.watch_query(arg="{0!s} {1!s}".format(watch_seconds, query), cur=cur))
     ctrl_c_process.join(1)
     assert len(results) == expected_results
     for result in results:

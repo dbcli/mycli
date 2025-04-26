@@ -35,11 +35,13 @@ def _multiline_exception(text):
         text.lower().startswith("delimiter")
         or
         # Ended with the current delimiter (usually a semi-column)
-        text.endswith(special.get_current_delimiter())
-        or text.endswith("\\g")
-        or text.endswith("\\G")
-        or text.endswith(r"\e")
-        or text.endswith(r"\clip")
+        text.endswith((
+            special.get_current_delimiter(),
+            text.endswith("\\g"),
+            text.endswith("\\G"),
+            text.endswith(r"\e"),
+            text.endswith(r"\clip"),
+        ))
         or
         # Exit doesn't need semi-column`
         (text == "exit")
