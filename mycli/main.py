@@ -66,11 +66,7 @@ except ImportError:
     from urllib.parse import urlparse
     from urllib.parse import unquote
 
-try:
-    import importlib.resources as resources
-except ImportError:
-    # Python < 3.7
-    import importlib_resources as resources
+from importlib import resources
 
 try:
     import paramiko
