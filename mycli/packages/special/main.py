@@ -108,7 +108,7 @@ def show_keyword_help(cur, arg):
 
 @special_command("exit", "\\q", "Exit.", arg_type=NO_QUERY, aliases=("\\q",))
 @special_command("quit", "\\q", "Quit.", arg_type=NO_QUERY)
-def quit(*_args):
+def quit_(*_args):
     raise EOFError
 
 
