@@ -73,7 +73,7 @@ def get_included_configs(config_file: Union[str, TextIOWrapper]) -> list:
     try:
         with open(config_file) as f:
             include_directives = filter(lambda s: s.startswith("!includedir"), f)
-            dirs_split = map(lambda s: s.strip().split()[-1], include_directives)
+            dirs_split = (s.strip().split()[-1] for s in include_directives)
             dirs = filter(os.path.isdir, dirs_split)
             for dir_ in dirs:
                 for filename in os.listdir(dir_):
