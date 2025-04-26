@@ -1,5 +1,5 @@
 import logging
-from re import compile, escape
+import re
 from collections import Counter
 
 from prompt_toolkit.completion import Completer, Completion
@@ -900,7 +900,7 @@ class SQLCompleter(Completer):
         self.reserved_words = set()
         for x in self.keywords:
             self.reserved_words.update(x.split())
-        self.name_pattern = compile(r"^[_a-z][_a-z0-9\$]*$")
+        self.name_pattern = re.compile(r"^[_a-z][_a-z0-9\$]*$")
 
         self.special_commands = []
         self.table_formats = supported_formats
@@ -1075,8 +1075,8 @@ class SQLCompleter(Completer):
         completions = []
 
         if fuzzy:
-            regex = ".*?".join(map(escape, text))
-            pat = compile("(%s)" % regex)
+            regex = ".*?".join(map(re.escape, text))
+            pat = re.compile("(%s)" % regex)
             for item in collection:
                 r = pat.search(item.lower())
                 if r:

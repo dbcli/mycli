@@ -1,5 +1,4 @@
 from collections import defaultdict
-from io import open
 import os
 import sys
 import shutil
