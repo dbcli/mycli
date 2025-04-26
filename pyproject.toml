@@ -32,8 +32,11 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
 
+
 [project.optional-dependencies]
 ssh = ["paramiko", "sshtunnel"]
+ai = ["llm"]
+llm = ["llm"]
 dev = [
     "behave>=1.2.6",
     "coverage>=7.2.7",
@@ -43,6 +46,9 @@ dev = [
     "pytest-cov>=4.1.0",
     "tox>=4.8.0",
     "pdbpp>=0.10.3",
+    "paramiko",
+    "sshtunnel",
+    "llm>=0.19.0",
 ]
 
 [project.scripts]
