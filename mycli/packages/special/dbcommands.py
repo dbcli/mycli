@@ -1,11 +1,13 @@
 import logging
 import os
 import platform
+
+from pymysql import ProgrammingError
+
 from mycli import __version__
 from mycli.packages.special import iocommands
+from mycli.packages.special.main import PARSED_QUERY, RAW_QUERY, special_command
 from mycli.packages.special.utils import format_uptime
-from .main import special_command, RAW_QUERY, PARSED_QUERY
-from pymysql import ProgrammingError
 
 log = logging.getLogger(__name__)
 

@@ -5,8 +5,8 @@ to call the step in "*.feature" file.
 
 """
 
+from behave import then, when
 import wrappers
-from behave import when, then
 
 
 @when("we save a named query")

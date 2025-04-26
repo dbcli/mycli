@@ -5,9 +5,10 @@ to call the step in "*.feature" file.
 
 """
 
-from behave import when, then
-from textwrap import dedent
 import tempfile
+from textwrap import dedent
+
+from behave import then, when
 import wrappers
 
 

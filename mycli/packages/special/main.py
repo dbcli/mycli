@@ -1,7 +1,7 @@
-import logging
 from collections import namedtuple
+import logging
 
-from . import export
+from mycli.packages.special import export
 
 log = logging.getLogger(__name__)
 

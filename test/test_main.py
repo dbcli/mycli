@@ -1,5 +1,8 @@
+from collections import namedtuple
 import os
 import shutil
+from tempfile import NamedTemporaryFile
+from textwrap import dedent
 
 import click
 from click.testing import CliRunner
@@ -7,13 +10,7 @@ from click.testing import CliRunner
 from mycli.main import MyCli, cli, thanks_picker
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
 from mycli.sqlexecute import ServerInfo
-from .utils import USER, HOST, PORT, PASSWORD, dbtest, run
-
-from textwrap import dedent
-from collections import namedtuple
-
-from tempfile import NamedTemporaryFile
-
+from test.utils import HOST, PASSWORD, PORT, USER, dbtest, run
 
 test_dir = os.path.abspath(os.path.dirname(__file__))
 project_dir = os.path.dirname(test_dir)

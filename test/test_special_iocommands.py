@@ -4,12 +4,11 @@ import tempfile
 from time import time
 from unittest.mock import patch
 
-import pytest
 from pymysql import ProgrammingError
+import pytest
 
 import mycli.packages.special
-
-from .utils import dbtest, db_connection, send_ctrl_c
+from test.utils import db_connection, dbtest, send_ctrl_c
 
 
 def test_set_get_pager():

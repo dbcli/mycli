@@ -1,12 +1,13 @@
 import pytest
+
 from mycli.packages.parseutils import (
     extract_tables,
     extract_tables_from_complete_statements,
-    query_starts_with,
-    queries_start_with,
     is_destructive,
-    query_has_where_clause,
     is_dropping_database,
+    queries_start_with,
+    query_has_where_clause,
+    query_starts_with,
 )
 
 

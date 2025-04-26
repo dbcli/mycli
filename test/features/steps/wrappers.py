@@ -1,8 +1,8 @@
 import re
-import pexpect
 import sys
 import textwrap
 
+import pexpect
 
 try:
     from StringIO import StringIO

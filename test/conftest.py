@@ -1,6 +1,7 @@
 import pytest
-from .utils import HOST, USER, PASSWORD, PORT, CHARSET, create_db, db_connection, SSH_USER, SSH_HOST, SSH_PORT
+
 import mycli.sqlexecute
+from test.utils import CHARSET, HOST, PASSWORD, PORT, SSH_HOST, SSH_PORT, SSH_USER, USER, create_db, db_connection
 
 
 @pytest.fixture(scope="function")

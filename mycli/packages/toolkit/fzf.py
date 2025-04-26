@@ -1,11 +1,11 @@
 import re
 from shutil import which
 
-from pyfzf import FzfPrompt
 from prompt_toolkit import search
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
+from pyfzf import FzfPrompt
 
-from .history import FileHistoryWithTimestamp
+from mycli.packages.toolkit.history import FileHistoryWithTimestamp
 
 
 class Fzf(FzfPrompt):

@@ -1,10 +1,10 @@
 import os
 
-import pytest
 import pymysql
+import pytest
 
 from mycli.sqlexecute import ServerInfo, ServerSpecies
-from .utils import run, dbtest, set_expanded_output, is_expanded_output
+from test.utils import dbtest, is_expanded_output, run, set_expanded_output
 
 
 def assert_result_equal(result, title=None, rows=None, headers=None, status=None, auto_status=True, assert_contains=False):

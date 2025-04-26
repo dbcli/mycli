@@ -1,9 +1,8 @@
 """Test the mycli.clistyle module."""
 
-import pytest
-
 from pygments.style import Style
 from pygments.token import Token
+import pytest
 
 from mycli.clistyle import style_factory
 

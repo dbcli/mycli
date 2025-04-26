@@ -8,5 +8,7 @@ def export(defn):
     return defn
 
 
-from . import dbcommands  # noqa: E402 F401
-from . import iocommands  # noqa: E402 F401
+from mycli.packages.special import (
+    dbcommands,  # noqa: E402 F401
+    iocommands,  # noqa: E402 F401
+)

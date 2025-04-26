@@ -3,9 +3,10 @@ import logging
 import re
 
 import pymysql
-from .packages import special
 from pymysql.constants import FIELD_TYPE
-from pymysql.converters import convert_datetime, convert_timedelta, convert_date, conversions, decoders
+from pymysql.converters import conversions, convert_date, convert_datetime, convert_timedelta, decoders
+
+from mycli.packages import special
 
 try:
     import paramiko  # noqa: F401

@@ -1,7 +1,9 @@
-from .main import MyCli
-import sql.parse
-import sql.connection
 import logging
+
+import sql.connection
+import sql.parse
+
+from mycli.main import MyCli
 
 _logger = logging.getLogger(__name__)
 

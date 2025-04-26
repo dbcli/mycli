@@ -5,10 +5,9 @@ to call the step in "*.feature" file.
 
 """
 
+from behave import then, when
 import pexpect
-
 import wrappers
-from behave import when, then
 
 
 @when("we create database")

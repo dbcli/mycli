@@ -1,7 +1,6 @@
 import os
 import platform
 
-
 if os.name == "posix":
     if platform.system() == "Darwin":
         DEFAULT_SOCKET_DIRS = ["/tmp"]

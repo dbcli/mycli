@@ -1,9 +1,9 @@
-import threading
-from .packages.special.main import COMMANDS
 from collections import OrderedDict
+import threading
 
-from .sqlcompleter import SQLCompleter
-from .sqlexecute import SQLExecute, ServerSpecies
+from mycli.packages.special.main import COMMANDS
+from mycli.sqlcompleter import SQLCompleter
+from mycli.sqlexecute import ServerSpecies, SQLExecute
 
 
 class CompletionRefresher(object):
