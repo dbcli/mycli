@@ -547,6 +547,6 @@ def get_current_delimiter():
 
 
 @export
-def split_queries(input):
-    for query in delimiter_command.queries_iter(input):
+def split_queries(input_str):
+    for query in delimiter_command.queries_iter(input_str):
         yield query

@@ -289,5 +289,5 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
         return [{"type": "keyword"}]
 
 
-def identifies(id, schema, table, alias):
-    return id == alias or id == table or (schema and (id == schema + "." + table))
+def identifies(identifier, schema, table, alias):
+    return identifier == alias or identifier == table or (schema and (identifier == schema + "." + table))

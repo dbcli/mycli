@@ -80,7 +80,6 @@ ignore = [
     'E117',   # over-indented
     'W191',   # tab-indentation
     # TODO
-    'A002',   # todo enableme function argument shadowing builtin
     'A004',   # todo enableme import shadowing builtin
     'PIE796', # todo enableme Enum contains duplicate value
 ]
