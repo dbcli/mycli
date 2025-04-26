@@ -369,5 +369,5 @@ def dummy_list_path(dir_name):
 def test_file_name_completion(completer, complete_event, text, expected):
     position = len(text)
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
-    expected = list((Completion(txt, pos) for txt, pos in expected))
+    expected = [Completion(txt, pos) for txt, pos in expected]
     assert result == expected
