@@ -129,7 +129,7 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
     else:
         token_v = token.value.lower()
 
-    is_operand = lambda x: x and any([x.endswith(op) for op in ["+", "-", "*", "/"]])  # noqa: E731
+    is_operand = lambda x: x and any(x.endswith(op) for op in ["+", "-", "*", "/"])  # noqa: E731
 
     if not token:
         return [{"type": "keyword"}, {"type": "special"}]
