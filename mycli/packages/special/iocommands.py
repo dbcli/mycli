@@ -4,7 +4,6 @@ import locale
 import logging
 import subprocess
 import shlex
-from io import open
 from time import sleep
 
 import click
