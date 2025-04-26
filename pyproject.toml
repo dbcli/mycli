@@ -90,6 +90,8 @@ ignore = [
 force-sort-within-sections = true
 known-first-party = [
     'mycli',
+    'test',
+    'steps',
 ]
 
 [tool.ruff.format]
