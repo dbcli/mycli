@@ -58,12 +58,8 @@ import itertools
 
 click.disable_unicode_literals_warning = True
 
-try:
-    from urlparse import urlparse
-    from urlparse import unquote
-except ImportError:
-    from urllib.parse import urlparse
-    from urllib.parse import unquote
+from urllib.parse import urlparse
+from urllib.parse import unquote
 
 from importlib import resources
 
