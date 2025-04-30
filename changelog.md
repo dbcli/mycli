@@ -1,8 +1,15 @@
 Upcoming Release (TBD)
 ======================
 
+Bug Fixes
+----------
+
+* Let table-name extraction work on multi-statement inputs.
+
+
 Internal
 --------
+
 * Work on passing `ruff check` linting.
 * Remove backward-compatibility hacks.
 * Pin more GitHub Actions and add Dependabot support.

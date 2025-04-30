@@ -1,6 +1,7 @@
 import pytest
 from mycli.packages.parseutils import (
     extract_tables,
+    extract_tables_from_complete_statements,
     query_starts_with,
     queries_start_with,
     is_destructive,
@@ -104,6 +105,22 @@ def test_join_table_schema_qualified():
 
 def test_join_as_table():
     tables = extract_tables("SELECT * FROM my_table AS m WHERE m.a > 5")
+    assert tables == [(None, "my_table", "m")]
+
+
+def test_extract_tables_from_complete_statements():
+    tables = extract_tables_from_complete_statements("SELECT * FROM my_table AS m WHERE m.a > 5")
+    assert tables == [(None, "my_table", "m")]
+
+
+def test_extract_tables_from_complete_statements_cte():
+    tables = extract_tables_from_complete_statements("WITH my_cte (id, num) AS ( SELECT id, COUNT(1) FROM my_table GROUP BY id ) SELECT *")
+    assert tables == [(None, "my_table", None)]
+
+
+# this would confuse plain extract_tables() per #1122
+def test_extract_tables_from_multiple_complete_statements():
+    tables = extract_tables_from_complete_statements(r'\T sql-insert; SELECT * FROM my_table AS m WHERE m.a > 5')
     assert tables == [(None, "my_table", "m")]
 
 
