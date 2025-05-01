@@ -1,9 +1,8 @@
 from textwrap import dedent
 
 from behave import then, when
-
-import wrappers
 from utils import parse_cli_args_to_dict
+import wrappers
 
 
 @when("we run dbcli with {arg}")

@@ -1,14 +1,13 @@
 import io
 import os
 
-from behave import when, then
-
+from behave import then, when
 import wrappers
-from test.features.steps.utils import parse_cli_args_to_dict
-from test.features.environment import MY_CNF_PATH, MYLOGIN_CNF_PATH, get_db_name_from_context
-from test.utils import HOST, PORT, USER, PASSWORD
-from mycli.config import encrypt_mylogin_cnf
 
+from mycli.config import encrypt_mylogin_cnf
+from test.features.environment import MY_CNF_PATH, MYLOGIN_CNF_PATH, get_db_name_from_context
+from test.features.steps.utils import parse_cli_args_to_dict
+from test.utils import HOST, PASSWORD, PORT, USER
 
 TEST_LOGIN_PATH = "test_login_path"
 

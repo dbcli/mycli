@@ -1,7 +1,8 @@
 import sqlparse
 from sqlparse.sql import Comparison, Identifier, Where
-from .parseutils import last_word, extract_tables, find_prev_keyword
-from .special import parse_special_command
+
+from mycli.packages.parseutils import extract_tables, find_prev_keyword, last_word
+from mycli.packages.special import parse_special_command
 
 
 def suggest_type(full_text, text_before_cursor):

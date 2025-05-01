@@ -1,7 +1,8 @@
-from prompt_toolkit.key_binding.vi_state import InputMode
 from prompt_toolkit.application import get_app
 from prompt_toolkit.enums import EditingMode
-from .packages import special
+from prompt_toolkit.key_binding.vi_state import InputMode
+
+from mycli.packages import special
 
 
 def create_toolbar_tokens_func(mycli, show_fish_help):

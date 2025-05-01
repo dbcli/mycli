@@ -1,5 +1,6 @@
-from mycli.packages.completion_engine import suggest_type
 import pytest
+
+from mycli.packages.completion_engine import suggest_type
 
 
 def sorted_dicts(dicts):

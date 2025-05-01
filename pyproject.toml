@@ -62,7 +62,7 @@ line-length = 140
 [tool.ruff.lint]
 select = [
     'A',
-#   'I',      # todo enableme imports
+    'I',
     'E',
     'W',
     'F',
@@ -90,6 +90,9 @@ known-first-party = [
     'test',
     'steps',
 ]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = 'all'
 
 [tool.ruff.format]
 preview = true

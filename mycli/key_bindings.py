@@ -1,9 +1,10 @@
 import logging
+
 from prompt_toolkit.enums import EditingMode
 from prompt_toolkit.filters import completion_is_selected, emacs_mode
 from prompt_toolkit.key_binding import KeyBindings
 
-from .packages.toolkit.fzf import search_history
+from mycli.packages.toolkit.fzf import search_history
 
 _logger = logging.getLogger(__name__)
 

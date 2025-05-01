@@ -1,21 +1,21 @@
-import os
-import re
 import locale
 import logging
-import subprocess
+import os
+import re
 import shlex
+import subprocess
 from time import sleep
 
 import click
 import pyperclip
 import sqlparse
 
-from . import export
-from .main import special_command, NO_QUERY, PARSED_QUERY
-from .favoritequeries import FavoriteQueries
-from .delimitercommand import DelimiterCommand
-from .utils import handle_cd_command
 from mycli.packages.prompt_utils import confirm_destructive_query
+from mycli.packages.special import export
+from mycli.packages.special.delimitercommand import DelimiterCommand
+from mycli.packages.special.favoritequeries import FavoriteQueries
+from mycli.packages.special.main import NO_QUERY, PARSED_QUERY, special_command
+from mycli.packages.special.utils import handle_cd_command
 
 TIMING_ENABLED = False
 use_expanded_output = False

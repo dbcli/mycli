@@ -1,72 +1,66 @@
-from collections import defaultdict
-import os
-import sys
-import shutil
-import traceback
+from collections import defaultdict, namedtuple
 import logging
-import threading
+import os
 import re
-from collections import namedtuple
+import shutil
+import sys
+import threading
+import traceback
 
 try:
     from pwd import getpwuid
 except ImportError:
     pass
-from time import time
 from datetime import datetime
+from importlib import resources
+import itertools
 from random import choice
+from time import time
+from urllib.parse import unquote, urlparse
 
-from pymysql import OperationalError
-from cli_helpers.tabular_output import TabularOutputFormatter
-from cli_helpers.tabular_output import preprocessors
+from cli_helpers.tabular_output import TabularOutputFormatter, preprocessors
 from cli_helpers.utils import strip_ansi
 import click
-import sqlparse
-import sqlglot
-from mycli.packages.parseutils import is_dropping_database, is_destructive
+from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.completion import DynamicCompleter
-from prompt_toolkit.enums import DEFAULT_BUFFER, EditingMode
-from prompt_toolkit.key_binding.bindings.named_commands import register as prompt_register
-from prompt_toolkit.shortcuts import PromptSession, CompleteStyle
 from prompt_toolkit.document import Document
+from prompt_toolkit.enums import DEFAULT_BUFFER, EditingMode
 from prompt_toolkit.filters import HasFocus, IsDone
 from prompt_toolkit.formatted_text import ANSI
-from prompt_toolkit.layout.processors import HighlightMatchingBracketProcessor, ConditionalProcessor
+from prompt_toolkit.key_binding.bindings.named_commands import register as prompt_register
+from prompt_toolkit.layout.processors import ConditionalProcessor, HighlightMatchingBracketProcessor
 from prompt_toolkit.lexers import PygmentsLexer
-from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
+from prompt_toolkit.shortcuts import CompleteStyle, PromptSession
+from pymysql import OperationalError
+import sqlglot
+import sqlparse
 
-from .packages.special.main import NO_QUERY
-from .packages.prompt_utils import confirm, confirm_destructive_query
-from .packages.tabular_output import sql_format
-from .packages import special
-from .packages.special.favoritequeries import FavoriteQueries
-from .packages.toolkit.history import FileHistoryWithTimestamp
-from .sqlcompleter import SQLCompleter
-from .clitoolbar import create_toolbar_tokens_func
-from .clistyle import style_factory, style_factory_output
-from .sqlexecute import FIELD_TYPES, SQLExecute, ERROR_CODE_ACCESS_DENIED
-from .clibuffer import cli_is_multiline
-from .completion_refresher import CompletionRefresher
-from .config import write_default_config, get_mylogin_cnf_path, open_mylogin_cnf, read_config_files, str_to_bool, strip_matching_quotes
-from .key_bindings import mycli_bindings
-from .lexer import MyCliLexer
-from . import __version__
-from .compat import WIN
-from .packages.filepaths import dir_path_exists, guess_socket_location
-
-import itertools
-
-click.disable_unicode_literals_warning = True
-
-from urllib.parse import urlparse
-from urllib.parse import unquote
-
-from importlib import resources
+from mycli import __version__
+from mycli.clibuffer import cli_is_multiline
+from mycli.clistyle import style_factory, style_factory_output
+from mycli.clitoolbar import create_toolbar_tokens_func
+from mycli.compat import WIN
+from mycli.completion_refresher import CompletionRefresher
+from mycli.config import get_mylogin_cnf_path, open_mylogin_cnf, read_config_files, str_to_bool, strip_matching_quotes, write_default_config
+from mycli.key_bindings import mycli_bindings
+from mycli.lexer import MyCliLexer
+from mycli.packages import special
+from mycli.packages.filepaths import dir_path_exists, guess_socket_location
+from mycli.packages.parseutils import is_destructive, is_dropping_database
+from mycli.packages.prompt_utils import confirm, confirm_destructive_query
+from mycli.packages.special.favoritequeries import FavoriteQueries
+from mycli.packages.special.main import NO_QUERY
+from mycli.packages.tabular_output import sql_format
+from mycli.packages.toolkit.history import FileHistoryWithTimestamp
+from mycli.sqlcompleter import SQLCompleter
+from mycli.sqlexecute import ERROR_CODE_ACCESS_DENIED, FIELD_TYPES, SQLExecute
 
 try:
     import paramiko
 except ImportError:
     from mycli.packages.paramiko_stub import paramiko
+
+click.disable_unicode_literals_warning = True
 
 # Query tuples are used for maintaining history
 Query = namedtuple("Query", ["query", "successful", "mutating"])

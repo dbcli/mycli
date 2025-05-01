@@ -6,11 +6,10 @@ import os
 from os.path import exists
 import struct
 import sys
-from typing import Union, IO
+from typing import IO, Union
 
 from configobj import ConfigObj, ConfigObjError
 import pyaes
-
 
 logger = logging.getLogger(__name__)
 

@@ -1,7 +1,9 @@
-import pytest
 from unittest.mock import patch
+
 from prompt_toolkit.completion import Completion
 from prompt_toolkit.document import Document
+import pytest
+
 import mycli.packages.special.main as special
 
 metadata = {

@@ -1,11 +1,11 @@
 import logging
 
-import pygments.styles
-from pygments.token import string_to_tokentype, Token
-from pygments.style import Style as PygmentsStyle
-from pygments.util import ClassNotFound
+from prompt_toolkit.styles import Style, merge_styles
 from prompt_toolkit.styles.pygments import style_from_pygments_cls
-from prompt_toolkit.styles import merge_styles, Style
+from pygments.style import Style as PygmentsStyle
+import pygments.styles
+from pygments.token import Token, string_to_tokentype
+from pygments.util import ClassNotFound
 
 logger = logging.getLogger(__name__)
 

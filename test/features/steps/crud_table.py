@@ -5,9 +5,10 @@ to call the step in "*.feature" file.
 
 """
 
-import wrappers
-from behave import when, then
 from textwrap import dedent
+
+from behave import then, when
+import wrappers
 
 
 @when("we create table")

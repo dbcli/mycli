@@ -1,13 +1,13 @@
+from collections import Counter
 import logging
 import re
-from collections import Counter
 
 from prompt_toolkit.completion import Completer, Completion
 
-from .packages.completion_engine import suggest_type
-from .packages.parseutils import last_word
-from .packages.filepaths import parse_path, complete_path, suggest_path
-from .packages.special.favoritequeries import FavoriteQueries
+from mycli.packages.completion_engine import suggest_type
+from mycli.packages.filepaths import complete_path, parse_path, suggest_path
+from mycli.packages.parseutils import last_word
+from mycli.packages.special.favoritequeries import FavoriteQueries
 
 _logger = logging.getLogger(__name__)
 

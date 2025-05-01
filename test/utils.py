@@ -1,8 +1,8 @@
-import os
-import time
-import signal
-import platform
 import multiprocessing
+import os
+import platform
+import signal
+import time
 
 import pymysql
 import pytest

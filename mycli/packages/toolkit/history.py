@@ -1,5 +1,5 @@
 import os
-from typing import Union, List, Tuple
+from typing import List, Tuple, Union
 
 from prompt_toolkit.history import FileHistory
 

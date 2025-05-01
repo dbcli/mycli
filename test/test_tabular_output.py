@@ -2,13 +2,11 @@
 
 from textwrap import dedent
 
-
-from .utils import USER, PASSWORD, HOST, PORT, dbtest
-
-import pytest
-from mycli.main import MyCli
-
 from pymysql.constants import FIELD_TYPE
+import pytest
+
+from mycli.main import MyCli
+from test.utils import HOST, PASSWORD, PORT, USER, dbtest
 
 
 @pytest.fixture
