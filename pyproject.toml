@@ -79,8 +79,6 @@ ignore = [
     'E114',   # indentation-with-invalid-multiple-comment
     'E117',   # over-indented
     'W191',   # tab-indentation
-    # TODO
-    'PIE796', # todo enableme Enum contains duplicate value
 ]
 
 [tool.ruff.lint.isort]
