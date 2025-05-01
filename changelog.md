@@ -1,8 +1,8 @@
-Upcoming Release (TBD)
-======================
+1.31.2 (2025/05/01)
+===================
 
 Bug Fixes
-----------
+---------
 
 * Let table-name extraction work on multi-statement inputs.
 
