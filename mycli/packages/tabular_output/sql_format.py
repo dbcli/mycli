@@ -1,6 +1,6 @@
 """Format adapter for sql."""
 
-from mycli.packages.parseutils import extract_tables
+from mycli.packages.parseutils import extract_tables_from_complete_statements
 
 supported_formats = (
     "sql-insert",
@@ -20,7 +20,7 @@ def escape_for_sql_statement(value):
 
 
 def adapter(data, headers, table_format=None, **kwargs):
-    tables = extract_tables(formatter.query)
+    tables = extract_tables_from_complete_statements(formatter.query)
     if len(tables) > 0:
         table = tables[0]
         if table[0]:

@@ -1,4 +1,5 @@
 import re
+import sqlglot
 import sqlparse
 from sqlparse.sql import IdentifierList, Identifier, Function
 from sqlparse.tokens import Keyword, DML, Punctuation
@@ -164,6 +165,42 @@ def extract_tables(sql):
     insert_stmt = parsed[0].token_first().value.lower() == "insert"
     stream = extract_from_part(parsed[0], stop_at_punctuation=insert_stmt)
     return list(extract_table_identifiers(stream))
+
+
+def extract_tables_from_complete_statements(sql):
+    """Extract the table names from a complete and valid series of SQL
+    statements.
+
+    Returns a list of (schema, table, alias) tuples
+
+    """
+    # sqlglot chokes entirely on things like "\T" that it doesn't know about,
+    # but is much better at extracting table names from complete statements.
+    # sqlparse can extract the series of statements, though it also doesn't
+    # understand "\T".
+    roughly_parsed = sqlparse.parse(sql)
+    if not roughly_parsed:
+        return []
+
+    finely_parsed = []
+    for statement in roughly_parsed:
+        try:
+            finely_parsed.append(sqlglot.parse_one(str(statement), read='mysql'))
+        except sqlglot.errors.ParseError:
+            pass
+
+    tables = []
+    for statement in finely_parsed:
+        for identifier in statement.find_all(sqlglot.exp.Table):
+            if identifier.parent_select.sql().startswith('WITH'):
+                continue
+            tables.append((
+                None if identifier.db == '' else identifier.db,
+                identifier.name,
+                None if identifier.alias == '' else identifier.alias,
+            ))
+
+    return tables
 
 
 def find_prev_keyword(sql):
