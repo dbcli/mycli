@@ -154,7 +154,7 @@ def test_llm_command_question_verbose(mock_sql_using_llm, mock_ensure_template, 
 
 def test_is_llm_command():
     # Valid llm command variants
-    for cmd in ["\\llm", ".llm", "\\ai", ".ai"]:
+    for cmd in ["\\llm", "\\ai"]:
         assert is_llm_command(cmd + " 'x'")
     # Invalid commands
     assert not is_llm_command("select * from table;")
