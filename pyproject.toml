@@ -21,7 +21,9 @@ dependencies = [
     "pyperclip >= 1.8.1",
     "pyaes >= 1.6.1",
     "pyfzf >= 0.3.1",
-    "importlib_resources >= 5.0.0; python_version<'3.9'",
+    "llm>=0.19.0",
+    "setuptools",                   # Required by llm commands to install models
+    "pip",
 ]
 
 [build-system]
@@ -34,6 +36,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
 
+
 [project.optional-dependencies]
 ssh = ["paramiko", "sshtunnel"]
 dev = [
@@ -44,6 +47,8 @@ dev = [
     "pytest-cov>=4.1.0",
     "tox>=4.8.0",
     "pdbpp>=0.10.3",
+    "paramiko",
+    "sshtunnel",
 ]
 
 [project.scripts]
@@ -60,34 +65,21 @@ target-version = 'py39'
 line-length = 140
 
 [tool.ruff.lint]
-select = [
-    'A',
-    'I',
-    'E',
-    'W',
-    'F',
-    'C4',
-    'PIE',
-    'TID',
-]
+select = ['A', 'I', 'E', 'W', 'F', 'C4', 'PIE', 'TID']
 ignore = [
     'E401',   # Multiple imports on one line
     'E402',   # Module level import not at top of file
     'PIE808', # range() starting with 0
     # https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
-    'E111',   # indentation-with-invalid-multiple
-    'E114',   # indentation-with-invalid-multiple-comment
-    'E117',   # over-indented
-    'W191',   # tab-indentation
+    'E111', # indentation-with-invalid-multiple
+    'E114', # indentation-with-invalid-multiple-comment
+    'E117', # over-indented
+    'W191', # tab-indentation
 ]
 
 [tool.ruff.lint.isort]
 force-sort-within-sections = true
-known-first-party = [
-    'mycli',
-    'test',
-    'steps',
-]
+known-first-party = ['mycli', 'test', 'steps']
 
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = 'all'
@@ -95,7 +87,4 @@ ban-relative-imports = 'all'
 [tool.ruff.format]
 preview = true
 quote-style = 'preserve'
-exclude = [
-    'build',
-    'mycli_dev',
-]
+exclude = ['build', 'mycli_dev']
