@@ -23,8 +23,8 @@ except ImportError:
     LLM_CLI_COMMANDS = []
     MODELS = {}
 
-from . import export
-from .main import parse_special_command
+from mycli.packages.special import export
+from mycli.packages.special.main import parse_special_command
 
 log = logging.getLogger(__name__)
 
