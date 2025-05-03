@@ -6,6 +6,7 @@ Internal
 
 * Work on passing `ruff check` linting.
 * Relax expectation for unreliable test.
+* Bump sqlglot version to v26 and add rs extras.
 
 
 1.31.2 (2025/05/01)
