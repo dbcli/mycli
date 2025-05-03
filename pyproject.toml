@@ -21,6 +21,7 @@ dependencies = [
     "pyperclip >= 1.8.1",
     "pyaes >= 1.6.1",
     "pyfzf >= 0.3.1",
+    "llm>=0.19.0",
     "setuptools",                   # Required by llm commands to install models
     "pip",
 ]
@@ -34,8 +35,6 @@ build-backend = "setuptools.build_meta"
 
 [project.optional-dependencies]
 ssh = ["paramiko", "sshtunnel"]
-ai = ["llm"]
-llm = ["llm"]
 dev = [
     "behave>=1.2.6",
     "coverage>=7.2.7",
@@ -47,7 +46,6 @@ dev = [
     "pdbpp>=0.10.3",
     "paramiko",
     "sshtunnel",
-    "llm>=0.19.0",
 ]
 
 [project.scripts]
