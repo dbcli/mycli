@@ -10,24 +10,16 @@ from time import time
 from typing import Optional, Tuple
 
 import click
-
-try:
-    import llm
-    from llm.cli import cli
-
-    LLM_CLI_COMMANDS = list(cli.commands.keys())
-    MODELS = {x.model_id: None for x in llm.get_models()}
-except ImportError:
-    llm = None
-    cli = None
-    LLM_CLI_COMMANDS = []
-    MODELS = {}
+import llm
+from llm.cli import cli
 
 from mycli.packages.special import export
 from mycli.packages.special.main import parse_special_command
 
 log = logging.getLogger(__name__)
 
+LLM_CLI_COMMANDS = list(cli.commands.keys())
+MODELS = {x.model_id: None for x in llm.get_models()}
 LLM_TEMPLATE_NAME = "mycli-llm-template"
 
 
@@ -151,12 +143,6 @@ SELECT count(*) FROM table_name;
 ```"""
 
 
-def initialize_llm():
-    if click.confirm("This feature requires additional libraries. Install LLM library?", default=True):
-        click.echo("Installing LLM library. Please wait...")
-        run_external_cmd("pip", "install", "--quiet", "llm", restart_cli=True)
-
-
 def ensure_mycli_template(replace=False):
     if not replace:
         code, _ = run_external_cmd("llm", "templates", "show", LLM_TEMPLATE_NAME, capture_output=True, raise_exception=False)
@@ -169,9 +155,6 @@ def ensure_mycli_template(replace=False):
 @export
 def handle_llm(text, cur) -> Tuple[str, Optional[str], float]:
     _, verbose, arg = parse_special_command(text)
-    if llm is None:
-        initialize_llm()
-        raise FinishIteration(None)
     if not arg.strip():
         output = [(None, None, None, USAGE)]
         raise FinishIteration(output)
