@@ -3,11 +3,11 @@ import io
 import logging
 import os
 import re
+from runpy import run_module
 import shlex
 import sys
-from runpy import run_module
-from typing import Optional, Tuple
 from time import time
+from typing import Optional, Tuple
 
 import click
 

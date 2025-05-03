@@ -1,13 +1,13 @@
-import re
-import pytest
 from unittest.mock import patch
 
+import pytest
+
 from mycli.packages.special.llm import (
-    handle_llm,
-    FinishIteration,
     USAGE,
-    sql_using_llm,
+    FinishIteration,
+    handle_llm,
     is_llm_command,
+    sql_using_llm,
 )
 
 
@@ -107,7 +107,7 @@ def test_llm_command_with_install_flag(mock_run_cmd, mock_llm, executor):
 @patch("mycli.packages.special.llm.ensure_mycli_template")
 @patch("mycli.packages.special.llm.sql_using_llm")
 def test_llm_command_with_prompt(mock_sql_using_llm, mock_ensure_template, mock_llm, executor):
-    """
+    r"""
     \llm prompt 'question' should use template and call sql_using_llm
     """
     mock_sql_using_llm.return_value = ("CTX", "SELECT 1;")
@@ -124,7 +124,7 @@ def test_llm_command_with_prompt(mock_sql_using_llm, mock_ensure_template, mock_
 @patch("mycli.packages.special.llm.ensure_mycli_template")
 @patch("mycli.packages.special.llm.sql_using_llm")
 def test_llm_command_question_with_context(mock_sql_using_llm, mock_ensure_template, mock_llm, executor):
-    """
+    r"""
     \llm 'question' treats as prompt and returns SQL
     """
     mock_sql_using_llm.return_value = ("CTX2", "SELECT 2;")
@@ -141,7 +141,7 @@ def test_llm_command_question_with_context(mock_sql_using_llm, mock_ensure_templ
 @patch("mycli.packages.special.llm.ensure_mycli_template")
 @patch("mycli.packages.special.llm.sql_using_llm")
 def test_llm_command_question_verbose(mock_sql_using_llm, mock_ensure_template, mock_llm, executor):
-    """
+    r"""
     \llm+ returns verbose context and SQL
     """
     mock_sql_using_llm.return_value = ("VERBOSE_CTX", "SELECT 42;")
