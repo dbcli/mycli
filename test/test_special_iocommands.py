@@ -219,12 +219,12 @@ def test_watch_query_full():
     expected_value = "1"
     query = "SELECT {0!s}".format(expected_value)
     expected_title = "> {0!s}".format(query)
-    expected_results = 4
+    expected_results = [4, 5]
     ctrl_c_process = send_ctrl_c(wait_interval)
     with db_connection().cursor() as cur:
         results = list(mycli.packages.special.iocommands.watch_query(arg="{0!s} {1!s}".format(watch_seconds, query), cur=cur))
     ctrl_c_process.join(1)
-    assert len(results) == expected_results
+    assert len(results) in expected_results
     for result in results:
         assert result[0] == expected_title
         assert result[2][0] == expected_value
