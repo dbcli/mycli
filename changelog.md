@@ -5,6 +5,7 @@ Internal
 --------
 
 * Work on passing `ruff check` linting.
+* Relax expectation for unreliable test.
 
 
 1.31.2 (2025/05/01)
