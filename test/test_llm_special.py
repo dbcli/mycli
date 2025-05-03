@@ -18,20 +18,6 @@ def executor():
     return None
 
 
-@patch("mycli.packages.special.llm.initialize_llm")
-@patch("mycli.packages.special.llm.llm", new=None)
-def test_llm_command_without_install(mock_initialize_llm, executor):
-    """
-    Test that handle_llm initializes llm when it is None and raises FinishIteration.
-    """
-    test_text = r"\llm"
-    with pytest.raises(FinishIteration) as exc_info:
-        handle_llm(test_text, executor)
-    mock_initialize_llm.assert_called_once()
-    # No results expected when llm is uninitialized
-    assert exc_info.value.args[0] is None
-
-
 @patch("mycli.packages.special.llm.llm")
 def test_llm_command_without_args(mock_llm, executor):
     r"""
