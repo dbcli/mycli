@@ -14,7 +14,7 @@ import llm
 from llm.cli import cli
 
 from mycli.packages.special import export
-from mycli.packages.special.main import parse_special_command
+from mycli.packages.special.main import Verbosity, parse_special_command
 
 log = logging.getLogger(__name__)
 
@@ -127,7 +127,9 @@ PROMPT = """A MySQL database has the following schema:
 
 $db_schema
 
-Here is a sample row of data from each table: $sample_data
+Here is a sample row of data from each table:
+
+$sample_data
 
 Use the provided schema and the sample data to construct a SQL query that
 can be run in MySQL to answer
@@ -154,7 +156,7 @@ def ensure_mycli_template(replace=False):
 
 @export
 def handle_llm(text, cur) -> Tuple[str, Optional[str], float]:
-    _, verbose, arg = parse_special_command(text)
+    _, verbosity, arg = parse_special_command(text)
     if not arg.strip():
         output = [(None, None, None, USAGE)]
         raise FinishIteration(output)
@@ -192,16 +194,16 @@ def handle_llm(text, cur) -> Tuple[str, Optional[str], float]:
             else:
                 output = [(None, None, None, result)]
                 raise FinishIteration(output)
-            return (result if verbose else "", sql, end - start)
+            return (result if verbosity == Verbosity.SUCCINCT else "", sql, end - start)
         else:
             run_external_cmd("llm", *args, restart_cli=restart)
             raise FinishIteration(None)
     try:
         ensure_mycli_template()
         start = time()
-        context, sql = sql_using_llm(cur=cur, question=arg, verbose=verbose)
+        context, sql = sql_using_llm(cur=cur, question=arg)
         end = time()
-        if not verbose:
+        if verbosity == Verbosity.SUCCINCT:
             context = ""
         return (context, sql, end - start)
     except Exception as e:
@@ -215,7 +217,7 @@ def is_llm_command(command) -> bool:
 
 
 @export
-def sql_using_llm(cur, question=None, verbose=False) -> Tuple[str, Optional[str]]:
+def sql_using_llm(cur, question=None) -> Tuple[str, Optional[str]]:
     if cur is None:
         raise RuntimeError("Connect to a database and try again.")
     schema_query = """

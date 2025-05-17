@@ -1,3 +1,4 @@
+from enum import Enum
 from collections import namedtuple
 from enum import Enum
 import logging
@@ -36,12 +37,22 @@ class CommandNotFound(Exception):
     pass
 
 
+class Verbosity(Enum):
+    SUCCINCT = "succinct"
+    NORMAL = "normal"
+    VERBOSE = "verbose"
+
+
 @export
 def parse_special_command(sql: str) -> tuple[str, bool, str]:
     command, _, arg = sql.partition(" ")
-    verbose = "+" in command
-    command = command.strip().replace("+", "")
-    return (command, verbose, arg.strip())
+    verbosity = Verbosity.NORMAL
+    if "+" in command:
+        verbosity = Verbosity.VERBOSE
+    elif "-" in command:
+        verbosity = Verbosity.SUCCINCT
+    command = command.strip().strip("+-")
+    return (command, verbosity, arg.strip())
 
 
 @export
@@ -109,7 +120,7 @@ def execute(cur: Cursor, sql: str) -> list[tuple]:
     """Execute a special command and return the results. If the special command
     is not supported a CommandNotFound will be raised.
     """
-    command, verbose, arg = parse_special_command(sql)
+    command, verbosity, arg = parse_special_command(sql)
 
     if (command not in COMMANDS) and (command.lower() not in COMMANDS):
         raise CommandNotFound
@@ -129,7 +140,7 @@ def execute(cur: Cursor, sql: str) -> list[tuple]:
     if special_cmd.arg_type == ArgType.NO_QUERY:
         return special_cmd.handler()
     elif special_cmd.arg_type == ArgType.PARSED_QUERY:
-        return special_cmd.handler(cur=cur, arg=arg, verbose=verbose)
+        return special_cmd.handler(cur=cur, arg=arg, verbose=(verbosity == Verbosity.VERBOSE))
     elif special_cmd.arg_type == ArgType.RAW_QUERY:
         return special_cmd.handler(cur=cur, query=sql)
 

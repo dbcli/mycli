@@ -101,7 +101,7 @@ def test_llm_command_with_prompt(mock_sql_using_llm, mock_ensure_template, mock_
     context, sql, duration = handle_llm(test_text, executor)
     mock_ensure_template.assert_called_once()
     mock_sql_using_llm.assert_called()
-    assert context == ""
+    assert context == "CTX"
     assert sql == "SELECT 1;"
     assert isinstance(duration, float)
 
@@ -118,7 +118,7 @@ def test_llm_command_question_with_context(mock_sql_using_llm, mock_ensure_templ
     context, sql, duration = handle_llm(test_text, executor)
     mock_ensure_template.assert_called_once()
     mock_sql_using_llm.assert_called()
-    assert context == ""
+    assert context == "CTX2"
     assert sql == "SELECT 2;"
     assert isinstance(duration, float)
 
@@ -130,10 +130,10 @@ def test_llm_command_question_verbose(mock_sql_using_llm, mock_ensure_template, 
     r"""
     \llm+ returns verbose context and SQL
     """
-    mock_sql_using_llm.return_value = ("VERBOSE_CTX", "SELECT 42;")
-    test_text = r"\llm+ 'Verbose?'"
+    mock_sql_using_llm.return_value = ("NO_CTX", "SELECT 42;")
+    test_text = r"\llm- 'Succinct?'"
     context, sql, duration = handle_llm(test_text, executor)
-    assert context == "VERBOSE_CTX"
+    assert context == ""
     assert sql == "SELECT 42;"
     assert isinstance(duration, float)
 
@@ -181,7 +181,7 @@ def test_sql_using_llm_success(mock_run_cmd):
     sql_text = "SELECT 1, 'abc';"
     fenced = f"Note\n```sql\n{sql_text}\n```"
     mock_run_cmd.return_value = (0, fenced)
-    result, sql = sql_using_llm(dummy_cur, question="dummy", verbose=False)
+    result, sql = sql_using_llm(dummy_cur, question="dummy")
     assert result == fenced
     assert sql == sql_text
 
