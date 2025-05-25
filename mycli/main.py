@@ -128,8 +128,6 @@ class MyCli:
         special.set_timing_enabled(c["main"].as_bool("timing"))
         self.beep_after_seconds = float(c["main"]["beep_after_seconds"] or 0)
 
-        FavoriteQueries.instance = FavoriteQueries.from_config(self.config)
-
         self.dsn_alias = None
         self.main_formatter = TabularOutputFormatter(format_name=c["main"]["table_format"])
         self.redirect_formatter = TabularOutputFormatter(format_name=c["main"].get("redirect_format", "csv"))
