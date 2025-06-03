@@ -16,7 +16,7 @@ from importlib import resources
 import itertools
 from random import choice
 from time import time
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 from cli_helpers.tabular_output import TabularOutputFormatter, preprocessors
 from cli_helpers.utils import strip_ansi
@@ -1119,7 +1119,7 @@ class MyCli(object):
 @click.option(
     "--ssl-verify-server-cert",
     is_flag=True,
-    help=('Verify server\'s "Common Name" in its cert against hostname used when connecting. This option is disabled by default.'),
+    help=("""Verify server's "Common Name" in its cert against hostname used when connecting. This option is disabled by default."""),
 )
 # as of 2016-02-15 revocation list is not supported by underling PyMySQL
 # library (--ssl-crl and --ssl-crlpath options in vanilla mysql client)
@@ -1240,20 +1240,6 @@ def cli(
     # Choose which ever one has a valid value.
     database = dbname or database
 
-    ssl = {
-        "enable": ssl_enable,
-        "ca": ssl_ca and os.path.expanduser(ssl_ca),
-        "cert": ssl_cert and os.path.expanduser(ssl_cert),
-        "key": ssl_key and os.path.expanduser(ssl_key),
-        "capath": ssl_capath,
-        "cipher": ssl_cipher,
-        "tls_version": tls_version,
-        "check_hostname": ssl_verify_server_cert,
-    }
-
-    # remove empty ssl options
-    ssl = {k: v for k, v in ssl.items() if v is not None}
-
     dsn_uri = None
 
     # Treat the database argument as a DSN alias only if it matches a configured alias
@@ -1293,6 +1279,49 @@ def cli(
             host = uri.hostname
         if not port:
             port = uri.port
+
+        if uri.query:
+            dsn_params = parse_qs(uri.query)
+        else:
+            dsn_params = {}
+
+        if dsn_params.get('ssl'):
+            ssl_enable = ssl_enable or (dsn_params.get('ssl')[0].lower() == 'true')
+        if dsn_params.get('ssl_ca'):
+            ssl_ca = ssl_ca or dsn_params.get('ssl_ca')[0]
+            ssl_enable = True
+        if dsn_params.get('ssl_capath'):
+            ssl_capath = ssl_capath or dsn_params.get('ssl_capath')[0]
+            ssl_enable = True
+        if dsn_params.get('ssl_cert'):
+            ssl_cert = ssl_cert or dsn_params.get('ssl_cert')[0]
+            ssl_enable = True
+        if dsn_params.get('ssl_key'):
+            ssl_key = ssl_key or dsn_params.get('ssl_key')[0]
+            ssl_enable = True
+        if dsn_params.get('ssl_cipher'):
+            ssl_cipher = ssl_cipher or dsn_params.get('ssl_cipher')[0]
+            ssl_enable = True
+        if dsn_params.get('tls_version'):
+            tls_version = tls_version or dsn_params.get('tls_version')[0]
+            ssl_enable = True
+        if dsn_params.get('ssl_verify_server_cert'):
+            ssl_verify_server_cert = ssl_verify_server_cert or (dsn_params.get('ssl_verify_server_cert')[0].lower() == 'true')
+            ssl_enable = True
+
+    ssl = {
+        "enable": ssl_enable,
+        "ca": ssl_ca and os.path.expanduser(ssl_ca),
+        "cert": ssl_cert and os.path.expanduser(ssl_cert),
+        "key": ssl_key and os.path.expanduser(ssl_key),
+        "capath": ssl_capath,
+        "cipher": ssl_cipher,
+        "tls_version": tls_version,
+        "check_hostname": ssl_verify_server_cert,
+    }
+
+    # remove empty ssl options
+    ssl = {k: v for k, v in ssl.items() if v is not None}
 
     if ssh_config_host:
         ssh_config = read_ssh_config(ssh_config_path).lookup(ssh_config_host)
