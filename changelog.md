@@ -1,6 +1,11 @@
 Upcoming Release (TBD)
 ======================
 
+Features
+--------
+
+* Support SSL query parameters on DSNs.
+
 Internal
 --------
 
