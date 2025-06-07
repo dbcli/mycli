@@ -774,11 +774,19 @@ class MyCli(object):
                             status_str = str(status).lower()
                             if status_str.find("ok") > -1:
                                 logger.debug("cancelled query, connection id: %r, sql: %r", connection_id_to_kill, text)
-                                self.echo("cancelled query", err=True, fg="red")
+                                self.echo(f"Cancelled query id: {connection_id_to_kill}", err=True, fg="blue")
+                            else:
+                                logger.debug(
+                                    "Failed to confirm query cancellation, connection id: %r, sql: %r",
+                                    connection_id_to_kill,
+                                    text,
+                                )
+                                self.echo(f"Failed to confirm query cancellation, id: {connection_id_to_kill}", err=True, fg="red")
                     except Exception as e:
                         self.echo("Encountered error while cancelling query: {}".format(e), err=True, fg="red")
                 else:
                     logger.debug("Did not get a connection id, skip cancelling query")
+                    self.echo("Did not get a connection id, skip cancelling query", err=True, fg="red")
             except NotImplementedError:
                 self.echo("Not Yet Implemented.", fg="yellow")
             except OperationalError as e:
