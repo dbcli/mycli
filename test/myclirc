@@ -160,8 +160,8 @@ foo_args = 'SELECT $1, "$2", "$3"'
 
 # Initial commands to execute when connecting to any database.
 [init-commands]
+global_limit = set sql_select_limit=9999
 # read_only = "SET SESSION TRANSACTION READ ONLY"
-global_limit = "set sql_select_limit=9999"
 
 
 # Use the -d option to reference a DSN.
