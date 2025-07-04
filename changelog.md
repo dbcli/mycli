@@ -5,6 +5,7 @@ Features
 --------
 
 * Support SSL query parameters on DSNs.
+* More information and care on KeyboardInterrupt.
 
 Internal
 --------
