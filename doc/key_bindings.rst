@@ -63,3 +63,27 @@ C-x u (Emacs-mode)
 Unprettify and dedent current statement, usually into one line.
 
 Only accepts buffers containing single SQL statements.
+
+##################
+C-o d (Emacs-mode)
+##################
+
+Insert the current date at cursor, defined by NOW() on the server.
+
+####################
+C-o C-d (Emacs-mode)
+####################
+
+Insert the quoted current date at cursor.
+
+##################
+C-o t (Emacs-mode)
+##################
+
+Insert the current datetime at cursor.
+
+####################
+C-o C-t (Emacs-mode)
+####################
+
+Insert the quoted current datetime at cursor.

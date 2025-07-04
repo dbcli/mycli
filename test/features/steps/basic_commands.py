@@ -5,6 +5,7 @@ to call the step in "*.feature" file.
 
 """
 
+import datetime
 import tempfile
 from textwrap import dedent
 
@@ -27,6 +28,16 @@ def step_ctrl_d(context):
     """Send Ctrl + D to hopefully exit."""
     context.cli.sendcontrol("d")
     context.exit_sent = True
+
+
+@when('we send "ctrl + o, ctrl + d"')
+def step_ctrl_o_ctrl_d(context):
+    """Send ctrl + o, ctrl + d to insert the quoted date."""
+    context.cli.send("SELECT ")
+    context.cli.sendcontrol("o")
+    context.cli.sendcontrol("d")
+    context.cli.send(" AS dt")
+    context.cli.sendline("")
 
 
 @when(r'we send "\?" command')
@@ -68,6 +79,29 @@ def step_see_found(context):
             +-------+\r
             | found |\r
             +-------+\r
+            \r
+        """)
+        + context.conf["pager_boundary"],
+        timeout=5,
+    )
+
+
+@then("we see the date")
+def step_see_date(context):
+    # There are some edge cases in which this test could fail,
+    # such as running near midnight when the test database has
+    # a different TZ setting than the system.
+    date_str = datetime.datetime.now().strftime("%Y-%m-%d")
+    wrappers.expect_exact(
+        context,
+        context.conf["pager_boundary"]
+        + "\r"
+        + dedent(f"""
+            +------------+\r
+            | dt         |\r
+            +------------+\r
+            | {date_str} |\r
+            +------------+\r
             \r
         """)
         + context.conf["pager_boundary"],

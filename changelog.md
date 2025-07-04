@@ -1,3 +1,12 @@
+Upcoming Release (TBD)
+======================
+
+Features
+--------
+
+* Keybindings to insert current date/datetime.
+
+
 1.32.0 (2025/07/04)
 ======================
 
