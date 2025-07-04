@@ -6,6 +6,11 @@ Features
 
 * Keybindings to insert current date/datetime.
 
+Internal
+--------
+
+* Remove `requirements-dev.txt` in favor of uv/`pyproject.toml`.
+
 
 1.32.0 (2025/07/04)
 ======================

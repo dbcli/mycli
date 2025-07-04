@@ -24,44 +24,41 @@ You'll always get credit for your work.
 
     ```bash
     $ cd mycli
-    $ uv venv
+    $ uv sync --extra dev --extra ssh
     ```
 
-    We've just created a virtual environment that we'll use to install all the dependencies
-    and tools we need to work on mycli. Whenever you want to work on mycli, you
-    need to activate the virtual environment:
+    We've just created a virtual environment and installed all the dependencies
+    and tools we need to work on mycli.
 
-    ```bash
-    $ source .venv/bin/activate
-    ```
-
-5. Install the dependencies and development tools:
-
-    ```bash
-    $ uv pip install -r requirements-dev.txt
-    $ uv pip install --editable .
-    ```
-
-6. Create a branch for your bugfix or feature based off the `main` branch:
+5. Create a branch for your bugfix or feature based off the `main` branch:
 
     ```bash
     $ git checkout -b <name-of-bugfix-or-feature> main
     ```
 
-7. While you work on your bugfix or feature, be sure to pull the latest changes from `upstream`. This ensures that your local codebase is up-to-date:
+6. While you work on your bugfix or feature, be sure to pull the latest changes from `upstream`. This ensures that your local codebase is up-to-date:
 
     ```bash
     $ git pull upstream main
     ```
 
-8. When your work is ready for the mycli team to review it, push your branch to your fork:
+7. When your work is ready for the mycli team to review it, push your branch to your fork:
 
     ```bash
     $ git push origin <name-of-bugfix-or-feature>
     ```
 
-9. [Create a pull request](https://help.github.com/articles/creating-a-pull-request-from-a-fork/)
+8. [Create a pull request](https://help.github.com/articles/creating-a-pull-request-from-a-fork/)
    on GitHub.
+
+
+## Running mycli
+
+To run mycli with your local changes:
+
+```bash
+$ uv run mycli
+```
 
 
 ## Running the Tests
@@ -70,12 +67,12 @@ While you work on mycli, it's important to run the tests to make sure your code
 hasn't broken any existing functionality. To run the tests, just type in:
 
 ```bash
-$ tox
+$ uv run tox
 ```
 
 ### Test Database Credentials
 
-The tests require a database connection to work. You can tell the tests which
+Some tests require a database connection to work. You can tell the tests which
 credentials to use by setting the applicable environment variables:
 
 ```bash

@@ -1,4 +1,4 @@
-include LICENSE.txt *.md *.rst requirements-dev.txt screenshots/*
+include LICENSE.txt *.md *.rst screenshots/*
 include tasks.py .coveragerc tox.ini
 recursive-include test *.cnf
 recursive-include test *.feature
