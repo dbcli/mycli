@@ -69,9 +69,14 @@ def step_query_select_number(context, param):
     wrappers.expect_exact(context, "1 row in set", timeout=2)
 
 
-@then('we see result "{result}"')
-def step_see_result(context, result):
-    wrappers.expect_exact(context, "| {} |".format(result), timeout=2)
+@then('we see tabular result "{result}"')
+def step_see_tabular_result(context, result):
+    wrappers.expect_exact(context, '| {} |'.format(result), timeout=2)
+
+
+@then('we see csv result "{result}"')
+def step_see_csv_result(context, result):
+    wrappers.expect_exact(context, '"{}"'.format(result), timeout=2)
 
 
 @when('we query "{query}"')
@@ -90,6 +95,19 @@ def step_see_123456_in_ouput(context):
         assert "123456" in f.read()
     if os.path.exists(context.tee_file_name):
         os.remove(context.tee_file_name)
+
+
+@then("we see csv 123 in redirected output")
+def step_see_csv_123_in_ouput(context):
+    wrappers.expect_exact(context, '"123"', timeout=2)
+    temp_filename = "/tmp/output1.csv"
+    if os.path.exists(temp_filename):
+        os.remove(temp_filename)
+
+
+@then("we see 12 in redirected output")
+def step_see_12_in_ouput(context):
+    wrappers.expect_exact(context, ' 12', timeout=2)
 
 
 @then('delimiter is set to "{delimiter}"')
