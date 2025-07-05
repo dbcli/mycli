@@ -464,10 +464,12 @@ def unset_pipe_once_if_written():
     global pipe_once_process, written_to_pipe_once_process
     if written_to_pipe_once_process:
         (stdout_data, stderr_data) = pipe_once_process.communicate()
-        if len(stdout_data) > 0:
-            print(stdout_data.rstrip("\n"))
-        if len(stderr_data) > 0:
-            print(stderr_data.rstrip("\n"))
+        if stdout_data:
+            click.secho(stdout_data.rstrip('\n'))
+        if stderr_data:
+            click.secho(stderr_data.rstrip('\n'), err=True, fg='red')
+        if pipe_once_process.returncode:
+            click.secho(f'process exited with nonzero code {pipe_once_process.returncode}', err=True, fg='red')
         pipe_once_process = None
         written_to_pipe_once_process = False
 

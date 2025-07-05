@@ -5,6 +5,7 @@ Features
 --------
 
 * Keybindings to insert current date/datetime.
+* Improve feedback when running external commands.
 
 Internal
 --------
