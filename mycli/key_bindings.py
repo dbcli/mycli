@@ -4,6 +4,7 @@ from prompt_toolkit.enums import EditingMode
 from prompt_toolkit.filters import completion_is_selected, emacs_mode
 from prompt_toolkit.key_binding import KeyBindings
 
+from mycli import shortcuts
 from mycli.packages.toolkit.fzf import search_history
 
 _logger = logging.getLogger(__name__)
@@ -101,6 +102,42 @@ def mycli_bindings(mycli):
             while 0 < cursorpos_abs < len(b.text) and b.text[cursorpos_abs] in (" ", "\n"):
                 cursorpos_abs -= 1
             b.cursor_position = min(cursorpos_abs, len(b.text))
+
+    @kb.add("c-o", "d", filter=emacs_mode)
+    def _(event):
+        """
+        Insert the current date.
+        """
+        _logger.debug("Detected <C-o d> key.")
+
+        event.app.current_buffer.insert_text(shortcuts.server_date(mycli.sqlexecute))
+
+    @kb.add("c-o", "c-d", filter=emacs_mode)
+    def _(event):
+        """
+        Insert the quoted current date.
+        """
+        _logger.debug("Detected <C-o C-d> key.")
+
+        event.app.current_buffer.insert_text(shortcuts.server_date(mycli.sqlexecute, quoted=True))
+
+    @kb.add("c-o", "t", filter=emacs_mode)
+    def _(event):
+        """
+        Insert the current datetime.
+        """
+        _logger.debug("Detected <C-o t> key.")
+
+        event.app.current_buffer.insert_text(shortcuts.server_datetime(mycli.sqlexecute))
+
+    @kb.add("c-o", "c-t", filter=emacs_mode)
+    def _(event):
+        """
+        Insert the quoted current datetime.
+        """
+        _logger.debug("Detected <C-o C-t> key.")
+
+        event.app.current_buffer.insert_text(shortcuts.server_datetime(mycli.sqlexecute, quoted=True))
 
     @kb.add("c-r", filter=emacs_mode)
     def _(event):

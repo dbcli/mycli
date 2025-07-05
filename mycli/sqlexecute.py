@@ -94,6 +94,8 @@ class SQLExecute(object):
                                     where table_schema = '%s'
                                     order by table_name,ordinal_position"""
 
+    now_query = """SELECT NOW()"""
+
     def __init__(
         self,
         database,
@@ -392,6 +394,12 @@ class SQLExecute(object):
             else:
                 for row in cur:
                     yield row
+
+    def now(self):
+        with self.conn.cursor() as cur:
+            _logger.debug("Now Query. sql: %r", self.now_query)
+            cur.execute(self.now_query)
+            return cur.fetchone()[0]
 
     def get_connection_id(self):
         if not self.connection_id:
