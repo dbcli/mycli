@@ -39,6 +39,10 @@ beep_after_seconds = 0
 # Recommended: ascii
 table_format = ascii
 
+# Redirected otuput format
+# Recommended: csv
+redirect_format = csv
+
 # Syntax coloring style. Possible values (many support the "-dark" suffix):
 # manni, igor, xcode, vim, autumn, vs, rrt, native, perldoc, borland, tango, emacs,
 # friendly, monokai, paraiso, colorful, murphy, bw, pastie, paraiso, trac, default,
