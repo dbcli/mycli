@@ -128,9 +128,12 @@ class MyCli(object):
         FavoriteQueries.instance = FavoriteQueries.from_config(self.config)
 
         self.dsn_alias = None
-        self.formatter = TabularOutputFormatter(format_name=c["main"]["table_format"])
-        sql_format.register_new_formatter(self.formatter)
-        self.formatter.mycli = self
+        self.main_formatter = TabularOutputFormatter(format_name=c["main"]["table_format"])
+        self.redirect_formatter = TabularOutputFormatter(format_name=c["main"].get("redirect_format", "csv"))
+        sql_format.register_new_formatter(self.main_formatter)
+        sql_format.register_new_formatter(self.redirect_formatter)
+        self.main_formatter.mycli = self
+        self.redirect_formatter.mycli = self
         self.syntax_style = c["main"]["syntax_style"]
         self.less_chatty = c["main"].as_bool("less_chatty")
         self.cli_style = c["colors"]
@@ -170,7 +173,7 @@ class MyCli(object):
         # Initialize completer.
         self.smart_completion = c["main"].as_bool("smart_completion")
         self.completer = SQLCompleter(
-            self.smart_completion, supported_formats=self.formatter.supported_formats, keyword_casing=keyword_casing
+            self.smart_completion, supported_formats=self.main_formatter.supported_formats, keyword_casing=keyword_casing
         )
         self._completer_lock = threading.Lock()
 
@@ -211,6 +214,14 @@ class MyCli(object):
             aliases=("\\T",),
             case_sensitive=True,
         )
+        special.register_special_command(
+            self.change_redirect_format,
+            "redirectformat",
+            "\\Tr",
+            "Change the table format used to output redirected results.",
+            aliases=("\\Tr",),
+            case_sensitive=True,
+        )
         special.register_special_command(self.execute_from_file, "source", "\\. filename", "Execute commands from file.", aliases=("\\.",))
         special.register_special_command(
             self.change_prompt_format, "prompt", "\\R", "Change prompt format.", aliases=("\\R",), case_sensitive=True
@@ -218,11 +229,21 @@ class MyCli(object):
 
     def change_table_format(self, arg, **_):
         try:
-            self.formatter.format_name = arg
+            self.main_formatter.format_name = arg
             yield (None, None, None, "Changed table format to {}".format(arg))
         except ValueError:
             msg = "Table format {} not recognized. Allowed formats:".format(arg)
-            for table_type in self.formatter.supported_formats:
+            for table_type in self.main_formatter.supported_formats:
+                msg += "\n\t{}".format(table_type)
+            yield (None, None, None, msg)
+
+    def change_redirect_format(self, arg, **_):
+        try:
+            self.redirect_formatter.format_name = arg
+            yield (None, None, None, "Changed redirect format to {}".format(arg))
+        except ValueError:
+            msg = "Redirect format {} not recognized. Allowed formats:".format(arg)
+            for table_type in self.redirect_formatter.supported_formats:
                 msg += "\n\t{}".format(table_type)
             yield (None, None, None, msg)
 
@@ -686,6 +707,17 @@ class MyCli(object):
             if not text.strip():
                 return
 
+            if special.is_redirect_command(text):
+                redirect_sql, redirect_operator, redirect_filename = special.get_redirect_components(text)
+                text = redirect_sql
+                try:
+                    special.set_redirect(redirect_filename, redirect_operator)
+                except (FileNotFoundError, OSError, RuntimeError) as e:
+                    logger.error("sql: %r, error: %r", text, e)
+                    logger.error("traceback: %r", traceback.format_exc())
+                    self.echo(str(e), err=True, fg="red")
+                    return
+
             if self.destructive_warning:
                 destroy = confirm_destructive_query(text)
                 if destroy is None:
@@ -715,7 +747,8 @@ class MyCli(object):
                 successful = False
                 start = time()
                 res = sqlexecute.run(text)
-                self.formatter.query = text
+                self.main_formatter.query = text
+                self.redirect_formatter.query = text
                 successful = True
                 result_count = 0
                 for title, cur, headers, status in res:
@@ -737,7 +770,14 @@ class MyCli(object):
                     if special.forced_horizontal():
                         max_width = None
 
-                    formatted = self.format_output(title, cur, headers, special.is_expanded_output(), max_width)
+                    formatted = self.format_output(
+                        title,
+                        cur,
+                        headers,
+                        special.is_expanded_output(),
+                        special.is_redirected(),
+                        max_width,
+                    )
 
                     t = time() - start
                     try:
@@ -930,7 +970,9 @@ class MyCli(object):
                 special.write_once(line)
                 special.write_pipe_once(line)
 
-                if fits or output_via_pager:
+                if special.is_redirected():
+                    pass
+                elif fits or output_via_pager:
                     # buffering
                     buf.append(line)
                     if len(line) > size.columns or i > (size.rows - margin):
@@ -988,7 +1030,7 @@ class MyCli(object):
             self._on_completions_refreshed,
             {
                 "smart_completion": self.smart_completion,
-                "supported_formats": self.formatter.supported_formats,
+                "supported_formats": self.main_formatter.supported_formats,
                 "keyword_casing": self.completer.keyword_casing,
             },
         )
@@ -1034,18 +1076,38 @@ class MyCli(object):
         results = self.sqlexecute.run(query)
         for result in results:
             title, cur, headers, status = result
-            self.formatter.query = query
-            output = self.format_output(title, cur, headers, special.is_expanded_output())
+            self.main_formatter.query = query
+            self.redirect_formatter.query = query
+            output = self.format_output(
+                title,
+                cur,
+                headers,
+                special.is_expanded_output(),
+                special.is_redirected(),
+            )
             for line in output:
                 click.echo(line, nl=new_line)
 
-    def format_output(self, title, cur, headers, expanded=False, max_width=None):
-        expanded = expanded or self.formatter.format_name == "vertical"
+    def format_output(
+        self,
+        title,
+        cur,
+        headers,
+        expanded=False,
+        is_redirected=False,
+        max_width=None,
+    ):
+        if is_redirected:
+            use_formatter = self.redirect_formatter
+        else:
+            use_formatter = self.main_formatter
+
+        expanded = expanded or use_formatter.format_name == "vertical"
         output = []
 
         output_kwargs = {"dialect": "unix", "disable_numparse": True, "preserve_whitespace": True, "style": self.output_style}
 
-        if self.formatter.format_name not in sql_format.supported_formats:
+        if use_formatter.format_name not in sql_format.supported_formats:
             output_kwargs["preprocessors"] = (preprocessors.align_decimals,)
 
         if title:  # Only print the title if it's not None.
@@ -1064,8 +1126,12 @@ class MyCli(object):
             if max_width is not None:
                 cur = list(cur)
 
-            formatted = self.formatter.format_output(
-                cur, headers, format_name="vertical" if expanded else None, column_types=column_types, **output_kwargs
+            formatted = use_formatter.format_output(
+                cur,
+                headers,
+                format_name="vertical" if expanded else None,
+                column_types=column_types,
+                **output_kwargs,
             )
 
             if isinstance(formatted, str):
@@ -1075,8 +1141,12 @@ class MyCli(object):
             if not expanded and max_width and headers and cur:
                 first_line = next(formatted)
                 if len(strip_ansi(first_line)) > max_width:
-                    formatted = self.formatter.format_output(
-                        cur, headers, format_name="vertical", column_types=column_types, **output_kwargs
+                    formatted = use_formatter.format_output(
+                        cur,
+                        headers,
+                        format_name="vertical",
+                        column_types=column_types,
+                        **output_kwargs,
                     )
                     if isinstance(formatted, str):
                         formatted = iter(formatted.splitlines())
@@ -1393,14 +1463,14 @@ def cli(
     if execute:
         try:
             if csv:
-                mycli.formatter.format_name = "csv"
+                mycli.main_formatter.format_name = "csv"
                 if execute.endswith(r"\G"):
                     execute = execute[:-2]
             elif table:
                 if execute.endswith(r"\G"):
                     execute = execute[:-2]
             else:
-                mycli.formatter.format_name = "tsv"
+                mycli.main_formatter.format_name = "tsv"
 
             mycli.run_query(execute)
             sys.exit(0)
@@ -1433,9 +1503,9 @@ def cli(
             new_line = True
 
             if csv:
-                mycli.formatter.format_name = "csv"
+                mycli.main_formatter.format_name = "csv"
             elif not table:
-                mycli.formatter.format_name = "tsv"
+                mycli.main_formatter.format_name = "tsv"
 
             mycli.run_query(stdin_text, new_line=new_line)
             sys.exit(0)

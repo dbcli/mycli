@@ -320,7 +320,8 @@ def test_dsn(monkeypatch):
         def __init__(self, **args):
             self.logger = Logger()
             self.destructive_warning = False
-            self.formatter = Formatter()
+            self.main_formatter = Formatter()
+            self.redirect_formatter = Formatter()
 
         def connect(self, **args):
             MockMyCli.connect_args = args
@@ -483,7 +484,8 @@ def test_ssh_config(monkeypatch):
         def __init__(self, **args):
             self.logger = Logger()
             self.destructive_warning = False
-            self.formatter = Formatter()
+            self.main_formatter = Formatter()
+            self.redirect_formatter = Formatter()
 
         def connect(self, **args):
             MockMyCli.connect_args = args

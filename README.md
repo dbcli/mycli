@@ -136,6 +136,7 @@ Features
 * Log every query and its results to a file (disabled by default).
 * Pretty prints tabular data (with colors!)
 * Support for SSL connections
+* Shell-style trailing redirects with `$>`, `$>>` and `$|` operators.
 * Some features are only exposed as [key bindings](doc/key_bindings.rst)
 
 Contributions:
@@ -150,7 +151,7 @@ https://github.com/dbcli/mycli/blob/main/CONTRIBUTING.md
 
 ## Additional Install Instructions:
 
-These are some alternative ways to install mycli that are not managed by our team but provided by OS package maintainers. These packages could be slightly out of date and take time to release the latest version. 
+These are some alternative ways to install mycli that are not managed by our team but provided by OS package maintainers. These packages could be slightly out of date and take time to release the latest version.
 
 ### Arch, Manjaro
 

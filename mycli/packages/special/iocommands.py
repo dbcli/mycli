@@ -8,6 +8,7 @@ from time import sleep
 
 import click
 import pyperclip
+import sqlglot
 import sqlparse
 
 from mycli.packages.prompt_utils import confirm_destructive_query
@@ -222,6 +223,78 @@ def copy_query_to_clipboard(sql=None):
     return message
 
 
+@export
+def is_redirect_command(command: str) -> bool:
+    """Is this a shell-style redirect command?
+
+    :param command: string
+
+    """
+    sql_string, operator, shell_string = get_redirect_components(command)
+    return bool(sql_string)
+
+
+@export
+def get_redirect_components(command: str):
+    """Get the parts of a shell-style redirect command."""
+
+    dollar_pos = 0
+    operator_pos = 0
+    try:
+        tokens = sqlglot.tokenize(command)
+    except sqlglot.errors.TokenError:
+        return None, None, None
+    for tok in reversed(tokens):
+        if tok.token_type in (sqlglot.TokenType.GT, sqlglot.TokenType.PIPE):
+            operator_pos = tok.start
+            continue
+        if tok.token_type == sqlglot.TokenType.VAR and tok.text == '$' and tok.start == operator_pos - 1:
+            dollar_pos = tok.start
+            break
+
+    sql_string = command[0:dollar_pos].strip().removesuffix(get_current_delimiter()).rstrip()
+    try:
+        statements = sqlglot.parse(sql_string, read='mysql')
+    except sqlglot.errors.ParseError:
+        return None, None, None
+    if len(statements) != 1:
+        # buglet: the statement count doesn't respect a custom delimiter
+        return None, None, None
+
+    operator_string = ''
+    shell_string = command[operator_pos:]
+    for op in ['>>', '>', '|']:
+        if shell_string.startswith(op):
+            operator_string = op
+            shell_string = shell_string.removeprefix(op)
+            break
+    shell_string = shell_string.strip().removesuffix(get_current_delimiter()).rstrip()
+
+    if ' ' in shell_string and operator_string.startswith('>'):
+        return None, None, None
+
+    if '>' in shell_string and operator_string.startswith('>'):
+        return None, None, None
+
+    if not shell_string:
+        return None, None, None
+
+    if not sql_string:
+        return None, None, None
+
+    return sql_string, operator_string, shell_string
+
+
+@export
+def set_redirect(filename: str, operator: str):
+    if operator == '|':
+        return set_pipe_once(filename)
+    elif operator == '>':
+        return set_once(f'-o {filename}')
+    else:
+        return set_once(filename)
+
+
 @special_command("\\f", "\\f [name [args..]]", "List or execute favorite queries.", arg_type=PARSED_QUERY, case_sensitive=True)
 def execute_favorite_query(cur, arg, **_):
     """Returns (title, rows, headers, status)"""
@@ -405,6 +478,11 @@ def set_once(arg, **_):
     written_to_once_file = False
 
     return [(None, None, None, "")]
+
+
+@export
+def is_redirected():
+    return bool(once_file or pipe_once_process)
 
 
 @export
