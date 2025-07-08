@@ -103,6 +103,8 @@ def suggest_special(text):
         ]
     elif cmd in ["\\.", "source"]:
         return [{"type": "file_name"}]
+    if cmd in ["\\llm", "\\ai"]:
+        return [{"type": "llm"}]
 
     return [{"type": "keyword"}, {"type": "special"}]
 

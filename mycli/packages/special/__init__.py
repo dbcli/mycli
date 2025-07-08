@@ -11,4 +11,5 @@ def export(defn):
 from mycli.packages.special import (
     dbcommands,  # noqa: E402 F401
     iocommands,  # noqa: E402 F401
+    llm,  # noqa: E402 F401
 )

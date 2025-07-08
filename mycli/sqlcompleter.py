@@ -7,6 +7,7 @@ from prompt_toolkit.completion import Completer, Completion
 from mycli.packages.completion_engine import suggest_type
 from mycli.packages.filepaths import complete_path, parse_path, suggest_path
 from mycli.packages.parseutils import last_word
+from mycli.packages.special import llm
 from mycli.packages.special.favoritequeries import FavoriteQueries
 
 _logger = logging.getLogger(__name__)
@@ -1192,6 +1193,19 @@ class SQLCompleter(Completer):
             elif suggestion["type"] == "file_name":
                 file_names = self.find_files(word_before_cursor)
                 completions.extend(file_names)
+            elif suggestion["type"] == "llm":
+                if not word_before_cursor:
+                    tokens = document.text.split()[1:]
+                else:
+                    tokens = document.text.split()[1:-1]
+                possible_entries = llm.get_completions(tokens)
+                subcommands = self.find_matches(
+                    word_before_cursor,
+                    possible_entries,
+                    start_only=False,
+                    fuzzy=True,
+                )
+                completions.extend(subcommands)
 
         return completions
 

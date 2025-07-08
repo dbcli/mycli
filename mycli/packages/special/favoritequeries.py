@@ -30,9 +30,6 @@ Examples:
     simple: Deleted
 """
 
-    # Class-level variable, for convenience to use as a singleton.
-    instance = None
-
     def __init__(self, config):
         self.config = config
 
