@@ -142,6 +142,7 @@ class MyCli(object):
         c_dest_warning = c["main"].as_bool("destructive_warning")
         self.destructive_warning = c_dest_warning if warn is None else warn
         self.login_path_as_host = c["main"].as_bool("login_path_as_host")
+        self.post_redirect_command = c['main'].get('post_redirect_command')
 
         # read from cli argument or user config file
         self.auto_vertical_output = auto_vertical_output or c["main"].as_bool("auto_vertical_output")
@@ -797,7 +798,7 @@ class MyCli(object):
                     start = time()
                     result_count += 1
                     mutating = mutating or destroy or is_mutating(status)
-                special.unset_once_if_written()
+                special.unset_once_if_written(self.post_redirect_command)
                 special.unset_pipe_once_if_written()
             except EOFError as e:
                 raise e

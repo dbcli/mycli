@@ -1,6 +1,11 @@
 Upcoming Release (TBD)
 ======================
 
+Features
+--------
+
+* Post-save command hook for redirected output.
+
 Internal
 --------
 
