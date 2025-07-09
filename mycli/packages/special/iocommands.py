@@ -496,12 +496,26 @@ def write_once(output):
 
 
 @export
-def unset_once_if_written():
+def unset_once_if_written(post_redirect_command) -> None:
     """Unset the once file, if it has been written to."""
     global once_file, written_to_once_file
     if written_to_once_file and once_file:
+        once_filename = once_file.name
         once_file.close()
         once_file = None
+        if post_redirect_command:
+            post_cmd = post_redirect_command.format(shlex.quote(once_filename))
+            try:
+                subprocess.run(
+                    post_cmd,
+                    shell=True,
+                    check=True,
+                    stdin=subprocess.DEVNULL,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+            except Exception as e:
+                raise OSError("Redirect post hook failed: {}".format(e))
 
 
 @special_command("\\pipe_once", "\\| command", "Send next result to a subprocess.", aliases=("\\|",))
