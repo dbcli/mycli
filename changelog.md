@@ -9,7 +9,8 @@ Features
 Internal
 --------
 
-* Documentation cleanup
+* Documentation cleanup.
+* Bump cli_helpers dependency for more output formats.
 
 
 1.33.0 (2025/07/07)
