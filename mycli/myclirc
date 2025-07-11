@@ -35,12 +35,13 @@ beep_after_seconds = 0
 
 # Table format. Possible values: ascii, double, github,
 # psql, plain, simple, grid, fancy_grid, pipe, orgtbl, rst, mediawiki, html,
-# latex, latex_booktabs, textile, moinmoin, jira, vertical, tsv, csv.
+# latex, latex_booktabs, textile, moinmoin, jira, vertical, tsv, tsv_noheader,
+# csv, csv-noheader, jsonl, jsonl_unescaped.
 # Recommended: ascii
 table_format = ascii
 
 # Redirected otuput format
-# Recommended: csv
+# Recommended: csv.
 redirect_format = csv
 
 # A command to run after a successful output redirect, with {} to be replaced
