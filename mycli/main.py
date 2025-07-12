@@ -799,7 +799,7 @@ class MyCli(object):
                     result_count += 1
                     mutating = mutating or destroy or is_mutating(status)
                 special.unset_once_if_written(self.post_redirect_command)
-                special.unset_pipe_once_if_written()
+                special.flush_pipe_once_if_written()
             except EOFError as e:
                 raise e
             except KeyboardInterrupt:
