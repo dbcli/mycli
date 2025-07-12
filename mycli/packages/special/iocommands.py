@@ -542,8 +542,8 @@ def write_pipe_once(output):
     global pipe_once_process, written_to_pipe_once_process
     if output and pipe_once_process:
         try:
-            click.echo(output, file=pipe_once_process.stdin, nl=False)
-            click.echo("\n", file=pipe_once_process.stdin, nl=False)
+            for line in output.split('\n'):
+                print(line, file=pipe_once_process.stdin)
         except (IOError, OSError) as e:
             pipe_once_process.terminate()
             raise OSError("Failed writing to pipe_once subprocess: {}".format(e.strerror))
