@@ -154,12 +154,12 @@ def test_pipe_once_command():
     if os.name == "nt":
         mycli.packages.special.execute(None, '\\pipe_once python -c "import sys; print(len(sys.stdin.read().strip()))"')
         mycli.packages.special.write_once("hello world")
-        mycli.packages.special.unset_pipe_once_if_written()
+        mycli.packages.special.flush_pipe_once_if_written()
     else:
         with tempfile.NamedTemporaryFile() as f:
             mycli.packages.special.execute(None, "\\pipe_once tee " + f.name)
             mycli.packages.special.write_pipe_once("hello world")
-            mycli.packages.special.unset_pipe_once_if_written()
+            mycli.packages.special.flush_pipe_once_if_written()
             f.seek(0)
             assert f.read() == b"hello world\n"
 
