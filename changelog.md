@@ -1,3 +1,12 @@
+1.34.1 (2025/07/12)
+======================
+
+Internal
+--------
+
+* Bump cli_helpers dependency for corrected output formats.
+
+
 1.34.0 (2025/07/11)
 ======================
 
