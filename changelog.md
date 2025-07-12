@@ -1,7 +1,7 @@
-Upcoming Release (TBD)
+1.34.2 (2025/07/12)
 ======================
 
-Internal
+Bug Fixes
 --------
 
 * Use plain `print()` to communicate with subprocess.
