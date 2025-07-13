@@ -123,7 +123,18 @@ Examples:
 # https://llm.datasette.io/en/stable/plugins/directory.html
 """
 _SQL_CODE_FENCE = r"```sql\n(.*?)\n```"
-PROMPT = """A MySQL database has the following schema:
+PROMPT = """
+You are a helpful assistant who is a MySQL expert. You are embedded in a mysql
+cli tool called mycli.
+
+Answer this question:
+
+$question
+
+Use the following context if it is relevant to answering the question. If the
+question is not about the current database then ignore the context.
+
+You are connected to a MySQL database with the following schema:
 
 $db_schema
 
@@ -131,18 +142,14 @@ Here is a sample row of data from each table:
 
 $sample_data
 
-Use the provided schema and the sample data to construct a SQL query that
-can be run in MySQL to answer
-
-$question
-
-Explain the reason for choosing each table in the SQL query you have
-written. Keep the explanation concise.
-Finally include a sql query in a code fence such as this one:
+If the answer can be found using a SQL query, include a sql query in a code
+fence such as this one:
 
 ```sql
 SELECT count(*) FROM table_name;
-```"""
+```
+Keep your explanation concise and focused on the question asked.
+"""
 
 
 def ensure_mycli_template(replace=False):
