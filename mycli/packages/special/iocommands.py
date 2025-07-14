@@ -26,7 +26,7 @@ tee_file = None
 once_file = None
 written_to_once_file = False
 pipe_once_process = None
-written_to_pipe_once_process = False
+pipe_once_stdin = []
 delimiter_command = DelimiterCommand()
 
 
@@ -520,17 +520,16 @@ def unset_once_if_written(post_redirect_command) -> None:
 
 @special_command("\\pipe_once", "\\| command", "Send next result to a subprocess.", aliases=("\\|",))
 def set_pipe_once(arg, **_):
-    global pipe_once_process, written_to_pipe_once_process
+    global pipe_once_process, pipe_once_stdin
     pipe_once_cmd = shlex.split(arg)
     if len(pipe_once_cmd) == 0:
         raise OSError("pipe_once requires a command")
-    written_to_pipe_once_process = False
+    pipe_once_stdin = []
     pipe_once_process = subprocess.Popen(
         pipe_once_cmd,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        bufsize=1,
         encoding="UTF-8",
         universal_newlines=True,
     )
@@ -538,32 +537,34 @@ def set_pipe_once(arg, **_):
 
 
 @export
-def write_pipe_once(output):
-    global pipe_once_process, written_to_pipe_once_process
-    if output and pipe_once_process:
-        try:
-            for line in output.split('\n'):
-                print(line, file=pipe_once_process.stdin)
-        except (IOError, OSError) as e:
-            pipe_once_process.terminate()
-            raise OSError("Failed writing to pipe_once subprocess: {}".format(e.strerror))
-        written_to_pipe_once_process = True
+def write_pipe_once(line):
+    global pipe_once_process, pipe_once_stdin
+    if line and pipe_once_process:
+        pipe_once_stdin.append(line)
 
 
 @export
-def unset_pipe_once_if_written():
-    """Unset the pipe_once cmd, if it has been written to."""
-    global pipe_once_process, written_to_pipe_once_process
-    if written_to_pipe_once_process:
+def flush_pipe_once_if_written():
+    """Flush the pipe_once cmd, if lines have been written."""
+    global pipe_once_process, pipe_once_stdin
+    if not pipe_once_stdin:
+        if pipe_once_process:
+            pipe_once_process.kill()
+            pipe_once_process = None
+        return
+    try:
+        (stdout_data, stderr_data) = pipe_once_process.communicate(input='\n'.join(pipe_once_stdin) + '\n', timeout=60)
+    except subprocess.TimeoutExpired:
+        pipe_once_process.kill()
         (stdout_data, stderr_data) = pipe_once_process.communicate()
-        if stdout_data:
-            click.secho(stdout_data.rstrip('\n'))
-        if stderr_data:
-            click.secho(stderr_data.rstrip('\n'), err=True, fg='red')
-        if pipe_once_process.returncode:
-            click.secho(f'process exited with nonzero code {pipe_once_process.returncode}', err=True, fg='red')
-        pipe_once_process = None
-        written_to_pipe_once_process = False
+    if stdout_data:
+        click.secho(stdout_data.rstrip('\n'))
+    if stderr_data:
+        click.secho(stderr_data.rstrip('\n'), err=True, fg='red')
+    if pipe_once_process.returncode:
+        click.secho(f'process exited with nonzero code {pipe_once_process.returncode}', err=True, fg='red')
+    pipe_once_process = None
+    pipe_once_stdin = []
 
 
 @special_command("watch", "watch [seconds] [-c] query", "Executes the query every [seconds] seconds (by default 5).")

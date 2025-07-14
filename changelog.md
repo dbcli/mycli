@@ -1,3 +1,12 @@
+1.34.3 (2025/07/14)
+======================
+
+Bug Fixes
+--------
+
+* Use only `communicate()` to communicate with subprocess.
+
+
 1.34.2 (2025/07/12)
 ======================
 
