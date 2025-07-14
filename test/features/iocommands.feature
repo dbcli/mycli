@@ -53,3 +53,7 @@ Feature: I/O commands
    Scenario: shell style redirect to command
       When we query "select 100 $| wc"
       then we see 12 in redirected output
+
+   Scenario: shell style redirect to multiple commands
+      When we query "select 100 $| head -1 $| wc"
+      then we see 6 in redirected output

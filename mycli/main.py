@@ -709,10 +709,10 @@ class MyCli(object):
                 return
 
             if special.is_redirect_command(text):
-                redirect_sql, redirect_operator, redirect_filename = special.get_redirect_components(text)
-                text = redirect_sql
+                sql_part, operator_part, shell_part = special.get_redirect_components(text)
+                text = sql_part
                 try:
-                    special.set_redirect(redirect_filename, redirect_operator)
+                    special.set_redirect(shell_part, operator_part)
                 except (FileNotFoundError, OSError, RuntimeError) as e:
                     logger.error("sql: %r, error: %r", text, e)
                     logger.error("traceback: %r", traceback.format_exc())

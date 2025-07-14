@@ -110,6 +110,11 @@ def step_see_12_in_ouput(context):
     wrappers.expect_exact(context, ' 12', timeout=2)
 
 
+@then("we see 6 in redirected output")
+def step_see_6_in_ouput(context):
+    wrappers.expect_exact(context, ' 6', timeout=2)
+
+
 @then('delimiter is set to "{delimiter}"')
 def delimiter_is_set(context, delimiter):
     wrappers.expect_exact(context, "Changed delimiter to {}".format(delimiter), timeout=2)

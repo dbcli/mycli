@@ -1,3 +1,4 @@
+import functools
 import locale
 import logging
 import os
@@ -11,6 +12,7 @@ import pyperclip
 import sqlglot
 import sqlparse
 
+from mycli.compat import WIN
 from mycli.packages.prompt_utils import confirm_destructive_query
 from mycli.packages.special import export
 from mycli.packages.special.delimitercommand import DelimiterCommand
@@ -230,59 +232,151 @@ def is_redirect_command(command: str) -> bool:
     :param command: string
 
     """
-    sql_string, operator, shell_string = get_redirect_components(command)
-    return bool(sql_string)
+    sql_part, operator_part, shell_part = get_redirect_components(command)
+    return bool(sql_part)
 
 
+def _find_redirect_indices(tokens):
+    raw_dollar_indices = []
+    true_dollar_indices = []
+    angle_bracket_indices = []
+    pipe_indices = []
+
+    for i, tok in enumerate(tokens):
+        if tok.token_type == sqlglot.TokenType.VAR and tok.text == '$':
+            raw_dollar_indices.append(i)
+            continue
+        if tok.token_type == sqlglot.TokenType.GT and (i - 1) in raw_dollar_indices:
+            angle_bracket_indices.append(i)
+            continue
+        if tok.token_type == sqlglot.TokenType.PIPE and (i - 1) in raw_dollar_indices:
+            pipe_indices.append(i)
+            continue
+
+    for i in raw_dollar_indices:
+        if (i + 1) in angle_bracket_indices or (i + 1) in pipe_indices:
+            true_dollar_indices.append(i)
+
+    return (
+        raw_dollar_indices,
+        true_dollar_indices,
+        angle_bracket_indices,
+        pipe_indices,
+    )
+
+
+def _find_redirect_sql_part(
+    command,
+    tokens,
+    true_dollar_indices,
+):
+    leftmost_dollar_pos = tokens[true_dollar_indices[0]].start
+    sql_part = command[0:leftmost_dollar_pos].strip().removesuffix(get_current_delimiter()).rstrip()
+    try:
+        statements = sqlglot.parse(sql_part, read='mysql')
+    except sqlglot.errors.ParseError:
+        return ''
+    if len(statements) != 1:
+        # buglet: the statement count doesn't respect a custom delimiter
+        return ''
+    return sql_part
+
+
+def _find_redirect_shell_tokens(
+    tokens,
+    true_dollar_indices,
+):
+    shell_part_tokens = []
+
+    for i, tok in enumerate(tokens):
+        if i < true_dollar_indices[0]:
+            continue
+        if i in true_dollar_indices:
+            continue
+        shell_part_tokens.append(tok)
+
+    return shell_part_tokens
+
+
+def _find_redirect_shell_part(shell_part_tokens):
+    shell_part = ' ' * (shell_part_tokens[-1].end + 1)
+    for tok in shell_part_tokens:
+        shell_part = shell_part[0 : tok.start] + tok.text + shell_part[tok.end :]
+    return shell_part.strip().removesuffix(get_current_delimiter()).rstrip()
+
+
+def _redirect_invalid_shell_part(
+    shell_part,
+    operator_part,
+):
+    if ' ' in shell_part and operator_part.startswith('>'):
+        return True
+
+    if '>' in shell_part and operator_part.startswith('>'):
+        return True
+
+    if not shell_part:
+        return True
+
+
+@functools.lru_cache(maxsize=1)
 @export
 def get_redirect_components(command: str):
     """Get the parts of a shell-style redirect command."""
 
-    dollar_pos = 0
-    operator_pos = 0
     try:
         tokens = sqlglot.tokenize(command)
     except sqlglot.errors.TokenError:
         return None, None, None
-    for tok in reversed(tokens):
-        if tok.token_type in (sqlglot.TokenType.GT, sqlglot.TokenType.PIPE):
-            operator_pos = tok.start
-            continue
-        if tok.token_type == sqlglot.TokenType.VAR and tok.text == '$' and tok.start == operator_pos - 1:
-            dollar_pos = tok.start
-            break
 
-    sql_string = command[0:dollar_pos].strip().removesuffix(get_current_delimiter()).rstrip()
-    try:
-        statements = sqlglot.parse(sql_string, read='mysql')
-    except sqlglot.errors.ParseError:
-        return None, None, None
-    if len(statements) != 1:
-        # buglet: the statement count doesn't respect a custom delimiter
+    (
+        raw_dollar_indices,
+        true_dollar_indices,
+        angle_bracket_indices,
+        pipe_indices,
+    ) = _find_redirect_indices(tokens)
+
+    if not true_dollar_indices:
         return None, None, None
 
-    operator_string = ''
-    shell_string = command[operator_pos:]
-    for op in ['>>', '>', '|']:
-        if shell_string.startswith(op):
-            operator_string = op
-            shell_string = shell_string.removeprefix(op)
-            break
-    shell_string = shell_string.strip().removesuffix(get_current_delimiter()).rstrip()
-
-    if ' ' in shell_string and operator_string.startswith('>'):
+    if len(angle_bracket_indices) > 1:
         return None, None, None
 
-    if '>' in shell_string and operator_string.startswith('>'):
+    if WIN and len(pipe_indices) > 1:
+        # how to give better feedback here?
         return None, None, None
 
-    if not shell_string:
+    if angle_bracket_indices and pipe_indices:
+        # could be supported in the future
         return None, None, None
 
-    if not sql_string:
+    sql_part = _find_redirect_sql_part(
+        command,
+        tokens,
+        true_dollar_indices,
+    )
+    if not sql_part:
         return None, None, None
 
-    return sql_string, operator_string, shell_string
+    shell_part_tokens = _find_redirect_shell_tokens(
+        tokens,
+        true_dollar_indices,
+    )
+
+    operator_part = shell_part_tokens.pop(0).text
+    if operator_part == '>' and shell_part_tokens[0].token_type == sqlglot.TokenType.GT:
+        shell_part_tokens.pop(0)
+        operator_part = '>>'
+
+    shell_part = _find_redirect_shell_part(shell_part_tokens)
+
+    if _redirect_invalid_shell_part(shell_part, operator_part):
+        return None, None, None
+
+    if not sql_part:
+        return None, None, None
+
+    return sql_part, operator_part, shell_part
 
 
 @export
@@ -521,9 +615,14 @@ def unset_once_if_written(post_redirect_command) -> None:
 @special_command("\\pipe_once", "\\| command", "Send next result to a subprocess.", aliases=("\\|",))
 def set_pipe_once(arg, **_):
     global pipe_once_process, pipe_once_stdin
-    pipe_once_cmd = shlex.split(arg)
-    if len(pipe_once_cmd) == 0:
+    if not arg:
         raise OSError("pipe_once requires a command")
+    if WIN:
+        # best effort, no chaining
+        pipe_once_cmd = shlex.split(arg)
+    else:
+        # to support chaining
+        pipe_once_cmd = ['sh', '-c', arg]
     pipe_once_stdin = []
     pipe_once_process = subprocess.Popen(
         pipe_once_cmd,
@@ -561,7 +660,7 @@ def flush_pipe_once_if_written():
     if stderr_data:
         click.secho(stderr_data.rstrip('\n'), err=True, fg='red')
     if pipe_once_process.returncode:
-        click.secho(f'process exited with nonzero code {pipe_once_process.returncode}', err=True, fg='red')
+        raise OSError(f'process exited with nonzero code {pipe_once_process.returncode}')
     pipe_once_process = None
     pipe_once_stdin = []
 
