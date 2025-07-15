@@ -547,10 +547,9 @@ def write_pipe_once(line):
 def flush_pipe_once_if_written():
     """Flush the pipe_once cmd, if lines have been written."""
     global pipe_once_process, pipe_once_stdin
+    if not pipe_once_process:
+        return
     if not pipe_once_stdin:
-        if pipe_once_process:
-            pipe_once_process.kill()
-            pipe_once_process = None
         return
     try:
         (stdout_data, stderr_data) = pipe_once_process.communicate(input='\n'.join(pipe_once_stdin) + '\n', timeout=60)
