@@ -1,3 +1,12 @@
+Upcoming Release (TBD)
+======================
+
+Features
+--------
+
+* Support chained pipe operators.
+
+
 1.34.4 (2025/07/15)
 ======================
 

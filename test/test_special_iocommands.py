@@ -150,6 +150,8 @@ def test_pipe_once_command():
 
     with pytest.raises(OSError):
         mycli.packages.special.execute(None, "\\pipe_once /proc/access-denied")
+        mycli.packages.special.write_pipe_once("select 1")
+        mycli.packages.special.flush_pipe_once_if_written()
 
     if os.name == "nt":
         mycli.packages.special.execute(None, '\\pipe_once python -c "import sys; print(len(sys.stdin.read().strip()))"')
