@@ -4,7 +4,8 @@ Upcoming Release (TBD)
 Features
 --------
 
-* Support chained pipe operators.
+* Support chained pipe operators such as `select first_name from users $| grep '^J' $| head -10`.
+* Support trailing file redirects after pipe operators, such as `select 10 $| tail -1 $> ten.txt`.
 
 
 1.34.4 (2025/07/15)
