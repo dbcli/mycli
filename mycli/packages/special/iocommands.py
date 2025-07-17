@@ -27,8 +27,12 @@ PAGER_ENABLED = True
 tee_file = None
 once_file = None
 written_to_once_file = False
-pipe_once_process = None
-pipe_once_stdin = []
+PIPE_ONCE = {
+    'process': None,
+    'stdin': [],
+    'stdout_file': None,
+    'stdout_mode': None,
+}
 delimiter_command = DelimiterCommand()
 
 
@@ -112,7 +116,7 @@ def forced_horizontal():
     return force_horizontal_output
 
 
-_logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 @export
@@ -227,45 +231,42 @@ def copy_query_to_clipboard(sql=None):
 
 @export
 def is_redirect_command(command: str) -> bool:
-    """Is this a shell-style redirect command?
+    """Is this a shell-style redirect to command or file?
 
     :param command: string
 
     """
-    sql_part, operator_part, shell_part = get_redirect_components(command)
+    sql_part, _command_part, _file_operator_part, _file_part = get_redirect_components(command)
     return bool(sql_part)
 
 
-def _find_redirect_indices(tokens):
-    raw_dollar_indices = []
-    true_dollar_indices = []
-    angle_bracket_indices = []
-    pipe_indices = []
+def _redirect_find_token_indices(tokens):
+    token_indices = {
+        'raw_dollar': [],
+        'true_dollar': [],
+        'angle_bracket': [],
+        'pipe': [],
+    }
 
     for i, tok in enumerate(tokens):
         if tok.token_type == sqlglot.TokenType.VAR and tok.text == '$':
-            raw_dollar_indices.append(i)
+            token_indices['raw_dollar'].append(i)
             continue
-        if tok.token_type == sqlglot.TokenType.GT and (i - 1) in raw_dollar_indices:
-            angle_bracket_indices.append(i)
+        if tok.token_type == sqlglot.TokenType.GT and (i - 1) in token_indices['raw_dollar']:
+            token_indices['angle_bracket'].append(i)
             continue
-        if tok.token_type == sqlglot.TokenType.PIPE and (i - 1) in raw_dollar_indices:
-            pipe_indices.append(i)
+        if tok.token_type == sqlglot.TokenType.PIPE and (i - 1) in token_indices['raw_dollar']:
+            token_indices['pipe'].append(i)
             continue
 
-    for i in raw_dollar_indices:
-        if (i + 1) in angle_bracket_indices or (i + 1) in pipe_indices:
-            true_dollar_indices.append(i)
+    for i in token_indices['raw_dollar']:
+        if (i + 1) in token_indices['angle_bracket'] or (i + 1) in token_indices['pipe']:
+            token_indices['true_dollar'].append(i)
 
-    return (
-        raw_dollar_indices,
-        true_dollar_indices,
-        angle_bracket_indices,
-        pipe_indices,
-    )
+    return token_indices
 
 
-def _find_redirect_sql_part(
+def _redirect_find_sql_part(
     command,
     tokens,
     true_dollar_indices,
@@ -282,111 +283,156 @@ def _find_redirect_sql_part(
     return sql_part
 
 
-def _find_redirect_shell_tokens(
+def _redirect_find_command_tokens(
     tokens,
     true_dollar_indices,
 ):
-    shell_part_tokens = []
+    command_part_tokens = []
 
     for i, tok in enumerate(tokens):
         if i < true_dollar_indices[0]:
             continue
         if i in true_dollar_indices:
             continue
-        shell_part_tokens.append(tok)
+        command_part_tokens.append(tok)
 
-    return shell_part_tokens
+    if command_part_tokens:
+        _operator = command_part_tokens.pop(0)
+
+    return command_part_tokens
 
 
-def _find_redirect_shell_part(shell_part_tokens):
-    shell_part = ' ' * (shell_part_tokens[-1].end + 1)
-    for tok in shell_part_tokens:
-        shell_part = shell_part[0 : tok.start] + tok.text + shell_part[tok.end :]
-    return shell_part.strip().removesuffix(get_current_delimiter()).rstrip()
+def _redirect_find_file_tokens(
+    tokens,
+    angle_bracket_indices,
+):
+    file_part_tokens = []
+    file_part_index = len(tokens)
+
+    if not angle_bracket_indices:
+        return file_part_tokens, file_part_index, None
+
+    file_part_tokens = tokens[angle_bracket_indices[-1] :]
+    file_part_index = angle_bracket_indices[-1]
+
+    file_operator_part = file_part_tokens.pop(0).text
+    if file_operator_part == '>' and file_part_tokens[0].token_type == sqlglot.TokenType.GT:
+        file_part_tokens.pop(0)
+        file_operator_part = '>>'
+
+    return file_part_tokens, file_part_index, file_operator_part
+
+
+def _redirect_assemble_tokens(tokens):
+    assembled_string = ' ' * (tokens[-1].end + 10)
+    for tok in tokens:
+        if tok.token_type == sqlglot.TokenType.IDENTIFIER:
+            text = f'"{tok.text}"'
+            offset = 2
+        elif tok.token_type == sqlglot.TokenType.STRING:
+            text = f"'{tok.text}'"
+            offset = 2
+        else:
+            text = tok.text
+            offset = 0
+        assembled_string = assembled_string[0 : tok.start] + text + assembled_string[tok.end + offset :]
+    return assembled_string.strip().removesuffix(get_current_delimiter()).rstrip()
 
 
 def _redirect_invalid_shell_part(
-    shell_part,
-    operator_part,
+    file_part,
+    command_part,
 ):
-    if ' ' in shell_part and operator_part.startswith('>'):
+    if file_part and ' ' in file_part:
         return True
 
-    if '>' in shell_part and operator_part.startswith('>'):
+    if file_part and '>' in file_part:
         return True
 
-    if not shell_part:
+    if not file_part and not command_part:
         return True
 
 
-@functools.lru_cache(maxsize=1)
 @export
+@functools.lru_cache(maxsize=1)
 def get_redirect_components(command: str):
     """Get the parts of a shell-style redirect command."""
 
     try:
         tokens = sqlglot.tokenize(command)
     except sqlglot.errors.TokenError:
-        return None, None, None
+        return None, None, None, None
 
-    (
-        raw_dollar_indices,
-        true_dollar_indices,
-        angle_bracket_indices,
-        pipe_indices,
-    ) = _find_redirect_indices(tokens)
+    token_indices = _redirect_find_token_indices(tokens)
 
-    if not true_dollar_indices:
-        return None, None, None
+    if not token_indices['true_dollar']:
+        return None, None, None, None
 
-    if len(angle_bracket_indices) > 1:
-        return None, None, None
+    if len(token_indices['angle_bracket']) > 1:
+        return None, None, None, None
 
-    if WIN and len(pipe_indices) > 1:
+    if WIN and len(token_indices['pipe']) > 1:
         # how to give better feedback here?
-        return None, None, None
+        return None, None, None, None
 
-    if angle_bracket_indices and pipe_indices:
-        # could be supported in the future
-        return None, None, None
+    if token_indices['angle_bracket'] and token_indices['pipe']:
+        if token_indices['pipe'][-1] > token_indices['angle_bracket'][-1]:
+            return None, None, None, None
 
-    sql_part = _find_redirect_sql_part(
+    sql_part = _redirect_find_sql_part(
         command,
         tokens,
-        true_dollar_indices,
+        token_indices['true_dollar'],
     )
     if not sql_part:
-        return None, None, None
+        return None, None, None, None
 
-    shell_part_tokens = _find_redirect_shell_tokens(
+    (
+        file_part_tokens,
+        file_part_index,
+        file_operator_part,
+    ) = _redirect_find_file_tokens(
         tokens,
-        true_dollar_indices,
+        token_indices['angle_bracket'],
     )
 
-    operator_part = shell_part_tokens.pop(0).text
-    if operator_part == '>' and shell_part_tokens[0].token_type == sqlglot.TokenType.GT:
-        shell_part_tokens.pop(0)
-        operator_part = '>>'
+    command_part_tokens = _redirect_find_command_tokens(
+        tokens[0:file_part_index],
+        token_indices['true_dollar'],
+    )
 
-    shell_part = _find_redirect_shell_part(shell_part_tokens)
+    if file_part_tokens:
+        file_part = _redirect_assemble_tokens(file_part_tokens)
+    else:
+        file_part = None
 
-    if _redirect_invalid_shell_part(shell_part, operator_part):
-        return None, None, None
+    if command_part_tokens:
+        command_part = _redirect_assemble_tokens(command_part_tokens)
+    else:
+        command_part = None
 
-    if not sql_part:
-        return None, None, None
+    if _redirect_invalid_shell_part(file_part, command_part):
+        return None, None, None, None
 
-    return sql_part, operator_part, shell_part
+    logger.debug('redirect parse sql_part: "{}"'.format(sql_part))
+    logger.debug('redirect parse command_part: "{}"'.format(command_part))
+    logger.debug('redirect parse file_operator_part: "{}"'.format(file_operator_part))
+    logger.debug('redirect parse file_part: "{}"'.format(file_part))
+
+    return sql_part, command_part, file_operator_part, file_part
 
 
 @export
-def set_redirect(filename: str, operator: str):
-    if operator == '|':
-        return set_pipe_once(filename)
-    elif operator == '>':
-        return set_once(f'-o {filename}')
+def set_redirect(command_part, file_operator_part, file_part):
+    if command_part:
+        if file_part:
+            PIPE_ONCE['stdout_file'] = file_part
+            PIPE_ONCE['stdout_mode'] = 'w' if file_operator_part == '>' else 'a'
+        return set_pipe_once(command_part)
+    elif file_operator_part == '>':
+        return set_once(f'-o {file_part}')
     else:
-        return set_once(filename)
+        return set_once(file_part)
 
 
 @special_command("\\f", "\\f [name [args..]]", "List or execute favorite queries.", arg_type=PARSED_QUERY, case_sensitive=True)
@@ -576,7 +622,7 @@ def set_once(arg, **_):
 
 @export
 def is_redirected():
-    return bool(once_file or pipe_once_process)
+    return bool(once_file or PIPE_ONCE['process'])
 
 
 @export
@@ -597,24 +643,28 @@ def unset_once_if_written(post_redirect_command) -> None:
         once_filename = once_file.name
         once_file.close()
         once_file = None
-        if post_redirect_command:
-            post_cmd = post_redirect_command.format(shlex.quote(once_filename))
-            try:
-                subprocess.run(
-                    post_cmd,
-                    shell=True,
-                    check=True,
-                    stdin=subprocess.DEVNULL,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                )
-            except Exception as e:
-                raise OSError("Redirect post hook failed: {}".format(e))
+        _run_post_redirect_hook(post_redirect_command, once_filename)
+
+
+def _run_post_redirect_hook(post_redirect_command, filename) -> None:
+    if not post_redirect_command:
+        return
+    post_cmd = post_redirect_command.format(shlex.quote(filename))
+    try:
+        subprocess.run(
+            post_cmd,
+            shell=True,
+            check=True,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except Exception as e:
+        raise OSError("Redirect post hook failed: {}".format(e))
 
 
 @special_command("\\pipe_once", "\\| command", "Send next result to a subprocess.", aliases=("\\|",))
 def set_pipe_once(arg, **_):
-    global pipe_once_process, pipe_once_stdin
     if not arg:
         raise OSError("pipe_once requires a command")
     if WIN:
@@ -623,8 +673,8 @@ def set_pipe_once(arg, **_):
     else:
         # to support chaining
         pipe_once_cmd = ['sh', '-c', arg]
-    pipe_once_stdin = []
-    pipe_once_process = subprocess.Popen(
+    PIPE_ONCE['stdin'] = []
+    PIPE_ONCE['process'] = subprocess.Popen(
         pipe_once_cmd,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
@@ -637,32 +687,37 @@ def set_pipe_once(arg, **_):
 
 @export
 def write_pipe_once(line):
-    global pipe_once_process, pipe_once_stdin
-    if line and pipe_once_process:
-        pipe_once_stdin.append(line)
+    if line and PIPE_ONCE['process']:
+        PIPE_ONCE['stdin'].append(line)
 
 
 @export
-def flush_pipe_once_if_written():
+def flush_pipe_once_if_written(post_redirect_command):
     """Flush the pipe_once cmd, if lines have been written."""
-    global pipe_once_process, pipe_once_stdin
-    if not pipe_once_process:
+    if not PIPE_ONCE['process']:
         return
-    if not pipe_once_stdin:
+    if not PIPE_ONCE['stdin']:
         return
     try:
-        (stdout_data, stderr_data) = pipe_once_process.communicate(input='\n'.join(pipe_once_stdin) + '\n', timeout=60)
+        (stdout_data, stderr_data) = PIPE_ONCE['process'].communicate(input='\n'.join(PIPE_ONCE['stdin']) + '\n', timeout=60)
     except subprocess.TimeoutExpired:
-        pipe_once_process.kill()
-        (stdout_data, stderr_data) = pipe_once_process.communicate()
+        PIPE_ONCE['process'].kill()
+        (stdout_data, stderr_data) = PIPE_ONCE['process'].communicate()
     if stdout_data:
-        click.secho(stdout_data.rstrip('\n'))
+        if PIPE_ONCE['stdout_file']:
+            with open(PIPE_ONCE['stdout_file'], PIPE_ONCE['stdout_mode']) as f:
+                print(stdout_data, file=f)
+            _run_post_redirect_hook(post_redirect_command, PIPE_ONCE['stdout_file'])
+            PIPE_ONCE['stdout_file'] = None
+            PIPE_ONCE['stdout_mode'] = None
+        else:
+            click.secho(stdout_data.rstrip('\n'))
     if stderr_data:
         click.secho(stderr_data.rstrip('\n'), err=True, fg='red')
-    if pipe_once_process.returncode:
-        raise OSError(f'process exited with nonzero code {pipe_once_process.returncode}')
-    pipe_once_process = None
-    pipe_once_stdin = []
+    if PIPE_ONCE['process'].returncode:
+        raise OSError(f'process exited with nonzero code {PIPE_ONCE["process"].returncode}')
+    PIPE_ONCE['process'] = None
+    PIPE_ONCE['stdin'] = []
 
 
 @special_command("watch", "watch [seconds] [-c] query", "Executes the query every [seconds] seconds (by default 5).")

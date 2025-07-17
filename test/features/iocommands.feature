@@ -48,12 +48,47 @@ Feature: I/O commands
    Scenario: shell style redirect to file
       When we query "select 123 as constant $> /tmp/output1.csv"
       and we query "system cat /tmp/output1.csv"
-      then we see csv 123 in redirected output
+      then we see csv 123 in file output
 
    Scenario: shell style redirect to command
       When we query "select 100 $| wc"
-      then we see 12 in redirected output
+      then we see space 12 in command output
 
    Scenario: shell style redirect to multiple commands
       When we query "select 100 $| head -1 $| wc"
-      then we see 6 in redirected output
+      then we see space 6 in command output
+
+   Scenario: shell style redirect to multiple commands with minimal spaces
+      When we query "select 100$|head -1$|wc"
+      then we see space 6 in command output
+
+   Scenario: shell style redirect to multiple commands containing single quotes
+      When we query "select 100 $| head '-1' $| wc"
+      then we see space 6 in command output
+
+   Scenario: shell style redirect to multiple commands containing single quotes and minimal spaces
+      When we query "select 100$|head '-1'$|wc"
+      then we see space 6 in command output
+
+   Scenario: shell style redirect to multiple commands containing double quotes
+      When we query "select 100 $| head ""-1"" $| wc"
+      then we see space 6 in command output
+
+   Scenario: shell style redirect with commands and capture to file
+      When we query "select 100 $| head -1 $| wc $> /tmp/output1.txt"
+      and we query "system cat /tmp/output1.txt"
+      then we see text 6 in file output
+
+   Scenario: shell style redirect with append to file
+      When we query "select 100 $> /tmp/output1.csv"
+      and we query "select 200 $>> /tmp/output1.csv"
+      and we query "system cat /tmp/output1.csv"
+      then we see csv 100 in file output
+      and we see csv 200 in file output
+
+   Scenario: shell style redirect with command and append to file
+      When we query "select 300 $| grep 0 $> /tmp/output1.csv"
+      and we query "select 400 $| grep 0 $>> /tmp/output1.csv"
+      and we query "system cat /tmp/output1.csv"
+      then we see csv 300 in file output
+      and we see csv 400 in file output

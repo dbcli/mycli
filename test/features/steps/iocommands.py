@@ -97,21 +97,29 @@ def step_see_123456_in_ouput(context):
         os.remove(context.tee_file_name)
 
 
-@then("we see csv 123 in redirected output")
-def step_see_csv_123_in_ouput(context):
-    wrappers.expect_exact(context, '"123"', timeout=2)
+@then('we see csv {result} in file output')
+def step_see_csv_result_in_redirected_ouput(context, result):
+    wrappers.expect_exact(context, f'"{result}"', timeout=2)
     temp_filename = "/tmp/output1.csv"
     if os.path.exists(temp_filename):
         os.remove(temp_filename)
 
 
-@then("we see 12 in redirected output")
-def step_see_12_in_ouput(context):
+@then('we see text {result} in file output')
+def step_see_text_result_in_redirected_ouput(context, result):
+    wrappers.expect_exact(context, f' {result}', timeout=2)
+    temp_filename = "/tmp/output1.txt"
+    if os.path.exists(temp_filename):
+        os.remove(temp_filename)
+
+
+@then("we see space 12 in command output")
+def step_see_space_12_in_command_ouput(context):
     wrappers.expect_exact(context, ' 12', timeout=2)
 
 
-@then("we see 6 in redirected output")
-def step_see_6_in_ouput(context):
+@then("we see space 6 in command output")
+def step_see_space_6_in_command_ouput(context):
     wrappers.expect_exact(context, ' 6', timeout=2)
 
 
