@@ -1,6 +1,8 @@
-# type: ignore
-
 """Format adapter for sql."""
+
+from typing import Generator, Union
+
+from cli_helpers.tabular_output import TabularOutputFormatter
 
 from mycli.packages.parseutils import extract_tables_from_complete_statements
 
@@ -13,15 +15,17 @@ supported_formats = (
 
 preprocessors = ()
 
+formatter: TabularOutputFormatter
 
-def escape_for_sql_statement(value):
+
+def escape_for_sql_statement(value: Union[bytes, str]) -> str:
     if isinstance(value, bytes):
         return f"X'{value.hex()}'"
     else:
         return formatter.mycli.sqlexecute.conn.escape(value)
 
 
-def adapter(data, headers, table_format=None, **kwargs):
+def adapter(data: list[str], headers: list[str], table_format: Union[str, None] = None, **kwargs) -> Generator[str, None, None]:
     tables = extract_tables_from_complete_statements(formatter.query)
     if len(tables) > 0:
         table = tables[0]
@@ -41,7 +45,7 @@ def adapter(data, headers, table_format=None, **kwargs):
             if prefix == "  ":
                 prefix = ", "
         yield ";"
-    if table_format.startswith("sql-update"):
+    if table_format and table_format.startswith("sql-update"):
         s = table_format.split("-")
         keys = 1
         if len(s) > 2:
@@ -58,8 +62,8 @@ def adapter(data, headers, table_format=None, **kwargs):
             yield "WHERE {};".format(" AND ".join(where))
 
 
-def register_new_formatter(TabularOutputFormatter):
+def register_new_formatter(tof: TabularOutputFormatter):
     global formatter
-    formatter = TabularOutputFormatter
+    formatter = tof
     for sql_format in supported_formats:
-        TabularOutputFormatter.register_new_formatter(sql_format, adapter, preprocessors, {"table_format": sql_format})
+        tof.register_new_formatter(sql_format, adapter, preprocessors, {"table_format": sql_format})

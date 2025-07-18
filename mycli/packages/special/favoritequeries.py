@@ -1,8 +1,8 @@
-# type: ignore
+from __future__ import annotations
 
 
-class FavoriteQueries(object):
-    section_name = "favorite_queries"
+class FavoriteQueries:
+    section_name: str = "favorite_queries"
 
     usage = """
 Favorite Queries are a way to save frequently used queries
@@ -36,27 +36,27 @@ Examples:
     # Class-level variable, for convenience to use as a singleton.
     instance = None
 
-    def __init__(self, config):
+    def __init__(self, config) -> None:
         self.config = config
 
     @classmethod
     def from_config(cls, config):
         return FavoriteQueries(config)
 
-    def list(self):
+    def list(self) -> list[str | None]:
         return self.config.get(self.section_name, [])
 
-    def get(self, name):
+    def get(self, name) -> str | None:
         return self.config.get(self.section_name, {}).get(name, None)
 
-    def save(self, name, query):
+    def save(self, name: str, query: str) -> None:
         self.config.encoding = "utf-8"
         if self.section_name not in self.config:
             self.config[self.section_name] = {}
         self.config[self.section_name][name] = query
         self.config.write()
 
-    def delete(self, name):
+    def delete(self, name: str) -> str:
         try:
             del self.config[self.section_name][name]
         except KeyError:

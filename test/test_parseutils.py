@@ -142,9 +142,9 @@ def test_query_starts_with_comment():
 
 def test_queries_start_with():
     sql = "# comment\nshow databases;use foo;"
-    assert queries_start_with(sql, ("show", "select")) is True
-    assert queries_start_with(sql, ("use", "drop")) is True
-    assert queries_start_with(sql, ("delete", "update")) is False
+    assert queries_start_with(sql, ["show", "select"]) is True
+    assert queries_start_with(sql, ["use", "drop"]) is True
+    assert queries_start_with(sql, ["delete", "update"]) is False
 
 
 def test_is_destructive():

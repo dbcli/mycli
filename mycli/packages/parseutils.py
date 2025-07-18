@@ -1,13 +1,14 @@
-# type: ignore
+from __future__ import annotations
 
 import re
+from typing import Generator
 
 import sqlglot
-import sqlparse  # type: ignore[import-untyped]
-from sqlparse.sql import Function, Identifier, IdentifierList  # type: ignore[import-untyped]
-from sqlparse.tokens import DML, Keyword, Punctuation  # type: ignore[import-untyped]
+import sqlparse
+from sqlparse.sql import Function, Identifier, IdentifierList, Token, TokenList
+from sqlparse.tokens import DML, Keyword, Punctuation
 
-cleanup_regex = {
+cleanup_regex: dict[str, re.Pattern] = {
     # This matches only alphanumerics and underscores.
     "alphanum_underscore": re.compile(r"(\w+)$"),
     # This matches everything except spaces, parens, colon, and comma
@@ -19,7 +20,7 @@ cleanup_regex = {
 }
 
 
-def last_word(text, include="alphanum_underscore"):
+def last_word(text: str, include: str = "alphanum_underscore") -> str:
     r"""
     Find the last word in a sentence.
 
@@ -67,7 +68,7 @@ def last_word(text, include="alphanum_underscore"):
 
 # This code is borrowed from sqlparse example script.
 # <url>
-def is_subselect(parsed):
+def is_subselect(parsed: TokenList) -> bool:
     if not parsed.is_group:
         return False
     for item in parsed.tokens:
@@ -76,7 +77,7 @@ def is_subselect(parsed):
     return False
 
 
-def extract_from_part(parsed, stop_at_punctuation=True):
+def extract_from_part(parsed: TokenList, stop_at_punctuation: bool = True) -> Generator[str, None, None]:
     tbl_prefix_seen = False
     for item in parsed.tokens:
         if tbl_prefix_seen:
@@ -84,7 +85,7 @@ def extract_from_part(parsed, stop_at_punctuation=True):
                 for x in extract_from_part(item, stop_at_punctuation):
                     yield x
             elif stop_at_punctuation and item.ttype is Punctuation:
-                return
+                return None
             # Multiple JOINs in the same query won't work properly since
             # "ON" is a keyword and will trigger the next elif condition.
             # So instead of stooping the loop when finding an "ON" skip it
@@ -101,7 +102,7 @@ def extract_from_part(parsed, stop_at_punctuation=True):
             # condition. So we need to ignore the keyword JOIN and its variants
             # INNER JOIN, FULL OUTER JOIN, etc.
             elif item.ttype is Keyword and (not item.value.upper() == "FROM") and (not item.value.upper().endswith("JOIN")):
-                return
+                return None
             else:
                 yield item
         elif (item.ttype is Keyword or item.ttype is Keyword.DML) and item.value.upper() in (
@@ -122,7 +123,7 @@ def extract_from_part(parsed, stop_at_punctuation=True):
                     break
 
 
-def extract_table_identifiers(token_stream):
+def extract_table_identifiers(token_stream: TokenList) -> Generator[tuple[str | None, str, str]]:
     """yields tuples of (schema_name, table_name, table_alias)"""
 
     for item in token_stream:
@@ -151,7 +152,7 @@ def extract_table_identifiers(token_stream):
 
 
 # extract_tables is inspired from examples in the sqlparse lib.
-def extract_tables(sql):
+def extract_tables(sql: str) -> list[tuple[str | None, str, str]]:
     """Extract the table names from an SQL statement.
 
     Returns a list of (schema, table, alias) tuples
@@ -170,7 +171,7 @@ def extract_tables(sql):
     return list(extract_table_identifiers(stream))
 
 
-def extract_tables_from_complete_statements(sql):
+def extract_tables_from_complete_statements(sql: str) -> list[tuple[str | None, str, str | None]]:
     """Extract the table names from a complete and valid series of SQL
     statements.
 
@@ -195,7 +196,7 @@ def extract_tables_from_complete_statements(sql):
     tables = []
     for statement in finely_parsed:
         for identifier in statement.find_all(sqlglot.exp.Table):
-            if identifier.parent_select.sql().startswith('WITH'):
+            if identifier.parent_select and identifier.parent_select.sql().startswith('WITH'):
                 continue
             tables.append((
                 None if identifier.db == '' else identifier.db,
@@ -206,7 +207,7 @@ def extract_tables_from_complete_statements(sql):
     return tables
 
 
-def find_prev_keyword(sql):
+def find_prev_keyword(sql: str) -> tuple[Token | None, str]:
     """Find the last sql keyword in an SQL statement
 
     Returns the value of the last keyword, and the text of the query with
@@ -240,14 +241,14 @@ def find_prev_keyword(sql):
     return None, ""
 
 
-def query_starts_with(query, prefixes):
+def query_starts_with(query: str, prefixes: list[str]) -> bool:
     """Check if the query starts with any item from *prefixes*."""
     prefixes = [prefix.lower() for prefix in prefixes]
     formatted_sql = sqlparse.format(query.lower(), strip_comments=True)
     return bool(formatted_sql) and formatted_sql.split()[0] in prefixes
 
 
-def queries_start_with(queries, prefixes):
+def queries_start_with(queries: str, prefixes: list[str]) -> bool:
     """Check if any queries start with any item from *prefixes*."""
     for query in sqlparse.split(queries):
         if query and query_starts_with(query, prefixes) is True:
@@ -255,17 +256,17 @@ def queries_start_with(queries, prefixes):
     return False
 
 
-def query_has_where_clause(query):
+def query_has_where_clause(query: str) -> bool:
     """Check if the query contains a where-clause."""
     return any(isinstance(token, sqlparse.sql.Where) for token_list in sqlparse.parse(query) for token in token_list)
 
 
-def is_destructive(queries):
+def is_destructive(queries: str) -> bool:
     """Returns if any of the queries in *queries* is destructive."""
     keywords = ("drop", "shutdown", "delete", "truncate", "alter")
     for query in sqlparse.split(queries):
         if query:
-            if query_starts_with(query, keywords) is True:
+            if query_starts_with(query, list(keywords)) is True:
                 return True
             elif query_starts_with(query, ["update"]) is True and not query_has_where_clause(query):
                 return True
@@ -273,12 +274,7 @@ def is_destructive(queries):
     return False
 
 
-if __name__ == "__main__":
-    sql = "select * from (select t. from tabl t"
-    print(extract_tables(sql))
-
-
-def is_dropping_database(queries, dbname):
+def is_dropping_database(queries: list[str], dbname: str | None) -> bool:
     """Determine if the query is dropping a specific database."""
     result = False
     if dbname is None:
@@ -301,3 +297,8 @@ def is_dropping_database(queries, dbname):
             if database_token is not None and normalize_db_name(database_token.get_name()) == dbname:
                 result = keywords[0].normalized == "DROP"
     return result
+
+
+if __name__ == "__main__":
+    sql = "select * from (select t. from tabl t"
+    print(extract_tables(sql))

@@ -14,11 +14,11 @@ from mycli.main import special
 PASSWORD = os.getenv("PYTEST_PASSWORD")
 USER = os.getenv("PYTEST_USER", "root")
 HOST = os.getenv("PYTEST_HOST", "localhost")
-PORT = int(os.getenv("PYTEST_PORT", 3306))
+PORT = int(os.getenv("PYTEST_PORT", "3306"))
 CHARSET = os.getenv("PYTEST_CHARSET", "utf8")
 SSH_USER = os.getenv("PYTEST_SSH_USER", None)
 SSH_HOST = os.getenv("PYTEST_SSH_HOST", None)
-SSH_PORT = os.getenv("PYTEST_SSH_PORT", 22)
+SSH_PORT = int(os.getenv("PYTEST_SSH_PORT", "22"))
 
 
 def db_connection(dbname=None):

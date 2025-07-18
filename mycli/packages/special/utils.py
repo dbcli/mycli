@@ -1,10 +1,10 @@
-# type: ignore
+from __future__ import annotations
 
 import os
 import subprocess
 
 
-def handle_cd_command(arg):
+def handle_cd_command(arg: str) -> tuple[bool, str | None]:
     """Handles a `cd` shell command by calling python's os.chdir."""
     CD_CMD = "cd"
     tokens = arg.split(CD_CMD + " ")
@@ -19,7 +19,7 @@ def handle_cd_command(arg):
         return False, e.strerror
 
 
-def format_uptime(uptime_in_seconds):
+def format_uptime(uptime_in_seconds: str) -> str:
     """Format number of seconds into human-readable string.
 
     :param uptime_in_seconds: The server uptime in seconds.
@@ -34,14 +34,14 @@ def format_uptime(uptime_in_seconds):
     h, m = divmod(m, 60)
     d, h = divmod(h, 24)
 
-    uptime_values = []
+    uptime_values: list[str] = []
 
     for value, unit in ((d, "days"), (h, "hours"), (m, "min"), (s, "sec")):
         if value == 0 and not uptime_values:
             # Don't include a value/unit if the unit isn't applicable to
             # the uptime. E.g. don't do 0 days 0 hours 1 min 30 sec.
             continue
-        elif value == 1 and unit.endswith("s"):
+        if value == 1 and unit.endswith("s"):
             # Remove the "s" if the unit is singular.
             unit = unit[:-1]
         uptime_values.append("{0} {1}".format(value, unit))
