@@ -70,6 +70,10 @@ Feature: I/O commands
       When we query "select 100$|head '-1'$|wc"
       then we see space 6 in command output
 
+   Scenario: shell style redirect to multiple commands containing mixed quoted and unquoted arg
+      When we query "select 100 $| head -'1' $| wc"
+      then we see space 6 in command output
+
    Scenario: shell style redirect to multiple commands containing double quotes
       When we query "select 100 $| head ""-1"" $| wc"
       then we see space 6 in command output
