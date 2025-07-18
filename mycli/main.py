@@ -1016,6 +1016,11 @@ class MyCli(object):
 
         cnf = self.read_my_cnf_files(self.cnf_files, ["pager", "skip-pager"])
         cnf_pager = cnf["pager"] or self.config["main"]["pager"]
+
+        # help Windows users who haven't edited the default myclirc
+        if WIN and cnf_pager == 'less' and not shutil.which(cnf_pager):
+            cnf_pager = 'more'
+
         if cnf_pager:
             special.set_pager(cnf_pager)
             self.explicit_pager = True

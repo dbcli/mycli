@@ -1,6 +1,11 @@
 Upcoming Release (TBD)
 ======================
 
+Bug Fixes
+--------
+* Help Windows installations find a working default pager.
+
+
 Internal
 --------
 
