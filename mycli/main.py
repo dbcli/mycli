@@ -46,6 +46,7 @@ from mycli.key_bindings import mycli_bindings
 from mycli.lexer import MyCliLexer
 from mycli.packages import special
 from mycli.packages.filepaths import dir_path_exists, guess_socket_location
+from mycli.packages.hybrid_redirection import get_redirect_components, is_redirect_command
 from mycli.packages.parseutils import is_destructive, is_dropping_database
 from mycli.packages.prompt_utils import confirm, confirm_destructive_query
 from mycli.packages.special.favoritequeries import FavoriteQueries
@@ -708,8 +709,8 @@ class MyCli(object):
             if not text.strip():
                 return
 
-            if special.is_redirect_command(text):
-                sql_part, command_part, file_operator_part, file_part = special.get_redirect_components(text)
+            if is_redirect_command(text):
+                sql_part, command_part, file_operator_part, file_part = get_redirect_components(text)
                 text = sql_part
                 try:
                     special.set_redirect(command_part, file_operator_part, file_part)
