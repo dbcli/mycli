@@ -1,3 +1,5 @@
+# type: ignore
+
 from unittest.mock import patch
 
 from prompt_toolkit.completion import Completion

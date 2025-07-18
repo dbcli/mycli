@@ -1,9 +1,11 @@
+# type: ignore
+
 import click
 
 from mycli.packages.prompt_utils import confirm_destructive_query
 
 
-def test_confirm_destructive_query_notty():
+def test_confirm_destructive_query_notty() -> None:
     stdin = click.get_text_stream("stdin")
     assert stdin.isatty() is False
 

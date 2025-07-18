@@ -1,3 +1,6 @@
+# type: ignore
+
+
 def server_date(sqlexecute, quoted: bool = False) -> str:
     server_date_str = sqlexecute.now().strftime('%Y-%m-%d')
     if quoted:

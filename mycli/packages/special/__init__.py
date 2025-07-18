@@ -1,3 +1,5 @@
+# type: ignore
+
 __all__ = []
 
 

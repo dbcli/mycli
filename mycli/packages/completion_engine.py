@@ -1,3 +1,5 @@
+# type: ignore
+
 import sqlparse
 from sqlparse.sql import Comparison, Identifier, Where
 

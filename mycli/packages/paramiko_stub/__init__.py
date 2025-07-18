@@ -1,3 +1,5 @@
+# type: ignore
+
 """A module to import instead of paramiko when it is not available (to avoid
 checking for paramiko all over the place).
 

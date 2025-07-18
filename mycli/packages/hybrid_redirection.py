@@ -5,8 +5,8 @@ import logging
 
 import sqlglot
 
-from mycli.compat import WIN
-from mycli.packages.special.delimitercommand import DelimiterCommand
+from mycli.compat import WIN  # type: ignore[attr-defined]
+from mycli.packages.special.delimitercommand import DelimiterCommand  # type: ignore[attr-defined]
 
 logger = logging.getLogger(__name__)
 delimiter_command = DelimiterCommand()

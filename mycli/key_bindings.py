@@ -1,3 +1,5 @@
+# type: ignore
+
 import logging
 
 from prompt_toolkit.enums import EditingMode

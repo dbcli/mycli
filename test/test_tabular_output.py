@@ -1,3 +1,5 @@
+# type: ignore
+
 """Test the sql output adapter."""
 
 from textwrap import dedent

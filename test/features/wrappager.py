@@ -1,8 +1,9 @@
 #!/usr/bin/env python
+
 import sys
 
 
-def wrappager(boundary):
+def wrappager(boundary: str) -> None:
     print(boundary)
     while 1:
         buf = sys.stdin.read(2048)

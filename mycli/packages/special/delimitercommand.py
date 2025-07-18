@@ -1,6 +1,8 @@
+# type: ignore
+
 import re
 
-import sqlparse
+import sqlparse  # type: ignore[import-untyped]
 
 
 class DelimiterCommand(object):

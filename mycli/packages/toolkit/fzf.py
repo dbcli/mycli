@@ -1,3 +1,5 @@
+# type: ignore
+
 import re
 from shutil import which
 

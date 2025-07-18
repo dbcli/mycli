@@ -1,3 +1,5 @@
+# type: ignore
+
 from textwrap import dedent
 
 from behave import then, when

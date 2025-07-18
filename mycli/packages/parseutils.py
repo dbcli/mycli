@@ -1,9 +1,11 @@
+# type: ignore
+
 import re
 
 import sqlglot
-import sqlparse
-from sqlparse.sql import Function, Identifier, IdentifierList
-from sqlparse.tokens import DML, Keyword, Punctuation
+import sqlparse  # type: ignore[import-untyped]
+from sqlparse.sql import Function, Identifier, IdentifierList  # type: ignore[import-untyped]
+from sqlparse.tokens import DML, Keyword, Punctuation  # type: ignore[import-untyped]
 
 cleanup_regex = {
     # This matches only alphanumerics and underscores.

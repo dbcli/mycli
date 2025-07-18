@@ -1,3 +1,5 @@
+# type: ignore
+
 import pytest
 
 import mycli.sqlexecute

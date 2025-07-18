@@ -1,3 +1,5 @@
+# type: ignore
+
 import locale
 import logging
 import os
@@ -5,10 +7,11 @@ import re
 import shlex
 import subprocess
 from time import sleep
+from typing import Any
 
 import click
-import pyperclip
-import sqlparse
+import pyperclip  # type: ignore[import-untyped]
+import sqlparse  # type: ignore[import-untyped]
 
 from mycli.compat import WIN
 from mycli.packages.prompt_utils import confirm_destructive_query
@@ -25,7 +28,7 @@ PAGER_ENABLED = True
 tee_file = None
 once_file = None
 written_to_once_file = False
-PIPE_ONCE = {
+PIPE_ONCE: dict[str, Any] = {
     'process': None,
     'stdin': [],
     'stdout_file': None,
