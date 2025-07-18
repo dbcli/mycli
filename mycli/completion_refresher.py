@@ -1,3 +1,5 @@
+# type: ignore
+
 from collections import OrderedDict
 import threading
 

@@ -1,3 +1,5 @@
+# type: ignore
+
 from collections import defaultdict, namedtuple
 import logging
 import os

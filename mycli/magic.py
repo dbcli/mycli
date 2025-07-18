@@ -1,3 +1,5 @@
+# type: ignore
+
 import logging
 
 import sql.connection

@@ -1,3 +1,5 @@
+# type: ignore
+
 """Unit tests for the mycli.config module."""
 
 from io import BytesIO, StringIO, TextIOWrapper

@@ -39,6 +39,7 @@ ssh = ["paramiko", "sshtunnel"]
 dev = [
     "behave>=1.2.6",
     "coverage>=7.2.7",
+    "mypy>=1.16.1",
     "pexpect>=4.9.0",
     "pytest>=7.4.4",
     "pytest-cov>=4.1.0",
@@ -98,4 +99,18 @@ quote-style = 'preserve'
 exclude = [
     'build',
     'mycli_dev',
+]
+
+[tool.mypy]
+pretty                 = true
+strict_equality        = true
+ignore_missing_imports = true
+warn_unreachable       = true
+warn_redundant_casts   = true
+warn_no_return         = true
+warn_unused_configs    = true
+show_column_numbers    = true
+exclude = [
+    '^build/',
+    '^dist/',
 ]

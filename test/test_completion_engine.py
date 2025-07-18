@@ -1,3 +1,5 @@
+# type: ignore
+
 import pytest
 
 from mycli.packages.completion_engine import suggest_type

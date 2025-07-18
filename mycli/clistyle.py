@@ -1,3 +1,5 @@
+# type: ignore
+
 import logging
 
 from prompt_toolkit.styles import Style, merge_styles

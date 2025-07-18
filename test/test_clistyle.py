@@ -1,3 +1,5 @@
+# type: ignore
+
 """Test the mycli.clistyle module."""
 
 from pygments.style import Style

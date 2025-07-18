@@ -1,3 +1,5 @@
+# type: ignore
+
 from collections import Counter
 import logging
 import re

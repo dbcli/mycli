@@ -1,3 +1,5 @@
+# type: ignore
+
 """Steps for behavioral style tests are defined in this module.
 
 Each step is defined by the string decorating it. This string is used

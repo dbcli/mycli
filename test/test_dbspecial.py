@@ -1,3 +1,5 @@
+# type: ignore
+
 from mycli.packages.completion_engine import suggest_type
 from mycli.packages.special.utils import format_uptime
 from test.test_completion_engine import sorted_dicts

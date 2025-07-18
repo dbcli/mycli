@@ -1,3 +1,5 @@
+# type: ignore
+
 from prompt_toolkit.completion import Completion
 from prompt_toolkit.document import Document
 import pytest

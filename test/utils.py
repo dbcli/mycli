@@ -1,3 +1,5 @@
+# type: ignore
+
 import multiprocessing
 import os
 import platform

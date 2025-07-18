@@ -1,3 +1,12 @@
+Upcoming Release (TBD)
+======================
+
+Internal
+--------
+
+* Add limited typechecking to CI.
+
+
 1.35.0 (2025/07/18)
 ======================
 

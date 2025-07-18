@@ -1,3 +1,5 @@
+# type: ignore
+
 """Platform and Python version compatibility support."""
 
 import sys

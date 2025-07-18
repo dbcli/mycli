@@ -1,3 +1,5 @@
+# type: ignore
+
 """Format adapter for sql."""
 
 from mycli.packages.parseutils import extract_tables_from_complete_statements

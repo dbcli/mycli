@@ -1,3 +1,5 @@
+# type: ignore
+
 from prompt_toolkit.application import get_app
 from prompt_toolkit.enums import EditingMode
 from prompt_toolkit.key_binding.vi_state import InputMode

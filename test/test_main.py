@@ -1,3 +1,5 @@
+# type: ignore
+
 from collections import namedtuple
 import os
 import shutil

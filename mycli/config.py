@@ -1,3 +1,5 @@
+# type: ignore
+
 from copy import copy
 from importlib import resources
 from io import BytesIO, TextIOWrapper
