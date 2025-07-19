@@ -10,6 +10,7 @@ Internal
 * Enable typechecking for several files.
 * CI: turn off fail-fast matrix strategy.
 * Remove unused Python 2 compatibility code.
+* Also run CI tests without installing SSH extra dependencies.
 
 
 1.36.0 (2025/07/19)
