@@ -1,6 +1,11 @@
 Upcoming Release (TBD)
 ======================
 
+Features
+--------
+* Make control-r reverse search style configurable.
+
+
 Internal
 --------
 

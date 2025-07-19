@@ -143,8 +143,18 @@ def mycli_bindings(mycli):
 
     @kb.add("c-r", filter=emacs_mode)
     def _(event):
-        """Search history using fzf or default reverse incremental search."""
+        """Search history using fzf or reverse incremental search."""
         _logger.debug("Detected <C-r> key.")
+        mode = mycli.config.get('keys', {}).get('control_r', 'auto')
+        if mode == 'reverse_isearch':
+            search_history(event, incremental=True)
+        else:
+            search_history(event)
+
+    @kb.add("escape", "r", filter=emacs_mode)
+    def _(event):
+        """Search history using fzf when available."""
+        _logger.debug("Detected <alt-r> key.")
         search_history(event)
 
     @kb.add("enter", filter=completion_is_selected)
