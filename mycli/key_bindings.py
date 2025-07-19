@@ -1,35 +1,34 @@
-# type: ignore
-
 import logging
 
 from prompt_toolkit.enums import EditingMode
 from prompt_toolkit.filters import completion_is_selected, emacs_mode
 from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 
-from mycli import shortcuts
+from mycli.packages import shortcuts
 from mycli.packages.toolkit.fzf import search_history
 
 _logger = logging.getLogger(__name__)
 
 
-def mycli_bindings(mycli):
+def mycli_bindings(mycli) -> KeyBindings:
     """Custom key bindings for mycli."""
     kb = KeyBindings()
 
     @kb.add("f2")
-    def _(event):
+    def _(_event: KeyPressEvent) -> None:
         """Enable/Disable SmartCompletion Mode."""
         _logger.debug("Detected F2 key.")
         mycli.completer.smart_completion = not mycli.completer.smart_completion
 
     @kb.add("f3")
-    def _(event):
+    def _(_event: KeyPressEvent) -> None:
         """Enable/Disable Multiline Mode."""
         _logger.debug("Detected F3 key.")
         mycli.multi_line = not mycli.multi_line
 
     @kb.add("f4")
-    def _(event):
+    def _(event: KeyPressEvent) -> None:
         """Toggle between Vi and Emacs mode."""
         _logger.debug("Detected F4 key.")
         if mycli.key_bindings == "vi":
@@ -40,7 +39,7 @@ def mycli_bindings(mycli):
             mycli.key_bindings = "vi"
 
     @kb.add("tab")
-    def _(event):
+    def _(event: KeyPressEvent) -> None:
         """Force autocompletion at cursor."""
         _logger.debug("Detected <Tab> key.")
         b = event.app.current_buffer
@@ -50,7 +49,7 @@ def mycli_bindings(mycli):
             b.start_completion(select_first=True)
 
     @kb.add("c-space")
-    def _(event):
+    def _(event: KeyPressEvent) -> None:
         """
         Initialize autocompletion at cursor.
 
@@ -68,7 +67,7 @@ def mycli_bindings(mycli):
             b.start_completion(select_first=False)
 
     @kb.add("c-x", "p", filter=emacs_mode)
-    def _(event):
+    def _(event: KeyPressEvent) -> None:
         """
         Prettify and indent current statement, usually into multiple lines.
 
@@ -87,7 +86,7 @@ def mycli_bindings(mycli):
             b.cursor_position = min(cursorpos_abs, len(b.text))
 
     @kb.add("c-x", "u", filter=emacs_mode)
-    def _(event):
+    def _(event: KeyPressEvent) -> None:
         """
         Unprettify and dedent current statement, usually into one line.
 
@@ -106,7 +105,7 @@ def mycli_bindings(mycli):
             b.cursor_position = min(cursorpos_abs, len(b.text))
 
     @kb.add("c-o", "d", filter=emacs_mode)
-    def _(event):
+    def _(event: KeyPressEvent) -> None:
         """
         Insert the current date.
         """
@@ -115,7 +114,7 @@ def mycli_bindings(mycli):
         event.app.current_buffer.insert_text(shortcuts.server_date(mycli.sqlexecute))
 
     @kb.add("c-o", "c-d", filter=emacs_mode)
-    def _(event):
+    def _(event: KeyPressEvent) -> None:
         """
         Insert the quoted current date.
         """
@@ -124,7 +123,7 @@ def mycli_bindings(mycli):
         event.app.current_buffer.insert_text(shortcuts.server_date(mycli.sqlexecute, quoted=True))
 
     @kb.add("c-o", "t", filter=emacs_mode)
-    def _(event):
+    def _(event: KeyPressEvent) -> None:
         """
         Insert the current datetime.
         """
@@ -133,7 +132,7 @@ def mycli_bindings(mycli):
         event.app.current_buffer.insert_text(shortcuts.server_datetime(mycli.sqlexecute))
 
     @kb.add("c-o", "c-t", filter=emacs_mode)
-    def _(event):
+    def _(event: KeyPressEvent) -> None:
         """
         Insert the quoted current datetime.
         """
@@ -142,7 +141,7 @@ def mycli_bindings(mycli):
         event.app.current_buffer.insert_text(shortcuts.server_datetime(mycli.sqlexecute, quoted=True))
 
     @kb.add("c-r", filter=emacs_mode)
-    def _(event):
+    def _(event: KeyPressEvent) -> None:
         """Search history using fzf or reverse incremental search."""
         _logger.debug("Detected <C-r> key.")
         mode = mycli.config.get('keys', {}).get('control_r', 'auto')
@@ -152,13 +151,13 @@ def mycli_bindings(mycli):
             search_history(event)
 
     @kb.add("escape", "r", filter=emacs_mode)
-    def _(event):
+    def _(event: KeyPressEvent) -> None:
         """Search history using fzf when available."""
         _logger.debug("Detected <alt-r> key.")
         search_history(event)
 
     @kb.add("enter", filter=completion_is_selected)
-    def _(event):
+    def _(event: KeyPressEvent) -> None:
         """Makes the enter key work as the tab key only when showing the menu.
 
         In other words, don't execute query when enter is pressed in
@@ -173,7 +172,7 @@ def mycli_bindings(mycli):
         b.complete_state = None
 
     @kb.add("escape", "enter")
-    def _(event):
+    def _(event: KeyPressEvent) -> None:
         """Introduces a line break in multi-line mode, or dispatches the
         command in single-line mode."""
         _logger.debug("Detected alt-enter key.")
