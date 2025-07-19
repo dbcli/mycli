@@ -1,4 +1,4 @@
-# type: ignore
+from __future__ import annotations
 
 from copy import copy
 from importlib import resources
@@ -8,7 +8,7 @@ import os
 from os.path import exists
 import struct
 import sys
-from typing import IO, Union
+from typing import IO, BinaryIO, Literal
 
 from configobj import ConfigObj, ConfigObjError
 import pyaes
@@ -16,16 +16,16 @@ import pyaes
 logger = logging.getLogger(__name__)
 
 
-def log(logger, level, message):
+def log(logger: logging.Logger, level: int, message: str) -> None:
     """Logs message to stderr if logging isn't initialized."""
 
-    if logger.parent.name != "root":
-        logger.log(level, message)
-    else:
+    if logger.parent and logger.parent.name == "root":
         print(message, file=sys.stderr)
 
+    logger.log(level, message)
 
-def read_config_file(f, list_values=True):
+
+def read_config_file(f: str | TextIOWrapper, list_values: bool = True) -> ConfigObj | None:
     """Read a config file.
 
     *list_values* set to `True` is the default behavior of ConfigObj.
@@ -52,7 +52,7 @@ def read_config_file(f, list_values=True):
     return config
 
 
-def get_included_configs(config_file: Union[str, TextIOWrapper]) -> list:
+def get_included_configs(config_file: str | TextIOWrapper) -> list[str]:
     """Get a list of configuration files that are included into config_path
     with !includedir directive.
 
@@ -80,7 +80,7 @@ def get_included_configs(config_file: Union[str, TextIOWrapper]) -> list:
     return included_configs
 
 
-def read_config_files(files, list_values=True):
+def read_config_files(files: list[str], list_values: bool = True) -> ConfigObj:
     """Read and merge a list of config files."""
 
     config = create_default_config(list_values=list_values)
@@ -93,21 +93,21 @@ def read_config_files(files, list_values=True):
         # (otherwise we'll just encounter the same errors again)
         if config is not None:
             _files = get_included_configs(_file) + _files
-        if bool(_config) is True:
+        if _config is not None:
             config.merge(_config)
             config.filename = _config.filename
 
     return config
 
 
-def create_default_config(list_values=True):
+def create_default_config(list_values: bool = True) -> ConfigObj:
     import mycli
 
     default_config_file = resources.open_text(mycli, "myclirc")
     return read_config_file(default_config_file, list_values=list_values)
 
 
-def write_default_config(destination, overwrite=False):
+def write_default_config(destination: str, overwrite: bool = False) -> None:
     import mycli
 
     default_config = resources.read_text(mycli, "myclirc")
@@ -119,7 +119,7 @@ def write_default_config(destination, overwrite=False):
         f.write(default_config)
 
 
-def get_mylogin_cnf_path():
+def get_mylogin_cnf_path() -> str | None:
     """Return the path to the login path file or None if it doesn't exist."""
     mylogin_cnf_path = os.getenv("MYSQL_TEST_LOGIN_FILE")
 
@@ -136,7 +136,7 @@ def get_mylogin_cnf_path():
     return None
 
 
-def open_mylogin_cnf(name):
+def open_mylogin_cnf(name: str) -> TextIOWrapper | None:
     """Open a readable version of .mylogin.cnf.
 
     Returns the file contents as a TextIOWrapper object.
@@ -160,7 +160,7 @@ def open_mylogin_cnf(name):
 
 
 # TODO reuse code between encryption an decryption
-def encrypt_mylogin_cnf(plaintext: IO[str]):
+def encrypt_mylogin_cnf(plaintext: IO[str]) -> BytesIO:
     """Encryption of .mylogin.cnf file, analogous to calling
     mysql_config_editor.
 
@@ -169,20 +169,20 @@ def encrypt_mylogin_cnf(plaintext: IO[str]):
 
     """
 
-    def realkey(key):
+    def realkey(key: bytes) -> bytes:
         """Create the AES key from the login key."""
         rkey = bytearray(16)
         for i in range(len(key)):
             rkey[i % 16] ^= key[i]
         return bytes(rkey)
 
-    def encode_line(plaintext, real_key, buf_len):
+    def encode_line(plaintext: str, real_key: bytes, buf_len: int) -> bytes:
         aes = pyaes.AESModeOfOperationECB(real_key)
         text_len = len(plaintext)
         pad_len = buf_len - text_len
         pad_chr = bytes(chr(pad_len), "utf8")
-        plaintext = plaintext.encode() + pad_chr * pad_len
-        encrypted_text = b"".join([aes.encrypt(plaintext[i : i + 16]) for i in range(0, len(plaintext), 16)])
+        plaintext_b = plaintext.encode() + pad_chr * pad_len
+        encrypted_text = b"".join([aes.encrypt(plaintext_b[i : i + 16]) for i in range(0, len(plaintext_b), 16)])
         return encrypted_text
 
     LOGIN_KEY_LENGTH = 20
@@ -209,7 +209,7 @@ def encrypt_mylogin_cnf(plaintext: IO[str]):
     return outfile
 
 
-def read_and_decrypt_mylogin_cnf(f):
+def read_and_decrypt_mylogin_cnf(f: BinaryIO) -> BytesIO | None:
     """Read and decrypt the contents of .mylogin.cnf.
 
     This decryption algorithm mimics the code in MySQL's
@@ -248,11 +248,11 @@ def read_and_decrypt_mylogin_cnf(f):
             # ord() was unable to get the value of the byte.
             logger.error("Unable to generate login path AES key.")
             return None
-    rkey = struct.pack("16B", *rkey)
+    rkey_b = struct.pack("16B", *rkey)
 
     # Create a bytes buffer to hold the plaintext.
     plaintext = BytesIO()
-    aes = pyaes.AESModeOfOperationECB(rkey)
+    aes = pyaes.AESModeOfOperationECB(rkey_b)
 
     while True:
         # Read the length of the ciphertext.
@@ -276,7 +276,7 @@ def read_and_decrypt_mylogin_cnf(f):
     return plaintext
 
 
-def str_to_bool(s):
+def str_to_bool(s: str | bool) -> bool:
     """Convert a string value to its corresponding boolean value."""
     if isinstance(s, bool):
         return s
@@ -294,7 +294,7 @@ def str_to_bool(s):
         raise ValueError("not a recognized boolean value: {0}".format(s))
 
 
-def strip_matching_quotes(s):
+def strip_matching_quotes(s: str) -> str:
     """Remove matching, surrounding quotes from a string.
 
     This is the same logic that ConfigObj uses when parsing config
@@ -306,7 +306,7 @@ def strip_matching_quotes(s):
     return s
 
 
-def _remove_pad(line):
+def _remove_pad(line: bytes) -> bytes | Literal[False]:
     """Remove the pad from the *line*."""
     try:
         # Determine pad length.
