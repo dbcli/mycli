@@ -8,7 +8,7 @@ from mycli.sqlcompleter import SQLCompleter
 from mycli.sqlexecute import ServerSpecies, SQLExecute
 
 
-class CompletionRefresher(object):
+class CompletionRefresher:
     refreshers = OrderedDict()
 
     def __init__(self):

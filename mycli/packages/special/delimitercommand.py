@@ -6,7 +6,7 @@ from typing import Generator
 import sqlparse  # type: ignore[import-untyped]
 
 
-class DelimiterCommand(object):
+class DelimiterCommand:
     def __init__(self) -> None:
         self._delimiter = ";"
 
