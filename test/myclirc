@@ -102,6 +102,10 @@ enable_pager = True
 # Choose a specific pager
 pager = less
 
+[keys]
+# possible values: auto, fzf, reverse_isearch
+control_r = auto
+
 # Custom colors for the completion menu, toolbar, etc.
 [colors]
 completion-menu.completion.current = "bg:#ffffff #000000"
