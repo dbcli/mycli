@@ -75,7 +75,7 @@ class PasswordFileError(Exception):
     """Base exception for errors related to reading password files."""
 
 
-class MyCli(object):
+class MyCli:
     default_prompt = "\\t \\u@\\h:\\d> "
     default_prompt_splitln = "\\u@\\h\\n(\\t):\\d>"
     max_len_prompt = 45

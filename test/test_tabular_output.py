@@ -23,7 +23,7 @@ def test_sql_output(mycli):
     """Test the sql output adapter."""
     headers = ["letters", "number", "optional", "float", "binary"]
 
-    class FakeCursor(object):
+    class FakeCursor:
         def __init__(self):
             self.data = [("abc", 1, None, 10.0, b"\xaa"), ("d", 456, "1", 0.5, b"\xaa\xbb")]
             self.description = [

@@ -80,7 +80,7 @@ class ServerInfo:
             return self.version_str
 
 
-class SQLExecute(object):
+class SQLExecute:
     databases_query = """SHOW DATABASES"""
 
     tables_query = """SHOW TABLES"""
