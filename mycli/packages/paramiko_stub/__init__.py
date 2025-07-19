@@ -1,5 +1,3 @@
-# type: ignore
-
 """A module to import instead of paramiko when it is not available (to avoid
 checking for paramiko all over the place).
 
@@ -11,7 +9,7 @@ features.
 
 
 class Paramiko:
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> None:
         import sys
         from textwrap import dedent
 
@@ -25,7 +23,8 @@ class Paramiko:
                 --list-ssh-config
                 --ssh-config-host
                 --ssh-host
-        """)
+            """),
+            file=sys.stderr,
         )
         sys.exit(1)
 
