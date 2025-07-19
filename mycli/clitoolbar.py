@@ -1,4 +1,4 @@
-# type: ignore
+from typing import Callable
 
 from prompt_toolkit.application import get_app
 from prompt_toolkit.enums import EditingMode
@@ -7,14 +7,14 @@ from prompt_toolkit.key_binding.vi_state import InputMode
 from mycli.packages import special
 
 
-def create_toolbar_tokens_func(mycli, show_fish_help):
+def create_toolbar_tokens_func(mycli, show_fish_help: Callable) -> Callable:
     """Return a function that generates the toolbar tokens."""
 
-    def get_toolbar_tokens():
+    def get_toolbar_tokens() -> list[tuple[str, str]]:
         result = [("class:bottom-toolbar", " ")]
 
         if mycli.multi_line:
-            delimiter = special.get_current_delimiter()
+            delimiter = special.get_current_delimiter()  # type: ignore
             result.append((
                 "class:bottom-toolbar",
                 " ({} [{}] will end the line) ".format("Semi-colon" if delimiter == ";" else "Delimiter", delimiter),
@@ -42,7 +42,7 @@ def create_toolbar_tokens_func(mycli, show_fish_help):
     return get_toolbar_tokens
 
 
-def _get_vi_mode():
+def _get_vi_mode() -> str:
     """Get the current vi mode for display."""
     return {
         InputMode.INSERT: "I",
