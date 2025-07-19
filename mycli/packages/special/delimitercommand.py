@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from typing import Generator
 
-import sqlparse  # type: ignore[import-untyped]
+import sqlparse
 
 
 class DelimiterCommand:
