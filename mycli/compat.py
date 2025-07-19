@@ -1,7 +1,7 @@
-# type: ignore
-
 """Platform and Python version compatibility support."""
+
+from __future__ import annotations
 
 import sys
 
-WIN = sys.platform in ("win32", "cygwin")
+WIN: bool = sys.platform in ("win32", "cygwin")

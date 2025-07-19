@@ -1,7 +1,7 @@
-# type: ignore
+from __future__ import annotations
 
 import os
-from typing import List, Tuple, Union
+from typing import Union
 
 from prompt_toolkit.history import FileHistory
 
@@ -17,16 +17,16 @@ class FileHistoryWithTimestamp(FileHistory):
         self.filename = filename
         super().__init__(filename)
 
-    def load_history_with_timestamp(self) -> List[Tuple[str, str]]:
+    def load_history_with_timestamp(self) -> list[tuple[str, str]]:
         """
         Load history entries along with their timestamps.
 
         Returns:
-            List[Tuple[str, str]]: A list of tuples where each tuple contains
+            list[tuple[str, str]]: A list of tuples where each tuple contains
                                    a history entry and its corresponding timestamp.
         """
-        history_with_timestamp: List[Tuple[str, str]] = []
-        lines: List[str] = []
+        history_with_timestamp: list[tuple[str, str]] = []
+        lines: list[str] = []
         timestamp: str = ""
 
         def add() -> None:

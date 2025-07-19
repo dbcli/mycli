@@ -7,6 +7,7 @@ Internal
 * Support only Python 3.9+ in `pyproject.toml`.
 * Add linting suggestion to pull request template.
 * Make CI names and properties more consistent.
+* Enable typechecking for several files.
 
 
 1.36.0 (2025/07/19)
