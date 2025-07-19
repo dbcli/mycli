@@ -28,6 +28,9 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Install less pager
+        run: sudo apt-get install less more
+
       - name: Start MySQL
         run: |
           sudo /etc/init.d/mysql start
@@ -46,6 +49,10 @@ jobs:
           PYTEST_PASSWORD: root
           PYTEST_HOST: 127.0.0.1
           TERM: xterm
+          # PAGER: cat
+          # EDITOR: touch
+          # LESS: -RXF
+          PYTHONUNBUFFERED: 1
         run: |
           uv run tox -e py${{ matrix.python-version }}
 
