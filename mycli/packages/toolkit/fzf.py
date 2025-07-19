@@ -47,7 +47,7 @@ def search_history(event: KeyPressEvent, incremental: bool = False) -> None:
 
     result = fzf.prompt(
         formatted_history_items,
-        fzf_options="--scheme=history --tiebreak=index --preview-window=down:wrap --preview=\"printf '%s' {}\"",
+        fzf_options="--scheme=history --tiebreak=index --bind ctrl-r:up,alt-r:up --preview-window=down:wrap --preview=\"printf '%s' {}\"",
     )
 
     if result:

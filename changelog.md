@@ -4,6 +4,7 @@ Upcoming Release (TBD)
 Features
 --------
 * Make control-r reverse search style configurable.
+* Make fzf search key bindings more compatible with traditional isearch.
 
 
 Internal
