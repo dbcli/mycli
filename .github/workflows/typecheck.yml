@@ -1,4 +1,4 @@
-name: lint
+name: mycli
 
 on:
   pull_request:
@@ -7,7 +7,7 @@ on:
       - 'AUTHORS'
 
 jobs:
-  linters:
+  typecheck:
     name: Typecheck
     runs-on: ubuntu-latest
 
