@@ -516,16 +516,20 @@ def flush_pipe_once_if_written(post_redirect_command):
             with open(PIPE_ONCE['stdout_file'], PIPE_ONCE['stdout_mode']) as f:
                 print(stdout_data, file=f)
             _run_post_redirect_hook(post_redirect_command, PIPE_ONCE['stdout_file'])
-            PIPE_ONCE['stdout_file'] = None
-            PIPE_ONCE['stdout_mode'] = None
         else:
             click.secho(stdout_data.rstrip('\n'))
     if stderr_data:
         click.secho(stderr_data.rstrip('\n'), err=True, fg='red')
-    if PIPE_ONCE['process'].returncode:
-        raise OSError(f'process exited with nonzero code {PIPE_ONCE["process"].returncode}')
+    if returncode := PIPE_ONCE['process'].returncode:
+        PIPE_ONCE['process'] = None
+        PIPE_ONCE['stdin'] = []
+        PIPE_ONCE['stdout_file'] = None
+        PIPE_ONCE['stdout_mode'] = None
+        raise OSError(f'process exited with nonzero code {returncode}')
     PIPE_ONCE['process'] = None
     PIPE_ONCE['stdin'] = []
+    PIPE_ONCE['stdout_file'] = None
+    PIPE_ONCE['stdout_mode'] = None
 
 
 @special_command("watch", "watch [seconds] [-c] query", "Executes the query every [seconds] seconds (by default 5).")

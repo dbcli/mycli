@@ -7,6 +7,12 @@ Features
 * Make fzf search key bindings more compatible with traditional isearch.
 
 
+Bug Fixes
+--------
+
+* Better reset after pipe command failures.
+
+
 Internal
 --------
 
