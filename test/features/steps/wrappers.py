@@ -1,15 +1,11 @@
 # type: ignore
 
+from io import StringIO
 import re
 import sys
 import textwrap
 
 import pexpect
-
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
 
 
 def expect_exact(context, expected, timeout):
