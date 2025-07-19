@@ -1,3 +1,12 @@
+Upcoming Release (TBD)
+======================
+
+Internal
+--------
+
+* Support only Python 3.9+ in `pyproject.toml`.
+
+
 1.36.0 (2025/07/19)
 ======================
 

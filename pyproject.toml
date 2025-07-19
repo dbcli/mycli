@@ -21,14 +21,12 @@ dependencies = [
     "pyperclip >= 1.8.1",
     "pyaes >= 1.6.1",
     "pyfzf >= 0.3.1",
-    "importlib_resources >= 5.0.0; python_version<'3.9'",
 ]
 
 [build-system]
 requires = [
     "setuptools>=64.0",
-    "setuptools-scm>=8;python_version>='3.8'",
-    "setuptools-scm<8;python_version<'3.8'",
+    "setuptools-scm>=8",
 ]
 build-backend = "setuptools.build_meta"
 
