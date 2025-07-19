@@ -1,4 +1,4 @@
-# type: ignore
+from __future__ import annotations
 
 import sys
 
@@ -10,13 +10,13 @@ from mycli.packages.parseutils import is_destructive
 class ConfirmBoolParamType(click.ParamType):
     name = "confirmation"
 
-    def convert(self, value, param, ctx):
+    def convert(self, value: bool | str, param: click.Parameter | None, ctx: click.Context | None) -> bool:
         if isinstance(value, bool):
             return bool(value)
         value = value.lower()
         if value in ("yes", "y"):
             return True
-        elif value in ("no", "n"):
+        if value in ("no", "n"):
             return False
         self.fail("%s is not a valid boolean" % value, param, ctx)
 
@@ -27,7 +27,7 @@ class ConfirmBoolParamType(click.ParamType):
 BOOLEAN_TYPE = ConfirmBoolParamType()
 
 
-def confirm_destructive_query(queries):
+def confirm_destructive_query(queries: str) -> bool | None:
     """Check if the query is destructive and prompts the user to confirm.
 
     Returns:
@@ -39,9 +39,11 @@ def confirm_destructive_query(queries):
     prompt_text = "You're about to run a destructive command.\nDo you want to proceed? (y/n)"
     if is_destructive(queries) and sys.stdin.isatty():
         return prompt(prompt_text, type=BOOLEAN_TYPE)
+    else:
+        return None
 
 
-def confirm(*args, **kwargs):
+def confirm(*args, **kwargs) -> bool:
     """Prompt for confirmation (yes/no) and handle any abort exceptions."""
     try:
         return click.confirm(*args, **kwargs)
@@ -49,7 +51,7 @@ def confirm(*args, **kwargs):
         return False
 
 
-def prompt(*args, **kwargs):
+def prompt(*args, **kwargs) -> bool:
     """Prompt the user for input and handle any abort exceptions."""
     try:
         return click.prompt(*args, **kwargs)
