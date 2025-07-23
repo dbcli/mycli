@@ -1012,7 +1012,7 @@ class MyCli:
     def configure_pager(self):
         # Provide sane defaults for less if they are empty.
         if not os.environ.get("LESS"):
-            os.environ["LESS"] = "-RXF"
+            os.environ["LESS"] = ""
 
         cnf = self.read_my_cnf_files(self.cnf_files, ["pager", "skip-pager"])
         cnf_pager = cnf["pager"] or self.config["main"]["pager"]
