@@ -1,13 +1,13 @@
-# type: ignore
+from typing import Callable
 
 from prompt_toolkit.application import get_app
 from prompt_toolkit.enums import DEFAULT_BUFFER
 from prompt_toolkit.filters import Condition
 
-from mycli.packages import special
+from mycli.packages.special import iocommands
 
 
-def cli_is_multiline(mycli):
+def cli_is_multiline(mycli) -> Callable:
     @Condition
     def cond():
         doc = get_app().layout.get_buffer_by_name(DEFAULT_BUFFER).document
@@ -20,7 +20,7 @@ def cli_is_multiline(mycli):
     return cond
 
 
-def _multiline_exception(text):
+def _multiline_exception(text: str) -> bool:
     orig = text
     text = text.strip()
 
@@ -39,7 +39,7 @@ def _multiline_exception(text):
         or
         # Ended with the current delimiter (usually a semi-column)
         text.endswith((
-            special.get_current_delimiter(),
+            iocommands.get_current_delimiter(),
             "\\g",
             "\\G",
             r"\e",

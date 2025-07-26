@@ -29,4 +29,5 @@ jobs:
 
       - name: Run mypy
         run: |
-          uv run --no-sync --frozen -- python -m mypy --no-pretty --install-types .
+          uv run --no-sync --frozen -- python -m ensurepip
+          uv run --no-sync --frozen -- python -m mypy --no-pretty --install-types --non-interactive .

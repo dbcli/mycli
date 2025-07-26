@@ -52,7 +52,7 @@ from mycli.packages.hybrid_redirection import get_redirect_components, is_redire
 from mycli.packages.parseutils import is_destructive, is_dropping_database
 from mycli.packages.prompt_utils import confirm, confirm_destructive_query
 from mycli.packages.special.favoritequeries import FavoriteQueries
-from mycli.packages.special.main import NO_QUERY
+from mycli.packages.special.main import ArgType
 from mycli.packages.tabular_output import sql_format
 from mycli.packages.toolkit.history import FileHistoryWithTimestamp
 from mycli.sqlcompleter import SQLCompleter
@@ -198,24 +198,24 @@ class MyCli:
         self.prompt_app = None
 
     def register_special_commands(self):
-        special.register_special_command(self.change_db, "use", "\\u", "Change to a new database.", aliases=("\\u",))
+        special.register_special_command(self.change_db, "use", "\\u", "Change to a new database.", aliases=["\\u"])
         special.register_special_command(
             self.change_db,
             "connect",
             "\\r",
             "Reconnect to the database. Optional database argument.",
-            aliases=("\\r",),
+            aliases=["\\r"],
             case_sensitive=True,
         )
         special.register_special_command(
-            self.refresh_completions, "rehash", "\\#", "Refresh auto-completions.", arg_type=NO_QUERY, aliases=("\\#",)
+            self.refresh_completions, "rehash", "\\#", "Refresh auto-completions.", arg_type=ArgType.NO_QUERY, aliases=["\\#"]
         )
         special.register_special_command(
             self.change_table_format,
             "tableformat",
             "\\T",
             "Change the table format used to output results.",
-            aliases=("\\T",),
+            aliases=["\\T"],
             case_sensitive=True,
         )
         special.register_special_command(
@@ -223,12 +223,12 @@ class MyCli:
             "redirectformat",
             "\\Tr",
             "Change the table format used to output redirected results.",
-            aliases=("\\Tr",),
+            aliases=["\\Tr"],
             case_sensitive=True,
         )
-        special.register_special_command(self.execute_from_file, "source", "\\. filename", "Execute commands from file.", aliases=("\\.",))
+        special.register_special_command(self.execute_from_file, "source", "\\. filename", "Execute commands from file.", aliases=["\\."])
         special.register_special_command(
-            self.change_prompt_format, "prompt", "\\R", "Change prompt format.", aliases=("\\R",), case_sensitive=True
+            self.change_prompt_format, "prompt", "\\R", "Change prompt format.", aliases=["\\R"], case_sensitive=True
         )
 
     def change_table_format(self, arg, **_):
@@ -574,7 +574,7 @@ class MyCli:
         while special.editor_command(text):
             filename = special.get_filename(text)
             query = special.get_editor_query(text) or self.get_last_query()
-            sql, message = special.open_external_editor(filename, sql=query)
+            sql, message = special.open_external_editor(filename=filename, sql=query)
             if message:
                 # Something went wrong. Raise an exception and bail.
                 raise RuntimeError(message)

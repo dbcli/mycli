@@ -170,14 +170,14 @@ def test_pipe_once_command():
 
 def test_parseargfile():
     """Test that parseargfile expands the user directory."""
-    expected = {"file": os.path.join(os.path.expanduser("~"), "filename"), "mode": "a"}
+    expected = (os.path.join(os.path.expanduser("~"), "filename"), "a")
 
     if os.name == "nt":
         assert expected == mycli.packages.special.iocommands.parseargfile("~\\filename")
     else:
         assert expected == mycli.packages.special.iocommands.parseargfile("~/filename")
 
-    expected = {"file": os.path.join(os.path.expanduser("~"), "filename"), "mode": "w"}
+    expected = (os.path.join(os.path.expanduser("~"), "filename"), "w")
     if os.name == "nt":
         assert expected == mycli.packages.special.iocommands.parseargfile("-o ~\\filename")
     else:
