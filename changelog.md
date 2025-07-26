@@ -1,6 +1,11 @@
 Upcoming Release (TBD)
 ======================
 
+Features
+--------
+* Show username in password prompt.
+
+
 Bug Fixes
 --------
 * Help Windows installations find a working default pager.
