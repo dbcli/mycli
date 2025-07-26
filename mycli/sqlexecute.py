@@ -1,14 +1,19 @@
-# type: ignore
+from __future__ import annotations
 
+import datetime
 import enum
 import logging
 import re
+import ssl
+from typing import Any, Generator
 
 import pymysql
 from pymysql.constants import FIELD_TYPE
 from pymysql.converters import conversions, convert_date, convert_datetime, convert_timedelta, decoders
+from pymysql.cursors import Cursor
 
-from mycli.packages import special
+from mycli.packages.special import iocommands
+from mycli.packages.special.main import CommandNotFound, execute
 
 try:
     import paramiko  # noqa: F401
@@ -34,13 +39,13 @@ class ServerSpecies(enum.Enum):
 
 
 class ServerInfo:
-    def __init__(self, species, version_str):
+    def __init__(self, species: ServerSpecies | None, version_str: str) -> None:
         self.species = species
         self.version_str = version_str
         self.version = self.calc_mysql_version_value(version_str)
 
     @staticmethod
-    def calc_mysql_version_value(version_str) -> int:
+    def calc_mysql_version_value(version_str: str) -> int:
         if not version_str or not isinstance(version_str, str):
             return 0
         try:
@@ -51,7 +56,7 @@ class ServerInfo:
             return int(major) * 10_000 + int(minor) * 100 + int(patch)
 
     @classmethod
-    def from_version_string(cls, version_string):
+    def from_version_string(cls, version_string: str) -> ServerInfo:
         if not version_string:
             return cls(ServerSpecies.MySQL, "")
 
@@ -73,7 +78,7 @@ class ServerInfo:
 
         return cls(detected_species, parsed_version)
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.species:
             return f"{self.species.value} {self.version_str}"
         else:
@@ -100,22 +105,22 @@ class SQLExecute:
 
     def __init__(
         self,
-        database,
-        user,
-        password,
-        host,
-        port,
-        socket,
-        charset,
-        local_infile,
-        ssl,
-        ssh_user,
-        ssh_host,
-        ssh_port,
-        ssh_password,
-        ssh_key_filename,
-        init_command=None,
-    ):
+        database: str | None,
+        user: str | None,
+        password: str | None,
+        host: str | None,
+        port: int | None,
+        socket: str | None,
+        charset: str | None,
+        local_infile: str | None,
+        ssl: dict[str, Any] | None,
+        ssh_user: str | None,
+        ssh_host: str | None,
+        ssh_port: int | None,
+        ssh_password: str | None,
+        ssh_key_filename: str | None,
+        init_command: str | None = None,
+    ) -> None:
         self.dbname = database
         self.user = user
         self.password = password
@@ -125,8 +130,8 @@ class SQLExecute:
         self.charset = charset
         self.local_infile = local_infile
         self.ssl = ssl
-        self.server_info = None
-        self.connection_id = None
+        self.server_info: ServerInfo | None = None
+        self.connection_id: int | None = None
         self.ssh_user = ssh_user
         self.ssh_host = ssh_host
         self.ssh_port = ssh_port
@@ -213,7 +218,7 @@ class SQLExecute:
             defer_connect = True
 
         client_flag = pymysql.constants.CLIENT.INTERACTIVE
-        if init_command and len(list(special.split_queries(init_command))) > 1:
+        if init_command and len(list(iocommands.split_queries(init_command))) > 1:
             client_flag |= pymysql.constants.CLIENT.MULTI_STATEMENTS
 
         ssl_context = None
@@ -277,7 +282,7 @@ class SQLExecute:
         self.reset_connection_id()
         self.server_info = ServerInfo.from_version_string(conn.server_version)
 
-    def run(self, statement):
+    def run(self, statement: str) -> Generator[tuple, None, None]:
         """Execute the sql in the database and return the results. The results
         are a list of tuples. Each tuple has 4 values
         (title, rows, headers, status).
@@ -294,26 +299,26 @@ class SQLExecute:
         if statement.startswith("\\fs"):
             components = [statement]
         else:
-            components = special.split_queries(statement)
+            components = iocommands.split_queries(statement)
 
         for sql in components:
             # \G is treated specially since we have to set the expanded output.
             if sql.endswith("\\G"):
-                special.set_expanded_output(True)
+                iocommands.set_expanded_output(True)
                 sql = sql[:-2].strip()
             # \g is treated specially since we might want collapsed output when
             # auto vertical output is enabled
             elif sql.endswith('\\g'):
-                special.set_expanded_output(False)
-                special.set_forced_horizontal_output(True)
+                iocommands.set_expanded_output(False)
+                iocommands.set_forced_horizontal_output(True)
                 sql = sql[:-2].strip()
 
             cur = self.conn.cursor()
             try:  # Special command
                 _logger.debug("Trying a dbspecial command. sql: %r", sql)
-                for result in special.execute(cur, sql):
+                for result in execute(cur, sql):
                     yield result
-            except special.CommandNotFound:  # Regular SQL
+            except CommandNotFound:  # Regular SQL
                 _logger.debug("Regular sql statement. sql: %r", sql)
                 cur.execute(sql)
                 while True:
@@ -325,23 +330,24 @@ class SQLExecute:
                     if not cur.nextset() or (not cur.rowcount and cur.description is None):
                         break
 
-    def get_result(self, cursor):
+    def get_result(self, cursor: Cursor) -> tuple:
         """Get the current result's data from the cursor."""
         title = headers = None
 
         # cursor.description is not None for queries that return result sets,
         # e.g. SELECT or SHOW.
-        if cursor.description is not None:
+        if cursor.description:
             headers = [x[0] for x in cursor.description]
-            status = "{0} row{1} in set"
+            plural = '' if cursor.rowcount == 1 else 's'
+            status = f'{cursor.rowcount} row{plural} in set'
         else:
             _logger.debug("No rows in result.")
-            status = "Query OK, {0} row{1} affected"
-        status = status.format(cursor.rowcount, "" if cursor.rowcount == 1 else "s")
+            plural = '' if cursor.rowcount == 1 else 's'
+            status = f'Query OK, {cursor.rowcount} row{plural} affected'
 
         return (title, cursor if cursor.description else None, headers, status)
 
-    def tables(self):
+    def tables(self) -> Generator[tuple[str], None, None]:
         """Yields table names"""
 
         with self.conn.cursor() as cur:
@@ -350,7 +356,7 @@ class SQLExecute:
             for row in cur:
                 yield row
 
-    def table_columns(self):
+    def table_columns(self) -> Generator[tuple[str, str], None, None]:
         """Yields (table name, column name) pairs"""
         with self.conn.cursor() as cur:
             _logger.debug("Columns Query. sql: %r", self.table_columns_query)
@@ -358,13 +364,13 @@ class SQLExecute:
             for row in cur:
                 yield row
 
-    def databases(self):
+    def databases(self) -> list[str]:
         with self.conn.cursor() as cur:
             _logger.debug("Databases Query. sql: %r", self.databases_query)
             cur.execute(self.databases_query)
             return [x[0] for x in cur.fetchall()]
 
-    def functions(self):
+    def functions(self) -> Generator[tuple[str, str], None, None]:
         """Yields tuples of (schema_name, function_name)"""
 
         with self.conn.cursor() as cur:
@@ -373,47 +379,50 @@ class SQLExecute:
             for row in cur:
                 yield row
 
-    def show_candidates(self):
+    def show_candidates(self) -> Generator[tuple, None, None]:
         with self.conn.cursor() as cur:
             _logger.debug("Show Query. sql: %r", self.show_candidates_query)
             try:
                 cur.execute(self.show_candidates_query)
             except pymysql.DatabaseError as e:
                 _logger.error("No show completions due to %r", e)
-                yield ""
+                yield ()
             else:
                 for row in cur:
                     yield (row[0].split(None, 1)[-1],)
 
-    def users(self):
+    def users(self) -> Generator[tuple, None, None]:
         with self.conn.cursor() as cur:
             _logger.debug("Users Query. sql: %r", self.users_query)
             try:
                 cur.execute(self.users_query)
             except pymysql.DatabaseError as e:
                 _logger.error("No user completions due to %r", e)
-                yield ""
+                yield ()
             else:
                 for row in cur:
                     yield row
 
-    def now(self):
+    def now(self) -> datetime.datetime:
         with self.conn.cursor() as cur:
             _logger.debug("Now Query. sql: %r", self.now_query)
             cur.execute(self.now_query)
-            return cur.fetchone()[0]
+            if one := cur.fetchone():
+                return one[0]
+            else:
+                return datetime.datetime.now()
 
-    def get_connection_id(self):
+    def get_connection_id(self) -> int | None:
         if not self.connection_id:
             self.reset_connection_id()
         return self.connection_id
 
-    def reset_connection_id(self):
+    def reset_connection_id(self) -> None:
         # Remember current connection id
         _logger.debug("Get current connection id")
         try:
             res = self.run("select connection_id()")
-            for title, cur, headers, status in res:
+            for _title, cur, _headers, _status in res:
                 self.connection_id = cur.fetchone()[0]
         except Exception as e:
             # See #1054
@@ -422,13 +431,11 @@ class SQLExecute:
         else:
             _logger.debug("Current connection id: %s", self.connection_id)
 
-    def change_db(self, db):
+    def change_db(self, db: str) -> None:
         self.conn.select_db(db)
         self.dbname = db
 
-    def _create_ssl_ctx(self, sslp):
-        import ssl
-
+    def _create_ssl_ctx(self, sslp: dict) -> ssl.SSLContext:
         ca = sslp.get("ca")
         capath = sslp.get("capath")
         hasnoca = ca is None and capath is None
