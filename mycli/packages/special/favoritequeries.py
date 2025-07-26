@@ -34,7 +34,7 @@ Examples:
 """
 
     # Class-level variable, for convenience to use as a singleton.
-    instance = None
+    instance: FavoriteQueries
 
     def __init__(self, config) -> None:
         self.config = config

@@ -123,7 +123,7 @@ def extract_from_part(parsed: TokenList, stop_at_punctuation: bool = True) -> Ge
                     break
 
 
-def extract_table_identifiers(token_stream: TokenList) -> Generator[tuple[str | None, str, str]]:
+def extract_table_identifiers(token_stream: TokenList) -> Generator[tuple[str | None, str, str], None, None]:
     """yields tuples of (schema_name, table_name, table_alias)"""
 
     for item in token_stream:
