@@ -949,17 +949,17 @@ class SQLCompleter(Completer):
             self.keywords.extend(keywords)
         self.all_completions.update(keywords)
 
-    def extend_show_items(self, show_items: list[tuple]) -> None:
+    def extend_show_items(self, show_items: Iterable[tuple]) -> None:
         for show_item in show_items:
             self.show_items.extend(show_item)
             self.all_completions.update(show_item)
 
-    def extend_change_items(self, change_items: list[tuple]) -> None:
+    def extend_change_items(self, change_items: Iterable[tuple]) -> None:
         for change_item in change_items:
             self.change_items.extend(change_item)
             self.all_completions.update(change_item)
 
-    def extend_users(self, users: list[tuple]) -> None:
+    def extend_users(self, users: Iterable[tuple]) -> None:
         for user in users:
             self.users.extend(user)
             self.all_completions.update(user)
@@ -975,7 +975,7 @@ class SQLCompleter(Completer):
             metadata[schema] = {}
         self.all_completions.update(schema)
 
-    def extend_relations(self, data: list[tuple[str]], kind: Literal['tables', 'views']) -> None:
+    def extend_relations(self, data: list[tuple[str, str]], kind: Literal['tables', 'views']) -> None:
         """Extend metadata for tables or views
 
         :param data: list of (rel_name, ) tuples
@@ -1015,10 +1015,11 @@ class SQLCompleter(Completer):
             metadata[self.dbname][relname].append(column)
             self.all_completions.add(column)
 
-    def extend_functions(self, func_data: Iterable[str], builtin: bool = False) -> None:
+    def extend_functions(self, func_data: list[str] | Generator[tuple[str, str]], builtin: bool = False) -> None:
         # if 'builtin' is set this is extending the list of builtin functions
         if builtin:
-            self.functions.extend(func_data)
+            if isinstance(func_data, list):
+                self.functions.extend(func_data)
             return
 
         # 'func_data' is a generator object. It can throw an exception while
@@ -1038,8 +1039,8 @@ class SQLCompleter(Completer):
             metadata[self.dbname][func[0]] = None
             self.all_completions.add(func[0])
 
-    def set_dbname(self, dbname: str) -> None:
-        self.dbname = dbname
+    def set_dbname(self, dbname: str | None) -> None:
+        self.dbname = dbname or ''
 
     def reset_completions(self) -> None:
         self.databases: list[str] = []
