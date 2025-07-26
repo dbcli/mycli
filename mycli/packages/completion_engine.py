@@ -1,13 +1,15 @@
-# type: ignore
+from __future__ import annotations
+
+from typing import Any
 
 import sqlparse
-from sqlparse.sql import Comparison, Identifier, Where
+from sqlparse.sql import Comparison, Identifier, Token, Where
 
 from mycli.packages.parseutils import extract_tables, find_prev_keyword, last_word
-from mycli.packages.special import parse_special_command
+from mycli.packages.special.main import parse_special_command
 
 
-def suggest_type(full_text, text_before_cursor):
+def suggest_type(full_text: str, text_before_cursor: str) -> list[dict[str, str]]:
     """Takes the full_text that is typed so far and also the text before the
     cursor to suggest completion type and scope.
 
@@ -17,7 +19,7 @@ def suggest_type(full_text, text_before_cursor):
 
     word_before_cursor = last_word(text_before_cursor, include="many_punctuations")
 
-    identifier = None
+    identifier: Identifier | None = None
 
     # here should be removed once sqlparse has been fixed
     try:
@@ -80,9 +82,9 @@ def suggest_type(full_text, text_before_cursor):
     return suggest_based_on_last_token(last_token, text_before_cursor, full_text, identifier)
 
 
-def suggest_special(text):
+def suggest_special(text: str) -> list[dict[str, Any]]:
     text = text.lstrip()
-    cmd, _, arg = parse_special_command(text)
+    cmd, _separator, _arg = parse_special_command(text)
 
     if cmd == text:
         # Trying to complete the special command itself
@@ -109,7 +111,12 @@ def suggest_special(text):
     return [{"type": "keyword"}, {"type": "special"}]
 
 
-def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier):
+def suggest_based_on_last_token(
+    token: str | Token | None,
+    text_before_cursor: str,
+    full_text: str,
+    identifier: Identifier,
+) -> list[dict[str, Any]]:
     if isinstance(token, str):
         token_v = token.lower()
     elif isinstance(token, Comparison):
@@ -157,7 +164,7 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
 
             # Check for a subquery expression (cases 3 & 4)
             where = p.tokens[-1]
-            idx, prev_tok = where.token_prev(len(where.tokens) - 1)
+            _idx, prev_tok = where.token_prev(len(where.tokens) - 1)
 
             if isinstance(prev_tok, Comparison):
                 # e.g. "SELECT foo FROM bar WHERE foo = ANY("
@@ -223,7 +230,7 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
                 {"type": "alias", "aliases": aliases},
                 {"type": "keyword"},
             ]
-    elif (token_v.endswith("join") and token.is_keyword) or (
+    elif (token_v.endswith("join") and isinstance(token, Token) and token.is_keyword) or (
         token_v in ("copy", "from", "update", "into", "describe", "truncate", "desc", "explain")
     ):
         schema = (identifier and identifier.get_parent_name()) or []
@@ -292,5 +299,16 @@ def suggest_based_on_last_token(token, text_before_cursor, full_text, identifier
         return [{"type": "keyword"}]
 
 
-def identifies(identifier, schema, table, alias):
-    return identifier == alias or identifier == table or (schema and (identifier == schema + "." + table))
+def identifies(
+    identifier: Any,
+    schema: str | None,
+    table: str,
+    alias: str,
+) -> bool:
+    if identifier == alias:
+        return True
+    if identifier == table:
+        return True
+    if schema and identifier == (schema + "." + table):
+        return True
+    return False
