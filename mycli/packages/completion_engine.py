@@ -9,7 +9,7 @@ from mycli.packages.parseutils import extract_tables, find_prev_keyword, last_wo
 from mycli.packages.special.main import parse_special_command
 
 
-def suggest_type(full_text: str, text_before_cursor: str) -> list[dict[str, str]]:
+def suggest_type(full_text: str, text_before_cursor: str) -> list[dict[str, Any]]:
     """Takes the full_text that is typed so far and also the text before the
     cursor to suggest completion type and scope.
 
