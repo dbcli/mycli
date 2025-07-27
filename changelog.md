@@ -17,7 +17,7 @@ Internal
 * Support only Python 3.9+ in `pyproject.toml`.
 * Add linting suggestion to pull request template.
 * Make CI names and properties more consistent.
-* Enable typechecking for several files.
+* Enable typechecking for most of the non-test codebase.
 * CI: turn off fail-fast matrix strategy.
 * Remove unused Python 2 compatibility code.
 * Also run CI tests without installing SSH extra dependencies.

@@ -1,7 +1,7 @@
-# type: ignore
+from __future__ import annotations
 
-from collections import OrderedDict
 import threading
+from typing import Callable
 
 from mycli.packages.special.main import COMMANDS
 from mycli.sqlcompleter import SQLCompleter
@@ -9,13 +9,18 @@ from mycli.sqlexecute import ServerSpecies, SQLExecute
 
 
 class CompletionRefresher:
-    refreshers = OrderedDict()
+    refreshers: dict = {}
 
-    def __init__(self):
-        self._completer_thread = None
+    def __init__(self) -> None:
+        self._completer_thread: threading.Thread | None = None
         self._restart_refresh = threading.Event()
 
-    def refresh(self, executor, callbacks, completer_options=None):
+    def refresh(
+        self,
+        executor: SQLExecute,
+        callbacks: Callable | list[Callable],
+        completer_options: dict | None = None,
+    ) -> list[tuple]:
         """Creates a SQLCompleter object and populates it with the relevant
         completion suggestions in a background thread.
 
@@ -41,13 +46,18 @@ class CompletionRefresher:
             self._completer_thread.start()
             return [(None, None, None, "Auto-completion refresh started in the background.")]
 
-    def is_refreshing(self):
-        return self._completer_thread and self._completer_thread.is_alive()
+    def is_refreshing(self) -> bool:
+        return bool(self._completer_thread and self._completer_thread.is_alive())
 
-    def _bg_refresh(self, sqlexecute, callbacks, completer_options):
+    def _bg_refresh(
+        self,
+        sqlexecute: SQLExecute,
+        callbacks: Callable | list[Callable],
+        completer_options: dict,
+    ) -> None:
         completer = SQLCompleter(**completer_options)
 
-        # Create a new pgexecute method to populate the completions.
+        # Create a new sqlexecute method to populate the completions.
         e = sqlexecute
         executor = SQLExecute(
             e.dbname,
@@ -89,7 +99,7 @@ class CompletionRefresher:
             callback(completer)
 
 
-def refresher(name, refreshers=CompletionRefresher.refreshers):
+def refresher(name: str, refreshers: dict = CompletionRefresher.refreshers) -> Callable:
     """Decorator to add the decorated function to the dictionary of
     refreshers. Any function decorated with a @refresher will be executed as
     part of the completion refresh routine."""
@@ -102,12 +112,12 @@ def refresher(name, refreshers=CompletionRefresher.refreshers):
 
 
 @refresher("databases")
-def refresh_databases(completer, executor):
+def refresh_databases(completer: SQLCompleter, executor: SQLExecute) -> None:
     completer.extend_database_names(executor.databases())
 
 
 @refresher("schemata")
-def refresh_schemata(completer, executor):
+def refresh_schemata(completer: SQLCompleter, executor: SQLExecute) -> None:
     # schemata - In MySQL Schema is the same as database. But for mycli
     # schemata will be the name of the current database.
     completer.extend_schemata(executor.dbname)
@@ -115,41 +125,41 @@ def refresh_schemata(completer, executor):
 
 
 @refresher("tables")
-def refresh_tables(completer, executor):
+def refresh_tables(completer: SQLCompleter, executor: SQLExecute) -> None:
     table_columns_dbresult = list(executor.table_columns())
     completer.extend_relations(table_columns_dbresult, kind="tables")
     completer.extend_columns(table_columns_dbresult, kind="tables")
 
 
 @refresher("users")
-def refresh_users(completer, executor):
+def refresh_users(completer: SQLCompleter, executor: SQLExecute) -> None:
     completer.extend_users(executor.users())
 
 
 # @refresher('views')
-# def refresh_views(completer, executor):
+# def refresh_views(completer: SQLCompleter, executor: SQLExecute) -> None:
 #     completer.extend_relations(executor.views(), kind='views')
 #     completer.extend_columns(executor.view_columns(), kind='views')
 
 
 @refresher("functions")
-def refresh_functions(completer, executor):
+def refresh_functions(completer: SQLCompleter, executor: SQLExecute) -> None:
     completer.extend_functions(executor.functions())
-    if executor.server_info.species == ServerSpecies.TiDB:
+    if executor.server_info and executor.server_info.species == ServerSpecies.TiDB:
         completer.extend_functions(completer.tidb_functions, builtin=True)
 
 
 @refresher("special_commands")
-def refresh_special(completer, executor):
-    completer.extend_special_commands(COMMANDS.keys())
+def refresh_special(completer: SQLCompleter, executor: SQLExecute) -> None:
+    completer.extend_special_commands(list(COMMANDS.keys()))
 
 
 @refresher("show_commands")
-def refresh_show_commands(completer, executor):
+def refresh_show_commands(completer: SQLCompleter, executor: SQLExecute) -> None:
     completer.extend_show_items(executor.show_candidates())
 
 
 @refresher("keywords")
-def refresh_keywords(completer, executor):
-    if executor.server_info.species == ServerSpecies.TiDB:
+def refresh_keywords(completer: SQLCompleter, executor: SQLExecute) -> None:
+    if executor.server_info and executor.server_info.species == ServerSpecies.TiDB:
         completer.extend_keywords(completer.tidb_keywords, replace=True)
