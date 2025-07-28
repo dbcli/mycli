@@ -1,10 +1,10 @@
-Upcoming Release (TBD)
+1.37.0 (2025/07/28)
 ======================
 
 Features
 --------
 * Show username in password prompt.
-* Add a `mysql` and `mysql_unicode` table format.
+* Add `mysql` and `mysql_unicode` table formats.
 
 
 Bug Fixes
