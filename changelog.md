@@ -5,6 +5,7 @@ Internal
 --------
 
 * Align LICENSE with SPDX format.
+* Fix deprecated `license` specification format in `pyproject.toml`.
 
 1.37.0 (2025/07/28)
 ======================
