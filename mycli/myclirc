@@ -33,11 +33,13 @@ timing = True
 # Beep after long-running queries are completed; 0 to disable.
 beep_after_seconds = 0
 
-# Table format. Possible values: ascii, double, github,
-# psql, plain, simple, grid, fancy_grid, pipe, orgtbl, rst, mediawiki, html,
-# latex, latex_booktabs, textile, moinmoin, jira, vertical, tsv, tsv_noheader,
-# csv, csv-noheader, jsonl, jsonl_unescaped.
-# Recommended: ascii
+# Table format. Possible values: ascii, ascii_escaped, csv, csv-noheader,
+# csv-tab, csv-tab-noheader, double, fancy_grid, github, grid, html, jira,
+# jsonl, jsonl_escaped, latex, latex_booktabs, mediawiki, minimal, moinmoin,
+# mysql, mysql_unicode, orgtbl, pipe, plain, psql, psql_unicode, rst, simple,
+# sql-insert, sql-update, sql-update-1, sql-update-2, textile, tsv,
+# tsv_noheader, vertical.
+# Recommended: ascii.
 table_format = ascii
 
 # Redirected otuput format

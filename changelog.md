@@ -4,6 +4,7 @@ Upcoming Release (TBD)
 Features
 --------
 * Show username in password prompt.
+* Add a `mysql` and `mysql_unicode` table format.
 
 
 Bug Fixes
@@ -21,6 +22,7 @@ Internal
 * CI: turn off fail-fast matrix strategy.
 * Remove unused Python 2 compatibility code.
 * Also run CI tests without installing SSH extra dependencies.
+* Update `cli_helpers` dependency, and list of table formats.
 
 
 1.36.0 (2025/07/19)
