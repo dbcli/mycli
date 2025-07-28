@@ -1,3 +1,11 @@
+Unreleased
+======================
+
+Internal
+--------
+
+* Align LICENSE with SPDX format.
+
 1.37.0 (2025/07/28)
 ======================
 
