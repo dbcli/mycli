@@ -1,13 +1,13 @@
-from typing import Callable
+from __future__ import annotations
 
 from prompt_toolkit.application import get_app
 from prompt_toolkit.enums import DEFAULT_BUFFER
-from prompt_toolkit.filters import Condition
+from prompt_toolkit.filters import Condition, Filter
 
 from mycli.packages.special import iocommands
 
 
-def cli_is_multiline(mycli) -> Callable:
+def cli_is_multiline(mycli) -> Filter:
     @Condition
     def cond():
         doc = get_app().layout.get_buffer_by_name(DEFAULT_BUFFER).document
