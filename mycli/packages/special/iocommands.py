@@ -17,7 +17,6 @@ import sqlparse
 
 from mycli.compat import WIN
 from mycli.packages.prompt_utils import confirm_destructive_query
-from mycli.packages.special import export
 from mycli.packages.special.delimitercommand import DelimiterCommand
 from mycli.packages.special.favoritequeries import FavoriteQueries
 from mycli.packages.special.main import ArgType, special_command
@@ -40,30 +39,25 @@ delimiter_command = DelimiterCommand()
 favoritequeries = FavoriteQueries(ConfigObj())
 
 
-@export
 def set_favorite_queries(config):
     global favoritequeries
     favoritequeries = FavoriteQueries(config)
 
 
-@export
 def set_timing_enabled(val: bool) -> None:
     global TIMING_ENABLED
     TIMING_ENABLED = val
 
 
-@export
 def set_pager_enabled(val: bool) -> None:
     global PAGER_ENABLED
     PAGER_ENABLED = val
 
 
-@export
 def is_pager_enabled() -> bool:
     return PAGER_ENABLED
 
 
-@export
 @special_command(
     "pager",
     "\\P [command]",
@@ -88,7 +82,6 @@ def set_pager(arg: str, **_) -> list[tuple]:
     return [(None, None, None, msg)]
 
 
-@export
 @special_command("nopager", "\\n", "Disable pager, print to stdout.", arg_type=ArgType.NO_QUERY, aliases=["\\n"], case_sensitive=True)
 def disable_pager() -> list[tuple]:
     set_pager_enabled(False)
@@ -104,29 +97,24 @@ def toggle_timing() -> list[tuple]:
     return [(None, None, None, message)]
 
 
-@export
 def is_timing_enabled() -> bool:
     return TIMING_ENABLED
 
 
-@export
 def set_expanded_output(val: bool) -> None:
     global use_expanded_output
     use_expanded_output = val
 
 
-@export
 def is_expanded_output() -> bool:
     return use_expanded_output
 
 
-@export
 def set_forced_horizontal_output(val: bool) -> None:
     global force_horizontal_output
     force_horizontal_output = val
 
 
-@export
 def forced_horizontal() -> bool:
     return force_horizontal_output
 
@@ -134,7 +122,6 @@ def forced_horizontal() -> bool:
 _logger = logging.getLogger(__name__)
 
 
-@export
 def editor_command(command: str) -> bool:
     """
     Is this an external editor command?
@@ -145,7 +132,6 @@ def editor_command(command: str) -> bool:
     return command.strip().endswith("\\e") or command.strip().startswith("\\e")
 
 
-@export
 def get_filename(sql: str) -> str | None:
     if sql.strip().startswith("\\e"):
         command, _, filename = sql.partition(" ")
@@ -154,7 +140,6 @@ def get_filename(sql: str) -> str | None:
         return None
 
 
-@export
 def get_editor_query(sql: str) -> str:
     """Get the query part of an editor command."""
     sql = sql.strip()
@@ -169,7 +154,6 @@ def get_editor_query(sql: str) -> str:
     return sql
 
 
-@export
 def open_external_editor(filename: str | None = None, sql: str | None = None) -> tuple[str, str | None]:
     """Open external editor, wait for the user to type in their query, return
     the query.
@@ -204,7 +188,6 @@ def open_external_editor(filename: str | None = None, sql: str | None = None) ->
     return (query, None)
 
 
-@export
 def clip_command(command: str) -> bool:
     """Is this a clip command?
 
@@ -216,7 +199,6 @@ def clip_command(command: str) -> bool:
     return command.strip().endswith("\\clip") or command.strip().startswith("\\clip")
 
 
-@export
 def get_clip_query(sql: str) -> str:
     """Get the query part of a clip command."""
     sql = sql.strip()
@@ -230,7 +212,6 @@ def get_clip_query(sql: str) -> str:
     return sql
 
 
-@export
 def copy_query_to_clipboard(sql: str | None = None) -> str | None:
     """Send query to the clipboard."""
 
@@ -245,7 +226,6 @@ def copy_query_to_clipboard(sql: str | None = None) -> str | None:
     return message
 
 
-@export
 def set_redirect(command_part: str | None, file_operator_part: str | None, file_part: str | None) -> list[tuple]:
     if command_part:
         if file_part:
@@ -405,7 +385,6 @@ def set_tee(arg: str, **_) -> list[tuple]:
     return [(None, None, None, "")]
 
 
-@export
 def close_tee() -> None:
     global tee_file
     if tee_file:
@@ -419,7 +398,6 @@ def no_tee(arg: str, **_) -> list[tuple]:
     return [(None, None, None, "")]
 
 
-@export
 def write_tee(output: str) -> None:
     global tee_file
     if tee_file:
@@ -441,12 +419,10 @@ def set_once(arg: str, **_) -> list[tuple]:
     return [(None, None, None, "")]
 
 
-@export
 def is_redirected() -> bool:
     return bool(once_file or PIPE_ONCE['process'])
 
 
-@export
 def write_once(output: str) -> None:
     global once_file, written_to_once_file
     if output and once_file:
@@ -456,7 +432,6 @@ def write_once(output: str) -> None:
         written_to_once_file = True
 
 
-@export
 def unset_once_if_written(post_redirect_command: str) -> None:
     """Unset the once file, if it has been written to."""
     global once_file, written_to_once_file
@@ -506,13 +481,11 @@ def set_pipe_once(arg: str, **_) -> list[tuple]:
     return [(None, None, None, "")]
 
 
-@export
 def write_pipe_once(line: str) -> None:
     if line and PIPE_ONCE['process']:
         PIPE_ONCE['stdin'].append(line)
 
 
-@export
 def flush_pipe_once_if_written(post_redirect_command: str) -> None:
     """Flush the pipe_once cmd, if lines have been written."""
     if not PIPE_ONCE['process']:
@@ -608,18 +581,15 @@ def watch_query(arg: str, **kwargs) -> Generator[tuple, None, None]:
             set_pager_enabled(old_pager_enabled)
 
 
-@export
 @special_command("delimiter", None, "Change SQL delimiter.")
 def set_delimiter(arg: str, **_) -> list[tuple]:
     return delimiter_command.set(arg)
 
 
-@export
 def get_current_delimiter() -> str:
     return delimiter_command.current
 
 
-@export
 def split_queries(input_str: str) -> Generator[str, None, None]:
     for query in delimiter_command.queries_iter(input_str):
         yield query

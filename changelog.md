@@ -1,6 +1,11 @@
 Upcoming Release (TBD)
 ======================
 
+Features
+--------
+* Add LLM support.
+
+
 Bug Fixes
 --------
 * Improve missing ssh-extras message.
@@ -9,6 +14,7 @@ Bug Fixes
 Internal
 --------
 * Improve pull request template lint commands.
+* Continue typehinting the non-test codebase.
 
 
 1.37.1 (2025/07/28)
