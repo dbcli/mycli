@@ -1,9 +1,19 @@
 Upcoming Release (TBD)
 ======================
 
+Features
+--------
+* Add LLM support.
+
+
 Bug Fixes
 --------
 * Improve missing ssh-extras message.
+
+
+Internal
+--------
+* Continue typehinting the non-test codebase.
 
 
 1.37.1 (2025/07/28)
