@@ -1,11 +1,11 @@
+from __future__ import annotations
+
 from collections import namedtuple
 from enum import Enum
 import logging
 from typing import Callable
 
 from pymysql.cursors import Cursor
-
-from mycli.packages.special import export
 
 logger = logging.getLogger(__name__)
 
@@ -31,12 +31,10 @@ class ArgType(Enum):
     RAW_QUERY = 2
 
 
-@export
 class CommandNotFound(Exception):
     pass
 
 
-@export
 def parse_special_command(sql: str) -> tuple[str, bool, str]:
     command, _, arg = sql.partition(" ")
     verbose = "+" in command
@@ -44,10 +42,9 @@ def parse_special_command(sql: str) -> tuple[str, bool, str]:
     return (command, verbose, arg.strip())
 
 
-@export
 def special_command(
     command: str,
-    shortcut: str,
+    shortcut: str | None,
     description: str,
     arg_type: ArgType = ArgType.PARSED_QUERY,
     hidden: bool = False,
@@ -70,11 +67,10 @@ def special_command(
     return wrapper
 
 
-@export
 def register_special_command(
     handler: Callable,
     command: str,
-    shortcut: str,
+    shortcut: str | None,
     description: str,
     arg_type: ArgType = ArgType.PARSED_QUERY,
     hidden: bool = False,
@@ -104,7 +100,6 @@ def register_special_command(
         )
 
 
-@export
 def execute(cur: Cursor, sql: str) -> list[tuple]:
     """Execute a special command and return the results. If the special command
     is not supported a CommandNotFound will be raised.
