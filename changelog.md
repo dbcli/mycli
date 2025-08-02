@@ -1,4 +1,12 @@
-Unreleased
+Upcoming Release (TBD)
+======================
+
+Bug Fixes
+--------
+* Improve missing ssh-extras message.
+
+
+1.37.1 (2025/07/28)
 ======================
 
 Internal
@@ -6,6 +14,7 @@ Internal
 
 * Align LICENSE with SPDX format.
 * Fix deprecated `license` specification format in `pyproject.toml`.
+
 
 1.37.0 (2025/07/28)
 ======================
