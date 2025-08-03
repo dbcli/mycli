@@ -10,8 +10,8 @@ from time import sleep
 from typing import Any, Generator
 
 import click
-from pymysql.cursors import Cursor
 from configobj import ConfigObj
+from pymysql.cursors import Cursor
 import pyperclip
 import sqlparse
 

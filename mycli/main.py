@@ -51,7 +51,6 @@ from mycli.packages.filepaths import dir_path_exists, guess_socket_location
 from mycli.packages.hybrid_redirection import get_redirect_components, is_redirect_command
 from mycli.packages.parseutils import is_destructive, is_dropping_database
 from mycli.packages.prompt_utils import confirm, confirm_destructive_query
-from mycli.packages.special.favoritequeries import FavoriteQueries
 from mycli.packages.special.main import ArgType
 from mycli.packages.tabular_output import sql_format
 from mycli.packages.toolkit.history import FileHistoryWithTimestamp
