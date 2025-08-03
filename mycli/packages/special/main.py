@@ -43,7 +43,7 @@ class Verbosity(Enum):
 
 
 @export
-def parse_special_command(sql: str) -> tuple[str, bool, str]:
+def parse_special_command(sql: str) -> tuple[str, Verbosity, str]:
     command, _, arg = sql.partition(" ")
     verbosity = Verbosity.NORMAL
     if "+" in command:
@@ -122,7 +122,7 @@ def execute(cur: Cursor, sql: str) -> list[tuple]:
     command, verbosity, arg = parse_special_command(sql)
 
     if (command not in COMMANDS) and (command.lower() not in COMMANDS):
-        raise CommandNotFound
+        raise CommandNotFound()
 
     try:
         special_cmd = COMMANDS[command]
