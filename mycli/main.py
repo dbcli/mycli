@@ -9,6 +9,8 @@ import sys
 import threading
 import traceback
 
+from prompt_toolkit import output
+
 try:
     from pwd import getpwuid
 except ImportError:
@@ -678,9 +680,14 @@ class MyCli:
         def show_suggestion_tip():
             return iterations < 2
 
+        # Keep track of whether or not the query is mutating. In case
+        # of a multi-statement query, the overall query is considered
+        # mutating if any one of the component statements is mutating
+        mutating = False
+
         def output_res(res, start):
+            nonlocal mutating
             result_count = 0
-            mutating = False
             for title, cur, headers, status in res:
                 logger.debug("headers: %r", headers)
                 logger.debug("rows: %r", cur)
@@ -717,7 +724,7 @@ class MyCli:
                 start = time()
                 result_count += 1
                 mutating = mutating or is_mutating(status)
-            return mutating
+            return
 
         def one_iteration(text=None):
             if text is None:
@@ -793,11 +800,6 @@ class MyCli:
             else:
                 destroy = True
 
-            # Keep track of whether or not the query is mutating. In case
-            # of a multi-statement query, the overall query is considered
-            # mutating if any one of the component statements is mutating
-            mutating = False
-
             try:
                 logger.debug("sql: %r", text)
 
@@ -813,53 +815,7 @@ class MyCli:
                 self.main_formatter.query = text
                 self.redirect_formatter.query = text
                 successful = True
-                result_count = 0
-                for title, cur, headers, status in res:
-                    logger.debug("headers: %r", headers)
-                    logger.debug("rows: %r", cur)
-                    logger.debug("status: %r", status)
-                    threshold = 1000
-                    if is_select(status) and cur and cur.rowcount > threshold:
-                        self.echo("The result set has more than {} rows.".format(threshold), fg="red")
-                        if not confirm("Do you want to continue?"):
-                            self.echo("Aborted!", err=True, fg="red")
-                            break
-
-                    if self.auto_vertical_output:
-                        max_width = self.prompt_app.output.get_size().columns
-                    else:
-                        max_width = None
-
-                    if special.forced_horizontal():
-                        max_width = None
-
-                    formatted = self.format_output(
-                        title,
-                        cur,
-                        headers,
-                        special.is_expanded_output(),
-                        special.is_redirected(),
-                        max_width,
-                    )
-
-                    t = time() - start
-                    try:
-                        if result_count > 0:
-                            self.echo("")
-                        try:
-                            self.output(formatted, status)
-                        except KeyboardInterrupt:
-                            pass
-                        if self.beep_after_seconds > 0 and t >= self.beep_after_seconds:
-                            self.bell()
-                        if special.is_timing_enabled():
-                            self.echo("Time: %0.03fs" % t)
-                    except KeyboardInterrupt:
-                        pass
-
-                    start = time()
-                    result_count += 1
-                    mutating = mutating or destroy or is_mutating(status)
+                output_res(res, start)
                 special.unset_once_if_written(self.post_redirect_command)
                 special.flush_pipe_once_if_written(self.post_redirect_command)
             except EOFError as e:
