@@ -107,6 +107,8 @@ def suggest_special(text: str) -> list[dict[str, Any]]:
         ]
     elif cmd in ["\\.", "source"]:
         return [{"type": "file_name"}]
+    if cmd in ["\\llm", "\\ai"]:
+        return [{"type": "llm"}]
 
     return [{"type": "keyword"}, {"type": "special"}]
 
