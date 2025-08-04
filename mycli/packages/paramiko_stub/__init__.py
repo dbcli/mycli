@@ -1,9 +1,8 @@
 """A module to import instead of paramiko when it is not available (to avoid
 checking for paramiko all over the place).
 
-When paramiko is first envoked, it simply shuts down mycli, telling
-user they either have to install paramiko or should not use SSH
-features.
+When paramiko is first invoked, this simply shuts down mycli, telling the
+user they either have to install paramiko or should not use SSH features.
 
 """
 
@@ -15,11 +14,16 @@ class Paramiko:
 
         print(
             dedent("""
-            To enable certain SSH features you need to install paramiko and sshtunnel:
+            To enable certain SSH features you need to install ssh extras:
 
-               pip install paramiko sshtunnel
+                pip install 'mycli[ssh]'
 
-            It is required for the following configuration options:
+            or
+
+                pip install paramiko sshtunnel
+
+            This is required for the following command-line arguments:
+
                 --list-ssh-config
                 --ssh-config-host
                 --ssh-host
