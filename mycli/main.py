@@ -8,9 +8,6 @@ import shutil
 import sys
 import threading
 import traceback
-
-from prompt_toolkit import output
-
 try:
     from pwd import getpwuid
 except ImportError:
