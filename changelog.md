@@ -6,6 +6,11 @@ Bug Fixes
 * Improve missing ssh-extras message.
 
 
+Internal
+--------
+* Improve pull request template lint commands.
+
+
 1.37.1 (2025/07/28)
 ======================
 
