@@ -5,9 +5,10 @@ import enum
 import logging
 import re
 import ssl
-from typing import Any, Generator
+from typing import Any, Generator, Iterable
 
 import pymysql
+from pymysql.connections import Connection
 from pymysql.constants import FIELD_TYPE
 from pymysql.converters import conversions, convert_date, convert_datetime, convert_timedelta, decoders
 from pymysql.cursors import Cursor
@@ -112,7 +113,7 @@ class SQLExecute:
         port: int | None,
         socket: str | None,
         charset: str | None,
-        local_infile: str | None,
+        local_infile: bool | None,
         ssl: dict[str, Any] | None,
         ssh_user: str | None,
         ssh_host: str | None,
@@ -138,41 +139,42 @@ class SQLExecute:
         self.ssh_password = ssh_password
         self.ssh_key_filename = ssh_key_filename
         self.init_command = init_command
+        self.conn: Connection | None = None
         self.connect()
 
     def connect(
         self,
-        database=None,
-        user=None,
-        password=None,
-        host=None,
-        port=None,
-        socket=None,
-        charset=None,
-        local_infile=None,
-        ssl=None,
-        ssh_host=None,
-        ssh_port=None,
-        ssh_user=None,
-        ssh_password=None,
-        ssh_key_filename=None,
-        init_command=None,
+        database: str | None = None,
+        user: str | None = None,
+        password: str | None = None,
+        host: str | None = None,
+        port: int | None = None,
+        socket: str | None = None,
+        charset: str | None = None,
+        local_infile: bool | None = None,
+        ssl: dict[str, Any] | None = None,
+        ssh_host: str | None = None,
+        ssh_port: int | None = None,
+        ssh_user: str | None = None,
+        ssh_password: str | None = None,
+        ssh_key_filename: str | None = None,
+        init_command: str | None = None,
     ):
-        db = database or self.dbname
-        user = user or self.user
-        password = password or self.password
-        host = host or self.host
-        port = port or self.port
-        socket = socket or self.socket
-        charset = charset or self.charset
-        local_infile = local_infile or self.local_infile
-        ssl = ssl or self.ssl
-        ssh_user = ssh_user or self.ssh_user
-        ssh_host = ssh_host or self.ssh_host
-        ssh_port = ssh_port or self.ssh_port
-        ssh_password = ssh_password or self.ssh_password
-        ssh_key_filename = ssh_key_filename or self.ssh_key_filename
-        init_command = init_command or self.init_command
+        db = database if database is not None else self.dbname
+        user = user if user is not None else self.user
+        password = password if password is not None else self.password
+        host = host if host is not None else self.host
+        port = port if port is not None else self.port
+        socket = socket if socket is not None else self.socket
+        charset = charset if charset is not None else self.charset
+        local_infile = local_infile if local_infile is not None else self.local_infile
+        ssl = ssl if ssl is not None else self.ssl
+        ssh_user = ssh_user if ssh_user is not None else self.ssh_user
+        ssh_host = ssh_host if ssh_host is not None else self.ssh_host
+        ssh_port = ssh_port if ssh_port is not None else self.ssh_port
+        ssh_password = ssh_password if ssh_password is not None else self.ssh_password
+        ssh_key_filename = ssh_key_filename if ssh_key_filename is not None else self.ssh_key_filename
+        init_command = init_command if init_command is not None else self.init_command
         _logger.debug(
             "Connection DB Params: \n"
             "\tdatabase: %r"
@@ -228,21 +230,21 @@ class SQLExecute:
         conn = pymysql.connect(
             database=db,
             user=user,
-            password=password,
+            password=password or '',
             host=host,
-            port=port,
+            port=port or 0,
             unix_socket=socket,
             use_unicode=True,
-            charset=charset,
+            charset=charset or '',
             autocommit=True,
             client_flag=client_flag,
             local_infile=local_infile,
             conv=conv,
-            ssl=ssl_context,
+            ssl=ssl_context,  # type: ignore[arg-type]
             program_name="mycli",
             defer_connect=defer_connect,
             init_command=init_command or None,
-        )
+        )  # type: ignore[misc]
 
         if ssh_host:
             ##### paramiko.Channel is a bad socket implementation overall if you want SSL through an SSH tunnel
@@ -264,8 +266,11 @@ class SQLExecute:
             except Exception as e:
                 raise e
 
-        if hasattr(self, "conn"):
-            self.conn.close()
+        if self.conn is not None:
+            try:
+                self.conn.close()
+            except pymysql.err.Error:
+                pass
         self.conn = conn
         # Update them after the connection is made to ensure that it was a
         # successful connection.
@@ -280,7 +285,7 @@ class SQLExecute:
         self.init_command = init_command
         # retrieve connection id
         self.reset_connection_id()
-        self.server_info = ServerInfo.from_version_string(conn.server_version)
+        self.server_info = ServerInfo.from_version_string(conn.server_version)  # type: ignore[attr-defined]
 
     def run(self, statement: str) -> Generator[tuple, None, None]:
         """Execute the sql in the database and return the results. The results
@@ -297,7 +302,7 @@ class SQLExecute:
         # Unless it's saving a favorite query, in which case we
         # want to save them all together.
         if statement.startswith("\\fs"):
-            components = [statement]
+            components: Iterable[str] = [statement]
         else:
             components = iocommands.split_queries(statement)
 
@@ -313,6 +318,7 @@ class SQLExecute:
                 iocommands.set_forced_horizontal_output(True)
                 sql = sql[:-2].strip()
 
+            assert isinstance(self.conn, Connection)
             cur = self.conn.cursor()
             try:  # Special command
                 _logger.debug("Trying a dbspecial command. sql: %r", sql)
@@ -350,6 +356,7 @@ class SQLExecute:
     def tables(self) -> Generator[tuple[str], None, None]:
         """Yields table names"""
 
+        assert isinstance(self.conn, Connection)
         with self.conn.cursor() as cur:
             _logger.debug("Tables Query. sql: %r", self.tables_query)
             cur.execute(self.tables_query)
@@ -358,6 +365,7 @@ class SQLExecute:
 
     def table_columns(self) -> Generator[tuple[str, str], None, None]:
         """Yields (table name, column name) pairs"""
+        assert isinstance(self.conn, Connection)
         with self.conn.cursor() as cur:
             _logger.debug("Columns Query. sql: %r", self.table_columns_query)
             cur.execute(self.table_columns_query % self.dbname)
@@ -365,6 +373,7 @@ class SQLExecute:
                 yield row
 
     def databases(self) -> list[str]:
+        assert isinstance(self.conn, Connection)
         with self.conn.cursor() as cur:
             _logger.debug("Databases Query. sql: %r", self.databases_query)
             cur.execute(self.databases_query)
@@ -373,6 +382,7 @@ class SQLExecute:
     def functions(self) -> Generator[tuple[str, str], None, None]:
         """Yields tuples of (schema_name, function_name)"""
 
+        assert isinstance(self.conn, Connection)
         with self.conn.cursor() as cur:
             _logger.debug("Functions Query. sql: %r", self.functions_query)
             cur.execute(self.functions_query % self.dbname)
@@ -380,6 +390,7 @@ class SQLExecute:
                 yield row
 
     def show_candidates(self) -> Generator[tuple, None, None]:
+        assert isinstance(self.conn, Connection)
         with self.conn.cursor() as cur:
             _logger.debug("Show Query. sql: %r", self.show_candidates_query)
             try:
@@ -392,6 +403,7 @@ class SQLExecute:
                     yield (row[0].split(None, 1)[-1],)
 
     def users(self) -> Generator[tuple, None, None]:
+        assert isinstance(self.conn, Connection)
         with self.conn.cursor() as cur:
             _logger.debug("Users Query. sql: %r", self.users_query)
             try:
@@ -404,6 +416,7 @@ class SQLExecute:
                     yield row
 
     def now(self) -> datetime.datetime:
+        assert isinstance(self.conn, Connection)
         with self.conn.cursor() as cur:
             _logger.debug("Now Query. sql: %r", self.now_query)
             cur.execute(self.now_query)
@@ -432,6 +445,7 @@ class SQLExecute:
             _logger.debug("Current connection id: %s", self.connection_id)
 
     def change_db(self, db: str) -> None:
+        assert isinstance(self.conn, Connection)
         self.conn.select_db(db)
         self.dbname = db
 

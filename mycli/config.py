@@ -8,7 +8,7 @@ import os
 from os.path import exists
 import struct
 import sys
-from typing import IO, BinaryIO, Literal
+from typing import IO, BinaryIO, Literal, TextIO
 
 from configobj import ConfigObj, ConfigObjError
 import pyaes
@@ -25,7 +25,7 @@ def log(logger: logging.Logger, level: int, message: str) -> None:
     logger.log(level, message)
 
 
-def read_config_file(f: str | TextIOWrapper, list_values: bool = True) -> ConfigObj | None:
+def read_config_file(f: str | TextIO | TextIOWrapper, list_values: bool = True) -> ConfigObj | None:
     """Read a config file.
 
     *list_values* set to `True` is the default behavior of ConfigObj.
@@ -52,7 +52,7 @@ def read_config_file(f: str | TextIOWrapper, list_values: bool = True) -> Config
     return config
 
 
-def get_included_configs(config_file: str | TextIOWrapper) -> list[str]:
+def get_included_configs(config_file: str | TextIOWrapper) -> list[str | TextIOWrapper]:
     """Get a list of configuration files that are included into config_path
     with !includedir directive.
 
@@ -64,7 +64,7 @@ def get_included_configs(config_file: str | TextIOWrapper) -> list[str]:
     """
     if not isinstance(config_file, str) or not os.path.isfile(config_file):
         return []
-    included_configs = []
+    included_configs: list[str | TextIOWrapper] = []
 
     try:
         with open(config_file) as f:
@@ -80,7 +80,7 @@ def get_included_configs(config_file: str | TextIOWrapper) -> list[str]:
     return included_configs
 
 
-def read_config_files(files: list[str], list_values: bool = True) -> ConfigObj:
+def read_config_files(files: list[str | TextIOWrapper], list_values: bool = True) -> ConfigObj:
     """Read and merge a list of config files."""
 
     config = create_default_config(list_values=list_values)
