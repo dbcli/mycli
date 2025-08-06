@@ -85,12 +85,13 @@ def before_all(context):
         "pager_boundary": "---boundary---",
     }
 
-    _, wrappager = mkstemp()
+    wrappager_fd, wrappager = mkstemp()
     with open(wrappager, "w") as f:
         f.write(WRAPPAGER_TEMPLATE.format(
             sys_executable=sys.executable,
             pager_boundary=repr(context.conf["pager_boundary"]),
         ))
+    os.close(wrappager_fd)
     os.chmod(wrappager, 0o755)
 
     _, my_cnf = mkstemp()
