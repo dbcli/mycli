@@ -27,6 +27,27 @@ def get_db_name_from_context(context):
     return context.config.userdata.get("my_test_db", None) or "mycli_behave_tests"
 
 
+WRAPPAGER_TEMPLATE = """\
+#!{sys_executable}
+import os
+import sys
+
+
+def wrappager(boundary):
+    print(boundary)
+    while 1:
+        buf = sys.stdin.read(2048)
+        if not buf:
+            break
+        sys.stdout.write(buf)
+    print(boundary)
+
+
+if __name__ == "__main__":
+    wrappager({pager_boundary})
+"""
+
+
 def before_all(context):
     """Set env parameters."""
     os.environ["LINES"] = "100"
@@ -64,13 +85,17 @@ def before_all(context):
         "pager_boundary": "---boundary---",
     }
 
+    _, wrappager = mkstemp()
+    with open(wrappager, "w") as f:
+        f.write(WRAPPAGER_TEMPLATE.format(
+            sys_executable=sys.executable,
+            pager_boundary=repr(context.conf["pager_boundary"]),
+        ))
+    os.chmod(wrappager, 0o755)
+
     _, my_cnf = mkstemp()
     with open(my_cnf, "w") as f:
-        f.write(
-            "[client]\npager={0} {1} {2}\n".format(
-                sys.executable, os.path.join(context.package_root, "test/features/wrappager.py"), context.conf["pager_boundary"]
-            )
-        )
+        f.write("[client]\npager={0}\n".format(wrappager))
     context.conf["defaults-file"] = my_cnf
     context.conf["myclirc"] = os.path.join(context.package_root, "test", "myclirc")
 
