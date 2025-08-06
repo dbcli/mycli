@@ -14,4 +14,4 @@ def wrappager(boundary: str) -> None:
 
 
 if __name__ == "__main__":
-    wrappager(sys.argv[1])
+    wrappager("---boundary---")
