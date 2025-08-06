@@ -66,11 +66,7 @@ def before_all(context):
 
     _, my_cnf = mkstemp()
     with open(my_cnf, "w") as f:
-        f.write(
-            "[client]\npager={0} {1} {2}\n".format(
-                sys.executable, os.path.join(context.package_root, "test/features/wrappager.py"), context.conf["pager_boundary"]
-            )
-        )
+        f.write("[client]\npager={0}\n".format(os.path.join(context.package_root, "test/features/wrappager.py")))
     context.conf["defaults-file"] = my_cnf
     context.conf["myclirc"] = os.path.join(context.package_root, "test", "myclirc")
 
