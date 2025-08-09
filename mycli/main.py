@@ -705,7 +705,14 @@ class MyCli:
                 else:
                     max_width = None
 
-                formatted = self.format_output(title, cur, headers, special.is_expanded_output(), max_width)
+                formatted = self.format_output(
+                    title,
+                    cur,
+                    headers,
+                    special.is_expanded_output(),
+                    special.is_redirected(),
+                    max_width,
+                )
 
                 t = time() - start
                 try:
