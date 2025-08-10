@@ -722,6 +722,10 @@ class MyCli:
                         self.output(formatted, status)
                     except KeyboardInterrupt:
                         pass
+                    if self.beep_after_seconds > 0 and t >= self.beep_after_seconds:
+                        self.bell()
+                    if special.is_timing_enabled():
+                        self.echo("Time: %0.03fs" % t)
                     self.echo("Time: %0.03fs" % t)
                 except KeyboardInterrupt:
                     pass
