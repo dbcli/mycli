@@ -1,19 +1,95 @@
 from __future__ import annotations
 
-from typing import Callable
-
-__all__: list[str] = []
-
-
-def export(defn: Callable):
-    """Decorator to explicitly mark functions that are exposed in a lib."""
-    globals()[defn.__name__] = defn
-    __all__.append(defn.__name__)
-    return defn
-
-
-from mycli.packages.special import (
-    dbcommands,  # noqa: E402 F401
-    iocommands,  # noqa: E402 F401
-    llm,  # noqa: E402 F401
+from mycli.packages.special.dbcommands import (
+    list_databases,
+    list_tables,
+    status,
 )
+from mycli.packages.special.iocommands import (
+    clip_command,
+    close_tee,
+    copy_query_to_clipboard,
+    disable_pager,
+    editor_command,
+    flush_pipe_once_if_written,
+    forced_horizontal,
+    get_clip_query,
+    get_current_delimiter,
+    get_editor_query,
+    get_filename,
+    is_expanded_output,
+    is_pager_enabled,
+    is_redirected,
+    is_timing_enabled,
+    open_external_editor,
+    set_delimiter,
+    set_expanded_output,
+    set_favorite_queries,
+    set_forced_horizontal_output,
+    set_pager,
+    set_pager_enabled,
+    set_redirect,
+    set_timing_enabled,
+    split_queries,
+    unset_once_if_written,
+    write_once,
+    write_pipe_once,
+    write_tee,
+)
+from mycli.packages.special.llm import (
+    FinishIteration,
+    handle_llm,
+    is_llm_command,
+    sql_using_llm,
+)
+from mycli.packages.special.main import (
+    CommandNotFound,
+    execute,
+    parse_special_command,
+    register_special_command,
+    special_command,
+)
+
+__all__: list[str] = [
+    'CommandNotFound',
+    'FinishIteration',
+    'clip_command',
+    'close_tee',
+    'copy_query_to_clipboard',
+    'disable_pager',
+    'editor_command',
+    'execute',
+    'flush_pipe_once_if_written',
+    'forced_horizontal',
+    'get_clip_query',
+    'get_current_delimiter',
+    'get_editor_query',
+    'get_filename',
+    'handle_llm',
+    'is_expanded_output',
+    'is_llm_command',
+    'is_pager_enabled',
+    'is_redirected',
+    'is_timing_enabled',
+    'list_databases',
+    'list_tables',
+    'open_external_editor',
+    'parse_special_command',
+    'register_special_command',
+    'set_delimiter',
+    'set_expanded_output',
+    'set_favorite_queries',
+    'set_forced_horizontal_output',
+    'set_pager',
+    'set_pager_enabled',
+    'set_redirect',
+    'set_timing_enabled',
+    'special_command',
+    'split_queries',
+    'sql_using_llm',
+    'status',
+    'unset_once_if_written',
+    'write_once',
+    'write_pipe_once',
+    'write_tee',
+]

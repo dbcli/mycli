@@ -274,13 +274,13 @@ def is_destructive(queries: str) -> bool:
     return False
 
 
-def is_dropping_database(queries: list[str], dbname: str | None) -> bool:
+def is_dropping_database(queries: str, dbname: str | None) -> bool:
     """Determine if the query is dropping a specific database."""
     result = False
     if dbname is None:
         return False
 
-    def normalize_db_name(db):
+    def normalize_db_name(db: str) -> str:
         return db.lower().strip('`"')
 
     dbname = normalize_db_name(dbname)

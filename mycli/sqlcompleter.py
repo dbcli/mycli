@@ -1104,7 +1104,7 @@ class SQLCompleter(Completer):
     def get_completions(
         self,
         document: Document,
-        complete_event: CompleteEvent,
+        complete_event: CompleteEvent | None,
         smart_completion: bool | None = None,
     ) -> Iterable[Completion]:
         word_before_cursor = document.get_word_before_cursor(WORD=True)

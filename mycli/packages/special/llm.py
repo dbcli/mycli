@@ -13,7 +13,6 @@ import click
 import llm
 from llm.cli import cli
 
-from mycli.packages.special import export
 from mycli.packages.special.main import Verbosity, parse_special_command
 
 log = logging.getLogger(__name__)
@@ -91,7 +90,6 @@ def get_completions(tokens, tree=COMMAND_TREE):
     return list(tree.keys()) if tree else []
 
 
-@export
 class FinishIteration(Exception):
     def __init__(self, results=None):
         self.results = results
@@ -161,7 +159,6 @@ def ensure_mycli_template(replace=False):
     return
 
 
-@export
 def handle_llm(text, cur) -> Tuple[str, Optional[str], float]:
     _, verbosity, arg = parse_special_command(text)
     if not arg.strip():
@@ -217,13 +214,11 @@ def handle_llm(text, cur) -> Tuple[str, Optional[str], float]:
         raise RuntimeError(e)
 
 
-@export
 def is_llm_command(command) -> bool:
     cmd, _, _ = parse_special_command(command)
     return cmd in ("\\llm", "\\ai")
 
 
-@export
 def sql_using_llm(cur, question=None) -> Tuple[str, Optional[str]]:
     if cur is None:
         raise RuntimeError("Connect to a database and try again.")
