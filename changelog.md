@@ -4,6 +4,7 @@ Upcoming Release (TBD)
 Bug Fixes
 --------
 * Improve missing ssh-extras message.
+* Fix repeated control-r in traditional reverse isearch.
 
 
 Internal
