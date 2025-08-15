@@ -1108,9 +1108,9 @@ class MyCli:
             # "Refreshing completions..." indicator
             self.prompt_app.app.invalidate()
 
-    def get_completions(self, text: str, cursor_positition: int) -> Iterable[Completion]:
+    def get_completions(self, text: str, cursor_position: int) -> Iterable[Completion]:
         with self._completer_lock:
-            return self.completer.get_completions(Document(text=text, cursor_position=cursor_positition), None)
+            return self.completer.get_completions(Document(text=text, cursor_position=cursor_position), None)
 
     def get_prompt(self, string: str) -> str:
         sqlexecute = self.sqlexecute
