@@ -426,7 +426,7 @@ class MyCli:
             "ssl-cert": None,
             "ssl-key": None,
             "ssl-cipher": None,
-            "ssl-verify-serer-cert": None,
+            "ssl-verify-server-cert": None,
         }
 
         cnf = self.read_my_cnf_files(self.cnf_files, list(cnf.keys()))
