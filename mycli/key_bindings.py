@@ -1,7 +1,7 @@
 import logging
 
 from prompt_toolkit.enums import EditingMode
-from prompt_toolkit.filters import completion_is_selected, emacs_mode
+from prompt_toolkit.filters import completion_is_selected, control_is_searchable, emacs_mode
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 
@@ -140,7 +140,7 @@ def mycli_bindings(mycli) -> KeyBindings:
 
         event.app.current_buffer.insert_text(shortcuts.server_datetime(mycli.sqlexecute, quoted=True))
 
-    @kb.add("c-r", filter=emacs_mode)
+    @kb.add("c-r", filter=control_is_searchable)
     def _(event: KeyPressEvent) -> None:
         """Search history using fzf or reverse incremental search."""
         _logger.debug("Detected <C-r> key.")
@@ -150,7 +150,7 @@ def mycli_bindings(mycli) -> KeyBindings:
         else:
             search_history(event)
 
-    @kb.add("escape", "r", filter=emacs_mode)
+    @kb.add("escape", "r", filter=control_is_searchable)
     def _(event: KeyPressEvent) -> None:
         """Search history using fzf when available."""
         _logger.debug("Detected <alt-r> key.")
