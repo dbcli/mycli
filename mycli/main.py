@@ -1632,10 +1632,9 @@ def thanks_picker() -> str:
 
     contents = []
     for line in lines:
-        m = re.match(r"^ *\* (.*)", line)
-        if m:
+        if m := re.match(r"^ *\* (.*)", line):
             contents.append(m.group(1))
-    return choice(contents)
+    return choice(contents) if contents else 'our sponsors'
 
 
 @prompt_register("edit-and-execute-command")
