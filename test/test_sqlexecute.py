@@ -130,7 +130,7 @@ def test_favorite_query(executor):
     assert_result_equal(results, title="> select * from test where a like 'a%'", headers=["a"], rows=[("abc",)], auto_status=False)
 
     results = run(executor, "\\fd test-a")
-    assert_result_equal(results, status="test-a: Deleted")
+    assert_result_equal(results, status="test-a: Deleted.")
 
 
 @dbtest
@@ -152,7 +152,7 @@ def test_favorite_query_multiple_statement(executor):
     assert expected == results
 
     results = run(executor, "\\fd test-ad")
-    assert_result_equal(results, status="test-ad: Deleted")
+    assert_result_equal(results, status="test-ad: Deleted.")
 
 
 @dbtest
@@ -172,7 +172,7 @@ def test_favorite_query_expanded_output(executor):
     set_expanded_output(False)
 
     results = run(executor, "\\fd test-ae")
-    assert_result_equal(results, status="test-ae: Deleted")
+    assert_result_equal(results, status="test-ae: Deleted.")
 
 
 @dbtest

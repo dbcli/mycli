@@ -74,7 +74,7 @@ class DelimiterCommand:
             return [(None, None, None, 'Invalid delimiter "delimiter"')]
 
         self._delimiter = delimiter
-        return [(None, None, None, "Changed delimiter to {}".format(delimiter))]
+        return [(None, None, None, f'Changed delimiter to {delimiter}')]
 
     @property
     def current(self) -> str:

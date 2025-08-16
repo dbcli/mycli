@@ -291,7 +291,7 @@ def str_to_bool(s: str | bool) -> bool:
     elif s.lower() in false_values:
         return False
     else:
-        raise ValueError("not a recognized boolean value: {0}".format(s))
+        raise ValueError(f'not a recognized boolean value: {s}')
 
 
 def strip_matching_quotes(s: str) -> str:

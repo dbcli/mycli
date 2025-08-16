@@ -30,7 +30,7 @@ Examples:
 
     # Delete a favorite query.
     > \\fd simple
-    simple: Deleted
+    simple: Deleted.
 """
 
     # Class-level variable, for convenience to use as a singleton.
@@ -60,6 +60,6 @@ Examples:
         try:
             del self.config[self.section_name][name]
         except KeyError:
-            return "%s: Not Found." % name
+            return f'{name}: Not Found.'
         self.config.write()
-        return "%s: Deleted" % name
+        return f'{name}: Deleted.'

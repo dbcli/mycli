@@ -23,7 +23,7 @@ def list_tables(
     verbose: bool = False,
 ) -> list[tuple]:
     if arg:
-        query = "SHOW FIELDS FROM {0}".format(arg)
+        query = f'SHOW FIELDS FROM {arg}'
     else:
         query = "SHOW TABLES"
     logger.debug(query)
@@ -36,7 +36,7 @@ def list_tables(
         return [(None, None, None, "")]
 
     if verbose and arg:
-        query = "SHOW CREATE TABLE {0}".format(arg)
+        query = f'SHOW CREATE TABLE {arg}'
         logger.debug(query)
         cur.execute(query)
         if one := cur.fetchone():
@@ -93,8 +93,8 @@ def status(cur: Cursor, **_) -> list[tuple]:
     implementation = platform.python_implementation()
     version = platform.python_version()
     client_info = []
-    client_info.append("mycli {0},".format(__version__))
-    client_info.append("running on {0} {1}".format(implementation, version))
+    client_info.append(f'mycli {__version__}')
+    client_info.append(f'running on {implementation} {version}')
     title.append(" ".join(client_info) + "\n")
 
     # Build the output that will be displayed as a table.
@@ -121,13 +121,13 @@ def status(cur: Cursor, **_) -> list[tuple]:
         pager = "stdout"
     output.append(("Current pager:", pager))
 
-    output.append(("Server version:", "{0} {1}".format(variables["version"], variables["version_comment"])))
+    output.append(("Server version:", f'{variables["version"]} {variables["version_comment"]}'))
     output.append(("Protocol version:", variables["protocol_version"]))
 
     if "unix" in cur.connection.host_info.lower():
         host_info = cur.connection.host_info
     else:
-        host_info = "{0} via TCP/IP".format(cur.connection.host)
+        host_info = f'{cur.connection.host} via TCP/IP'
 
     output.append(("Connection:", host_info))
 
@@ -154,17 +154,17 @@ def status(cur: Cursor, **_) -> list[tuple]:
     if "Threads_connected" in status:
         # Print the current server statistics.
         stats = []
-        stats.append("Connections: {0}".format(status["Threads_connected"]))
+        stats.append(f'Connections: {status["Threads_connected"]}')
         if "Queries" in status:
-            stats.append("Queries: {0}".format(status["Queries"]))
-        stats.append("Slow queries: {0}".format(status["Slow_queries"]))
-        stats.append("Opens: {0}".format(status["Opened_tables"]))
+            stats.append(f'Queries: {status["Queries"]}')
+        stats.append(f'Slow queries: {status["Slow_queries"]}')
+        stats.append(f'Opens: {status["Opened_tables"]}')
         if "Flush_commands" in status:
-            stats.append("Flush tables: {0}".format(status["Flush_commands"]))
-        stats.append("Open tables: {0}".format(status["Open_tables"]))
+            stats.append(f'Flush tables: {status["Flush_commands"]}')
+        stats.append(f'Open tables: {status["Open_tables"]}')
         if "Queries" in status:
             queries_per_second = int(status["Queries"]) / int(status["Uptime"])
-            stats.append("Queries per second avg: {:.3f}".format(queries_per_second))
+            stats.append(f'Queries per second avg: {queries_per_second:.3f}')
         stats_str = "  ".join(stats)
         footer.append("\n" + stats_str)
 

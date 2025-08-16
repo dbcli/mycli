@@ -44,7 +44,7 @@ def format_uptime(uptime_in_seconds: str) -> str:
         if value == 1 and unit.endswith("s"):
             # Remove the "s" if the unit is singular.
             unit = unit[:-1]
-        uptime_values.append("{0} {1}".format(value, unit))
+        uptime_values.append(f'{value} {unit}')
 
     uptime = " ".join(uptime_values)
     return uptime
