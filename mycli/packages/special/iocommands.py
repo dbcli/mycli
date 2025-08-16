@@ -69,11 +69,11 @@ def is_pager_enabled() -> bool:
 def set_pager(arg: str, **_) -> list[tuple]:
     if arg:
         os.environ["PAGER"] = arg
-        msg = "PAGER set to %s." % arg
+        msg = f"PAGER set to {arg}."
         set_pager_enabled(True)
     else:
         if "PAGER" in os.environ:
-            msg = "PAGER set to %s." % os.environ["PAGER"]
+            msg = f"PAGER set to {os.environ['PAGER']}."
         else:
             # This uses click's default per echo_via_pager.
             msg = "Pager enabled."
@@ -176,7 +176,7 @@ def open_external_editor(filename: str | None = None, sql: str | None = None) ->
 
     # Populate the editor buffer with the partial sql (if available) and a
     # placeholder comment.
-    query = click.edit("{sql}\n\n{marker}".format(sql=sql, marker=MARKER), extension=".sql") or ''
+    query = click.edit(f"{sql}\n\n{MARKER}", extension=".sql") or ''
 
     if query:
         query = query.split(MARKER, 1)[0].rstrip("\n")
@@ -219,7 +219,7 @@ def copy_query_to_clipboard(sql: str | None = None) -> str | None:
     message = None
 
     try:
-        pyperclip.copy("{sql}".format(sql=sql))
+        pyperclip.copy(f"{sql}")
     except RuntimeError as e:
         message = f"Error clipping query: {e}."
 
@@ -251,7 +251,7 @@ def execute_favorite_query(cur: Cursor, arg: str, **_) -> Generator[tuple, None,
 
     query = favoritequeries.get(name)
     if query is None:
-        message = "No favorite query: %s" % (name)
+        message = f"No favorite query: {name}"
         yield (None, None, None, message)
     else:
         query, arg_error = subst_favorite_query_args(query, args)
@@ -260,7 +260,7 @@ def execute_favorite_query(cur: Cursor, arg: str, **_) -> Generator[tuple, None,
         else:
             for sql in sqlparse.split(query):
                 sql = sql.rstrip(";")
-                title = "> %s" % (sql)
+                title = f"> {sql}"
                 cur.execute(sql)
                 if cur.description:
                     headers = [x[0] for x in cur.description]
@@ -356,7 +356,7 @@ def execute_system_command(arg: str, **_) -> list[tuple]:
 
         return [(None, None, None, response_str)]
     except OSError as e:
-        return [(None, None, None, "OSError: %s" % e.strerror)]
+        return [(None, None, None, f"OSError: {e.strerror}")]
 
 
 def parseargfile(arg: str) -> tuple[str, str]:
@@ -380,7 +380,7 @@ def set_tee(arg: str, **_) -> list[tuple]:
     try:
         tee_file = open(*parseargfile(arg))
     except (IOError, OSError) as e:
-        raise OSError("Cannot write to file '{}': {}".format(e.filename, e.strerror))
+        raise OSError(f"Cannot write to file '{e.filename}': {e.strerror}")
 
     return [(None, None, None, "")]
 
@@ -413,7 +413,7 @@ def set_once(arg: str, **_) -> list[tuple]:
     try:
         once_file = open(*parseargfile(arg))
     except (IOError, OSError) as e:
-        raise OSError("Cannot write to file '{}': {}".format(e.filename, e.strerror))
+        raise OSError(f"Cannot write to file '{e.filename}': {e.strerror}")
     written_to_once_file = False
 
     return [(None, None, None, "")]
@@ -456,7 +456,7 @@ def _run_post_redirect_hook(post_redirect_command: str, filename: str) -> None:
             stderr=subprocess.DEVNULL,
         )
     except Exception as e:
-        raise OSError("Redirect post hook failed: {}".format(e))
+        raise OSError(f"Redirect post hook failed: {e}")
 
 
 @special_command("\\pipe_once", "\\| command", "Send next result to a subprocess.", aliases=["\\|"])
@@ -547,7 +547,7 @@ def watch_query(arg: str, **kwargs) -> Generator[tuple, None, None]:
         if left_arg == "-c":
             clear_screen = True
             continue
-        statement = "{0!s} {1!s}".format(left_arg, arg)
+        statement = f"{left_arg} {arg}"
     destructive_prompt = confirm_destructive_query(statement)
     if destructive_prompt is False:
         click.secho("Wise choice!")
@@ -555,7 +555,7 @@ def watch_query(arg: str, **kwargs) -> Generator[tuple, None, None]:
     elif destructive_prompt is True:
         click.secho("Your call!")
     cur = kwargs["cur"]
-    sql_list = [(sql.rstrip(";"), "> {0!s}".format(sql)) for sql in sqlparse.split(statement)]
+    sql_list = [(sql.rstrip(";"), f"> {sql}") for sql in sqlparse.split(statement)]
     old_pager_enabled = is_pager_enabled()
     while True:
         if clear_screen:

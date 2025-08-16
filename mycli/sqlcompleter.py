@@ -921,7 +921,7 @@ class SQLCompleter(Completer):
 
     def escape_name(self, name: str) -> str:
         if name and ((not self.name_pattern.match(name)) or (name.upper() in self.reserved_words) or (name.upper() in self.functions)):
-            name = "`%s`" % name
+            name = f'`{name}`'
 
         return name
 
@@ -1079,7 +1079,7 @@ class SQLCompleter(Completer):
 
         if fuzzy:
             regex = ".*?".join(map(re.escape, text))
-            pat = re.compile("(%s)" % regex)
+            pat = re.compile(f'({regex})')
             for item in collection:
                 r = pat.search(item.lower())
                 if r:

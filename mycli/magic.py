@@ -48,7 +48,7 @@ def mycli_line_magic(line: str):
         conn._mycli = mycli
 
     # For convenience, print the connection alias
-    print("Connected: {}".format(conn.name))
+    print(f'Connected: {conn.name}')
 
     try:
         mycli.run_cli()

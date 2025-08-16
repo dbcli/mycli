@@ -124,7 +124,7 @@ def execute(cur: Cursor, sql: str) -> list[tuple]:
     except KeyError:
         special_cmd = COMMANDS[command.lower()]
         if special_cmd.case_sensitive:
-            raise CommandNotFound("Command not found: %s" % command)
+            raise CommandNotFound(f'Command not found: {command}')
 
     # "help <SQL KEYWORD> is a special case. We want built-in help, not
     # mycli help here.
@@ -160,14 +160,14 @@ def show_keyword_help(cur: Cursor, arg: str) -> list[tuple]:
     :return: list
     """
     keyword = arg.strip('"').strip("'")
-    query = "help '{0}'".format(keyword)
+    query = f"help '{keyword}'"
     logger.debug(query)
     cur.execute(query)
     if cur.description and cur.rowcount > 0:
         headers = [x[0] for x in cur.description]
         return [(None, cur, headers, "")]
     else:
-        return [(None, None, None, "No help found for {0}.".format(keyword))]
+        return [(None, None, None, f'No help found for {keyword}.')]
 
 
 @special_command("exit", "\\q", "Exit.", arg_type=ArgType.NO_QUERY, aliases=["\\q"])
