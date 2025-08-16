@@ -75,10 +75,6 @@ DEFAULT_WIDTH = 80
 DEFAULT_HEIGHT = 25
 
 
-class PasswordFileError(Exception):
-    """Base exception for errors related to reading password files."""
-
-
 class MyCli:
     default_prompt = "\\t \\u@\\h:\\d> "
     default_prompt_splitln = "\\u@\\h\\n(\\t):\\d>"
@@ -561,13 +557,17 @@ class MyCli:
                 password = fp.readline().strip()
                 return password
         except FileNotFoundError:
-            raise PasswordFileError(f"Password file '{password_file}' not found") from None
+            click.secho(f"Password file '{password_file}' not found", err=True, fg="red")
+            sys.exit(1)
         except PermissionError:
-            raise PasswordFileError(f"Permission denied reading password file '{password_file}'") from None
+            click.secho(f"Permission denied reading password file '{password_file}'", err=True, fg="red")
+            sys.exit(1)
         except IsADirectoryError:
-            raise PasswordFileError(f"Path '{password_file}' is a directory, not a file") from None
+            click.secho(f"Path '{password_file}' is a directory, not a file", err=True, fg="red")
+            sys.exit(1)
         except Exception as e:
-            raise PasswordFileError(f"Error reading password file '{password_file}': {str(e)}") from None
+            click.secho(f"Error reading password file '{password_file}': {str(e)}", err=True, fg="red")
+            sys.exit(1)
 
     def handle_editor_command(self, text: str) -> str:
         r"""Editor command is any query that is prefixed or suffixed by a '\e'.
