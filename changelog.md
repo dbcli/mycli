@@ -15,6 +15,7 @@ Bug Fixes
 * Guard against missing contributors file on startup.
 * Friendlier errors on password-file failures.
 * Better handle empty-string passwords.
+* Permit empty-string passwords at the interactive prompt.
 
 
 Internal
