@@ -11,6 +11,7 @@ Bug Fixes
 * Improve missing ssh-extras message.
 * Fix repeated control-r in traditional reverse isearch.
 * Fix spelling of `ssl-verify-server-cert` option.
+* Improve handling of `ssl-verify-server-cert` False values.
 
 
 Internal

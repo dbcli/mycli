@@ -384,7 +384,7 @@ class MyCli:
             # special case because PyMySQL argument is significantly different
             # from commandline
             if k == "ssl-verify-server-cert":
-                merged["check_hostname"] = v
+                merged["check_hostname"] = str_to_bool(v)
             else:
                 # use argument name just strip "ssl-" prefix
                 arg = k[len(prefix) :]
