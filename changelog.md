@@ -21,7 +21,7 @@ Bug Fixes
 Internal
 --------
 * Improve pull request template lint commands.
-* Continue typehinting the non-test codebase.
+* Complete typehinting the non-test codebase.
 
 
 1.37.1 (2025/07/28)

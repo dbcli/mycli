@@ -43,7 +43,7 @@ import sqlparse
 
 from mycli import __version__
 from mycli.clibuffer import cli_is_multiline
-from mycli.clistyle import style_factory, style_factory_output  # type: ignore[attr-defined]
+from mycli.clistyle import style_factory, style_factory_output
 from mycli.clitoolbar import create_toolbar_tokens_func
 from mycli.compat import WIN
 from mycli.completion_refresher import CompletionRefresher
@@ -404,7 +404,7 @@ class MyCli:
         ssh_port: int = 22,
         ssh_password: str | None = "",
         ssh_key_filename: str | None = "",
-        init_command: str = "",
+        init_command: str | None = "",
         password_file: str | None = "",
     ) -> None:
         cnf = {
