@@ -36,10 +36,8 @@ class FileHistoryWithTimestamp(FileHistory):
                 history_with_timestamp.append((string, timestamp))
 
         if os.path.exists(self.filename):
-            with open(self.filename, "rb") as f:
-                for line_bytes in f:
-                    line = line_bytes.decode("utf-8", errors="replace")
-
+            with open(self.filename, 'r', encoding='utf-8') as f:
+                for line in f:
                     if line.startswith("#"):
                         # Extract timestamp
                         timestamp = line[2:].strip()
