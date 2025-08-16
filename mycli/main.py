@@ -488,7 +488,9 @@ class MyCli:
                     if password_from_file is not None:
                         new_passwd = password_from_file
                     else:
-                        new_passwd = click.prompt(f"Password for {user}", hide_input=True, show_default=False, type=str, err=True)
+                        new_passwd = click.prompt(
+                            f"Password for {user}", hide_input=True, show_default=False, default='', type=str, err=True
+                        )
                     self.sqlexecute = SQLExecute(
                         database,
                         user,
