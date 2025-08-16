@@ -12,6 +12,7 @@ Bug Fixes
 * Fix repeated control-r in traditional reverse isearch.
 * Fix spelling of `ssl-verify-server-cert` option.
 * Improve handling of `ssl-verify-server-cert` False values.
+* Guard against missing contributors file on startup.
 
 
 Internal
