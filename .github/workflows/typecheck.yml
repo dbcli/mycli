@@ -1,4 +1,4 @@
-name: mycli
+name: Typecheck
 
 on:
   pull_request:
