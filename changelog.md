@@ -23,6 +23,7 @@ Internal
 * Improve pull request template lint commands.
 * Complete typehinting the non-test codebase.
 * Modernization: conversion to f-strings.
+* Modernization: remove more Python 2 compatibility logic.
 
 
 1.37.1 (2025/07/28)
