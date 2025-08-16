@@ -1,16 +1,17 @@
-# type: ignore
+from __future__ import annotations
 
 import logging
+from typing import Any
 
 import sql.connection
 import sql.parse
 
-from mycli.main import MyCli
+from mycli.main import MyCli, Query
 
-_logger = logging.getLogger(__name__)
+_logger: logging.Logger = logging.getLogger(__name__)
 
 
-def load_ipython_extension(ipython):
+def load_ipython_extension(ipython) -> None:
     # This is called via the ipython command '%load_ext mycli.magic'.
 
     # First, load the sql magic if it isn't already loaded.
@@ -21,9 +22,9 @@ def load_ipython_extension(ipython):
     ipython.register_magic_function(mycli_line_magic, "line", "mycli")
 
 
-def mycli_line_magic(line):
+def mycli_line_magic(line: str):
     _logger.debug("mycli magic called: %r", line)
-    parsed = sql.parse.parse(line, {})
+    parsed: dict[str, Any] = sql.parse.parse(line, {})
     # "get" was renamed to "set" in ipython-sql:
     # https://github.com/catherinedevlin/ipython-sql/commit/f4283c65aaf68f961e84019e8b939e4a3c501d43
     if hasattr(sql.connection.Connection, "get"):
@@ -36,7 +37,7 @@ def mycli_line_magic(line):
             conn = sql.connection.Connection.set(parsed["connection"], False)
     try:
         # A corresponding mycli object already exists
-        mycli = conn._mycli
+        mycli: MyCli = conn._mycli
         _logger.debug("Reusing existing mycli")
     except AttributeError:
         mycli = MyCli()
@@ -57,11 +58,11 @@ def mycli_line_magic(line):
     if not mycli.query_history:
         return
 
-    q = mycli.query_history[-1]
+    q: Query = mycli.query_history[-1]
     if q.mutating:
         _logger.debug("Mutating query detected -- ignoring")
         return
 
     if q.successful:
-        ipython = get_ipython()  # noqa: F821
+        ipython = get_ipython()  # type: ignore # noqa: F821
         return ipython.run_cell_magic("sql", line, q.query)
