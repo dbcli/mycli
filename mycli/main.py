@@ -699,7 +699,7 @@ class MyCli:
         # mutating if any one of the component statements is mutating
         mutating = False
 
-        def output_res(res, start):
+        def output_res(res: Generator[tuple], start: float) -> None:
             nonlocal mutating
             result_count = 0
             for title, cur, headers, status in res:
@@ -717,7 +717,10 @@ class MyCli:
                         break
 
                 if self.auto_vertical_output:
-                    max_width = self.prompt_app.output.get_size().columns
+                    if self.prompt_app is not None:
+                        max_width = self.prompt_app.output.get_size().columns
+                    else:
+                        max_width = DEFAULT_WIDTH
                 else:
                     max_width = None
 
@@ -749,7 +752,6 @@ class MyCli:
                 start = time()
                 result_count += 1
                 mutating = mutating or is_mutating(status)
-            return
 
         def one_iteration(text: str | None = None) -> None:
             if text is None:
@@ -1336,7 +1338,7 @@ def cli(
     init_command,
     charset,
     password_file,
-):
+) -> None:
     """A MySQL terminal client with auto-completion and syntax highlighting.
 
     \b
@@ -1428,28 +1430,28 @@ def cli(
         else:
             dsn_params = {}
 
-        if dsn_params.get('ssl'):
-            ssl_enable = ssl_enable or (dsn_params.get('ssl')[0].lower() == 'true')
-        if dsn_params.get('ssl_ca'):
-            ssl_ca = ssl_ca or dsn_params.get('ssl_ca')[0]
+        if params := dsn_params.get('ssl'):
+            ssl_enable = ssl_enable or (params[0].lower() == 'true')
+        if params := dsn_params.get('ssl_ca'):
+            ssl_ca = ssl_ca or params[0]
             ssl_enable = True
-        if dsn_params.get('ssl_capath'):
-            ssl_capath = ssl_capath or dsn_params.get('ssl_capath')[0]
+        if params := dsn_params.get('ssl_capath'):
+            ssl_capath = ssl_capath or params[0]
             ssl_enable = True
-        if dsn_params.get('ssl_cert'):
-            ssl_cert = ssl_cert or dsn_params.get('ssl_cert')[0]
+        if params := dsn_params.get('ssl_cert'):
+            ssl_cert = ssl_cert or params[0]
             ssl_enable = True
-        if dsn_params.get('ssl_key'):
-            ssl_key = ssl_key or dsn_params.get('ssl_key')[0]
+        if params := dsn_params.get('ssl_key'):
+            ssl_key = ssl_key or params[0]
             ssl_enable = True
-        if dsn_params.get('ssl_cipher'):
-            ssl_cipher = ssl_cipher or dsn_params.get('ssl_cipher')[0]
+        if params := dsn_params.get('ssl_cipher'):
+            ssl_cipher = ssl_cipher or params[0]
             ssl_enable = True
-        if dsn_params.get('tls_version'):
-            tls_version = tls_version or dsn_params.get('tls_version')[0]
+        if params := dsn_params.get('tls_version'):
+            tls_version = tls_version or params[0]
             ssl_enable = True
-        if dsn_params.get('ssl_verify_server_cert'):
-            ssl_verify_server_cert = ssl_verify_server_cert or (dsn_params.get('ssl_verify_server_cert')[0].lower() == 'true')
+        if params := dsn_params.get('ssl_verify_server_cert'):
+            ssl_verify_server_cert = ssl_verify_server_cert or (params[0].lower() == 'true')
             ssl_enable = True
 
     ssl = {
@@ -1477,7 +1479,7 @@ def cli(
 
     ssh_key_filename = ssh_key_filename and os.path.expanduser(ssh_key_filename)
     # Merge init-commands: global, DSN-specific, then CLI
-    init_cmds = []
+    init_cmds: list[str] = []
     # 1) Global init-commands
     global_section = mycli.config.get("init-commands", {})
     for _, val in global_section.items():

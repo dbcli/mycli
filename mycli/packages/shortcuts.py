@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from mycli.sqlexecute import SQLExecute  # type: ignore
+from mycli.sqlexecute import SQLExecute
 
 
 def server_date(sqlexecute: SQLExecute, quoted: bool = False) -> str:
