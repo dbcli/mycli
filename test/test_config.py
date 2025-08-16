@@ -171,16 +171,16 @@ def test_strip_quotes_with_matching_quotes():
     """Test that a string with matching quotes is unquoted."""
 
     s = "May the force be with you."
-    assert s == strip_matching_quotes('"{}"'.format(s))
-    assert s == strip_matching_quotes("'{}'".format(s))
+    assert s == strip_matching_quotes(f'"{s}"')
+    assert s == strip_matching_quotes(f"'{s}'")
 
 
 def test_strip_quotes_with_unmatching_quotes():
     """Test that a string with unmatching quotes is not unquoted."""
 
     s = "May the force be with you."
-    assert '"' + s == strip_matching_quotes('"{}'.format(s))
-    assert s + "'" == strip_matching_quotes("{}'".format(s))
+    assert '"' + s == strip_matching_quotes(f'"{s}')
+    assert s + "'" == strip_matching_quotes(f"{s}'")
 
 
 def test_strip_quotes_with_empty_string():

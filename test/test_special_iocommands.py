@@ -101,7 +101,7 @@ def test_tee_command_error():
     with pytest.raises(OSError):
         with tempfile.NamedTemporaryFile() as f:
             os.chmod(f.name, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
-            mycli.packages.special.execute(None, "tee {}".format(f.name))
+            mycli.packages.special.execute(None, f"tee {f.name}")
 
 
 @dbtest
@@ -109,7 +109,7 @@ def test_tee_command_error():
 def test_favorite_query():
     with db_connection().cursor() as cur:
         query = 'select "✔"'
-        mycli.packages.special.execute(cur, "\\fs check {0}".format(query))
+        mycli.packages.special.execute(cur, f"\\fs check {query}")
         assert next(mycli.packages.special.execute(cur, "\\f check"))[0] == "> " + query
 
 
@@ -198,8 +198,8 @@ def test_watch_query_iteration():
     """Test that a single iteration of the result of `watch_query` executes
     the desired query and returns the given results."""
     expected_value = "1"
-    query = "SELECT {0!s}".format(expected_value)
-    expected_title = "> {0!s}".format(query)
+    query = f"SELECT {expected_value}"
+    expected_title = f"> {query}"
     with db_connection().cursor() as cur:
         result = next(mycli.packages.special.iocommands.watch_query(arg=query, cur=cur))
     assert result[0] == expected_title
@@ -221,12 +221,12 @@ def test_watch_query_full():
     watch_seconds = 0.3
     wait_interval = 1
     expected_value = "1"
-    query = "SELECT {0!s}".format(expected_value)
-    expected_title = "> {0!s}".format(query)
+    query = f"SELECT {expected_value}"
+    expected_title = f"> {query}"
     expected_results = [4, 5]
     ctrl_c_process = send_ctrl_c(wait_interval)
     with db_connection().cursor() as cur:
-        results = list(mycli.packages.special.iocommands.watch_query(arg="{0!s} {1!s}".format(watch_seconds, query), cur=cur))
+        results = list(mycli.packages.special.iocommands.watch_query(arg=f"{watch_seconds} {query}", cur=cur))
     ctrl_c_process.join(1)
     assert len(results) in expected_results
     for result in results:
@@ -283,14 +283,14 @@ def test_watch_query_interval_clear(clear_mock):
     seconds = 1.0
     watch_query = mycli.packages.special.iocommands.watch_query
     with db_connection().cursor() as cur:
-        test_asserts(watch_query("{0!s} -c select 1;".format(seconds), cur=cur))
-        test_asserts(watch_query("-c {0!s} select 1;".format(seconds), cur=cur))
+        test_asserts(watch_query(f"{seconds} -c select 1;", cur=cur))
+        test_asserts(watch_query(f"-c {seconds} select 1;", cur=cur))
 
 
 def test_split_sql_by_delimiter():
     for delimiter_str in (";", "$", "😀"):
         mycli.packages.special.set_delimiter(delimiter_str)
-        sql_input = "select 1{} select \ufffc2".format(delimiter_str)
+        sql_input = f"select 1{delimiter_str} select \ufffc2"
         queries = ("select 1", "select \ufffc2")
         for query, parsed_query in zip(queries, mycli.packages.special.split_queries(sql_input)):
             assert query == parsed_query
