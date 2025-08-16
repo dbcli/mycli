@@ -22,6 +22,7 @@ Internal
 --------
 * Improve pull request template lint commands.
 * Complete typehinting the non-test codebase.
+* Modernization: conversion to f-strings.
 
 
 1.37.1 (2025/07/28)
