@@ -1,4 +1,4 @@
-Upcoming Release (TBD)
+1.38.0 (2025/08/16)
 ======================
 
 Features
