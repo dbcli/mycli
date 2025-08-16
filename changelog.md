@@ -14,6 +14,7 @@ Bug Fixes
 * Improve handling of `ssl-verify-server-cert` False values.
 * Guard against missing contributors file on startup.
 * Friendlier errors on password-file failures.
+* Better handle empty-string passwords.
 
 
 Internal
