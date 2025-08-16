@@ -1,4 +1,4 @@
-name: mycli
+name: Lint
 
 on:
   pull_request:
