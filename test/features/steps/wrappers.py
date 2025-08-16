@@ -18,25 +18,27 @@ def expect_exact(context, expected, timeout):
         # Strip color codes out of the output.
         actual = re.sub(r"\x1b\[([0-9A-Za-z;?])+[m|K]?", "", context.cli.before)
         raise Exception(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                f"""\
                 Expected:
                 ---
-                {0!r}
+                {expected!r}
                 ---
                 Actual:
                 ---
-                {1!r}
+                {actual!r}
                 ---
                 Full log:
                 ---
-                {2!r}
+                {context.logfile.getvalue()!r}
                 ---
-            """).format(expected, actual, context.logfile.getvalue())
+                """
+            )
         )
 
 
 def expect_pager(context, expected, timeout):
-    expect_exact(context, "{0}\r\n{1}{0}\r\n".format(context.conf["pager_boundary"], expected), timeout=timeout)
+    expect_exact(context, f"{context.conf['pager_boundary']}\r\n{expected}{context.conf['pager_boundary']}\r\n", timeout=timeout)
 
 
 def run_cli(context, run_args=None, exclude_args=None):
@@ -79,7 +81,7 @@ def run_cli(context, run_args=None, exclude_args=None):
     try:
         cli_cmd = context.conf["cli_command"]
     except KeyError:
-        cli_cmd = ('{0!s} -c "import coverage ; coverage.process_startup(); import mycli.main; mycli.main.cli()"').format(sys.executable)
+        cli_cmd = f'{sys.executable} -c "import coverage ; coverage.process_startup(); import mycli.main; mycli.main.cli()"'
 
     cmd_parts = [cli_cmd] + rendered_args
     cmd = " ".join(cmd_parts)
@@ -96,6 +98,6 @@ def wait_prompt(context, prompt=None):
         user = context.conf["user"]
         host = context.conf["host"]
         dbname = context.currentdb
-        prompt = ("{0}@{1}:{2}>".format(user, host, dbname),)
+        prompt = (f"{user}@{host}:{dbname}>",)
     expect_exact(context, prompt, timeout=5)
     context.atprompt = True

@@ -10,10 +10,10 @@ import wrappers
 @when("we start external editor providing a file name")
 def step_edit_file(context):
     """Edit file with external editor."""
-    context.editor_file_name = os.path.join(context.package_root, "test_file_{0}.sql".format(context.conf["vi"]))
+    context.editor_file_name = os.path.join(context.package_root, f"test_file_{context.conf['vi']}.sql")
     if os.path.exists(context.editor_file_name):
         os.remove(context.editor_file_name)
-    context.cli.sendline("\\e {0}".format(os.path.basename(context.editor_file_name)))
+    context.cli.sendline(f"\\e {os.path.basename(context.editor_file_name)}")
     wrappers.expect_exact(context, 'Entering Ex mode.  Type "visual" to go to Normal mode.', timeout=2)
     wrappers.expect_exact(context, "\r\n:", timeout=2)
 
@@ -45,26 +45,26 @@ def step_edit_done_sql(context, query):
 
 @when("we tee output")
 def step_tee_ouptut(context):
-    context.tee_file_name = os.path.join(context.package_root, "tee_file_{0}.sql".format(context.conf["vi"]))
+    context.tee_file_name = os.path.join(context.package_root, f"tee_file_{context.conf['vi']}.sql")
     if os.path.exists(context.tee_file_name):
         os.remove(context.tee_file_name)
-    context.cli.sendline("tee {0}".format(os.path.basename(context.tee_file_name)))
+    context.cli.sendline(f"tee {os.path.basename(context.tee_file_name)}")
 
 
 @when('we select "select {param}"')
 def step_query_select_number(context, param):
-    context.cli.sendline("select {}".format(param))
+    context.cli.sendline(f"select {param}")
     wrappers.expect_pager(
         context,
         dedent(
-            """\
-        +{dashes}+\r
+            f"""\
+        +{'-' * (len(param) + 2)}+\r
         | {param} |\r
-        +{dashes}+\r
+        +{'-' * (len(param) + 2)}+\r
         | {param} |\r
-        +{dashes}+\r
+        +{'-' * (len(param) + 2)}+\r
         \r
-        """.format(param=param, dashes="-" * (len(param) + 2))
+        """
         ),
         timeout=5,
     )
@@ -73,12 +73,12 @@ def step_query_select_number(context, param):
 
 @then('we see tabular result "{result}"')
 def step_see_tabular_result(context, result):
-    wrappers.expect_exact(context, '| {} |'.format(result), timeout=2)
+    wrappers.expect_exact(context, f'| {result} |', timeout=2)
 
 
 @then('we see csv result "{result}"')
 def step_see_csv_result(context, result):
-    wrappers.expect_exact(context, '"{}"'.format(result), timeout=2)
+    wrappers.expect_exact(context, f'"{result}"', timeout=2)
 
 
 @when('we query "{query}"')
@@ -127,4 +127,4 @@ def step_see_space_6_in_command_ouput(context):
 
 @then('delimiter is set to "{delimiter}"')
 def delimiter_is_set(context, delimiter):
-    wrappers.expect_exact(context, "Changed delimiter to {}".format(delimiter), timeout=2)
+    wrappers.expect_exact(context, f"Changed delimiter to {delimiter}", timeout=2)

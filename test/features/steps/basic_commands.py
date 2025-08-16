@@ -58,7 +58,7 @@ def step_send_source_command(context):
     with tempfile.NamedTemporaryFile() as f:
         f.write(b"\\?")
         f.flush()
-        context.cli.sendline("\\. {0}".format(f.name))
+        context.cli.sendline(f"\\. {f.name}")
         wrappers.expect_exact(context, context.conf["pager_boundary"] + "\r\n", timeout=5)
 
 
