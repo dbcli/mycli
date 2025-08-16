@@ -132,7 +132,7 @@ class MyCli:
         special.set_timing_enabled(c["main"].as_bool("timing"))
         self.beep_after_seconds = float(c["main"]["beep_after_seconds"] or 0)
 
-        self.dsn_alias = None
+        self.dsn_alias: str | None = None
         self.main_formatter = TabularOutputFormatter(format_name=c["main"]["table_format"])
         self.redirect_formatter = TabularOutputFormatter(format_name=c["main"].get("redirect_format", "csv"))
         sql_format.register_new_formatter(self.main_formatter)
@@ -396,16 +396,16 @@ class MyCli:
         host: str | None = "",
         port: str | int | None = "",
         socket: str | None = "",
-        charset: str = "",
-        local_infile: str = "",
+        charset: str | None = "",
+        local_infile: bool = False,
         ssl: dict[str, Any] | None = {},
-        ssh_user: str = "",
-        ssh_host: str = "",
-        ssh_port: str = "",
-        ssh_password: str = "",
-        ssh_key_filename: str = "",
+        ssh_user: str | None = "",
+        ssh_host: str | None = "",
+        ssh_port: int = 22,
+        ssh_password: str | None = "",
+        ssh_key_filename: str | None = "",
         init_command: str = "",
-        password_file: str = "",
+        password_file: str | None = "",
     ) -> None:
         cnf = {
             "database": None,
@@ -552,7 +552,7 @@ class MyCli:
             self.echo(str(e), err=True, fg="red")
             sys.exit(1)
 
-    def get_password_from_file(self, password_file: str) -> str | None:
+    def get_password_from_file(self, password_file: str | None) -> str | None:
         if not password_file:
             return None
         try:
@@ -1300,47 +1300,47 @@ class MyCli:
 )
 @click.argument("database", default="", nargs=1)
 def cli(
-    database,
-    user,
-    host,
-    port,
-    socket,
-    password,
-    dbname,
-    verbose,
-    prompt,
-    logfile,
-    defaults_group_suffix,
-    defaults_file,
-    login_path,
-    auto_vertical_output,
-    local_infile,
-    ssl_enable,
-    ssl_ca,
-    ssl_capath,
-    ssl_cert,
-    ssl_key,
-    ssl_cipher,
-    tls_version,
-    ssl_verify_server_cert,
-    table,
-    csv,
-    warn,
-    execute,
-    myclirc,
-    dsn,
-    list_dsn,
-    ssh_user,
-    ssh_host,
-    ssh_port,
-    ssh_password,
-    ssh_key_filename,
-    list_ssh_config,
-    ssh_config_path,
-    ssh_config_host,
-    init_command,
-    charset,
-    password_file,
+    database: str,
+    user: str | None,
+    host: str | None,
+    port: int | None,
+    socket: str | None,
+    password: str | None,
+    dbname: str | None,
+    verbose: bool,
+    prompt: str | None,
+    logfile: TextIOWrapper | None,
+    defaults_group_suffix: str | None,
+    defaults_file: str | None,
+    login_path: str | None,
+    auto_vertical_output: bool,
+    local_infile: bool,
+    ssl_enable: bool,
+    ssl_ca: str | None,
+    ssl_capath: str | None,
+    ssl_cert: str | None,
+    ssl_key: str | None,
+    ssl_cipher: str | None,
+    tls_version: str | None,
+    ssl_verify_server_cert: bool,
+    table: bool,
+    csv: bool,
+    warn: bool | None,
+    execute: str | None,
+    myclirc: str,
+    dsn: str,
+    list_dsn: str | None,
+    ssh_user: str | None,
+    ssh_host: str | None,
+    ssh_port: int,
+    ssh_password: str | None,
+    ssh_key_filename: str | None,
+    list_ssh_config: bool,
+    ssh_config_path: str,
+    ssh_config_host: str | None,
+    init_command: str | None,
+    charset: str | None,
+    password_file: str | None,
 ) -> None:
     """A MySQL terminal client with auto-completion and syntax highlighting.
 
