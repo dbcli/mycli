@@ -13,6 +13,7 @@ Bug Fixes
 * Fix spelling of `ssl-verify-server-cert` option.
 * Improve handling of `ssl-verify-server-cert` False values.
 * Guard against missing contributors file on startup.
+* Friendlier errors on password-file failures.
 
 
 Internal
