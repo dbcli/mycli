@@ -392,7 +392,7 @@ class MyCli:
         self,
         database: str | None = "",
         user: str | None = "",
-        passwd: str = "",
+        passwd: str | None = "",
         host: str | None = "",
         port: str | int | None = "",
         socket: str | None = "",
@@ -459,7 +459,8 @@ class MyCli:
 
         # if the passwd is not specified try to set it using the password_file option
         password_from_file = self.get_password_from_file(password_file)
-        passwd = passwd or password_from_file
+        passwd = passwd if isinstance(passwd, str) else password_from_file
+        passwd = '' if passwd is None else passwd
 
         # Connect to the database.
 
@@ -484,7 +485,7 @@ class MyCli:
                 )
             except OperationalError as e:
                 if e.args[0] == ERROR_CODE_ACCESS_DENIED:
-                    if password_from_file:
+                    if password_from_file is not None:
                         new_passwd = password_from_file
                     else:
                         new_passwd = click.prompt(f"Password for {user}", hide_input=True, show_default=False, type=str, err=True)
@@ -549,9 +550,9 @@ class MyCli:
             self.echo(str(e), err=True, fg="red")
             sys.exit(1)
 
-    def get_password_from_file(self, password_file: str) -> str:
+    def get_password_from_file(self, password_file: str) -> str | None:
         if not password_file:
-            return ''
+            return None
         try:
             with open(password_file) as fp:
                 password = fp.readline().strip()
