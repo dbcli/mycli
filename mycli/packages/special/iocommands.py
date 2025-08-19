@@ -249,7 +249,7 @@ def execute_favorite_query(cur: Cursor, arg: str, **_) -> Generator[tuple, None,
     name, _separator, arg_str = arg.partition(" ")
     args = shlex.split(arg_str)
 
-    query = favoritequeries.get(name)
+    query = FavoriteQueries.instance.get(name)
     if query is None:
         message = f"No favorite query: {name}"
         yield (None, None, None, message)
@@ -274,10 +274,10 @@ def list_favorite_queries() -> list[tuple]:
     Returns (title, rows, headers, status)"""
 
     headers = ["Name", "Query"]
-    rows = [(r, favoritequeries.get(r)) for r in favoritequeries.list()]
+    rows = [(r, FavoriteQueries.instance.get(r)) for r in FavoriteQueries.instance.list()]
 
     if not rows:
-        status = "\nNo favorite queries found." + favoritequeries.usage
+        status = "\nNo favorite queries found." + FavoriteQueries.instance.usage
     else:
         status = ""
     return [("", rows, headers, status)]
@@ -304,7 +304,7 @@ def save_favorite_query(arg: str, **_) -> list[tuple]:
     """Save a new favorite query.
     Returns (title, rows, headers, status)"""
 
-    usage = "Syntax: \\fs name query.\n\n" + favoritequeries.usage
+    usage = "Syntax: \\fs name query.\n\n" + FavoriteQueries.instance.usage
     if not arg:
         return [(None, None, None, usage)]
 
@@ -314,18 +314,18 @@ def save_favorite_query(arg: str, **_) -> list[tuple]:
     if (not name) or (not query):
         return [(None, None, None, usage + "Err: Both name and query are required.")]
 
-    favoritequeries.save(name, query)
+    FavoriteQueries.instance.save(name, query)
     return [(None, None, None, "Saved.")]
 
 
 @special_command("\\fd", "\\fd [name]", "Delete a favorite query.")
 def delete_favorite_query(arg: str, **_) -> list[tuple]:
     """Delete an existing favorite query."""
-    usage = "Syntax: \\fd name.\n\n" + favoritequeries.usage
+    usage = "Syntax: \\fd name.\n\n" + FavoriteQueries.instance.usage
     if not arg:
         return [(None, None, None, usage)]
 
-    status = favoritequeries.delete(arg)
+    status = FavoriteQueries.instance.delete(arg)
 
     return [(None, None, None, status)]
 
