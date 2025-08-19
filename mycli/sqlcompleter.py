@@ -1193,8 +1193,9 @@ class SQLCompleter(Completer):
                 completions.extend(special_m)
 
             elif suggestion["type"] == "favoritequery":
-                queries_m = self.find_matches(word_before_cursor, FavoriteQueries.instance.list(), start_only=False, fuzzy=True)
-                completions.extend(queries_m)
+                if hasattr(FavoriteQueries, 'instance') and hasattr(FavoriteQueries.instance, 'list'):
+                    queries_m = self.find_matches(word_before_cursor, FavoriteQueries.instance.list(), start_only=False, fuzzy=True)
+                    completions.extend(queries_m)
 
             elif suggestion["type"] == "table_format":
                 formats_m = self.find_matches(word_before_cursor, self.table_formats)
