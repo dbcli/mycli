@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Bug Fixes
+--------
+* Fix the infinite looping when `\llm` is called without args.
+
+
 1.38.2 (2025/08/19)
 ======================
 
