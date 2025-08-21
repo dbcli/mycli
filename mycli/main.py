@@ -808,7 +808,9 @@ class MyCli:
                         return
                     except special.FinishIteration as e:
                         if e.results:
-                            output_res(e.results, start)
+                            return output_res(e.results, start)
+                        else:
+                            return None
                     except RuntimeError as e:
                         logger.error("sql: %r, error: %r", text, e)
                         logger.error("traceback: %r", traceback.format_exc())
