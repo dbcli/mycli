@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Internal
+--------
+* Only read "my" configuration files once, rather than once per call to read_my_cnf_files
+
+
 1.38.3 (2025/08/21)
 ==============
 
