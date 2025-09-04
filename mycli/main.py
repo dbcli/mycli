@@ -25,6 +25,7 @@ from urllib.parse import parse_qs, unquote, urlparse
 from cli_helpers.tabular_output import TabularOutputFormatter, preprocessors
 from cli_helpers.utils import strip_ansi
 import click
+from configobj import ConfigObj
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.completion import Completion, DynamicCompleter
 from prompt_toolkit.document import Document
@@ -172,9 +173,6 @@ class MyCli:
         self.logger = logging.getLogger(__name__)
         self.initialize_logging()
 
-        prompt_cnf = self.read_my_cnf_files(self.cnf_files, ["prompt"])["prompt"]
-        self.prompt_format = prompt or prompt_cnf or c["main"]["prompt"] or self.default_prompt
-        self.multiline_continuation_char = c["main"]["prompt_continuation"]
         keyword_casing = c["main"].get("keyword_casing", "auto")
 
         self.query_history: list[Query] = []
@@ -200,6 +198,10 @@ class MyCli:
                 # There was an error reading the login path file.
                 print("Error: Unable to read login path file.")
 
+        self.my_cnf = read_config_files(self.cnf_files, list_values=False)
+        prompt_cnf = self.read_my_cnf(self.my_cnf, ["prompt"])["prompt"]
+        self.prompt_format = prompt or prompt_cnf or c["main"]["prompt"] or self.default_prompt
+        self.multiline_continuation_char = c["main"]["prompt_continuation"]
         self.prompt_app = None
 
     def register_special_commands(self) -> None:
@@ -339,14 +341,13 @@ class MyCli:
         root_logger.debug("Initializing mycli logging.")
         root_logger.debug("Log file %r.", log_file)
 
-    def read_my_cnf_files(self, files: list[str | TextIOWrapper], keys: list[str]) -> dict[str, Any]:
+    def read_my_cnf(self, cnf: ConfigObj, keys: list[str]) -> dict[str, Any]:
         """
-        Reads a list of config files and merges them. The last one will win.
-        :param files: list of files to read
+        Retrieves some keys from a configuration, applies transformations, returns a new configuration.
+        :param cnf: configuration to read
         :param keys: list of keys to retrieve
         :returns: tuple, with None for missing keys.
         """
-        cnf = read_config_files(files, list_values=False)
 
         sections = ["client", "mysqld"]
         key_transformations = {
@@ -433,7 +434,7 @@ class MyCli:
             "ssl-verify-server-cert": None,
         }
 
-        cnf = self.read_my_cnf_files(self.cnf_files, list(cnf.keys()))
+        cnf = self.read_my_cnf(self.my_cnf, list(cnf.keys()))
 
         # Fall back to config values only if user did not specify a value.
         database = database or cnf["database"]
@@ -1080,7 +1081,7 @@ class MyCli:
         if not os.environ.get("LESS"):
             os.environ["LESS"] = "-RXF"
 
-        cnf = self.read_my_cnf_files(self.cnf_files, ["pager", "skip-pager"])
+        cnf = self.read_my_cnf(self.my_cnf, ["pager", "skip-pager"])
         cnf_pager = cnf["pager"] or self.config["main"]["pager"]
 
         # help Windows users who haven't edited the default myclirc
