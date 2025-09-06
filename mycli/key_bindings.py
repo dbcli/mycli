@@ -150,7 +150,7 @@ def mycli_bindings(mycli) -> KeyBindings:
         else:
             search_history(event)
 
-    @kb.add("escape", "r", filter=control_is_searchable)
+    @kb.add("escape", "r", filter=control_is_searchable & emacs_mode)
     def _(event: KeyPressEvent) -> None:
         """Search history using fzf when available."""
         _logger.debug("Detected <alt-r> key.")
