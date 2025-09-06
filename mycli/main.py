@@ -757,7 +757,6 @@ class MyCli:
                         self.bell()
                     if special.is_timing_enabled():
                         self.echo(f"Time: {t:0.03f}s")
-                    self.echo(f"Time: {t:0.03f}s")
                 except KeyboardInterrupt:
                     pass
 

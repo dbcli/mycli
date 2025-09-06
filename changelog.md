@@ -4,6 +4,7 @@ Upcoming (TBD)
 Bug Fixes
 --------
 * Limit Alt-R bindings to Emacs mode.
+* Fix timing being printed twice.
 
 
 Internal
