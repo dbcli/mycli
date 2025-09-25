@@ -20,19 +20,19 @@ If you already know how to install Python packages, then you can install it via 
 You might need sudo on Linux.
 
 ```bash
-$ pip install -U mycli
+pip install -U mycli
 ```
 
 or
 
 ```bash
-$ brew update && brew install mycli  # Only on macOS
+brew update && brew install mycli  # Only on macOS
 ```
 
 or
 
 ```bash
-$ sudo apt-get install mycli  # Only on Debian or Ubuntu
+sudo apt-get install mycli  # Only on Debian or Ubuntu
 ```
 
 ### Usage
@@ -40,7 +40,7 @@ $ sudo apt-get install mycli  # Only on Debian or Ubuntu
 See
 
 ```bash
-$ mycli --help
+mycli --help
 ```
 
 Features
@@ -84,7 +84,7 @@ These are some alternative ways to install mycli that are not managed by our tea
 You can install the mycli package available in the AUR:
 
 ```
-$ yay -S mycli
+yay -S mycli
 ```
 
 ### Debian, Ubuntu
@@ -92,7 +92,7 @@ $ yay -S mycli
 On Debian, Ubuntu distributions, you can easily install the mycli package using apt:
 
 ```
-$ sudo apt-get install mycli
+sudo apt-get install mycli
 ```
 
 ### Fedora
@@ -100,7 +100,7 @@ $ sudo apt-get install mycli
 Fedora has a package available for mycli, install it using dnf:
 
 ```
-$ sudo dnf install mycli
+sudo dnf install mycli
 ```
 
 ### Windows
