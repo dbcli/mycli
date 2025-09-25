@@ -1,3 +1,10 @@
+Upcoming (TBD)
+==============
+
+Bug Fixes
+--------
+* Fixes use of incorrect ssl config after retrying connection with prompted password
+
 1.38.4 (2025/09/06)
 ==============
 
