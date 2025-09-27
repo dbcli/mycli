@@ -238,7 +238,7 @@ class SQLExecute:
             charset=charset or '',
             autocommit=True,
             client_flag=client_flag,
-            local_infile=local_infile,
+            local_infile=local_infile or False,
             conv=conv,
             ssl=ssl_context,  # type: ignore[arg-type]
             program_name="mycli",
