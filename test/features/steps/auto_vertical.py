@@ -24,16 +24,22 @@ def step_execute_large_query(context):
 
 @then("we see small results in horizontal format")
 def step_see_small_results(context):
+    expected = (
+        dedent(
+            """
+            +---+\r
+            | 1 |\r
+            +---+\r
+            | 1 |\r
+            +---+
+            """
+        ).strip()
+        + '\r\n\r\n'
+    )
+
     wrappers.expect_pager(
         context,
-        dedent("""\
-        +---+\r
-        | 1 |\r
-        +---+\r
-        | 1 |\r
-        +---+\r
-        \r
-        """),
+        expected,
         timeout=5,
     )
     wrappers.expect_exact(context, "1 row in set", timeout=2)

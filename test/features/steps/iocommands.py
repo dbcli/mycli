@@ -54,18 +54,22 @@ def step_tee_ouptut(context):
 @when('we select "select {param}"')
 def step_query_select_number(context, param):
     context.cli.sendline(f"select {param}")
+    expected = (
+        dedent(
+            f"""
+            +{'-' * (len(param) + 2)}+\r
+            | {param} |\r
+            +{'-' * (len(param) + 2)}+\r
+            | {param} |\r
+            +{'-' * (len(param) + 2)}+
+            """
+        ).strip()
+        + '\r\n\r\n'
+    )
+
     wrappers.expect_pager(
         context,
-        dedent(
-            f"""\
-        +{'-' * (len(param) + 2)}+\r
-        | {param} |\r
-        +{'-' * (len(param) + 2)}+\r
-        | {param} |\r
-        +{'-' * (len(param) + 2)}+\r
-        \r
-        """
-        ),
+        expected,
         timeout=5,
     )
     wrappers.expect_exact(context, "1 row in set", timeout=2)

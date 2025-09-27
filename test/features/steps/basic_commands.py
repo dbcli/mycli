@@ -71,19 +71,22 @@ def step_check_application_name(context):
 
 @then("we see found")
 def step_see_found(context):
+    expected = (
+        dedent(
+            """
+            +-------+\r
+            | found |\r
+            +-------+\r
+            | found |\r
+            +-------+
+            """
+        ).strip()
+        + '\r\n\r\n'
+    )
+
     wrappers.expect_exact(
         context,
-        context.conf["pager_boundary"]
-        + "\r"
-        + dedent("""
-            +-------+\r
-            | found |\r
-            +-------+\r
-            | found |\r
-            +-------+\r
-            \r
-        """)
-        + context.conf["pager_boundary"],
+        context.conf["pager_boundary"] + '\r\n' + expected + context.conf["pager_boundary"],
         timeout=5,
     )
 
@@ -94,19 +97,22 @@ def step_see_date(context):
     # such as running near midnight when the test database has
     # a different TZ setting than the system.
     date_str = datetime.datetime.now().strftime("%Y-%m-%d")
-    wrappers.expect_exact(
-        context,
-        context.conf["pager_boundary"]
-        + "\r"
-        + dedent(f"""
+    expected = (
+        dedent(
+            f"""
             +------------+\r
             | dt         |\r
             +------------+\r
             | {date_str} |\r
-            +------------+\r
-            \r
-        """)
-        + context.conf["pager_boundary"],
+            +------------+
+            """
+        ).strip()
+        + '\r\n\r\n'
+    )
+
+    wrappers.expect_exact(
+        context,
+        context.conf["pager_boundary"] + '\r\n' + expected + context.conf["pager_boundary"],
         timeout=5,
     )
 
