@@ -1,5 +1,7 @@
 """Format adapter for sql."""
 
+from __future__ import annotations
+
 from typing import Generator, Union
 
 from cli_helpers.tabular_output import TabularOutputFormatter

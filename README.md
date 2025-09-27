@@ -126,7 +126,7 @@ Thanks to [PyMysql](https://github.com/PyMySQL/PyMySQL) for a pure python adapte
 
 ### Compatibility
 
-Mycli is tested on macOS and Linux, and requires Python 3.9 or better.
+Mycli is tested on macOS and Linux, and requires Python 3.10 or better.
 
 **Mycli is not tested on Windows**, but the libraries used in this app are Windows-compatible.
 This means it should work without any modifications. If you're unable to run it
