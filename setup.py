@@ -27,7 +27,7 @@ install_requirements = [
     'configobj >= 5.0.5',
     'cli_helpers[styles] >= 2.2.1',
     'pyperclip >= 1.8.1',
-    'pyaes >= 1.6.1'
+    "pycryptodomex",
 ]
 
 if sys.version_info.minor < 9:
