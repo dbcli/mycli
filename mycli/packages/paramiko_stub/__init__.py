@@ -30,7 +30,6 @@ class Paramiko:
             """),
             file=sys.stderr,
         )
-        sys.exit(1)
 
 
 paramiko = Paramiko()
