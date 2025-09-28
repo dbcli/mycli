@@ -1,3 +1,5 @@
+* Fix ssl_context always created.
+
 1.38.4 (2025/09/06)
 ==============
 
