@@ -1641,7 +1641,8 @@ def is_select(status: str | None) -> bool:
 def thanks_picker() -> str:
     import mycli
 
-    lines = (resources.read_text(mycli, "AUTHORS") + resources.read_text(mycli, "SPONSORS")).split("\n")
+    lines = (resources.files(mycli).joinpath('AUTHORS').read_text(encoding='utf-8') +
+             resources.files(mycli).joinpath('SPONSORS').read_text(encoding='utf-8')).split("\n")
 
     contents = []
     for line in lines:
