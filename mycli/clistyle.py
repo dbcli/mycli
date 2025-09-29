@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import logging
 
 from prompt_toolkit.styles import Style, merge_styles

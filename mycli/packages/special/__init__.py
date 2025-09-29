@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from mycli.packages.special.dbcommands import (
     list_databases,
     list_tables,
