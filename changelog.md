@@ -9,6 +9,7 @@ Features
 Bug Fixes
 --------
 * Fixes use of incorrect ssl config after retrying connection with prompted password.
+* Fix ssl_context always created.
 
 
 1.38.4 (2025/09/06)

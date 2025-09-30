@@ -224,7 +224,7 @@ class SQLExecute:
             client_flag |= pymysql.constants.CLIENT.MULTI_STATEMENTS
 
         ssl_context = None
-        if ssl:
+        if ssl and ssl.get('enable') is True:
             ssl_context = self._create_ssl_ctx(ssl)
 
         conn = pymysql.connect(
