@@ -509,7 +509,7 @@ class MyCli:
                         socket,
                         charset,
                         use_local_infile,
-                        ssl_config,
+                        ssl_config_or_none,
                         ssh_user,
                         ssh_host,
                         int(ssh_port) if ssh_port else None,

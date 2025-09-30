@@ -1,4 +1,16 @@
+Upcoming (TBD)
+==============
+
+Features
+--------
+* Support only Python 3.10+.
+
+
+Bug Fixes
+--------
+* Fixes use of incorrect ssl config after retrying connection with prompted password.
 * Fix ssl_context always created.
+
 
 1.38.4 (2025/09/06)
 ==============
@@ -40,7 +52,7 @@ Bug Fixes
 
 Internal
 --------
-* Improve CI worflow naming.
+* Improve CI workflow naming.
 
 
 1.38.0 (2025/08/16)

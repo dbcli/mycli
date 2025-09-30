@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from copy import copy
 from importlib import resources
 from io import BytesIO, TextIOWrapper
