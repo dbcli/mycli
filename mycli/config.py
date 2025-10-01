@@ -9,7 +9,7 @@ import sys
 from typing import IO, BinaryIO, Literal, TextIO
 
 from configobj import ConfigObj, ConfigObjError
-import pyaes
+from Cryptodome.Cipher import AES
 
 logger = logging.getLogger(__name__)
 
@@ -175,7 +175,7 @@ def encrypt_mylogin_cnf(plaintext: IO[str]) -> BytesIO:
         return bytes(rkey)
 
     def encode_line(plaintext: str, real_key: bytes, buf_len: int) -> bytes:
-        aes = pyaes.AESModeOfOperationECB(real_key)
+        aes = AES.new(real_key, AES.MODE_ECB)
         text_len = len(plaintext)
         pad_len = buf_len - text_len
         pad_chr = bytes(chr(pad_len), "utf8")
@@ -250,7 +250,7 @@ def read_and_decrypt_mylogin_cnf(f: BinaryIO) -> BytesIO | None:
 
     # Create a bytes buffer to hold the plaintext.
     plaintext = BytesIO()
-    aes = pyaes.AESModeOfOperationECB(rkey_b)
+    aes = AES.new(rkey_b, AES.MODE_ECB)
 
     while True:
         # Read the length of the ciphertext.

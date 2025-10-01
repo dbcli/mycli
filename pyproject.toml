@@ -19,7 +19,7 @@ dependencies = [
     "configobj >= 5.0.5",
     "cli_helpers[styles] >= 2.7.0",
     "pyperclip >= 1.8.1",
-    "pyaes >= 1.6.1",
+    "pycryptodomex",
     "pyfzf >= 0.3.1",
     "llm>=0.19.0",
     "setuptools",                   # Required by llm commands to install models
