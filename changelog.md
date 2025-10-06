@@ -1,4 +1,12 @@
-1.39.0 (2025/10/30)
+1.39.1 (2025/10/06)
+==============
+
+Bug Fixes
+--------
+* Don't require `--ssl` argument when other SSL arguments are given.
+
+
+1.39.0 (2025/09/30)
 ==============
 
 Features
