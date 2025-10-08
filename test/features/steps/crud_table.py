@@ -70,16 +70,22 @@ def step_see_record_updated(context):
 @then("we see data selected")
 def step_see_data_selected(context):
     """Wait to see select output."""
-    wrappers.expect_pager(
-        context,
-        dedent("""\
+    expected = (
+        dedent(
+            """
             +-----+\r
             | x   |\r
             +-----+\r
             | yyy |\r
-            +-----+\r
-            \r
-            """),
+            +-----+
+            """
+        ).strip()
+        + '\r\n\r\n'
+    )
+
+    wrappers.expect_pager(
+        context,
+        expected,
         timeout=2,
     )
     wrappers.expect_exact(context, "1 row in set", timeout=2)
@@ -106,16 +112,22 @@ def step_select_null(context):
 @then("we see null selected")
 def step_see_null_selected(context):
     """Wait to see null output."""
-    wrappers.expect_pager(
-        context,
-        dedent("""\
+    expected = (
+        dedent(
+            """
             +--------+\r
             | NULL   |\r
             +--------+\r
             | <null> |\r
-            +--------+\r
-            \r
-            """),
+            +--------+
+            """
+        ).strip()
+        + '\r\n\r\n'
+    )
+
+    wrappers.expect_pager(
+        context,
+        expected,
         timeout=2,
     )
     wrappers.expect_exact(context, "1 row in set", timeout=2)
