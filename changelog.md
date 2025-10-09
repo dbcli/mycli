@@ -4,6 +4,7 @@ Upcoming (TBD)
 Internal
 --------
 * Test on Python 3.14.
+* Switch from pyaes to pycryptodomex as it seems to be more actively maintained.
 
 
 1.39.1 (2025/10/06)
@@ -12,10 +13,6 @@ Internal
 Bug Fixes
 --------
 * Don't require `--ssl` argument when other SSL arguments are given.
-
-Internal
---------
-Switch from pyaes to pycryptodomex as it seems to be more actively maintained.
 
 
 1.39.0 (2025/09/30)
