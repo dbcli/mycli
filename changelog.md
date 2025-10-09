@@ -13,6 +13,10 @@ Bug Fixes
 --------
 * Don't require `--ssl` argument when other SSL arguments are given.
 
+Internal
+--------
+Switch from pyaes to pycryptodomex as it seems to be more actively maintained.
+
 
 1.39.0 (2025/09/30)
 ==============
