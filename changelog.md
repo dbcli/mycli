@@ -4,6 +4,7 @@ Upcoming (TBD)
 Internal
 --------
 * Test on Python 3.14.
+* Switch from pyaes to pycryptodomex as it seems to be more actively maintained.
 
 
 1.39.1 (2025/10/06)
