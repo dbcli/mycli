@@ -1,11 +1,15 @@
 Upcoming (TBD)
 ==============
 
+Features
+--------
+* Support reconnecting to mysql server when the server restarts.
+
+
 Internal
 --------
 * Test on Python 3.14.
 * Switch from pyaes to pycryptodomex as it seems to be more actively maintained.
-* Support reconnect mysql server when the server restart.
 
 
 1.39.1 (2025/10/06)
