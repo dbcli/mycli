@@ -37,7 +37,7 @@ from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from prompt_toolkit.layout.processors import ConditionalProcessor, HighlightMatchingBracketProcessor
 from prompt_toolkit.lexers import PygmentsLexer
 from prompt_toolkit.shortcuts import CompleteStyle, PromptSession
-from pymysql import OperationalError
+from pymysql import OperationalError, err
 from pymysql.cursors import Cursor
 import sqlglot
 import sqlparse
@@ -863,6 +863,19 @@ class MyCli:
                 output_res(res, start)
                 special.unset_once_if_written(self.post_redirect_command)
                 special.flush_pipe_once_if_written(self.post_redirect_command)
+            except err.InterfaceError:
+                logger.debug("Attempting to reconnect.")
+                self.echo("Reconnecting...", fg="yellow")
+                try:
+                    sqlexecute.connect()
+                    logger.debug("Reconnected successfully.")
+                    one_iteration(text)
+                    return  # OK to just return, cuz the recursion call runs to the end.
+                except OperationalError as e2:
+                    logger.debug("Reconnect failed. e: %r", e2)
+                    self.echo(str(e2), err=True, fg="red")
+                    # If reconnection failed, don't proceed further.
+                    return
             except EOFError as e:
                 raise e
             except KeyboardInterrupt:
