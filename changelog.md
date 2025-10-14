@@ -4,6 +4,7 @@ Upcoming (TBD)
 Internal
 --------
 * Add mypy to Pull Request template.
+* Require release format of `changelog.md` when making a release.
 
 
 1.40.0 (2025/10/14)
