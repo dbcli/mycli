@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Internal
+--------
+* Add mypy to Pull Request template.
+
+
 1.40.0 (2025/10/14)
 ==============
 
