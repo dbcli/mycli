@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Features
+--------
+* Let LLM commands respect show-timing configuration.
+
+
 Internal
 --------
 * Add mypy to Pull Request template.
