@@ -42,16 +42,14 @@ def run_external_cmd(cmd, *args, capture_output=False, restart_cli=False, raise_
                 code = e.code
                 if code != 0 and raise_exception:
                     if capture_output:
-                        raise RuntimeError(buffer.getvalue())
-                    else:
-                        raise RuntimeError(f"Command {cmd} failed with exit code {code}.")
+                        raise RuntimeError(buffer.getvalue()) from e
+                    raise RuntimeError(f"Command {cmd} failed with exit code {code}.") from e
             except Exception as e:
                 code = 1
                 if raise_exception:
                     if capture_output:
-                        raise RuntimeError(buffer.getvalue())
-                    else:
-                        raise RuntimeError(f"Command {cmd} failed: {e}")
+                        raise RuntimeError(buffer.getvalue()) from e
+                    raise RuntimeError(f"Command {cmd} failed: {e}") from e
         if restart_cli and code == 0:
             os.execv(original_exe, [original_exe] + original_args)
         if capture_output:
@@ -211,7 +209,7 @@ def handle_llm(text, cur) -> Tuple[str, Optional[str], float]:
             context = ""
         return (context, sql, end - start)
     except Exception as e:
-        raise RuntimeError(e)
+        raise RuntimeError(e) from e
 
 
 def is_llm_command(command) -> bool:

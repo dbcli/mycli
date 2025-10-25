@@ -119,10 +119,10 @@ def execute(cur: Cursor, sql: str) -> list[tuple]:
 
     try:
         special_cmd = COMMANDS[command]
-    except KeyError:
+    except KeyError as exc:
         special_cmd = COMMANDS[command.lower()]
         if special_cmd.case_sensitive:
-            raise CommandNotFound(f'Command not found: {command}')
+            raise CommandNotFound(f'Command not found: {command}') from exc
 
     # "help <SQL KEYWORD> is a special case. We want built-in help, not
     # mycli help here.
