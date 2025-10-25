@@ -24,7 +24,7 @@ You'll always get credit for your work.
 
     ```bash
     $ cd mycli
-    $ uv sync --extra dev --extra ssh
+    $ uv sync --extra dev
     ```
 
     We've just created a virtual environment and installed all the dependencies
