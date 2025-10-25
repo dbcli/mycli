@@ -66,7 +66,6 @@ select = ['A', 'B', 'I', 'E', 'W', 'F', 'C4', 'PIE', 'TID']
 ignore = [
     'B005',   # Multi-character strip()
     'B006',   # TODO: Mutable data structures for argument defaults
-    'B007',   # TODO: Variable unused
     'B015',   # TODO: Pointless comparison
     'B904',   # TODO: Raise exceptions with "raise ... from err"
     'E401',   # Multiple imports on one line
