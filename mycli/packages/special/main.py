@@ -57,7 +57,7 @@ def special_command(
     arg_type: ArgType = ArgType.PARSED_QUERY,
     hidden: bool = False,
     case_sensitive: bool = False,
-    aliases: list[str] = [],
+    aliases: list[str] | None = None,
 ) -> Callable:
     def wrapper(wrapped):
         register_special_command(
@@ -83,7 +83,7 @@ def register_special_command(
     arg_type: ArgType = ArgType.PARSED_QUERY,
     hidden: bool = False,
     case_sensitive: bool = False,
-    aliases: list[str] = [],
+    aliases: list[str] | None = None,
 ) -> None:
     cmd = command.lower() if not case_sensitive else command
     COMMANDS[cmd] = SpecialCommand(
@@ -95,6 +95,7 @@ def register_special_command(
         hidden=hidden,
         case_sensitive=case_sensitive,
     )
+    aliases = [] if aliases is None else aliases
     for alias in aliases:
         cmd = alias.lower() if not case_sensitive else alias
         COMMANDS[cmd] = SpecialCommand(

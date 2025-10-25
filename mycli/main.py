@@ -407,7 +407,7 @@ class MyCli:
         socket: str | None = "",
         charset: str | None = "",
         local_infile: bool = False,
-        ssl: dict[str, Any] | None = {},
+        ssl: dict[str, Any] | None = None,
         ssh_user: str | None = "",
         ssh_host: str | None = "",
         ssh_port: int = 22,
