@@ -9,6 +9,7 @@
 | \fd            | \fd [name]                 | Delete a favorite query.                                   |
 | \fs            | \fs name query             | Save a favorite query.                                     |
 | \l             | \l                         | List databases.                                            |
+| \llm           | \ai                        | Interrogate LLM.                                           |
 | \once          | \o [-o] filename           | Append next result to an output file (overwrite using -o). |
 | \pipe_once     | \| command                 | Send next result to a subprocess.                          |
 | \timing        | \t                         | Toggle timing of commands.                                 |

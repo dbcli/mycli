@@ -1,8 +1,18 @@
 from collections import namedtuple
 from enum import Enum
 import logging
+import os
 from typing import Callable
 
+try:
+    if not os.environ.get('MYCLI_LLM_OFF'):
+        import llm  # noqa: F401
+
+        LLM_IMPORTED = True
+    else:
+        LLM_IMPORTED = False
+except ImportError:
+    LLM_IMPORTED = False
 from pymysql.cursors import Cursor
 
 logger = logging.getLogger(__name__)
@@ -179,3 +189,10 @@ def quit_(*_args):
 @special_command("\\G", "\\G", "Display current query results vertically.", arg_type=ArgType.NO_QUERY, case_sensitive=True)
 def stub():
     raise NotImplementedError
+
+
+if LLM_IMPORTED:
+
+    @special_command("\\llm", "\\ai", "Interrogate LLM.", arg_type=ArgType.RAW_QUERY, case_sensitive=True)
+    def llm_stub():
+        raise NotImplementedError
