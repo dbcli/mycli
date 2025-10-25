@@ -51,9 +51,8 @@ def test_editor_command():
 
     os.environ["EDITOR"] = "true"
     os.environ["VISUAL"] = "true"
-    # Set the editor to Notepad on Windows
     if os.name != "nt":
-        mycli.packages.special.open_external_editor(sql=r"select 1") == "select 1"
+        assert mycli.packages.special.open_external_editor(sql=r"select 1") == ('select 1', None)
     else:
         pytest.skip("Skipping on Windows platform.")
 
