@@ -40,7 +40,6 @@ Feature: manipulate tables:
 
    # TODO (amjith). This scenario fails in GH actions but only in 3.12. Unable
    # to reproduce locally.
-   @skip_py312
    Scenario: no destructive warning if disabled in config
      When we run dbcli with --no-warn
       and we query "create table blabla(x integer);"
