@@ -4,6 +4,7 @@ Upcoming (TBD)
 Internal
 --------
 * Add mypy to Pull Request template.
+* Enable flake8-bugbear lint rules.
 
 
 1.40.0 (2025/10/14)
