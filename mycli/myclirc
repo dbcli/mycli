@@ -27,7 +27,7 @@ log_level = INFO
 # line below.
 # audit_log = ~/.mycli-audit.log
 
-# Timing of sql statements and table rendering.
+# Timing of SQL statements and table rendering, or LLM commands.
 timing = True
 
 # Beep after long-running queries are completed; 0 to disable.
