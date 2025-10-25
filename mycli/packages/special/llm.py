@@ -1,4 +1,5 @@
 import contextlib
+import functools
 import io
 import logging
 import os
@@ -7,7 +8,7 @@ from runpy import run_module
 import shlex
 import sys
 from time import time
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple
 
 import click
 import llm
@@ -159,7 +160,7 @@ def ensure_mycli_template(replace=False):
     return
 
 
-def handle_llm(text, cur) -> Tuple[str, Optional[str], float]:
+def handle_llm(text, cur, dbname: str) -> Tuple[str, Optional[str], float]:
     _, verbosity, arg = parse_special_command(text)
     if not arg.strip():
         output = [(None, None, None, USAGE)]
@@ -205,7 +206,7 @@ def handle_llm(text, cur) -> Tuple[str, Optional[str], float]:
     try:
         ensure_mycli_template()
         start = time()
-        context, sql = sql_using_llm(cur=cur, question=arg)
+        context, sql = sql_using_llm(cur=cur, question=arg, dbname=dbname)
         end = time()
         if verbosity == Verbosity.SUCCINCT:
             context = ""
@@ -219,42 +220,75 @@ def is_llm_command(command) -> bool:
     return cmd in ("\\llm", "\\ai")
 
 
-def sql_using_llm(cur, question=None) -> Tuple[str, Optional[str]]:
-    if cur is None:
-        raise RuntimeError("Connect to a database and try again.")
-    schema_query = """
-        SELECT CONCAT(table_name, '(', GROUP_CONCAT(column_name, ' ', COLUMN_TYPE SEPARATOR ', '),')')
+def truncate_list_elements(row: list) -> list:
+    target_size = 20000
+    width = 1024
+    while width >= 0:
+        truncated_row = [x[:width] if isinstance(x, (str, bytes)) else x for x in row]
+        if sum(sys.getsizeof(x) for x in truncated_row) <= target_size:
+            break
+        width -= 100
+    return truncated_row
+
+
+def truncate_table_lines(table: list[str]) -> list[str]:
+    target_size = 40000
+    truncated_table = []
+    running_sum = 0
+    while table and running_sum <= target_size:
+        line = table.pop(0)
+        running_sum += sys.getsizeof(line)
+        truncated_table.append(line)
+    return truncated_table
+
+
+@functools.cache
+def get_schema(cur, dbname) -> str:
+    click.echo("Preparing schema information to feed the LLM")
+    schema_query = f"""
+        SELECT CONCAT(table_name, '(', GROUP_CONCAT(column_name, ' ', COLUMN_TYPE SEPARATOR ', '),')') AS schema
         FROM information_schema.columns
-        WHERE table_schema = DATABASE()
+        WHERE table_schema = '{dbname}'
         GROUP BY table_name
         ORDER BY table_name
     """
-    tables_query = "SHOW TABLES"
-    sample_row_query = "SELECT * FROM `{table}` LIMIT 1"
-    click.echo("Preparing schema information to feed the llm")
     cur.execute(schema_query)
-    db_schema = "\n".join([row[0] for (row,) in cur.fetchall()])
+    db_schema = [row[0] for (row,) in cur.fetchall()]
+    return '\n'.join(truncate_table_lines(db_schema))
+
+
+@functools.cache
+def get_sample_data(cur, dbname) -> dict[str, Any]:
+    click.echo("Preparing sample data to feed the LLM")
+    tables_query = "SHOW TABLES"
+    sample_row_query = "SELECT * FROM `{dbname}`.`{table}` LIMIT 1"
     cur.execute(tables_query)
     sample_data = {}
     for (table_name,) in cur.fetchall():
         try:
-            cur.execute(sample_row_query.format(table=table_name))
+            cur.execute(sample_row_query.format(dbname=dbname, table=table_name))
         except Exception:
             continue
         cols = [desc[0] for desc in cur.description]
         row = cur.fetchone()
         if row is None:
             continue
-        sample_data[table_name] = list(zip(cols, row))
+        sample_data[table_name] = list(zip(cols, truncate_list_elements(row)))
+    return sample_data
+
+
+def sql_using_llm(cur, question=None, dbname: str = '') -> Tuple[str, Optional[str]]:
+    if cur is None:
+        raise RuntimeError("Connect to a database and try again.")
     args = [
         "--template",
         LLM_TEMPLATE_NAME,
         "--param",
         "db_schema",
-        db_schema,
+        get_schema(cur, dbname),
         "--param",
         "sample_data",
-        sample_data,
+        get_sample_data(cur, dbname),
         "--param",
         "question",
         question,
