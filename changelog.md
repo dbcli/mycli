@@ -1,3 +1,16 @@
+TBD
+==============
+
+Features
+--------
+* Options to limit size of LLM prompts; cache LLM prompt data.
+
+
+Bug Fixes
+--------
+* Correct mangled schema info sent in LLM prompts.
+
+
 1.50.0 (2026/02/07)
 ==============
 

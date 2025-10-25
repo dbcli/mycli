@@ -169,6 +169,14 @@ class MyCli:
         self.null_string = c['main'].get('null_string')
         self.numeric_alignment = c['main'].get('numeric_alignment', 'right')
         self.binary_display = c['main'].get('binary_display')
+        if 'llm' in c and re.match(r'^\d+$', c['llm'].get('prompt_field_truncate', '')):
+            self.llm_prompt_field_truncate = int(c['llm'].get('prompt_field_truncate'))
+        else:
+            self.llm_prompt_field_truncate = 0
+        if 'llm' in c and re.match(r'^\d+$', c['llm'].get('prompt_section_truncate', '')):
+            self.llm_prompt_section_truncate = int(c['llm'].get('prompt_section_truncate'))
+        else:
+            self.llm_prompt_section_truncate = 0
 
         # set ssl_mode if a valid option is provided in a config file, otherwise None
         ssl_mode = c["main"].get("ssl_mode", None)
@@ -965,9 +973,16 @@ class MyCli:
                 while special.is_llm_command(text):
                     start = time()
                     try:
+                        assert isinstance(self.sqlexecute, SQLExecute)
                         assert sqlexecute.conn is not None
                         cur = sqlexecute.conn.cursor()
-                        context, sql, duration = special.handle_llm(text, cur)
+                        context, sql, duration = special.handle_llm(
+                            text,
+                            cur,
+                            sqlexecute.dbname or '',
+                            self.llm_prompt_field_truncate,
+                            self.llm_prompt_section_truncate,
+                        )
                         if context:
                             click.echo("LLM Response:")
                             click.echo(context)

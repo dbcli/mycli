@@ -38,6 +38,10 @@ log = logging.getLogger(__name__)
 
 LLM_TEMPLATE_NAME = "mycli-llm-template"
 
+SCHEMA_DATA_CACHE: dict[str, str] = {}
+
+SAMPLE_DATA_CACHE: dict[str, dict] = {}
+
 
 def run_external_cmd(
     cmd: str,
@@ -212,7 +216,13 @@ def cli_commands() -> list[str]:
     return list(cli.commands.keys())
 
 
-def handle_llm(text: str, cur: Cursor) -> tuple[str, str | None, float]:
+def handle_llm(
+    text: str,
+    cur: Cursor,
+    dbname: str,
+    prompt_field_truncate: int,
+    prompt_section_truncate: int,
+) -> tuple[str, str | None, float]:
     _, verbosity, arg = parse_special_command(text)
     if not LLM_IMPORTED:
         output = [(None, None, None, NEED_DEPENDENCIES)]
@@ -261,7 +271,13 @@ def handle_llm(text: str, cur: Cursor) -> tuple[str, str | None, float]:
     try:
         ensure_mycli_template()
         start = time()
-        context, sql = sql_using_llm(cur=cur, question=arg)
+        context, sql = sql_using_llm(
+            cur=cur,
+            question=arg,
+            dbname=dbname,
+            prompt_field_truncate=prompt_field_truncate,
+            prompt_section_truncate=prompt_section_truncate,
+        )
         end = time()
         if verbosity == Verbosity.SUCCINCT:
             context = ""
@@ -275,51 +291,110 @@ def is_llm_command(command: str) -> bool:
     return cmd in ("\\llm", "\\ai")
 
 
-def sql_using_llm(
-    cur: Cursor | None,
-    question: str | None = None,
-) -> tuple[str, str | None]:
-    if cur is None:
-        raise RuntimeError("Connect to a database and try again.")
-    schema_query = """
-        SELECT CONCAT(table_name, '(', GROUP_CONCAT(column_name, ' ', COLUMN_TYPE SEPARATOR ', '),')')
+def truncate_list_elements(row: list, prompt_field_truncate: int, prompt_section_truncate: int) -> list:
+    if not prompt_section_truncate and not prompt_field_truncate:
+        return row
+
+    width = prompt_field_truncate
+    while width >= 0:
+        truncated_row = [x[:width] if isinstance(x, (str, bytes)) else x for x in row]
+        if prompt_section_truncate:
+            if sum(sys.getsizeof(x) for x in truncated_row) <= prompt_section_truncate:
+                break
+            width -= 100
+        else:
+            break
+    return truncated_row
+
+
+def truncate_table_lines(table: list[str], prompt_section_truncate: int) -> list[str]:
+    if not prompt_section_truncate:
+        return table
+
+    truncated_table = []
+    running_sum = 0
+    while table and running_sum <= prompt_section_truncate:
+        line = table.pop(0)
+        running_sum += sys.getsizeof(line)
+        truncated_table.append(line)
+    return truncated_table
+
+
+def get_schema(cur: Cursor, dbname: str, prompt_section_truncate: int) -> str:
+    if dbname in SCHEMA_DATA_CACHE:
+        return SCHEMA_DATA_CACHE[dbname]
+    click.echo("Preparing schema information to feed the LLM")
+    schema_query = f"""
+        SELECT CONCAT(table_name, '(', GROUP_CONCAT(column_name, ' ', COLUMN_TYPE SEPARATOR ', '),')') AS `schema`
         FROM information_schema.columns
-        WHERE table_schema = DATABASE()
+        WHERE table_schema = '{dbname}'
         GROUP BY table_name
         ORDER BY table_name
     """
-    tables_query = "SHOW TABLES"
-    sample_row_query = "SELECT * FROM `{table}` LIMIT 1"
-    click.echo("Preparing schema information to feed the llm")
     cur.execute(schema_query)
-    db_schema = "\n".join([row[0] for (row,) in cur.fetchall()])
+    db_schema = [row for (row,) in cur.fetchall()]
+    summary = '\n'.join(truncate_table_lines(db_schema, prompt_section_truncate))
+    SCHEMA_DATA_CACHE[dbname] = summary
+    return summary
+
+
+def get_sample_data(
+    cur: Cursor,
+    dbname: str,
+    prompt_field_truncate: int,
+    prompt_section_truncate: int,
+) -> dict[str, Any]:
+    if dbname in SAMPLE_DATA_CACHE:
+        return SAMPLE_DATA_CACHE[dbname]
+    click.echo("Preparing sample data to feed the LLM")
+    tables_query = "SHOW TABLES"
+    sample_row_query = "SELECT * FROM `{dbname}`.`{table}` LIMIT 1"
     cur.execute(tables_query)
     sample_data = {}
     for (table_name,) in cur.fetchall():
         try:
-            cur.execute(sample_row_query.format(table=table_name))
+            cur.execute(sample_row_query.format(dbname=dbname, table=table_name))
         except Exception:
             continue
         cols = [desc[0] for desc in cur.description]
         row = cur.fetchone()
         if row is None:
             continue
-        sample_data[table_name] = list(zip(cols, row, strict=True))
+        sample_data[table_name] = list(
+            zip(cols, truncate_list_elements(list(row), prompt_field_truncate, prompt_section_truncate), strict=False)
+        )
+    SAMPLE_DATA_CACHE[dbname] = sample_data
+    return sample_data
+
+
+def sql_using_llm(
+    cur: Cursor | None,
+    question: str | None,
+    dbname: str = '',
+    prompt_field_truncate: int = 0,
+    prompt_section_truncate: int = 0,
+) -> tuple[str, str | None]:
+    if cur is None:
+        raise RuntimeError("Connect to a database and try again.")
+    if dbname == '':
+        raise RuntimeError("Choose a schema and try again.")
     args = [
         "--template",
         LLM_TEMPLATE_NAME,
         "--param",
         "db_schema",
-        db_schema,
+        get_schema(cur, dbname, prompt_section_truncate),
         "--param",
         "sample_data",
-        sample_data,
+        get_sample_data(cur, dbname, prompt_field_truncate, prompt_section_truncate),
         "--param",
         "question",
         question,
         " ",
     ]
-    click.echo("Invoking llm command with schema information")
+    click.echo(args[4])
+    click.echo(args[7])
+    click.echo("Invoking llm command with schema information and sample data")
     _, result = run_external_cmd("llm", *args, capture_output=True)
     click.echo("Received response from the llm command")
     match = re.search(_SQL_CODE_FENCE, result, re.DOTALL)

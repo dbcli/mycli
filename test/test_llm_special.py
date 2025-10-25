@@ -26,7 +26,7 @@ def test_llm_command_without_args(mock_llm, executor):
     assert mock_llm is not None
     test_text = r"\llm"
     with pytest.raises(FinishIteration) as exc_info:
-        handle_llm(test_text, executor)
+        handle_llm(test_text, executor, 'mysql', 0, 0)
     # Should return usage message when no args provided
     assert exc_info.value.args[0] == [(None, None, None, USAGE)]
 
@@ -38,7 +38,7 @@ def test_llm_command_with_c_flag(mock_run_cmd, mock_llm, executor):
     mock_run_cmd.return_value = (0, "Hello, no SQL today.")
     test_text = r"\llm -c 'Something?'"
     with pytest.raises(FinishIteration) as exc_info:
-        handle_llm(test_text, executor)
+        handle_llm(test_text, executor, 'mysql', 0, 0)
     # Expect raw output when no SQL fence found
     assert exc_info.value.args[0] == [(None, None, None, "Hello, no SQL today.")]
 
@@ -51,7 +51,7 @@ def test_llm_command_with_c_flag_and_fenced_sql(mock_run_cmd, mock_llm, executor
     fenced = f"Here you go:\n```sql\n{sql_text}\n```"
     mock_run_cmd.return_value = (0, fenced)
     test_text = r"\llm -c 'Rewrite SQL'"
-    result, sql, duration = handle_llm(test_text, executor)
+    result, sql, duration = handle_llm(test_text, executor, 'mysql', 0, 0)
     # Without verbose, result is empty, sql extracted
     assert sql == sql_text
     assert result == ""
@@ -64,7 +64,7 @@ def test_llm_command_known_subcommand(mock_run_cmd, mock_llm, executor):
     # 'models' is a known subcommand
     test_text = r"\llm models"
     with pytest.raises(FinishIteration) as exc_info:
-        handle_llm(test_text, executor)
+        handle_llm(test_text, executor, 'mysql', 0, 0)
     mock_run_cmd.assert_called_once_with("llm", "models", restart_cli=False)
     assert exc_info.value.args[0] is None
 
@@ -74,7 +74,7 @@ def test_llm_command_known_subcommand(mock_run_cmd, mock_llm, executor):
 def test_llm_command_with_help_flag(mock_run_cmd, mock_llm, executor):
     test_text = r"\llm --help"
     with pytest.raises(FinishIteration) as exc_info:
-        handle_llm(test_text, executor)
+        handle_llm(test_text, executor, 'mysql', 0, 0)
     mock_run_cmd.assert_called_once_with("llm", "--help", restart_cli=False)
     assert exc_info.value.args[0] is None
 
@@ -84,7 +84,7 @@ def test_llm_command_with_help_flag(mock_run_cmd, mock_llm, executor):
 def test_llm_command_with_install_flag(mock_run_cmd, mock_llm, executor):
     test_text = r"\llm install openai"
     with pytest.raises(FinishIteration) as exc_info:
-        handle_llm(test_text, executor)
+        handle_llm(test_text, executor, 'mysql', 0, 0)
     mock_run_cmd.assert_called_once_with("llm", "install", "openai", restart_cli=True)
     assert exc_info.value.args[0] is None
 
@@ -98,7 +98,7 @@ def test_llm_command_with_prompt(mock_sql_using_llm, mock_ensure_template, mock_
     """
     mock_sql_using_llm.return_value = ("CTX", "SELECT 1;")
     test_text = r"\llm prompt 'Test?'"
-    context, sql, duration = handle_llm(test_text, executor)
+    context, sql, duration = handle_llm(test_text, executor, 'mysql', 0, 0)
     mock_ensure_template.assert_called_once()
     mock_sql_using_llm.assert_called()
     assert context == "CTX"
@@ -115,7 +115,7 @@ def test_llm_command_question_with_context(mock_sql_using_llm, mock_ensure_templ
     """
     mock_sql_using_llm.return_value = ("CTX2", "SELECT 2;")
     test_text = r"\llm 'Top 10?'"
-    context, sql, duration = handle_llm(test_text, executor)
+    context, sql, duration = handle_llm(test_text, executor, 'mysql', 0, 0)
     mock_ensure_template.assert_called_once()
     mock_sql_using_llm.assert_called()
     assert context == "CTX2"
@@ -132,7 +132,7 @@ def test_llm_command_question_verbose(mock_sql_using_llm, mock_ensure_template, 
     """
     mock_sql_using_llm.return_value = ("NO_CTX", "SELECT 42;")
     test_text = r"\llm- 'Succinct?'"
-    context, sql, duration = handle_llm(test_text, executor)
+    context, sql, duration = handle_llm(test_text, executor, 'mysql', 0, 0)
     assert context == ""
     assert sql == "SELECT 42;"
     assert isinstance(duration, float)
@@ -181,7 +181,7 @@ def test_sql_using_llm_success(mock_run_cmd):
     sql_text = "SELECT 1, 'abc';"
     fenced = f"Note\n```sql\n{sql_text}\n```"
     mock_run_cmd.return_value = (0, fenced)
-    result, sql = sql_using_llm(dummy_cur, question="dummy")
+    result, sql = sql_using_llm(dummy_cur, question="dummy", dbname='mysql')
     assert result == fenced
     assert sql == sql_text
 
@@ -194,5 +194,5 @@ def test_handle_llm_aliases_without_args(prefix, executor, monkeypatch):
 
     monkeypatch.setattr(llm_module, "llm", object())
     with pytest.raises(FinishIteration) as exc_info:
-        handle_llm(prefix, executor)
+        handle_llm(prefix, executor, 'mysql', 0, 0)
     assert exc_info.value.args[0] == [(None, None, None, USAGE)]
