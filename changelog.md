@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Features
+--------
+* Make LLM dependencies an optional extra.
+
+
 Internal
 --------
 * Add mypy to Pull Request template.

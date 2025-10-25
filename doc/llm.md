@@ -8,13 +8,22 @@ Alias: `\ai` works the same as `\llm`.
 
 ## Quick Start
 
-1) Configure your API key (only needed for remote providers like OpenAI):
+1) Make sure mycli is installed with the `[llm]` extras, like
+```bash
+pip install 'mycli[llm]'
+```
+or that the `llm` dependency is installed separately:
+```bash
+pip install llm
+```
+
+2) From the mycli prompt, configure your API key (only needed for remote providers like OpenAI):
 
 ```text
 \llm keys set openai
 ```
 
-2) Ask a question. The response’s SQL (inside a ```sql fenced block) is extracted and pre-filled at the prompt:
+3) Ask a question. The response’s SQL (inside a ```sql fenced block) is extracted and pre-filled at the prompt:
 
 ```text
 World> \llm "Capital of India?"
@@ -164,6 +173,16 @@ World> \llm templates show mycli-llm-template
 
 - Data sent: Contextual questions send schema (table/column names and types) and a single sample row per table. Review your data sensitivity policies before using remote models; prefer local models (such as ollama) if needed.
 - Help: Running `\llm` with no arguments shows a short usage message.
+
+## Turning Off LLM Support
+
+To turn off LLM support even when the `llm` dependency is installed, set the `MYCLI_LLM_OFF` environment variable:
+```bash
+export MYCLI_LLM_OFF=1
+```
+
+This may be desirable for faster startup times.
+
 
 ---
 
