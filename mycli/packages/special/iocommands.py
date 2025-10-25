@@ -380,7 +380,7 @@ def set_tee(arg: str, **_) -> list[tuple]:
     try:
         tee_file = open(*parseargfile(arg))
     except (IOError, OSError) as e:
-        raise OSError(f"Cannot write to file '{e.filename}': {e.strerror}")
+        raise OSError(f"Cannot write to file '{e.filename}': {e.strerror}") from e
 
     return [(None, None, None, "")]
 
@@ -413,7 +413,7 @@ def set_once(arg: str, **_) -> list[tuple]:
     try:
         once_file = open(*parseargfile(arg))
     except (IOError, OSError) as e:
-        raise OSError(f"Cannot write to file '{e.filename}': {e.strerror}")
+        raise OSError(f"Cannot write to file '{e.filename}': {e.strerror}") from e
     written_to_once_file = False
 
     return [(None, None, None, "")]
@@ -456,7 +456,7 @@ def _run_post_redirect_hook(post_redirect_command: str, filename: str) -> None:
             stderr=subprocess.DEVNULL,
         )
     except Exception as e:
-        raise OSError(f"Redirect post hook failed: {e}")
+        raise OSError(f"Redirect post hook failed: {e}") from e
 
 
 @special_command("\\pipe_once", "\\| command", "Send next result to a subprocess.", aliases=["\\|"])
