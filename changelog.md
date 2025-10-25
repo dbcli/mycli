@@ -6,6 +6,11 @@ Features
 * Make LLM dependencies an optional extra.
 
 
+Bug Fixes
+--------
+* Let LLM commands respect show-timing configuration.
+
+
 Internal
 --------
 * Add mypy to Pull Request template.
