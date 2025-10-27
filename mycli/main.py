@@ -887,7 +887,7 @@ class MyCli:
                     # Restart connection to the database
                     sqlexecute.connect()
                     try:
-                        for title, cur, headers, status in sqlexecute.run(f"kill {connection_id_to_kill}"):
+                        for _title, _cur, _headers, status in sqlexecute.run(f"kill {connection_id_to_kill}"):
                             status_str = str(status).lower()
                             if status_str.find("ok") > -1:
                                 logger.debug("cancelled query, connection id: %r, sql: %r", connection_id_to_kill, text)
