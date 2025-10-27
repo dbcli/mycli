@@ -67,7 +67,6 @@ ignore = [
     'B005',   # Multi-character strip()
     'B006',   # TODO: Mutable data structures for argument defaults
     'B015',   # TODO: Pointless comparison
-    'B904',   # TODO: Raise exceptions with "raise ... from err"
     'E401',   # Multiple imports on one line
     'E402',   # Module level import not at top of file
     'PIE808', # range() starting with 0
