@@ -65,7 +65,6 @@ line-length = 140
 select = ['A', 'B', 'I', 'E', 'W', 'F', 'C4', 'PIE', 'TID']
 ignore = [
     'B005',   # Multi-character strip()
-    'B006',   # TODO: Mutable data structures for argument defaults
     'E401',   # Multiple imports on one line
     'E402',   # Module level import not at top of file
     'PIE808', # range() starting with 0
