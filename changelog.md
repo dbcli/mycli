@@ -17,6 +17,7 @@ Internal
 * Enable flake8-bugbear lint rules.
 * Fix flaky editor-command tests in CI.
 * Require release format of `changelog.md` when making a release.
+* Improve type annotations on LLM driver.
 
 
 1.40.0 (2025/10/14)
