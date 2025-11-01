@@ -802,7 +802,8 @@ class MyCli:
                             click.echo("LLM Response:")
                             click.echo(context)
                             click.echo("---")
-                        click.echo(f"Time: {duration:.2f} seconds")
+                        if special.is_timing_enabled():
+                            click.echo(f"Time: {duration:.2f} seconds")
                         text = self.prompt_app.prompt(default=sql or '')
                     except KeyboardInterrupt:
                         return
