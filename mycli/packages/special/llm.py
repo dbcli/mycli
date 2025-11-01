@@ -1,4 +1,5 @@
 import contextlib
+import functools
 import io
 import logging
 import os
@@ -10,15 +11,30 @@ from time import time
 from typing import Optional, Tuple
 
 import click
-import llm
-from llm.cli import cli
+
+try:
+    if not os.environ.get('MYCLI_LLM_OFF'):
+        import llm
+
+        LLM_IMPORTED = True
+    else:
+        LLM_IMPORTED = False
+except ImportError:
+    LLM_IMPORTED = False
+try:
+    if not os.environ.get('MYCLI_LLM_OFF'):
+        from llm.cli import cli
+
+        LLM_CLI_IMPORTED = True
+    else:
+        LLM_CLI_IMPORTED = False
+except ImportError:
+    LLM_CLI_IMPORTED = False
 
 from mycli.packages.special.main import Verbosity, parse_special_command
 
 log = logging.getLogger(__name__)
 
-LLM_CLI_COMMANDS = list(cli.commands.keys())
-MODELS = {x.model_id: None for x in llm.get_models()}
 LLM_TEMPLATE_NAME = "mycli-llm-template"
 
 
@@ -65,7 +81,7 @@ def build_command_tree(cmd):
     if isinstance(cmd, click.Group):
         for name, subcmd in cmd.commands.items():
             if cmd.name == "models" and name == "default":
-                tree[name] = MODELS
+                tree[name] = {x.model_id: None for x in llm.get_models()}
             else:
                 tree[name] = build_command_tree(subcmd)
     else:
@@ -74,7 +90,7 @@ def build_command_tree(cmd):
 
 
 # Generate the command tree for autocompletion
-COMMAND_TREE = build_command_tree(cli) if cli else {}
+COMMAND_TREE = build_command_tree(cli) if LLM_CLI_IMPORTED is True else {}
 
 
 def get_completions(tokens, tree=COMMAND_TREE):
@@ -118,7 +134,25 @@ Examples:
 # Plugins directory
 # https://llm.datasette.io/en/stable/plugins/directory.html
 """
+
+NEED_DEPENDENCIES = """
+To enable LLM features you need to install mycli with LLM support:
+
+    pip install 'mycli[llm]'
+
+or
+
+    pip install 'mycli[all]'
+
+or install LLM libraries separately
+
+   pip install llm
+
+This is required to use the \\llm command.
+"""
+
 _SQL_CODE_FENCE = r"```sql\n(.*?)\n```"
+
 PROMPT = """
 You are a helpful assistant who is a MySQL expert. You are embedded in a mysql
 cli tool called mycli.
@@ -157,8 +191,16 @@ def ensure_mycli_template(replace=False):
     return
 
 
+@functools.cache
+def cli_commands() -> list[str]:
+    return list(cli.commands.keys())
+
+
 def handle_llm(text, cur) -> Tuple[str, Optional[str], float]:
     _, verbosity, arg = parse_special_command(text)
+    if not LLM_IMPORTED:
+        output = [(None, None, None, NEED_DEPENDENCIES)]
+        raise FinishIteration(output)
     if not arg.strip():
         output = [(None, None, None, USAGE)]
         raise FinishIteration(output)
@@ -174,7 +216,7 @@ def handle_llm(text, cur) -> Tuple[str, Optional[str], float]:
         capture_output = False
         use_context = False
         restart = True
-    elif parts and parts[0] in LLM_CLI_COMMANDS:
+    elif parts and parts[0] in cli_commands():
         capture_output = False
         use_context = False
     elif parts and parts[0] == "--help":

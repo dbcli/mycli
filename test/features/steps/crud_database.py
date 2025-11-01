@@ -75,6 +75,9 @@ def step_see_prompt(context):
 @then("we see help output")
 def step_see_help(context):
     for expected_line in context.fixture_data["help_commands.txt"]:
+        # in case tests are run without extras
+        if 'LLM' in expected_line:
+            continue
         wrappers.expect_exact(context, expected_line, timeout=1)
 
 
