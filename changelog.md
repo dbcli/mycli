@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Internal
+--------
+* Include LLM dependencies in tox configuration.
+
+
 1.41.0 (2025/11/01)
 ==============
 
