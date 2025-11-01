@@ -795,9 +795,10 @@ class MyCli:
                 while special.is_llm_command(text):
                     start = time()
                     try:
+                        assert isinstance(self.sqlexecute, SQLExecute)
                         assert sqlexecute.conn is not None
                         cur = sqlexecute.conn.cursor()
-                        context, sql, duration = special.handle_llm(text, cur)
+                        context, sql, duration = special.handle_llm(text, cur, sqlexecute.dbname or '')
                         if context:
                             click.echo("LLM Response:")
                             click.echo(context)
