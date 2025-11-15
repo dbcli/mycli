@@ -1,5 +1,10 @@
-Upcoming (TBD)
+1.41.1 (2025/11/15)
 ==============
+
+Bug Fixes
+--------
+* Upgrade `click` to v8.3.1, resolving a longstanding pager bug.
+
 
 Internal
 --------
