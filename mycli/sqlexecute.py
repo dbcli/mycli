@@ -483,3 +483,10 @@ class SQLExecute:
                 _logger.error("Invalid tls version: %s", tls_version)
 
         return ctx
+
+    def close(self) -> None:
+        if self.conn is not None:
+            try:
+                self.conn.close()
+            except pymysql.err.Error:
+                pass
