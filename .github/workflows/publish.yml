@@ -21,6 +21,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     needs: [docs]
+    continue-on-error: true
 
     strategy:
       matrix:

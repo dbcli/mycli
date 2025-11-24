@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Internal
+--------
+* Improve robustness for flaky tests when publishing.
+
+
 1.41.2 (2025/11/24)
 ==============
 
