@@ -96,6 +96,8 @@ class CompletionRefresher:
         for callback in callbacks:
             callback(completer)
 
+        executor.close()
+
 
 def refresher(name: str, refreshers: dict = CompletionRefresher.refreshers) -> Callable:
     """Decorator to add the decorated function to the dictionary of

@@ -107,6 +107,11 @@ You can check this by running:
 $ readlink -f $(which ex)
 ```
 
+# Github PR checklist
+- add the contribution to the `changelog.md`
+- add your name to the `AUTHORS` file (or it's already there).
+- run `uv run ruff check && uv run ruff format && uv run mypy --install-types .`
+
 
 ## Releasing a new version of mycli
 

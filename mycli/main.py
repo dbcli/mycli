@@ -204,6 +204,10 @@ class MyCli:
         self.multiline_continuation_char = c["main"]["prompt_continuation"]
         self.prompt_app = None
 
+    def close(self) -> None:
+        if self.sqlexecute is not None:
+            self.sqlexecute.close()
+
     def register_special_commands(self) -> None:
         special.register_special_command(self.change_db, "use", "\\u", "Change to a new database.", aliases=["\\u"])
         special.register_special_command(
@@ -1606,6 +1610,7 @@ def cli(
         except Exception as e:
             click.secho(str(e), err=True, fg="red")
             sys.exit(1)
+    mycli.close()
 
 
 def need_completion_refresh(queries: str) -> bool:
