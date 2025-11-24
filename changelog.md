@@ -1,14 +1,14 @@
-1.41.2 (2025/11/??)
+1.41.2 (2025/11/24)
 ==============
 
 Bug Fixes
 --------
-* Close connection to server properly to avoid warning in the server about 'Aborted connection ... (Got an error reading communication packets)'
+* Close connection to server properly to avoid "Aborted connection" warnings in server logs.
 
 Internal
 --------
-* Add ruff to developement dependencies
-* Update contributing guidelines to match github pull request checklist
+* Add ruff to developement dependencies.
+* Update contributing guidelines to match GitHub pull request checklist.
 
 
 1.41.1 (2025/11/15)
