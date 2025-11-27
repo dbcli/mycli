@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Features
+--------
+* Limit size of LLM prompts and cache LLM prompt data.
+
+
 Internal
 --------
 * Improve robustness for flaky tests when publishing.
