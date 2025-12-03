@@ -4,6 +4,7 @@ Upcoming (TBD)
 Internal
 --------
 * Improve robustness for flaky tests when publishing.
+* Set mypy version more strictly.
 
 
 1.41.2 (2025/11/24)
