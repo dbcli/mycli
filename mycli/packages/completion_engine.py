@@ -77,7 +77,8 @@ def suggest_type(full_text: str, text_before_cursor: str) -> list[dict[str, Any]
 
     last_token = statement and statement.token_prev(len(statement.tokens))[1] or ""
 
-    return suggest_based_on_last_token(last_token, text_before_cursor, full_text, identifier)
+    # todo: unsure about empty string as identifier
+    return suggest_based_on_last_token(last_token, text_before_cursor, full_text, identifier or Identifier(''))
 
 
 def suggest_special(text: str) -> list[dict[str, Any]]:
