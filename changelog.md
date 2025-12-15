@@ -4,6 +4,7 @@ Upcoming (TBD)
 Internal
 --------
 * Improve robustness for flaky tests when publishing.
+* Improve type annotations for latest mypy/type stubs.
 
 
 1.41.2 (2025/11/24)

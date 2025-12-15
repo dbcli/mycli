@@ -255,7 +255,7 @@ def execute_favorite_query(cur: Cursor, arg: str, **_) -> Generator[tuple, None,
         yield (None, None, None, message)
     else:
         query, arg_error = subst_favorite_query_args(query, args)
-        if arg_error:
+        if query is None:
             yield (None, None, None, arg_error)
         else:
             for sql in sqlparse.split(query):
