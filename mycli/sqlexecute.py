@@ -342,14 +342,16 @@ class SQLExecute:
 
         # cursor.description is not None for queries that return result sets,
         # e.g. SELECT or SHOW.
+        plural = '' if cursor.rowcount == 1 else 's'
         if cursor.description:
-            headers = [x[0] for x in cursor.description]
-            plural = '' if cursor.rowcount == 1 else 's'
+            headers = [x[0] for x in cursor.description]          
             status = f'{cursor.rowcount} row{plural} in set'
         else:
             _logger.debug("No rows in result.")
-            plural = '' if cursor.rowcount == 1 else 's'
             status = f'Query OK, {cursor.rowcount} row{plural} affected'
+
+        if cursor.warning_count > 0:
+            status = f'{status}, {cursor.warning_count} warning{plural}'
 
         return (title, cursor if cursor.description else None, headers, status)
 

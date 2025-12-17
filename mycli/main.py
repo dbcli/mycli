@@ -109,6 +109,7 @@ class MyCli:
         defaults_file: str | None = None,
         login_path: str | None = None,
         auto_vertical_output: bool = False,
+        show_warnings: bool = False,
         warn: bool | None = None,
         myclirc: str = "~/.myclirc",
     ) -> None:
@@ -155,6 +156,7 @@ class MyCli:
 
         # read from cli argument or user config file
         self.auto_vertical_output = auto_vertical_output or c["main"].as_bool("auto_vertical_output")
+        self.show_warnings = show_warnings or c["main"].as_bool("show_warnings")
 
         # Write user config if system config wasn't the last config loaded.
         if c.filename not in self.system_config_files and not os.path.exists(myclirc):
@@ -237,10 +239,36 @@ class MyCli:
             aliases=["\\Tr"],
             case_sensitive=True,
         )
+        special.register_special_command(
+            self.disable_show_warnings,
+            "nowarnings",
+            "\\w",
+            "Disable automatic warnings display.",
+            aliases=["\\w"],
+            case_sensitive=True,
+        )
+        special.register_special_command(
+            self.enable_show_warnings,
+            "warnings",
+            "\\W",
+            "Enable automatic warnings display.",
+            aliases=["\\W"],
+            case_sensitive=True,
+        )
         special.register_special_command(self.execute_from_file, "source", "\\. filename", "Execute commands from file.", aliases=["\\."])
         special.register_special_command(
             self.change_prompt_format, "prompt", "\\R", "Change prompt format.", aliases=["\\R"], case_sensitive=True
         )
+
+    def enable_show_warnings(self, **_) -> Generator[tuple, None, None]:
+        self.show_warnings = True
+        msg = "Show warnings enabled."
+        yield (None, None, None, msg)
+
+    def disable_show_warnings(self, **_) -> Generator[tuple, None, None]:
+        self.show_warnings = False
+        msg = "Show warnings disabled."
+        yield (None, None, None, msg)
 
     def change_table_format(self, arg: str, **_) -> Generator[tuple, None, None]:
         try:
@@ -767,6 +795,24 @@ class MyCli:
                 start = time()
                 result_count += 1
                 mutating = mutating or is_mutating(status)
+
+                if self.show_warnings and type(cur) == Cursor and cur.warning_count > 0:
+                    warnings = sqlexecute.run("SHOW WARNINGS")
+                    for title, cur, headers, status in warnings:
+                        formatted = self.format_output(
+                            title,
+                            cur,
+                            headers,
+                            special.is_expanded_output(),
+                            special.is_redirected(),
+                            max_width,
+                        )
+                        try:
+                            self.echo("")
+                            self.output(formatted, status)
+                        except KeyboardInterrupt:
+                            pass
+
 
         def one_iteration(text: str | None = None) -> None:
             if text is None:
