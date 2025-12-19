@@ -796,6 +796,7 @@ class MyCli:
                 result_count += 1
                 mutating = mutating or is_mutating(status)
 
+                # get and display warnings if enabled
                 if self.show_warnings and type(cur) == Cursor and cur.warning_count > 0:
                     warnings = sqlexecute.run("SHOW WARNINGS")
                     for title, cur, headers, status in warnings:
@@ -807,12 +808,8 @@ class MyCli:
                             special.is_redirected(),
                             max_width,
                         )
-                        try:
-                            self.echo("")
-                            self.output(formatted, status)
-                        except KeyboardInterrupt:
-                            pass
-
+                        self.echo("")
+                        self.output(formatted, status)
 
         def one_iteration(text: str | None = None) -> None:
             if text is None:
@@ -1231,6 +1228,20 @@ class MyCli:
             )
             for line in output:
                 click.echo(line, nl=new_line)
+
+            # get and display warnings if enabled
+            if self.show_warnings and type(cur) == Cursor and cur.warning_count > 0:
+                warnings = self.sqlexecute.run("SHOW WARNINGS")
+                for title, cur, headers, status in warnings:
+                    output = self.format_output(
+                        title,
+                        cur,
+                        headers,
+                        special.is_expanded_output(),
+                        special.is_redirected(),
+                    )
+                    for line in output:
+                        click.echo(line, nl=new_line)
 
     def format_output(
         self,
