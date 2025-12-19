@@ -797,7 +797,7 @@ class MyCli:
                 mutating = mutating or is_mutating(status)
 
                 # get and display warnings if enabled
-                if self.show_warnings and type(cur) == Cursor and cur.warning_count > 0:
+                if self.show_warnings and isinstance(cur, Cursor) and cur.warning_count > 0:
                     warnings = sqlexecute.run("SHOW WARNINGS")
                     for title, cur, headers, status in warnings:
                         formatted = self.format_output(
@@ -1230,9 +1230,9 @@ class MyCli:
                 click.echo(line, nl=new_line)
 
             # get and display warnings if enabled
-            if self.show_warnings and type(cur) == Cursor and cur.warning_count > 0:
+            if self.show_warnings and isinstance(cur, Cursor) and cur.warning_count > 0:
                 warnings = self.sqlexecute.run("SHOW WARNINGS")
-                for title, cur, headers, status in warnings:
+                for title, cur, headers, _ in warnings:
                     output = self.format_output(
                         title,
                         cur,
@@ -1672,7 +1672,7 @@ def cli(
             sys.exit(0)
         except Exception as e:
             click.secho(str(e), err=True, fg="red")
-            sys.exit(1)   
+            sys.exit(1)
     mycli.close()
 
 

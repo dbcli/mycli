@@ -56,18 +56,54 @@ def test_disable_show_warnings(executor):
 
 
 @dbtest
-def test_otput_res_without_warning(executor):
-    mycli = MyCli()
-    mycli.register_special_commands()
-    sql = "\\W; SELECT 1 + '0 foo'"
-    result = run(executor, sql)
-    output = mycli.output_res(result)
-    assert 1==2
+def test_output_with_warning_and_show_warnings_enabled(executor):
+    runner = CliRunner()
+    sql = "SELECT 1 + '0 foo'"
+    result = runner.invoke(cli, args=CLI_ARGS + ["--show-warnings"], input=sql)
+    expected = "1 + '0 foo'\n1.0\nLevel\tCode\tMessage\nWarning\t1292\tTruncated incorrect DOUBLE value: '0 foo'\n"
+    assert expected in result.output
 
 
 @dbtest
-def test_otput_res_with_warning(executor):
-    pass
+def test_output_with_warning_and_show_warnings_disabled(executor):
+    runner = CliRunner()
+    sql = "SELECT 1 + '0 foo'"
+    result = runner.invoke(cli, args=CLI_ARGS + ["--no-show-warnings"], input=sql)
+    expected = "1 + '0 foo'\n1.0\nLevel\tCode\tMessage\nWarning\t1292\tTruncated incorrect DOUBLE value: '0 foo'\n"
+    assert expected not in result.output
+
+
+@dbtest
+def test_output_with_multiple_warnings_in_single_statement(executor):
+    runner = CliRunner()
+    sql = "SELECT 1 + '0 foo', 2 + '0 foo'"
+    result = runner.invoke(cli, args=CLI_ARGS + ["--show-warnings"], input=sql)
+    expected = (
+        "1 + '0 foo'\t2 + '0 foo'\n"
+        "1.0\t2.0\n"
+        "Level\tCode\tMessage\n"
+        "Warning\t1292\tTruncated incorrect DOUBLE value: '0 foo'\n"
+        "Warning\t1292\tTruncated incorrect DOUBLE value: '0 foo'\n"
+    )
+    assert expected in result.output
+
+
+@dbtest
+def test_output_with_multiple_warnings_in_multiple_statements(executor):
+    runner = CliRunner()
+    sql = "SELECT 1 + '0 foo'; SELECT 2 + '0 foo'"
+    result = runner.invoke(cli, args=CLI_ARGS + ["--show-warnings"], input=sql)
+    expected = (
+        "1 + '0 foo'\n"
+        "1.0\n"
+        "Level\tCode\tMessage\n"
+        "Warning\t1292\tTruncated incorrect DOUBLE value: '0 foo'\n"
+        "2 + '0 foo'\n"
+        "2.0\n"
+        "Level\tCode\tMessage\n"
+        "Warning\t1292\tTruncated incorrect DOUBLE value: '0 foo'\n"
+    )
+    assert expected in result.output
 
 
 @dbtest
