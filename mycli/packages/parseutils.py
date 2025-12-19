@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Generator
+from typing import Any, Generator
 
 import sqlglot
 import sqlparse
@@ -77,7 +77,7 @@ def is_subselect(parsed: TokenList) -> bool:
     return False
 
 
-def extract_from_part(parsed: TokenList, stop_at_punctuation: bool = True) -> Generator[str, None, None]:
+def extract_from_part(parsed: TokenList, stop_at_punctuation: bool = True) -> Generator[Any, None, None]:
     tbl_prefix_seen = False
     for item in parsed.tokens:
         if tbl_prefix_seen:
@@ -123,7 +123,7 @@ def extract_from_part(parsed: TokenList, stop_at_punctuation: bool = True) -> Ge
                     break
 
 
-def extract_table_identifiers(token_stream: TokenList) -> Generator[tuple[str | None, str, str], None, None]:
+def extract_table_identifiers(token_stream: Generator[Any, None, None]) -> Generator[tuple[str | None, str, str], None, None]:
     """yields tuples of (schema_name, table_name, table_alias)"""
 
     for item in token_stream:
@@ -187,15 +187,15 @@ def extract_tables_from_complete_statements(sql: str) -> list[tuple[str | None, 
         return []
 
     finely_parsed = []
-    for statement in roughly_parsed:
+    for rough_statement in roughly_parsed:
         try:
-            finely_parsed.append(sqlglot.parse_one(str(statement), read='mysql'))
+            finely_parsed.append(sqlglot.parse_one(str(rough_statement), read='mysql'))
         except sqlglot.errors.ParseError:
             pass
 
     tables = []
-    for statement in finely_parsed:
-        for identifier in statement.find_all(sqlglot.exp.Table):
+    for fine_statement in finely_parsed:
+        for identifier in fine_statement.find_all(sqlglot.exp.Table):
             if identifier.parent_select and identifier.parent_select.sql().startswith('WITH'):
                 continue
             tables.append((

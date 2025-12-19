@@ -11,6 +11,8 @@ Features
 Internal
 --------
 * Improve robustness for flaky tests when publishing.
+* Improve type annotations for latest mypy/type stubs.
+* Set mypy version more strictly.
 
 
 1.41.2 (2025/11/24)
