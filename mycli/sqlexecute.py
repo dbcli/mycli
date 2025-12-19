@@ -351,6 +351,7 @@ class SQLExecute:
             status = f'Query OK, {cursor.rowcount} row{plural} affected'
 
         if cursor.warning_count > 0:
+            plural = '' if cursor.warning_count == 1 else 's'
             status = f'{status}, {cursor.warning_count} warning{plural}'
 
         return (title, cursor if cursor.description else None, headers, status)
