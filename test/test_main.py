@@ -38,6 +38,39 @@ CLI_ARGS = [
 
 
 @dbtest
+def test_enable_show_warnings(executor):
+    mycli = MyCli()
+    mycli.register_special_commands()
+    sql = "\\W"
+    result = run(executor, sql)
+    assert result[0]["status"] == "Show warnings enabled."
+
+
+@dbtest
+def test_disable_show_warnings(executor):
+    mycli = MyCli()
+    mycli.register_special_commands()
+    sql = "\\w"
+    result = run(executor, sql)
+    assert result[0]["status"] == "Show warnings disabled."
+
+
+@dbtest
+def test_otput_res_without_warning(executor):
+    mycli = MyCli()
+    mycli.register_special_commands()
+    sql = "\\W; SELECT 1 + '0 foo'"
+    result = run(executor, sql)
+    output = mycli.output_res(result)
+    assert 1==2
+
+
+@dbtest
+def test_otput_res_with_warning(executor):
+    pass
+
+
+@dbtest
 def test_execute_arg(executor):
     run(executor, "create table test (a text)")
     run(executor, 'insert into test values("abc")')

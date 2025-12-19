@@ -1361,6 +1361,7 @@ class MyCli:
     is_flag=True,
     help="Automatically switch to vertical output mode if the result is wider than the terminal width.",
 )
+@click.option("--show-warnings/--no-show-warnings", is_flag=True, help="Automatically show warnings after executing a SQL statement.")
 @click.option("-t", "--table", is_flag=True, help="Display batch output in table format.")
 @click.option("--csv", is_flag=True, help="Display batch output in CSV format.")
 @click.option("--warn/--no-warn", default=None, help="Warn before running a destructive query.")
@@ -1388,6 +1389,7 @@ def cli(
     defaults_file: str | None,
     login_path: str | None,
     auto_vertical_output: bool,
+    show_warnings: bool,
     local_infile: bool,
     ssl_enable: bool,
     ssl_ca: str | None,
@@ -1579,6 +1581,10 @@ def cli(
 
     combined_init_cmd = "; ".join(cmd.strip() for cmd in init_cmds if cmd)
 
+    # --show-warnings / --no-show-warnings
+    if show_warnings:
+        mycli.show_warnings = show_warnings
+
     mycli.connect(
         database=database,
         user=user,
@@ -1655,7 +1661,7 @@ def cli(
             sys.exit(0)
         except Exception as e:
             click.secho(str(e), err=True, fg="red")
-            sys.exit(1)
+            sys.exit(1)   
     mycli.close()
 
 
