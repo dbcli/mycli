@@ -26,6 +26,20 @@ def assert_result_equal(result, title=None, rows=None, headers=None, status=None
 
 
 @dbtest
+def test_get_result_status_without_warning(executor):
+    sql = "select 1"
+    result = run(executor, sql)
+    assert result[0]["status"] == "1 row in set"
+
+
+@dbtest
+def test_get_result_status_with_warning(executor):
+    sql = "SELECT 1 + '0 foo'"
+    result = run(executor, sql)
+    assert result[0]["status"] == "1 row in set, 1 warning"
+
+
+@dbtest
 def test_conn(executor):
     run(executor, """create table test(a text)""")
     run(executor, """insert into test values('abc')""")

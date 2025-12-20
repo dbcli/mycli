@@ -1,6 +1,10 @@
 # vi: ft=dosini
 [main]
 
+# Enable or disable the automatic displaying of warnings ("SHOW WARNINGS")
+# after executing a SQL statement when applicable.
+show_warnings = False
+
 # Enables context sensitive auto-completion. If this is disabled the all
 # possible completions will be listed.
 smart_completion = True

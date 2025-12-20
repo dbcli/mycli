@@ -1,6 +1,13 @@
 Upcoming (TBD)
 ==============
 
+Features
+--------
+* Add support for the automatic displaying of warnings after a SQL statement is executed.
+  May be set with the commands \W and \w, in the config file with show_warnings, or
+  with --show-warnings/--no-show-warnings on the command line.
+
+
 Internal
 --------
 * Improve robustness for flaky tests when publishing.

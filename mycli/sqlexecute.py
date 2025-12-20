@@ -208,10 +208,10 @@ class SQLExecute:
         )
         conv = conversions.copy()
         conv.update({
-            FIELD_TYPE.TIMESTAMP: lambda obj: (convert_datetime(obj) or obj),
-            FIELD_TYPE.DATETIME: lambda obj: (convert_datetime(obj) or obj),
-            FIELD_TYPE.TIME: lambda obj: (convert_timedelta(obj) or obj),
-            FIELD_TYPE.DATE: lambda obj: (convert_date(obj) or obj),
+            FIELD_TYPE.TIMESTAMP: lambda obj: convert_datetime(obj) or obj,
+            FIELD_TYPE.DATETIME: lambda obj: convert_datetime(obj) or obj,
+            FIELD_TYPE.TIME: lambda obj: convert_timedelta(obj) or obj,
+            FIELD_TYPE.DATE: lambda obj: convert_date(obj) or obj,
         })
 
         defer_connect = False
@@ -342,14 +342,17 @@ class SQLExecute:
 
         # cursor.description is not None for queries that return result sets,
         # e.g. SELECT or SHOW.
+        plural = '' if cursor.rowcount == 1 else 's'
         if cursor.description:
             headers = [x[0] for x in cursor.description]
-            plural = '' if cursor.rowcount == 1 else 's'
             status = f'{cursor.rowcount} row{plural} in set'
         else:
             _logger.debug("No rows in result.")
-            plural = '' if cursor.rowcount == 1 else 's'
             status = f'Query OK, {cursor.rowcount} row{plural} affected'
+
+        if cursor.warning_count > 0:
+            plural = '' if cursor.warning_count == 1 else 's'
+            status = f'{status}, {cursor.warning_count} warning{plural}'
 
         return (title, cursor if cursor.description else None, headers, status)
 

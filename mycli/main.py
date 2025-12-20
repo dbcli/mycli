@@ -109,6 +109,7 @@ class MyCli:
         defaults_file: str | None = None,
         login_path: str | None = None,
         auto_vertical_output: bool = False,
+        show_warnings: bool = False,
         warn: bool | None = None,
         myclirc: str = "~/.myclirc",
     ) -> None:
@@ -155,6 +156,7 @@ class MyCli:
 
         # read from cli argument or user config file
         self.auto_vertical_output = auto_vertical_output or c["main"].as_bool("auto_vertical_output")
+        self.show_warnings = show_warnings or c["main"].as_bool("show_warnings")
 
         # Write user config if system config wasn't the last config loaded.
         if c.filename not in self.system_config_files and not os.path.exists(myclirc):
@@ -237,10 +239,36 @@ class MyCli:
             aliases=["\\Tr"],
             case_sensitive=True,
         )
+        special.register_special_command(
+            self.disable_show_warnings,
+            "nowarnings",
+            "\\w",
+            "Disable automatic warnings display.",
+            aliases=["\\w"],
+            case_sensitive=True,
+        )
+        special.register_special_command(
+            self.enable_show_warnings,
+            "warnings",
+            "\\W",
+            "Enable automatic warnings display.",
+            aliases=["\\W"],
+            case_sensitive=True,
+        )
         special.register_special_command(self.execute_from_file, "source", "\\. filename", "Execute commands from file.", aliases=["\\."])
         special.register_special_command(
             self.change_prompt_format, "prompt", "\\R", "Change prompt format.", aliases=["\\R"], case_sensitive=True
         )
+
+    def enable_show_warnings(self, **_) -> Generator[tuple, None, None]:
+        self.show_warnings = True
+        msg = "Show warnings enabled."
+        yield (None, None, None, msg)
+
+    def disable_show_warnings(self, **_) -> Generator[tuple, None, None]:
+        self.show_warnings = False
+        msg = "Show warnings disabled."
+        yield (None, None, None, msg)
 
     def change_table_format(self, arg: str, **_) -> Generator[tuple, None, None]:
         try:
@@ -768,6 +796,21 @@ class MyCli:
                 result_count += 1
                 mutating = mutating or is_mutating(status)
 
+                # get and display warnings if enabled
+                if self.show_warnings and isinstance(cur, Cursor) and cur.warning_count > 0:
+                    warnings = sqlexecute.run("SHOW WARNINGS")
+                    for title, cur, headers, status in warnings:
+                        formatted = self.format_output(
+                            title,
+                            cur,
+                            headers,
+                            special.is_expanded_output(),
+                            special.is_redirected(),
+                            max_width,
+                        )
+                        self.echo("")
+                        self.output(formatted, status)
+
         def one_iteration(text: str | None = None) -> None:
             if text is None:
                 try:
@@ -1186,6 +1229,20 @@ class MyCli:
             for line in output:
                 click.echo(line, nl=new_line)
 
+            # get and display warnings if enabled
+            if self.show_warnings and isinstance(cur, Cursor) and cur.warning_count > 0:
+                warnings = self.sqlexecute.run("SHOW WARNINGS")
+                for title, cur, headers, _ in warnings:
+                    output = self.format_output(
+                        title,
+                        cur,
+                        headers,
+                        special.is_expanded_output(),
+                        special.is_redirected(),
+                    )
+                    for line in output:
+                        click.echo(line, nl=new_line)
+
     def format_output(
         self,
         title: str | None,
@@ -1315,6 +1372,7 @@ class MyCli:
     is_flag=True,
     help="Automatically switch to vertical output mode if the result is wider than the terminal width.",
 )
+@click.option("--show-warnings/--no-show-warnings", is_flag=True, help="Automatically show warnings after executing a SQL statement.")
 @click.option("-t", "--table", is_flag=True, help="Display batch output in table format.")
 @click.option("--csv", is_flag=True, help="Display batch output in CSV format.")
 @click.option("--warn/--no-warn", default=None, help="Warn before running a destructive query.")
@@ -1342,6 +1400,7 @@ def cli(
     defaults_file: str | None,
     login_path: str | None,
     auto_vertical_output: bool,
+    show_warnings: bool,
     local_infile: bool,
     ssl_enable: bool,
     ssl_ca: str | None,
@@ -1532,6 +1591,10 @@ def cli(
         init_cmds.append(init_command)
 
     combined_init_cmd = "; ".join(cmd.strip() for cmd in init_cmds if cmd)
+
+    # --show-warnings / --no-show-warnings
+    if show_warnings:
+        mycli.show_warnings = show_warnings
 
     mycli.connect(
         database=database,
