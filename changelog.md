@@ -1,5 +1,9 @@
-1.42.0 (2025/12/20)
+Upcoming (TBD)
 ==============
+
+Features
+--------
+* Rework reconnect logic to actually create a new connection instead of simply changing the database (#746)
 
 Bug Fixes
 --------
