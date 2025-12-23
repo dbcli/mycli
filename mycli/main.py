@@ -213,8 +213,8 @@ class MyCli:
     def register_special_commands(self) -> None:
         special.register_special_command(self.change_db, "use", "\\u", "Change to a new database.", aliases=["\\u"])
         special.register_special_command(
-            self.change_db,
-            "connect",
+            self.manual_reconnect,
+            "reconnect",
             "\\r",
             "Reconnect to the database. Optional database argument.",
             aliases=["\\r"],
@@ -259,6 +259,14 @@ class MyCli:
         special.register_special_command(
             self.change_prompt_format, "prompt", "\\R", "Change prompt format.", aliases=["\\R"], case_sensitive=True
         )
+
+    def manual_reconnect(self, arg: str = None, **_) -> Generator[tuple, None, None]:
+        """
+        wrapper function to use for the \r command so that the real function
+        may be cleanly used elsewhere
+        """
+        _ = self.reconnect(arg)
+        yield (None, None, None, None)
 
     def enable_show_warnings(self, **_) -> Generator[tuple, None, None]:
         self.show_warnings = True
@@ -912,18 +920,11 @@ class MyCli:
                 special.unset_once_if_written(self.post_redirect_command)
                 special.flush_pipe_once_if_written(self.post_redirect_command)
             except err.InterfaceError:
-                logger.debug("Attempting to reconnect.")
-                self.echo("Reconnecting...", fg="yellow")
-                try:
-                    sqlexecute.connect()
-                    logger.debug("Reconnected successfully.")
-                    one_iteration(text)
-                    return  # OK to just return, cuz the recursion call runs to the end.
-                except OperationalError as e2:
-                    logger.debug("Reconnect failed. e: %r", e2)
-                    self.echo(str(e2), err=True, fg="red")
-                    # If reconnection failed, don't proceed further.
+                # attempt to reconnect
+                if not self.reconnect():
                     return
+                one_iteration(text)
+                return  # OK to just return, cuz the recursion call runs to the end.
             except EOFError as e:
                 raise e
             except KeyboardInterrupt:
@@ -957,18 +958,11 @@ class MyCli:
             except OperationalError as e1:
                 logger.debug("Exception: %r", e1)
                 if e1.args[0] in (2003, 2006, 2013):
-                    logger.debug("Attempting to reconnect.")
-                    self.echo("Reconnecting...", fg="yellow")
-                    try:
-                        sqlexecute.connect()
-                        logger.debug("Reconnected successfully.")
-                        one_iteration(text)
-                        return  # OK to just return, cuz the recursion call runs to the end.
-                    except OperationalError as e2:
-                        logger.debug("Reconnect failed. e: %r", e2)
-                        self.echo(str(e2), err=True, fg="red")
-                        # If reconnection failed, don't proceed further.
+                    # attempt to reconnect
+                    if not self.reconnect():
                         return
+                    one_iteration(text)
+                    return  # OK to just return, cuz the recursion call runs to the end.
                 else:
                     logger.error("sql: %r, error: %r", text, e1)
                     logger.error("traceback: %r", traceback.format_exc())
@@ -1039,6 +1033,28 @@ class MyCli:
             special.close_tee()
             if not self.less_chatty:
                 self.echo("Goodbye!")
+
+    def reconnect(self, database: str = None) -> bool:
+        """
+        Attempt to reconnect to the database. Return True if successful,
+        False if unsuccessful.
+        """
+        self.logger.debug("Attempting to reconnect.")
+        self.echo("Reconnecting...", fg="yellow")
+        try:
+            self.sqlexecute.connect()
+        except OperationalError as e:
+            self.logger.debug("Reconnect failed. e: %r", e)
+            self.echo(str(e), err=True, fg="red")
+            return False
+        self.logger.debug("Reconnected successfully.")
+        self.echo("Reconnected successfully.\n", fg="yellow")
+        if database and self.sqlexecute.dbname != database:
+            for result in self.change_db(database):
+                self.echo(result[3])
+        elif database:
+            self.echo(f'You are already connected to database "{self.sqlexecute.dbname}" as user "{self.sqlexecute.user}"')
+        return True
 
     def log_output(self, output: str) -> None:
         """Log the output in the audit log, if it's enabled."""
