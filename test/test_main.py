@@ -38,6 +38,35 @@ CLI_ARGS = [
 
 
 @dbtest
+def test_reconnect_no_database(executor):
+    runner = CliRunner()
+    sql = "\\r"
+    result = runner.invoke(cli, args=CLI_ARGS, input=sql)
+    expected = "Reconnecting...\nReconnected successfully.\n\n"
+    assert expected in result.output
+
+
+@dbtest
+def test_reconnect_with_different_database(executor):
+    runner = CliRunner()
+    database = "mysql"
+    sql = f"\\r {database}"
+    result = runner.invoke(cli, args=CLI_ARGS, input=sql)
+    expected = f'Reconnecting...\nReconnected successfully.\n\nYou are now connected to database "{database}" as user "{USER}"\n'
+    assert expected in result.output
+
+
+@dbtest
+def test_reconnect_with_same_database(executor):
+    runner = CliRunner()
+    database = "mysql"
+    sql = f"\\u {database}; \\r {database}"
+    result = runner.invoke(cli, args=CLI_ARGS, input=sql)
+    expected = f'Reconnecting...\nReconnected successfully.\n\nYou are already connected to database "{database}" as user "{USER}"\n'
+    assert expected in result.output
+
+
+@dbtest
 def test_prompt_no_host_only_socket(executor):
     mycli = MyCli()
     mycli.prompt_format = "\\t \\u@\\h:\\d> "

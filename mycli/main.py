@@ -260,12 +260,12 @@ class MyCli:
             self.change_prompt_format, "prompt", "\\R", "Change prompt format.", aliases=["\\R"], case_sensitive=True
         )
 
-    def manual_reconnect(self, arg: str = None, **_) -> Generator[tuple, None, None]:
+    def manual_reconnect(self, arg: str = "", **_) -> Generator[tuple, None, None]:
         """
         wrapper function to use for the \r command so that the real function
         may be cleanly used elsewhere
         """
-        _ = self.reconnect(arg)
+        self.reconnect(arg)
         yield (None, None, None, None)
 
     def enable_show_warnings(self, **_) -> Generator[tuple, None, None]:
@@ -1034,11 +1034,12 @@ class MyCli:
             if not self.less_chatty:
                 self.echo("Goodbye!")
 
-    def reconnect(self, database: str = None) -> bool:
+    def reconnect(self, database: str = "") -> bool:
         """
         Attempt to reconnect to the database. Return True if successful,
         False if unsuccessful.
         """
+        assert self.sqlexecute is not None
         self.logger.debug("Attempting to reconnect.")
         self.echo("Reconnecting...", fg="yellow")
         try:
