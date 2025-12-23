@@ -1,6 +1,15 @@
 1.42.0 (2025/12/20)
 ==============
 
+Bug Fixes
+--------
+* Update the prompt display logic to handle an edge case where a socket is used without
+  a host being parsed from any other method (#707).
+
+
+1.42.0 (2025/12/20)
+==============
+
 Features
 --------
 * Add support for the automatic displaying of warnings after a SQL statement is executed.

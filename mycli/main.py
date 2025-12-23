@@ -1193,10 +1193,15 @@ class MyCli:
         assert sqlexecute is not None
         assert sqlexecute.server_info is not None
         assert sqlexecute.server_info.species is not None
-        host = self.login_path if self.login_path and self.login_path_as_host else sqlexecute.host
+        if self.login_path and self.login_path_as_host:
+            prompt_host = self.login_path
+        elif sqlexecute.host is not None:
+            prompt_host = sqlexecute.host
+        else:
+            prompt_host = "localhost"
         now = datetime.now()
         string = string.replace("\\u", sqlexecute.user or "(none)")
-        string = string.replace("\\h", host or "(none)")
+        string = string.replace("\\h", prompt_host or "(none)")
         string = string.replace("\\d", sqlexecute.dbname or "(none)")
         string = string.replace("\\t", sqlexecute.server_info.species.name)
         string = string.replace("\\n", "\n")

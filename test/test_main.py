@@ -11,7 +11,7 @@ from click.testing import CliRunner
 
 from mycli.main import MyCli, cli, thanks_picker
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
-from mycli.sqlexecute import ServerInfo
+from mycli.sqlexecute import ServerInfo, SQLExecute
 from test.utils import HOST, PASSWORD, PORT, USER, dbtest, run
 
 test_dir = os.path.abspath(os.path.dirname(__file__))
@@ -35,6 +35,21 @@ CLI_ARGS = [
     default_config_file,
     "mycli_test_db",
 ]
+
+
+@dbtest
+def test_prompt_no_host_only_socket(executor):
+    mycli = MyCli()
+    mycli.prompt_format = "\\t \\u@\\h:\\d> "
+    mycli.sqlexecute = SQLExecute
+    mycli.sqlexecute.server_info = ServerInfo.from_version_string("8.0.44-0ubuntu0.24.04.1")
+    mycli.sqlexecute.host = None
+    mycli.sqlexecute.socket = "/var/run/mysqld/mysqld.sock"
+    mycli.sqlexecute.user = "root"
+    mycli.sqlexecute.dbname = "mysql"
+    mycli.sqlexecute.port = "3306"
+    prompt = mycli.get_prompt(mycli.prompt_format)
+    assert prompt == "MySQL root@localhost:mysql> "
 
 
 @dbtest
