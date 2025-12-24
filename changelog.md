@@ -3,7 +3,7 @@ Upcoming (TBD)
 
 Features
 --------
-* Update the default SSL value to connect securely by default.
+* Update the default SSL value to connect securely by default. Add a --no-ssl option to disable it.
 
 Bug Fixes
 --------

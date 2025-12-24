@@ -1343,7 +1343,9 @@ class MyCli:
 @click.option("--ssh-key-filename", help="Private key filename (identify file) for the ssh connection.")
 @click.option("--ssh-config-path", help="Path to ssh configuration.", default=os.path.expanduser("~") + "/.ssh/config")
 @click.option("--ssh-config-host", help="Host to connect to ssh server reading from ssh configuration.")
-@click.option("--ssl", "ssl_enable", is_flag=True, default=True, help="Enable SSL for connection (automatically enabled with other flags).")
+@click.option(
+    "--ssl/--no-ssl", "ssl_enable", is_flag=True, default=True, help="Enable SSL for connection (automatically enabled with other flags)."
+)
 @click.option("--ssl-ca", help="CA file in PEM format.", type=click.Path(exists=True))
 @click.option("--ssl-capath", help="CA directory.")
 @click.option("--ssl-cert", help="X509 cert in PEM format.", type=click.Path(exists=True))
