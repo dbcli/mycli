@@ -1273,7 +1273,7 @@ class MyCli:
         if title:  # Only print the title if it's not None.
             output = itertools.chain(output, [title])
 
-        if cur:
+        if headers or (cur and title):
             column_types = None
             if isinstance(cur, Cursor):
 
@@ -1283,7 +1283,7 @@ class MyCli:
 
                 column_types = [get_col_type(tup) for tup in cur.description]
 
-            if max_width is not None:
+            if max_width is not None and isinstance(cur, Cursor):
                 cur = list(cur)
 
             formatted = use_formatter.format_output(
