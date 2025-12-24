@@ -100,6 +100,17 @@ def test_disable_show_warnings(executor):
 
 
 @dbtest
+def test_output_ddl_with_warning_and_show_warnings_enabled(executor):
+    runner = CliRunner()
+    db = "mycli_test_db"
+    table = "table_that_definitely_does_not_exist_1234"
+    sql = f"DROP TABLE IF EXISTS {db}.{table}"
+    result = runner.invoke(cli, args=CLI_ARGS + ["--show-warnings", "--no-warn"], input=sql)
+    expected = "Level\tCode\tMessage\nNote\t1051\tUnknown table 'mycli_test_db.table_that_definitely_does_not_exist_1234'\n"
+    assert expected in result.output
+
+
+@dbtest
 def test_output_with_warning_and_show_warnings_enabled(executor):
     runner = CliRunner()
     sql = "SELECT 1 + '0 foo'"
