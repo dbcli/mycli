@@ -1377,7 +1377,9 @@ class MyCli:
     is_flag=True,
     help="Automatically switch to vertical output mode if the result is wider than the terminal width.",
 )
-@click.option("--show-warnings/--no-show-warnings", is_flag=True, help="Automatically show warnings after executing a SQL statement.")
+@click.option(
+    "--show-warnings/--no-show-warnings", "show_warnings", is_flag=True, help="Automatically show warnings after executing a SQL statement."
+)
 @click.option("-t", "--table", is_flag=True, help="Display batch output in table format.")
 @click.option("--csv", is_flag=True, help="Display batch output in CSV format.")
 @click.option("--warn/--no-warn", default=None, help="Warn before running a destructive query.")
