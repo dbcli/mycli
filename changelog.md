@@ -3,6 +3,7 @@ Upcoming (TBD)
 
 Features
 --------
+* Update query processing functions to allow automatic show_warnings to work for more code paths like DDL.
 * Update the default SSL value to connect securely by default. Add a --no-ssl option to disable it.
 
 Bug Fixes
