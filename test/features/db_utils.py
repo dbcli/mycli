@@ -1,5 +1,7 @@
 # type: ignore
 
+import ssl
+
 import pymysql
 
 
@@ -14,8 +16,11 @@ def create_db(hostname="localhost", port=3306, username=None, password=None, dbn
     :return:
 
     """
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.VerifyMode.CERT_NONE
     cn = pymysql.connect(
-        host=hostname, port=port, user=username, password=password, charset="utf8mb4", cursorclass=pymysql.cursors.DictCursor
+        host=hostname, port=port, user=username, password=password, charset="utf8mb4", cursorclass=pymysql.cursors.DictCursor, ssl=ctx
     )
 
     with cn.cursor() as cr:
@@ -39,8 +44,18 @@ def create_cn(hostname, port, password, username, dbname):
     :return: psycopg2.connection
 
     """
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.VerifyMode.CERT_NONE
     cn = pymysql.connect(
-        host=hostname, port=port, user=username, password=password, db=dbname, charset="utf8mb4", cursorclass=pymysql.cursors.DictCursor
+        host=hostname,
+        port=port,
+        user=username,
+        password=password,
+        db=dbname,
+        charset="utf8mb4",
+        cursorclass=pymysql.cursors.DictCursor,
+        ssl=ctx,
     )
 
     return cn
@@ -56,8 +71,18 @@ def drop_db(hostname="localhost", port=3306, username=None, password=None, dbnam
     :param dbname: string
 
     """
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.VerifyMode.CERT_NONE
     cn = pymysql.connect(
-        host=hostname, port=port, user=username, password=password, db=dbname, charset="utf8mb4", cursorclass=pymysql.cursors.DictCursor
+        host=hostname,
+        port=port,
+        user=username,
+        password=password,
+        db=dbname,
+        charset="utf8mb4",
+        cursorclass=pymysql.cursors.DictCursor,
+        ssl=ctx,
     )
 
     with cn.cursor() as cr:

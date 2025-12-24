@@ -1,5 +1,9 @@
-1.42.0 (2025/12/20)
+Upcoming (TBD)
 ==============
+
+Features
+--------
+* Update the default SSL value to connect securely by default.
 
 Bug Fixes
 --------
