@@ -1,5 +1,9 @@
-1.42.0 (2025/12/20)
+Upcoming (TBD)
 ==============
+
+Features
+--------
+* Update query processing functions to allow automatic show_warnings to work for more code paths like DDL
 
 Bug Fixes
 --------
