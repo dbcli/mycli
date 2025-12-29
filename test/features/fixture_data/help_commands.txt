@@ -13,6 +13,7 @@
 | \once          | \o [-o] filename           | Append next result to an output file (overwrite using -o). |
 | \pipe_once     | \| command                 | Send next result to a subprocess.                          |
 | \timing        | \t                         | Toggle timing of commands.                                 |
+| connect        | \r                         | Reconnect to the database. Optional database argument.     |
 | delimiter      | <null>                     | Change SQL delimiter.                                      |
 | exit           | \q                         | Exit.                                                      |
 | help           | \?                         | Show this help.                                            |
@@ -22,7 +23,6 @@
 | pager          | \P [command]               | Set PAGER. Print the query results via PAGER.              |
 | prompt         | \R                         | Change prompt format.                                      |
 | quit           | \q                         | Quit.                                                      |
-| reconnect      | \r                         | Reconnect to the database. Optional database argument.     |
 | redirectformat | \Tr                        | Change the table format used to output redirected results. |
 | rehash         | \#                         | Refresh auto-completions.                                  |
 | source         | \. filename                | Execute commands from file.                                |

@@ -214,7 +214,7 @@ class MyCli:
         special.register_special_command(self.change_db, "use", "\\u", "Change to a new database.", aliases=["\\u"])
         special.register_special_command(
             self.manual_reconnect,
-            "reconnect",
+            "connect",
             "\\r",
             "Reconnect to the database. Optional database argument.",
             aliases=["\\r"],
