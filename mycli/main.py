@@ -262,11 +262,15 @@ class MyCli:
 
     def manual_reconnect(self, arg: str = "", **_) -> Generator[tuple, None, None]:
         """
-        wrapper function to use for the \r command so that the real function
-        may be cleanly used elsewhere
+        Interactive method to use for the \r command, so that the utility method
+        may be cleanly used elsewhere.
         """
-        self.reconnect(arg)
-        yield (None, None, None, None)
+        if not self.reconnect(database=arg):
+            yield (None, None, None, "Not connected")
+        elif not arg or arg == '``':
+            yield (None, None, None, None)
+        else:
+            yield self.change_db(arg).send(None)
 
     def enable_show_warnings(self, **_) -> Generator[tuple, None, None]:
         self.show_warnings = True
@@ -308,13 +312,18 @@ class MyCli:
             return
 
         assert isinstance(self.sqlexecute, SQLExecute)
-        self.sqlexecute.change_db(arg)
+
+        if self.sqlexecute.dbname == arg:
+            msg = f'You are already connected to database "{self.sqlexecute.dbname}" as user "{self.sqlexecute.user}"'
+        else:
+            self.sqlexecute.change_db(arg)
+            msg = f'You are now connected to database "{self.sqlexecute.dbname}" as user "{self.sqlexecute.user}"'
 
         yield (
             None,
             None,
             None,
-            f'You are now connected to database "{self.sqlexecute.dbname}" as user "{self.sqlexecute.user}"',
+            msg,
         )
 
     def execute_from_file(self, arg: str, **_) -> Iterable[tuple]:
@@ -1036,26 +1045,55 @@ class MyCli:
 
     def reconnect(self, database: str = "") -> bool:
         """
-        Attempt to reconnect to the database. Return True if successful,
+        Attempt to reconnect to the server. Return True if successful,
         False if unsuccessful.
+
+        The "database" argument is used only to improve messages.
         """
         assert self.sqlexecute is not None
-        self.logger.debug("Attempting to reconnect.")
-        self.echo("Reconnecting...", fg="yellow")
+        assert self.sqlexecute.conn is not None
+
+        # First pass with ping(reconnect=False) and minimal feedback levels.  This definitely
+        # works as expected, and is a good idea especially when "connect" was used as a
+        # synonym for "use".
         try:
+            self.sqlexecute.conn.ping(reconnect=False)
+            if not database:
+                self.echo("Already connected.", fg="yellow")
+            return True
+        except pymysql.err.Error:
+            pass
+
+        # Second pass with ping(reconnect=True).  It is not demonstrated that this pass ever
+        # gives the benefit it is looking for, _ie_ preserves session state.  We need to test
+        # this with connection pooling.
+        try:
+            old_connection_id = self.sqlexecute.connection_id
+            self.logger.debug("Attempting to reconnect.")
+            self.echo("Reconnecting...", fg="yellow")
+            self.sqlexecute.conn.ping(reconnect=True)
+            self.logger.debug("Reconnected successfully.")
+            self.echo("Reconnected successfully.", fg="yellow")
+            self.sqlexecute.reset_connection_id()
+            if old_connection_id != self.sqlexecute.connection_id:
+                self.echo("Any session state was reset.", fg="red")
+            return True
+        except pymysql.err.Error:
+            pass
+
+        # Third pass with sqlexecute.connect() should always work, but always resets session state.
+        try:
+            self.logger.debug("Creating new connection")
+            self.echo("Creating new connection...", fg="yellow")
             self.sqlexecute.connect()
+            self.logger.debug("New connection created successfully.")
+            self.echo("New connection created successfully.", fg="yellow")
+            self.echo("Any session state was reset.", fg="red")
+            return True
         except pymysql.OperationalError as e:
             self.logger.debug("Reconnect failed. e: %r", e)
             self.echo(str(e), err=True, fg="red")
             return False
-        self.logger.debug("Reconnected successfully.")
-        self.echo("Reconnected successfully.\n", fg="yellow")
-        if database and self.sqlexecute.dbname != database:
-            for result in self.change_db(database):
-                self.echo(result[3])
-        elif database:
-            self.echo(f'You are already connected to database "{self.sqlexecute.dbname}" as user "{self.sqlexecute.user}"')
-        return True
 
     def log_output(self, output: str) -> None:
         """Log the output in the audit log, if it's enabled."""

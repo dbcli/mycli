@@ -4,7 +4,7 @@ Upcoming (TBD)
 Features
 --------
 * Update query processing functions to allow automatic show_warnings to work for more code paths like DDL.
-* Rework reconnect logic to actually create a new connection instead of simply changing the database (#746).
+* Rework reconnect logic to actually reconnect or create a new connection instead of simply changing the database (#746).
 
 
 Bug Fixes
