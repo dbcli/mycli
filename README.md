@@ -105,7 +105,21 @@ sudo dnf install mycli
 
 ### Windows
 
+#### Option 1: Native Windows
+
+Install the `less` pager, for example by `scoop install less`.
+
 Follow the instructions on this blogpost: http://web.archive.org/web/20221006045208/https://www.codewall.co.uk/installing-using-mycli-on-windows/
+
+**Mycli is not tested on Windows**, but the libraries used in the app are Windows-compatible.
+This means it should work without any modifications, but isn't supported.
+
+PRs to add native Windows testing to Mycli CI would be welcome!
+
+#### Option 2: WSL
+
+Everything should work as expected in WSL.  This is a good option for using
+Mycli on Windows.
 
 
 ### Thanks:
@@ -128,9 +142,6 @@ Thanks to [PyMysql](https://github.com/PyMySQL/PyMySQL) for a pure python adapte
 
 Mycli is tested on macOS and Linux, and requires Python 3.10 or better.
 
-**Mycli is not tested on Windows**, but the libraries used in this app are Windows-compatible.
-This means it should work without any modifications. If you're unable to run it
-on Windows, please [file a bug](https://github.com/dbcli/mycli/issues/new).
 
 ### Configuration and Usage
 

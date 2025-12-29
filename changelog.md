@@ -5,10 +5,16 @@ Features
 --------
 * Update query processing functions to allow automatic show_warnings to work for more code paths like DDL
 
+
 Bug Fixes
 --------
 * Update the prompt display logic to handle an edge case where a socket is used without
   a host being parsed from any other method (#707).
+
+
+Internal
+--------
+* Refine documentation for Windows.
 
 
 1.42.0 (2025/12/20)
