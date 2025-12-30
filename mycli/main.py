@@ -38,6 +38,7 @@ from prompt_toolkit.layout.processors import ConditionalProcessor, HighlightMatc
 from prompt_toolkit.lexers import PygmentsLexer
 from prompt_toolkit.shortcuts import CompleteStyle, PromptSession
 from pymysql import OperationalError, err
+from pymysql.constants.ER import HANDSHAKE_ERROR
 from pymysql.cursors import Cursor
 import sqlglot
 import sqlparse
@@ -506,49 +507,37 @@ class MyCli:
         # Connect to the database.
 
         def _connect() -> None:
+            conn_config = {
+                "database": database,
+                "user": user,
+                "password": passwd,
+                "host": host,
+                "port": int_port,
+                "socket": socket,
+                "charset": charset,
+                "local_infile": use_local_infile,
+                "ssl": ssl_config_or_none,
+                "ssh_user": ssh_user,
+                "ssh_host": ssh_host,
+                "ssh_port": int(ssh_port) if ssh_port else None,
+                "ssh_password": ssh_password,
+                "ssh_key_filename": ssh_key_filename,
+                "init_command": init_command,
+            }
             try:
-                self.sqlexecute = SQLExecute(
-                    database,
-                    user,
-                    passwd,
-                    host,
-                    int_port,
-                    socket,
-                    charset,
-                    use_local_infile,
-                    ssl_config_or_none,
-                    ssh_user,
-                    ssh_host,
-                    int(ssh_port) if ssh_port else None,
-                    ssh_password,
-                    ssh_key_filename,
-                    init_command,
-                )
+                self.sqlexecute = SQLExecute(**conn_config)
             except OperationalError as e:
                 if e.args[0] == ERROR_CODE_ACCESS_DENIED:
                     if password_from_file is not None:
-                        new_passwd = password_from_file
+                        conn_config["password"] = password_from_file
                     else:
-                        new_passwd = click.prompt(
+                        conn_config["password"] = click.prompt(
                             f"Password for {user}", hide_input=True, show_default=False, default='', type=str, err=True
                         )
-                    self.sqlexecute = SQLExecute(
-                        database,
-                        user,
-                        new_passwd,
-                        host,
-                        int_port,
-                        socket,
-                        charset,
-                        use_local_infile,
-                        ssl_config_or_none,
-                        ssh_user,
-                        ssh_host,
-                        int(ssh_port) if ssh_port else None,
-                        ssh_password,
-                        ssh_key_filename,
-                        init_command,
-                    )
+                    self.sqlexecute = SQLExecute(**conn_config)
+                elif e.args[0] == HANDSHAKE_ERROR:
+                    conn_config["ssl"] = None
+                    self.sqlexecute = SQLExecute(**conn_config)
                 else:
                     raise e
 
