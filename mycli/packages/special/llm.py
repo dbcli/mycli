@@ -304,7 +304,7 @@ def sql_using_llm(
         row = cur.fetchone()
         if row is None:
             continue
-        sample_data[table_name] = list(zip(cols, row))
+        sample_data[table_name] = list(zip(cols, row, strict=True))
     args = [
         "--template",
         LLM_TEMPLATE_NAME,

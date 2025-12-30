@@ -291,15 +291,15 @@ def test_split_sql_by_delimiter():
         mycli.packages.special.set_delimiter(delimiter_str)
         sql_input = f"select 1{delimiter_str} select \ufffc2"
         queries = ("select 1", "select \ufffc2")
-        for query, parsed_query in zip(queries, mycli.packages.special.split_queries(sql_input)):
+        for query, parsed_query in zip(queries, mycli.packages.special.split_queries(sql_input), strict=True):
             assert query == parsed_query
 
 
 def test_switch_delimiter_within_query():
     mycli.packages.special.set_delimiter(";")
     sql_input = "select 1; delimiter $$ select 2 $$ select 3 $$"
-    queries = ("select 1", "delimiter $$ select 2 $$ select 3 $$", "select 2", "select 3")
-    for query, parsed_query in zip(queries, mycli.packages.special.split_queries(sql_input)):
+    queries = ("select 1", "delimiter $$ select 2 $$ select 3 $$")
+    for query, parsed_query in zip(queries, mycli.packages.special.split_queries(sql_input), strict=True):
         assert query == parsed_query
 
 
