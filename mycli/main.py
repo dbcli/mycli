@@ -37,7 +37,7 @@ from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from prompt_toolkit.layout.processors import ConditionalProcessor, HighlightMatchingBracketProcessor
 from prompt_toolkit.lexers import PygmentsLexer
 from prompt_toolkit.shortcuts import CompleteStyle, PromptSession
-from pymysql import OperationalError, err
+import pymysql
 from pymysql.cursors import Cursor
 import sqlglot
 import sqlparse
@@ -532,7 +532,7 @@ class MyCli:
                     ssh_key_filename,
                     init_command,
                 )
-            except OperationalError as e:
+            except pymysql.OperationalError as e:
                 if e.args[0] == ERROR_CODE_ACCESS_DENIED:
                     if password_from_file is not None:
                         new_passwd = password_from_file
@@ -566,7 +566,7 @@ class MyCli:
                 self.echo(f"Connecting to socket {socket}, owned by user {socket_owner}", err=True)
                 try:
                     _connect()
-                except OperationalError as e:
+                except pymysql.OperationalError as e:
                     # These are "Can't open socket" and 2x "Can't connect"
                     if [code for code in (2001, 2002, 2003) if code == e.args[0]]:
                         self.logger.debug("Database connection failed: %r.", e)
@@ -919,7 +919,7 @@ class MyCli:
                 output_res(res, start)
                 special.unset_once_if_written(self.post_redirect_command)
                 special.flush_pipe_once_if_written(self.post_redirect_command)
-            except err.InterfaceError:
+            except pymysql.err.InterfaceError:
                 # attempt to reconnect
                 if not self.reconnect():
                     return
@@ -955,7 +955,7 @@ class MyCli:
                     self.echo("Did not get a connection id, skip cancelling query", err=True, fg="red")
             except NotImplementedError:
                 self.echo("Not Yet Implemented.", fg="yellow")
-            except OperationalError as e1:
+            except pymysql.OperationalError as e1:
                 logger.debug("Exception: %r", e1)
                 if e1.args[0] in (2003, 2006, 2013):
                     # attempt to reconnect
@@ -1044,7 +1044,7 @@ class MyCli:
         self.echo("Reconnecting...", fg="yellow")
         try:
             self.sqlexecute.connect()
-        except OperationalError as e:
+        except pymysql.OperationalError as e:
             self.logger.debug("Reconnect failed. e: %r", e)
             self.echo(str(e), err=True, fg="red")
             return False
