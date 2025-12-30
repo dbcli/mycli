@@ -10,6 +10,7 @@ import click
 from click.testing import CliRunner
 
 from mycli.main import MyCli, cli, thanks_picker
+import mycli.packages.special
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
 from mycli.sqlexecute import ServerInfo, SQLExecute
 from test.utils import HOST, PASSWORD, PORT, USER, dbtest, run
@@ -35,6 +36,95 @@ CLI_ARGS = [
     default_config_file,
     "mycli_test_db",
 ]
+
+
+@dbtest
+def test_reconnect_no_database(executor, capsys):
+    m = MyCli()
+    m.register_special_commands()
+    m.sqlexecute = SQLExecute(
+        None,
+        USER,
+        PASSWORD,
+        HOST,
+        PORT,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    )
+    sql = "\\r"
+    result = next(mycli.packages.special.execute(executor, sql))
+    stdout, _stderr = capsys.readouterr()
+    assert result[-1] is None
+    assert "Already connected" in stdout
+
+
+@dbtest
+def test_reconnect_with_different_database(executor):
+    m = MyCli()
+    m.register_special_commands()
+    m.sqlexecute = SQLExecute(
+        None,
+        USER,
+        PASSWORD,
+        HOST,
+        PORT,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    )
+    database_1 = "mycli_test_db"
+    database_2 = "mysql"
+    sql_1 = f"use {database_1}"
+    sql_2 = f"\\r {database_2}"
+    _result_1 = next(mycli.packages.special.execute(executor, sql_1))
+    result_2 = next(mycli.packages.special.execute(executor, sql_2))
+    expected = f'You are now connected to database "{database_2}" as user "{USER}"'
+    assert expected in result_2[-1]
+
+
+@dbtest
+def test_reconnect_with_same_database(executor):
+    m = MyCli()
+    m.register_special_commands()
+    m.sqlexecute = SQLExecute(
+        None,
+        USER,
+        PASSWORD,
+        HOST,
+        PORT,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    )
+    database = "mysql"
+    sql = f"\\u {database}"
+    result = next(mycli.packages.special.execute(executor, sql))
+    sql = f"\\r {database}"
+    result = next(mycli.packages.special.execute(executor, sql))
+    expected = f'You are already connected to database "{database}" as user "{USER}"'
+    assert expected in result[-1]
 
 
 @dbtest

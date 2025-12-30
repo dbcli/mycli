@@ -5,11 +5,20 @@ Features
 --------
 * Update query processing functions to allow automatic show_warnings to work for more code paths like DDL.
 * Update the default SSL value to connect securely by default. Add a --no-ssl option to disable it.
+* Rework reconnect logic to actually reconnect or create a new connection instead of simply changing the database (#746).
+
 
 Bug Fixes
 --------
 * Update the prompt display logic to handle an edge case where a socket is used without
   a host being parsed from any other method (#707).
+
+
+Internal
+--------
+* Refine documentation for Windows.
+* Target Python 3.10 for linting.
+* Use fully-qualified pymysql exception classes.
 
 
 1.42.0 (2025/12/20)

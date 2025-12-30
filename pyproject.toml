@@ -55,7 +55,7 @@ dev = [
     "llm>=0.19.0",
     "setuptools",                   # Required by llm commands to install models
     "pip",
-    "ruff>=0.14.6",
+    "ruff~=0.14.10",
 ]
 
 [project.scripts]
@@ -68,7 +68,7 @@ mycli = ["myclirc", "AUTHORS", "SPONSORS"]
 include = ["mycli*"]
 
 [tool.ruff]
-target-version = 'py39'
+target-version = 'py310'
 line-length = 140
 
 [tool.ruff.lint]

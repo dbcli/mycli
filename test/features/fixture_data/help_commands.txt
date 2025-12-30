@@ -19,6 +19,7 @@
 | help           | \?                         | Show this help.                                            |
 | nopager        | \n                         | Disable pager, print to stdout.                            |
 | notee          | notee                      | Stop writing results to an output file.                    |
+| nowarnings     | \w                         | Disable automatic warnings display.                        |
 | pager          | \P [command]               | Set PAGER. Print the query results via PAGER.              |
 | prompt         | \R                         | Change prompt format.                                      |
 | quit           | \q                         | Quit.                                                      |
@@ -30,5 +31,6 @@
 | tableformat    | \T                         | Change the table format used to output results.            |
 | tee            | tee [-o] filename          | Append all results to an output file (overwrite using -o). |
 | use            | \u                         | Change to a new database.                                  |
+| warnings       | \W                         | Enable automatic warnings display.                         |
 | watch          | watch [seconds] [-c] query | Executes the query every [seconds] seconds (by default 5). |
 +----------------+----------------------------+------------------------------------------------------------+

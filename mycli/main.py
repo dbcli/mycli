@@ -37,8 +37,8 @@ from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from prompt_toolkit.layout.processors import ConditionalProcessor, HighlightMatchingBracketProcessor
 from prompt_toolkit.lexers import PygmentsLexer
 from prompt_toolkit.shortcuts import CompleteStyle, PromptSession
-from pymysql import OperationalError, err
-from pymysql.constants.ER import HANDSHAKE_ERROR
+import pymysql
+from pymysql.constants.ER import ERROR_CODE_ACCESS_DENIED, HANDSHAKE_ERROR
 from pymysql.cursors import Cursor
 import sqlglot
 import sqlparse
@@ -214,7 +214,7 @@ class MyCli:
     def register_special_commands(self) -> None:
         special.register_special_command(self.change_db, "use", "\\u", "Change to a new database.", aliases=["\\u"])
         special.register_special_command(
-            self.change_db,
+            self.manual_reconnect,
             "connect",
             "\\r",
             "Reconnect to the database. Optional database argument.",
@@ -261,6 +261,18 @@ class MyCli:
             self.change_prompt_format, "prompt", "\\R", "Change prompt format.", aliases=["\\R"], case_sensitive=True
         )
 
+    def manual_reconnect(self, arg: str = "", **_) -> Generator[tuple, None, None]:
+        """
+        Interactive method to use for the \r command, so that the utility method
+        may be cleanly used elsewhere.
+        """
+        if not self.reconnect(database=arg):
+            yield (None, None, None, "Not connected")
+        elif not arg or arg == '``':
+            yield (None, None, None, None)
+        else:
+            yield self.change_db(arg).send(None)
+
     def enable_show_warnings(self, **_) -> Generator[tuple, None, None]:
         self.show_warnings = True
         msg = "Show warnings enabled."
@@ -301,13 +313,18 @@ class MyCli:
             return
 
         assert isinstance(self.sqlexecute, SQLExecute)
-        self.sqlexecute.change_db(arg)
+
+        if self.sqlexecute.dbname == arg:
+            msg = f'You are already connected to database "{self.sqlexecute.dbname}" as user "{self.sqlexecute.user}"'
+        else:
+            self.sqlexecute.change_db(arg)
+            msg = f'You are now connected to database "{self.sqlexecute.dbname}" as user "{self.sqlexecute.user}"'
 
         yield (
             None,
             None,
             None,
-            f'You are now connected to database "{self.sqlexecute.dbname}" as user "{self.sqlexecute.user}"',
+            msg,
         )
 
     def execute_from_file(self, arg: str, **_) -> Iterable[tuple]:
@@ -526,7 +543,7 @@ class MyCli:
             }
             try:
                 self.sqlexecute = SQLExecute(**conn_config)
-            except OperationalError as e:
+            except pymysql.OperationalError as e:
                 if e.args[0] == ERROR_CODE_ACCESS_DENIED:
                     if password_from_file is not None:
                         conn_config["password"] = password_from_file
@@ -547,7 +564,7 @@ class MyCli:
                 self.echo(f"Connecting to socket {socket}, owned by user {socket_owner}", err=True)
                 try:
                     _connect()
-                except OperationalError as e:
+                except pymysql.OperationalError as e:
                     # These are "Can't open socket" and 2x "Can't connect"
                     if [code for code in (2001, 2002, 2003) if code == e.args[0]]:
                         self.logger.debug("Database connection failed: %r.", e)
@@ -900,19 +917,12 @@ class MyCli:
                 output_res(res, start)
                 special.unset_once_if_written(self.post_redirect_command)
                 special.flush_pipe_once_if_written(self.post_redirect_command)
-            except err.InterfaceError:
-                logger.debug("Attempting to reconnect.")
-                self.echo("Reconnecting...", fg="yellow")
-                try:
-                    sqlexecute.connect()
-                    logger.debug("Reconnected successfully.")
-                    one_iteration(text)
-                    return  # OK to just return, cuz the recursion call runs to the end.
-                except OperationalError as e2:
-                    logger.debug("Reconnect failed. e: %r", e2)
-                    self.echo(str(e2), err=True, fg="red")
-                    # If reconnection failed, don't proceed further.
+            except pymysql.err.InterfaceError:
+                # attempt to reconnect
+                if not self.reconnect():
                     return
+                one_iteration(text)
+                return  # OK to just return, cuz the recursion call runs to the end.
             except EOFError as e:
                 raise e
             except KeyboardInterrupt:
@@ -943,21 +953,14 @@ class MyCli:
                     self.echo("Did not get a connection id, skip cancelling query", err=True, fg="red")
             except NotImplementedError:
                 self.echo("Not Yet Implemented.", fg="yellow")
-            except OperationalError as e1:
+            except pymysql.OperationalError as e1:
                 logger.debug("Exception: %r", e1)
                 if e1.args[0] in (2003, 2006, 2013):
-                    logger.debug("Attempting to reconnect.")
-                    self.echo("Reconnecting...", fg="yellow")
-                    try:
-                        sqlexecute.connect()
-                        logger.debug("Reconnected successfully.")
-                        one_iteration(text)
-                        return  # OK to just return, cuz the recursion call runs to the end.
-                    except OperationalError as e2:
-                        logger.debug("Reconnect failed. e: %r", e2)
-                        self.echo(str(e2), err=True, fg="red")
-                        # If reconnection failed, don't proceed further.
+                    # attempt to reconnect
+                    if not self.reconnect():
                         return
+                    one_iteration(text)
+                    return  # OK to just return, cuz the recursion call runs to the end.
                 else:
                     logger.error("sql: %r, error: %r", text, e1)
                     logger.error("traceback: %r", traceback.format_exc())
@@ -1028,6 +1031,58 @@ class MyCli:
             special.close_tee()
             if not self.less_chatty:
                 self.echo("Goodbye!")
+
+    def reconnect(self, database: str = "") -> bool:
+        """
+        Attempt to reconnect to the server. Return True if successful,
+        False if unsuccessful.
+
+        The "database" argument is used only to improve messages.
+        """
+        assert self.sqlexecute is not None
+        assert self.sqlexecute.conn is not None
+
+        # First pass with ping(reconnect=False) and minimal feedback levels.  This definitely
+        # works as expected, and is a good idea especially when "connect" was used as a
+        # synonym for "use".
+        try:
+            self.sqlexecute.conn.ping(reconnect=False)
+            if not database:
+                self.echo("Already connected.", fg="yellow")
+            return True
+        except pymysql.err.Error:
+            pass
+
+        # Second pass with ping(reconnect=True).  It is not demonstrated that this pass ever
+        # gives the benefit it is looking for, _ie_ preserves session state.  We need to test
+        # this with connection pooling.
+        try:
+            old_connection_id = self.sqlexecute.connection_id
+            self.logger.debug("Attempting to reconnect.")
+            self.echo("Reconnecting...", fg="yellow")
+            self.sqlexecute.conn.ping(reconnect=True)
+            self.logger.debug("Reconnected successfully.")
+            self.echo("Reconnected successfully.", fg="yellow")
+            self.sqlexecute.reset_connection_id()
+            if old_connection_id != self.sqlexecute.connection_id:
+                self.echo("Any session state was reset.", fg="red")
+            return True
+        except pymysql.err.Error:
+            pass
+
+        # Third pass with sqlexecute.connect() should always work, but always resets session state.
+        try:
+            self.logger.debug("Creating new connection")
+            self.echo("Creating new connection...", fg="yellow")
+            self.sqlexecute.connect()
+            self.logger.debug("New connection created successfully.")
+            self.echo("New connection created successfully.", fg="yellow")
+            self.echo("Any session state was reset.", fg="red")
+            return True
+        except pymysql.OperationalError as e:
+            self.logger.debug("Reconnect failed. e: %r", e)
+            self.echo(str(e), err=True, fg="red")
+            return False
 
     def log_output(self, output: str) -> None:
         """Log the output in the audit log, if it's enabled."""
