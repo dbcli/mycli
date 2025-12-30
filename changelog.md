@@ -16,6 +16,7 @@ Bug Fixes
 Internal
 --------
 * Refine documentation for Windows.
+* Target Python 3.10 for linting.
 
 
 1.42.0 (2025/12/20)
