@@ -17,6 +17,7 @@ Internal
 --------
 * Refine documentation for Windows.
 * Target Python 3.10 for linting.
+* Use fully-qualified pymysql exception classes.
 
 
 1.42.0 (2025/12/20)
