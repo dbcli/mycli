@@ -38,7 +38,7 @@ from prompt_toolkit.layout.processors import ConditionalProcessor, HighlightMatc
 from prompt_toolkit.lexers import PygmentsLexer
 from prompt_toolkit.shortcuts import CompleteStyle, PromptSession
 import pymysql
-from pymysql.constants.ER import ERROR_CODE_ACCESS_DENIED, HANDSHAKE_ERROR
+from pymysql.constants.ER import HANDSHAKE_ERROR
 from pymysql.cursors import Cursor
 import sqlglot
 import sqlparse
@@ -154,6 +154,14 @@ class MyCli:
         self.destructive_warning = c_dest_warning if warn is None else warn
         self.login_path_as_host = c["main"].as_bool("login_path_as_host")
         self.post_redirect_command = c['main'].get('post_redirect_command')
+
+        # set ssl_mode if a valid option is provided in a config file, otherwise None
+        ssl_mode = c["ssl"].get("ssl_mode", None)
+        if ssl_mode not in ("auto", "on", "off", None):
+            self.echo(f"Invalid config option provided for ssl_mode ({ssl_mode}); ignoring.", err=True, fg="red")
+            self.ssl_mode = None
+        else:
+            self.ssl_mode = ssl_mode
 
         # read from cli argument or user config file
         self.auto_vertical_output = auto_vertical_output or c["main"].as_bool("auto_vertical_output")
@@ -524,37 +532,67 @@ class MyCli:
         # Connect to the database.
 
         def _connect() -> None:
-            conn_config = {
-                "database": database,
-                "user": user,
-                "password": passwd,
-                "host": host,
-                "port": int_port,
-                "socket": socket,
-                "charset": charset,
-                "local_infile": use_local_infile,
-                "ssl": ssl_config_or_none,
-                "ssh_user": ssh_user,
-                "ssh_host": ssh_host,
-                "ssh_port": int(ssh_port) if ssh_port else None,
-                "ssh_password": ssh_password,
-                "ssh_key_filename": ssh_key_filename,
-                "init_command": init_command,
-            }
             try:
-                self.sqlexecute = SQLExecute(**conn_config)
+                self.sqlexecute = SQLExecute(
+                    database,
+                    user,
+                    passwd,
+                    host,
+                    int_port,
+                    socket,
+                    charset,
+                    use_local_infile,
+                    ssl_config_or_none,
+                    ssh_user,
+                    ssh_host,
+                    int(ssh_port) if ssh_port else None,
+                    ssh_password,
+                    ssh_key_filename,
+                    init_command,
+                )
             except pymysql.OperationalError as e:
                 if e.args[0] == ERROR_CODE_ACCESS_DENIED:
                     if password_from_file is not None:
-                        conn_config["password"] = password_from_file
+                        new_passwd = password_from_file
                     else:
-                        conn_config["password"] = click.prompt(
+                        new_passwd = click.prompt(
                             f"Password for {user}", hide_input=True, show_default=False, default='', type=str, err=True
                         )
-                    self.sqlexecute = SQLExecute(**conn_config)
-                elif e.args[0] == HANDSHAKE_ERROR:
-                    conn_config["ssl"] = None
-                    self.sqlexecute = SQLExecute(**conn_config)
+                    self.sqlexecute = SQLExecute(
+                        database,
+                        user,
+                        new_passwd,
+                        host,
+                        int_port,
+                        socket,
+                        charset,
+                        use_local_infile,
+                        ssl_config_or_none,
+                        ssh_user,
+                        ssh_host,
+                        int(ssh_port) if ssh_port else None,
+                        ssh_password,
+                        ssh_key_filename,
+                        init_command,
+                    )
+                elif e.args[0] == HANDSHAKE_ERROR and ssl is not None and ssl.get("mode", None) == "auto":
+                    self.sqlexecute = SQLExecute(
+                        database,
+                        user,
+                        passwd,
+                        host,
+                        int_port,
+                        socket,
+                        charset,
+                        use_local_infile,
+                        None,
+                        ssh_user,
+                        ssh_host,
+                        int(ssh_port) if ssh_port else None,
+                        ssh_password,
+                        ssh_key_filename,
+                        init_command,
+                    )
                 else:
                     raise e
 
@@ -1387,6 +1425,7 @@ class MyCli:
 @click.option("--ssh-key-filename", help="Private key filename (identify file) for the ssh connection.")
 @click.option("--ssh-config-path", help="Path to ssh configuration.", default=os.path.expanduser("~") + "/.ssh/config")
 @click.option("--ssh-config-host", help="Host to connect to ssh server reading from ssh configuration.")
+@click.option("--ssl-mode", "ssl_mode", default="auto", help="Set desired SSL behavior. auto=preferred, on=required, off=off.", type=str)
 @click.option(
     "--ssl/--no-ssl", "ssl_enable", is_flag=True, default=True, help="Enable SSL for connection (automatically enabled with other flags)."
 )
@@ -1455,6 +1494,7 @@ def cli(
     auto_vertical_output: bool,
     show_warnings: bool,
     local_infile: bool,
+    ssl_mode: str | None,
     ssl_enable: bool,
     ssl_ca: str | None,
     ssl_capath: str | None,
@@ -1597,19 +1637,29 @@ def cli(
             ssl_verify_server_cert = ssl_verify_server_cert or (params[0].lower() == 'true')
             ssl_enable = True
 
-    ssl = {
-        "enable": ssl_enable,
-        "ca": ssl_ca and os.path.expanduser(ssl_ca),
-        "cert": ssl_cert and os.path.expanduser(ssl_cert),
-        "key": ssl_key and os.path.expanduser(ssl_key),
-        "capath": ssl_capath,
-        "cipher": ssl_cipher,
-        "tls_version": tls_version,
-        "check_hostname": ssl_verify_server_cert,
-    }
+    if ssl_mode not in ("auto", "on", "off"):
+        click.secho(f"Invalid option provided for --ssl-mode: {ssl_mode}. See --help for valid options.", err=True, fg="red")
+        sys.exit(1)
 
-    # remove empty ssl options
-    ssl = {k: v for k, v in ssl.items() if v is not None}
+    ssl_mode = ssl_mode or mycli.ssl_mode  # cli option or config option
+
+    if ssl_mode in ("auto", "on"):
+        ssl = {
+            "mode": ssl_mode,
+            "enable": ssl_enable,
+            "ca": ssl_ca and os.path.expanduser(ssl_ca),
+            "cert": ssl_cert and os.path.expanduser(ssl_cert),
+            "key": ssl_key and os.path.expanduser(ssl_key),
+            "capath": ssl_capath,
+            "cipher": ssl_cipher,
+            "tls_version": tls_version,
+            "check_hostname": ssl_verify_server_cert,
+        }
+
+        # remove empty ssl options
+        ssl = {k: v for k, v in ssl.items() if v is not None}
+    else:
+        ssl = None
 
     if ssh_config_host:
         ssh_config = read_ssh_config(ssh_config_path).lookup(ssh_config_host)
