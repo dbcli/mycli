@@ -1,7 +1,5 @@
 # type: ignore
 
-import ssl
-
 import pymysql
 
 
