@@ -4,6 +4,7 @@
 
 from textwrap import dedent
 
+from cli_helpers.utils import strip_ansi
 from pymysql.constants import FIELD_TYPE
 import pytest
 
@@ -16,6 +17,15 @@ def mycli():
     cli = MyCli()
     cli.connect(None, USER, PASSWORD, HOST, PORT, None, init_command=None)
     return cli
+
+
+def test_null_string_config_override(tmp_path):
+    config_path = tmp_path / "myclirc"
+    config_path.write_text("[main]\nnull_string = 'NULLISH'\n", encoding="utf8")
+    cli = MyCli(myclirc=str(config_path))
+    cli.output_style = None
+    output = list(cli.format_output(None, [(None, 1)], ["value", "number"], False, False))
+    assert any("NULLISH" in strip_ansi(line) for line in output)
 
 
 @dbtest

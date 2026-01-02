@@ -44,6 +44,9 @@ beep_after_seconds = 0
 # Recommended: ascii
 table_format = ascii
 
+# The string used in place of a NULL value.
+null_string = "<null>"
+
 # Redirected otuput format
 # Recommended: csv.
 redirect_format = csv

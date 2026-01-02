@@ -148,6 +148,7 @@ class MyCli:
         self.less_chatty = c["main"].as_bool("less_chatty")
         self.cli_style = c["colors"]
         self.output_style = style_factory_output(self.syntax_style, self.cli_style)
+        self.null_string = c["main"].get("null_string", "<null>")
         self.wider_completion_menu = c["main"].as_bool("wider_completion_menu")
         c_dest_warning = c["main"].as_bool("destructive_warning")
         self.destructive_warning = c_dest_warning if warn is None else warn
@@ -1320,7 +1321,13 @@ class MyCli:
         expanded = expanded or use_formatter.format_name == "vertical"
         output: itertools.chain[str] = itertools.chain()
 
-        output_kwargs = {"dialect": "unix", "disable_numparse": True, "preserve_whitespace": True, "style": self.output_style}
+        output_kwargs = {
+            "dialect": "unix",
+            "disable_numparse": True,
+            "preserve_whitespace": True,
+            "style": self.output_style,
+            "missing_value": self.null_string,
+        }
 
         if use_formatter.format_name not in sql_format.supported_formats:
             output_kwargs["preprocessors"] = (preprocessors.align_decimals,)
