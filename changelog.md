@@ -4,7 +4,8 @@ Upcoming (TBD)
 Features
 --------
 * Update query processing functions to allow automatic show_warnings to work for more code paths like DDL.
-* Update the default SSL value to connect securely by default. Add a --no-ssl option to disable it.
+* Add new ssl_mode config / --ssl-mode CLI option to control SSL connection behavior. This setting will supercede the
+  existing --ssl/--no-ssl CLI options, which will be deprecated in a later release.
 * Rework reconnect logic to actually reconnect or create a new connection instead of simply changing the database (#746).
 
 

@@ -1,6 +1,7 @@
 # type: ignore
 
 from collections import namedtuple
+import csv
 import os
 import shutil
 from tempfile import NamedTemporaryFile
@@ -36,6 +37,61 @@ CLI_ARGS = [
     default_config_file,
     "mycli_test_db",
 ]
+
+
+@dbtest
+def test_ssl_mode_on(executor, capsys):
+    runner = CliRunner()
+    ssl_mode = "on"
+    sql = "select * from performance_schema.session_status where variable_name = 'Ssl_cipher'"
+    result = runner.invoke(cli, args=CLI_ARGS + ["--csv", "--ssl-mode", ssl_mode], input=sql)
+    result_dict = next(csv.DictReader(result.stdout.split("\n")))
+    ssl_cipher = result_dict["VARIABLE_VALUE"]
+    assert ssl_cipher
+
+
+@dbtest
+def test_ssl_mode_auto(executor, capsys):
+    runner = CliRunner()
+    ssl_mode = "auto"
+    sql = "select * from performance_schema.session_status where variable_name = 'Ssl_cipher'"
+    result = runner.invoke(cli, args=CLI_ARGS + ["--csv", "--ssl-mode", ssl_mode], input=sql)
+    result_dict = next(csv.DictReader(result.stdout.split("\n")))
+    ssl_cipher = result_dict["VARIABLE_VALUE"]
+    assert ssl_cipher
+
+
+@dbtest
+def test_ssl_mode_off(executor, capsys):
+    runner = CliRunner()
+    ssl_mode = "off"
+    sql = "select * from performance_schema.session_status where variable_name = 'Ssl_cipher'"
+    result = runner.invoke(cli, args=CLI_ARGS + ["--csv", "--ssl-mode", ssl_mode], input=sql)
+    result_dict = next(csv.DictReader(result.stdout.split("\n")))
+    ssl_cipher = result_dict["VARIABLE_VALUE"]
+    assert not ssl_cipher
+
+
+@dbtest
+def test_ssl_mode_overrides_ssl(executor, capsys):
+    runner = CliRunner()
+    ssl_mode = "off"
+    sql = "select * from performance_schema.session_status where variable_name = 'Ssl_cipher'"
+    result = runner.invoke(cli, args=CLI_ARGS + ["--csv", "--ssl-mode", ssl_mode, "--ssl"], input=sql)
+    result_dict = next(csv.DictReader(result.stdout.split("\n")))
+    ssl_cipher = result_dict["VARIABLE_VALUE"]
+    assert not ssl_cipher
+
+
+@dbtest
+def test_ssl_mode_overrides_no_ssl(executor, capsys):
+    runner = CliRunner()
+    ssl_mode = "on"
+    sql = "select * from performance_schema.session_status where variable_name = 'Ssl_cipher'"
+    result = runner.invoke(cli, args=CLI_ARGS + ["--csv", "--ssl-mode", ssl_mode, "--no-ssl"], input=sql)
+    result_dict = next(csv.DictReader(result.stdout.split("\n")))
+    ssl_cipher = result_dict["VARIABLE_VALUE"]
+    assert ssl_cipher
 
 
 @dbtest
@@ -509,6 +565,7 @@ def test_dsn(monkeypatch):
             self.destructive_warning = False
             self.main_formatter = Formatter()
             self.redirect_formatter = Formatter()
+            self.ssl_mode = "auto"
 
         def connect(self, **args):
             MockMyCli.connect_args = args
@@ -673,6 +730,7 @@ def test_ssh_config(monkeypatch):
             self.destructive_warning = False
             self.main_formatter = Formatter()
             self.redirect_formatter = Formatter()
+            self.ssl_mode = "auto"
 
         def connect(self, **args):
             MockMyCli.connect_args = args
