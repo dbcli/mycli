@@ -23,6 +23,7 @@ from time import time
 from urllib.parse import parse_qs, unquote, urlparse
 
 from cli_helpers.tabular_output import TabularOutputFormatter, preprocessors
+from cli_helpers.tabular_output.output_formatter import MISSING_VALUE as DEFAULT_MISSING_VALUE
 from cli_helpers.utils import strip_ansi
 import click
 from configobj import ConfigObj
@@ -153,6 +154,7 @@ class MyCli:
         self.destructive_warning = c_dest_warning if warn is None else warn
         self.login_path_as_host = c["main"].as_bool("login_path_as_host")
         self.post_redirect_command = c['main'].get('post_redirect_command')
+        self.null_string = c['main'].get('null_string')
 
         # read from cli argument or user config file
         self.auto_vertical_output = auto_vertical_output or c["main"].as_bool("auto_vertical_output")
@@ -791,6 +793,7 @@ class MyCli:
                     headers,
                     special.is_expanded_output(),
                     special.is_redirected(),
+                    self.null_string,
                     max_width,
                 )
 
@@ -823,6 +826,7 @@ class MyCli:
                             headers,
                             special.is_expanded_output(),
                             special.is_redirected(),
+                            self.null_string,
                             max_width,
                         )
                         self.echo("")
@@ -1285,6 +1289,7 @@ class MyCli:
                 headers,
                 special.is_expanded_output(),
                 special.is_redirected(),
+                self.null_string,
             )
             for line in output:
                 click.echo(line, nl=new_line)
@@ -1299,6 +1304,7 @@ class MyCli:
                         headers,
                         special.is_expanded_output(),
                         special.is_redirected(),
+                        self.null_string,
                     )
                     for line in output:
                         click.echo(line, nl=new_line)
@@ -1310,6 +1316,7 @@ class MyCli:
         headers: list[str] | None,
         expanded: bool = False,
         is_redirected: bool = False,
+        null_string: str | None = None,
         max_width: int | None = None,
     ) -> itertools.chain[str]:
         if is_redirected:
@@ -1320,7 +1327,16 @@ class MyCli:
         expanded = expanded or use_formatter.format_name == "vertical"
         output: itertools.chain[str] = itertools.chain()
 
-        output_kwargs = {"dialect": "unix", "disable_numparse": True, "preserve_whitespace": True, "style": self.output_style}
+        output_kwargs = {
+            "dialect": "unix",
+            "disable_numparse": True,
+            "preserve_whitespace": True,
+            "style": self.output_style,
+        }
+        default_kwargs = use_formatter._output_formats[use_formatter.format_name].formatter_args
+
+        if null_string is not None and default_kwargs.get('missing_value') == DEFAULT_MISSING_VALUE:
+            output_kwargs['missing_value'] = null_string
 
         if use_formatter.format_name not in sql_format.supported_formats:
             output_kwargs["preprocessors"] = (preprocessors.align_decimals,)
