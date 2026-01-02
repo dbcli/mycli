@@ -5,6 +5,13 @@
 # after executing a SQL statement when applicable.
 show_warnings = False
 
+# Sets the desired behavior for handling secure connections to the database server.
+# Possible values:
+# auto = SSL is preferred. Will attempt to connect via SSL, but will fallback to cleartext as needed.
+# on = SSL is required. Will attempt to connect via SSL and will fail if a secure connection is not established.
+# off = do not use SSL. Will fail if the server requires a secure connection.
+ssl_mode = auto
+
 # Enables context sensitive auto-completion. If this is disabled the all
 # possible completions will be listed.
 smart_completion = True
@@ -191,11 +198,3 @@ global_limit = set sql_select_limit=9999
 [alias_dsn.init-commands]
 # Define one or more SQL statements per alias (semicolon-separated).
 # example_dsn = "SET sql_select_limit=1000; SET time_zone='+00:00'"
-
-[ssl]
-# Sets the desired behavior for handling secure connections to the database server.
-# Possible values:
-# auto = SSL is preferred. Will attempt to connect via SSL, but will fallback to cleartext as needed.
-# on = SSL is required. Will attempt to connect via SSL and will fail if a secure connection is not established.
-# off = do not use SSL. Will fail if the server requires a secure connection.
-ssl_mode = auto

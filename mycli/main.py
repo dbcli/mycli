@@ -156,7 +156,7 @@ class MyCli:
         self.post_redirect_command = c['main'].get('post_redirect_command')
 
         # set ssl_mode if a valid option is provided in a config file, otherwise None
-        ssl_mode = c["ssl"].get("ssl_mode", None)
+        ssl_mode = c["main"].get("ssl_mode", None)
         if ssl_mode not in ("auto", "on", "off", None):
             self.echo(f"Invalid config option provided for ssl_mode ({ssl_mode}); ignoring.", err=True, fg="red")
             self.ssl_mode = None
@@ -1545,7 +1545,7 @@ def cli(
 
     if ssl_enable is not None:
         click.secho(
-            "Warning: The --ssl/--no-ssl CLI options will be deprecated in a future release. "
+            "Warning: The --ssl/--no-ssl CLI options are deprecated and will be removed in a future release. "
             "Please use the ssl_mode config or --ssl-mode CLI options instead.",
             err=True,
             fg="yellow",
