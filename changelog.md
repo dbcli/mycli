@@ -4,6 +4,8 @@ Upcoming (TBD)
 Features
 --------
 * Update query processing functions to allow automatic show_warnings to work for more code paths like DDL.
+* Add new ssl_mode config / --ssl-mode CLI option to control SSL connection behavior. This setting will supercede the
+  existing --ssl/--no-ssl CLI options, which are deprecated and will be removed in a future release.
 * Rework reconnect logic to actually reconnect or create a new connection instead of simply changing the database (#746).
 * Configurable string for missing values (NULLs) in outputs.
 

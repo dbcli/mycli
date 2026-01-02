@@ -39,6 +39,7 @@ from prompt_toolkit.layout.processors import ConditionalProcessor, HighlightMatc
 from prompt_toolkit.lexers import PygmentsLexer
 from prompt_toolkit.shortcuts import CompleteStyle, PromptSession
 import pymysql
+from pymysql.constants.ER import HANDSHAKE_ERROR
 from pymysql.cursors import Cursor
 import sqlglot
 import sqlparse
@@ -155,6 +156,14 @@ class MyCli:
         self.login_path_as_host = c["main"].as_bool("login_path_as_host")
         self.post_redirect_command = c['main'].get('post_redirect_command')
         self.null_string = c['main'].get('null_string')
+
+        # set ssl_mode if a valid option is provided in a config file, otherwise None
+        ssl_mode = c["main"].get("ssl_mode", None)
+        if ssl_mode not in ("auto", "on", "off", None):
+            self.echo(f"Invalid config option provided for ssl_mode ({ssl_mode}); ignoring.", err=True, fg="red")
+            self.ssl_mode = None
+        else:
+            self.ssl_mode = ssl_mode
 
         # read from cli argument or user config file
         self.auto_vertical_output = auto_vertical_output or c["main"].as_bool("auto_vertical_output")
@@ -561,6 +570,24 @@ class MyCli:
                         charset,
                         use_local_infile,
                         ssl_config_or_none,
+                        ssh_user,
+                        ssh_host,
+                        int(ssh_port) if ssh_port else None,
+                        ssh_password,
+                        ssh_key_filename,
+                        init_command,
+                    )
+                elif e.args[0] == HANDSHAKE_ERROR and ssl is not None and ssl.get("mode", None) == "auto":
+                    self.sqlexecute = SQLExecute(
+                        database,
+                        user,
+                        passwd,
+                        host,
+                        int_port,
+                        socket,
+                        charset,
+                        use_local_infile,
+                        None,
                         ssh_user,
                         ssh_host,
                         int(ssh_port) if ssh_port else None,
@@ -1414,7 +1441,13 @@ class MyCli:
 @click.option("--ssh-key-filename", help="Private key filename (identify file) for the ssh connection.")
 @click.option("--ssh-config-path", help="Path to ssh configuration.", default=os.path.expanduser("~") + "/.ssh/config")
 @click.option("--ssh-config-host", help="Host to connect to ssh server reading from ssh configuration.")
-@click.option("--ssl", "ssl_enable", is_flag=True, help="Enable SSL for connection (automatically enabled with other flags).")
+@click.option(
+    "--ssl-mode",
+    "ssl_mode",
+    help="Set desired SSL behavior. auto=preferred, on=required, off=off.",
+    type=click.Choice(["auto", "on", "off"]),
+)
+@click.option("--ssl/--no-ssl", "ssl_enable", default=None, help="Enable SSL for connection (automatically enabled with other flags).")
 @click.option("--ssl-ca", help="CA file in PEM format.", type=click.Path(exists=True))
 @click.option("--ssl-capath", help="CA directory.")
 @click.option("--ssl-cert", help="X509 cert in PEM format.", type=click.Path(exists=True))
@@ -1430,8 +1463,6 @@ class MyCli:
     is_flag=True,
     help=("""Verify server's "Common Name" in its cert against hostname used when connecting. This option is disabled by default."""),
 )
-# as of 2016-02-15 revocation list is not supported by underling PyMySQL
-# library (--ssl-crl and --ssl-crlpath options in vanilla mysql client)
 @click.version_option(__version__, "-V", "--version", help="Output mycli's version.")
 @click.option("-v", "--verbose", is_flag=True, help="Verbose output.")
 @click.option("-D", "--database", "dbname", help="Database to use.")
@@ -1480,6 +1511,7 @@ def cli(
     auto_vertical_output: bool,
     show_warnings: bool,
     local_infile: bool,
+    ssl_mode: str | None,
     ssl_enable: bool,
     ssl_ca: str | None,
     ssl_capath: str | None,
@@ -1526,6 +1558,15 @@ def cli(
         warn=warn,
         myclirc=myclirc,
     )
+
+    if ssl_enable is not None:
+        click.secho(
+            "Warning: The --ssl/--no-ssl CLI options are deprecated and will be removed in a future release. "
+            "Please use the ssl_mode config or --ssl-mode CLI options instead.",
+            err=True,
+            fg="yellow",
+        )
+
     if list_dsn:
         try:
             alias_dsn = mycli.config["alias_dsn"]
@@ -1622,19 +1663,36 @@ def cli(
             ssl_verify_server_cert = ssl_verify_server_cert or (params[0].lower() == 'true')
             ssl_enable = True
 
-    ssl = {
-        "enable": ssl_enable,
-        "ca": ssl_ca and os.path.expanduser(ssl_ca),
-        "cert": ssl_cert and os.path.expanduser(ssl_cert),
-        "key": ssl_key and os.path.expanduser(ssl_key),
-        "capath": ssl_capath,
-        "cipher": ssl_cipher,
-        "tls_version": tls_version,
-        "check_hostname": ssl_verify_server_cert,
-    }
+    ssl_mode = ssl_mode or mycli.ssl_mode  # cli option or config option
 
-    # remove empty ssl options
-    ssl = {k: v for k, v in ssl.items() if v is not None}
+    # if there is a mismatch between the ssl_mode value and other sources of ssl config, show a warning
+    # specifically using "is False" to not pickup the case where ssl_enable is None (not set by the user)
+    if ssl_enable and ssl_mode == "off" or ssl_enable is False and ssl_mode in ("auto", "on"):
+        click.secho(
+            f"Warning: The current ssl_mode value of '{ssl_mode}' is overriding the value provided by "
+            f"either the --ssl/--no-ssl CLI options or a DSN URI parameter (ssl={ssl_enable}).",
+            err=True,
+            fg="yellow",
+        )
+
+    # configure SSL if ssl_mode is auto/on or if
+    # ssl_enable = True (from --ssl or a DSN URI) and ssl_mode is None
+    if ssl_mode in ("auto", "on") or (ssl_enable and ssl_mode is None):
+        ssl = {
+            "mode": ssl_mode,
+            "enable": ssl_enable,
+            "ca": ssl_ca and os.path.expanduser(ssl_ca),
+            "cert": ssl_cert and os.path.expanduser(ssl_cert),
+            "key": ssl_key and os.path.expanduser(ssl_key),
+            "capath": ssl_capath,
+            "cipher": ssl_cipher,
+            "tls_version": tls_version,
+            "check_hostname": ssl_verify_server_cert,
+        }
+        # remove empty ssl options
+        ssl = {k: v for k, v in ssl.items() if v is not None}
+    else:
+        ssl = None
 
     if ssh_config_host:
         ssh_config = read_ssh_config(ssh_config_path).lookup(ssh_config_host)

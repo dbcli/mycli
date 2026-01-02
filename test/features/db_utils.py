@@ -40,7 +40,13 @@ def create_cn(hostname, port, password, username, dbname):
 
     """
     cn = pymysql.connect(
-        host=hostname, port=port, user=username, password=password, db=dbname, charset="utf8mb4", cursorclass=pymysql.cursors.DictCursor
+        host=hostname,
+        port=port,
+        user=username,
+        password=password,
+        db=dbname,
+        charset="utf8mb4",
+        cursorclass=pymysql.cursors.DictCursor,
     )
 
     return cn
@@ -57,7 +63,13 @@ def drop_db(hostname="localhost", port=3306, username=None, password=None, dbnam
 
     """
     cn = pymysql.connect(
-        host=hostname, port=port, user=username, password=password, db=dbname, charset="utf8mb4", cursorclass=pymysql.cursors.DictCursor
+        host=hostname,
+        port=port,
+        user=username,
+        password=password,
+        db=dbname,
+        charset="utf8mb4",
+        cursorclass=pymysql.cursors.DictCursor,
     )
 
     with cn.cursor() as cr:
