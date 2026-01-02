@@ -5,6 +5,7 @@ Features
 --------
 * Update query processing functions to allow automatic show_warnings to work for more code paths like DDL.
 * Rework reconnect logic to actually reconnect or create a new connection instead of simply changing the database (#746).
+* Allow configuring the string used to display NULL values via myclirc (#1120)
 
 
 Bug Fixes
