@@ -50,6 +50,11 @@ table_format = ascii
 # Recommended: csv.
 redirect_format = csv
 
+# How to display the missing value (ie NULL).  Only certain table formats
+# support configuring the missing value.  CSV for example always uses the
+# empty string, and JSON formats use native nulls.
+null_string = <null>
+
 # A command to run after a successful output redirect, with {} to be replaced
 # with the escaped filename.  Mac example: echo {} | pbcopy.  Escaping is not
 # reliable/safe on Windows.

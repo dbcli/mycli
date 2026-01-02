@@ -14,7 +14,7 @@
 | \pipe_once     | \| command                 | Send next result to a subprocess.                          |
 | \timing        | \t                         | Toggle timing of commands.                                 |
 | connect        | \r                         | Reconnect to the database. Optional database argument.     |
-| delimiter      | <null>                     | Change SQL delimiter.                                      |
+| delimiter      | <nope>                     | Change SQL delimiter.                                      |
 | exit           | \q                         | Exit.                                                      |
 | help           | \?                         | Show this help.                                            |
 | nopager        | \n                         | Disable pager, print to stdout.                            |
