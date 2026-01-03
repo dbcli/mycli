@@ -1,3 +1,12 @@
+Upcoming (TBD)
+==============
+
+Features
+--------
+
+* Add enum value completions for WHERE/HAVING clauses. (#790)
+
+
 1.43.1 (2026/01/03)
 ==============
 
@@ -11,7 +20,6 @@ Bug Fixes
 
 Features
 --------
-* Add enum value completions for WHERE/HAVING comparisons.
 * Update query processing functions to allow automatic show_warnings to work for more code paths like DDL.
 * Add new ssl_mode config / --ssl-mode CLI option to control SSL connection behavior. This setting will supercede the
   existing --ssl/--no-ssl CLI options, which are deprecated and will be removed in a future release.
