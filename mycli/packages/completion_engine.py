@@ -1,5 +1,5 @@
-from typing import Any
 import re
+from typing import Any
 
 import sqlparse
 from sqlparse.sql import Comparison, Identifier, Token, Where
@@ -350,9 +350,7 @@ def suggest_based_on_last_token(
         original_text = text_before_cursor
         prev_keyword, text_before_cursor = find_prev_keyword(text_before_cursor)
         enum_suggestion = _enum_value_suggestion(original_text, full_text)
-        fallback = (
-            suggest_based_on_last_token(prev_keyword, text_before_cursor, full_text, identifier) if prev_keyword else []
-        )
+        fallback = suggest_based_on_last_token(prev_keyword, text_before_cursor, full_text, identifier) if prev_keyword else []
         if enum_suggestion and _is_where_or_having(prev_keyword):
             return [enum_suggestion] + fallback
         return fallback
