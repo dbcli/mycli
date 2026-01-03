@@ -1,3 +1,11 @@
+1.43.1 (2026/01/03)
+==============
+
+Bug Fixes
+--------
+* Prompt for password within SSL-auto retry flow.
+
+
 1.43.0 (2026/01/02)
 ==============
 
