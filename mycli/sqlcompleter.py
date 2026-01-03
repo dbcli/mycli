@@ -1016,6 +1016,17 @@ class SQLCompleter(Completer):
             metadata[self.dbname][relname].append(column)
             self.all_completions.add(column)
 
+    def extend_enum_values(self, enum_data: Iterable[tuple[str, str, list[str]]]) -> None:
+        metadata = self.dbmetadata["enum_values"]
+        if self.dbname not in metadata:
+            metadata[self.dbname] = {}
+
+        for relname, column, values in enum_data:
+            relname_escaped = self.escape_name(relname)
+            column_escaped = self.escape_name(column)
+            table_meta = metadata[self.dbname].setdefault(relname_escaped, {})
+            table_meta[column_escaped] = values
+
     def extend_functions(self, func_data: list[str] | Generator[tuple[str, str]], builtin: bool = False) -> None:
         # if 'builtin' is set this is extending the list of builtin functions
         if builtin:
@@ -1048,7 +1059,7 @@ class SQLCompleter(Completer):
         self.users: list[str] = []
         self.show_items: list[Completion] = []
         self.dbname = ""
-        self.dbmetadata: dict[str, Any] = {"tables": {}, "views": {}, "functions": {}}
+        self.dbmetadata: dict[str, Any] = {"tables": {}, "views": {}, "functions": {}, "enum_values": {}}
         self.all_completions = set(self.keywords + self.functions)
 
     @staticmethod
@@ -1217,6 +1228,15 @@ class SQLCompleter(Completer):
                     fuzzy=True,
                 )
                 completions.extend(subcommands_m)
+            elif suggestion["type"] == "enum_value":
+                enum_values = self.populate_enum_values(
+                    suggestion["tables"],
+                    suggestion["column"],
+                    suggestion.get("parent"),
+                )
+                if enum_values:
+                    quoted_values = [self._quote_sql_string(value) for value in enum_values]
+                    return list(self.find_matches(word_before_cursor, quoted_values))
 
         return completions
 
@@ -1271,6 +1291,55 @@ class SQLCompleter(Completer):
                 pass
 
         return columns
+
+    def populate_enum_values(
+        self,
+        scoped_tbls: list[tuple[str | None, str, str | None]],
+        column: str,
+        parent: str | None = None,
+    ) -> list[str]:
+        values: list[str] = []
+        meta = self.dbmetadata["enum_values"]
+        column_key = self._escape_identifier(column)
+        parent_key = self._strip_backticks(parent) if parent else None
+
+        for schema, relname, alias in scoped_tbls:
+            if parent_key and not self._matches_parent(parent_key, schema, relname, alias):
+                continue
+
+            schema = schema or self.dbname
+            table_meta = meta.get(schema, {})
+            escaped_relname = self.escape_name(relname)
+
+            for rel_key in {relname, escaped_relname}:
+                columns = table_meta.get(rel_key)
+                if columns and column_key in columns:
+                    values.extend(columns[column_key])
+
+        return list(dict.fromkeys(values))
+
+    def _escape_identifier(self, name: str) -> str:
+        return self.escape_name(self._strip_backticks(name))
+
+    @staticmethod
+    def _strip_backticks(name: str | None) -> str:
+        if name and name[0] == "`" and name[-1] == "`":
+            return name[1:-1]
+        return name or ""
+
+    @staticmethod
+    def _matches_parent(parent: str, schema: str | None, relname: str, alias: str | None) -> bool:
+        if alias and parent == alias:
+            return True
+        if parent == relname:
+            return True
+        if schema and parent == f"{schema}.{relname}":
+            return True
+        return False
+
+    @staticmethod
+    def _quote_sql_string(value: str) -> str:
+        return "'" + value.replace("'", "''") + "'"
 
     def populate_schema_objects(self, schema: str | None, obj_type: str) -> list[str]:
         """Returns list of tables or functions for a (optional) schema"""

@@ -478,7 +478,9 @@ def test_reserved_space_is_integer(monkeypatch):
         assert isinstance(mycli.get_reserved_space(), int)
 
 
-def test_list_dsn():
+def test_list_dsn(monkeypatch):
+    monkeypatch.setattr(MyCli, "system_config_files", [])
+    monkeypatch.setattr(MyCli, "pwd_config_file", os.path.join(test_dir, "does_not_exist.myclirc"))
     runner = CliRunner()
     # keep Windows from locking the file with delete=False
     with NamedTemporaryFile(mode="w", delete=False) as myclirc:

@@ -1,10 +1,61 @@
 from typing import Any
+import re
 
 import sqlparse
 from sqlparse.sql import Comparison, Identifier, Token, Where
 
 from mycli.packages.parseutils import extract_tables, find_prev_keyword, last_word
 from mycli.packages.special.main import parse_special_command
+
+_ENUM_VALUE_RE = re.compile(
+    r"(?P<lhs>(?:`[^`]+`|[\w$]+)(?:\.(?:`[^`]+`|[\w$]+))?)\s*=\s*$",
+    re.IGNORECASE,
+)
+
+
+def _enum_value_suggestion(text_before_cursor: str, full_text: str) -> dict[str, Any] | None:
+    match = _ENUM_VALUE_RE.search(text_before_cursor)
+    if not match:
+        return None
+    if _is_inside_quotes(text_before_cursor, match.start("lhs")):
+        return None
+
+    lhs = match.group("lhs")
+    if "." in lhs:
+        parent, column = lhs.split(".", 1)
+    else:
+        parent, column = None, lhs
+
+    return {
+        "type": "enum_value",
+        "tables": extract_tables(full_text),
+        "column": column,
+        "parent": parent,
+    }
+
+
+def _is_where_or_having(token: Token | None) -> bool:
+    return bool(token and token.value and token.value.lower() in ("where", "having"))
+
+
+def _is_inside_quotes(text: str, pos: int) -> bool:
+    in_single = False
+    in_double = False
+    escaped = False
+
+    for ch in text[:pos]:
+        if escaped:
+            escaped = False
+            continue
+        if ch == "\\":
+            escaped = True
+            continue
+        if ch == "'" and not in_double:
+            in_single = not in_single
+        elif ch == '"' and not in_single:
+            in_double = not in_double
+
+    return in_single or in_double
 
 
 def suggest_type(full_text: str, text_before_cursor: str) -> list[dict[str, Any]]:
@@ -133,8 +184,13 @@ def suggest_based_on_last_token(
         # list. This means that token.value may be something like
         # 'where foo > 5 and '. We need to look "inside" token.tokens to handle
         # suggestions in complicated where clauses correctly
+        original_text = text_before_cursor
         prev_keyword, text_before_cursor = find_prev_keyword(text_before_cursor)
-        return suggest_based_on_last_token(prev_keyword, text_before_cursor, full_text, identifier)
+        enum_suggestion = _enum_value_suggestion(original_text, full_text)
+        fallback = suggest_based_on_last_token(prev_keyword, text_before_cursor, full_text, identifier)
+        if enum_suggestion and _is_where_or_having(prev_keyword):
+            return [enum_suggestion] + fallback
+        return fallback
     elif token is None:
         return [{"type": "keyword"}]
     else:
@@ -291,11 +347,15 @@ def suggest_based_on_last_token(
     elif token_v == "tableformat":
         return [{"type": "table_format"}]
     elif token_v.endswith(",") or is_operand(token_v) or token_v in ["=", "and", "or"]:
+        original_text = text_before_cursor
         prev_keyword, text_before_cursor = find_prev_keyword(text_before_cursor)
-        if prev_keyword:
-            return suggest_based_on_last_token(prev_keyword, text_before_cursor, full_text, identifier)
-        else:
-            return []
+        enum_suggestion = _enum_value_suggestion(original_text, full_text)
+        fallback = (
+            suggest_based_on_last_token(prev_keyword, text_before_cursor, full_text, identifier) if prev_keyword else []
+        )
+        if enum_suggestion and _is_where_or_having(prev_keyword):
+            return [enum_suggestion] + fallback
+        return fallback
     else:
         return [{"type": "keyword"}]
 
