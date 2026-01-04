@@ -113,8 +113,8 @@ class SQLExecute:
         if not column_type or not column_type.lower().startswith("enum("):
             return []
 
-        values = []
-        current = []
+        values: list[str] = []
+        current: list[str] = []
         in_quote = False
         i = column_type.find("(") + 1
 
