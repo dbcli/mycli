@@ -1,3 +1,12 @@
+Upcoming (TBD)
+==============
+
+Features
+--------
+
+* Add enum value completions for WHERE/HAVING clauses. (#790)
+
+
 1.43.1 (2026/01/03)
 ==============
 

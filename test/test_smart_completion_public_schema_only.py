@@ -32,6 +32,7 @@ def completer():
     comp.extend_schemata("test")
     comp.extend_relations(tables, kind="tables")
     comp.extend_columns(columns, kind="tables")
+    comp.extend_enum_values([("orders", "status", ["pending", "shipped"])])
     comp.extend_special_commands(special.COMMANDS)
 
     return comp
@@ -81,6 +82,16 @@ def test_table_completion(completer, complete_event):
         Completion(text="orders", start_position=0),
         Completion(text="`select`", start_position=0),
         Completion(text="`réveillé`", start_position=0),
+    ]
+
+
+def test_enum_value_completion(completer, complete_event):
+    text = "SELECT * FROM orders WHERE status = "
+    position = len(text)
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    assert result == [
+        Completion(text="'pending'", start_position=0),
+        Completion(text="'shipped'", start_position=0),
     ]
 
 
