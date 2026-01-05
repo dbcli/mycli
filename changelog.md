@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Bug Fixes
+--------
+* Update watch query output to display the correct execution time on all iterations (#763).
+
+
 1.43.0 (2026/01/02)
 ==============
 

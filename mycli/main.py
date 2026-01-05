@@ -797,6 +797,13 @@ class MyCli:
                 logger.debug("rows: %r", cur)
                 logger.debug("status: %r", status)
                 threshold = 1000
+                # If this is a watch query, offset the start time on the 2nd+ iteration
+                # to account for the sleep duration and reset the title back to the query
+                if title is not None and title[0] == "watch":
+                    watch_seconds = float(title[1])
+                    if (time() - start) >= watch_seconds:
+                        start += watch_seconds
+                    title = title[2]
                 if is_select(status) and cur and cur.rowcount > threshold:
                     self.echo(
                         f"The result set has more than {threshold} rows.",
@@ -1310,6 +1317,9 @@ class MyCli:
             title, cur, headers, status = result
             self.main_formatter.query = query
             self.redirect_formatter.query = query
+            # If this is a watch query, reset the title back to the query
+            if title is not None and title[0] == "watch":
+                title = title[2]
             output = self.format_output(
                 title,
                 cur,
