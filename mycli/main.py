@@ -839,7 +839,7 @@ class MyCli:
                 # to account for the sleep duration
                 if command is not None and command["type"] == "command" and command["name"] == "watch":
                     watch_seconds = float(command["seconds"])
-                    if (time() - start) >= watch_seconds:
+                    if result_count > 0:
                         start += watch_seconds
                 if is_select(status) and cur and cur.rowcount > threshold:
                     self.echo(
