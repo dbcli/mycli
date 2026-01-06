@@ -567,7 +567,6 @@ def watch_query(arg: str, **kwargs) -> Generator[tuple, None, None]:
             for sql, title in sql_list:
                 cur.execute(sql)
                 command = {
-                    "type": "command",
                     "name": "watch",
                     "seconds": seconds,
                 }

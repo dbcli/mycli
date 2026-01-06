@@ -837,7 +837,7 @@ class MyCli:
                 threshold = 1000
                 # If this is a watch query, offset the start time on the 2nd+ iteration
                 # to account for the sleep duration
-                if command is not None and command["type"] == "command" and command["name"] == "watch":
+                if command is not None and command["name"] == "watch":
                     watch_seconds = float(command["seconds"])
                     if result_count > 0:
                         start += watch_seconds
@@ -1353,7 +1353,14 @@ class MyCli:
         for result in results:
             # discard the optional command portion of the results
             # tuple since it is not used here currently
-            title, cur, headers, status, *_ = result
+            try:
+                title, cur, headers, status, _ = result
+            except ValueError:
+                title, cur, headers, status = result
+            except Exception as e:
+                self.echo("An unexpected error has occurred.", err=True, fg="red")
+                self.logger.error(f"Error unpacking results: {e}")
+                sys.exit(1)
             self.main_formatter.query = query
             self.redirect_formatter.query = query
             output = self.format_output(
