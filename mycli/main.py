@@ -789,21 +789,30 @@ class MyCli:
         # mutating if any one of the component statements is mutating
         mutating = False
 
-        def output_res(res: Generator[tuple], start: float) -> None:
+        def output_res(results: Generator[tuple], start: float) -> None:
             nonlocal mutating
             result_count = 0
-            for title, cur, headers, status in res:
+            for result in results:
+                # unpack the results, including the command info if present
+                try:
+                    title, cur, headers, status, command = result
+                except ValueError:
+                    title, cur, headers, status = result
+                    command = None
+                except Exception as e:
+                    self.echo("An unexpected error has occurred.", err=True, fg="red")
+                    self.logger.error(f"Error unpacking results: {e}")
+                    sys.exit(1)
                 logger.debug("headers: %r", headers)
                 logger.debug("rows: %r", cur)
                 logger.debug("status: %r", status)
                 threshold = 1000
                 # If this is a watch query, offset the start time on the 2nd+ iteration
-                # to account for the sleep duration and reset the title back to the query
-                if title is not None and title[0] == "watch":
-                    watch_seconds = float(title[1])
+                # to account for the sleep duration
+                if command is not None and command["type"] == "command" and command["name"] == "watch":
+                    watch_seconds = float(command["seconds"])
                     if (time() - start) >= watch_seconds:
                         start += watch_seconds
-                    title = title[2]
                 if is_select(status) and cur and cur.rowcount > threshold:
                     self.echo(
                         f"The result set has more than {threshold} rows.",
@@ -1314,12 +1323,11 @@ class MyCli:
         assert self.sqlexecute is not None
         results = self.sqlexecute.run(query)
         for result in results:
-            title, cur, headers, status = result
+            # discard the optional command portion of the results
+            # tuple since it is not used here currently
+            title, cur, headers, status, *_ = result
             self.main_formatter.query = query
             self.redirect_formatter.query = query
-            # If this is a watch query, reset the title back to the query
-            if title is not None and title[0] == "watch":
-                title = title[2]
             output = self.format_output(
                 title,
                 cur,
