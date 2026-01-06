@@ -1,9 +1,21 @@
 Upcoming (TBD)
 ==============
 
+Features
+--------
+* Add enum value completions for WHERE/HAVING clauses. (#790)
+
 Bug Fixes
 --------
 * Update watch query output to display the correct execution time on all iterations (#763).
+
+
+1.43.1 (2026/01/03)
+==============
+
+Bug Fixes
+--------
+* Prompt for password within SSL-auto retry flow.
 
 
 1.43.0 (2026/01/02)

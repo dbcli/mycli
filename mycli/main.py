@@ -552,8 +552,8 @@ class MyCli:
                     ssh_key_filename,
                     init_command,
                 )
-            except pymysql.OperationalError as e:
-                if e.args[0] == ERROR_CODE_ACCESS_DENIED:
+            except pymysql.OperationalError as e1:
+                if e1.args[0] == ERROR_CODE_ACCESS_DENIED:
                     if password_from_file is not None:
                         new_passwd = password_from_file
                     else:
@@ -577,26 +577,54 @@ class MyCli:
                         ssh_key_filename,
                         init_command,
                     )
-                elif e.args[0] == HANDSHAKE_ERROR and ssl is not None and ssl.get("mode", None) == "auto":
-                    self.sqlexecute = SQLExecute(
-                        database,
-                        user,
-                        passwd,
-                        host,
-                        int_port,
-                        socket,
-                        charset,
-                        use_local_infile,
-                        None,
-                        ssh_user,
-                        ssh_host,
-                        int(ssh_port) if ssh_port else None,
-                        ssh_password,
-                        ssh_key_filename,
-                        init_command,
-                    )
+                elif e1.args[0] == HANDSHAKE_ERROR and ssl is not None and ssl.get("mode", None) == "auto":
+                    try:
+                        self.sqlexecute = SQLExecute(
+                            database,
+                            user,
+                            passwd,
+                            host,
+                            int_port,
+                            socket,
+                            charset,
+                            use_local_infile,
+                            None,
+                            ssh_user,
+                            ssh_host,
+                            int(ssh_port) if ssh_port else None,
+                            ssh_password,
+                            ssh_key_filename,
+                            init_command,
+                        )
+                    except pymysql.OperationalError as e2:
+                        if e2.args[0] == ERROR_CODE_ACCESS_DENIED:
+                            if password_from_file is not None:
+                                new_passwd = password_from_file
+                            else:
+                                new_passwd = click.prompt(
+                                    f"Password for {user}", hide_input=True, show_default=False, default='', type=str, err=True
+                                )
+                            self.sqlexecute = SQLExecute(
+                                database,
+                                user,
+                                new_passwd,
+                                host,
+                                int_port,
+                                socket,
+                                charset,
+                                use_local_infile,
+                                None,
+                                ssh_user,
+                                ssh_host,
+                                int(ssh_port) if ssh_port else None,
+                                ssh_password,
+                                ssh_key_filename,
+                                init_command,
+                            )
+                        else:
+                            raise e2
                 else:
-                    raise e
+                    raise e1
 
         try:
             if not WIN and socket:

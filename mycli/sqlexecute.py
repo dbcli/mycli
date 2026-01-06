@@ -102,7 +102,47 @@ class SQLExecute:
                                     where table_schema = '%s'
                                     order by table_name,ordinal_position"""
 
+    enum_values_query = """select TABLE_NAME, COLUMN_NAME, COLUMN_TYPE from information_schema.columns
+                                    where table_schema = '%s' and data_type = 'enum'
+                                    order by table_name,ordinal_position"""
+
     now_query = """SELECT NOW()"""
+
+    @staticmethod
+    def _parse_enum_values(column_type: str) -> list[str]:
+        if not column_type or not column_type.lower().startswith("enum("):
+            return []
+
+        values: list[str] = []
+        current: list[str] = []
+        in_quote = False
+        i = column_type.find("(") + 1
+
+        while i < len(column_type):
+            ch = column_type[i]
+
+            if not in_quote:
+                if ch == "'":
+                    in_quote = True
+                    current = []
+                elif ch == ")":
+                    break
+            else:
+                if ch == "\\" and i + 1 < len(column_type):
+                    current.append(column_type[i + 1])
+                    i += 1
+                elif ch == "'":
+                    if i + 1 < len(column_type) and column_type[i + 1] == "'":
+                        current.append("'")
+                        i += 1
+                    else:
+                        values.append("".join(current))
+                        in_quote = False
+                else:
+                    current.append(ch)
+            i += 1
+
+        return values
 
     def __init__(
         self,
@@ -374,6 +414,17 @@ class SQLExecute:
             cur.execute(self.table_columns_query % self.dbname)
             for row in cur:
                 yield row
+
+    def enum_values(self) -> Generator[tuple[str, str, list[str]], None, None]:
+        """Yields (table name, column name, enum values) tuples"""
+        assert isinstance(self.conn, Connection)
+        with self.conn.cursor() as cur:
+            _logger.debug("Enum Values Query. sql: %r", self.enum_values_query)
+            cur.execute(self.enum_values_query % self.dbname)
+            for table_name, column_name, column_type in cur:
+                values = self._parse_enum_values(column_type)
+                if values:
+                    yield (table_name, column_name, values)
 
     def databases(self) -> list[str]:
         assert isinstance(self.conn, Connection)

@@ -35,7 +35,6 @@ def test_select_suggests_cols_with_qualified_table_scope():
     [
         "SELECT * FROM tabl WHERE ",
         "SELECT * FROM tabl WHERE (",
-        "SELECT * FROM tabl WHERE foo = ",
         "SELECT * FROM tabl WHERE bar OR ",
         "SELECT * FROM tabl WHERE foo = 1 AND ",
         "SELECT * FROM tabl WHERE (bar > 10 AND ",
@@ -48,6 +47,18 @@ def test_select_suggests_cols_with_qualified_table_scope():
 def test_where_suggests_columns_functions(expression):
     suggestions = suggest_type(expression, expression)
     assert sorted_dicts(suggestions) == sorted_dicts([
+        {"type": "alias", "aliases": ["tabl"]},
+        {"type": "column", "tables": [(None, "tabl", None)]},
+        {"type": "function", "schema": []},
+        {"type": "keyword"},
+    ])
+
+
+def test_where_equals_suggests_enum_values_first():
+    expression = "SELECT * FROM tabl WHERE foo = "
+    suggestions = suggest_type(expression, expression)
+    assert sorted_dicts(suggestions) == sorted_dicts([
+        {"type": "enum_value", "tables": [(None, "tabl", None)], "column": "foo", "parent": None},
         {"type": "alias", "aliases": ["tabl"]},
         {"type": "column", "tables": [(None, "tabl", None)]},
         {"type": "function", "schema": []},
