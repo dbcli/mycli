@@ -17,7 +17,6 @@ class ConfirmBoolParamType(click.ParamType):
         if value in ("no", "n"):
             return False
         self.fail(f'{value} is not a valid boolean', param, ctx)
-        return False
 
     def __repr__(self):
         return "BOOL"
