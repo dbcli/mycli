@@ -41,6 +41,9 @@ log_level = INFO
 # Timing of SQL statements and table rendering, or LLM commands.
 timing = True
 
+# Show the full SQL when running a favorite query. Set to False to hide.
+favorite_query_show_query = True
+
 # Beep after long-running queries are completed; 0 to disable.
 beep_after_seconds = 0
 
