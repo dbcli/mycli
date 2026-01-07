@@ -63,7 +63,7 @@ from mycli.packages.special.main import ArgType
 from mycli.packages.tabular_output import sql_format
 from mycli.packages.toolkit.history import FileHistoryWithTimestamp
 from mycli.sqlcompleter import SQLCompleter
-from mycli.sqlexecute import ERROR_CODE_ACCESS_DENIED, FIELD_TYPES, SQLExecute
+from mycli.sqlexecute import FIELD_TYPES, SQLExecute
 
 try:
     import paramiko
@@ -529,19 +529,16 @@ class MyCli:
         # if the passwd is not specified try to set it using the password_file option
         password_from_file = self.get_password_from_file(password_file)
         passwd = passwd if isinstance(passwd, str) else password_from_file
-        passwd = '' if passwd is None else passwd
 
         # password hierarchy
         # 1. --p CLI option
         # 2. envvar (MYSQL_PWD, part of --p option config)
         # 3. DSN (mysql://user:password)
-        # 4. cnf (my.cnf / etc)
+        # 4. cnf (.my.cnf / etc)
         # 5. --password-file CLI option
         # 6. if all the above is not set, ask the user
-        if not passwd:
-            passwd = click.prompt(
-                f"Password for {user}", hide_input=True, show_default=False, default='', type=str, err=True
-            )
+        if passwd is None:
+            passwd = click.prompt(f"Password for {user}", hide_input=True, show_default=False, default='', type=str, err=True)
 
         # Connect to the database.
         def _connect() -> None:
@@ -584,7 +581,7 @@ class MyCli:
                             init_command,
                         )
                     except Exception as e2:
-                            raise e2
+                        raise e2
                 else:
                     raise e1
 
@@ -1428,10 +1425,10 @@ class MyCli:
     "--password",
     "password",
     is_flag=False,
-    flag_value="",
+    flag_value="MYCLI_ASK_PASSWORD",
     envvar="MYSQL_PWD",
     type=str,
-    help="Password to connect to the database."
+    help="Password to connect to the database.",
 )
 @click.option("--ssh-user", help="User name to connect to ssh server.")
 @click.option("--ssh-host", help="Host name to connect to ssh server.")
@@ -1547,6 +1544,12 @@ def cli(
       - mycli mysql://my_user@my_host.com:3306/my_database
 
     """
+
+    # if user passes the --p* flag, ask for the password right away
+    # to reduce lag as much as possible
+    if password == "MYCLI_ASK_PASSWORD":
+        password = click.prompt(f"Password for {user}", hide_input=True, show_default=False, default='', type=str, err=True)
+
     mycli = MyCli(
         prompt=prompt,
         logfile=logfile,
