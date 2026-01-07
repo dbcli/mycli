@@ -531,8 +531,19 @@ class MyCli:
         passwd = passwd if isinstance(passwd, str) else password_from_file
         passwd = '' if passwd is None else passwd
 
-        # Connect to the database.
+        # password hierarchy
+        # 1. --p CLI option
+        # 2. envvar (MYSQL_PWD, part of --p option config)
+        # 3. DSN (mysql://user:password)
+        # 4. cnf (my.cnf / etc)
+        # 5. --password-file CLI option
+        # 6. if all the above is not set, ask the user
+        if not passwd:
+            passwd = click.prompt(
+                f"Password for {user}", hide_input=True, show_default=False, default='', type=str, err=True
+            )
 
+        # Connect to the database.
         def _connect() -> None:
             try:
                 self.sqlexecute = SQLExecute(
@@ -553,31 +564,7 @@ class MyCli:
                     init_command,
                 )
             except pymysql.OperationalError as e1:
-                if e1.args[0] == ERROR_CODE_ACCESS_DENIED:
-                    if password_from_file is not None:
-                        new_passwd = password_from_file
-                    else:
-                        new_passwd = click.prompt(
-                            f"Password for {user}", hide_input=True, show_default=False, default='', type=str, err=True
-                        )
-                    self.sqlexecute = SQLExecute(
-                        database,
-                        user,
-                        new_passwd,
-                        host,
-                        int_port,
-                        socket,
-                        charset,
-                        use_local_infile,
-                        ssl_config_or_none,
-                        ssh_user,
-                        ssh_host,
-                        int(ssh_port) if ssh_port else None,
-                        ssh_password,
-                        ssh_key_filename,
-                        init_command,
-                    )
-                elif e1.args[0] == HANDSHAKE_ERROR and ssl is not None and ssl.get("mode", None) == "auto":
+                if e1.args[0] == HANDSHAKE_ERROR and ssl is not None and ssl.get("mode", None) == "auto":
                     try:
                         self.sqlexecute = SQLExecute(
                             database,
@@ -596,32 +583,7 @@ class MyCli:
                             ssh_key_filename,
                             init_command,
                         )
-                    except pymysql.OperationalError as e2:
-                        if e2.args[0] == ERROR_CODE_ACCESS_DENIED:
-                            if password_from_file is not None:
-                                new_passwd = password_from_file
-                            else:
-                                new_passwd = click.prompt(
-                                    f"Password for {user}", hide_input=True, show_default=False, default='', type=str, err=True
-                                )
-                            self.sqlexecute = SQLExecute(
-                                database,
-                                user,
-                                new_passwd,
-                                host,
-                                int_port,
-                                socket,
-                                charset,
-                                use_local_infile,
-                                None,
-                                ssh_user,
-                                ssh_host,
-                                int(ssh_port) if ssh_port else None,
-                                ssh_password,
-                                ssh_key_filename,
-                                init_command,
-                            )
-                        else:
+                    except Exception as e2:
                             raise e2
                 else:
                     raise e1
@@ -1460,8 +1422,17 @@ class MyCli:
 @click.option("-P", "--port", envvar="MYSQL_TCP_PORT", type=int, help="Port number to use for connection. Honors $MYSQL_TCP_PORT.")
 @click.option("-u", "--user", help="User name to connect to the database.")
 @click.option("-S", "--socket", envvar="MYSQL_UNIX_PORT", help="The socket file to use for connection.")
-@click.option("-p", "--password", "password", envvar="MYSQL_PWD", type=str, help="Password to connect to the database.")
-@click.option("--pass", "password", envvar="MYSQL_PWD", type=str, help="Password to connect to the database.")
+@click.option(
+    "-p",
+    "--pass",
+    "--password",
+    "password",
+    is_flag=False,
+    flag_value="",
+    envvar="MYSQL_PWD",
+    type=str,
+    help="Password to connect to the database."
+)
 @click.option("--ssh-user", help="User name to connect to ssh server.")
 @click.option("--ssh-host", help="Host name to connect to ssh server.")
 @click.option("--ssh-port", default=22, help="Port to connect to ssh server.")
