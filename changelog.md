@@ -5,7 +5,7 @@ Features
 --------
 
 * Add enum value completions for WHERE/HAVING clauses. (#790)
-* Add `favorite_query_show_query` config option to control query printing when running favorite queries. (#1118)
+* Add `show_favorite_query` config option to control query printing when running favorite queries. (#1118)
 
 
 1.43.1 (2026/01/03)
