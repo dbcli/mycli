@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Bug Fixes
+--------
+* Let `sqlparse` accept arbitrarily-large queries.
+
+
 1.44.0 (2026/01/08)
 ==============
 

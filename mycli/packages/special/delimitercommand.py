@@ -5,6 +5,9 @@ from typing import Generator
 
 import sqlparse
 
+sqlparse.engine.grouping.MAX_GROUPING_DEPTH = None  # type: ignore[assignment]
+sqlparse.engine.grouping.MAX_GROUPING_TOKENS = None  # type: ignore[assignment]
+
 
 class DelimiterCommand:
     def __init__(self) -> None:
