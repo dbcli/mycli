@@ -531,14 +531,11 @@ class MyCli:
         passwd = passwd if isinstance(passwd, str) else password_from_file
 
         # password hierarchy
-        # 1. --p CLI option
-        # 2. envvar (MYSQL_PWD, part of --p option config)
+        # 1. -p CLI option
+        # 2. envvar (MYSQL_PWD, part of -p option config)
         # 3. DSN (mysql://user:password)
         # 4. cnf (.my.cnf / etc)
         # 5. --password-file CLI option
-        # 6. if all the above is not set, ask the user
-        if passwd is None:
-            passwd = click.prompt(f"Password for {user}", hide_input=True, show_default=False, default='', type=str, err=True)
 
         # Connect to the database.
         def _connect() -> None:
@@ -1548,7 +1545,7 @@ def cli(
     # if user passes the --p* flag, ask for the password right away
     # to reduce lag as much as possible
     if password == "MYCLI_ASK_PASSWORD":
-        password = click.prompt(f"Password for {user}", hide_input=True, show_default=False, default='', type=str, err=True)
+        password = click.prompt(f"Enter password", hide_input=True, show_default=False, default='', type=str, err=True)
 
     mycli = MyCli(
         prompt=prompt,
