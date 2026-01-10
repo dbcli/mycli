@@ -1,3 +1,19 @@
+Upcoming (TBD)
+==============
+
+Internal
+--------
+* Create new data class to handle SQL/command results to make further code improvements easier
+
+
+1.44.1 (2026/01/10)
+==============
+
+Bug Fixes
+--------
+* Let `sqlparse` accept arbitrarily-large queries.
+
+
 1.44.0 (2026/01/08)
 ==============
 

@@ -60,6 +60,7 @@ from mycli.packages.parseutils import is_destructive, is_dropping_database
 from mycli.packages.prompt_utils import confirm, confirm_destructive_query
 from mycli.packages.special.favoritequeries import FavoriteQueries
 from mycli.packages.special.main import ArgType
+from mycli.packages.sqlresult import SQLResult
 from mycli.packages.tabular_output import sql_format
 from mycli.packages.toolkit.history import FileHistoryWithTimestamp
 from mycli.sqlcompleter import SQLCompleter
@@ -70,6 +71,8 @@ try:
 except ImportError:
     from mycli.packages.paramiko_stub import paramiko  # type: ignore[no-redef]
 
+sqlparse.engine.grouping.MAX_GROUPING_DEPTH = None  # type: ignore[assignment]
+sqlparse.engine.grouping.MAX_GROUPING_TOKENS = None  # type: ignore[assignment]
 
 # Query tuples are used for maintaining history
 Query = namedtuple("Query", ["query", "successful", "mutating"])
@@ -272,49 +275,49 @@ class MyCli:
             self.change_prompt_format, "prompt", "\\R", "Change prompt format.", aliases=["\\R"], case_sensitive=True
         )
 
-    def manual_reconnect(self, arg: str = "", **_) -> Generator[tuple, None, None]:
+    def manual_reconnect(self, arg: str = "", **_) -> Generator[SQLResult, None, None]:
         """
         Interactive method to use for the \r command, so that the utility method
         may be cleanly used elsewhere.
         """
         if not self.reconnect(database=arg):
-            yield (None, None, None, "Not connected")
+            yield SQLResult(status="Not connected")
         elif not arg or arg == '``':
-            yield (None, None, None, None)
+            yield SQLResult()
         else:
             yield self.change_db(arg).send(None)
 
-    def enable_show_warnings(self, **_) -> Generator[tuple, None, None]:
+    def enable_show_warnings(self, **_) -> Generator[SQLResult, None, None]:
         self.show_warnings = True
         msg = "Show warnings enabled."
-        yield (None, None, None, msg)
+        yield SQLResult(status=msg)
 
-    def disable_show_warnings(self, **_) -> Generator[tuple, None, None]:
+    def disable_show_warnings(self, **_) -> Generator[SQLResult, None, None]:
         self.show_warnings = False
         msg = "Show warnings disabled."
-        yield (None, None, None, msg)
+        yield SQLResult(status=msg)
 
-    def change_table_format(self, arg: str, **_) -> Generator[tuple, None, None]:
+    def change_table_format(self, arg: str, **_) -> Generator[SQLResult, None, None]:
         try:
             self.main_formatter.format_name = arg
-            yield (None, None, None, f"Changed table format to {arg}")
+            yield SQLResult(status=f"Changed table format to {arg}")
         except ValueError:
             msg = f"Table format {arg} not recognized. Allowed formats:"
             for table_type in self.main_formatter.supported_formats:
                 msg += f"\n\t{table_type}"
-            yield (None, None, None, msg)
+            yield SQLResult(status=msg)
 
-    def change_redirect_format(self, arg: str, **_) -> Generator[tuple, None, None]:
+    def change_redirect_format(self, arg: str, **_) -> Generator[SQLResult, None, None]:
         try:
             self.redirect_formatter.format_name = arg
-            yield (None, None, None, f"Changed redirect format to {arg}")
+            yield SQLResult(status=f"Changed redirect format to {arg}")
         except ValueError:
             msg = f"Redirect format {arg} not recognized. Allowed formats:"
             for table_type in self.redirect_formatter.supported_formats:
                 msg += f"\n\t{table_type}"
-            yield (None, None, None, msg)
+            yield SQLResult(status=msg)
 
-    def change_db(self, arg: str, **_) -> Generator[tuple, None, None]:
+    def change_db(self, arg: str, **_) -> Generator[SQLResult, None, None]:
         if arg.startswith("`") and arg.endswith("`"):
             arg = re.sub(r"^`(.*)`$", r"\1", arg)
             arg = re.sub(r"``", r"`", arg)
@@ -331,40 +334,35 @@ class MyCli:
             self.sqlexecute.change_db(arg)
             msg = f'You are now connected to database "{self.sqlexecute.dbname}" as user "{self.sqlexecute.user}"'
 
-        yield (
-            None,
-            None,
-            None,
-            msg,
-        )
+        yield SQLResult(status=msg)
 
-    def execute_from_file(self, arg: str, **_) -> Iterable[tuple]:
+    def execute_from_file(self, arg: str, **_) -> Iterable[SQLResult]:
         if not arg:
             message = "Missing required argument: filename."
-            return [(None, None, None, message)]
+            return [SQLResult(status=message)]
         try:
             with open(os.path.expanduser(arg)) as f:
                 query = f.read()
         except IOError as e:
-            return [(None, None, None, str(e))]
+            return [SQLResult(status=str(e))]
 
         if self.destructive_warning and confirm_destructive_query(query) is False:
             message = "Wise choice. Command execution stopped."
-            return [(None, None, None, message)]
+            return [SQLResult(status=message)]
 
         assert isinstance(self.sqlexecute, SQLExecute)
         return self.sqlexecute.run(query)
 
-    def change_prompt_format(self, arg: str, **_) -> list[tuple]:
+    def change_prompt_format(self, arg: str, **_) -> list[SQLResult]:
         """
         Change the prompt format.
         """
         if not arg:
             message = "Missing required argument, format."
-            return [(None, None, None, message)]
+            return [SQLResult(status=message)]
 
         self.prompt_format = self.get_prompt(arg)
-        return [(None, None, None, f"Changed prompt format to {arg}")]
+        return [SQLResult(status=f"Changed prompt format to {arg}")]
 
     def initialize_logging(self) -> None:
         log_file = os.path.expanduser(self.config["main"]["log_file"])
@@ -818,20 +816,11 @@ class MyCli:
         # mutating if any one of the component statements is mutating
         mutating = False
 
-        def output_res(results: Generator[tuple], start: float) -> None:
+        def output_res(res: Generator[SQLResult], start: float) -> None:
             nonlocal mutating
             result_count = 0
-            for result in results:
-                # unpack the results, including the command info if present
-                try:
-                    title, cur, headers, status, command = result
-                except ValueError:
-                    title, cur, headers, status = result
-                    command = None
-                except Exception as e:
-                    self.echo("An unexpected error has occurred.", err=True, fg="red")
-                    self.logger.error(f"Error unpacking results: {e}")
-                    sys.exit(1)
+            for title, cur, headers, status, command in res:
+                logger.debug("title: %r", title)
                 logger.debug("headers: %r", headers)
                 logger.debug("rows: %r", cur)
                 logger.debug("status: %r", status)
@@ -891,7 +880,7 @@ class MyCli:
                 # get and display warnings if enabled
                 if self.show_warnings and isinstance(cur, Cursor) and cur.warning_count > 0:
                     warnings = sqlexecute.run("SHOW WARNINGS")
-                    for title, cur, headers, status in warnings:
+                    for title, cur, headers, status, _command in warnings:
                         formatted = self.format_output(
                             title,
                             cur,
@@ -1288,7 +1277,7 @@ class MyCli:
         if cnf["skip-pager"] or not self.config["main"].as_bool("enable_pager"):
             special.disable_pager()
 
-    def refresh_completions(self, reset: bool = False) -> list[tuple]:
+    def refresh_completions(self, reset: bool = False) -> list[SQLResult]:
         if reset:
             with self._completer_lock:
                 self.completer.reset_completions()
@@ -1303,7 +1292,7 @@ class MyCli:
             },
         )
 
-        return [(None, None, None, "Auto-completion refresh started in the background.")]
+        return [SQLResult(status="Auto-completion refresh started in the background.")]
 
     def _on_completions_refreshed(self, new_completer: SQLCompleter) -> None:
         """Swap the completer object in cli with the newly created completer."""
@@ -1350,18 +1339,8 @@ class MyCli:
     def run_query(self, query: str, new_line: bool = True) -> None:
         """Runs *query*."""
         assert self.sqlexecute is not None
-        results = self.sqlexecute.run(query)
-        for result in results:
-            # discard the optional command portion of the results
-            # tuple since it is not used here currently
-            try:
-                title, cur, headers, status, _ = result
-            except ValueError:
-                title, cur, headers, status = result
-            except Exception as e:
-                self.echo("An unexpected error has occurred.", err=True, fg="red")
-                self.logger.error(f"Error unpacking results: {e}")
-                sys.exit(1)
+        res = self.sqlexecute.run(query)
+        for title, cur, headers, _status, _command in res:
             self.main_formatter.query = query
             self.redirect_formatter.query = query
             output = self.format_output(
@@ -1378,7 +1357,7 @@ class MyCli:
             # get and display warnings if enabled
             if self.show_warnings and isinstance(cur, Cursor) and cur.warning_count > 0:
                 warnings = self.sqlexecute.run("SHOW WARNINGS")
-                for title, cur, headers, _ in warnings:
+                for title, cur, headers, _status, _command in warnings:
                     output = self.format_output(
                         title,
                         cur,

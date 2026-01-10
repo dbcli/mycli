@@ -7,6 +7,9 @@ from sqlparse.sql import Comparison, Identifier, Token, Where
 from mycli.packages.parseutils import extract_tables, find_prev_keyword, last_word
 from mycli.packages.special.main import parse_special_command
 
+sqlparse.engine.grouping.MAX_GROUPING_DEPTH = None  # type: ignore[assignment]
+sqlparse.engine.grouping.MAX_GROUPING_TOKENS = None  # type: ignore[assignment]
+
 _ENUM_VALUE_RE = re.compile(
     r"(?P<lhs>(?:`[^`]+`|[\w$]+)(?:\.(?:`[^`]+`|[\w$]+))?)\s*=\s*$",
     re.IGNORECASE,
