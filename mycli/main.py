@@ -71,6 +71,8 @@ try:
 except ImportError:
     from mycli.packages.paramiko_stub import paramiko  # type: ignore[no-redef]
 
+sqlparse.engine.grouping.MAX_GROUPING_DEPTH = None  # type: ignore[assignment]
+sqlparse.engine.grouping.MAX_GROUPING_TOKENS = None  # type: ignore[assignment]
 
 # Query tuples are used for maintaining history
 Query = namedtuple("Query", ["query", "successful", "mutating"])

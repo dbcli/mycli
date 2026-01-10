@@ -23,6 +23,9 @@ from mycli.packages.special.main import ArgType, special_command
 from mycli.packages.special.utils import handle_cd_command
 from mycli.packages.sqlresult import SQLResult
 
+sqlparse.engine.grouping.MAX_GROUPING_DEPTH = None  # type: ignore[assignment]
+sqlparse.engine.grouping.MAX_GROUPING_TOKENS = None  # type: ignore[assignment]
+
 TIMING_ENABLED = False
 use_expanded_output = False
 force_horizontal_output = False
