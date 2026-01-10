@@ -118,7 +118,7 @@ def test_reconnect_no_database(executor, capsys):
     sql = "\\r"
     result = next(mycli.packages.special.execute(executor, sql))
     stdout, _stderr = capsys.readouterr()
-    assert result[-1] is None
+    assert result.status is None
     assert "Already connected" in stdout
 
 
@@ -150,7 +150,7 @@ def test_reconnect_with_different_database(executor):
     _result_1 = next(mycli.packages.special.execute(executor, sql_1))
     result_2 = next(mycli.packages.special.execute(executor, sql_2))
     expected = f'You are now connected to database "{database_2}" as user "{USER}"'
-    assert expected in result_2[-1]
+    assert expected in result_2.status
 
 
 @dbtest
@@ -180,7 +180,7 @@ def test_reconnect_with_same_database(executor):
     sql = f"\\r {database}"
     result = next(mycli.packages.special.execute(executor, sql))
     expected = f'You are already connected to database "{database}" as user "{USER}"'
-    assert expected in result[-1]
+    assert expected in result.status
 
 
 @dbtest

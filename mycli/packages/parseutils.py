@@ -8,6 +8,9 @@ import sqlparse
 from sqlparse.sql import Function, Identifier, IdentifierList, Token, TokenList
 from sqlparse.tokens import DML, Keyword, Punctuation
 
+sqlparse.engine.grouping.MAX_GROUPING_DEPTH = None  # type: ignore[assignment]
+sqlparse.engine.grouping.MAX_GROUPING_TOKENS = None  # type: ignore[assignment]
+
 cleanup_regex: dict[str, re.Pattern] = {
     # This matches only alphanumerics and underscores.
     "alphanum_underscore": re.compile(r"(\w+)$"),
