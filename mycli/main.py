@@ -530,11 +530,15 @@ class MyCli:
         passwd = passwd if isinstance(passwd, str) else password_from_file
 
         # password hierarchy
-        # 1. -p CLI option
-        # 2. envvar (MYSQL_PWD, part of -p option config)
+        # 1. -p / --pass/--password CLI options
+        # 2. envvar (MYSQL_PWD)
         # 3. DSN (mysql://user:password)
         # 4. cnf (.my.cnf / etc)
         # 5. --password-file CLI option
+
+        # if no password has been set up to this point, ask for one
+        if passwd is None:
+            passwd = click.prompt("Enter password", hide_input=True, show_default=False, default='', type=str, err=True)
 
         # Connect to the database.
         def _connect() -> None:
@@ -1423,14 +1427,19 @@ class MyCli:
 @click.option("-S", "--socket", envvar="MYSQL_UNIX_PORT", help="The socket file to use for connection.")
 @click.option(
     "-p",
-    "--pass",
-    "--password",
-    "password",
+    "prompt_password",
     is_flag=False,
     flag_value="MYCLI_ASK_PASSWORD",
-    envvar="MYSQL_PWD",
     type=str,
-    help="Password to connect to the database.",
+    help="Prompt for (or enter in cleartext) password to connect to the database.",
+)
+@click.option(
+    "--pass",
+    "--password",
+    "cli_password",
+    default=None,
+    type=str,
+    help="Cleartext password to connect to the database.",
 )
 @click.option("--ssh-user", help="User name to connect to ssh server.")
 @click.option("--ssh-host", help="Host name to connect to ssh server.")
@@ -1498,7 +1507,8 @@ def cli(
     host: str | None,
     port: int | None,
     socket: str | None,
-    password: str | None,
+    prompt_password: str | None,
+    cli_password: str | None,
     dbname: str | None,
     verbose: bool,
     prompt: str | None,
@@ -1546,11 +1556,25 @@ def cli(
       - mycli mysql://my_user@my_host.com:3306/my_database
 
     """
+    # if both types of password options are used, throw an error
+    if prompt_password == "MYCLI_ASK_PASSWORD" and cli_password is not None:
+        click.secho("Please use either the -p or --pass/--password option, not both at the same time.", err=True, fg="red")
+        sys.exit(1)
 
     # if user passes the --p* flag, ask for the password right away
     # to reduce lag as much as possible
-    if password == "MYCLI_ASK_PASSWORD":
-        password = click.prompt(f"Enter password", hide_input=True, show_default=False, default='', type=str, err=True)
+    if prompt_password == "MYCLI_ASK_PASSWORD":
+        password = click.prompt("Enter password", hide_input=True, show_default=False, default='', type=str, err=True)
+    elif prompt_password is not None:
+        password = prompt_password
+    elif cli_password is not None:
+        password = cli_password
+    elif os.environ.get("MYSQL_PWD") is not None:
+        # getting the envvar ourselves because the envar from a click
+        # option cannot be an empty string, but a password can be
+        password = os.environ.get("MYSQL_PWD")
+    else:
+        password = None
 
     mycli = MyCli(
         prompt=prompt,

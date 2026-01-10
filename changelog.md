@@ -1,6 +1,19 @@
 Upcoming (TBD)
 ==============
 
+Features
+--------
+* Update password handling functionality (#341):
+  1. Add ability to use the -p flag to launch a password prompt (or to enter cleartext as before)
+  2. Check for -p flag at the earliest possible point to reduce prompt load time (still limited by startup time)
+  3. Allow for an empty string password from the envvar MYSQL_PWD
+  4. Clarify password option hierachy:
+        1. -p / --pass/--password CLI options
+        2. envvar (MYSQL_PWD)
+        3. DSN (mysql://user:password)
+        4. cnf (.my.cnf / etc)
+        5. --password-file CLI option
+
 Internal
 --------
 * Create new data class to handle SQL/command results to make further code improvements easier
