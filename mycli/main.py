@@ -135,6 +135,7 @@ class MyCli:
         self.multi_line = c["main"].as_bool("multi_line")
         self.key_bindings = c["main"]["key_bindings"]
         special.set_timing_enabled(c["main"].as_bool("timing"))
+        special.set_show_favorite_query(c["main"].as_bool("show_favorite_query"))
         self.beep_after_seconds = float(c["main"]["beep_after_seconds"] or 0)
 
         FavoriteQueries.instance = FavoriteQueries.from_config(self.config)

@@ -26,6 +26,7 @@ TIMING_ENABLED = False
 use_expanded_output = False
 force_horizontal_output = False
 PAGER_ENABLED = True
+SHOW_FAVORITE_QUERY = True
 tee_file = None
 once_file = None
 written_to_once_file = False
@@ -56,6 +57,15 @@ def set_pager_enabled(val: bool) -> None:
 
 def is_pager_enabled() -> bool:
     return PAGER_ENABLED
+
+
+def set_show_favorite_query(val: bool) -> None:
+    global SHOW_FAVORITE_QUERY
+    SHOW_FAVORITE_QUERY = val
+
+
+def is_show_favorite_query() -> bool:
+    return SHOW_FAVORITE_QUERY
 
 
 @special_command(
@@ -260,7 +270,7 @@ def execute_favorite_query(cur: Cursor, arg: str, **_) -> Generator[tuple, None,
         else:
             for sql in sqlparse.split(query):
                 sql = sql.rstrip(";")
-                title = f"> {sql}"
+                title = f"> {sql}" if is_show_favorite_query() else None
                 cur.execute(sql)
                 if cur.description:
                     headers = [x[0] for x in cur.description]
