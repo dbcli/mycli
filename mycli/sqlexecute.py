@@ -395,7 +395,7 @@ class SQLExecute:
             plural = '' if cursor.warning_count == 1 else 's'
             status = f'{status}, {cursor.warning_count} warning{plural}'
 
-        return SQLResult(title=title, cursor=cursor, headers=headers, status=status)
+        return SQLResult(title=title, results=cursor, headers=headers, status=status)
 
     def tables(self) -> Generator[tuple[str], None, None]:
         """Yields table names"""

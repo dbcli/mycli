@@ -160,7 +160,7 @@ def show_help(*_args) -> list[SQLResult]:
     for _, value in sorted(COMMANDS.items()):
         if not value.hidden:
             result.append((value.command, value.shortcut, value.description))
-    return [SQLResult(cursor=result, headers=headers)]
+    return [SQLResult(results=result, headers=headers)]
 
 
 def show_keyword_help(cur: Cursor, arg: str) -> list[SQLResult]:
@@ -176,7 +176,7 @@ def show_keyword_help(cur: Cursor, arg: str) -> list[SQLResult]:
     cur.execute(query)
     if cur.description and cur.rowcount > 0:
         headers = [x[0] for x in cur.description]
-        return [SQLResult(cursor=cur, headers=headers, status="")]
+        return [SQLResult(results=cur, headers=headers, status="")]
     else:
         return [SQLResult(status=f'No help found for {keyword}.')]
 

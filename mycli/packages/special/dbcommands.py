@@ -40,7 +40,7 @@ def list_tables(
         if one := cur.fetchone():
             status = one[1]
 
-    return [SQLResult(cursor=cur, headers=headers, status=status)]
+    return [SQLResult(results=cur, headers=headers, status=status)]
 
 
 @special_command("\\l", "\\l", "List databases.", arg_type=ArgType.RAW_QUERY, case_sensitive=True)
@@ -50,7 +50,7 @@ def list_databases(cur: Cursor, **_) -> list[SQLResult]:
     cur.execute(query)
     if cur.description:
         headers = [x[0] for x in cur.description]
-        return [SQLResult(cursor=cur, headers=headers, status="")]
+        return [SQLResult(results=cur, headers=headers, status="")]
     else:
         return [SQLResult(status="")]
 
@@ -167,4 +167,4 @@ def status(cur: Cursor, **_) -> list[SQLResult]:
         footer.append("\n" + stats_str)
 
     footer.append("--------------")
-    return [SQLResult(title="\n".join(title), cursor=output, headers="", status="\n".join(footer))]
+    return [SQLResult(title="\n".join(title), results=output, headers="", status="\n".join(footer))]

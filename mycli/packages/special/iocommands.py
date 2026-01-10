@@ -278,7 +278,7 @@ def execute_favorite_query(cur: Cursor, arg: str, **_) -> Generator[SQLResult, N
                 cur.execute(sql)
                 if cur.description:
                     headers = [x[0] for x in cur.description]
-                    yield SQLResult(title=title, cursor=cur, headers=headers)
+                    yield SQLResult(title=title, results=cur, headers=headers)
                 else:
                     yield SQLResult(title=title)
 
@@ -294,7 +294,7 @@ def list_favorite_queries() -> list[SQLResult]:
         status = "\nNo favorite queries found." + FavoriteQueries.instance.usage
     else:
         status = ""
-    return [SQLResult(title="", cursor=rows, headers=headers, status=status)]
+    return [SQLResult(title="", results=rows, headers=headers, status=status)]
 
 
 def subst_favorite_query_args(query: str, args: list[str]) -> list[str | None]:
@@ -582,7 +582,7 @@ def watch_query(arg: str, **kwargs) -> Generator[SQLResult, None, None]:
                 cur.execute(sql)
                 if cur.description:
                     headers = [x[0] for x in cur.description]
-                    yield SQLResult(title=title, cursor=cur, headers=headers)
+                    yield SQLResult(title=title, results=cur, headers=headers)
                 else:
                     yield SQLResult(title=title)
             sleep(seconds)
