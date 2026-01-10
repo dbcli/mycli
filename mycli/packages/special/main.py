@@ -4,6 +4,8 @@ import logging
 import os
 from typing import Callable
 
+from mycli.packages.sqlresult import SQLResult
+
 try:
     if not os.environ.get('MYCLI_LLM_OFF'):
         import llm  # noqa: F401
@@ -119,7 +121,7 @@ def register_special_command(
         )
 
 
-def execute(cur: Cursor, sql: str) -> list[tuple]:
+def execute(cur: Cursor, sql: str) -> list[SQLResult]:
     """Execute a special command and return the results. If the special command
     is not supported a CommandNotFound will be raised.
     """
@@ -151,17 +153,17 @@ def execute(cur: Cursor, sql: str) -> list[tuple]:
 
 
 @special_command("help", "\\?", "Show this help.", arg_type=ArgType.NO_QUERY, aliases=["\\?", "?"])
-def show_help(*_args) -> list[tuple]:
+def show_help(*_args) -> list[SQLResult]:
     headers = ["Command", "Shortcut", "Description"]
     result = []
 
     for _, value in sorted(COMMANDS.items()):
         if not value.hidden:
             result.append((value.command, value.shortcut, value.description))
-    return [(None, result, headers, None)]
+    return [SQLResult(cursor=result, headers=headers)]
 
 
-def show_keyword_help(cur: Cursor, arg: str) -> list[tuple]:
+def show_keyword_help(cur: Cursor, arg: str) -> list[SQLResult]:
     """
     Call the built-in "show <command>", to display help for an SQL keyword.
     :param cur: cursor
@@ -174,9 +176,9 @@ def show_keyword_help(cur: Cursor, arg: str) -> list[tuple]:
     cur.execute(query)
     if cur.description and cur.rowcount > 0:
         headers = [x[0] for x in cur.description]
-        return [(None, cur, headers, "")]
+        return [SQLResult(cursor=cur, headers=headers, status="")]
     else:
-        return [(None, None, None, f'No help found for {keyword}.')]
+        return [SQLResult(status=f'No help found for {keyword}.')]
 
 
 @special_command("exit", "\\q", "Exit.", arg_type=ArgType.NO_QUERY, aliases=["\\q"])

@@ -9,6 +9,7 @@ from mycli import __version__
 from mycli.packages.special import iocommands
 from mycli.packages.special.main import ArgType, special_command
 from mycli.packages.special.utils import format_uptime
+from mycli.packages.sqlresult import SQLResult
 
 logger = logging.getLogger(__name__)
 
@@ -19,19 +20,18 @@ def list_tables(
     arg: str | None = None,
     _arg_type: ArgType = ArgType.PARSED_QUERY,
     verbose: bool = False,
-) -> list[tuple]:
+) -> list[SQLResult]:
     if arg:
         query = f'SHOW FIELDS FROM {arg}'
     else:
         query = "SHOW TABLES"
     logger.debug(query)
     cur.execute(query)
-    tables = cur.fetchall()
     status = ""
     if cur.description:
         headers = [x[0] for x in cur.description]
     else:
-        return [(None, None, None, "")]
+        return [SQLResult(status="")]
 
     if verbose and arg:
         query = f'SHOW CREATE TABLE {arg}'
@@ -40,25 +40,25 @@ def list_tables(
         if one := cur.fetchone():
             status = one[1]
 
-    return [(None, tables, headers, status)]
+    return [SQLResult(cursor=cur, headers=headers, status=status)]
 
 
 @special_command("\\l", "\\l", "List databases.", arg_type=ArgType.RAW_QUERY, case_sensitive=True)
-def list_databases(cur: Cursor, **_) -> list[tuple]:
+def list_databases(cur: Cursor, **_) -> list[SQLResult]:
     query = "SHOW DATABASES"
     logger.debug(query)
     cur.execute(query)
     if cur.description:
         headers = [x[0] for x in cur.description]
-        return [(None, cur, headers, "")]
+        return [SQLResult(cursor=cur, headers=headers, status="")]
     else:
-        return [(None, None, None, "")]
+        return [SQLResult(status="")]
 
 
 @special_command(
     "status", "\\s", "Get status information from the server.", arg_type=ArgType.RAW_QUERY, aliases=["\\s"], case_sensitive=True
 )
-def status(cur: Cursor, **_) -> list[tuple]:
+def status(cur: Cursor, **_) -> list[SQLResult]:
     query = "SHOW GLOBAL STATUS;"
     logger.debug(query)
     try:
@@ -167,4 +167,4 @@ def status(cur: Cursor, **_) -> list[tuple]:
         footer.append("\n" + stats_str)
 
     footer.append("--------------")
-    return [("\n".join(title), output, "", "\n".join(footer))]
+    return [SQLResult(title="\n".join(title), cursor=output, headers="", status="\n".join(footer))]

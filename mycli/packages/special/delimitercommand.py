@@ -5,6 +5,8 @@ from typing import Generator
 
 import sqlparse
 
+from mycli.packages.sqlresult import SQLResult
+
 
 class DelimiterCommand:
     def __init__(self) -> None:
@@ -55,7 +57,7 @@ class DelimiterCommand:
                         combined_statement += delimiter
                     queries = self._split(combined_statement)[1:]
 
-    def set(self, arg: str, **_) -> list[tuple[None, None, None, str]]:
+    def set(self, arg: str, **_) -> list[SQLResult]:
         """Change delimiter.
 
         Since `arg` is everything that follows the DELIMITER token
@@ -67,14 +69,14 @@ class DelimiterCommand:
         match = arg and re.search(r"[^\s]+", arg)
         if not match:
             message = "Missing required argument, delimiter"
-            return [(None, None, None, message)]
+            return [SQLResult(status=message)]
 
         delimiter = match.group()
         if delimiter.lower() == "delimiter":
-            return [(None, None, None, 'Invalid delimiter "delimiter"')]
+            return [SQLResult(status='Invalid delimiter "delimiter"')]
 
         self._delimiter = delimiter
-        return [(None, None, None, f'Changed delimiter to {delimiter}')]
+        return [SQLResult(status=f'Changed delimiter to {delimiter}')]
 
     @property
     def current(self) -> str:

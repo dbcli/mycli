@@ -48,9 +48,10 @@ def test_refresh_called_once(refresher):
     with patch.object(refresher, "_bg_refresh") as bg_refresh:
         actual = refresher.refresh(sqlexecute, callbacks)
         time.sleep(1)  # Wait for the thread to work.
-        assert len(actual) == 1
-        assert len(actual[0]) == 4
-        assert actual[0][3] == "Auto-completion refresh started in the background."
+        assert actual[0].title is None
+        assert actual[0].cursor is None
+        assert actual[0].headers is None
+        assert actual[0].status == "Auto-completion refresh started in the background."
         bg_refresh.assert_called_with(sqlexecute, callbacks, {})
 
 
@@ -72,15 +73,17 @@ def test_refresh_called_twice(refresher):
 
     actual1 = refresher.refresh(sqlexecute, callbacks)
     time.sleep(1)  # Wait for the thread to work.
-    assert len(actual1) == 1
-    assert len(actual1[0]) == 4
-    assert actual1[0][3] == "Auto-completion refresh started in the background."
+    assert actual1[0].title is None
+    assert actual1[0].cursor is None
+    assert actual1[0].headers is None
+    assert actual1[0].status == "Auto-completion refresh started in the background."
 
     actual2 = refresher.refresh(sqlexecute, callbacks)
     time.sleep(1)  # Wait for the thread to work.
-    assert len(actual2) == 1
-    assert len(actual2[0]) == 4
-    assert actual2[0][3] == "Auto-completion refresh restarted."
+    assert actual2[0].title is None
+    assert actual2[0].cursor is None
+    assert actual2[0].headers is None
+    assert actual2[0].status == "Auto-completion refresh restarted."
 
 
 def test_refresh_with_callbacks(refresher):
