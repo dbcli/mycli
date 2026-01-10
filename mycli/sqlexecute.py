@@ -490,7 +490,7 @@ class SQLExecute:
         _logger.debug("Get current connection id")
         try:
             res = self.run("select connection_id()")
-            for _title, cur, _headers, _status in res:
+            for _title, cur, _headers, _status, _command in res:
                 self.connection_id = cur.fetchone()[0]
         except Exception as e:
             # See #1054

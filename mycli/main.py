@@ -819,11 +819,18 @@ class MyCli:
         def output_res(res: Generator[SQLResult], start: float) -> None:
             nonlocal mutating
             result_count = 0
-            for title, cur, headers, status in res:
+            for title, cur, headers, status, command in res:
+                logger.debug("title: %r", title)
                 logger.debug("headers: %r", headers)
                 logger.debug("rows: %r", cur)
                 logger.debug("status: %r", status)
                 threshold = 1000
+                # If this is a watch query, offset the start time on the 2nd+ iteration
+                # to account for the sleep duration
+                if command is not None and command["name"] == "watch":
+                    watch_seconds = float(command["seconds"])
+                    if result_count > 0:
+                        start += watch_seconds
                 if is_select(status) and cur and cur.rowcount > threshold:
                     self.echo(
                         f"The result set has more than {threshold} rows.",
@@ -873,7 +880,7 @@ class MyCli:
                 # get and display warnings if enabled
                 if self.show_warnings and isinstance(cur, Cursor) and cur.warning_count > 0:
                     warnings = sqlexecute.run("SHOW WARNINGS")
-                    for title, cur, headers, status in warnings:
+                    for title, cur, headers, status, _command in warnings:
                         formatted = self.format_output(
                             title,
                             cur,
@@ -1332,9 +1339,8 @@ class MyCli:
     def run_query(self, query: str, new_line: bool = True) -> None:
         """Runs *query*."""
         assert self.sqlexecute is not None
-        results = self.sqlexecute.run(query)
-        for result in results:
-            title, cur, headers, status = result
+        res = self.sqlexecute.run(query)
+        for title, cur, headers, _status, _command in res:
             self.main_formatter.query = query
             self.redirect_formatter.query = query
             output = self.format_output(
@@ -1351,7 +1357,7 @@ class MyCli:
             # get and display warnings if enabled
             if self.show_warnings and isinstance(cur, Cursor) and cur.warning_count > 0:
                 warnings = self.sqlexecute.run("SHOW WARNINGS")
-                for title, cur, headers, _ in warnings:
+                for title, cur, headers, _status, _command in warnings:
                     output = self.format_output(
                         title,
                         cur,

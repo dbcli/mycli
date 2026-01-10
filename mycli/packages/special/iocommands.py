@@ -580,11 +580,15 @@ def watch_query(arg: str, **kwargs) -> Generator[SQLResult, None, None]:
             set_pager_enabled(False)
             for sql, title in sql_list:
                 cur.execute(sql)
+                command = {
+                    "name": "watch",
+                    "seconds": seconds,
+                }
                 if cur.description:
                     headers = [x[0] for x in cur.description]
-                    yield SQLResult(title=title, results=cur, headers=headers)
+                    yield SQLResult(title=title, results=cur, headers=headers, command=command)
                 else:
-                    yield SQLResult(title=title)
+                    yield SQLResult(title=title, command=command)
             sleep(seconds)
         except KeyboardInterrupt:
             # This prints the Ctrl-C character in its own line, which prevents

@@ -49,7 +49,7 @@ def run(executor, sql, rows_as_list=True):
     """Return string output for the sql to be run."""
     result = []
 
-    for title, rows, headers, status in executor.run(sql):
+    for title, rows, headers, status, _command in executor.run(sql):
         rows = list(rows) if (rows_as_list and rows) else rows
         result.append({"title": title, "rows": rows, "headers": headers, "status": status})
 

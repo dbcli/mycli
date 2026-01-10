@@ -5,6 +5,10 @@ Internal
 --------
 * Create new data class to handle SQL/command results to make further code improvements easier
 
+Bug Fixes
+--------
+* Update watch query output to display the correct execution time on all iterations (#763).
+
 
 1.44.1 (2026/01/10)
 ==============
@@ -19,7 +23,6 @@ Bug Fixes
 
 Features
 --------
-
 * Add enum value completions for WHERE/HAVING clauses. (#790)
 * Add `show_favorite_query` config option to control query printing when running favorite queries. (#1118)
 
