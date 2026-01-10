@@ -1570,7 +1570,7 @@ def cli(
     elif cli_password is not None:
         password = cli_password
     elif os.environ.get("MYSQL_PWD") is not None:
-        # getting the envvar ourselves because the envar from a click
+        # getting the envvar ourselves because the envvar from a click
         # option cannot be an empty string, but a password can be
         password = os.environ.get("MYSQL_PWD")
     else:
