@@ -1,9 +1,10 @@
-Upcoming (TBD)
+1.44.0 (2026/01/08)
 ==============
 
 Features
 --------
 * Add enum value completions for WHERE/HAVING clauses. (#790)
+* Add `show_favorite_query` config option to control query printing when running favorite queries. (#1118)
 
 Bug Fixes
 --------
