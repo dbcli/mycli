@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Internal
+--------
+* Create new data class to handle SQL/command results to make further code improvements easier
+
+
 1.44.1 (2026/01/10)
 ==============
 

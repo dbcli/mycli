@@ -15,6 +15,7 @@ from pymysql.cursors import Cursor
 
 from mycli.packages.special import iocommands
 from mycli.packages.special.main import CommandNotFound, execute
+from mycli.packages.sqlresult import SQLResult
 
 try:
     import paramiko  # noqa: F401
@@ -327,7 +328,7 @@ class SQLExecute:
         self.reset_connection_id()
         self.server_info = ServerInfo.from_version_string(conn.server_version)  # type: ignore[attr-defined]
 
-    def run(self, statement: str) -> Generator[tuple, None, None]:
+    def run(self, statement: str) -> Generator[SQLResult, None, None]:
         """Execute the sql in the database and return the results. The results
         are a list of tuples. Each tuple has 4 values
         (title, rows, headers, status).
@@ -336,7 +337,7 @@ class SQLExecute:
         # Remove spaces and EOL
         statement = statement.strip()
         if not statement:  # Empty string
-            yield (None, None, None, None)
+            yield SQLResult()
 
         # Split the sql into separate queries and run each one.
         # Unless it's saving a favorite query, in which case we
@@ -376,7 +377,7 @@ class SQLExecute:
                     if not cur.nextset() or (not cur.rowcount and cur.description is None):
                         break
 
-    def get_result(self, cursor: Cursor) -> tuple:
+    def get_result(self, cursor: Cursor) -> SQLResult:
         """Get the current result's data from the cursor."""
         title = headers = None
 
@@ -394,7 +395,7 @@ class SQLExecute:
             plural = '' if cursor.warning_count == 1 else 's'
             status = f'{status}, {cursor.warning_count} warning{plural}'
 
-        return (title, cursor, headers, status)
+        return SQLResult(title=title, results=cursor, headers=headers, status=status)
 
     def tables(self) -> Generator[tuple[str], None, None]:
         """Yields table names"""

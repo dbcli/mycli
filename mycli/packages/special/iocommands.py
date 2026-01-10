@@ -21,6 +21,7 @@ from mycli.packages.special.delimitercommand import DelimiterCommand
 from mycli.packages.special.favoritequeries import FavoriteQueries
 from mycli.packages.special.main import ArgType, special_command
 from mycli.packages.special.utils import handle_cd_command
+from mycli.packages.sqlresult import SQLResult
 
 sqlparse.engine.grouping.MAX_GROUPING_DEPTH = None  # type: ignore[assignment]
 sqlparse.engine.grouping.MAX_GROUPING_TOKENS = None  # type: ignore[assignment]
@@ -79,7 +80,7 @@ def is_show_favorite_query() -> bool:
     aliases=["\\P"],
     case_sensitive=True,
 )
-def set_pager(arg: str, **_) -> list[tuple]:
+def set_pager(arg: str, **_) -> list[SQLResult]:
     if arg:
         os.environ["PAGER"] = arg
         msg = f"PAGER set to {arg}."
@@ -92,22 +93,22 @@ def set_pager(arg: str, **_) -> list[tuple]:
             msg = "Pager enabled."
         set_pager_enabled(True)
 
-    return [(None, None, None, msg)]
+    return [SQLResult(status=msg)]
 
 
 @special_command("nopager", "\\n", "Disable pager, print to stdout.", arg_type=ArgType.NO_QUERY, aliases=["\\n"], case_sensitive=True)
-def disable_pager() -> list[tuple]:
+def disable_pager() -> list[SQLResult]:
     set_pager_enabled(False)
-    return [(None, None, None, "Pager disabled.")]
+    return [SQLResult(status="Pager disabled.")]
 
 
 @special_command("\\timing", "\\t", "Toggle timing of commands.", arg_type=ArgType.NO_QUERY, aliases=["\\t"], case_sensitive=True)
-def toggle_timing() -> list[tuple]:
+def toggle_timing() -> list[SQLResult]:
     global TIMING_ENABLED
     TIMING_ENABLED = not TIMING_ENABLED
     message = "Timing is "
     message += "on." if TIMING_ENABLED else "off."
-    return [(None, None, None, message)]
+    return [SQLResult(status=message)]
 
 
 def is_timing_enabled() -> bool:
@@ -252,7 +253,7 @@ def set_redirect(command_part: str | None, file_operator_part: str | None, file_
 
 
 @special_command("\\f", "\\f [name [args..]]", "List or execute favorite queries.", arg_type=ArgType.PARSED_QUERY, case_sensitive=True)
-def execute_favorite_query(cur: Cursor, arg: str, **_) -> Generator[tuple, None, None]:
+def execute_favorite_query(cur: Cursor, arg: str, **_) -> Generator[SQLResult, None, None]:
     """Returns (title, rows, headers, status)"""
     if arg == "":
         for result in list_favorite_queries():
@@ -265,11 +266,11 @@ def execute_favorite_query(cur: Cursor, arg: str, **_) -> Generator[tuple, None,
     query = FavoriteQueries.instance.get(name)
     if query is None:
         message = f"No favorite query: {name}"
-        yield (None, None, None, message)
+        yield SQLResult(status=message)
     else:
         query, arg_error = subst_favorite_query_args(query, args)
         if query is None:
-            yield (None, None, None, arg_error)
+            yield SQLResult(status=arg_error)
         else:
             for sql in sqlparse.split(query):
                 sql = sql.rstrip(";")
@@ -277,12 +278,12 @@ def execute_favorite_query(cur: Cursor, arg: str, **_) -> Generator[tuple, None,
                 cur.execute(sql)
                 if cur.description:
                     headers = [x[0] for x in cur.description]
-                    yield (title, cur, headers, None)
+                    yield SQLResult(title=title, results=cur, headers=headers)
                 else:
-                    yield (title, None, None, None)
+                    yield SQLResult(title=title)
 
 
-def list_favorite_queries() -> list[tuple]:
+def list_favorite_queries() -> list[SQLResult]:
     """List of all favorite queries.
     Returns (title, rows, headers, status)"""
 
@@ -293,7 +294,7 @@ def list_favorite_queries() -> list[tuple]:
         status = "\nNo favorite queries found." + FavoriteQueries.instance.usage
     else:
         status = ""
-    return [("", rows, headers, status)]
+    return [SQLResult(title="", results=rows, headers=headers, status=status)]
 
 
 def subst_favorite_query_args(query: str, args: list[str]) -> list[str | None]:
@@ -313,51 +314,51 @@ def subst_favorite_query_args(query: str, args: list[str]) -> list[str | None]:
 
 
 @special_command("\\fs", "\\fs name query", "Save a favorite query.")
-def save_favorite_query(arg: str, **_) -> list[tuple]:
+def save_favorite_query(arg: str, **_) -> list[SQLResult]:
     """Save a new favorite query.
     Returns (title, rows, headers, status)"""
 
     usage = "Syntax: \\fs name query.\n\n" + FavoriteQueries.instance.usage
     if not arg:
-        return [(None, None, None, usage)]
+        return [SQLResult(status=usage)]
 
     name, _separator, query = arg.partition(" ")
 
     # If either name or query is missing then print the usage and complain.
     if (not name) or (not query):
-        return [(None, None, None, usage + "Err: Both name and query are required.")]
+        return [SQLResult(status=f"{usage} Err: Both name and query are required.")]
 
     FavoriteQueries.instance.save(name, query)
-    return [(None, None, None, "Saved.")]
+    return [SQLResult(status="Saved.")]
 
 
 @special_command("\\fd", "\\fd [name]", "Delete a favorite query.")
-def delete_favorite_query(arg: str, **_) -> list[tuple]:
+def delete_favorite_query(arg: str, **_) -> list[SQLResult]:
     """Delete an existing favorite query."""
     usage = "Syntax: \\fd name.\n\n" + FavoriteQueries.instance.usage
     if not arg:
-        return [(None, None, None, usage)]
+        return [SQLResult(status=usage)]
 
     status = FavoriteQueries.instance.delete(arg)
 
-    return [(None, None, None, status)]
+    return [SQLResult(status=status)]
 
 
 @special_command("system", "system [command]", "Execute a system shell commmand.")
-def execute_system_command(arg: str, **_) -> list[tuple]:
+def execute_system_command(arg: str, **_) -> list[SQLResult]:
     """Execute a system shell command."""
     usage = "Syntax: system [command].\n"
 
     if not arg:
-        return [(None, None, None, usage)]
+        return [SQLResult(status=usage)]
 
     try:
         command = arg.strip()
         if command.startswith("cd"):
             ok, error_message = handle_cd_command(arg)
             if not ok:
-                return [(None, None, None, error_message)]
-            return [(None, None, None, "")]
+                return [SQLResult(status=error_message)]
+            return [SQLResult(status="")]
 
         args = arg.split(" ")
         process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -367,9 +368,9 @@ def execute_system_command(arg: str, **_) -> list[tuple]:
         encoding = locale.getpreferredencoding(False)
         response_str = response.decode(encoding)
 
-        return [(None, None, None, response_str)]
+        return [SQLResult(status=response_str)]
     except OSError as e:
-        return [(None, None, None, f"OSError: {e.strerror}")]
+        return [SQLResult(status=f"OSError: {e.strerror}")]
 
 
 def parseargfile(arg: str) -> tuple[str, str]:
@@ -387,7 +388,7 @@ def parseargfile(arg: str) -> tuple[str, str]:
 
 
 @special_command("tee", "tee [-o] filename", "Append all results to an output file (overwrite using -o).")
-def set_tee(arg: str, **_) -> list[tuple]:
+def set_tee(arg: str, **_) -> list[SQLResult]:
     global tee_file
 
     try:
@@ -395,7 +396,7 @@ def set_tee(arg: str, **_) -> list[tuple]:
     except (IOError, OSError) as e:
         raise OSError(f"Cannot write to file '{e.filename}': {e.strerror}") from e
 
-    return [(None, None, None, "")]
+    return [SQLResult(status="")]
 
 
 def close_tee() -> None:
@@ -406,9 +407,9 @@ def close_tee() -> None:
 
 
 @special_command("notee", "notee", "Stop writing results to an output file.")
-def no_tee(arg: str, **_) -> list[tuple]:
+def no_tee(arg: str, **_) -> list[SQLResult]:
     close_tee()
-    return [(None, None, None, "")]
+    return [SQLResult(status="")]
 
 
 def write_tee(output: str) -> None:
@@ -420,7 +421,7 @@ def write_tee(output: str) -> None:
 
 
 @special_command("\\once", "\\o [-o] filename", "Append next result to an output file (overwrite using -o).", aliases=["\\o"])
-def set_once(arg: str, **_) -> list[tuple]:
+def set_once(arg: str, **_) -> list[SQLResult]:
     global once_file, written_to_once_file
 
     try:
@@ -429,7 +430,7 @@ def set_once(arg: str, **_) -> list[tuple]:
         raise OSError(f"Cannot write to file '{e.filename}': {e.strerror}") from e
     written_to_once_file = False
 
-    return [(None, None, None, "")]
+    return [SQLResult(status="")]
 
 
 def is_redirected() -> bool:
@@ -473,7 +474,7 @@ def _run_post_redirect_hook(post_redirect_command: str, filename: str) -> None:
 
 
 @special_command("\\pipe_once", "\\| command", "Send next result to a subprocess.", aliases=["\\|"])
-def set_pipe_once(arg: str, **_) -> list[tuple]:
+def set_pipe_once(arg: str, **_) -> list[SQLResult]:
     if not arg:
         raise OSError("pipe_once requires a command")
     if WIN:
@@ -491,7 +492,7 @@ def set_pipe_once(arg: str, **_) -> list[tuple]:
         encoding="UTF-8",
         universal_newlines=True,
     )
-    return [(None, None, None, "")]
+    return [SQLResult(status="")]
 
 
 def write_pipe_once(line: str) -> None:
@@ -532,14 +533,14 @@ def flush_pipe_once_if_written(post_redirect_command: str) -> None:
 
 
 @special_command("watch", "watch [seconds] [-c] query", "Executes the query every [seconds] seconds (by default 5).")
-def watch_query(arg: str, **kwargs) -> Generator[tuple, None, None]:
+def watch_query(arg: str, **kwargs) -> Generator[SQLResult, None, None]:
     usage = """Syntax: watch [seconds] [-c] query.
     * seconds: The interval at the query will be repeated, in seconds.
                By default 5.
     * -c: Clears the screen between every iteration.
 """
     if not arg:
-        yield (None, None, None, usage)
+        yield SQLResult(status=usage)
         return
     seconds = 5.0
     clear_screen = False
@@ -548,7 +549,7 @@ def watch_query(arg: str, **kwargs) -> Generator[tuple, None, None]:
         arg = arg.strip()
         if not arg:
             # Oops, we parsed all the arguments without finding a statement
-            yield (None, None, None, usage)
+            yield SQLResult(status=usage)
             return
         (left_arg, _, right_arg) = arg.partition(" ")
         arg = right_arg
@@ -581,9 +582,9 @@ def watch_query(arg: str, **kwargs) -> Generator[tuple, None, None]:
                 cur.execute(sql)
                 if cur.description:
                     headers = [x[0] for x in cur.description]
-                    yield (title, cur, headers, None)
+                    yield SQLResult(title=title, results=cur, headers=headers)
                 else:
-                    yield (title, None, None, None)
+                    yield SQLResult(title=title)
             sleep(seconds)
         except KeyboardInterrupt:
             # This prints the Ctrl-C character in its own line, which prevents
@@ -595,7 +596,7 @@ def watch_query(arg: str, **kwargs) -> Generator[tuple, None, None]:
 
 
 @special_command("delimiter", None, "Change SQL delimiter.")
-def set_delimiter(arg: str, **_) -> list[tuple]:
+def set_delimiter(arg: str, **_) -> list[SQLResult]:
     return delimiter_command.set(arg)
 
 
