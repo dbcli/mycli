@@ -536,10 +536,6 @@ class MyCli:
         # 4. cnf (.my.cnf / etc)
         # 5. --password-file CLI option
 
-        # if no password has been set up to this point, ask for one
-        if passwd is None:
-            passwd = click.prompt("Enter password", hide_input=True, show_default=False, default='', type=str, err=True)
-
         # Connect to the database.
         def _connect() -> None:
             try:
