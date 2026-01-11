@@ -9,10 +9,13 @@ class SQLResult:
     results: Cursor | list[tuple] | None = None
     headers: list[str] | str | None = None
     status: str | None = None
-    command: dict[str, object] | None = None
+    command: dict[str, str] | None = None
+
+    def get_output(self):
+        return self.title, self.results, self.headers, self.status
 
     def __iter__(self):
-        return iter((self.title, self.results, self.headers, self.status, self.command))
+        return self
 
     def __str__(self):
         return f"{self.title}, {self.results}, {self.headers}, {self.status}, {self.command}"

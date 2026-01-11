@@ -582,7 +582,7 @@ def watch_query(arg: str, **kwargs) -> Generator[SQLResult, None, None]:
                 cur.execute(sql)
                 command = {
                     "name": "watch",
-                    "seconds": seconds,
+                    "seconds": str(seconds),
                 }
                 if cur.description:
                     headers = [x[0] for x in cur.description]

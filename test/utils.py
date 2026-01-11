@@ -47,13 +47,19 @@ def create_db(dbname):
 
 def run(executor, sql, rows_as_list=True):
     """Return string output for the sql to be run."""
-    result = []
+    results = []
 
-    for title, rows, headers, status, _command in executor.run(sql):
+    for result in executor.run(sql):
+        (
+            title,
+            rows,
+            headers,
+            status,
+        ) = result.get_output()
         rows = list(rows) if (rows_as_list and rows) else rows
-        result.append({"title": title, "rows": rows, "headers": headers, "status": status})
+        results.append({"title": title, "rows": rows, "headers": headers, "status": status})
 
-    return result
+    return results
 
 
 def set_expanded_output(is_expanded):
