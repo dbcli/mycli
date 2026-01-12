@@ -1423,19 +1423,13 @@ class MyCli:
 @click.option("-S", "--socket", envvar="MYSQL_UNIX_PORT", help="The socket file to use for connection.")
 @click.option(
     "-p",
-    "prompt_password",
+    "--pass",
+    "--password",
+    "password",
     is_flag=False,
     flag_value="MYCLI_ASK_PASSWORD",
     type=str,
     help="Prompt for (or enter in cleartext) password to connect to the database.",
-)
-@click.option(
-    "--pass",
-    "--password",
-    "cli_password",
-    default=None,
-    type=str,
-    help="Cleartext password to connect to the database.",
 )
 @click.option("--ssh-user", help="User name to connect to ssh server.")
 @click.option("--ssh-host", help="Host name to connect to ssh server.")
@@ -1503,8 +1497,7 @@ def cli(
     host: str | None,
     port: int | None,
     socket: str | None,
-    prompt_password: str | None,
-    cli_password: str | None,
+    password: str | None,
     dbname: str | None,
     verbose: bool,
     prompt: str | None,
@@ -1552,25 +1545,14 @@ def cli(
       - mycli mysql://my_user@my_host.com:3306/my_database
 
     """
-    # if both types of password options are used, throw an error
-    if prompt_password == "MYCLI_ASK_PASSWORD" and cli_password is not None:
-        click.secho("Please use either the -p or --pass/--password option, not both at the same time.", err=True, fg="red")
-        sys.exit(1)
-
     # if user passes the --p* flag, ask for the password right away
     # to reduce lag as much as possible
-    if prompt_password == "MYCLI_ASK_PASSWORD":
+    if password == "MYCLI_ASK_PASSWORD":
         password = click.prompt("Enter password", hide_input=True, show_default=False, default='', type=str, err=True)
-    elif prompt_password is not None:
-        password = prompt_password
-    elif cli_password is not None:
-        password = cli_password
-    elif os.environ.get("MYSQL_PWD") is not None:
+    elif password is None and os.environ.get("MYSQL_PWD") is not None:
         # getting the envvar ourselves because the envvar from a click
         # option cannot be an empty string, but a password can be
         password = os.environ.get("MYSQL_PWD")
-    else:
-        password = None
 
     mycli = MyCli(
         prompt=prompt,
