@@ -9,7 +9,7 @@ class SQLResult:
     results: Cursor | list[tuple] | None = None
     headers: list[str] | str | None = None
     status: str | None = None
-    command: dict[str, str] | None = None
+    command: dict[str, str | float] | None = None
 
     def get_output(self):
         return self.title, self.results, self.headers, self.status

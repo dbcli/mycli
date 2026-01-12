@@ -833,10 +833,10 @@ class MyCli:
                     if result_count > 0:
                         try:
                             watch_seconds = float(command["seconds"])
+                            start += watch_seconds
                         except ValueError as e:
                             self.echo(f"Invalid watch sleep time provided ({e}).", err=True, fg="red")
                             sys.exit(1)
-                        start += watch_seconds
                 if is_select(status) and cur and cur.rowcount > threshold:
                     self.echo(
                         f"The result set has more than {threshold} rows.",

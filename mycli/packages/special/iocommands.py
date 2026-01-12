@@ -580,9 +580,9 @@ def watch_query(arg: str, **kwargs) -> Generator[SQLResult, None, None]:
             set_pager_enabled(False)
             for sql, title in sql_list:
                 cur.execute(sql)
-                command = {
+                command: dict[str, str | float] = {
                     "name": "watch",
-                    "seconds": str(seconds),
+                    "seconds": seconds,
                 }
                 if cur.description:
                     headers = [x[0] for x in cur.description]
