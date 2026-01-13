@@ -1144,6 +1144,9 @@ class MyCli:
             self.logger.debug("Attempting to reconnect.")
             self.echo("Reconnecting...", fg="yellow")
             self.sqlexecute.conn.ping(reconnect=True)
+            # if a database is currently selected, set it on the conn again
+            if self.sqlexecute.dbname:
+                self.sqlexecute.conn.select_db(self.sqlexecute.dbname)
             self.logger.debug("Reconnected successfully.")
             self.echo("Reconnected successfully.", fg="yellow")
             self.sqlexecute.reset_connection_id()
