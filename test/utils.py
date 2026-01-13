@@ -11,6 +11,7 @@ import pytest
 
 from mycli.main import special
 
+DATABASE = "mycli_test_db"
 PASSWORD = os.getenv("PYTEST_PASSWORD")
 USER = os.getenv("PYTEST_USER", "root")
 HOST = os.getenv("PYTEST_HOST", "localhost")

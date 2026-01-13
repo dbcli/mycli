@@ -3,13 +3,13 @@
 import pytest
 
 import mycli.sqlexecute
-from test.utils import CHARSET, HOST, PASSWORD, PORT, SSH_HOST, SSH_PORT, SSH_USER, USER, create_db, db_connection
+from test.utils import CHARSET, DATABASE, HOST, PASSWORD, PORT, SSH_HOST, SSH_PORT, SSH_USER, USER, create_db, db_connection
 
 
 @pytest.fixture(scope="function")
 def connection():
-    create_db("mycli_test_db")
-    connection = db_connection("mycli_test_db")
+    create_db(DATABASE)
+    connection = db_connection(DATABASE)
     yield connection
 
     connection.close()
@@ -24,7 +24,7 @@ def cursor(connection):
 @pytest.fixture
 def executor(connection):
     return mycli.sqlexecute.SQLExecute(
-        database="mycli_test_db",
+        database=DATABASE,
         user=USER,
         host=HOST,
         password=PASSWORD,
