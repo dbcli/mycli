@@ -14,7 +14,8 @@ from mycli.main import MyCli, cli, thanks_picker
 import mycli.packages.special
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
 from mycli.sqlexecute import ServerInfo, SQLExecute
-from test.utils import HOST, PASSWORD, PORT, USER, dbtest, run
+from pymysql.err import OperationalError
+from test.utils import DATABASE, HOST, PASSWORD, PORT, USER, dbtest, run
 
 test_dir = os.path.abspath(os.path.dirname(__file__))
 project_dir = os.path.dirname(test_dir)
@@ -92,6 +93,41 @@ def test_ssl_mode_overrides_no_ssl(executor, capsys):
     result_dict = next(csv.DictReader(result.stdout.split("\n")))
     ssl_cipher = result_dict["VARIABLE_VALUE"]
     assert ssl_cipher
+
+
+@dbtest
+def test_reconnect_database_is_selected(executor, capsys):
+    m = MyCli()
+    m.register_special_commands()
+    m.sqlexecute = SQLExecute(
+        None,
+        USER,
+        PASSWORD,
+        HOST,
+        PORT,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    )
+    try:
+        next(m.sqlexecute.run(f"use {DATABASE}"))
+        next(m.sqlexecute.run(f"kill {m.sqlexecute.connection_id}"))
+    except OperationalError:
+        pass # expected as the connection was killed
+    except Exception as e:
+        raise e
+    m.reconnect()
+    try:
+        next(m.sqlexecute.run("show tables")).results.fetchall()
+    except Exception as e:
+        raise e
 
 
 @dbtest
