@@ -14,13 +14,18 @@ Features
         4. cnf (.my.cnf / etc)
         5. --password-file CLI option
 
-Internal
---------
-* Create new data class to handle SQL/command results to make further code improvements easier
+
+1.44.2 (2026/01/13)
+==============
 
 Bug Fixes
 --------
 * Update watch query output to display the correct execution time on all iterations (#763).
+* Use correct database (if applicable) when reconnecting after a connection loss (#1437).
+
+Internal
+--------
+* Create new data class to handle SQL/command results to make further code improvements easier.
 
 
 1.44.1 (2026/01/10)
