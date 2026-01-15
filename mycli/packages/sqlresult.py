@@ -11,9 +11,6 @@ class SQLResult:
     status: str | None = None
     command: dict[str, str | float] | None = None
 
-    def get_output(self):
-        return self.title, self.results, self.headers, self.status
-
     def __iter__(self):
         return self
 

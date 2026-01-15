@@ -51,12 +51,10 @@ def run(executor, sql, rows_as_list=True):
     results = []
 
     for result in executor.run(sql):
-        (
-            title,
-            rows,
-            headers,
-            status,
-        ) = result.get_output()
+        title = result.title
+        rows = result.results
+        headers = result.headers
+        status = result.status
         rows = list(rows) if (rows_as_list and rows) else rows
         results.append({"title": title, "rows": rows, "headers": headers, "status": status})
 
