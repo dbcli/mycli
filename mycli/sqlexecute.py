@@ -491,8 +491,12 @@ class SQLExecute:
         try:
             results = self.run("select connection_id()")
             for result in results:
-                _title, cur, _headers, _status = result.get_output()
-                self.connection_id = cur.fetchone()[0]
+                cur = result.results
+                if isinstance(cur, Cursor):
+                    v = cur.fetchone()
+                    self.connection_id = v[0] if v is not None else -1
+                else:
+                    raise ValueError
         except Exception as e:
             # See #1054
             self.connection_id = -1

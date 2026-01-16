@@ -776,7 +776,10 @@ class MyCli:
             nonlocal mutating
             result_count = 0
             for result in results:
-                title, cur, headers, status = result.get_output()
+                title = result.title
+                cur = result.results
+                headers = result.headers
+                status = result.status
                 command = result.command
                 logger.debug("title: %r", title)
                 logger.debug("headers: %r", headers)
@@ -793,7 +796,7 @@ class MyCli:
                         except ValueError as e:
                             self.echo(f"Invalid watch sleep time provided ({e}).", err=True, fg="red")
                             sys.exit(1)
-                if is_select(status) and cur and cur.rowcount > threshold:
+                if is_select(status) and isinstance(cur, Cursor) and cur.rowcount > threshold:
                     self.echo(
                         f"The result set has more than {threshold} rows.",
                         fg="red",
@@ -843,7 +846,10 @@ class MyCli:
                 if self.show_warnings and isinstance(cur, Cursor) and cur.warning_count > 0:
                     warnings = sqlexecute.run("SHOW WARNINGS")
                     for warning in warnings:
-                        title, cur, headers, status = warning.get_output()
+                        title = warning.title
+                        cur = warning.results
+                        headers = warning.headers
+                        status = warning.status
                         formatted = self.format_output(
                             title,
                             cur,
@@ -1307,7 +1313,9 @@ class MyCli:
         assert self.sqlexecute is not None
         results = self.sqlexecute.run(query)
         for result in results:
-            title, cur, headers, _status = result.get_output()
+            title = result.title
+            cur = result.results
+            headers = result.headers
             self.main_formatter.query = query
             self.redirect_formatter.query = query
             output = self.format_output(
@@ -1325,7 +1333,9 @@ class MyCli:
             if self.show_warnings and isinstance(cur, Cursor) and cur.warning_count > 0:
                 warnings = self.sqlexecute.run("SHOW WARNINGS")
                 for warning in warnings:
-                    title, cur, headers, _status = warning.get_output()
+                    title = warning.title
+                    cur = warning.results
+                    headers = warning.headers
                     output = self.format_output(
                         title,
                         cur,
@@ -1341,7 +1351,7 @@ class MyCli:
         self,
         title: str | None,
         cur: Cursor | list[tuple] | None,
-        headers: list[str] | None,
+        headers: list[str] | str | None,
         expanded: bool = False,
         is_redirected: bool = False,
         null_string: str | None = None,
