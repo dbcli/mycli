@@ -1446,14 +1446,14 @@ class MyCli:
 # the user provides the parameters in on the CLI
 class ProvidedParamsOrder(click.Command):
     def parse_args(self, ctx, args):
-        # Run the parser to get the options and their order
+        # run parser to get the options and their order
         parser = self.make_parser(ctx)
         opts, _, param_order = parser.parse_args(args=list(args))
 
-        # Store the ordered parameters in the context object for later use
+        # store the ordered parameters in the context object for later use
         ctx.obj = {'param_order': param_order}
 
-        # Return "normal" parse results
+        # proceed with parsing as normal
         return super().parse_args(ctx, args)
 
 
