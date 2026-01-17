@@ -1,3 +1,11 @@
+TBD
+==============
+
+Bug Fixes
+--------
+* Gracefully catch Paramiko parsing errors on `--list-ssh-config`.
+
+
 1.44.2 (2026/01/13)
 ==============
 
