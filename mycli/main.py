@@ -64,7 +64,7 @@ from mycli.packages.sqlresult import SQLResult
 from mycli.packages.tabular_output import sql_format
 from mycli.packages.toolkit.history import FileHistoryWithTimestamp
 from mycli.sqlcompleter import SQLCompleter
-from mycli.sqlexecute import ERROR_CODE_ACCESS_DENIED, FIELD_TYPES, SQLExecute
+from mycli.sqlexecute import FIELD_TYPES, SQLExecute
 
 try:
     import paramiko
@@ -460,7 +460,7 @@ class MyCli:
         self,
         database: str | None = "",
         user: str | None = "",
-        passwd: str | None = "",
+        passwd: str | None = None,
         host: str | None = "",
         port: str | int | None = "",
         socket: str | None = "",
@@ -528,10 +528,19 @@ class MyCli:
         # if the passwd is not specified try to set it using the password_file option
         password_from_file = self.get_password_from_file(password_file)
         passwd = passwd if isinstance(passwd, str) else password_from_file
-        passwd = '' if passwd is None else passwd
+
+        # password hierarchy
+        # 1. -p / --pass/--password CLI options
+        # 2. envvar (MYSQL_PWD)
+        # 3. DSN (mysql://user:password)
+        # 4. cnf (.my.cnf / etc)
+        # 5. --password-file CLI option
+
+        # if no password was found from all of the above sources, ask for a password
+        if passwd is None:
+            passwd = click.prompt("Enter password", hide_input=True, show_default=False, default='', type=str, err=True)
 
         # Connect to the database.
-
         def _connect() -> None:
             try:
                 self.sqlexecute = SQLExecute(
@@ -552,31 +561,7 @@ class MyCli:
                     init_command,
                 )
             except pymysql.OperationalError as e1:
-                if e1.args[0] == ERROR_CODE_ACCESS_DENIED:
-                    if password_from_file is not None:
-                        new_passwd = password_from_file
-                    else:
-                        new_passwd = click.prompt(
-                            f"Password for {user}", hide_input=True, show_default=False, default='', type=str, err=True
-                        )
-                    self.sqlexecute = SQLExecute(
-                        database,
-                        user,
-                        new_passwd,
-                        host,
-                        int_port,
-                        socket,
-                        charset,
-                        use_local_infile,
-                        ssl_config_or_none,
-                        ssh_user,
-                        ssh_host,
-                        int(ssh_port) if ssh_port else None,
-                        ssh_password,
-                        ssh_key_filename,
-                        init_command,
-                    )
-                elif e1.args[0] == HANDSHAKE_ERROR and ssl is not None and ssl.get("mode", None) == "auto":
+                if e1.args[0] == HANDSHAKE_ERROR and ssl is not None and ssl.get("mode", None) == "auto":
                     try:
                         self.sqlexecute = SQLExecute(
                             database,
@@ -595,33 +580,8 @@ class MyCli:
                             ssh_key_filename,
                             init_command,
                         )
-                    except pymysql.OperationalError as e2:
-                        if e2.args[0] == ERROR_CODE_ACCESS_DENIED:
-                            if password_from_file is not None:
-                                new_passwd = password_from_file
-                            else:
-                                new_passwd = click.prompt(
-                                    f"Password for {user}", hide_input=True, show_default=False, default='', type=str, err=True
-                                )
-                            self.sqlexecute = SQLExecute(
-                                database,
-                                user,
-                                new_passwd,
-                                host,
-                                int_port,
-                                socket,
-                                charset,
-                                use_local_infile,
-                                None,
-                                ssh_user,
-                                ssh_host,
-                                int(ssh_port) if ssh_port else None,
-                                ssh_password,
-                                ssh_key_filename,
-                                init_command,
-                            )
-                        else:
-                            raise e2
+                    except Exception as e2:
+                        raise e2
                 else:
                     raise e1
 
@@ -1482,13 +1442,36 @@ class MyCli:
         return self.query_history[-1][0] if self.query_history else None
 
 
-@click.command()
+# custom parsing class for click options to let us know what order
+# the user provides the parameters in on the CLI
+class ProvidedParamsOrder(click.Command):
+    def parse_args(self, ctx, args):
+        # run parser to get the options and their order
+        parser = self.make_parser(ctx)
+        opts, _, param_order = parser.parse_args(args=list(args))
+
+        # store the ordered parameters in the context object for later use
+        ctx.obj = {'param_order': param_order}
+
+        # proceed with parsing as normal
+        return super().parse_args(ctx, args)
+
+
+@click.command(cls=ProvidedParamsOrder)
 @click.option("-h", "--host", envvar="MYSQL_HOST", help="Host address of the database.")
 @click.option("-P", "--port", envvar="MYSQL_TCP_PORT", type=int, help="Port number to use for connection. Honors $MYSQL_TCP_PORT.")
 @click.option("-u", "--user", help="User name to connect to the database.")
 @click.option("-S", "--socket", envvar="MYSQL_UNIX_PORT", help="The socket file to use for connection.")
-@click.option("-p", "--password", "password", envvar="MYSQL_PWD", type=str, help="Password to connect to the database.")
-@click.option("--pass", "password", envvar="MYSQL_PWD", type=str, help="Password to connect to the database.")
+@click.option(
+    "-p",
+    "--pass",
+    "--password",
+    "password",
+    is_flag=False,
+    flag_value="MYCLI_ASK_PASSWORD",
+    type=str,
+    help="Prompt for (or enter in cleartext) password to connect to the database.",
+)
 @click.option("--ssh-user", help="User name to connect to ssh server.")
 @click.option("--ssh-host", help="Host name to connect to ssh server.")
 @click.option("--ssh-port", default=22, help="Port to connect to ssh server.")
@@ -1548,9 +1531,11 @@ class MyCli:
 @click.option(
     "--password-file", type=click.Path(), help="File or FIFO path containing the password to connect to the db if not specified otherwise."
 )
-@click.argument("database", default="", nargs=1)
+@click.argument("database", default=None, nargs=1)
+@click.pass_context
 def cli(
-    database: str,
+    ctx: click.Context,
+    database: str | None,
     user: str | None,
     host: str | None,
     port: int | None,
@@ -1603,6 +1588,25 @@ def cli(
       - mycli mysql://my_user@my_host.com:3306/my_database
 
     """
+    # get an ordered list of params provided, excluding the
+    # database argument as that will be provided by default
+    param_order = [param.name for param in ctx.obj['param_order'] if param.name != "database"]
+
+    # if password is not the flag value, is the last param, and
+    # database has no value, then assume the password value is
+    # actually the database and prompt for password
+    if password != "MYCLI_ASK_PASSWORD" and len(param_order) >= 1 and not database and param_order[-1] == "password":
+        database = password
+        password = click.prompt("Enter password", hide_input=True, show_default=False, default='', type=str, err=True)
+    # if user passes the --p* flag, ask for the password right away
+    # to reduce lag as much as possible
+    elif password == "MYCLI_ASK_PASSWORD":
+        password = click.prompt("Enter password", hide_input=True, show_default=False, default='', type=str, err=True)
+    elif password is None and os.environ.get("MYSQL_PWD") is not None:
+        # getting the envvar ourselves because the envvar from a click
+        # option cannot be an empty string, but a password can be
+        password = os.environ.get("MYSQL_PWD")
+
     mycli = MyCli(
         prompt=prompt,
         logfile=logfile,
