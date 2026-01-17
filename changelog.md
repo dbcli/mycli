@@ -1,3 +1,11 @@
+TBD
+==============
+
+Bug Fixes
+--------
+* Downgrade to Paramiko 3.5.1 to avoid crashing on DSA keys.
+
+
 1.44.2 (2026/01/13)
 ==============
 
