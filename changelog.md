@@ -4,8 +4,8 @@ Upcoming (TBD)
 Features
 --------
 * Update password handling functionality (#341):
-  1. Add ability to use the -p flag to launch a password prompt (or to enter cleartext as before)
-  2. Check for -p flag at the earliest possible point to reduce prompt load time (still limited by startup time)
+  1. Add ability to use the -p/--password/--pass options to launch a password prompt (or to enter cleartext as before)
+  2. Check for the -p/--password/--pass options at the earliest possible point to reduce prompt load time (still limited by startup time)
   3. Allow for an empty string password from the envvar MYSQL_PWD
   4. Clarify password option hierachy:
         1. -p / --pass/--password CLI options

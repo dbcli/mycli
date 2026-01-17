@@ -460,7 +460,7 @@ class MyCli:
         self,
         database: str | None = "",
         user: str | None = "",
-        passwd: str | None = "",
+        passwd: str | None = None,
         host: str | None = "",
         port: str | int | None = "",
         socket: str | None = "",
@@ -535,6 +535,10 @@ class MyCli:
         # 3. DSN (mysql://user:password)
         # 4. cnf (.my.cnf / etc)
         # 5. --password-file CLI option
+
+        # if no password was found from all of the above sources, ask for a password
+        if passwd is None:
+            passwd = click.prompt("Enter password", hide_input=True, show_default=False, default='', type=str, err=True)
 
         # Connect to the database.
         def _connect() -> None:
@@ -1438,7 +1442,22 @@ class MyCli:
         return self.query_history[-1][0] if self.query_history else None
 
 
-@click.command()
+# custom parsing class for click options to let us know what order
+# the user provides the parameters in on the CLI
+class ProvidedParamsOrder(click.Command):
+    def parse_args(self, ctx, args):
+        # Run the parser to get the options and their order
+        parser = self.make_parser(ctx)
+        opts, _, param_order = parser.parse_args(args=list(args))
+
+        # Store the ordered parameters in the context object for later use
+        ctx.obj = {'param_order': param_order}
+
+        # Return "normal" parse results
+        return super().parse_args(ctx, args)
+
+
+@click.command(cls=ProvidedParamsOrder)
 @click.option("-h", "--host", envvar="MYSQL_HOST", help="Host address of the database.")
 @click.option("-P", "--port", envvar="MYSQL_TCP_PORT", type=int, help="Port number to use for connection. Honors $MYSQL_TCP_PORT.")
 @click.option("-u", "--user", help="User name to connect to the database.")
@@ -1512,9 +1531,11 @@ class MyCli:
 @click.option(
     "--password-file", type=click.Path(), help="File or FIFO path containing the password to connect to the db if not specified otherwise."
 )
-@click.argument("database", default="", nargs=1)
+@click.argument("database", default=None, nargs=1)
+@click.pass_context
 def cli(
-    database: str,
+    ctx: click.Context,
+    database: str | None,
     user: str | None,
     host: str | None,
     port: int | None,
@@ -1567,9 +1588,19 @@ def cli(
       - mycli mysql://my_user@my_host.com:3306/my_database
 
     """
+    # get an ordered list of params provided, excluding the
+    # database argument as that will be provided by default
+    param_order = [param.name for param in ctx.obj['param_order'] if param.name != "database"]
+
+    # if password is not the flag value, is the last param, and
+    # database has no value, then assume the password value is
+    # actually the database and prompt for password
+    if password != "MYCLI_ASK_PASSWORD" and len(param_order) >= 1 and not database and param_order[-1] == "password":
+        database = password
+        password = click.prompt("Enter password", hide_input=True, show_default=False, default='', type=str, err=True)
     # if user passes the --p* flag, ask for the password right away
     # to reduce lag as much as possible
-    if password == "MYCLI_ASK_PASSWORD":
+    elif password == "MYCLI_ASK_PASSWORD":
         password = click.prompt("Enter password", hide_input=True, show_default=False, default='', type=str, err=True)
     elif password is None and os.environ.get("MYSQL_PWD") is not None:
         # getting the envvar ourselves because the envvar from a click
