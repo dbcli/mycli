@@ -1644,12 +1644,17 @@ def cli(
         sys.exit(0)
     if list_ssh_config:
         ssh_config = read_ssh_config(ssh_config_path)
-        for host in ssh_config.get_hostnames():
+        try:
+            host_entries = ssh_config.get_hostnames()
+        except KeyError:
+            click.secho('Error reading ssh config', err=True, fg="red")
+            sys.exit(1)
+        for host_entry in host_entries:
             if verbose:
-                host_config = ssh_config.lookup(host)
-                click.secho(f"{host} : {host_config.get('hostname')}")
+                host_config = ssh_config.lookup(host_entry)
+                click.secho(f"{host_entry} : {host_config.get('hostname')}")
             else:
-                click.secho(host)
+                click.secho(host_entry)
         sys.exit(0)
     # Choose which ever one has a valid value.
     database = dbname or database
