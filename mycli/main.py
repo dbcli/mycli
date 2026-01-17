@@ -772,7 +772,7 @@ class MyCli:
         if self.smart_completion:
             self.refresh_completions()
 
-        history_file = os.path.expanduser(os.environ.get("MYCLI_HISTFILE", "~/.mycli-history"))
+        history_file = os.path.expanduser(os.environ.get("MYCLI_HISTFILE", self.config.get("history_file", "~/.mycli-history")))
         if dir_path_exists(history_file):
             history = FileHistoryWithTimestamp(history_file)
         else:
