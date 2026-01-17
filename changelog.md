@@ -1,3 +1,11 @@
+TBD
+==============
+
+Features
+--------
+* Allow history file location to be configured.
+
+
 1.44.2 (2026/01/13)
 ==============
 

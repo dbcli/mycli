@@ -27,6 +27,9 @@ multi_line = False
 # or "shutdown".
 destructive_warning = True
 
+# interactive query history location.
+history_file = ~/.mycli-history
+
 # log_file location.
 log_file = ~/.mycli.log
 
