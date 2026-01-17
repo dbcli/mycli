@@ -1,3 +1,11 @@
+TBD
+==============
+
+Bug Fixes
+--------
+* Respect `--logfile` when using `--execute` or standard input at the shell CLI.
+
+
 1.44.2 (2026/01/13)
 ==============
 

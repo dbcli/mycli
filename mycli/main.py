@@ -992,10 +992,7 @@ class MyCli:
                 logger.debug("sql: %r", text)
 
                 special.write_tee(self.get_prompt(self.prompt_format) + text)
-                if self.logfile:
-                    self.logfile.write(f"\n# {datetime.now()}\n")
-                    self.logfile.write(text)
-                    self.logfile.write("\n")
+                self.log_query(text)
 
                 successful = False
                 start = time()
@@ -1176,6 +1173,12 @@ class MyCli:
             self.echo(str(e), err=True, fg="red")
             return False
 
+    def log_query(self, query: str) -> None:
+        if isinstance(self.logfile, TextIOWrapper):
+            self.logfile.write(f"\n# {datetime.now()}\n")
+            self.logfile.write(query)
+            self.logfile.write("\n")
+
     def log_output(self, output: str) -> None:
         """Log the output in the audit log, if it's enabled."""
         if isinstance(self.logfile, TextIOWrapper):
@@ -1355,6 +1358,7 @@ class MyCli:
     def run_query(self, query: str, new_line: bool = True) -> None:
         """Runs *query*."""
         assert self.sqlexecute is not None
+        self.log_query(query)
         results = self.sqlexecute.run(query)
         for result in results:
             title = result.title
@@ -1371,6 +1375,7 @@ class MyCli:
                 self.null_string,
             )
             for line in output:
+                self.log_output(line)
                 click.echo(line, nl=new_line)
 
             # get and display warnings if enabled
