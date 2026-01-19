@@ -25,7 +25,7 @@ class ConfirmBoolParamType(click.ParamType):
 BOOLEAN_TYPE = ConfirmBoolParamType()
 
 
-def confirm_destructive_query(queries: str) -> bool | None:
+def confirm_destructive_query(keywords: list[str], queries: str) -> bool | None:
     """Check if the query is destructive and prompts the user to confirm.
 
     Returns:
@@ -35,7 +35,7 @@ def confirm_destructive_query(queries: str) -> bool | None:
 
     """
     prompt_text = "You're about to run a destructive command.\nDo you want to proceed? (y/n)"
-    if is_destructive(queries) and sys.stdin.isatty():
+    if is_destructive(keywords, queries) and sys.stdin.isatty():
         return prompt(prompt_text, type=BOOLEAN_TYPE)
     else:
         return None
