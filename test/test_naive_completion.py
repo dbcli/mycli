@@ -37,7 +37,48 @@ def test_function_name_completion(completer, complete_event):
     text = "SELECT MA"
     position = len("SELECT MA")
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
-    assert sorted(x.text for x in result) == ["MASTER", "MAX"]
+    assert sorted(x.text for x in result) == [
+        'MAKEDATE',
+        'MAKETIME',
+        'MAKE_SET',
+        'MASTER',
+        'MASTER_AUTO_POSITION',
+        'MASTER_BIND',
+        'MASTER_COMPRESSION_ALGORITHMS',
+        'MASTER_CONNECT_RETRY',
+        'MASTER_DELAY',
+        'MASTER_HEARTBEAT_PERIOD',
+        'MASTER_HOST',
+        'MASTER_LOG_FILE',
+        'MASTER_LOG_POS',
+        'MASTER_PASSWORD',
+        'MASTER_PORT',
+        'MASTER_POS_WAIT',
+        'MASTER_PUBLIC_KEY_PATH',
+        'MASTER_RETRY_COUNT',
+        'MASTER_SSL',
+        'MASTER_SSL_CA',
+        'MASTER_SSL_CAPATH',
+        'MASTER_SSL_CERT',
+        'MASTER_SSL_CIPHER',
+        'MASTER_SSL_CRL',
+        'MASTER_SSL_CRLPATH',
+        'MASTER_SSL_KEY',
+        'MASTER_SSL_VERIFY_SERVER_CERT',
+        'MASTER_TLS_CIPHERSUITES',
+        'MASTER_TLS_VERSION',
+        'MASTER_USER',
+        'MASTER_ZSTD_COMPRESSION_LEVEL',
+        'MATCH',
+        'MAX',
+        'MAXVALUE',
+        'MAX_CONNECTIONS_PER_HOUR',
+        'MAX_QUERIES_PER_HOUR',
+        'MAX_ROWS',
+        'MAX_SIZE',
+        'MAX_UPDATES_PER_HOUR',
+        'MAX_USER_CONNECTIONS',
+    ]
 
 
 def test_column_name_completion(completer, complete_event):
