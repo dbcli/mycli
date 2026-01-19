@@ -1442,22 +1442,7 @@ class MyCli:
         return self.query_history[-1][0] if self.query_history else None
 
 
-# custom parsing class for click options to let us know what order
-# the user provides the parameters in on the CLI
-class ProvidedParamsOrder(click.Command):
-    def parse_args(self, ctx, args):
-        # run parser to get the options and their order
-        parser = self.make_parser(ctx)
-        opts, _, param_order = parser.parse_args(args=list(args))
-
-        # store the ordered parameters in the context object for later use
-        ctx.obj = {'param_order': param_order}
-
-        # proceed with parsing as normal
-        return super().parse_args(ctx, args)
-
-
-@click.command(cls=ProvidedParamsOrder)
+@click.command()
 @click.option("-h", "--host", envvar="MYSQL_HOST", help="Host address of the database.")
 @click.option("-P", "--port", envvar="MYSQL_TCP_PORT", type=int, help="Port number to use for connection. Honors $MYSQL_TCP_PORT.")
 @click.option("-u", "--user", help="User name to connect to the database.")
@@ -1588,23 +1573,18 @@ def cli(
       - mycli mysql://my_user@my_host.com:3306/my_database
 
     """
-    # get an ordered list of params provided, excluding the
-    # database argument as that will be provided by default
-    param_order = [param.name for param in ctx.obj['param_order'] if param.name != "database"]
-
-    # if password is not the flag value, is the last param, and
-    # database has no value, then assume the password value is
-    # actually the database and prompt for password
-    if password != "MYCLI_ASK_PASSWORD" and len(param_order) >= 1 and not database and param_order[-1] == "password":
-        database = password
-        password = click.prompt("Enter password", hide_input=True, show_default=False, default='', type=str, err=True)
     # if user passes the --p* flag, ask for the password right away
     # to reduce lag as much as possible
-    elif password == "MYCLI_ASK_PASSWORD":
+    if password == "MYCLI_ASK_PASSWORD":
         password = click.prompt("Enter password", hide_input=True, show_default=False, default='', type=str, err=True)
+    # if the password value looks like a DSN, treat it as such and
+    # prompt for password
+    elif database is None and password is not None and password.startswith("mysql://"):
+        database = password
+        password = click.prompt("Enter password", hide_input=True, show_default=False, default='', type=str, err=True)
+    # getting the envvar ourselves because the envvar from a click
+    # option cannot be an empty string, but a password can be
     elif password is None and os.environ.get("MYSQL_PWD") is not None:
-        # getting the envvar ourselves because the envvar from a click
-        # option cannot be an empty string, but a password can be
         password = os.environ.get("MYSQL_PWD")
 
     mycli = MyCli(
