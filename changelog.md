@@ -8,6 +8,7 @@ Features
 * Place exact-leading completions first.
 * Allow history file location to be configured.
 * Make destructive-warning keywords configurable.
+* Smarter fuzzy completion matches.
 
 
 Bug Fixes

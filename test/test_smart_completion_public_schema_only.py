@@ -13,6 +13,11 @@ metadata = {
     "orders": ["id", "ordered_date", "status"],
     "select": ["id", "insert", "ABC"],
     "réveillé": ["id", "insert", "ABC"],
+    "time_zone": ["Time_zone_id"],
+    "time_zone_leap_second": ["Time_zone_id"],
+    "time_zone_name": ["Time_zone_id"],
+    "time_zone_transition": ["Time_zone_id"],
+    "time_zone_transition_type": ["Time_zone_id"],
 }
 
 
@@ -66,51 +71,12 @@ def test_select_keyword_completion(completer, complete_event):
     assert list(result) == [
         Completion(text='SELECT', start_position=-3),
         Completion(text='SERIAL', start_position=-3),
-        Completion(text='GET_MASTER_PUBLIC_KEY', start_position=-3),
-        Completion(text='GET_SOURCE_PUBLIC_KEY', start_position=-3),
-        Completion(text='MASTER_COMPRESSION_ALGORITHMS', start_position=-3),
-        Completion(text='MASTER_DELAY', start_position=-3),
         Completion(text='MASTER_LOG_FILE', start_position=-3),
         Completion(text='MASTER_LOG_POS', start_position=-3),
-        Completion(text='MASTER_PUBLIC_KEY_PATH', start_position=-3),
-        Completion(text='MASTER_SSL', start_position=-3),
-        Completion(text='MASTER_SSL_CA', start_position=-3),
-        Completion(text='MASTER_SSL_CAPATH', start_position=-3),
-        Completion(text='MASTER_SSL_CERT', start_position=-3),
-        Completion(text='MASTER_SSL_CIPHER', start_position=-3),
-        Completion(text='MASTER_SSL_CRL', start_position=-3),
-        Completion(text='MASTER_SSL_CRLPATH', start_position=-3),
-        Completion(text='MASTER_SSL_KEY', start_position=-3),
-        Completion(text='MASTER_SSL_VERIFY_SERVER_CERT', start_position=-3),
         Completion(text='MASTER_TLS_CIPHERSUITES', start_position=-3),
         Completion(text='MASTER_TLS_VERSION', start_position=-3),
-        Completion(text='MASTER_ZSTD_COMPRESSION_LEVEL', start_position=-3),
         Completion(text='SCHEDULE', start_position=-3),
-        Completion(text='SECONDARY_LOAD', start_position=-3),
-        Completion(text='SECONDARY_UNLOAD', start_position=-3),
         Completion(text='SERIALIZABLE', start_position=-3),
-        Completion(text='SOURCE_COMPRESSION_ALGORITHMS', start_position=-3),
-        Completion(text='SOURCE_CONNECTION_AUTO_FAILOVER', start_position=-3),
-        Completion(text='SOURCE_DELAY', start_position=-3),
-        Completion(text='SOURCE_LOG_FILE', start_position=-3),
-        Completion(text='SOURCE_LOG_POS', start_position=-3),
-        Completion(text='SOURCE_PUBLIC_KEY_PATH', start_position=-3),
-        Completion(text='SOURCE_SSL', start_position=-3),
-        Completion(text='SOURCE_SSL_CA', start_position=-3),
-        Completion(text='SOURCE_SSL_CAPATH', start_position=-3),
-        Completion(text='SOURCE_SSL_CERT', start_position=-3),
-        Completion(text='SOURCE_SSL_CIPHER', start_position=-3),
-        Completion(text='SOURCE_SSL_CRL', start_position=-3),
-        Completion(text='SOURCE_SSL_CRLPATH', start_position=-3),
-        Completion(text='SOURCE_SSL_KEY', start_position=-3),
-        Completion(text='SOURCE_SSL_VERIFY_SERVER_CERT', start_position=-3),
-        Completion(text='SOURCE_TLS_CIPHERSUITES', start_position=-3),
-        Completion(text='SOURCE_TLS_VERSION', start_position=-3),
-        Completion(text='SOURCE_ZSTD_COMPRESSION_LEVEL', start_position=-3),
-        Completion(text='SQL_BIG_RESULT', start_position=-3),
-        Completion(text='SQL_BUFFER_RESULT', start_position=-3),
-        Completion(text='SQL_SMALL_RESULT', start_position=-3),
-        Completion(text='STATS_AUTO_RECALC', start_position=-3),
     ]
 
 
@@ -130,6 +96,11 @@ def test_table_completion(completer, complete_event):
         Completion(text="orders", start_position=0),
         Completion(text="`select`", start_position=0),
         Completion(text="`réveillé`", start_position=0),
+        Completion(text="time_zone", start_position=0),
+        Completion(text="time_zone_leap_second", start_position=0),
+        Completion(text="time_zone_name", start_position=0),
+        Completion(text="time_zone_transition", start_position=0),
+        Completion(text="time_zone_transition_type", start_position=0),
     ]
 
 
@@ -191,7 +162,6 @@ def test_function_name_completion(completer, complete_event):
         Completion(text='DECIMAL', start_position=-2),
         Completion(text='SMALLINT', start_position=-2),
         Completion(text='TIMESTAMP', start_position=-2),
-        Completion(text='ASSIGN_GTIDS_TO_ANONYMOUS_TRANSACTIONS', start_position=-2),
         Completion(text='COLUMN_FORMAT', start_position=-2),
         Completion(text='COLUMN_NAME', start_position=-2),
         Completion(text='COMPACT', start_position=-2),
@@ -211,10 +181,7 @@ def test_function_name_completion(completer, complete_event):
         Completion(text='SCHEMA', start_position=-2),
         Completion(text='SCHEMA_NAME', start_position=-2),
         Completion(text='SCHEMAS', start_position=-2),
-        Completion(text='SOURCE_COMPRESSION_ALGORITHMS', start_position=-2),
-        Completion(text='SQL_AFTER_MTS_GAPS', start_position=-2),
         Completion(text='SQL_SMALL_RESULT', start_position=-2),
-        Completion(text='STATS_SAMPLE_PAGES', start_position=-2),
         Completion(text='TEMPORARY', start_position=-2),
         Completion(text='TEMPTABLE', start_position=-2),
         Completion(text='TERMINATED', start_position=-2),
@@ -428,6 +395,33 @@ def test_table_names_after_from(completer, complete_event):
         Completion(text="orders", start_position=0),
         Completion(text="`select`", start_position=0),
         Completion(text="`réveillé`", start_position=0),
+        Completion(text="time_zone", start_position=0),
+        Completion(text="time_zone_leap_second", start_position=0),
+        Completion(text="time_zone_name", start_position=0),
+        Completion(text="time_zone_transition", start_position=0),
+        Completion(text="time_zone_transition_type", start_position=0),
+    ]
+
+
+def test_table_names_leading_partial(completer, complete_event):
+    text = "SELECT * FROM time_zone"
+    position = len("SELECT * FROM time_zone")
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    assert result == [
+        Completion(text="time_zone", start_position=-9),
+        Completion(text="time_zone_name", start_position=-9),
+        Completion(text="time_zone_transition", start_position=-9),
+        Completion(text="time_zone_leap_second", start_position=-9),
+        Completion(text="time_zone_transition_type", start_position=-9),
+    ]
+
+
+def test_table_names_inter_partial(completer, complete_event):
+    text = "SELECT * FROM time_leap"
+    position = len("SELECT * FROM time_leap")
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    assert result == [
+        Completion(text="time_zone_leap_second", start_position=-9),
     ]
 
 
