@@ -977,6 +977,13 @@ class SQLCompleter(Completer):
                 return kw.upper()
             return kw.lower()
 
+        def exact_leading_key(item: tuple[int, int, str], text):
+            if text and item[2].lower().startswith(text):
+                return -1000 + len(item[2])
+            return 0
+
+        completions = sorted(completions, key=lambda item: exact_leading_key(item, text))
+
         return (Completion(z if casing is None else apply_case(z), -len(text)) for x, y, z in completions)
 
     def get_completions(

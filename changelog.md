@@ -4,6 +4,7 @@ TBD
 Features
 --------
 * More complete and up-to-date set of MySQL reserved words for completions.
+* Place exact-leading completions first.
 * Allow history file location to be configured.
 
 
