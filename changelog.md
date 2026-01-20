@@ -1,3 +1,11 @@
+TBD
+==============
+
+Bug Fixes
+--------
+* Fix CamelCase fuzzy matching.
+
+
 1.45.0 (2026/01/20)
 ==============
 
