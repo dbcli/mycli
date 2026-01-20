@@ -23,6 +23,17 @@ cleanup_regex: dict[str, re.Pattern] = {
 }
 
 
+def is_valid_connection_scheme(text: str) -> tuple[bool, str | None]:
+    # exit early if the text does not resemble a DSN URI
+    if "://" not in text:
+        return False, None
+    scheme = text.split("://")[0]
+    if scheme not in ("mysql", "mysqlx", "tcp", "socket", "ssh"):
+        return False, scheme
+    else:
+        return True, None
+
+
 def last_word(text: str, include: str = "alphanum_underscore") -> str:
     r"""
     Find the last word in a sentence.
