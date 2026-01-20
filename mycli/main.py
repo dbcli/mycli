@@ -56,7 +56,7 @@ from mycli.lexer import MyCliLexer
 from mycli.packages import special
 from mycli.packages.filepaths import dir_path_exists, guess_socket_location
 from mycli.packages.hybrid_redirection import get_redirect_components, is_redirect_command
-from mycli.packages.parseutils import is_destructive, is_dropping_database
+from mycli.packages.parseutils import is_destructive, is_dropping_database, is_valid_connection_scheme
 from mycli.packages.prompt_utils import confirm, confirm_destructive_query
 from mycli.packages.special.favoritequeries import FavoriteQueries
 from mycli.packages.special.main import ArgType
@@ -1584,7 +1584,14 @@ def cli(
         password = click.prompt("Enter password", hide_input=True, show_default=False, default='', type=str, err=True)
     # if the password value looks like a DSN, treat it as such and
     # prompt for password
-    elif database is None and password is not None and password.startswith("mysql://"):
+    elif database is None and password is not None and "://" in password:
+        # check if the scheme is valid. We do not actually have any logic for these, but
+        # it will most usefully catch the case where we erroneously catch someone's
+        # password, and give them an easy error message to follow / report
+        is_valid_scheme, scheme = is_valid_connection_scheme(password)
+        if not is_valid_scheme:
+            click.secho(f"Error: Unknown connection scheme provided for DSN URI ({scheme}://)", err=True, fg="red")
+            sys.exit(1)
         database = password
         password = click.prompt("Enter password", hide_input=True, show_default=False, default='', type=str, err=True)
     # getting the envvar ourselves because the envvar from a click
