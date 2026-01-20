@@ -931,7 +931,7 @@ class SQLCompleter(Completer):
 
     @staticmethod
     def find_matches(
-        text: str,
+        orig_text: str,
         collection: Collection,
         start_only: bool = False,
         fuzzy: bool = True,
@@ -950,24 +950,53 @@ class SQLCompleter(Completer):
         yields prompt_toolkit Completion instances for any matches found
         in the collection of available completions.
         """
-        last = last_word(text, include="most_punctuations")
+        last = last_word(orig_text, include="most_punctuations")
         text = last.lower()
+        # unicode support not possible without adding the regex dependency
+        case_change_pat = re.compile("(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])")
 
         completions = []
 
         if fuzzy:
-            regex = ".*?".join(map(re.escape, text))
+            regex = ".{0,3}?".join(map(re.escape, text))
             pat = re.compile(f'({regex})')
+            under_words_text = [x for x in text.split('_') if x]
+            case_words_text = re.split(case_change_pat, text)
+
             for item in collection:
                 r = pat.search(item.lower())
                 if r:
-                    completions.append((len(r.group()), r.start(), item))
+                    completions.append(item)
+                    continue
+
+                under_words_item = [x for x in item.lower().split('_') if x]
+                occurrences = 0
+                for elt_word in under_words_text:
+                    for elt_item in under_words_item:
+                        if elt_item.startswith(elt_word):
+                            occurrences += 1
+                            break
+                if occurrences >= len(under_words_text):
+                    completions.append(item)
+                    continue
+
+                case_words_item = re.split(case_change_pat, item.lower())
+                occurrences = 0
+                for elt_word in case_words_text:
+                    for elt_item in case_words_item:
+                        if elt_item.startswith(elt_word):
+                            occurrences += 1
+                            break
+                if occurrences >= len(case_words_text):
+                    completions.append(item)
+                    continue
+
         else:
             match_end_limit = len(text) if start_only else None
             for item in collection:
                 match_point = item.lower().find(text, 0, match_end_limit)
                 if match_point >= 0:
-                    completions.append((len(text), match_point, item))
+                    completions.append(item)
 
         if casing == "auto":
             casing = "lower" if last and last[-1].islower() else "upper"
@@ -977,14 +1006,14 @@ class SQLCompleter(Completer):
                 return kw.upper()
             return kw.lower()
 
-        def exact_leading_key(item: tuple[int, int, str], text):
-            if text and item[2].lower().startswith(text):
-                return -1000 + len(item[2])
+        def exact_leading_key(item: str, text: str):
+            if text and item.lower().startswith(text):
+                return -1000 + len(item)
             return 0
 
         completions = sorted(completions, key=lambda item: exact_leading_key(item, text))
 
-        return (Completion(z if casing is None else apply_case(z), -len(text)) for x, y, z in completions)
+        return (Completion(x if casing is None else apply_case(x), -len(text)) for x in completions)
 
     def get_completions(
         self,
