@@ -1517,8 +1517,8 @@ class MyCli:
 @click.option(
     "--show-warnings/--no-show-warnings", "show_warnings", is_flag=True, help="Automatically show warnings after executing a SQL statement."
 )
-@click.option("-t", "--table", is_flag=True, help="Display batch output in table format.")
-@click.option("--csv", is_flag=True, help="Display batch output in CSV format.")
+@click.option("-t", "--table", is_flag=True, help="Shorthand for --format=table.")
+@click.option("--csv", is_flag=True, help="Shorthand for --format=csv.")
 @click.option("--warn/--no-warn", default=None, help="Warn before running a destructive query.")
 @click.option("--local-infile", type=bool, help="Enable/disable LOAD DATA LOCAL INFILE.")
 @click.option("-g", "--login-path", type=str, help="Read this path from the login file.")
@@ -1532,6 +1532,10 @@ class MyCli:
     "--password-file", type=click.Path(), help="File or FIFO path containing the password to connect to the db if not specified otherwise."
 )
 @click.argument("database", default=None, nargs=1)
+@click.option("--noninteractive", is_flag=True, help="Don't prompt during batch input.  Recommended.")
+@click.option(
+    '--format', 'batch_format', type=click.Choice(['default', 'csv', 'tsv', 'table']), help='Format for batch or --execute output.'
+)
 @click.pass_context
 def cli(
     ctx: click.Context,
@@ -1579,6 +1583,8 @@ def cli(
     unbuffered: bool | None,
     charset: str | None,
     password_file: str | None,
+    noninteractive: bool,
+    batch_format: str | None,
 ) -> None:
     """A MySQL terminal client with auto-completion and syntax highlighting.
 
@@ -1620,6 +1626,23 @@ def cli(
         warn=warn,
         myclirc=myclirc,
     )
+
+    if csv and batch_format not in [None, 'csv']:
+        click.secho("Conflicting --csv and --format arguments.", err=True, fg="red")
+        sys.exit(1)
+
+    if table and batch_format not in [None, 'table']:
+        click.secho("Conflicting --table and --format arguments.", err=True, fg="red")
+        sys.exit(1)
+
+    if not batch_format:
+        batch_format = 'default'
+
+    if csv:
+        batch_format = 'csv'
+
+    if table:
+        batch_format = 'table'
 
     if ssl_enable is not None:
         click.secho(
@@ -1827,15 +1850,20 @@ def cli(
     #  --execute argument
     if execute:
         try:
-            if csv:
-                mycli.main_formatter.format_name = "csv"
-                if execute.endswith(r"\G"):
+            if batch_format == 'csv':
+                mycli.main_formatter.format_name = 'csv'
+                if execute.endswith(r'\G'):
                     execute = execute[:-2]
-            elif table:
-                if execute.endswith(r"\G"):
+            elif batch_format == 'tsv':
+                mycli.main_formatter.format_name = 'tsv'
+                if execute.endswith(r'\G'):
+                    execute = execute[:-2]
+            elif batch_format == 'table':
+                mycli.main_formatter.format_name = 'ascii'
+                if execute.endswith(r'\G'):
                     execute = execute[:-2]
             else:
-                mycli.main_formatter.format_name = "tsv"
+                mycli.main_formatter.format_name = 'tsv'
 
             mycli.run_query(execute)
             sys.exit(0)
@@ -1847,36 +1875,44 @@ def cli(
         mycli.run_cli()
     else:
         stdin = click.get_text_stream("stdin")
-        try:
-            stdin_text = stdin.read()
-        except MemoryError:
-            click.secho("Failed! Ran out of memory.", err=True, fg="red")
-            click.secho("You might want to try the official mysql client.", err=True, fg="red")
-            click.secho("Sorry... :(", err=True, fg="red")
-            sys.exit(1)
-
-        if mycli.destructive_warning and is_destructive(mycli.destructive_keywords, stdin_text):
+        counter = 0
+        for stdin_text in stdin:
+            if counter:
+                if batch_format == 'csv':
+                    mycli.main_formatter.format_name = 'csv-noheader'
+                elif batch_format == 'tsv':
+                    mycli.main_formatter.format_name = 'tsv_noheader'
+                elif batch_format == 'table':
+                    mycli.main_formatter.format_name = 'ascii'
+                else:
+                    mycli.main_formatter.format_name = 'tsv'
+            else:
+                if batch_format == 'csv':
+                    mycli.main_formatter.format_name = 'csv'
+                elif batch_format == 'tsv':
+                    mycli.main_formatter.format_name = 'tsv'
+                elif batch_format == 'table':
+                    mycli.main_formatter.format_name = 'ascii'
+                else:
+                    mycli.main_formatter.format_name = 'tsv'
+            counter += 1
+            warn_confirmed: bool | None = True
+            if not noninteractive and mycli.destructive_warning and is_destructive(mycli.destructive_keywords, stdin_text):
+                try:
+                    # this seems to work, even though we are reading from stdin above
+                    sys.stdin = open("/dev/tty")
+                    # bug: the prompt will not be visible if stdout is redirected
+                    warn_confirmed = confirm_destructive_query(mycli.destructive_keywords, stdin_text)
+                except (IOError, OSError):
+                    mycli.logger.warning("Unable to open TTY as stdin.")
+                    sys.exit(1)
             try:
-                sys.stdin = open("/dev/tty")
-                warn_confirmed = confirm_destructive_query(mycli.destructive_keywords, stdin_text)
-            except (IOError, OSError):
-                mycli.logger.warning("Unable to open TTY as stdin.")
-            if not warn_confirmed:
-                sys.exit(0)
-
-        try:
-            new_line = True
-
-            if csv:
-                mycli.main_formatter.format_name = "csv"
-            elif not table:
-                mycli.main_formatter.format_name = "tsv"
-
-            mycli.run_query(stdin_text, new_line=new_line)
-            sys.exit(0)
-        except Exception as e:
-            click.secho(str(e), err=True, fg="red")
-            sys.exit(1)
+                if warn_confirmed:
+                    mycli.run_query(stdin_text, new_line=True)
+            except Exception as e:
+                click.secho(str(e), err=True, fg="red")
+                sys.exit(1)
+        sys.exit(0)
     mycli.close()
 
 
