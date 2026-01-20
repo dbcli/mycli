@@ -338,8 +338,9 @@ def suggest_based_on_last_token(
 
             # The lists of 'aliases' could be empty if we're trying to complete
             # a GRANT query. eg: GRANT SELECT, INSERT ON <tab>
-            # In that case we just suggest all tables.
+            # In that case we just suggest all schemata and all tables.
             if not aliases:
+                suggest.append({"type": "database"})
                 suggest.append({"type": "table", "schema": parent})
             return suggest
 
