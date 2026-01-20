@@ -456,6 +456,19 @@ def test_un_escaped_table_names(completer, complete_event):
     )
 
 
+# todo: the fixtures are insufficient; the database name should also appear in the result
+def test_grant_on_suggets_tables_and_schemata(completer, complete_event):
+    text = "GRANT ALL ON "
+    position = len(text)
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    assert result == [
+        Completion(text='users', start_position=0),
+        Completion(text='orders', start_position=0),
+        Completion(text='`select`', start_position=0),
+        Completion(text='`réveillé`', start_position=0),
+    ]
+
+
 def dummy_list_path(dir_name):
     dirs = {
         "/": [
