@@ -10,4 +10,4 @@ def test_confirm_destructive_query_notty() -> None:
     assert stdin.isatty() is False
 
     sql = "drop database foo;"
-    assert confirm_destructive_query(sql) is None
+    assert confirm_destructive_query(["drop"], sql) is None

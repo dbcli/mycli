@@ -27,6 +27,11 @@ multi_line = False
 # or "shutdown".
 destructive_warning = True
 
+# Queries starting with these keywords will activate the destructive warning.
+# UPDATE will not activate the warning if the statement includes a WHERE
+# clause.
+destructive_keywords = DROP SHUTDOWN DELETE TRUNCATE ALTER UPDATE
+
 # interactive query history location.
 history_file = ~/.mycli-history
 

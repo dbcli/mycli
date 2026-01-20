@@ -42,6 +42,7 @@ PIPE_ONCE: dict[str, Any] = {
 }
 delimiter_command = DelimiterCommand()
 favoritequeries = FavoriteQueries(ConfigObj())
+DESTRUCTIVE_KEYWORDS: list[str] = []
 
 
 def set_favorite_queries(config):
@@ -70,6 +71,11 @@ def set_show_favorite_query(val: bool) -> None:
 
 def is_show_favorite_query() -> bool:
     return SHOW_FAVORITE_QUERY
+
+
+def set_destructive_keywords(val: list[str]) -> None:
+    global DESTRUCTIVE_KEYWORDS
+    DESTRUCTIVE_KEYWORDS = val
 
 
 @special_command(
@@ -562,7 +568,7 @@ def watch_query(arg: str, **kwargs) -> Generator[SQLResult, None, None]:
             clear_screen = True
             continue
         statement = f"{left_arg} {arg}"
-    destructive_prompt = confirm_destructive_query(statement)
+    destructive_prompt = confirm_destructive_query(DESTRUCTIVE_KEYWORDS, statement)
     if destructive_prompt is False:
         click.secho("Wise choice!")
         return

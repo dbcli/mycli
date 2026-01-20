@@ -275,15 +275,19 @@ def query_has_where_clause(query: str) -> bool:
     return any(isinstance(token, sqlparse.sql.Where) for token_list in sqlparse.parse(query) for token in token_list)
 
 
-def is_destructive(queries: str) -> bool:
-    """Returns if any of the queries in *queries* is destructive."""
-    keywords = ("drop", "shutdown", "delete", "truncate", "alter")
+def is_destructive(keywords: list[str], queries: str) -> bool:
+    """Returns True if any of the queries in *queries* is destructive."""
     for query in sqlparse.split(queries):
-        if query:
-            if query_starts_with(query, list(keywords)) is True:
+        if not query:
+            continue
+        # subtle: if "UPDATE" is one of our keywords AND "query" starts with "UPDATE"
+        if query_starts_with(query, keywords) and query_starts_with(query, ["update"]):
+            if query_has_where_clause(query):
+                return False
+            else:
                 return True
-            elif query_starts_with(query, ["update"]) is True and not query_has_where_clause(query):
-                return True
+        if query_starts_with(query, keywords):
+            return True
 
     return False
 

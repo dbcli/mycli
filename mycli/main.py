@@ -220,6 +220,10 @@ class MyCli:
         self.prompt_format = prompt or prompt_cnf or c["main"]["prompt"] or self.default_prompt
         self.multiline_continuation_char = c["main"]["prompt_continuation"]
         self.prompt_app = None
+        self.destructive_keywords = [
+            keyword for keyword in c["main"].get("destructive_keywords", "DROP SHUTDOWN DELETE TRUNCATE ALTER UPDATE").split(' ') if keyword
+        ]
+        special.set_destructive_keywords(self.destructive_keywords)
 
     def close(self) -> None:
         if self.sqlexecute is not None:
@@ -346,7 +350,7 @@ class MyCli:
         except IOError as e:
             return [SQLResult(status=str(e))]
 
-        if self.destructive_warning and confirm_destructive_query(query) is False:
+        if self.destructive_warning and confirm_destructive_query(self.destructive_keywords, query) is False:
             message = "Wise choice. Command execution stopped."
             return [SQLResult(status=message)]
 
@@ -937,7 +941,7 @@ class MyCli:
                     return
 
             if self.destructive_warning:
-                destroy = confirm_destructive_query(text)
+                destroy = confirm_destructive_query(self.destructive_keywords, text)
                 if destroy is None:
                     pass  # Query was not destructive. Nothing to do here.
                 elif destroy is True:
@@ -1843,10 +1847,10 @@ def cli(
             click.secho("Sorry... :(", err=True, fg="red")
             sys.exit(1)
 
-        if mycli.destructive_warning and is_destructive(stdin_text):
+        if mycli.destructive_warning and is_destructive(mycli.destructive_keywords, stdin_text):
             try:
                 sys.stdin = open("/dev/tty")
-                warn_confirmed = confirm_destructive_query(stdin_text)
+                warn_confirmed = confirm_destructive_query(mycli.destructive_keywords, stdin_text)
             except (IOError, OSError):
                 mycli.logger.warning("Unable to open TTY as stdin.")
             if not warn_confirmed:
