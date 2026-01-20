@@ -466,6 +466,11 @@ def test_grant_on_suggets_tables_and_schemata(completer, complete_event):
         Completion(text='orders', start_position=0),
         Completion(text='`select`', start_position=0),
         Completion(text='`réveillé`', start_position=0),
+        Completion(text='time_zone', start_position=0),
+        Completion(text='time_zone_leap_second', start_position=0),
+        Completion(text='time_zone_name', start_position=0),
+        Completion(text='time_zone_transition', start_position=0),
+        Completion(text='time_zone_transition_type', start_position=0),
     ]
 
 
