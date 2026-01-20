@@ -961,7 +961,7 @@ class SQLCompleter(Completer):
             regex = ".{0,3}?".join(map(re.escape, text))
             pat = re.compile(f'({regex})')
             under_words_text = [x for x in text.split('_') if x]
-            case_words_text = re.split(case_change_pat, text)
+            case_words_text = re.split(case_change_pat, last)
 
             for item in collection:
                 r = pat.search(item.lower())
@@ -980,7 +980,7 @@ class SQLCompleter(Completer):
                     completions.append(item)
                     continue
 
-                case_words_item = re.split(case_change_pat, item.lower())
+                case_words_item = re.split(case_change_pat, item)
                 occurrences = 0
                 for elt_word in case_words_text:
                     for elt_item in case_words_item:
