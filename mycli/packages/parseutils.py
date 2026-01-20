@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Generator, Tuple
+from typing import Any, Generator
 
 import sqlglot
 import sqlparse
@@ -23,7 +23,7 @@ cleanup_regex: dict[str, re.Pattern] = {
 }
 
 
-def is_valid_connection_scheme(text: str) -> Tuple[bool, str | None]:
+def is_valid_connection_scheme(text: str) -> tuple[bool, str | None]:
     # exit early if the text does not resemble a DSN URI
     if "://" not in text:
         return False, None
