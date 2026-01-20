@@ -1,6 +1,10 @@
 TBD
 ==============
 
+Features
+--------
+* Allow history file location to be configured.
+
 Bug Fixes
 --------
 * Respect `--logfile` when using `--execute` or standard input at the shell CLI.
