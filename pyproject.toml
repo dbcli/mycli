@@ -31,7 +31,10 @@ build-backend = "setuptools.build_meta"
 
 
 [project.optional-dependencies]
-ssh = ["paramiko", "sshtunnel"]
+ssh = [
+    "paramiko~=3.5.1",
+    "sshtunnel",
+]
 llm = [
     "llm>=0.19.0",
     "setuptools",                   # Required by llm commands to install models
@@ -50,7 +53,7 @@ dev = [
     "pytest-cov>=4.1.0",
     "tox>=4.8.0",
     "pdbpp>=0.10.3",
-    "paramiko",
+    "paramiko~=3.5.1",
     "sshtunnel",
     "llm>=0.19.0",
     "setuptools",                   # Required by llm commands to install models

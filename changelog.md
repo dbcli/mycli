@@ -12,6 +12,7 @@ Bug Fixes
 --------
 * Respect `--logfile` when using `--execute` or standard input at the shell CLI.
 * Gracefully catch Paramiko parsing errors on `--list-ssh-config`.
+* Downgrade to Paramiko 3.5.1 to avoid crashing on DSA SSH keys.
 
 
 1.44.2 (2026/01/13)
