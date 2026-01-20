@@ -3,6 +3,7 @@ TBD
 
 Features
 --------
+* Make password options also function as flags. Reworked password logic to prompt user as early as possible (#341).
 * More complete and up-to-date set of MySQL reserved words for completions.
 * Place exact-leading completions first.
 * Allow history file location to be configured.
