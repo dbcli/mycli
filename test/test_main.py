@@ -11,7 +11,7 @@ import click
 from click.testing import CliRunner
 from pymysql.err import OperationalError
 
-from mycli.main import MyCli, cli, thanks_picker
+from mycli.main import MyCli, cli, thanks_picker, is_valid_connection_scheme
 import mycli.packages.special
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
 from mycli.sqlexecute import ServerInfo, SQLExecute
@@ -38,6 +38,16 @@ CLI_ARGS = [
     default_config_file,
     "mycli_test_db",
 ]
+
+
+def test_is_valid_connection_scheme_valid(executor, capsys):
+    is_valid, scheme = is_valid_connection_scheme("mysql://test@localhost:3306/dev")
+    assert is_valid
+
+
+def test_is_valid_connection_scheme_invalid(executor, capsys):
+    is_valid, scheme = is_valid_connection_scheme("nope://test@localhost:3306/dev")
+    assert not is_valid
 
 
 @dbtest
