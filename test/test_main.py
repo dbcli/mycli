@@ -878,3 +878,22 @@ def test_global_init_commands(executor):
     expected = "sql_select_limit\t9999\n"
     assert result.exit_code == 0
     assert expected in result.output
+
+
+@dbtest
+def test_execute_with_logfile(executor):
+    """Test that --execute combines with --logfile"""
+    sql = 'select 1'
+    runner = CliRunner()
+
+    with NamedTemporaryFile(mode="w", delete=False) as logfile:
+        result = runner.invoke(mycli.main.cli, args=CLI_ARGS + ["--logfile", logfile.name, "--execute", sql])
+        assert result.exit_code == 0
+
+    assert os.path.getsize(logfile.name) > 0
+
+    try:
+        if os.path.exists(logfile.name):
+            os.remove(logfile.name)
+    except Exception as e:
+        print(f"An error occurred while attempting to delete the file: {e}")

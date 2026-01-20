@@ -732,7 +732,7 @@ class MyCli:
         if self.smart_completion:
             self.refresh_completions()
 
-        history_file = os.path.expanduser(os.environ.get("MYCLI_HISTFILE", "~/.mycli-history"))
+        history_file = os.path.expanduser(os.environ.get("MYCLI_HISTFILE", self.config.get("history_file", "~/.mycli-history")))
         if dir_path_exists(history_file):
             history = FileHistoryWithTimestamp(history_file)
         else:
@@ -952,10 +952,7 @@ class MyCli:
                 logger.debug("sql: %r", text)
 
                 special.write_tee(self.get_prompt(self.prompt_format) + text)
-                if self.logfile:
-                    self.logfile.write(f"\n# {datetime.now()}\n")
-                    self.logfile.write(text)
-                    self.logfile.write("\n")
+                self.log_query(text)
 
                 successful = False
                 start = time()
@@ -1136,6 +1133,12 @@ class MyCli:
             self.echo(str(e), err=True, fg="red")
             return False
 
+    def log_query(self, query: str) -> None:
+        if isinstance(self.logfile, TextIOWrapper):
+            self.logfile.write(f"\n# {datetime.now()}\n")
+            self.logfile.write(query)
+            self.logfile.write("\n")
+
     def log_output(self, output: str) -> None:
         """Log the output in the audit log, if it's enabled."""
         if isinstance(self.logfile, TextIOWrapper):
@@ -1315,6 +1318,7 @@ class MyCli:
     def run_query(self, query: str, new_line: bool = True) -> None:
         """Runs *query*."""
         assert self.sqlexecute is not None
+        self.log_query(query)
         results = self.sqlexecute.run(query)
         for result in results:
             title = result.title
@@ -1331,6 +1335,7 @@ class MyCli:
                 self.null_string,
             )
             for line in output:
+                self.log_output(line)
                 click.echo(line, nl=new_line)
 
             # get and display warnings if enabled
@@ -1623,12 +1628,17 @@ def cli(
         sys.exit(0)
     if list_ssh_config:
         ssh_config = read_ssh_config(ssh_config_path)
-        for host in ssh_config.get_hostnames():
+        try:
+            host_entries = ssh_config.get_hostnames()
+        except KeyError:
+            click.secho('Error reading ssh config', err=True, fg="red")
+            sys.exit(1)
+        for host_entry in host_entries:
             if verbose:
-                host_config = ssh_config.lookup(host)
-                click.secho(f"{host} : {host_config.get('hostname')}")
+                host_config = ssh_config.lookup(host_entry)
+                click.secho(f"{host_entry} : {host_config.get('hostname')}")
             else:
-                click.secho(host)
+                click.secho(host_entry)
         sys.exit(0)
     # Choose which ever one has a valid value.
     database = dbname or database

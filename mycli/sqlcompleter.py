@@ -7,6 +7,7 @@ from typing import Any, Collection, Generator, Iterable, Literal
 
 from prompt_toolkit.completion import CompleteEvent, Completer, Completion
 from prompt_toolkit.completion.base import Document
+from pygments.lexers._mysql_builtins import MYSQL_DATATYPES, MYSQL_FUNCTIONS, MYSQL_KEYWORDS
 
 from mycli.packages.completion_engine import suggest_type
 from mycli.packages.filepaths import complete_path, parse_path, suggest_path
@@ -18,141 +19,27 @@ _logger = logging.getLogger(__name__)
 
 
 class SQLCompleter(Completer):
-    keywords = [
-        "SELECT",
-        "FROM",
-        "WHERE",
-        "UPDATE",
-        "DELETE FROM",
-        "GROUP BY",
-        "JOIN",
-        "INSERT INTO",
-        "LIKE",
-        "LIMIT",
-        "ACCESS",
-        "ADD",
-        "ALL",
-        "ALTER TABLE",
-        "AND",
-        "ANY",
-        "AS",
-        "ASC",
-        "AUTO_INCREMENT",
-        "BEFORE",
-        "BEGIN",
-        "BETWEEN",
-        "BIGINT",
-        "BINARY",
-        "BY",
-        "CASE",
-        "CHANGE MASTER TO",
-        "CHAR",
-        "CHARACTER SET",
-        "CHECK",
-        "COLLATE",
-        "COLUMN",
-        "COMMENT",
-        "COMMIT",
-        "CONSTRAINT",
-        "CREATE",
-        "CURRENT",
-        "CURRENT_TIMESTAMP",
-        "DATABASE",
-        "DATE",
-        "DECIMAL",
-        "DEFAULT",
-        "DESC",
-        "DESCRIBE",
-        "DROP",
-        "ELSE",
-        "END",
-        "ENGINE",
-        "ESCAPE",
-        "EXISTS",
-        "FILE",
-        "FLOAT",
-        "FOR",
-        "FOREIGN KEY",
-        "FORMAT",
-        "FULL",
-        "FUNCTION",
-        "GRANT",
-        "HAVING",
-        "HOST",
-        "IDENTIFIED",
-        "IN",
-        "INCREMENT",
-        "INDEX",
-        "INT",
-        "INTEGER",
-        "INTERVAL",
-        "INTO",
-        "IS",
-        "KEY",
-        "LEFT",
-        "LEVEL",
-        "LOCK",
-        "LOGS",
-        "LONG",
-        "MASTER",
-        "MEDIUMINT",
-        "MODE",
-        "MODIFY",
-        "NOT",
-        "NULL",
-        "NUMBER",
-        "OFFSET",
-        "ON",
-        "OPTION",
-        "OR",
-        "ORDER BY",
-        "OUTER",
-        "OWNER",
-        "PASSWORD",
-        "PORT",
-        "PRIMARY",
-        "PRIVILEGES",
-        "PROCESSLIST",
-        "PURGE",
-        "REFERENCES",
-        "REGEXP",
-        "RENAME",
-        "REPAIR",
-        "RESET",
-        "REVOKE",
-        "RIGHT",
-        "ROLLBACK",
-        "ROW",
-        "ROWS",
-        "ROW_FORMAT",
-        "SAVEPOINT",
-        "SESSION",
-        "SET",
-        "SHARE",
-        "SHOW",
-        "SLAVE",
-        "SMALLINT",
-        "START",
-        "STOP",
-        "TABLE",
-        "THEN",
-        "TINYINT",
-        "TO",
-        "TRANSACTION",
-        "TRIGGER",
-        "TRUNCATE",
-        "UNION",
-        "UNIQUE",
-        "UNSIGNED",
-        "USE",
-        "USER",
-        "USING",
-        "VALUES",
-        "VARCHAR",
-        "VIEW",
-        "WHEN",
-        "WITH",
+    favorite_keywords = [
+        'SELECT',
+        'FROM',
+        'WHERE',
+        'UPDATE',
+        'DELETE FROM',
+        'GROUP BY',
+        'ORDER BY',
+        'JOIN',
+        'INSERT INTO',
+        'LIKE',
+        'LIMIT',
     ]
+    keywords = [
+        x.upper()
+        for x in favorite_keywords
+        + list(MYSQL_DATATYPES)
+        + list(MYSQL_KEYWORDS)
+        + ['ALTER TABLE', 'CHANGE MASTER TO', 'CHARACTER SET', 'FOREIGN KEY']
+    ]
+    keywords = list(dict.fromkeys(keywords))
 
     tidb_keywords = [
         "SELECT",
@@ -838,27 +725,7 @@ class SQLCompleter(Completer):
         "ZEROFILL",
     ]
 
-    functions = [
-        "AVG",
-        "CONCAT",
-        "COUNT",
-        "DISTINCT",
-        "FIRST",
-        "FORMAT",
-        "FROM_UNIXTIME",
-        "LAST",
-        "LCASE",
-        "LEN",
-        "MAX",
-        "MID",
-        "MIN",
-        "NOW",
-        "ROUND",
-        "SUM",
-        "TOP",
-        "UCASE",
-        "UNIX_TIMESTAMP",
-    ]
+    functions = [x.upper() for x in MYSQL_FUNCTIONS]
 
     # https://docs.pingcap.com/tidb/dev/tidb-functions
     tidb_functions = [
@@ -1109,6 +976,13 @@ class SQLCompleter(Completer):
             if casing == "upper":
                 return kw.upper()
             return kw.lower()
+
+        def exact_leading_key(item: tuple[int, int, str], text):
+            if text and item[2].lower().startswith(text):
+                return -1000 + len(item[2])
+            return 0
+
+        completions = sorted(completions, key=lambda item: exact_leading_key(item, text))
 
         return (Completion(z if casing is None else apply_case(z), -len(text)) for x, y, z in completions)
 

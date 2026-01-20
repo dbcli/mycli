@@ -1,9 +1,19 @@
-Upcoming (TBD)
+TBD
 ==============
 
 Features
 --------
-* Make password options also function as flags. Reworked password logic to prompt user as early as possible. (#341):
+* Make password options also function as flags. Reworked password logic to prompt user as early as possible (#341).
+* More complete and up-to-date set of MySQL reserved words for completions.
+* Place exact-leading completions first.
+* Allow history file location to be configured.
+
+
+Bug Fixes
+--------
+* Respect `--logfile` when using `--execute` or standard input at the shell CLI.
+* Gracefully catch Paramiko parsing errors on `--list-ssh-config`.
+* Downgrade to Paramiko 3.5.1 to avoid crashing on DSA SSH keys.
 
 
 1.44.2 (2026/01/13)
