@@ -301,7 +301,7 @@ def suggest_based_on_last_token(
 
         if not schema:
             # Suggest schemas
-            suggest.insert(0, {"type": "schema"})
+            suggest.append({"type": "database"})
 
         # Only tables can be TRUNCATED, otherwise suggest views
         if token_v != "truncate":
