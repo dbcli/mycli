@@ -61,7 +61,7 @@ def test_empty_string_completion(completer, complete_event):
     text = ""
     position = 0
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
-    assert list(map(Completion, completer.keywords + completer.special_commands)) == result
+    assert list(map(Completion, completer.special_commands + completer.keywords)) == result
 
 
 def test_select_keyword_completion(completer, complete_event):
@@ -471,6 +471,20 @@ def test_grant_on_suggets_tables_and_schemata(completer, complete_event):
         Completion(text='time_zone_name', start_position=0),
         Completion(text='time_zone_transition', start_position=0),
         Completion(text='time_zone_transition_type', start_position=0),
+    ]
+
+
+# todo: this test belongs more logically in test_naive_completion.py, but it didn't work there:
+#       multiple completion candidates were not suggested.
+def test_deleted_keyword_completion(completer, complete_event):
+    text = "exi"
+    position = len("exi")
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    assert result == [
+        Completion(text="exit", start_position=-3),
+        Completion(text='exists', start_position=-3),
+        Completion(text='expire', start_position=-3),
+        Completion(text='explain', start_position=-3),
     ]
 
 

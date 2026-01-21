@@ -14,6 +14,7 @@ from mycli.packages.filepaths import complete_path, parse_path, suggest_path
 from mycli.packages.parseutils import last_word
 from mycli.packages.special import llm
 from mycli.packages.special.favoritequeries import FavoriteQueries
+from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
 
 _logger = logging.getLogger(__name__)
 
@@ -32,14 +33,18 @@ class SQLCompleter(Completer):
         'LIKE',
         'LIMIT',
     ]
-    keywords = [
+    keywords_raw = [
         x.upper()
         for x in favorite_keywords
         + list(MYSQL_DATATYPES)
         + list(MYSQL_KEYWORDS)
         + ['ALTER TABLE', 'CHANGE MASTER TO', 'CHARACTER SET', 'FOREIGN KEY']
     ]
-    keywords = list(dict.fromkeys(keywords))
+    keywords_d = dict.fromkeys(keywords_raw)
+    for x in SPECIAL_COMMANDS:
+        if x.upper() in keywords_d:
+            del keywords_d[x.upper()]
+    keywords = list(keywords_d)
 
     tidb_keywords = [
         "SELECT",
@@ -1104,7 +1109,8 @@ class SQLCompleter(Completer):
 
             elif suggestion["type"] == "special":
                 special_m = self.find_matches(word_before_cursor, self.special_commands, start_only=True, fuzzy=False)
-                completions.extend(special_m)
+                # specials are special, and go early in the candidates, first if possible
+                completions = list(special_m) + completions
 
             elif suggestion["type"] == "favoritequery":
                 if hasattr(FavoriteQueries, 'instance') and hasattr(FavoriteQueries.instance, 'list'):

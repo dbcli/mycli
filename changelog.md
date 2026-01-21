@@ -10,6 +10,7 @@ Features
 Bug Fixes
 --------
 * Fix CamelCase fuzzy matching.
+* Place special commands first in the list of completion candidates, and remove duplicates.
 
 
 1.45.0 (2026/01/20)
