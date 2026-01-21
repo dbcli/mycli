@@ -21,6 +21,7 @@ dependencies = [
     "pyperclip >= 1.8.1",
     "pycryptodomex",
     "pyfzf >= 0.3.1",
+    "rapidfuzz ~= 3.14.3",
 ]
 
 [build-system]

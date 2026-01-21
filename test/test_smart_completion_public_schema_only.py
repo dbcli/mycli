@@ -422,6 +422,18 @@ def test_table_names_inter_partial(completer, complete_event):
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
     assert result == [
         Completion(text="time_zone_leap_second", start_position=-9),
+        Completion(text='time_zone_name', start_position=-9),
+        Completion(text='time_zone_transition', start_position=-9),
+        Completion(text='time_zone_transition_type', start_position=-9),
+    ]
+
+
+def test_table_names_fuzzy(completer, complete_event):
+    text = "SELECT * FROM tim_leap"
+    position = len("SELECT * FROM tim_leap")
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    assert result == [
+        Completion(text="time_zone_leap_second", start_position=-8),
     ]
 
 
