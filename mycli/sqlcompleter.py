@@ -782,7 +782,7 @@ class SQLCompleter(Completer):
         self.reserved_words = set()
         for x in self.keywords:
             self.reserved_words.update(x.split())
-        self.name_pattern = re.compile(r"^[_a-z][_a-z0-9\$]*$")
+        self.name_pattern = re.compile(r"^[_a-zA-Z][_a-zA-Z0-9\$]*$")
 
         self.special_commands: list[str] = []
         self.table_formats = supported_formats

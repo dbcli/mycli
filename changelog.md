@@ -6,6 +6,7 @@ Features
 * Add `--unbuffered` mode which fetches rows as needed, to save memory.
 * Default to standards-compliant `utf8mb4` character set.
 * Stream input from STDIN to consume less memory, adding `--noninteractive` and `--format=` CLI arguments.
+* Remove suggested quoting on completions for identifiers with uppercase.
 
 
 Bug Fixes
