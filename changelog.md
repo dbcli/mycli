@@ -4,6 +4,7 @@ Upcoming (TBD)
 Features
 --------
 * Add a `--checkpoint=` argument to log successful queries in batch mode.
+* Add `--throttle` option for batch mode.
 
 
 Bug Fixes
