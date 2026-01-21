@@ -477,6 +477,7 @@ class MyCli:
         ssh_password: str | None = "",
         ssh_key_filename: str | None = "",
         init_command: str | None = "",
+        unbuffered: bool | None = None,
         password_file: str | None = "",
     ) -> None:
         cnf = {
@@ -563,6 +564,7 @@ class MyCli:
                     ssh_password,
                     ssh_key_filename,
                     init_command,
+                    unbuffered,
                 )
             except pymysql.OperationalError as e1:
                 if e1.args[0] == HANDSHAKE_ERROR and ssl is not None and ssl.get("mode", None) == "auto":
@@ -583,6 +585,7 @@ class MyCli:
                             ssh_password,
                             ssh_key_filename,
                             init_command,
+                            unbuffered,
                         )
                     except Exception as e2:
                         raise e2
@@ -1521,6 +1524,9 @@ class MyCli:
 @click.option("-g", "--login-path", type=str, help="Read this path from the login file.")
 @click.option("-e", "--execute", type=str, help="Execute command and quit.")
 @click.option("--init-command", type=str, help="SQL statement to execute after connecting.")
+@click.option(
+    "--unbuffered", is_flag=True, help="Instead of copying every row of data into a buffer, fetch rows as needed, to save memory."
+)
 @click.option("--charset", type=str, help="Character set for MySQL session.")
 @click.option(
     "--password-file", type=click.Path(), help="File or FIFO path containing the password to connect to the db if not specified otherwise."
@@ -1570,6 +1576,7 @@ def cli(
     ssh_config_path: str,
     ssh_config_host: str | None,
     init_command: str | None,
+    unbuffered: bool | None,
     charset: str | None,
     password_file: str | None,
 ) -> None:
@@ -1807,6 +1814,7 @@ def cli(
         ssh_password=ssh_password,
         ssh_key_filename=ssh_key_filename,
         init_command=combined_init_cmd,
+        unbuffered=unbuffered,
         charset=charset,
         password_file=password_file,
     )
