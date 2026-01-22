@@ -1,6 +1,11 @@
 TBD
 ==============
 
+Features
+--------
+* Add `--unbuffered` mode which fetches rows as needed, to save memory.
+
+
 Bug Fixes
 --------
 * Fix CamelCase fuzzy matching.

@@ -162,6 +162,7 @@ class SQLExecute:
         ssh_password: str | None,
         ssh_key_filename: str | None,
         init_command: str | None = None,
+        unbuffered: bool | None = None,
     ) -> None:
         self.dbname = database
         self.user = user
@@ -180,6 +181,7 @@ class SQLExecute:
         self.ssh_password = ssh_password
         self.ssh_key_filename = ssh_key_filename
         self.init_command = init_command
+        self.unbuffered = unbuffered
         self.conn: Connection | None = None
         self.connect()
 
@@ -200,6 +202,7 @@ class SQLExecute:
         ssh_password: str | None = None,
         ssh_key_filename: str | None = None,
         init_command: str | None = None,
+        unbuffered: bool | None = None,
     ):
         db = database if database is not None else self.dbname
         user = user if user is not None else self.user
@@ -216,6 +219,7 @@ class SQLExecute:
         ssh_password = ssh_password if ssh_password is not None else self.ssh_password
         ssh_key_filename = ssh_key_filename if ssh_key_filename is not None else self.ssh_key_filename
         init_command = init_command if init_command is not None else self.init_command
+        unbuffered = unbuffered if unbuffered is not None else self.unbuffered
         _logger.debug(
             "Connection DB Params: \n"
             "\tdatabase: %r"
@@ -231,7 +235,8 @@ class SQLExecute:
             "\tssh_port: %r"
             "\tssh_password: %r"
             "\tssh_key_filename: %r"
-            "\tinit_command: %r",
+            "\tinit_command: %r"
+            "\tunbuffered: %r",
             db,
             user,
             host,
@@ -246,6 +251,7 @@ class SQLExecute:
             ssh_password,
             ssh_key_filename,
             init_command,
+            unbuffered,
         )
         conv = conversions.copy()
         conv.update({
@@ -285,6 +291,7 @@ class SQLExecute:
             program_name="mycli",
             defer_connect=defer_connect,
             init_command=init_command or None,
+            cursorclass=pymysql.cursors.SSCursor if unbuffered else pymysql.cursors.Cursor,
         )  # type: ignore[misc]
 
         if ssh_host:
@@ -324,6 +331,7 @@ class SQLExecute:
         self.charset = charset
         self.ssl = ssl
         self.init_command = init_command
+        self.unbuffered = unbuffered
         # retrieve connection id
         self.reset_connection_id()
         self.server_info = ServerInfo.from_version_string(conn.server_version)  # type: ignore[attr-defined]
