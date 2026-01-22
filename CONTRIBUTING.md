@@ -80,10 +80,10 @@ $ export PYTEST_HOST=localhost
 $ export PYTEST_USER=mycli
 $ export PYTEST_PASSWORD=myclirocks
 $ export PYTEST_PORT=3306
-$ export PYTEST_CHARSET=utf8
+$ export PYTEST_CHARSET=utf8mb4
 ```
 
-The default values are `localhost`, `root`, no password, `3306`, and `utf8`.
+The default values are `localhost`, `root`, no password, `3306`, and `utf8mb4`.
 You only need to set the values that differ from the defaults.
 
 If you would like to run the tests as a user with only the necessary privileges,

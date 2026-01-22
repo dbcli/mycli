@@ -142,6 +142,14 @@ Thanks to [PyMysql](https://github.com/PyMySQL/PyMySQL) for a pure python adapte
 
 Mycli is tested on macOS and Linux, and requires Python 3.10 or better.
 
+To connect to MySQL versions earlier than 5.5, you may need to set the following in `~/.myclirc`:
+
+```
+# character set for connections without --charset being set at the CLI
+default_character_set = utf8
+```
+
+or set `--charset=utf8` when invoking MyCLI.
 
 ### Configuration and Usage
 

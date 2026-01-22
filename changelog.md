@@ -4,6 +4,7 @@ TBD
 Features
 --------
 * Add `--unbuffered` mode which fetches rows as needed, to save memory.
+* Default to standards-compliant `utf8mb4` character set.
 
 
 Bug Fixes
