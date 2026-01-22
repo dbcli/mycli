@@ -9,6 +9,7 @@ Features
 * Remove suggested quoting on completions for identifiers with uppercase.
 * Allow table names to be completed with leading schema names.
 * Soft deprecate the built-in SSH features.
+* Add true fuzzy-match completions with rapidfuzz.
 
 
 Bug Fixes

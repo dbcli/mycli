@@ -8,6 +8,7 @@ from typing import Any, Collection, Generator, Iterable, Literal
 from prompt_toolkit.completion import CompleteEvent, Completer, Completion
 from prompt_toolkit.completion.base import Document
 from pygments.lexers._mysql_builtins import MYSQL_DATATYPES, MYSQL_FUNCTIONS, MYSQL_KEYWORDS
+import rapidfuzz
 
 from mycli.packages.completion_engine import suggest_type
 from mycli.packages.filepaths import complete_path, parse_path, suggest_path
@@ -995,6 +996,25 @@ class SQLCompleter(Completer):
                 if occurrences >= len(case_words_text):
                     completions.append(item)
                     continue
+
+            if len(text) >= 4:
+                rapidfuzz_matches = rapidfuzz.process.extract(
+                    text,
+                    collection,
+                    scorer=rapidfuzz.fuzz.WRatio,
+                    # todo: maybe make our own processor which only does case-folding
+                    # because underscores are valuable info
+                    processor=rapidfuzz.utils.default_process,
+                    limit=20,
+                    score_cutoff=75,
+                )
+                for elt in rapidfuzz_matches:
+                    item, _score, _type = elt
+                    if len(item) < len(text) / 1.5:
+                        continue
+                    if item in completions:
+                        continue
+                    completions.append(item)
 
         else:
             match_end_limit = len(text) if start_only else None
