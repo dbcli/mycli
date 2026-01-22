@@ -7,6 +7,7 @@ Features
 * Default to standards-compliant `utf8mb4` character set.
 * Stream input from STDIN to consume less memory, adding `--noninteractive` and `--format=` CLI arguments.
 * Remove suggested quoting on completions for identifiers with uppercase.
+* Allow table names to be completed with leading schema names.
 
 
 Bug Fixes
