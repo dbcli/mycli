@@ -1504,6 +1504,7 @@ class MyCli:
 @click.option("-d", "--dsn", default="", envvar="DSN", help="Use DSN configured into the [alias_dsn] section of myclirc file.")
 @click.option("--list-dsn", "list_dsn", is_flag=True, help="list of DSN configured into the [alias_dsn] section of myclirc file.")
 @click.option("--list-ssh-config", "list_ssh_config", is_flag=True, help="list ssh configurations in the ssh config (requires paramiko).")
+@click.option("--ssh-warning-off", is_flag=True, help="Suppress the SSH deprecation notice.")
 @click.option("-R", "--prompt", "prompt", help=f'Prompt format (Default: "{MyCli.default_prompt}").')
 @click.option("-l", "--logfile", type=click.File(mode="a", encoding="utf-8"), help="Log every query and its results to a file.")
 @click.option("--defaults-group-suffix", type=str, help="Read MySQL config groups with the specified suffix.")
@@ -1579,6 +1580,7 @@ def cli(
     list_ssh_config: bool,
     ssh_config_path: str,
     ssh_config_host: str | None,
+    ssh_warning_off: bool | None,
     init_command: str | None,
     unbuffered: bool | None,
     charset: str | None,
@@ -1650,6 +1652,15 @@ def cli(
             "Please use the ssl_mode config or --ssl-mode CLI options instead.",
             err=True,
             fg="yellow",
+        )
+
+    # ssh_port and ssh_config_path have truthy defaults and are not included
+    if any([ssh_user, ssh_host, ssh_password, ssh_key_filename, list_ssh_config, ssh_config_host]) and not ssh_warning_off:
+        click.secho(
+            "Warning: The built-in SSH functionality is soft deprecated and may be removed in a future release. "
+            "Please discuss or vote on this at https://github.com/dbcli/mycli/issues/1464",
+            err=True,
+            fg="red",
         )
 
     if list_dsn:
