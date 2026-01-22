@@ -1322,7 +1322,12 @@ class MyCli:
         string = string.replace("\\_", " ")
         return string
 
-    def run_query(self, query: str, new_line: bool = True) -> None:
+    def run_query(
+        self,
+        query: str,
+        checkpoint: TextIOWrapper | None = None,
+        new_line: bool = True,
+    ) -> None:
         """Runs *query*."""
         assert self.sqlexecute is not None
         self.log_query(query)
@@ -1362,6 +1367,9 @@ class MyCli:
                     )
                     for line in output:
                         click.echo(line, nl=new_line)
+        if checkpoint:
+            checkpoint.write(query.rstrip('\n') + '\n')
+            checkpoint.flush()
 
     def format_output(
         self,
@@ -1507,6 +1515,9 @@ class MyCli:
 @click.option("--ssh-warning-off", is_flag=True, help="Suppress the SSH deprecation notice.")
 @click.option("-R", "--prompt", "prompt", help=f'Prompt format (Default: "{MyCli.default_prompt}").')
 @click.option("-l", "--logfile", type=click.File(mode="a", encoding="utf-8"), help="Log every query and its results to a file.")
+@click.option(
+    "--checkpoint", type=click.File(mode="a", encoding="utf-8"), help="In batch or --execute mode, log successful queries to a file."
+)
 @click.option("--defaults-group-suffix", type=str, help="Read MySQL config groups with the specified suffix.")
 @click.option("--defaults-file", type=click.Path(), help="Only read MySQL options from the given file.")
 @click.option("--myclirc", type=click.Path(), default="~/.myclirc", help="Location of myclirc file.")
@@ -1550,6 +1561,7 @@ def cli(
     verbose: bool,
     prompt: str | None,
     logfile: TextIOWrapper | None,
+    checkpoint: TextIOWrapper | None,
     defaults_group_suffix: str | None,
     defaults_file: str | None,
     login_path: str | None,
@@ -1876,7 +1888,7 @@ def cli(
             else:
                 mycli.main_formatter.format_name = 'tsv'
 
-            mycli.run_query(execute)
+            mycli.run_query(execute, checkpoint=checkpoint)
             sys.exit(0)
         except Exception as e:
             click.secho(str(e), err=True, fg="red")
@@ -1919,7 +1931,7 @@ def cli(
                     sys.exit(1)
             try:
                 if warn_confirmed:
-                    mycli.run_query(stdin_text, new_line=True)
+                    mycli.run_query(stdin_text, checkpoint=checkpoint, new_line=True)
             except Exception as e:
                 click.secho(str(e), err=True, fg="red")
                 sys.exit(1)

@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Features
+--------
+* Add a `--checkpoint=` argument to log successful queries in batch mode.
+
+
 Bug Fixes
 --------
 * Fix timediff output when the result is a negative value (#1113).
