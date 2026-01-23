@@ -347,6 +347,42 @@ def test_execute_arg(executor):
 
 
 @dbtest
+def test_execute_arg_with_checkpoint(executor):
+    run(executor, "create table test (a text)")
+    run(executor, 'insert into test values("abc")')
+
+    sql = "select * from test;"
+    runner = CliRunner()
+
+    with NamedTemporaryFile(mode="w", delete=False) as checkpoint:
+        checkpoint.close()
+
+    result = runner.invoke(cli, args=CLI_ARGS + ["--execute", sql, f"--checkpoint={checkpoint.name}"])
+    assert result.exit_code == 0
+
+    with open(checkpoint.name, 'r') as f:
+        contents = f.read()
+    assert sql in contents
+    os.remove(checkpoint.name)
+
+    sql = 'select 10 from nonexistent_table;'
+    result = runner.invoke(cli, args=CLI_ARGS + ["--execute", sql, f"--checkpoint={checkpoint.name}"])
+    assert result.exit_code != 0
+
+    with open(checkpoint.name, 'r') as f:
+        contents = f.read()
+    assert sql not in contents
+
+    # delete=False means we should try to clean up
+    # we don't really need "try" here as open() would have already failed
+    try:
+        if os.path.exists(checkpoint.name):
+            os.remove(checkpoint.name)
+    except Exception as e:
+        print(f"An error occurred while attempting to delete the file: {e}")
+
+
+@dbtest
 def test_execute_arg_with_table(executor):
     run(executor, "create table test (a text)")
     run(executor, 'insert into test values("abc")')
