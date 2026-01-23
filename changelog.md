@@ -9,6 +9,7 @@ Features
 Bug Fixes
 --------
 * Fix timediff output when the result is a negative value (#1113).
+* Don't offer completions for numeric text.
 
 
 1.46.0 (2026/01/22)

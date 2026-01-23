@@ -961,7 +961,10 @@ class SQLCompleter(Completer):
         # unicode support not possible without adding the regex dependency
         case_change_pat = re.compile("(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])")
 
-        completions = []
+        completions: list[str] = []
+
+        if re.match(r'^[\d\.]', text):
+            return (Completion(x, -len(text)) for x in completions)
 
         if fuzzy:
             regex = ".{0,3}?".join(map(re.escape, text))
