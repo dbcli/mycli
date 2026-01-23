@@ -10,7 +10,7 @@ from typing import Any, Generator, Iterable
 import pymysql
 from pymysql.connections import Connection
 from pymysql.constants import FIELD_TYPE
-from pymysql.converters import conversions, convert_date, convert_datetime, convert_timedelta, decoders
+from pymysql.converters import conversions, convert_date, convert_datetime, convert_time, decoders
 from pymysql.cursors import Cursor
 
 from mycli.packages.special import iocommands
@@ -257,7 +257,7 @@ class SQLExecute:
         conv.update({
             FIELD_TYPE.TIMESTAMP: lambda obj: convert_datetime(obj) or obj,
             FIELD_TYPE.DATETIME: lambda obj: convert_datetime(obj) or obj,
-            FIELD_TYPE.TIME: lambda obj: convert_timedelta(obj) or obj,
+            FIELD_TYPE.TIME: lambda obj: convert_time(obj) or obj,
             FIELD_TYPE.DATE: lambda obj: convert_date(obj) or obj,
         })
 
