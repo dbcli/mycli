@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Bug Fixes
+--------
+* Fix timediff output when the result is a negative value (#1113).
+
+
 1.46.0 (2026/01/22)
 ==============
 
