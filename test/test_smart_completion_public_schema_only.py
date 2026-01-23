@@ -500,6 +500,13 @@ def test_deleted_keyword_completion(completer, complete_event):
     ]
 
 
+def test_numbers_no_completion(completer, complete_event):
+    text = "SELECT COUNT(1) FROM time_zone WHERE Time_zone_id = 1"
+    position = len("SELECT COUNT(1) FROM time_zone WHERE Time_zone_id = 1")
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    assert result == []  # ie not INT1
+
+
 def dummy_list_path(dir_name):
     dirs = {
         "/": [
