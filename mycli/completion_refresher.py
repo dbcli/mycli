@@ -155,6 +155,11 @@ def refresh_functions(completer: SQLCompleter, executor: SQLExecute) -> None:
         completer.extend_functions(completer.tidb_functions, builtin=True)
 
 
+@refresher("procedures")
+def refresh_procedures(completer: SQLCompleter, executor: SQLExecute) -> None:
+    completer.extend_procedures(executor.procedures())
+
+
 @refresher("special_commands")
 def refresh_special(completer: SQLCompleter, executor: SQLExecute) -> None:
     completer.extend_special_commands(list(COMMANDS.keys()))

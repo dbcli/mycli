@@ -254,6 +254,8 @@ def suggest_based_on_last_token(
 
         # We're probably in a function argument list
         return [{"type": "column", "tables": extract_tables(full_text)}]
+    elif token_v in ("call"):
+        return [{"type": "procedure", "schema": []}]
     elif token_v in ("set", "order by", "distinct"):
         return [{"type": "column", "tables": extract_tables(full_text)}]
     elif token_v == "as":

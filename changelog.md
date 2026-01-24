@@ -4,6 +4,7 @@ TBD
 Features
 --------
 * Right-align numeric columns, and make the behavior configurable.
+* Add completions for stored procedures.
 
 
 Bug Fixes
