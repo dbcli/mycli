@@ -1027,7 +1027,7 @@ class SQLCompleter(Completer):
                     completions.append(item)
 
         if casing == "auto":
-            casing = "lower" if last and last[-1].islower() else "upper"
+            casing = "lower" if last and (last[0].islower() or last[-1].islower()) else "upper"
 
         def apply_case(kw: str) -> str:
             if casing == "upper":
