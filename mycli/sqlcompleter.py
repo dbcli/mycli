@@ -924,6 +924,14 @@ class SQLCompleter(Completer):
             metadata[self.dbname][func[0]] = None
             self.all_completions.add(func[0])
 
+    def extend_procedures(self, procedure_data: Generator[tuple[str, str]]) -> None:
+        metadata = self.dbmetadata["procedures"]
+        if self.dbname not in metadata:
+            metadata[self.dbname] = {}
+
+        for elt in procedure_data:
+            metadata[self.dbname][elt[0]] = None
+
     def set_dbname(self, dbname: str | None) -> None:
         self.dbname = dbname or ''
 
@@ -932,7 +940,13 @@ class SQLCompleter(Completer):
         self.users: list[str] = []
         self.show_items: list[Completion] = []
         self.dbname = ""
-        self.dbmetadata: dict[str, Any] = {"tables": {}, "views": {}, "functions": {}, "enum_values": {}}
+        self.dbmetadata: dict[str, Any] = {
+            "tables": {},
+            "views": {},
+            "functions": {},
+            "procedures": {},
+            "enum_values": {},
+        }
         self.all_completions = set(self.keywords + self.functions)
 
     @staticmethod
@@ -1092,6 +1106,11 @@ class SQLCompleter(Completer):
                         word_before_cursor, self.functions, start_only=True, fuzzy=False, casing=self.keyword_casing
                     )
                     completions.extend(predefined_funcs)
+
+            elif suggestion["type"] == "procedure":
+                procs = self.populate_schema_objects(suggestion["schema"], "procedures")
+                procs_m = self.find_matches(word_before_cursor, procs)
+                completions.extend(procs_m)
 
             elif suggestion["type"] == "table":
                 tables = self.populate_schema_objects(suggestion["schema"], "tables")

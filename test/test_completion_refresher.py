@@ -29,6 +29,7 @@ def test_ctor(refresher):
         "enum_values",
         "users",
         "functions",
+        "procedures",
         "special_commands",
         "show_commands",
         "keywords",

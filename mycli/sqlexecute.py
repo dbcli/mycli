@@ -99,6 +99,9 @@ class SQLExecute:
     functions_query = '''SELECT ROUTINE_NAME FROM INFORMATION_SCHEMA.ROUTINES
     WHERE ROUTINE_TYPE="FUNCTION" AND ROUTINE_SCHEMA = "%s"'''
 
+    procedures_query = '''SELECT ROUTINE_NAME FROM INFORMATION_SCHEMA.ROUTINES
+    WHERE ROUTINE_TYPE="PROCEDURE" AND ROUTINE_SCHEMA = "%s"'''
+
     table_columns_query = """select TABLE_NAME, COLUMN_NAME from information_schema.columns
                                     where table_schema = '%s'
                                     order by table_name,ordinal_position"""
@@ -449,6 +452,16 @@ class SQLExecute:
         with self.conn.cursor() as cur:
             _logger.debug("Functions Query. sql: %r", self.functions_query)
             cur.execute(self.functions_query % self.dbname)
+            for row in cur:
+                yield row
+
+    def procedures(self) -> Generator[tuple[str, str], None, None]:
+        """Yields tuples of (procedure_name, )"""
+
+        assert isinstance(self.conn, Connection)
+        with self.conn.cursor() as cur:
+            _logger.debug("Procedures Query. sql: %r", self.procedures_query)
+            cur.execute(self.procedures_query % self.dbname)
             for row in cur:
                 yield row
 
