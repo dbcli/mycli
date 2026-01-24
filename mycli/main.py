@@ -19,7 +19,7 @@ from datetime import datetime
 from importlib import resources
 import itertools
 from random import choice
-from time import time
+from time import sleep, time
 from urllib.parse import parse_qs, unquote, urlparse
 
 from cli_helpers.tabular_output import TabularOutputFormatter, preprocessors
@@ -1548,6 +1548,7 @@ class MyCli:
 @click.option(
     '--format', 'batch_format', type=click.Choice(['default', 'csv', 'tsv', 'table']), help='Format for batch or --execute output.'
 )
+@click.option('--throttle', type=float, default=0.0, help='Pause in seconds between queries in batch mode.')
 @click.pass_context
 def cli(
     ctx: click.Context,
@@ -1599,6 +1600,7 @@ def cli(
     password_file: str | None,
     noninteractive: bool,
     batch_format: str | None,
+    throttle: float,
 ) -> None:
     """A MySQL terminal client with auto-completion and syntax highlighting.
 
@@ -1931,6 +1933,8 @@ def cli(
                     sys.exit(1)
             try:
                 if warn_confirmed:
+                    if throttle and counter > 1:
+                        sleep(throttle)
                     mycli.run_query(stdin_text, checkpoint=checkpoint, new_line=True)
             except Exception as e:
                 click.secho(str(e), err=True, fg="red")
