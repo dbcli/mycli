@@ -6,6 +6,11 @@ Features
 * Right-align numeric columns, and make the behavior configurable.
 
 
+Bug Fixes
+--------
+* Better respect case when `keyword_casing` is `auto`.
+
+
 1.47.0 (2026/01/24)
 ==============
 
