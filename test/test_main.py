@@ -347,6 +347,21 @@ def test_execute_arg(executor):
 
 
 @dbtest
+def test_multiple_execute_arg(executor):
+    run(executor, "create table test (a text)")
+    run(executor, 'insert into test values("abc")')
+
+    sql_1 = "select * from test;"
+    sql_2 = "select 1234;"
+    runner = CliRunner()
+    result = runner.invoke(cli, args=CLI_ARGS + ["-e", sql_1, "-e", sql_2])
+
+    assert result.exit_code == 0
+    assert "abc" in result.output
+    assert "1234" in result.output
+
+
+@dbtest
 def test_execute_arg_with_checkpoint(executor):
     run(executor, "create table test (a text)")
     run(executor, 'insert into test values("abc")')

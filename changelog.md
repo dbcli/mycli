@@ -1,3 +1,11 @@
+TBD
+==============
+
+Features
+--------
+* Accept multiple `--execute` arguments, running each query in turn.
+
+
 1.47.0 (2026/01/24)
 ==============
 
