@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict, namedtuple
+from decimal import Decimal
 from io import TextIOWrapper
 import logging
 import os
@@ -160,6 +161,7 @@ class MyCli:
         self.login_path_as_host = c["main"].as_bool("login_path_as_host")
         self.post_redirect_command = c['main'].get('post_redirect_command')
         self.null_string = c['main'].get('null_string')
+        self.numeric_alignment = c['main'].get('numeric_alignment', 'right')
 
         # set ssl_mode if a valid option is provided in a config file, otherwise None
         ssl_mode = c["main"].get("ssl_mode", None)
@@ -831,6 +833,7 @@ class MyCli:
                     special.is_expanded_output(),
                     special.is_redirected(),
                     self.null_string,
+                    self.numeric_alignment,
                     max_width,
                 )
 
@@ -868,6 +871,7 @@ class MyCli:
                             special.is_expanded_output(),
                             special.is_redirected(),
                             self.null_string,
+                            self.numeric_alignment,
                             max_width,
                         )
                         self.echo("")
@@ -1345,6 +1349,7 @@ class MyCli:
                 special.is_expanded_output(),
                 special.is_redirected(),
                 self.null_string,
+                self.numeric_alignment,
             )
             for line in output:
                 self.log_output(line)
@@ -1364,6 +1369,7 @@ class MyCli:
                         special.is_expanded_output(),
                         special.is_redirected(),
                         self.null_string,
+                        self.numeric_alignment,
                     )
                     for line in output:
                         click.echo(line, nl=new_line)
@@ -1379,6 +1385,7 @@ class MyCli:
         expanded: bool = False,
         is_redirected: bool = False,
         null_string: str | None = None,
+        numeric_alignment: str = 'right',
         max_width: int | None = None,
     ) -> itertools.chain[str]:
         if is_redirected:
@@ -1408,6 +1415,7 @@ class MyCli:
 
         if headers or (cur and title):
             column_types = None
+            colalign = None
             if isinstance(cur, Cursor):
 
                 def get_col_type(col) -> type:
@@ -1415,6 +1423,7 @@ class MyCli:
                     return col_type if type(col_type) is type else str
 
                 column_types = [get_col_type(tup) for tup in cur.description]
+                colalign = [numeric_alignment if x in (int, float, Decimal) else 'left' for x in column_types]
 
             if max_width is not None and isinstance(cur, Cursor):
                 cur = list(cur)
@@ -1424,6 +1433,7 @@ class MyCli:
                 headers,
                 format_name="vertical" if expanded else None,
                 column_types=column_types,
+                colalign=colalign,
                 **output_kwargs,
             )
 

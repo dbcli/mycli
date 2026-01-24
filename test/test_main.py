@@ -438,7 +438,7 @@ def test_batch_mode_table(executor):
         +----------+
         | count(*) |
         +----------+
-        | 3        |
+        |        3 |
         +----------+
         +-----+
         | a   |

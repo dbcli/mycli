@@ -1,3 +1,11 @@
+TBD
+==============
+
+Features
+--------
+* Right-align numeric columns, and make the behavior configurable.
+
+
 1.47.0 (2026/01/24)
 ==============
 

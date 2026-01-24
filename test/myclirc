@@ -71,6 +71,9 @@ redirect_format = csv
 # empty string, and JSON formats use native nulls.
 null_string = <nope>
 
+# How to align numeric data in tabular output: right or left.
+numeric_alignment = right
+
 # A command to run after a successful output redirect, with {} to be replaced
 # with the escaped filename.  Mac example: echo {} | pbcopy.  Escaping is not
 # reliable/safe on Windows.
