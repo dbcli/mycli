@@ -5,16 +5,13 @@ Features
 --------
 * Right-align numeric columns, and make the behavior configurable.
 * Add completions for stored procedures.
+* Offer completions on `CREATE TABLE ... LIKE`.
 
 
 Bug Fixes
 --------
 * Better respect case when `keyword_casing` is `auto`.
 * Let favorite queries contain special commands.
-
-
-Bug Fixes
---------
 * Render binary values more consistently as hex literals.
 
 
