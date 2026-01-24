@@ -1534,7 +1534,7 @@ class MyCli:
 @click.option("--warn/--no-warn", default=None, help="Warn before running a destructive query.")
 @click.option("--local-infile", type=bool, help="Enable/disable LOAD DATA LOCAL INFILE.")
 @click.option("-g", "--login-path", type=str, help="Read this path from the login file.")
-@click.option("-e", "--execute", type=str, help="Execute command and quit.")
+@click.option("-e", "--execute", type=str, multiple=True, help="Execute command and quit.")
 @click.option("--init-command", type=str, help="SQL statement to execute after connecting.")
 @click.option(
     "--unbuffered", is_flag=True, help="Instead of copying every row of data into a buffer, fetch rows as needed, to save memory."
@@ -1874,27 +1874,18 @@ def cli(
 
     #  --execute argument
     if execute:
-        try:
-            if batch_format == 'csv':
-                mycli.main_formatter.format_name = 'csv'
-                if execute.endswith(r'\G'):
-                    execute = execute[:-2]
-            elif batch_format == 'tsv':
-                mycli.main_formatter.format_name = 'tsv'
-                if execute.endswith(r'\G'):
-                    execute = execute[:-2]
-            elif batch_format == 'table':
-                mycli.main_formatter.format_name = 'ascii'
-                if execute.endswith(r'\G'):
-                    execute = execute[:-2]
-            else:
-                mycli.main_formatter.format_name = 'tsv'
-
-            mycli.run_query(execute, checkpoint=checkpoint)
-            sys.exit(0)
-        except Exception as e:
-            click.secho(str(e), err=True, fg="red")
-            sys.exit(1)
+        counter = 0
+        for query in execute:
+            set_batch_formatter(mycli, batch_format, counter)
+            counter += 1
+            try:
+                if throttle and counter > 1:
+                    sleep(throttle)
+                mycli.run_query(query, checkpoint=checkpoint)
+            except Exception as e:
+                click.secho(str(e), err=True, fg="red")
+                sys.exit(1)
+        sys.exit(0)
 
     if sys.stdin.isatty():
         mycli.run_cli()
@@ -1902,24 +1893,7 @@ def cli(
         stdin = click.get_text_stream("stdin")
         counter = 0
         for stdin_text in stdin:
-            if counter:
-                if batch_format == 'csv':
-                    mycli.main_formatter.format_name = 'csv-noheader'
-                elif batch_format == 'tsv':
-                    mycli.main_formatter.format_name = 'tsv_noheader'
-                elif batch_format == 'table':
-                    mycli.main_formatter.format_name = 'ascii'
-                else:
-                    mycli.main_formatter.format_name = 'tsv'
-            else:
-                if batch_format == 'csv':
-                    mycli.main_formatter.format_name = 'csv'
-                elif batch_format == 'tsv':
-                    mycli.main_formatter.format_name = 'tsv'
-                elif batch_format == 'table':
-                    mycli.main_formatter.format_name = 'ascii'
-                else:
-                    mycli.main_formatter.format_name = 'tsv'
+            set_batch_formatter(mycli, batch_format, counter)
             counter += 1
             warn_confirmed: bool | None = True
             if not noninteractive and mycli.destructive_warning and is_destructive(mycli.destructive_keywords, stdin_text):
@@ -1941,6 +1915,27 @@ def cli(
                 sys.exit(1)
         sys.exit(0)
     mycli.close()
+
+
+def set_batch_formatter(mycli: MyCli, batch_format: str, counter: int) -> None:
+    if counter:
+        if batch_format == 'csv':
+            mycli.main_formatter.format_name = 'csv-noheader'
+        elif batch_format == 'tsv':
+            mycli.main_formatter.format_name = 'tsv_noheader'
+        elif batch_format == 'table':
+            mycli.main_formatter.format_name = 'ascii'
+        else:
+            mycli.main_formatter.format_name = 'tsv'
+    else:
+        if batch_format == 'csv':
+            mycli.main_formatter.format_name = 'csv'
+        elif batch_format == 'tsv':
+            mycli.main_formatter.format_name = 'tsv'
+        elif batch_format == 'table':
+            mycli.main_formatter.format_name = 'ascii'
+        else:
+            mycli.main_formatter.format_name = 'tsv'
 
 
 def need_completion_refresh(queries: str) -> bool:
