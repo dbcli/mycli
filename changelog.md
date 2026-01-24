@@ -6,6 +6,11 @@ Features
 * Right-align numeric columns, and make the behavior configurable.
 
 
+Bug Fixes
+--------
+* Render binary values more consistently as hex literals.
+
+
 1.47.0 (2026/01/24)
 ==============
 
