@@ -33,8 +33,12 @@ def completer():
         tables.append((table,))
         columns.extend([(table, col) for col in cols])
 
+    databases = ["test", "test 2"]
+
+    for db in databases:
+        comp.extend_schemata(db)
+    comp.extend_database_names(databases)
     comp.set_dbname("test")
-    comp.extend_schemata("test")
     comp.extend_relations(tables, kind="tables")
     comp.extend_columns(columns, kind="tables")
     comp.extend_enum_values([("orders", "status", ["pending", "shipped"])])
@@ -48,6 +52,16 @@ def complete_event():
     from unittest.mock import Mock
 
     return Mock()
+
+
+def test_use_database_completion(completer, complete_event):
+    text = "USE "
+    position = len(text)
+    result = completer.get_completions(Document(text=text, cursor_position=position), complete_event)
+    assert list(result) == [
+        Completion(text="test", start_position=0),
+        Completion(text="`test 2`", start_position=0),
+    ]
 
 
 def test_special_name_completion(completer, complete_event):
@@ -101,6 +115,8 @@ def test_table_completion(completer, complete_event):
         Completion(text="time_zone_name", start_position=0),
         Completion(text="time_zone_transition", start_position=0),
         Completion(text="time_zone_transition_type", start_position=0),
+        Completion(text="test", start_position=0),
+        Completion(text="`test 2`", start_position=0),
     ]
 
 
@@ -400,6 +416,8 @@ def test_table_names_after_from(completer, complete_event):
         Completion(text="time_zone_name", start_position=0),
         Completion(text="time_zone_transition", start_position=0),
         Completion(text="time_zone_transition_type", start_position=0),
+        Completion(text="test", start_position=0),
+        Completion(text="`test 2`", start_position=0),
     ]
 
 
@@ -474,6 +492,8 @@ def test_grant_on_suggets_tables_and_schemata(completer, complete_event):
     position = len(text)
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
     assert result == [
+        Completion(text="test", start_position=0),
+        Completion(text="`test 2`", start_position=0),
         Completion(text='users', start_position=0),
         Completion(text='orders', start_position=0),
         Completion(text='`select`', start_position=0),
@@ -555,4 +575,17 @@ def test_auto_case_heuristic(completer, complete_event):
         'json_value',
         'join',
         'json',
+    ]
+
+
+def test_create_table_like_completion(completer, complete_event):
+    text = "CREATE TABLE foo LIKE ti"
+    position = len(text)
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    assert [x.text for x in result] == [
+        'time_zone',
+        'time_zone_name',
+        'time_zone_transition',
+        'time_zone_leap_second',
+        'time_zone_transition_type',
     ]

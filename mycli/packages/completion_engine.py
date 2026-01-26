@@ -292,8 +292,12 @@ def suggest_based_on_last_token(
                 {"type": "alias", "aliases": aliases},
                 {"type": "keyword"},
             ]
-    elif (token_v.endswith("join") and isinstance(token, Token) and token.is_keyword) or (
-        token_v in ("copy", "from", "update", "into", "describe", "truncate", "desc", "explain")
+    elif (
+        (token_v.endswith("join") and isinstance(token, Token) and token.is_keyword)
+        or (token_v in ("copy", "from", "update", "into", "describe", "truncate", "desc", "explain"))
+        # todo: the create table regex fails to match on multi-statement queries, which
+        # suggests a bug above in suggest_type()
+        or (token_v == "like" and re.match(r'^\s*create\s+table\s', full_text, re.IGNORECASE))
     ):
         schema = (identifier and identifier.get_parent_name()) or []
 

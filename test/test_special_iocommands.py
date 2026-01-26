@@ -112,6 +112,17 @@ def test_favorite_query():
         assert next(mycli.packages.special.execute(cur, "\\f check")).title == "> " + query
 
 
+@dbtest
+@pytest.mark.skipif(os.name == "nt", reason="Bug: fails on Windows, needs fixing, singleton of FQ not working right")
+def test_special_favorite_query():
+    with db_connection().cursor() as cur:
+        query = r'\?'
+        mycli.packages.special.execute(cur, rf"\fs special {query}")
+        assert (r'\G', r'\G', 'Display current query results vertically.') in next(
+            mycli.packages.special.execute(cur, r'\f special')
+        ).results
+
+
 def test_once_command():
     with pytest.raises(TypeError):
         mycli.packages.special.execute(None, "\\once")
