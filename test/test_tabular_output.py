@@ -112,3 +112,7 @@ def test_sql_output(mycli):
               ('abc', 1, NULL, 10.0e0, X'aa')
             , ('d', 456, '1', 0.5e0, X'aabb')
             ;""")
+    # Test binary output format is a hex string
+    assert list(mycli.change_table_format("psql")) == [SQLResult(None, None, None, "Changed table format to psql")]
+    output = mycli.format_output(None, FakeCursor(), headers, False, False)
+    assert '0xaabb' in '\n'.join(output)

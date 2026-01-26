@@ -17,7 +17,7 @@ dependencies = [
     "sqlparse>=0.3.0,<0.6.0",
     "sqlglot[rs] == 27.*",
     "configobj >= 5.0.5",
-    "cli_helpers[styles] >= 2.8.1",
+    "cli_helpers[styles] >= 2.9.0",
     "pyperclip >= 1.8.1",
     "pycryptodomex",
     "pyfzf >= 0.3.1",
