@@ -19,7 +19,9 @@ from mycli.compat import WIN
 from mycli.packages.prompt_utils import confirm_destructive_query
 from mycli.packages.special.delimitercommand import DelimiterCommand
 from mycli.packages.special.favoritequeries import FavoriteQueries
+from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
 from mycli.packages.special.main import ArgType, special_command
+from mycli.packages.special.main import execute as special_execute
 from mycli.packages.special.utils import handle_cd_command
 from mycli.packages.sqlresult import SQLResult
 
@@ -281,12 +283,23 @@ def execute_favorite_query(cur: Cursor, arg: str, **_) -> Generator[SQLResult, N
             for sql in sqlparse.split(query):
                 sql = sql.rstrip(";")
                 title = f"> {sql}" if is_show_favorite_query() else None
-                cur.execute(sql)
-                if cur.description:
-                    headers = [x[0] for x in cur.description]
-                    yield SQLResult(title=title, results=cur, headers=headers)
+                is_special = False
+                for special in SPECIAL_COMMANDS:
+                    if sql.lower().startswith(special.lower()):
+                        is_special = True
+                        break
+                if is_special:
+                    for result in special_execute(cur, sql):
+                        result.title = title
+                        # special_execute() already returns a SQLResult
+                        yield result
                 else:
-                    yield SQLResult(title=title)
+                    cur.execute(sql)
+                    if cur.description:
+                        headers = [x[0] for x in cur.description]
+                        yield SQLResult(title=title, results=cur, headers=headers)
+                    else:
+                        yield SQLResult(title=title)
 
 
 def list_favorite_queries() -> list[SQLResult]:

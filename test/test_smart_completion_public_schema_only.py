@@ -576,3 +576,16 @@ def test_auto_case_heuristic(completer, complete_event):
         'join',
         'json',
     ]
+
+
+def test_create_table_like_completion(completer, complete_event):
+    text = "CREATE TABLE foo LIKE ti"
+    position = len(text)
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    assert [x.text for x in result] == [
+        'time_zone',
+        'time_zone_name',
+        'time_zone_transition',
+        'time_zone_leap_second',
+        'time_zone_transition_type',
+    ]
