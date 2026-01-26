@@ -13,6 +13,7 @@ Bug Fixes
 * Better respect case when `keyword_casing` is `auto`.
 * Let favorite queries contain special commands.
 * Render binary values more consistently as hex literals.
+* Offer format completions on special command `\Tr`/`redirectformat`.
 
 
 1.47.0 (2026/01/24)
