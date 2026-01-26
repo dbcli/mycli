@@ -22,7 +22,7 @@ formatter: TabularOutputFormatter
 
 def escape_for_sql_statement(value: Union[bytes, str]) -> str:
     if isinstance(value, bytes):
-        return f"X'{value.hex()}'"
+        return f"0x{value.hex()}"
     else:
         return formatter.mycli.sqlexecute.conn.escape(value)
 
