@@ -10,6 +10,7 @@ Features
 Bug Fixes
 --------
 * Better respect case when `keyword_casing` is `auto`.
+* Fix error when selecting from an empty table.
 
 
 1.47.0 (2026/01/24)
