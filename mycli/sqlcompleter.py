@@ -814,7 +814,7 @@ class SQLCompleter(Completer):
         self.special_commands.extend(special_commands)
 
     def extend_database_names(self, databases: list[str]) -> None:
-        self.databases.extend(databases)
+        self.databases.extend([self.escape_name(db) for db in databases])
 
     def extend_keywords(self, keywords: list[str], replace: bool = False) -> None:
         if replace:

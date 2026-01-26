@@ -5,6 +5,7 @@ Features
 --------
 * Right-align numeric columns, and make the behavior configurable.
 * Add completions for stored procedures.
+* Escape database completions.
 * Offer completions on `CREATE TABLE ... LIKE`.
 
 
