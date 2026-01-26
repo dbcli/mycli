@@ -40,6 +40,20 @@ CLI_ARGS = [
 ]
 
 
+@dbtest
+def test_select_from_empty_table(executor):
+    run(executor, """create table t1(id int)""")
+    sql = "select * from t1"
+    runner = CliRunner()
+    result = runner.invoke(cli, args=CLI_ARGS + ["-t"], input=sql)
+    expected = dedent("""\
+        +----+
+        | id |
+        +----+
+        +----+""")
+    assert expected in result.output
+
+
 def test_is_valid_connection_scheme_valid(executor, capsys):
     is_valid, scheme = is_valid_connection_scheme("mysql://test@localhost:3306/dev")
     assert is_valid

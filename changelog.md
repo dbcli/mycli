@@ -12,6 +12,7 @@ Features
 Bug Fixes
 --------
 * Better respect case when `keyword_casing` is `auto`.
+* Fix error when selecting from an empty table.
 * Let favorite queries contain special commands.
 * Render binary values more consistently as hex literals.
 

@@ -1422,8 +1422,11 @@ class MyCli:
                     col_type = FIELD_TYPES.get(col[1], str)
                     return col_type if type(col_type) is type else str
 
-                column_types = [get_col_type(tup) for tup in cur.description]
-                colalign = [numeric_alignment if x in (int, float, Decimal) else 'left' for x in column_types]
+                if cur.rowcount > 0:
+                    column_types = [get_col_type(tup) for tup in cur.description]
+                    colalign = [numeric_alignment if x in (int, float, Decimal) else 'left' for x in column_types]
+                else:
+                    column_types, colalign = [], []
 
             if max_width is not None and isinstance(cur, Cursor):
                 cur = list(cur)
