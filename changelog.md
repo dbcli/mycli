@@ -13,6 +13,11 @@ Bug Fixes
 * Let favorite queries contain special commands.
 
 
+Bug Fixes
+--------
+* Render binary values more consistently as hex literals.
+
+
 1.47.0 (2026/01/24)
 ==============
 
