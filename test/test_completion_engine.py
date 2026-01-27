@@ -2,6 +2,7 @@
 
 import pytest
 
+from mycli.packages import special
 from mycli.packages.completion_engine import suggest_type
 
 
@@ -538,6 +539,13 @@ def test_specials_included_for_initial_completion(initial_text):
     assert sorted_dicts(suggestions) == sorted_dicts([{"type": "keyword"}, {"type": "special"}])
 
 
+@pytest.mark.parametrize('initial_text', ['REDIRECT'])
+def test_specials_included_with_caps(initial_text):
+    suggestions = suggest_type(initial_text, initial_text)
+
+    assert sorted_dicts(suggestions) == sorted_dicts([{'type': 'keyword'}, {'type': 'special'}])
+
+
 def test_specials_not_included_after_initial_token():
     suggestions = suggest_type("create table foo (dt d", "create table foo (dt d")
 
@@ -593,6 +601,8 @@ def test_after_as(expression):
     ],
 )
 def test_source_is_file(expression):
+    # "source" has to be registered by hand because that usually happens inside MyCLI in mycli/main.py
+    special.register_special_command(..., 'source', '\\. filename', 'Execute commands from file.', aliases=['\\.'])
     suggestions = suggest_type(expression, expression)
     assert suggestions == [{"type": "file_name"}]
 
