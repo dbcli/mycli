@@ -1,6 +1,11 @@
 TBD
 ==============
 
+Features
+--------
+* "Eager" completions for the `source` command, limited to `*.sql` files.
+
+
 Internal
 --------
 * Remove `align_decimals` preprocessor, which had no effect.

@@ -19,7 +19,11 @@ def list_path(root_dir: str) -> list[str]:
     res = []
     if os.path.isdir(root_dir):
         for name in os.listdir(root_dir):
-            res.append(name)
+            if os.path.isdir(name):
+                res.append(f'{name}/')
+            # if .sql is too restrictive it can be made configurable with some effort
+            elif name.lower().endswith('.sql'):
+                res.append(name)
     return res
 
 
@@ -69,7 +73,16 @@ def suggest_path(root_dir: str) -> list[str]:
 
     """
     if not root_dir:
-        return [os.path.abspath(os.sep), "~", os.curdir, os.pardir]
+        return [
+            os.path.abspath(os.sep),
+            "~",
+            os.curdir,
+            os.pardir,
+            *list_path(os.curdir),
+        ]
+
+    if root_dir[0] not in ('/', '~') and root_dir[0:1] != './':
+        return list_path(os.curdir)
 
     if "~" in root_dir:
         root_dir = os.path.expanduser(root_dir)
