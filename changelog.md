@@ -7,6 +7,7 @@ Features
 * Add completions for stored procedures.
 * Escape database completions.
 * Offer completions on `CREATE TABLE ... LIKE`.
+* Use 0x-style hex literals for binaries in SQL output formats.
 
 
 Bug Fixes

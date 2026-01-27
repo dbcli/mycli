@@ -58,13 +58,13 @@ def test_sql_output(mycli):
               `number` = 1
             , `optional` = NULL
             , `float` = 10.0e0
-            , `binary` = X'aa'
+            , `binary` = 0xaa
             WHERE `letters` = 'abc';
             UPDATE `DUAL` SET
               `number` = 456
             , `optional` = '1'
             , `float` = 0.5e0
-            , `binary` = X'aabb'
+            , `binary` = 0xaabb
             WHERE `letters` = 'd';""")
     # Test sql-update-2 output format
     assert list(mycli.change_table_format("sql-update-2")) == [SQLResult(None, None, None, "Changed table format to sql-update-2")]
@@ -75,12 +75,12 @@ def test_sql_output(mycli):
             UPDATE `DUAL` SET
               `optional` = NULL
             , `float` = 10.0e0
-            , `binary` = X'aa'
+            , `binary` = 0xaa
             WHERE `letters` = 'abc' AND `number` = 1;
             UPDATE `DUAL` SET
               `optional` = '1'
             , `float` = 0.5e0
-            , `binary` = X'aabb'
+            , `binary` = 0xaabb
             WHERE `letters` = 'd' AND `number` = 456;""")
     # Test sql-insert output format (without table name)
     assert list(mycli.change_table_format("sql-insert")) == [SQLResult(None, None, None, "Changed table format to sql-insert")]
@@ -89,8 +89,8 @@ def test_sql_output(mycli):
     output = mycli.format_output(None, FakeCursor(), headers, False, False)
     assert "\n".join(output) == dedent("""\
             INSERT INTO `DUAL` (`letters`, `number`, `optional`, `float`, `binary`) VALUES
-              ('abc', 1, NULL, 10.0e0, X'aa')
-            , ('d', 456, '1', 0.5e0, X'aabb')
+              ('abc', 1, NULL, 10.0e0, 0xaa)
+            , ('d', 456, '1', 0.5e0, 0xaabb)
             ;""")
     # Test sql-insert output format (with table name)
     assert list(mycli.change_table_format("sql-insert")) == [SQLResult(None, None, None, "Changed table format to sql-insert")]
@@ -99,8 +99,8 @@ def test_sql_output(mycli):
     output = mycli.format_output(None, FakeCursor(), headers, False, False)
     assert "\n".join(output) == dedent("""\
             INSERT INTO table (`letters`, `number`, `optional`, `float`, `binary`) VALUES
-              ('abc', 1, NULL, 10.0e0, X'aa')
-            , ('d', 456, '1', 0.5e0, X'aabb')
+              ('abc', 1, NULL, 10.0e0, 0xaa)
+            , ('d', 456, '1', 0.5e0, 0xaabb)
             ;""")
     # Test sql-insert output format (with database + table name)
     assert list(mycli.change_table_format("sql-insert")) == [SQLResult(None, None, None, "Changed table format to sql-insert")]
@@ -109,8 +109,8 @@ def test_sql_output(mycli):
     output = mycli.format_output(None, FakeCursor(), headers, False, False)
     assert "\n".join(output) == dedent("""\
             INSERT INTO database.table (`letters`, `number`, `optional`, `float`, `binary`) VALUES
-              ('abc', 1, NULL, 10.0e0, X'aa')
-            , ('d', 456, '1', 0.5e0, X'aabb')
+              ('abc', 1, NULL, 10.0e0, 0xaa)
+            , ('d', 456, '1', 0.5e0, 0xaabb)
             ;""")
     # Test binary output format is a hex string
     assert list(mycli.change_table_format("psql")) == [SQLResult(None, None, None, "Changed table format to psql")]
