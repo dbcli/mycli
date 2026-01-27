@@ -1408,7 +1408,11 @@ class MyCli:
             output_kwargs['missing_value'] = null_string
 
         if use_formatter.format_name not in sql_format.supported_formats:
-            output_kwargs["preprocessors"] = (preprocessors.align_decimals,)
+            # will run before preprocessors defined as part of the format in cli_helpers
+            output_kwargs["preprocessors"] = (
+                preprocessors.convert_to_undecoded_string,
+                preprocessors.align_decimals,
+            )
 
         if title:  # Only print the title if it's not None.
             output = itertools.chain(output, [title])
