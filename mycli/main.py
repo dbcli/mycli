@@ -1409,10 +1409,7 @@ class MyCli:
 
         if use_formatter.format_name not in sql_format.supported_formats:
             # will run before preprocessors defined as part of the format in cli_helpers
-            output_kwargs["preprocessors"] = (
-                preprocessors.convert_to_undecoded_string,
-                preprocessors.align_decimals,
-            )
+            output_kwargs["preprocessors"] = (preprocessors.convert_to_undecoded_string,)
 
         if title:  # Only print the title if it's not None.
             output = itertools.chain(output, [title])
