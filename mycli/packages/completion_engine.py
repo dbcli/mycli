@@ -146,7 +146,7 @@ def suggest_special(text: str) -> list[dict[str, Any]]:
     if cmd in ("\\u", "\\r"):
         return [{"type": "database"}]
 
-    if cmd in ("\\T"):
+    if cmd in (r'\T', r'\Tr'):
         return [{"type": "table_format"}]
 
     if cmd in ["\\f", "\\fs", "\\fd"]:
@@ -354,7 +354,7 @@ def suggest_based_on_last_token(
         # "\c <db", "use <db>", "DROP DATABASE <db>",
         # "CREATE DATABASE <newdb> WITH TEMPLATE <db>"
         return [{"type": "database"}]
-    elif token_v == "tableformat":
+    elif token_v in ("tableformat", "redirectformat"):
         return [{"type": "table_format"}]
     elif token_v.endswith(",") or is_operand(token_v) or token_v in ["=", "and", "or"]:
         original_text = text_before_cursor
