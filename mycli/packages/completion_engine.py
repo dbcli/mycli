@@ -5,6 +5,7 @@ import sqlparse
 from sqlparse.sql import Comparison, Identifier, Token, Where
 
 from mycli.packages.parseutils import extract_tables, find_prev_keyword, last_word
+from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
 from mycli.packages.special.main import parse_special_command
 
 sqlparse.engine.grouping.MAX_GROUPING_DEPTH = None  # type: ignore[assignment]
@@ -126,8 +127,12 @@ def suggest_type(full_text: str, text_before_cursor: str) -> list[dict[str, Any]
         # Be careful here because trivial whitespace is parsed as a statement,
         # but the statement won't have a first token
         tok1 = statement.token_first()
-        if tok1 and (tok1.value == "source" or tok1.value.startswith("\\")):
+        # lenient because \. will parse as two tokens
+        if tok1 and tok1.value.startswith('\\'):
             return suggest_special(text_before_cursor)
+        elif tok1:
+            if tok1.value.lower() in SPECIAL_COMMANDS:
+                return suggest_special(text_before_cursor)
 
     last_token = statement and statement.token_prev(len(statement.tokens))[1] or ""
 
@@ -146,7 +151,13 @@ def suggest_special(text: str) -> list[dict[str, Any]]:
     if cmd in ("\\u", "\\r"):
         return [{"type": "database"}]
 
+    if cmd.lower() in ('use', 'connect'):
+        return [{'type': 'database'}]
+
     if cmd in (r'\T', r'\Tr'):
+        return [{"type": "table_format"}]
+
+    if cmd.lower() in ('tableformat', 'redirectformat'):
         return [{"type": "table_format"}]
 
     if cmd in ["\\f", "\\fs", "\\fd"]:
@@ -158,7 +169,7 @@ def suggest_special(text: str) -> list[dict[str, Any]]:
             {"type": "view", "schema": []},
             {"type": "schema"},
         ]
-    elif cmd in ["\\.", "source"]:
+    elif cmd.lower() in ["\\.", "source"]:
         return [{"type": "file_name"}]
     if cmd in ["\\llm", "\\ai"]:
         return [{"type": "llm"}]
@@ -350,12 +361,11 @@ def suggest_based_on_last_token(
                 suggest.append({"type": "table", "schema": parent})
             return suggest
 
-    elif token_v in ("use", "database", "template", "connect"):
+    elif token_v in ("database", "template"):
         # "\c <db", "use <db>", "DROP DATABASE <db>",
         # "CREATE DATABASE <newdb> WITH TEMPLATE <db>"
         return [{"type": "database"}]
-    elif token_v in ("tableformat", "redirectformat"):
-        return [{"type": "table_format"}]
+
     elif token_v.endswith(",") or is_operand(token_v) or token_v in ["=", "and", "or"]:
         original_text = text_before_cursor
         prev_keyword, text_before_cursor = find_prev_keyword(text_before_cursor)

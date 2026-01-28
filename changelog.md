@@ -6,6 +6,11 @@ Features
 * "Eager" completions for the `source` command, limited to `*.sql` files.
 
 
+Bug Fixes
+--------
+* Refactor completions for special commands, with minor casing fixes.
+
+
 Internal
 --------
 * Remove `align_decimals` preprocessor, which had no effect.
