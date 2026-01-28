@@ -1,3 +1,11 @@
+TBD
+==============
+
+Internal
+--------
+* Remove `align_decimals` preprocessor, which had no effect.
+
+
 1.48.0 (2026/01/27)
 ==============
 
