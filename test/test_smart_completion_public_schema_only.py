@@ -603,8 +603,8 @@ def test_source_eager_completion(completer, complete_event):
     error = 'unknown'
     try:
         assert [x.text for x in result] == [
-            'screenshots/',
             script_filename,
+            'screenshots/',
         ]
     except AssertionError as e:
         success = False

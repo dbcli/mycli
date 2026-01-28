@@ -16,15 +16,19 @@ def list_path(root_dir: str) -> list[str]:
     :return: list
 
     """
-    res = []
-    if os.path.isdir(root_dir):
-        for name in os.listdir(root_dir):
-            if os.path.isdir(name):
-                res.append(f'{name}/')
-            # if .sql is too restrictive it can be made configurable with some effort
-            elif name.lower().endswith('.sql'):
-                res.append(name)
-    return res
+    files = []
+    dirs = []
+    if not os.path.isdir(root_dir):
+        return []
+    for name in sorted(os.listdir(root_dir)):
+        if name.startswith('.'):
+            continue
+        elif os.path.isdir(name):
+            dirs.append(f'{name}/')
+        # if .sql is too restrictive it can be made configurable with some effort
+        elif name.lower().endswith('.sql'):
+            files.append(name)
+    return files + dirs
 
 
 def complete_path(curr_dir: str, last_dir: str) -> str:
