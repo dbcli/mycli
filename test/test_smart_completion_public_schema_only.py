@@ -1,5 +1,6 @@
 # type: ignore
 
+import os.path
 from unittest.mock import patch
 
 from prompt_toolkit.completion import Completion
@@ -589,3 +590,26 @@ def test_create_table_like_completion(completer, complete_event):
         'time_zone_leap_second',
         'time_zone_transition_type',
     ]
+
+
+def test_source_eager_completion(completer, complete_event):
+    text = "source sc"
+    position = len(text)
+    script_filename = 'script_for_test_suite.sql'
+    f = open(script_filename, 'w')
+    f.close()
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    success = True
+    error = 'unknown'
+    try:
+        assert [x.text for x in result] == [
+            'screenshots/',
+            script_filename,
+        ]
+    except AssertionError as e:
+        success = False
+        error = e
+    if os.path.exists(script_filename):
+        os.remove(script_filename)
+    if not success:
+        raise AssertionError(error)
