@@ -1200,7 +1200,7 @@ class SQLCompleter(Completer):
         """
         base_path, last_path, position = parse_path(word)
         paths = suggest_path(word)
-        for name in sorted(paths):
+        for name in paths:
             suggestion = complete_path(name, last_path)
             if suggestion:
                 yield Completion(suggestion, position)
