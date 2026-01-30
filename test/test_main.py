@@ -668,6 +668,7 @@ def test_dsn(monkeypatch):
             self.main_formatter = Formatter()
             self.redirect_formatter = Formatter()
             self.ssl_mode = "auto"
+            self.my_cnf = {"client": {}, "mysqld": {}}
 
         def connect(self, **args):
             MockMyCli.connect_args = args
@@ -842,6 +843,7 @@ def test_ssh_config(monkeypatch):
             self.main_formatter = Formatter()
             self.redirect_formatter = Formatter()
             self.ssl_mode = "auto"
+            self.my_cnf = {"client": {}, "mysqld": {}}
 
         def connect(self, **args):
             MockMyCli.connect_args = args
