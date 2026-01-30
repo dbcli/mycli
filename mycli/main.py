@@ -480,7 +480,6 @@ class MyCli:
         ssh_key_filename: str | None = "",
         init_command: str | None = "",
         unbuffered: bool | None = None,
-        password_file: str | None = "",
     ) -> None:
         cnf = {
             "database": None,
@@ -532,16 +531,12 @@ class MyCli:
         if not any(v for v in ssl_config.values()):
             ssl_config_or_none = None
 
-        # if the passwd is not specified try to set it using the password_file option
-        password_from_file = self.get_password_from_file(password_file)
-        passwd = passwd if isinstance(passwd, str) else password_from_file
-
         # password hierarchy
         # 1. -p / --pass/--password CLI options
-        # 2. envvar (MYSQL_PWD)
-        # 3. DSN (mysql://user:password)
-        # 4. cnf (.my.cnf / etc)
-        # 5. --password-file CLI option
+        # 2. --password-file CLI option
+        # 3. envvar (MYSQL_PWD)
+        # 4. DSN (mysql://user:password)
+        # 5. cnf (.my.cnf / etc)
 
         # if no password was found from all of the above sources, ask for a password
         if passwd is None:
@@ -633,26 +628,6 @@ class MyCli:
             self.logger.debug("Database connection failed: %r.", e)
             self.logger.error("traceback: %r", traceback.format_exc())
             self.echo(str(e), err=True, fg="red")
-            sys.exit(1)
-
-    def get_password_from_file(self, password_file: str | None) -> str | None:
-        if not password_file:
-            return None
-        try:
-            with open(password_file) as fp:
-                password = fp.readline().strip()
-                return password
-        except FileNotFoundError:
-            click.secho(f"Password file '{password_file}' not found", err=True, fg="red")
-            sys.exit(1)
-        except PermissionError:
-            click.secho(f"Permission denied reading password file '{password_file}'", err=True, fg="red")
-            sys.exit(1)
-        except IsADirectoryError:
-            click.secho(f"Path '{password_file}' is a directory, not a file", err=True, fg="red")
-            sys.exit(1)
-        except Exception as e:
-            click.secho(f"Error reading password file '{password_file}': {str(e)}", err=True, fg="red")
             sys.exit(1)
 
     def handle_editor_command(self, text: str) -> str:
@@ -1625,6 +1600,27 @@ def cli(
       - mycli mysql://my_user@my_host.com:3306/my_database
 
     """
+
+    def get_password_from_file(password_file: str | None) -> str | None:
+        if not password_file:
+            return None
+        try:
+            with open(password_file) as fp:
+                password = fp.readline().strip()
+                return password
+        except FileNotFoundError:
+            click.secho(f"Password file '{password_file}' not found", err=True, fg="red")
+            sys.exit(1)
+        except PermissionError:
+            click.secho(f"Permission denied reading password file '{password_file}'", err=True, fg="red")
+            sys.exit(1)
+        except IsADirectoryError:
+            click.secho(f"Path '{password_file}' is a directory, not a file", err=True, fg="red")
+            sys.exit(1)
+        except Exception as e:
+            click.secho(f"Error reading password file '{password_file}': {str(e)}", err=True, fg="red")
+            sys.exit(1)
+
     # if user passes the --p* flag, ask for the password right away
     # to reduce lag as much as possible
     if password == "MYCLI_ASK_PASSWORD":
@@ -1641,9 +1637,15 @@ def cli(
             sys.exit(1)
         database = password
         password = click.prompt("Enter password", hide_input=True, show_default=False, default='', type=str, err=True)
+
+    # if the passwd is not specified try to set it using the password_file option
+    if password is None and password_file:
+        if password_from_file := get_password_from_file(password_file):
+            password = password_from_file
+
     # getting the envvar ourselves because the envvar from a click
     # option cannot be an empty string, but a password can be
-    elif password is None and os.environ.get("MYSQL_PWD") is not None:
+    if password is None and os.environ.get("MYSQL_PWD") is not None:
         password = os.environ.get("MYSQL_PWD")
 
     mycli = MyCli(
@@ -1878,7 +1880,6 @@ def cli(
         init_command=combined_init_cmd,
         unbuffered=unbuffered,
         charset=charset,
-        password_file=password_file,
     )
 
     if combined_init_cmd:
