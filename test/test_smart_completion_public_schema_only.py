@@ -136,6 +136,7 @@ def test_function_name_completion(completer, complete_event):
     position = len("SELECT MA")
     result = completer.get_completions(Document(text=text, cursor_position=position), complete_event)
     assert list(result) == [
+        Completion(text='email', start_position=-2),
         Completion(text='MAX', start_position=-2),
         Completion(text='MAKE_SET', start_position=-2),
         Completion(text='MAKEDATE', start_position=-2),
