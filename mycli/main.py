@@ -2005,7 +2005,14 @@ def is_select(status: str | None) -> bool:
 def thanks_picker() -> str:
     import mycli
 
-    lines = (resources.read_text(mycli, "AUTHORS") + resources.read_text(mycli, "SPONSORS")).split("\n")
+    lines: str = ""
+    with resources.files(mycli).joinpath("AUTHORS").open('r') as f:
+        lines += f.read()
+
+    with resources.files(mycli).joinpath("SPONSORS").open('r') as f:
+        lines += f.read()
+    
+    lines = lines.split("\n")
 
     contents = []
     for line in lines:

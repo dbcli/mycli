@@ -101,14 +101,15 @@ def read_config_files(files: list[str | TextIOWrapper], list_values: bool = True
 def create_default_config(list_values: bool = True) -> ConfigObj:
     import mycli
 
-    default_config_file = resources.open_text(mycli, "myclirc")
+    default_config_file = resources.files(mycli).joinpath("myclirc").open('r')
     return read_config_file(default_config_file, list_values=list_values)
 
 
 def write_default_config(destination: str, overwrite: bool = False) -> None:
     import mycli
 
-    default_config = resources.read_text(mycli, "myclirc")
+    with resources.files(mycli).joinpath("myclirc").open('r') as f:
+        default_config = f.read()
     destination = os.path.expanduser(destination)
     if not overwrite and exists(destination):
         return
