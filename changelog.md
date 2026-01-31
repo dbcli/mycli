@@ -16,6 +16,7 @@ Bug Fixes
 Internal
 --------
 * Remove `align_decimals` preprocessor, which had no effect.
+* Fix TLS deprecation warning in test suite.
 
 
 1.48.0 (2026/01/27)
