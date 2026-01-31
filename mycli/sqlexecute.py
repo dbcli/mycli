@@ -542,8 +542,7 @@ class SQLExecute:
         if "cipher" in sslp:
             ctx.set_ciphers(sslp["cipher"])
 
-        # raise this default to v1.1 or v1.2?
-        ctx.minimum_version = ssl.TLSVersion.TLSv1
+        ctx.minimum_version = ssl.TLSVersion.TLSv1_2
 
         if "tls_version" in sslp:
             tls_version = sslp["tls_version"]
