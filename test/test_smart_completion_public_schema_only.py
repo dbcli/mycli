@@ -58,6 +58,7 @@ def complete_event():
 def test_use_database_completion(completer, complete_event):
     text = "USE "
     position = len(text)
+    special.register_special_command(..., 'use', '\\u', 'Change to a new database.', aliases=['\\u'])
     result = completer.get_completions(Document(text=text, cursor_position=position), complete_event)
     assert list(result) == [
         Completion(text="test", start_position=0),
@@ -69,7 +70,7 @@ def test_special_name_completion(completer, complete_event):
     text = "\\d"
     position = len("\\d")
     result = completer.get_completions(Document(text=text, cursor_position=position), complete_event)
-    assert result == [Completion(text="\\dt", start_position=-2)]
+    assert list(result) == [Completion(text="\\dt", start_position=-2)]
 
 
 def test_empty_string_completion(completer, complete_event):
@@ -136,14 +137,12 @@ def test_function_name_completion(completer, complete_event):
     position = len("SELECT MA")
     result = completer.get_completions(Document(text=text, cursor_position=position), complete_event)
     assert list(result) == [
-        Completion(text='email', start_position=-2),
         Completion(text='MAX', start_position=-2),
+        Completion(text='MATCH', start_position=-2),
+        Completion(text='MASTER', start_position=-2),
         Completion(text='MAKE_SET', start_position=-2),
         Completion(text='MAKEDATE', start_position=-2),
         Completion(text='MAKETIME', start_position=-2),
-        Completion(text='MASTER_POS_WAIT', start_position=-2),
-        Completion(text='MATCH', start_position=-2),
-        Completion(text='MASTER', start_position=-2),
         Completion(text='MAX_ROWS', start_position=-2),
         Completion(text='MAX_SIZE', start_position=-2),
         Completion(text='MAXVALUE', start_position=-2),
@@ -157,6 +156,7 @@ def test_function_name_completion(completer, complete_event):
         Completion(text='MASTER_LOG_POS', start_position=-2),
         Completion(text='MASTER_SSL_CRL', start_position=-2),
         Completion(text='MASTER_SSL_KEY', start_position=-2),
+        Completion(text='MASTER_POS_WAIT', start_position=-2),
         Completion(text='MASTER_LOG_FILE', start_position=-2),
         Completion(text='MASTER_PASSWORD', start_position=-2),
         Completion(text='MASTER_SSL_CERT', start_position=-2),
@@ -177,6 +177,7 @@ def test_function_name_completion(completer, complete_event):
         Completion(text='MASTER_COMPRESSION_ALGORITHMS', start_position=-2),
         Completion(text='MASTER_SSL_VERIFY_SERVER_CERT', start_position=-2),
         Completion(text='MASTER_ZSTD_COMPRESSION_LEVEL', start_position=-2),
+        Completion(text='email', start_position=-2),
         Completion(text='DECIMAL', start_position=-2),
         Completion(text='SMALLINT', start_position=-2),
         Completion(text='TIMESTAMP', start_position=-2),
@@ -231,7 +232,7 @@ def test_suggested_column_names(completer, complete_event):
         ]
         + list(map(Completion, completer.functions))
         + [Completion(text="users", start_position=0)]
-        + list(map(Completion, completer.keywords))
+        + [x for x in map(Completion, completer.keywords) if x.text not in completer.functions]
     )
 
 
@@ -318,7 +319,7 @@ def test_suggested_multiple_column_names(completer, complete_event):
         ]
         + list(map(Completion, completer.functions))
         + [Completion(text="u", start_position=0)]
-        + list(map(Completion, completer.keywords))
+        + [x for x in map(Completion, completer.keywords) if x.text not in completer.functions]
     )
 
 
@@ -460,32 +461,31 @@ def test_table_names_fuzzy(completer, complete_event):
 def test_auto_escaped_col_names(completer, complete_event):
     text = "SELECT  from `select`"
     position = len("SELECT ")
-    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
-    assert result == [
-        Completion(text="*", start_position=0),
-        Completion(text="id", start_position=0),
-        Completion(text="`insert`", start_position=0),
-        Completion(text="ABC", start_position=0),
-    ] + list(map(Completion, completer.functions)) + [Completion(text="select", start_position=0)] + list(
-        map(Completion, completer.keywords)
+    result = [x.text for x in completer.get_completions(Document(text=text, cursor_position=position), complete_event)]
+    expected = (
+        [
+            "*",
+            "id",
+            "`insert`",
+            "ABC",
+        ]
+        + completer.functions
+        + ["select"]
+        + [x for x in completer.keywords if x not in completer.functions]
     )
+    assert result == expected
 
 
 def test_un_escaped_table_names(completer, complete_event):
     text = "SELECT  from réveillé"
     position = len("SELECT ")
-    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
-    assert result == list(
-        [
-            Completion(text="*", start_position=0),
-            Completion(text="id", start_position=0),
-            Completion(text="`insert`", start_position=0),
-            Completion(text="ABC", start_position=0),
-        ]
-        + list(map(Completion, completer.functions))
-        + [Completion(text="réveillé", start_position=0)]
-        + list(map(Completion, completer.keywords))
-    )
+    result = [x.text for x in completer.get_completions(Document(text=text, cursor_position=position), complete_event)]
+    assert result == [
+        "*",
+        "id",
+        "`insert`",
+        "ABC",
+    ] + completer.functions + ["réveillé"] + [x for x in completer.keywords if x not in completer.functions]
 
 
 # todo: the fixtures are insufficient; the database name should also appear in the result
@@ -551,18 +551,18 @@ def dummy_list_path(dir_name):
 @patch("mycli.packages.filepaths.list_path", new=dummy_list_path)
 @pytest.mark.parametrize(
     "text,expected",
+    # it may be that the cursor positions should be 0, but the position
+    # info is currently being dropped in find_files()
     [
-        #    ('source ',  [('~', 0),
-        #                  ('/', 0),
-        #                  ('.', 0),
-        #                  ('..', 0)]),
-        ("source /", [("dir1", 0), ("file1.sql", 0), ("file2.sql", 0)]),
-        ("source /dir1/", [("subdir1", 0), ("subfile1.sql", 0), ("subfile2.sql", 0)]),
-        ("source /dir1/subdir1/", [("lastfile.sql", 0)]),
+        ('source ', [('/', 0), ('~', 0), ('.', 0), ('..', 0)]),
+        ("source /", [("dir1", -1), ("file1.sql", -1), ("file2.sql", -1)]),
+        ("source /dir1/", [("subdir1", -6), ("subfile1.sql", -6), ("subfile2.sql", -6)]),
+        ("source /dir1/subdir1/", [("lastfile.sql", -14)]),
     ],
 )
 def test_file_name_completion(completer, complete_event, text, expected):
     position = len(text)
+    special.register_special_command(..., 'source', '\\. filename', 'Execute commands from file.', aliases=['\\.'])
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
     expected = [Completion(txt, pos) for txt, pos in expected]
     assert result == expected
@@ -599,6 +599,7 @@ def test_source_eager_completion(completer, complete_event):
     script_filename = 'script_for_test_suite.sql'
     f = open(script_filename, 'w')
     f.close()
+    special.register_special_command(..., 'source', '\\. filename', 'Execute commands from file.', aliases=['\\.'])
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
     success = True
     error = 'unknown'
