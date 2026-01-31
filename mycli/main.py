@@ -10,7 +10,7 @@ import shutil
 import sys
 import threading
 import traceback
-from typing import Any, Generator, Iterable, Literal
+from typing import IO, Any, Generator, Iterable, Literal
 
 try:
     from pwd import getpwuid
@@ -90,7 +90,7 @@ class MyCli:
     defaults_suffix = None
 
     # In order of being loaded. Files lower in list override earlier ones.
-    cnf_files: list[str | TextIOWrapper] = [
+    cnf_files: list[str | IO[str]] = [
         "/etc/my.cnf",
         "/etc/mysql/my.cnf",
         "/usr/local/etc/my.cnf",
@@ -99,7 +99,7 @@ class MyCli:
 
     # check XDG_CONFIG_HOME exists and not an empty string
     xdg_config_home = os.environ.get("XDG_CONFIG_HOME", "~/.config")
-    system_config_files: list[str | TextIOWrapper] = [
+    system_config_files: list[str | IO[str]] = [
         "/etc/myclirc",
         os.path.join(os.path.expanduser(xdg_config_home), "mycli", "myclirc"),
     ]
@@ -134,7 +134,7 @@ class MyCli:
             self.cnf_files = [defaults_file]
 
         # Load config.
-        config_files: list[str | TextIOWrapper] = self.system_config_files + [myclirc] + [self.pwd_config_file]
+        config_files: list[str | IO[str]] = self.system_config_files + [myclirc] + [self.pwd_config_file]
         c = self.config = read_config_files(config_files)
         self.multi_line = c["main"].as_bool("multi_line")
         self.key_bindings = c["main"]["key_bindings"]
@@ -2005,10 +2005,15 @@ def is_select(status: str | None) -> bool:
 def thanks_picker() -> str:
     import mycli
 
-    lines = (resources.read_text(mycli, "AUTHORS") + resources.read_text(mycli, "SPONSORS")).split("\n")
+    lines: str = ""
+    with resources.files(mycli).joinpath("AUTHORS").open('r') as f:
+        lines += f.read()
+
+    with resources.files(mycli).joinpath("SPONSORS").open('r') as f:
+        lines += f.read()
 
     contents = []
-    for line in lines:
+    for line in lines.split("\n"):
         if m := re.match(r"^ *\* (.*)", line):
             contents.append(m.group(1))
     return choice(contents) if contents else 'our sponsors'
