@@ -656,7 +656,10 @@ def test_dsn(monkeypatch):
             pass
 
     class MockMyCli:
-        config = {"alias_dsn": {}}
+        config = {
+            "main": {},
+            "alias_dsn": {},
+        }
 
         def __init__(self, **args):
             self.logger = Logger()
@@ -718,7 +721,10 @@ def test_dsn(monkeypatch):
         and MockMyCli.connect_args["database"] == "arg_database"
     )
 
-    MockMyCli.config = {"alias_dsn": {"test": "mysql://alias_dsn_user:alias_dsn_passwd@alias_dsn_host:4/alias_dsn_database"}}
+    MockMyCli.config = {
+        "main": {},
+        "alias_dsn": {"test": "mysql://alias_dsn_user:alias_dsn_passwd@alias_dsn_host:4/alias_dsn_database"},
+    }
     MockMyCli.connect_args = None
 
     # When a user uses a DSN from the configuration file (alias_dsn),
@@ -733,7 +739,10 @@ def test_dsn(monkeypatch):
         and MockMyCli.connect_args["database"] == "alias_dsn_database"
     )
 
-    MockMyCli.config = {"alias_dsn": {"test": "mysql://alias_dsn_user:alias_dsn_passwd@alias_dsn_host:4/alias_dsn_database"}}
+    MockMyCli.config = {
+        "main": {},
+        "alias_dsn": {"test": "mysql://alias_dsn_user:alias_dsn_passwd@alias_dsn_host:4/alias_dsn_database"},
+    }
     MockMyCli.connect_args = None
 
     # When a user uses a DSN from the configuration file (alias_dsn)
@@ -821,7 +830,10 @@ def test_ssh_config(monkeypatch):
             pass
 
     class MockMyCli:
-        config = {"alias_dsn": {}}
+        config = {
+            "main": {},
+            "alias_dsn": {},
+        }
 
         def __init__(self, **args):
             self.logger = Logger()
