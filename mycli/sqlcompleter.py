@@ -1087,6 +1087,10 @@ class SQLCompleter(Completer):
                     # which should suggest only columns that appear in more than
                     # one table
                     scoped_cols = [col for (col, count) in Counter(scoped_cols).items() if count > 1 and col != "*"]
+                elif not tables:
+                    # if tables was empty, this is a naked SELECT and we are
+                    # showing all columns. So make them unique and sort them.
+                    scoped_cols = sorted(set(scoped_cols), key=lambda s: s.strip('`'))
 
                 cols = self.find_matches(word_before_cursor, scoped_cols)
                 completions.extend(cols)
@@ -1213,6 +1217,14 @@ class SQLCompleter(Completer):
         columns = []
         meta = self.dbmetadata
 
+        # if scoped tables is empty, this is just after a SELECT so we
+        # show all columns for all tables in the schema.
+        if len(scoped_tbls) == 0 and self.dbname:
+            for table in meta["tables"][self.dbname]:
+                columns.extend(meta["tables"][self.dbname][table])
+            return columns
+
+        # query includes tables, so use those to populate columns
         for tbl in scoped_tbls:
             # A fully qualified schema.relname reference or default_schema
             # DO NOT escape schema names.

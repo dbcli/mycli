@@ -4,7 +4,7 @@ TBD
 Features
 --------
 * "Eager" completions for the `source` command, limited to `*.sql` files.
-
+* Suggest column names from all tables in the current database after SELECT (#212)
 
 Bug Fixes
 --------
