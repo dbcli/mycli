@@ -480,6 +480,7 @@ class MyCli:
         ssh_key_filename: str | None = "",
         init_command: str | None = "",
         unbuffered: bool | None = None,
+        password_file: str | None = None,
     ) -> None:
         cnf = {
             "database": None,
@@ -500,10 +501,23 @@ class MyCli:
         }
 
         cnf = self.read_my_cnf(self.my_cnf, list(cnf.keys()))
+        # get user and passwd from config so we can use it in password checking logic and prompt
+        user = user or cnf["user"] or os.getenv("USER")
+        passwd = passwd if isinstance(passwd, str) else cnf["password"]
+
+        if database is None and passwd is not None and "://" in passwd:
+            # check if the scheme is valid. We do not actually have any logic for these, but
+            # it will most usefully catch the case where we erroneously catch someone's
+            # password, and give them an easy error message to follow / report
+            is_valid_scheme, scheme = is_valid_connection_scheme(passwd)
+            if not is_valid_scheme:
+                click.secho(f"Error: Unknown connection scheme provided for DSN URI ({scheme}://)", err=True, fg="red")
+                sys.exit(1)
+            database = passwd
+            passwd = click.prompt(f"Enter password for {user}", hide_input=True, show_default=False, default='', type=str, err=True)
 
         # Fall back to config values only if user did not specify a value.
         database = database or cnf["database"]
-        user = user or cnf["user"] or os.getenv("USER")
         host = host or cnf["host"]
         port = port or cnf["port"]
         ssl_config: dict[str, Any] = ssl or {}
@@ -514,7 +528,6 @@ class MyCli:
             if not host or host == "localhost":
                 socket = socket or cnf["socket"] or cnf["default_socket"] or guess_socket_location()
 
-        passwd = passwd if isinstance(passwd, str) else cnf["password"]
         charset = charset or self.config["main"].get("default_character_set") or cnf["default-character-set"] or "utf8mb4"
 
         # Favor whichever local_infile option is set.
@@ -538,9 +551,43 @@ class MyCli:
         # 4. DSN (mysql://user:password)
         # 5. cnf (.my.cnf / etc)
 
+        def get_password_from_file(password_file: str | None) -> str | None:
+            if not password_file:
+                return None
+            try:
+                with open(password_file) as fp:
+                    password = fp.readline().strip()
+                    return password
+            except FileNotFoundError:
+                click.secho(f"Password file '{password_file}' not found", err=True, fg="red")
+                sys.exit(1)
+            except PermissionError:
+                click.secho(f"Permission denied reading password file '{password_file}'", err=True, fg="red")
+                sys.exit(1)
+            except IsADirectoryError:
+                click.secho(f"Path '{password_file}' is a directory, not a file", err=True, fg="red")
+                sys.exit(1)
+            except Exception as e:
+                click.secho(f"Error reading password file '{password_file}': {str(e)}", err=True, fg="red")
+                sys.exit(1)
+
+        if passwd == "MYCLI_ASK_PASSWORD":
+            passwd = click.prompt(f"Enter password for {user}", hide_input=True, show_default=False, default='', type=str, err=True)
+
+        # if the passwd is not specified try to set it using the password_file option
+        if passwd is None and password_file:
+            password_from_file = get_password_from_file(password_file)
+            if password_from_file is not None:
+                passwd = password_from_file
+
+        # getting the envvar ourselves because the envvar from a click
+        # option cannot be an empty string, but a password can be
+        if passwd is None and os.environ.get("MYSQL_PWD") is not None:
+            passwd = os.environ.get("MYSQL_PWD")
+
         # if no password was found from all of the above sources, ask for a password
         if passwd is None:
-            passwd = click.prompt("Enter password", hide_input=True, show_default=False, default='', type=str, err=True)
+            passwd = click.prompt(f"Enter password for {user}", hide_input=True, show_default=False, default='', type=str, err=True)
 
         # Connect to the database.
         def _connect() -> None:
@@ -1600,54 +1647,6 @@ def cli(
       - mycli mysql://my_user@my_host.com:3306/my_database
 
     """
-
-    def get_password_from_file(password_file: str | None) -> str | None:
-        if not password_file:
-            return None
-        try:
-            with open(password_file) as fp:
-                password = fp.readline().strip()
-                return password
-        except FileNotFoundError:
-            click.secho(f"Password file '{password_file}' not found", err=True, fg="red")
-            sys.exit(1)
-        except PermissionError:
-            click.secho(f"Permission denied reading password file '{password_file}'", err=True, fg="red")
-            sys.exit(1)
-        except IsADirectoryError:
-            click.secho(f"Path '{password_file}' is a directory, not a file", err=True, fg="red")
-            sys.exit(1)
-        except Exception as e:
-            click.secho(f"Error reading password file '{password_file}': {str(e)}", err=True, fg="red")
-            sys.exit(1)
-
-    # if user passes the --p* flag, ask for the password right away
-    # to reduce lag as much as possible
-    if password == "MYCLI_ASK_PASSWORD":
-        password = click.prompt("Enter password", hide_input=True, show_default=False, default='', type=str, err=True)
-    # if the password value looks like a DSN, treat it as such and
-    # prompt for password
-    elif database is None and password is not None and "://" in password:
-        # check if the scheme is valid. We do not actually have any logic for these, but
-        # it will most usefully catch the case where we erroneously catch someone's
-        # password, and give them an easy error message to follow / report
-        is_valid_scheme, scheme = is_valid_connection_scheme(password)
-        if not is_valid_scheme:
-            click.secho(f"Error: Unknown connection scheme provided for DSN URI ({scheme}://)", err=True, fg="red")
-            sys.exit(1)
-        database = password
-        password = click.prompt("Enter password", hide_input=True, show_default=False, default='', type=str, err=True)
-
-    # if the passwd is not specified try to set it using the password_file option
-    if password is None and password_file:
-        if password_from_file := get_password_from_file(password_file):
-            password = password_from_file
-
-    # getting the envvar ourselves because the envvar from a click
-    # option cannot be an empty string, but a password can be
-    if password is None and os.environ.get("MYSQL_PWD") is not None:
-        password = os.environ.get("MYSQL_PWD")
-
     mycli = MyCli(
         prompt=prompt,
         logfile=logfile,
@@ -1880,6 +1879,7 @@ def cli(
         init_command=combined_init_cmd,
         unbuffered=unbuffered,
         charset=charset,
+        password_file=password_file,
     )
 
     if combined_init_cmd:
