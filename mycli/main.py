@@ -501,10 +501,23 @@ class MyCli:
         }
 
         cnf = self.read_my_cnf(self.my_cnf, list(cnf.keys()))
+        # get user and passwd from config so we can use it in password checking logic and prompt
+        user = user or cnf["user"] or os.getenv("USER")
+        passwd = passwd if isinstance(passwd, str) else cnf["password"]
+
+        if database is None and passwd is not None and "://" in passwd:
+            # check if the scheme is valid. We do not actually have any logic for these, but
+            # it will most usefully catch the case where we erroneously catch someone's
+            # password, and give them an easy error message to follow / report
+            is_valid_scheme, scheme = is_valid_connection_scheme(passwd)
+            if not is_valid_scheme:
+                click.secho(f"Error: Unknown connection scheme provided for DSN URI ({scheme}://)", err=True, fg="red")
+                sys.exit(1)
+            database = passwd
+            passwd = click.prompt(f"Enter password for {user}", hide_input=True, show_default=False, default='', type=str, err=True)
 
         # Fall back to config values only if user did not specify a value.
         database = database or cnf["database"]
-        user = user or cnf["user"] or os.getenv("USER")
         host = host or cnf["host"]
         port = port or cnf["port"]
         ssl_config: dict[str, Any] = ssl or {}
@@ -515,7 +528,6 @@ class MyCli:
             if not host or host == "localhost":
                 socket = socket or cnf["socket"] or cnf["default_socket"] or guess_socket_location()
 
-        passwd = passwd if isinstance(passwd, str) else cnf["password"]
         charset = charset or self.config["main"].get("default_character_set") or cnf["default-character-set"] or "utf8mb4"
 
         # Favor whichever local_infile option is set.
@@ -559,13 +571,6 @@ class MyCli:
                 click.secho(f"Error reading password file '{password_file}': {str(e)}", err=True, fg="red")
                 sys.exit(1)
 
-        if passwd and '://' in passwd:
-            is_valid_scheme, _scheme = is_valid_connection_scheme(passwd or '')
-            if is_valid_scheme:
-                click.secho('Warning: password looks like a DSN. Check the command line.', err=True, fg='yellow')
-
-        # if user passes the --p* flag, ask for the password right away
-        # to enforce consistency and reduce lag as much as possible
         if passwd == "MYCLI_ASK_PASSWORD":
             passwd = click.prompt(f"Enter password for {user}", hide_input=True, show_default=False, default='', type=str, err=True)
 
