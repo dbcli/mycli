@@ -501,9 +501,8 @@ class MyCli:
         }
 
         cnf = self.read_my_cnf(self.my_cnf, list(cnf.keys()))
-        # get user and passwd from config so we can use it in password checking logic and prompt
+        # get user from config so we can use it in password checking logic and prompt
         user = user or cnf["user"] or os.getenv("USER")
-        passwd = passwd if isinstance(passwd, str) else cnf["password"]
 
         if database is None and passwd is not None and "://" in passwd:
             # check if the scheme is valid. We do not actually have any logic for these, but
@@ -528,6 +527,7 @@ class MyCli:
             if not host or host == "localhost":
                 socket = socket or cnf["socket"] or cnf["default_socket"] or guess_socket_location()
 
+        passwd = passwd if isinstance(passwd, str) else cnf["password"]
         charset = charset or self.config["main"].get("default_character_set") or cnf["default-character-set"] or "utf8mb4"
 
         # Favor whichever local_infile option is set.
