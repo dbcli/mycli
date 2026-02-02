@@ -22,6 +22,7 @@ dependencies = [
     "pycryptodomex",
     "pyfzf >= 0.3.1",
     "rapidfuzz ~= 3.14.3",
+    "keyring ~= 25.7.0",
 ]
 
 [build-system]

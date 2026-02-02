@@ -137,6 +137,13 @@ pager = 'less'
 # character set for connections without --charset being set at the CLI
 default_character_set = utf8mb4
 
+# Whether to store and retrieve passwords from the system keyring.
+# See the documentation for https://pypi.org/project/keyring/ for your OS.
+# Note that the hostname is considered to be different if short or qualified.
+# This can be overridden with --use-keyring= at the CLI.
+# A password can be reset with --use-keyring=reset at the CLI.
+use_keyring = False
+
 [keys]
 # possible values: auto, fzf, reverse_isearch
 control_r = auto
