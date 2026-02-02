@@ -28,6 +28,7 @@ from cli_helpers.tabular_output.output_formatter import MISSING_VALUE as DEFAULT
 from cli_helpers.utils import strip_ansi
 import click
 from configobj import ConfigObj
+import keyring
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.completion import Completion, DynamicCompleter
 from prompt_toolkit.document import Document
@@ -480,6 +481,8 @@ class MyCli:
         ssh_key_filename: str | None = "",
         init_command: str | None = "",
         unbuffered: bool | None = None,
+        use_keyring: bool | None = None,
+        reset_keyring: bool | None = None,
     ) -> None:
         cnf = {
             "database": None,
@@ -537,10 +540,26 @@ class MyCli:
         # 3. envvar (MYSQL_PWD)
         # 4. DSN (mysql://user:password)
         # 5. cnf (.my.cnf / etc)
+        # 6. keyring
+
+        keychain_user = f'{user}@{host}'
+        keychain_domain = 'mycli.net'
+        keychain_retrieved = False
+
+        if passwd is None and use_keyring and not reset_keyring:
+            passwd = keyring.get_password(keychain_domain, keychain_user)
+            keychain_retrieved = True
 
         # if no password was found from all of the above sources, ask for a password
         if passwd is None:
             passwd = click.prompt("Enter password", hide_input=True, show_default=False, default='', type=str, err=True)
+
+        if reset_keyring or (use_keyring and not keychain_retrieved):
+            try:
+                keyring.set_password(keychain_domain, keychain_user, passwd)
+                click.secho('Password saved to the system keychain', err=True)
+            except Exception as e:
+                click.secho(f'Password not saved to the system keychain: {e}', err=True, fg='red')
 
         # Connect to the database.
         def _connect() -> None:
@@ -1538,6 +1557,13 @@ class MyCli:
     '--format', 'batch_format', type=click.Choice(['default', 'csv', 'tsv', 'table']), help='Format for batch or --execute output.'
 )
 @click.option('--throttle', type=float, default=0.0, help='Pause in seconds between queries in batch mode.')
+@click.option(
+    '--use-keyring',
+    'use_keyring_cli_opt',
+    type=click.Choice(['true', 'false', 'reset']),
+    default=None,
+    help='Store and retrieve passwords from the system keyring: true/false/reset.',
+)
 @click.pass_context
 def cli(
     ctx: click.Context,
@@ -1590,6 +1616,7 @@ def cli(
     noninteractive: bool,
     batch_format: str | None,
     throttle: float,
+    use_keyring_cli_opt: str | None,
 ) -> None:
     """A MySQL terminal client with auto-completion and syntax highlighting.
 
@@ -1863,6 +1890,16 @@ def cli(
     if show_warnings:
         mycli.show_warnings = show_warnings
 
+    if use_keyring_cli_opt is not None and use_keyring_cli_opt.lower() == 'reset':
+        use_keyring = True
+        reset_keyring = True
+    elif use_keyring_cli_opt is None:
+        use_keyring = str_to_bool(mycli.config['main'].get('use_keyring', 'False'))
+        reset_keyring = False
+    else:
+        use_keyring = str_to_bool(use_keyring_cli_opt)
+        reset_keyring = False
+
     mycli.connect(
         database=database,
         user=user,
@@ -1880,6 +1917,8 @@ def cli(
         init_command=combined_init_cmd,
         unbuffered=unbuffered,
         charset=charset,
+        use_keyring=use_keyring,
+        reset_keyring=reset_keyring,
     )
 
     if combined_init_cmd:

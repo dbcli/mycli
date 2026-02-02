@@ -6,6 +6,7 @@ Features
 * "Eager" completions for the `source` command, limited to `*.sql` files.
 * Suggest column names from all tables in the current database after SELECT (#212)
 * Put fuzzy completions more often to the bottom of the suggestion list.
+* Store and retrieve passwords using the system keyring.
 
 
 Bug Fixes
