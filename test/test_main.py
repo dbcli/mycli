@@ -11,7 +11,8 @@ import click
 from click.testing import CliRunner
 from pymysql.err import OperationalError
 
-from mycli.main import MyCli, cli, is_valid_connection_scheme, thanks_picker
+from mycli.main import MyCli, cli, thanks_picker
+from mycli.packages.parseutils import is_valid_connection_scheme
 import mycli.packages.special
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
 from mycli.sqlexecute import ServerInfo, SQLExecute
