@@ -49,6 +49,28 @@ def completer():
 
 
 @pytest.fixture
+def empty_completer():
+    import mycli.sqlcompleter as sqlcompleter
+
+    comp = sqlcompleter.SQLCompleter(smart_completion=True)
+
+    tables, columns = [], []
+
+    for table, cols in metadata.items():
+        tables.append((table,))
+        columns.extend([(table, col) for col in cols])
+
+    db = 'empty'
+
+    comp.extend_schemata(db)
+    comp.extend_database_names([db])
+    comp.set_dbname(db)
+    comp.extend_special_commands(special.COMMANDS)
+
+    return comp
+
+
+@pytest.fixture
 def complete_event():
     from unittest.mock import Mock
 
@@ -233,6 +255,26 @@ def test_suggested_column_names(completer, complete_event):
         + list(map(Completion, completer.functions))
         + [Completion(text="users", start_position=0)]
         + [x for x in map(Completion, completer.keywords) if x.text not in completer.functions]
+    )
+
+
+def test_suggested_column_names_empty_db(empty_completer, complete_event):
+    """Suggest * and function/keywords when selecting from no-table db.
+
+    :param empty_completer:
+    :param complete_event:
+    :return:
+
+    """
+    text = "SELECT "
+    position = len("SELECT ")
+    result = list(empty_completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    assert result == list(
+        [
+            Completion(text="*", start_position=0),
+        ]
+        + list(map(Completion, empty_completer.functions))
+        + [x for x in map(Completion, empty_completer.keywords) if x.text not in empty_completer.functions]
     )
 
 

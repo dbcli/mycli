@@ -1259,7 +1259,7 @@ class SQLCompleter(Completer):
         if len(scoped_tbls) == 0 and self.dbname:
             for table in meta["tables"][self.dbname]:
                 columns.extend(meta["tables"][self.dbname][table])
-            return columns
+            return columns or ['*']
 
         # query includes tables, so use those to populate columns
         for tbl in scoped_tbls:
