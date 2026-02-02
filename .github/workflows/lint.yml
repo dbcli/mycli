@@ -17,13 +17,13 @@ jobs:
 
         # remember to sync the ruff-check version number with pyproject.toml
       - name: Run ruff check
-        uses: astral-sh/ruff-action@57714a7c8a2e59f32539362ba31877a1957dded1 # v3.5.1
+        uses: astral-sh/ruff-action@4919ec5cf1f49eff0871dbcea0da843445b837e6 # v3.6.1
         with:
           version: 0.11.5
 
         # remember to sync the ruff-check version number with pyproject.toml
       - name: Run ruff format
-        uses: astral-sh/ruff-action@57714a7c8a2e59f32539362ba31877a1957dded1 # v3.5.1
+        uses: astral-sh/ruff-action@4919ec5cf1f49eff0871dbcea0da843445b837e6 # v3.6.1
         with:
           version: 0.11.5
           args: 'format --check'
