@@ -551,8 +551,8 @@ class MyCli:
             keychain_retrieved = True
 
         # if no password was found from all of the above sources, ask for a password
-        if passwd is None:
-            passwd = click.prompt("Enter password", hide_input=True, show_default=False, default='', type=str, err=True)
+        if passwd is None or passwd == "MYCLI_ASK_PASSWORD":
+            passwd = click.prompt(f"Enter password for {user}", hide_input=True, show_default=False, default='', type=str, err=True)
 
         if reset_keyring or (use_keyring and not keychain_retrieved):
             try:
@@ -1648,13 +1648,9 @@ def cli(
             click.secho(f"Error reading password file '{password_file}': {str(e)}", err=True, fg="red")
             sys.exit(1)
 
-    # if user passes the --p* flag, ask for the password right away
-    # to reduce lag as much as possible
-    if password == "MYCLI_ASK_PASSWORD":
-        password = click.prompt("Enter password", hide_input=True, show_default=False, default='', type=str, err=True)
     # if the password value looks like a DSN, treat it as such and
     # prompt for password
-    elif database is None and password is not None and "://" in password:
+    if database is None and password is not None and "://" in password:
         # check if the scheme is valid. We do not actually have any logic for these, but
         # it will most usefully catch the case where we erroneously catch someone's
         # password, and give them an easy error message to follow / report
@@ -1663,11 +1659,12 @@ def cli(
             click.secho(f"Error: Unknown connection scheme provided for DSN URI ({scheme}://)", err=True, fg="red")
             sys.exit(1)
         database = password
-        password = click.prompt("Enter password", hide_input=True, show_default=False, default='', type=str, err=True)
+        password = "MYCLI_ASK_PASSWORD"
 
-    # if the passwd is not specified try to set it using the password_file option
+    # if the password is not specified try to set it using the password_file option
     if password is None and password_file:
-        if password_from_file := get_password_from_file(password_file):
+        password_from_file = get_password_from_file(password_file)
+        if password_from_file is not None:
             password = password_from_file
 
     # getting the envvar ourselves because the envvar from a click

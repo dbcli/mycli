@@ -13,6 +13,7 @@ Bug Fixes
 --------
 * Refactor completions for special commands, with minor casing fixes.
 * Raise `--password-file` higher in the precedence of password specification.
+* Fix regression: show username in password prompt.
 
 
 Internal
