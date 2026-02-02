@@ -18,7 +18,8 @@ Internal
 --------
 * Remove `align_decimals` preprocessor, which had no effect.
 * Fix TLS deprecation warning in test suite.
-* Convert importlib read_text and open_text uses to newer files() syntax
+* Convert importlib read_text and open_text uses to newer files() syntax.
+* Update Pull Request template.
 
 
 1.48.0 (2026/01/27)
