@@ -1,3 +1,11 @@
+TBD
+==============
+
+Features
+--------
+* Deprecate reading configuration values from `my.cnf` files.
+
+
 1.49.0 (2026/02/02)
 ==============
 

@@ -20,6 +20,7 @@ from datetime import datetime
 from importlib import resources
 import itertools
 from random import choice
+from textwrap import dedent
 from time import sleep, time
 from urllib.parse import parse_qs, unquote, urlparse
 
@@ -137,6 +138,11 @@ class MyCli:
         # Load config.
         config_files: list[str | IO[str]] = self.system_config_files + [myclirc] + [self.pwd_config_file]
         c = self.config = read_config_files(config_files)
+        # this parallel config exists only to compare with my.cnf and can be removed with my.cnf support
+        self.config_without_package_defaults = read_config_files(config_files, ignore_package_defaults=True)
+        for toplevel in ['main', 'connection']:
+            if not self.config_without_package_defaults.get(toplevel):
+                self.config_without_package_defaults[toplevel] = {}
         self.multi_line = c["main"].as_bool("multi_line")
         self.key_bindings = c["main"]["key_bindings"]
         special.set_timing_enabled(c["main"].as_bool("timing"))
@@ -219,6 +225,10 @@ class MyCli:
                 print("Error: Unable to read login path file.")
 
         self.my_cnf = read_config_files(self.cnf_files, list_values=False)
+        if not self.my_cnf.get('client'):
+            self.my_cnf['client'] = {}
+        if not self.my_cnf.get('mysqld'):
+            self.my_cnf['mysqld'] = {}
         prompt_cnf = self.read_my_cnf(self.my_cnf, ["prompt"])["prompt"]
         self.prompt_format = prompt or prompt_cnf or c["main"]["prompt"] or self.default_prompt
         self.multiline_continuation_char = c["main"]["prompt_continuation"]
@@ -515,21 +525,69 @@ class MyCli:
         if not int_port:
             int_port = 3306
             if not host or host == "localhost":
-                socket = socket or cnf["socket"] or cnf["default_socket"] or guess_socket_location()
+                socket = (
+                    socket
+                    or self.config_without_package_defaults["connection"].get("default_socket")
+                    or cnf["socket"]
+                    or cnf["default_socket"]
+                    or guess_socket_location()
+                )
 
         passwd = passwd if isinstance(passwd, str) else cnf["password"]
-        charset = charset or self.config["main"].get("default_character_set") or cnf["default-character-set"] or "utf8mb4"
+
+        # default_character_set doesn't check in self.config_without_package_defaults, because the
+        # option already existed before the my.cnf deprecation.  For the same reason,
+        # default_character_set can be in [connection] or [main].
+        if not charset:
+            if 'default_character_set' in self.config['connection']:
+                charset = self.config['connection']['default_character_set']
+            elif 'default_character_set' in self.config['main']:
+                charset = self.config['main']['default_character_set']
+            elif 'default_character_set' in cnf:
+                charset = cnf['default_character_set']
+            elif 'default-character-set' in cnf:
+                charset = cnf['default-character-set']
+        if not charset:
+            charset = 'utf8mb4'
 
         # Favor whichever local_infile option is set.
         use_local_infile = False
-        for local_infile_option in (local_infile, cnf["local-infile"], cnf["loose-local-infile"], False):
+        for local_infile_option in (
+            local_infile,
+            self.config_without_package_defaults['connection'].get('default_local_infile'),
+            cnf['local_infile'],
+            cnf['local-infile'],
+            cnf['loose_local_infile'],
+            cnf['loose-local-infile'],
+            False,
+        ):
             try:
                 use_local_infile = str_to_bool(local_infile_option or '')
                 break
             except (TypeError, ValueError):
                 pass
 
+        # temporary my.cnf override mappings
+        if 'default_ssl_ca' in self.config_without_package_defaults['connection']:
+            cnf['ssl-ca'] = self.config_without_package_defaults['connection']['default_ssl_ca'] or None
+        if 'default_ssl_cert' in self.config_without_package_defaults['connection']:
+            cnf['ssl-cert'] = self.config_without_package_defaults['connection']['default_ssl_cert'] or None
+        if 'default_ssl_key' in self.config_without_package_defaults['connection']:
+            cnf['ssl-key'] = self.config_without_package_defaults['connection']['default_ssl_key'] or None
+        if 'default_ssl_cipher' in self.config_without_package_defaults['connection']:
+            cnf['ssl-cipher'] = self.config_without_package_defaults['connection']['default_ssl_cipher'] or None
+        if 'default_ssl_verify_server_cert' in self.config_without_package_defaults['connection']:
+            cnf['ssl-verify-server-cert'] = self.config_without_package_defaults['connection']['default_ssl_verify_server_cert'] or None
+
+        # todo: rewrite the merge method using self.config['connection'] instead of cnf, after removing my.cnf support
         ssl_config_or_none: dict[str, Any] | None = self.merge_ssl_with_cnf(ssl_config, cnf)
+
+        # default_ssl_ca_path is not represented in my.cnf
+        if 'default_ssl_ca_path' in self.config['connection'] and (not ssl_config_or_none or not ssl_config_or_none.get('capath')):
+            if ssl_config_or_none is None:
+                ssl_config_or_none = {}
+            ssl_config_or_none['capath'] = self.config['connection']['default_ssl_ca_path'] or False
+
         # prune lone check_hostname=False
         if not any(v for v in ssl_config.values()):
             ssl_config_or_none = None
@@ -1896,6 +1954,81 @@ def cli(
     else:
         use_keyring = str_to_bool(use_keyring_cli_opt)
         reset_keyring = False
+
+    # todo: removeme after a period of transition
+    for tup in [
+        ('client', 'prompt', 'prompt', 'main', 'prompt'),
+        ('client', 'pager', 'pager', 'main', 'pager'),
+        ('client', 'skip-pager', 'skip-pager', 'main', 'enable_pager'),
+        # this is a white lie, because default_character_set can actually be read from the package config
+        ('client', 'default-character-set', 'default-character-set', 'connection', 'default_character_set'),
+        # local-infile can be read from both sections
+        ('mysqld', 'local-infile', 'local-infile', 'connection', 'default_local_infile'),
+        ('client', 'local-infile', 'local-infile', 'connection', 'default_local_infile'),
+        ('mysqld', 'loose-local-infile', 'loose-local-infile', 'connection', 'default_local_infile'),
+        ('client', 'loose-local-infile', 'loose-local-infile', 'connection', 'default_local_infile'),
+        # todo: in the future we should add default_port, etc, but only in .myclirc
+        # they are currently ignored in my.cnf
+        ('mysqld', 'default_socket', 'socket', 'connection', 'default_socket'),
+        ('client', 'ssl-ca', 'ssl-ca', 'connection', 'default_ssl_ca'),
+        ('client', 'ssl-cert', 'ssl-cert', 'connection', 'default_ssl_cert'),
+        ('client', 'ssl-key', 'ssl-key', 'connection', 'default_ssl_key'),
+        ('client', 'ssl-cipher', 'ssl-cipher', 'connection', 'default_ssl_cipher'),
+        ('client', 'ssl-verify-server-cert', 'ssl-verify-server-cert', 'connection', 'default_ssl_verify_server_cert'),
+    ]:
+        (
+            mycnf_section_name,
+            mycnf_item_name,
+            printable_mycnf_item_name,
+            myclirc_section_name,
+            myclirc_item_name,
+        ) = tup
+        if str_to_bool(mycli.config['main'].get('my_cnf_transition_done', 'False')):
+            break
+        if (
+            mycli.my_cnf[mycnf_section_name].get(mycnf_item_name) is None
+            and mycli.my_cnf[mycnf_section_name].get(mycnf_item_name.replace('-', '_')) is None
+        ):
+            continue
+        if mycli.config_without_package_defaults[myclirc_section_name].get(myclirc_item_name) is None:
+            cnf_value = mycli.my_cnf[mycnf_section_name].get(mycnf_item_name)
+            if cnf_value is None:
+                cnf_value = mycli.my_cnf[mycnf_section_name].get(mycnf_item_name.replace('-', '_'))
+            click.secho(
+                dedent(
+                    f"""
+                    Reading configuration from my.cnf files is deprecated.
+                    See https://github.com/dbcli/mycli/issues/1490 .
+                    The cause of this message is the following in a my.cnf file without a corresponding
+                    ~/.myclirc entry:
+
+                        [{mycnf_section_name}]
+                        {printable_mycnf_item_name} = {cnf_value}
+
+                    To suppress this message, remove the my.cnf item add or the following to ~/.myclirc:
+
+                        [{myclirc_section_name}]
+                        {myclirc_item_name} = <value>
+
+                    The ~/.myclirc setting will take precedence.  In the future, the my.cnf will be ignored.
+
+                    Values are documented at https://github.com/dbcli/mycli/blob/main/mycli/myclirc .  An
+                    empty <value> is generally accepted.
+
+                    To ignore all of this, set
+
+                        [main]
+                        my_cnf_transition_done = True
+
+                    in ~/.myclirc.
+
+                    --------
+
+                    """
+                ),
+                err=True,
+                fg='yellow',
+            )
 
     mycli.connect(
         database=database,

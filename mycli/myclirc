@@ -134,8 +134,8 @@ enable_pager = True
 # Choose a specific pager
 pager = 'less'
 
-# character set for connections without --charset being set at the CLI
-default_character_set = utf8mb4
+# whether to show verbose warnings about the transition away from reading my.cnf
+my_cnf_transition_done = False
 
 # Whether to store and retrieve passwords from the system keyring.
 # See the documentation for https://pypi.org/project/keyring/ for your OS.
@@ -143,6 +143,33 @@ default_character_set = utf8mb4
 # This can be overridden with --use-keyring= at the CLI.
 # A password can be reset with --use-keyring=reset at the CLI.
 use_keyring = False
+
+[connection]
+
+# character set for connections without --charset being set
+default_character_set = utf8mb4
+
+# whether to enable LOAD DATA LOCAL INFILE for connections without --local-infile being set
+default_local_infile = False
+
+# SSL CA file for connections without --ssl-ca being set
+default_ssl_ca =
+
+# SSL CA directory for connections without --ssl-capath being set
+default_ssl_capath =
+
+# SSL X509 cert path for connections without --ssl-cert being set
+default_ssl_cert =
+
+# SSL X509 key for connections without --ssl-key being set
+default_ssl_key =
+
+# SSL cipher to use for connections without --ssl-cipher being set
+default_ssl_cipher =
+
+# whether to verify server's "Common Name" in its cert, for connections without
+# --ssl-verify-server-cert being set
+default_ssl_verify_server_cert = False
 
 [keys]
 # possible values: auto, fzf, reverse_isearch

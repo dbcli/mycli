@@ -78,10 +78,18 @@ def get_included_configs(config_file: str | IO[str]) -> list[str | IO[str]]:
     return included_configs
 
 
-def read_config_files(files: list[str | IO[str]], list_values: bool = True) -> ConfigObj:
+def read_config_files(
+    files: list[str | IO[str]],
+    list_values: bool = True,
+    ignore_package_defaults: bool = False,
+) -> ConfigObj:
     """Read and merge a list of config files."""
 
-    config = create_default_config(list_values=list_values)
+    if ignore_package_defaults:
+        config = ConfigObj()
+    else:
+        config = create_default_config(list_values=list_values)
+
     _files = copy(files)
     while _files:
         _file = _files.pop(0)
