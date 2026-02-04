@@ -1761,7 +1761,8 @@ def cli(
     if ssl_enable is not None:
         click.secho(
             "Warning: The --ssl/--no-ssl CLI options are deprecated and will be removed in a future release. "
-            "Please use the ssl_mode config or --ssl-mode CLI options instead.",
+            "Please use the ssl_mode config or --ssl-mode CLI options instead. "
+            "See issue https://github.com/dbcli/mycli/issues/1507",
             err=True,
             fg="yellow",
         )
