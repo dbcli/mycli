@@ -614,10 +614,12 @@ class MyCli:
 
         if reset_keyring or (use_keyring and not keychain_retrieved):
             try:
-                keyring.set_password(keychain_domain, keychain_user, passwd)
-                click.secho('Password saved to the system keychain', err=True)
+                saved_pw = keyring.get_password(keychain_domain, keychain_user)
+                if passwd != saved_pw or reset_keyring:
+                    keyring.set_password(keychain_domain, keychain_user, passwd)
+                    click.secho('Password saved to the system keyring', err=True)
             except Exception as e:
-                click.secho(f'Password not saved to the system keychain: {e}', err=True, fg='red')
+                click.secho(f'Password not saved to the system keyring: {e}', err=True, fg='red')
 
         # Connect to the database.
         def _connect() -> None:

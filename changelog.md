@@ -9,6 +9,7 @@ Features
 Bug Fixes
 --------
 * Link to `--ssl`/`--no-ssl` GitHub issue in deprecation warning.
+* Don't emit keyring-updated message unless needed.
 
 
 1.49.0 (2026/02/02)
