@@ -6,6 +6,11 @@ Features
 * Deprecate reading configuration values from `my.cnf` files.
 
 
+Bug Fixes
+--------
+* Link to `--ssl`/`--no-ssl` GitHub issue in deprecation warning.
+
+
 1.49.0 (2026/02/02)
 ==============
 
