@@ -138,11 +138,10 @@ class MyCli:
         # Load config.
         config_files: list[str | IO[str]] = self.system_config_files + [myclirc] + [self.pwd_config_file]
         c = self.config = read_config_files(config_files)
-        # this parallel config exists only to compare with my.cnf and can be removed with my.cnf support
+        # this parallel config exists to
+        #  * compare with my.cnf
+        #  * support the --checkup feature
         self.config_without_package_defaults = read_config_files(config_files, ignore_package_defaults=True)
-        for toplevel in ['main', 'connection']:
-            if not self.config_without_package_defaults.get(toplevel):
-                self.config_without_package_defaults[toplevel] = {}
         self.multi_line = c["main"].as_bool("multi_line")
         self.key_bindings = c["main"]["key_bindings"]
         special.set_timing_enabled(c["main"].as_bool("timing"))
@@ -520,6 +519,7 @@ class MyCli:
         host = host or cnf["host"]
         port = port or cnf["port"]
         ssl_config: dict[str, Any] = ssl or {}
+        user_connection_config = self.config_without_package_defaults.get('connection', {})
 
         int_port = port and int(port)
         if not int_port:
@@ -527,7 +527,7 @@ class MyCli:
             if not host or host == "localhost":
                 socket = (
                     socket
-                    or self.config_without_package_defaults["connection"].get("default_socket")
+                    or user_connection_config.get("default_socket")
                     or cnf["socket"]
                     or cnf["default_socket"]
                     or guess_socket_location()
@@ -554,7 +554,7 @@ class MyCli:
         use_local_infile = False
         for local_infile_option in (
             local_infile,
-            self.config_without_package_defaults['connection'].get('default_local_infile'),
+            user_connection_config.get('default_local_infile'),
             cnf['local_infile'],
             cnf['local-infile'],
             cnf['loose_local_infile'],
@@ -568,16 +568,16 @@ class MyCli:
                 pass
 
         # temporary my.cnf override mappings
-        if 'default_ssl_ca' in self.config_without_package_defaults['connection']:
-            cnf['ssl-ca'] = self.config_without_package_defaults['connection']['default_ssl_ca'] or None
-        if 'default_ssl_cert' in self.config_without_package_defaults['connection']:
-            cnf['ssl-cert'] = self.config_without_package_defaults['connection']['default_ssl_cert'] or None
-        if 'default_ssl_key' in self.config_without_package_defaults['connection']:
-            cnf['ssl-key'] = self.config_without_package_defaults['connection']['default_ssl_key'] or None
-        if 'default_ssl_cipher' in self.config_without_package_defaults['connection']:
-            cnf['ssl-cipher'] = self.config_without_package_defaults['connection']['default_ssl_cipher'] or None
-        if 'default_ssl_verify_server_cert' in self.config_without_package_defaults['connection']:
-            cnf['ssl-verify-server-cert'] = self.config_without_package_defaults['connection']['default_ssl_verify_server_cert'] or None
+        if 'default_ssl_ca' in user_connection_config:
+            cnf['ssl-ca'] = user_connection_config.get('default_ssl_ca') or None
+        if 'default_ssl_cert' in user_connection_config:
+            cnf['ssl-cert'] = user_connection_config.get('default_ssl_cert') or None
+        if 'default_ssl_key' in user_connection_config:
+            cnf['ssl-key'] = user_connection_config.get('default_ssl_key') or None
+        if 'default_ssl_cipher' in user_connection_config:
+            cnf['ssl-cipher'] = user_connection_config.get('default_ssl_cipher') or None
+        if 'default_ssl_verify_server_cert' in user_connection_config:
+            cnf['ssl-verify-server-cert'] = user_connection_config.get('default_ssl_verify_server_cert') or None
 
         # todo: rewrite the merge method using self.config['connection'] instead of cnf, after removing my.cnf support
         ssl_config_or_none: dict[str, Any] | None = self.merge_ssl_with_cnf(ssl_config, cnf)
@@ -1624,6 +1624,7 @@ class MyCli:
     default=None,
     help='Store and retrieve passwords from the system keyring: true/false/reset.',
 )
+@click.option("--checkup", is_flag=True, help="Run a checkup on your config file.")
 @click.pass_context
 def cli(
     ctx: click.Context,
@@ -1677,6 +1678,7 @@ def cli(
     batch_format: str | None,
     throttle: float,
     use_keyring_cli_opt: str | None,
+    checkup: bool,
 ) -> None:
     """A MySQL terminal client with auto-completion and syntax highlighting.
 
@@ -1742,6 +1744,10 @@ def cli(
         warn=warn,
         myclirc=myclirc,
     )
+
+    if checkup:
+        do_config_checkup(mycli)
+        sys.exit(0)
 
     if csv and batch_format not in [None, 'csv']:
         click.secho("Conflicting --csv and --format arguments.", err=True, fg="red")
@@ -1993,7 +1999,8 @@ def cli(
             and mycli.my_cnf[mycnf_section_name].get(mycnf_item_name.replace('-', '_')) is None
         ):
             continue
-        if mycli.config_without_package_defaults[myclirc_section_name].get(myclirc_item_name) is None:
+        user_section = mycli.config_without_package_defaults.get(myclirc_section_name, {})
+        if user_section.get(myclirc_item_name) is None:
             cnf_value = mycli.my_cnf[mycnf_section_name].get(mycnf_item_name)
             if cnf_value is None:
                 cnf_value = mycli.my_cnf[mycnf_section_name].get(mycnf_item_name.replace('-', '_'))
@@ -2215,6 +2222,34 @@ def read_ssh_config(ssh_config_path: str):
         sys.exit(1)
     else:
         return ssh_config
+
+
+def do_config_checkup(mycli: MyCli) -> None:
+    did_output = False
+
+    if not list(mycli.config.keys()):
+        print('\nThe local ~/,myclirc is missing or empty.\n')
+        did_output = True
+    else:
+        for section_name in mycli.config.keys():
+            if section_name not in mycli.config_without_package_defaults:
+                if not did_output:
+                    print('\nMissing in user ~/.myclirc:\n')
+                print(f'The entire section:\n\n    [{section_name}]\n')
+                did_output = True
+                continue
+            for item_name in mycli.config[section_name]:
+                if item_name not in mycli.config_without_package_defaults[section_name]:
+                    if not did_output:
+                        print('\nMissing in user ~/.myclirc:\n')
+                    print(f'The item:\n\n    [{section_name}]\n    {item_name} =\n')
+                    did_output = True
+    if did_output:
+        print(
+            'For more info on new features, see the commentary and defaults at:\n\n    * https://github.com/dbcli/mycli/blob/main/mycli/myclirc\n'
+        )
+    else:
+        print('User configuration all up to date!')
 
 
 if __name__ == "__main__":
