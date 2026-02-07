@@ -42,6 +42,84 @@ CLI_ARGS = [
 
 
 @dbtest
+def test_binary_display_hex(executor, capsys):
+    m = MyCli()
+    m.sqlexecute = SQLExecute(
+        None,
+        USER,
+        PASSWORD,
+        HOST,
+        PORT,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    )
+    m.explicit_pager = False
+    sqlresult = next(m.sqlexecute.run("select b'01101010' AS binary_test"))
+    formatted = m.format_output(
+        sqlresult.title,
+        sqlresult.results,
+        sqlresult.headers,
+        False,
+        False,
+        "<nope>",
+        "right",
+        "hex",
+        None,
+    )
+    m.output(formatted, sqlresult.status)
+    expected = "+-------------+\n| binary_test |\n+-------------+\n| 0x6a        |\n+-------------+\n1 row in set\n"
+    stdout = capsys.readouterr().out
+    assert expected in stdout
+
+
+@dbtest
+def test_binary_display_utf8(executor, capsys):
+    m = MyCli()
+    m.sqlexecute = SQLExecute(
+        None,
+        USER,
+        PASSWORD,
+        HOST,
+        PORT,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    )
+    m.explicit_pager = False
+    sqlresult = next(m.sqlexecute.run("select b'01101010' AS binary_test"))
+    formatted = m.format_output(
+        sqlresult.title,
+        sqlresult.results,
+        sqlresult.headers,
+        False,
+        False,
+        "<nope>",
+        "right",
+        "utf8",
+        None,
+    )
+    m.output(formatted, sqlresult.status)
+    expected = "+-------------+\n| binary_test |\n+-------------+\n| j           |\n+-------------+\n1 row in set\n"
+    stdout = capsys.readouterr().out
+    assert expected in stdout
+
+
+@dbtest
 def test_select_from_empty_table(executor):
     run(executor, """create table t1(id int)""")
     sql = "select * from t1"
