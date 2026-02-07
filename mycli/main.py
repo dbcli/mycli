@@ -5,6 +5,7 @@ from decimal import Decimal
 from io import TextIOWrapper
 import logging
 import os
+import random
 import re
 import shutil
 import sys
@@ -821,7 +822,10 @@ class MyCli:
             print(sqlexecute.server_info)
             print("mycli", __version__)
             print(SUPPORT_INFO)
-            print("Thanks to the contributor -", thanks_picker())
+            if random.random() <= 0.5:
+                print("Thanks to the contributor —", thanks_picker())
+            else:
+                print("Tip —", tips_picker())
 
         def get_message() -> ANSI:
             prompt = self.get_prompt(self.prompt_format)
@@ -2206,17 +2210,39 @@ def thanks_picker() -> str:
     import mycli
 
     lines: str = ""
-    with resources.files(mycli).joinpath("AUTHORS").open('r') as f:
-        lines += f.read()
+    try:
+        with resources.files(mycli).joinpath("AUTHORS").open('r') as f:
+            lines += f.read()
+    except FileNotFoundError:
+        pass
 
-    with resources.files(mycli).joinpath("SPONSORS").open('r') as f:
-        lines += f.read()
+    try:
+        with resources.files(mycli).joinpath("SPONSORS").open('r') as f:
+            lines += f.read()
+    except FileNotFoundError:
+        pass
 
     contents = []
     for line in lines.split("\n"):
         if m := re.match(r"^ *\* (.*)", line):
             contents.append(m.group(1))
     return choice(contents) if contents else 'our sponsors'
+
+
+def tips_picker() -> str:
+    import mycli
+
+    tips = []
+
+    try:
+        with resources.files(mycli).joinpath('TIPS').open('r') as f:
+            for line in f:
+                if tip := line.strip():
+                    tips.append(tip)
+    except FileNotFoundError:
+        pass
+
+    return choice(tips) if tips else r'\? or "help" for help!'
 
 
 @prompt_register("edit-and-execute-command")
