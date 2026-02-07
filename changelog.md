@@ -5,6 +5,7 @@ Features
 --------
 * Deprecate reading configuration values from `my.cnf` files.
 * Add `--checkup` mode to show unconfigured new features.
+* Add `binary_display` configuration option.
 
 
 Bug Fixes

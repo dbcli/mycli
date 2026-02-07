@@ -168,6 +168,7 @@ class MyCli:
         self.post_redirect_command = c['main'].get('post_redirect_command')
         self.null_string = c['main'].get('null_string')
         self.numeric_alignment = c['main'].get('numeric_alignment', 'right')
+        self.binary_display = c['main'].get('binary_display')
 
         # set ssl_mode if a valid option is provided in a config file, otherwise None
         ssl_mode = c["main"].get("ssl_mode", None)
@@ -888,6 +889,7 @@ class MyCli:
                     special.is_redirected(),
                     self.null_string,
                     self.numeric_alignment,
+                    self.binary_display,
                     max_width,
                 )
 
@@ -926,6 +928,7 @@ class MyCli:
                             special.is_redirected(),
                             self.null_string,
                             self.numeric_alignment,
+                            self.binary_display,
                             max_width,
                         )
                         self.echo("")
@@ -1404,6 +1407,7 @@ class MyCli:
                 special.is_redirected(),
                 self.null_string,
                 self.numeric_alignment,
+                self.binary_display,
             )
             for line in output:
                 self.log_output(line)
@@ -1424,6 +1428,7 @@ class MyCli:
                         special.is_redirected(),
                         self.null_string,
                         self.numeric_alignment,
+                        self.binary_display,
                     )
                     for line in output:
                         click.echo(line, nl=new_line)
@@ -1440,6 +1445,7 @@ class MyCli:
         is_redirected: bool = False,
         null_string: str | None = None,
         numeric_alignment: str = 'right',
+        binary_display: str | None = None,
         max_width: int | None = None,
     ) -> itertools.chain[str]:
         if is_redirected:
@@ -1461,7 +1467,7 @@ class MyCli:
         if null_string is not None and default_kwargs.get('missing_value') == DEFAULT_MISSING_VALUE:
             output_kwargs['missing_value'] = null_string
 
-        if use_formatter.format_name not in sql_format.supported_formats:
+        if use_formatter.format_name not in sql_format.supported_formats and binary_display != 'utf8':
             # will run before preprocessors defined as part of the format in cli_helpers
             output_kwargs["preprocessors"] = (preprocessors.convert_to_undecoded_string,)
 
