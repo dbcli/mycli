@@ -9,6 +9,7 @@ Features
 Bug Fixes
 --------
 * Correct mangled schema info sent in LLM prompts.
+* Give destructive warning on multi-table `UPDATE`s.
 
 
 1.50.0 (2026/02/07)
