@@ -11,6 +11,7 @@ Bug Fixes
 --------
 * Link to `--ssl`/`--no-ssl` GitHub issue in deprecation warning.
 * Don't emit keyring-updated message unless needed.
+* Include port and socket in keyring identifier.
 
 
 1.49.0 (2026/02/02)

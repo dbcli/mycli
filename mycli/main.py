@@ -600,12 +600,12 @@ class MyCli:
         # 5. cnf (.my.cnf / etc)
         # 6. keyring
 
-        keychain_user = f'{user}@{host}'
+        keychain_identifier = f'{user}@{host}:{int_port}:{socket}'
         keychain_domain = 'mycli.net'
         keychain_retrieved = False
 
         if passwd is None and use_keyring and not reset_keyring:
-            passwd = keyring.get_password(keychain_domain, keychain_user)
+            passwd = keyring.get_password(keychain_domain, keychain_identifier)
             keychain_retrieved = True
 
         # if no password was found from all of the above sources, ask for a password
@@ -614,9 +614,9 @@ class MyCli:
 
         if reset_keyring or (use_keyring and not keychain_retrieved):
             try:
-                saved_pw = keyring.get_password(keychain_domain, keychain_user)
+                saved_pw = keyring.get_password(keychain_domain, keychain_identifier)
                 if passwd != saved_pw or reset_keyring:
-                    keyring.set_password(keychain_domain, keychain_user, passwd)
+                    keyring.set_password(keychain_domain, keychain_identifier, passwd)
                     click.secho('Password saved to the system keyring', err=True)
             except Exception as e:
                 click.secho(f'Password not saved to the system keyring: {e}', err=True, fg='red')
