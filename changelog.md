@@ -4,6 +4,7 @@ TBD
 Features
 --------
 * Options to limit size of LLM prompts; cache LLM prompt data.
+* Add startup usage tips.
 
 
 Bug Fixes
