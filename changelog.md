@@ -5,6 +5,7 @@ Features
 --------
 * Options to limit size of LLM prompts; cache LLM prompt data.
 * Add startup usage tips.
+* Move `main.ssl_mode` config option to `connection.default_ssl_mode`.
 
 
 Bug Fixes

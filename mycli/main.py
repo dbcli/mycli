@@ -180,7 +180,7 @@ class MyCli:
             self.llm_prompt_section_truncate = 0
 
         # set ssl_mode if a valid option is provided in a config file, otherwise None
-        ssl_mode = c["main"].get("ssl_mode", None)
+        ssl_mode = c["main"].get("ssl_mode", None) or c["connection"].get("default_ssl_mode", None)
         if ssl_mode not in ("auto", "on", "off", None):
             self.echo(f"Invalid config option provided for ssl_mode ({ssl_mode}); ignoring.", err=True, fg="red")
             self.ssl_mode = None
