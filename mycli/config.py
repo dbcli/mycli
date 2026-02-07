@@ -82,6 +82,7 @@ def read_config_files(
     files: list[str | IO[str]],
     list_values: bool = True,
     ignore_package_defaults: bool = False,
+    ignore_user_options: bool = False,
 ) -> ConfigObj:
     """Read and merge a list of config files."""
 
@@ -89,6 +90,9 @@ def read_config_files(
         config = ConfigObj()
     else:
         config = create_default_config(list_values=list_values)
+
+    if ignore_user_options:
+        return config
 
     _files = copy(files)
     while _files:
