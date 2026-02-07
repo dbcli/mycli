@@ -9,6 +9,7 @@ Features
 Bug Fixes
 --------
 * Correct mangled schema info sent in LLM prompts.
+* Move `main.ssl_mode` config option to `connection.default_ssl_mode`.
 
 
 1.50.0 (2026/02/07)
