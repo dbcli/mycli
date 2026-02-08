@@ -157,6 +157,11 @@ def test_is_destructive_update_with_where_clause():
     assert is_destructive(["update"], sql) is False
 
 
+def test_is_destructive_update_multiple_tables_with_where_clause():
+    sql = "use test;\nshow databases;\nUPDATE test, foo SET x = 1 WHERE id = 1;"
+    assert is_destructive(["update"], sql) is True
+
+
 def test_is_destructive_update_without_where_clause():
     sql = "use test;\nshow databases;\nUPDATE test SET x = 1;"
     assert is_destructive(["update"], sql) is True
