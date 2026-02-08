@@ -185,6 +185,46 @@ def extract_tables(sql: str) -> list[tuple[str | None, str, str]]:
     return list(extract_table_identifiers(stream))
 
 
+def extract_columns_from_select(sql: str) -> list[str]:
+    """
+    Extract the column names from a select SQL statement.
+
+    Returns a list of columns.
+    """
+    parsed = sqlparse.parse(sql)
+    if not parsed:
+        return []
+
+    statement = parsed[0]
+    columns = []
+
+    # Loops through the tokens (pieces) of the SQL statement.
+    # Once it finds the SELECT token (generally first), it
+    # will then start looking for columns from that point on.
+    # The get_real_name() function returns the real column name
+    # even if an alias is used.
+    found_select = False
+    for token in statement.tokens:
+        if token.ttype is DML and token.value.upper() == 'SELECT':
+            found_select = True
+        elif found_select:
+            if isinstance(token, IdentifierList):
+                # multiple columns
+                for identifier in token.get_identifiers():
+                    column = identifier.get_real_name()
+                    columns.append(column)
+            elif isinstance(token, Identifier):
+                # single column
+                column = token.get_real_name()
+                columns.append(column)
+            elif token.ttype is Keyword:
+                break
+
+            if columns:
+                break
+    return columns
+
+
 def extract_tables_from_complete_statements(sql: str) -> list[tuple[str | None, str, str | None]]:
     """Extract the table names from a complete and valid series of SQL
     statements.
