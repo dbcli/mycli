@@ -5,13 +5,6 @@
 # after executing a SQL statement when applicable.
 show_warnings = False
 
-# Sets the desired behavior for handling secure connections to the database server.
-# Possible values:
-# auto = SSL is preferred. Will attempt to connect via SSL, but will fallback to cleartext as needed.
-# on = SSL is required. Will attempt to connect via SSL and will fail if a secure connection is not established.
-# off = do not use SSL. Will fail if the server requires a secure connection.
-ssl_mode = auto
-
 # Enables context sensitive auto-completion. If this is disabled the all
 # possible completions will be listed.
 smart_completion = True
@@ -154,6 +147,13 @@ default_character_set = utf8mb4
 
 # whether to enable LOAD DATA LOCAL INFILE for connections without --local-infile being set
 default_local_infile = False
+
+# Sets the desired behavior for handling secure connections to the database server.
+# Possible values:
+# auto = SSL is preferred. Will attempt to connect via SSL, but will fallback to cleartext as needed.
+# on = SSL is required. Will attempt to connect via SSL and will fail if a secure connection is not established.
+# off = do not use SSL. Will fail if the server requires a secure connection.
+default_ssl_mode = auto
 
 # SSL CA file for connections without --ssl-ca being set
 default_ssl_ca =
