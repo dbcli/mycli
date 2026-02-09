@@ -9,6 +9,7 @@ Features
 Internal
 --------
 * Let CI ignore additional documentation files.
+* Add a GitHub Issue template.
 
 
 1.51.1 (2026/02/09)
