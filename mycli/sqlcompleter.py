@@ -1365,7 +1365,6 @@ class SQLCompleter(Completer):
         # columns, return a filtered list of tables (or views) that contain
         # one or more of the given columns.
         if obj_type == "tables" and columns and objects:
-            # print(f"##{columns}##")
             for obj in objects:
                 for column in metadata[schema][obj]:
                     if column in columns:
