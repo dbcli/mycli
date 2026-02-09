@@ -1354,22 +1354,29 @@ class SQLCompleter(Completer):
         metadata = self.dbmetadata[obj_type]
         schema = schema or self.dbname
         try:
-            objects = metadata[schema].keys()
+            objects = list(metadata[schema].keys())
         except KeyError:
             # schema doesn't exist
             objects = []
 
         filtered_objects: list[str] = []
+        remaining_objects: list[str] = []
 
         # If the requested object type is tables and the user already entered
         # columns, return a filtered list of tables (or views) that contain
-        # one or more of the given columns.
+        # one or more of the given columns. If a table does not contain the
+        # given columns, add it to a separate list to add to the end of the
+        # filtered suggestions.
         if obj_type == "tables" and columns and objects:
             for obj in objects:
+                matched = False
                 for column in metadata[schema][obj]:
                     if column in columns:
                         filtered_objects.append(obj)
+                        matched = True
                         break
+                if not matched:
+                    remaining_objects.append(obj)
         else:
             filtered_objects = objects
-        return filtered_objects
+        return filtered_objects + remaining_objects
