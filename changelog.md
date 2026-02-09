@@ -4,6 +4,7 @@ TBD
 Features
 --------
 * Options to limit size of LLM prompts; cache LLM prompt data.
+* Add startup usage tips.
 * Suggest only tables/views that contain the given columns when provided in a SELECT query.
 
 

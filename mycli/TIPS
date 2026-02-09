@@ -1,0 +1,103 @@
+set "less_chatty = True" in ~/.myclirc to turn off these tips!
+
+set a fancy table format like "table_format = psql_unicode" in ~/.myclirc!
+
+change the string for NULLs with "null_string = <null>" in ~/.myclirc!
+
+interact with an LLM using the \llm command!
+
+display query result vertically using \G at the end of a query!
+
+copy a query to the clipboard using \clip at the end of the query!
+
+\dt lists tables; \dt <table> describes <table>!
+
+edit a query in an external editor using \e!
+
+edit a query in an external editor using keystrokes control-x + control-e!
+
+toggle smart completion using keystroke F2!
+
+toggle multi-line mode using keystroke F3!
+
+toggle vi mode using keystroke F4!
+
+complete at cursor using the tab key!
+
+prettify a query using keystrokes control-x + p!
+
+un-prettify a query using keystrokes control-x + u!
+
+insert the current date using keystrokes control-o + d!
+
+insert the quoted current date using keystrokes control-o + control-d!
+
+insert the current datetime using keystrokes control-o + t!
+
+insert the quoted current date using keystrokes control-o + control-t!
+
+search query history using keystroke control-r!
+
+\f lists favorite queries; \f <name> executes a favorite!
+
+\fs <name> <query> saves a favorite query!
+
+\fd <name> deletes a saved favorite query!
+
+\l lists databases!
+
+\once <filename> appends the next result to <filename>!
+
+\| <command> sends the next result to a subprocess!
+
+\t toggles timing of commands!
+
+\r or "connect" reconnects to the server!
+
+\delimiter changes the SQL delimiter!
+
+\q, "quit", or "exit" exits from the prompt!
+
+\? or "help" for help!
+
+\n or "nopager" to disable the pager!
+
+use "tee"/"notee" to write/stop-writing results to a output file!
+
+\W or "warnings" enables automatic warnings display!
+
+\w or "nowarnings" disables automatic warnings display!
+
+\P or "pager" sets the pager.  Try "pager less"!
+
+\R or "prompt" changes the prompt format!
+
+\Tr or "redirectformat" changes the table format for redirects!
+
+\# or "rehash" refreshes autocompletions!
+
+\. or "source" executes queries from a file!
+
+\s or "status" requests status information from the server!
+
+use "system <command>" to execute a shell command!
+
+\T or "tableformat" changes the interactive table format!
+
+\u or "use" changes to a new database!
+
+the "watch" command executes a query every N seconds!
+
+redirect query output to a shell command with "$| <command>"!
+
+redirect query output to a file with "$> <filename>"!
+
+append query output to a file with "$>> <filename>"!
+
+choose a color theme with "syntax_style" in ~/.myclirc!
+
+design a prompt with the "prompt" option in ~/.myclirc!
+
+save passwords in the system keyring with "use_keyring" in ~/.myclirc!
+
+check your ~/.myclirc settings using the --checkup flag!
