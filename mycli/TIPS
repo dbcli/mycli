@@ -101,3 +101,5 @@ design a prompt with the "prompt" option in ~/.myclirc!
 save passwords in the system keyring with "use_keyring" in ~/.myclirc!
 
 check your ~/.myclirc settings using the --checkup flag!
+
+use keystroke control-g to cancel completion popups!
