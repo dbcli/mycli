@@ -144,6 +144,44 @@ def test_table_completion(completer, complete_event):
     ]
 
 
+def test_select_filtered_table_completion(completer, complete_event):
+    text = "SELECT ABC FROM "
+    position = len(text)
+    result = completer.get_completions(Document(text=text, cursor_position=position), complete_event)
+    assert list(result) == [
+        Completion(text="`select`", start_position=0),
+        Completion(text="`réveillé`", start_position=0),
+        Completion(text="users", start_position=0),
+        Completion(text="orders", start_position=0),
+        Completion(text="time_zone", start_position=0),
+        Completion(text="time_zone_leap_second", start_position=0),
+        Completion(text="time_zone_name", start_position=0),
+        Completion(text="time_zone_transition", start_position=0),
+        Completion(text="time_zone_transition_type", start_position=0),
+        Completion(text="test", start_position=0),
+        Completion(text="`test 2`", start_position=0),
+    ]
+
+
+def test_sub_select_filtered_table_completion(completer, complete_event):
+    text = "SELECT * FROM (SELECT ordered_date FROM "
+    position = len(text)
+    result = completer.get_completions(Document(text=text, cursor_position=position), complete_event)
+    assert list(result) == [
+        Completion(text="orders", start_position=0),
+        Completion(text="users", start_position=0),
+        Completion(text="`select`", start_position=0),
+        Completion(text="`réveillé`", start_position=0),
+        Completion(text="time_zone", start_position=0),
+        Completion(text="time_zone_leap_second", start_position=0),
+        Completion(text="time_zone_name", start_position=0),
+        Completion(text="time_zone_transition", start_position=0),
+        Completion(text="time_zone_transition_type", start_position=0),
+        Completion(text="test", start_position=0),
+        Completion(text="`test 2`", start_position=0),
+    ]
+
+
 def test_enum_value_completion(completer, complete_event):
     text = "SELECT * FROM orders WHERE status = "
     position = len(text)

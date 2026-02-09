@@ -13,7 +13,7 @@ import rapidfuzz
 
 from mycli.packages.completion_engine import suggest_type
 from mycli.packages.filepaths import complete_path, parse_path, suggest_path
-from mycli.packages.parseutils import last_word
+from mycli.packages.parseutils import extract_columns_from_select, last_word
 from mycli.packages.special import llm
 from mycli.packages.special.favoritequeries import FavoriteQueries
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
@@ -1131,7 +1131,15 @@ class SQLCompleter(Completer):
                 completions.extend([(*x, rank) for x in procs_m])
 
             elif suggestion["type"] == "table":
-                tables = self.populate_schema_objects(suggestion["schema"], "tables")
+                # If this is a select and columns are given, parse the columns and
+                # then only return tables that have one or more of the given columns.
+                # If no columns are given (or able to be parsed), return all tables
+                # as usual.
+                columns = extract_columns_from_select(document.text)
+                if columns:
+                    tables = self.populate_schema_objects(suggestion["schema"], "tables", columns)
+                else:
+                    tables = self.populate_schema_objects(suggestion["schema"], "tables")
                 tables_m = self.find_matches(word_before_cursor, tables)
                 completions.extend([(*x, rank) for x in tables_m])
 
@@ -1341,15 +1349,34 @@ class SQLCompleter(Completer):
     def _quote_sql_string(value: str) -> str:
         return "'" + value.replace("'", "''") + "'"
 
-    def populate_schema_objects(self, schema: str | None, obj_type: str) -> list[str]:
+    def populate_schema_objects(self, schema: str | None, obj_type: str, columns: list[str] | None = None) -> list[str]:
         """Returns list of tables or functions for a (optional) schema"""
         metadata = self.dbmetadata[obj_type]
         schema = schema or self.dbname
-
         try:
-            objects = metadata[schema].keys()
+            objects = list(metadata[schema].keys())
         except KeyError:
             # schema doesn't exist
             objects = []
 
-        return objects
+        filtered_objects: list[str] = []
+        remaining_objects: list[str] = []
+
+        # If the requested object type is tables and the user already entered
+        # columns, return a filtered list of tables (or views) that contain
+        # one or more of the given columns. If a table does not contain the
+        # given columns, add it to a separate list to add to the end of the
+        # filtered suggestions.
+        if obj_type == "tables" and columns and objects:
+            for obj in objects:
+                matched = False
+                for column in metadata[schema][obj]:
+                    if column in columns:
+                        filtered_objects.append(obj)
+                        matched = True
+                        break
+                if not matched:
+                    remaining_objects.append(obj)
+        else:
+            filtered_objects = objects
+        return filtered_objects + remaining_objects
