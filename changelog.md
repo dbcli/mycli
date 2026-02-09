@@ -15,6 +15,7 @@ Internal
 --------
 * Let CI ignore additional documentation files.
 * Add a GitHub Issue template.
+* Upgrade `cli_helpers` library to v2.10.0.
 
 
 1.51.1 (2026/02/09)
