@@ -144,13 +144,24 @@ def test_table_completion(completer, complete_event):
     ]
 
 
-def test_filtered_table_completion(completer, complete_event):
+def test_select_filtered_table_completion(completer, complete_event):
     text = "SELECT ABC FROM "
     position = len(text)
     result = completer.get_completions(Document(text=text, cursor_position=position), complete_event)
     assert list(result) == [
         Completion(text="`select`", start_position=0),
         Completion(text="`réveillé`", start_position=0),
+        Completion(text="test", start_position=0),
+        Completion(text="`test 2`", start_position=0),
+    ]
+
+
+def test_sub_select_filtered_table_completion(completer, complete_event):
+    text = "SELECT * FROM (SELECT email FROM "
+    position = len(text)
+    result = completer.get_completions(Document(text=text, cursor_position=position), complete_event)
+    assert list(result) == [
+        Completion(text="users", start_position=0),
         Completion(text="test", start_position=0),
         Completion(text="`test 2`", start_position=0),
     ]

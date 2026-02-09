@@ -91,6 +91,42 @@ def is_subselect(parsed: TokenList) -> bool:
     return False
 
 
+def get_last_select(parsed: TokenList) -> TokenList:
+    """
+    Takes a parsed sql statement and returns the last select query where applicable.
+
+    The intended use case is for when giving table suggestions based on columns, where
+    we only want to look at the columns from the most recent select. This works for a single
+    select query, or one or more sub queries (the useful part).
+
+    The custom logic is necessary because the typical sqlparse logic for things like finding
+    sub selects (i.e. is_subselect) only works on complete statements, such as:
+
+    * select c1 from t1;
+
+    However when suggesting tables based on columns, we only have partial select statements, i.e.:
+
+    * select c1
+    * select c1 from (select c2)
+
+    So given the above, we must parse them ourselves as they are not viewed as complete statements.
+
+    Returns a TokenList of the last select statement's tokens.
+    """
+    select_indexes: list[int] = []
+
+    for token in parsed:
+        if token.match(DML, "select"):  # match is case insensitive
+            select_indexes.append(parsed.token_index(token))
+
+    last_select = TokenList()
+
+    if select_indexes:
+        last_select = TokenList(parsed[select_indexes[-1] :])
+
+    return last_select
+
+
 def extract_from_part(parsed: TokenList, stop_at_punctuation: bool = True) -> Generator[Any, None, None]:
     tbl_prefix_seen = False
     for item in parsed.tokens:
@@ -195,7 +231,12 @@ def extract_columns_from_select(sql: str) -> list[str]:
     if not parsed:
         return []
 
-    statement = parsed[0]
+    statement = get_last_select(parsed[0])
+
+    # if there is no select, skip checking for columns
+    if not statement:
+        return []
+
     columns = []
 
     # Loops through the tokens (pieces) of the SQL statement.

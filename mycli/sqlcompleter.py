@@ -1131,7 +1131,10 @@ class SQLCompleter(Completer):
                 completions.extend([(*x, rank) for x in procs_m])
 
             elif suggestion["type"] == "table":
-                #print(f"##{document.text}##")
+                # If this is a select and columns are given, parse the columns and
+                # then only return tables that have one or more of the given columns.
+                # If no columns are given (or able to be parsed), return all tables
+                # as usual.
                 columns = extract_columns_from_select(document.text)
                 if columns:
                     tables = self.populate_schema_objects(suggestion["schema"], "tables", columns)
@@ -1362,7 +1365,7 @@ class SQLCompleter(Completer):
         # columns, return a filtered list of tables (or views) that contain
         # one or more of the given columns.
         if obj_type == "tables" and columns and objects:
-            #print(f"##{columns}##")
+            # print(f"##{columns}##")
             for obj in objects:
                 for column in metadata[schema][obj]:
                     if column in columns:
