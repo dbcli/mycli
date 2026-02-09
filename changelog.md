@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Features
+--------
+* Suggest tables/views that contain the given columns first when provided in a SELECT query.
+
+
 1.51.1 (2026/02/09)
 ==============
 
@@ -5,7 +13,6 @@ Features
 --------
 * Options to limit size of LLM prompts; cache LLM prompt data.
 * Add startup usage tips.
-* Suggest tables/views that contain the given columns first when provided in a SELECT query.
 * Move `main.ssl_mode` config option to `connection.default_ssl_mode`.
 * Add "unsupported" and "deprecated" `--checkup` sections.
 
