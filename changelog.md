@@ -6,6 +6,11 @@ Features
 * Suggest tables/views that contain the given columns first when provided in a SELECT query.
 
 
+Bug Fixes
+--------
+* Reduce duplicated `--checkup` output.
+
+
 Internal
 --------
 * Let CI ignore additional documentation files.
