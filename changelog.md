@@ -1,3 +1,11 @@
+TBD
+==============
+
+Internal
+--------
+* Let CI ignore additional documentation files.
+
+
 1.51.1 (2026/02/09)
 ==============
 
