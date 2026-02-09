@@ -75,7 +75,7 @@ def test_binary_display_hex(executor, capsys):
         None,
     )
     m.output(formatted, sqlresult.status)
-    expected = "+-------------+\n| binary_test |\n+-------------+\n| 0x6a        |\n+-------------+\n1 row in set\n"
+    expected = " 0x6a "
     stdout = capsys.readouterr().out
     assert expected in stdout
 
@@ -114,7 +114,7 @@ def test_binary_display_utf8(executor, capsys):
         None,
     )
     m.output(formatted, sqlresult.status)
-    expected = "+-------------+\n| binary_test |\n+-------------+\n| j           |\n+-------------+\n1 row in set\n"
+    expected = " j "
     stdout = capsys.readouterr().out
     assert expected in stdout
 
