@@ -142,7 +142,10 @@ class MyCli:
         # this parallel config exists to
         #  * compare with my.cnf
         #  * support the --checkup feature
+        # todo: after removing my.cnf, create the parallel configs only when --checkup is set
         self.config_without_package_defaults = read_config_files(config_files, ignore_package_defaults=True)
+        # this parallel config exists to compare with my.cnf support the --checkup feature
+        self.config_without_user_options = read_config_files(config_files, ignore_user_options=True)
         self.multi_line = c["main"].as_bool("multi_line")
         self.key_bindings = c["main"]["key_bindings"]
         special.set_timing_enabled(c["main"].as_bool("timing"))
@@ -180,7 +183,7 @@ class MyCli:
             self.llm_prompt_section_truncate = 0
 
         # set ssl_mode if a valid option is provided in a config file, otherwise None
-        ssl_mode = c["main"].get("ssl_mode", None)
+        ssl_mode = c["main"].get("ssl_mode", None) or c["connection"].get("default_ssl_mode", None)
         if ssl_mode not in ("auto", "on", "off", None):
             self.echo(f"Invalid config option provided for ssl_mode ({ssl_mode}); ignoring.", err=True, fg="red")
             self.ssl_mode = None
@@ -2272,28 +2275,72 @@ def read_ssh_config(ssh_config_path: str):
 
 
 def do_config_checkup(mycli: MyCli) -> None:
-    did_output = False
+    did_output_missing = False
+    did_output_unsupported = False
+    did_output_deprecated = False
+
+    indent = '    '
+    transitions = {
+        f'{indent}[main]\n{indent}default_character_set': f'{indent}[connection]\n{indent}default_character_set',
+        f'{indent}[main]\n{indent}ssl_mode': f'{indent}[connection]\n{indent}default_ssl_mode',
+    }
 
     if not list(mycli.config.keys()):
         print('\nThe local ~/,myclirc is missing or empty.\n')
-        did_output = True
+        did_output_missing = True
     else:
-        for section_name in mycli.config.keys():
+        for section_name in mycli.config:
             if section_name not in mycli.config_without_package_defaults:
-                if not did_output:
-                    print('\nMissing in user ~/.myclirc:\n')
-                print(f'The entire section:\n\n    [{section_name}]\n')
-                did_output = True
+                if not did_output_missing:
+                    print('\n### Missing in user ~/.myclirc:\n')
+                print(f'The entire section:\n\n{indent}[{section_name}]\n')
+                did_output_missing = True
                 continue
             for item_name in mycli.config[section_name]:
                 if item_name not in mycli.config_without_package_defaults[section_name]:
-                    if not did_output:
-                        print('\nMissing in user ~/.myclirc:\n')
-                    print(f'The item:\n\n    [{section_name}]\n    {item_name} =\n')
-                    did_output = True
-    if did_output:
+                    if not did_output_missing:
+                        print('\n### Missing in user ~/.myclirc:\n')
+                    print(f'The item:\n\n{indent}[{section_name}]\n{indent}{item_name} =\n')
+                    did_output_missing = True
+
+        for section_name in mycli.config_without_package_defaults:
+            if section_name not in mycli.config_without_user_options:
+                if not did_output_unsupported:
+                    print('\n### Unsupported in user ~/.myclirc:\n')
+                did_output_unsupported = True
+                print(f'The entire section:\n\n{indent}[{section_name}]\n')
+                continue
+            for item_name in mycli.config_without_package_defaults[section_name]:
+                if section_name == 'colors' and item_name.startswith('sql.'):
+                    # these are commented out in the package myclirc
+                    continue
+                transition_key = f'{indent}[{section_name}]\n{indent}{item_name}'
+                if transition_key in transitions:
+                    continue
+                if item_name not in mycli.config_without_user_options[section_name]:
+                    if not did_output_unsupported:
+                        print('\n### Unsupported in user ~/.myclirc:\n')
+                    print(f'The item:\n\n{indent}[{section_name}]\n{indent}{item_name} =\n')
+                    did_output_unsupported = True
+
+        for section_name in mycli.config_without_package_defaults:
+            if section_name not in mycli.config_without_user_options:
+                continue
+            for item_name in mycli.config_without_package_defaults[section_name]:
+                if section_name == 'colors' and item_name.startswith('sql.'):
+                    # these are commented out in the package myclirc
+                    continue
+                transition_key = f'{indent}[{section_name}]\n{indent}{item_name}'
+                if transition_key in transitions:
+                    if not did_output_deprecated:
+                        print('\n### Deprecated in user ~/.myclirc:\n')
+                    transition_value = transitions[transition_key]
+                    print(f'It is recommended to transition:\n\n{transition_key}\n\nto\n\n{transition_value}\n')
+                    did_output_deprecated = True
+
+    if did_output_missing or did_output_unsupported or did_output_deprecated:
         print(
-            'For more info on new features, see the commentary and defaults at:\n\n    * https://github.com/dbcli/mycli/blob/main/mycli/myclirc\n'
+            'For more info on supported features, see the commentary and defaults at:\n\n    * https://github.com/dbcli/mycli/blob/main/mycli/myclirc\n'
         )
     else:
         print('User configuration all up to date!')

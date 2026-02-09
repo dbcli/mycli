@@ -1,4 +1,4 @@
-TBD
+1.51.1 (2026/02/09)
 ==============
 
 Features
@@ -6,11 +6,14 @@ Features
 * Options to limit size of LLM prompts; cache LLM prompt data.
 * Add startup usage tips.
 * Suggest tables/views that contain the given columns first when provided in a SELECT query.
+* Move `main.ssl_mode` config option to `connection.default_ssl_mode`.
+* Add "unsupported" and "deprecated" `--checkup` sections.
 
 
 Bug Fixes
 --------
 * Correct mangled schema info sent in LLM prompts.
+* Give destructive warning on multi-table `UPDATE`s.
 
 
 1.50.0 (2026/02/07)

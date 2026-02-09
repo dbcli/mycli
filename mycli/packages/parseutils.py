@@ -356,6 +356,25 @@ def query_has_where_clause(query: str) -> bool:
     return any(isinstance(token, sqlparse.sql.Where) for token_list in sqlparse.parse(query) for token in token_list)
 
 
+# todo: handle "UPDATE LOW_PRIORITY" and "UPDATE IGNORE"
+def query_is_single_table_update(query: str) -> bool:
+    """Check if a query is a simple single-table UPDATE."""
+    cleaned_query = sqlparse.format(query, strip_comments=True)
+    if not cleaned_query:
+        return False
+    parsed = sqlparse.parse(cleaned_query)
+    if not parsed:
+        return False
+    statement = parsed[0]
+    return (
+        statement[0].value.lower() == 'update'
+        and statement[1].is_whitespace
+        and ',' not in statement[2].value  # multiple tables
+        and statement[3].is_whitespace
+        and statement[4].value.lower() == 'set'
+    )
+
+
 def is_destructive(keywords: list[str], queries: str) -> bool:
     """Returns True if any of the queries in *queries* is destructive."""
     for query in sqlparse.split(queries):
@@ -363,7 +382,7 @@ def is_destructive(keywords: list[str], queries: str) -> bool:
             continue
         # subtle: if "UPDATE" is one of our keywords AND "query" starts with "UPDATE"
         if query_starts_with(query, keywords) and query_starts_with(query, ["update"]):
-            if query_has_where_clause(query):
+            if query_has_where_clause(query) and query_is_single_table_update(query):
                 return False
             else:
                 return True
