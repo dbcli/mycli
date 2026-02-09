@@ -2284,6 +2284,7 @@ def do_config_checkup(mycli: MyCli) -> None:
         f'{indent}[main]\n{indent}default_character_set': f'{indent}[connection]\n{indent}default_character_set',
         f'{indent}[main]\n{indent}ssl_mode': f'{indent}[connection]\n{indent}default_ssl_mode',
     }
+    reverse_transitions = {v: k for k, v in transitions.items()}
 
     if not list(mycli.config.keys()):
         print('\nThe local ~/,myclirc is missing or empty.\n')
@@ -2297,6 +2298,9 @@ def do_config_checkup(mycli: MyCli) -> None:
                 did_output_missing = True
                 continue
             for item_name in mycli.config[section_name]:
+                transition_key = f'{indent}[{section_name}]\n{indent}{item_name}'
+                if transition_key in reverse_transitions:
+                    continue
                 if item_name not in mycli.config_without_package_defaults[section_name]:
                     if not did_output_missing:
                         print('\n### Missing in user ~/.myclirc:\n')
