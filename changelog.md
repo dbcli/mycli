@@ -6,6 +6,11 @@ Features
 * Suggest tables/views that contain the given columns first when provided in a SELECT query.
 
 
+Internal
+--------
+* Let CI ignore additional documentation files.
+
+
 1.51.1 (2026/02/09)
 ==============
 

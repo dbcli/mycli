@@ -5,6 +5,8 @@ on:
     paths-ignore:
       - '**.md'
       - 'AUTHORS'
+      - 'SPONSORS'
+      - 'TIPS'
 
 jobs:
   typecheck:
