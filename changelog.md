@@ -14,7 +14,6 @@ Bug Fixes
 Internal
 --------
 * Let CI ignore additional documentation files.
-* Add a GitHub Issue template.
 * Upgrade `cli_helpers` library to v2.10.0.
 
 
