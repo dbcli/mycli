@@ -359,10 +359,11 @@ def query_has_where_clause(query: str) -> bool:
 # todo: handle "UPDATE LOW_PRIORITY" and "UPDATE IGNORE"
 def query_is_single_table_update(query: str) -> bool:
     """Check if a query is a simple single-table UPDATE."""
-    cleaned_query = sqlparse.format(query, strip_comments=True)
-    if not cleaned_query:
+    cleaned_query_for_parsing_only = sqlparse.format(query, strip_comments=True)
+    cleaned_query_for_parsing_only = re.sub(r'\s+', ' ', cleaned_query_for_parsing_only)
+    if not cleaned_query_for_parsing_only:
         return False
-    parsed = sqlparse.parse(cleaned_query)
+    parsed = sqlparse.parse(cleaned_query_for_parsing_only)
     if not parsed:
         return False
     statement = parsed[0]
