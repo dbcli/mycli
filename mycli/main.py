@@ -2240,6 +2240,8 @@ def tips_picker() -> str:
     try:
         with resources.files(mycli).joinpath('TIPS').open('r') as f:
             for line in f:
+                if line.startswith("#"):
+                    continue
                 if tip := line.strip():
                     tips.append(tip)
     except FileNotFoundError:
