@@ -116,7 +116,63 @@ choose a color theme with "syntax_style" in ~/.myclirc!
 
 design a prompt with the "prompt" option in ~/.myclirc!
 
+turn off multi-line prompt indentation with "prompt_continuation = ''" in ~/.myclirc!
+
 save passwords in the system keyring with "use_keyring" in ~/.myclirc!
+
+enable SHOW WARNINGS with "show warnings" in ~/.myclirc!
+
+turn off smart completions with "smart_completion" in ~/.myclirc!
+
+turn on multi-line mode with "multi_line" in ~/.myclirc!
+
+turn off destructive warnings with "destructive_warning" in ~/.myclirc!
+
+control destructive warnings with "destructive_keywords" in ~/.myclirc!
+
+move the history file locattion with "history_file" in ~/.myclirc!
+
+enable an audit log with "audit_log" in ~/.myclirc!
+
+disable timing of SQL statements with "timiing" in ~/.myclirc!
+
+disable display of SQL when running a favorite with "show_favorite_query" in ~/.myclirc!
+
+notify after a long query by setting "beep_after_seconds" in ~/.myclirc!
+
+control alignment with "numeric_alignment" in ~/.myclirc!
+
+control binary value display with "binary_display" in ~/.myclirc!
+
+set vi key bindings with "key_bindings" in ~/.myclirc!
+
+show more suggestions with "wider_completion_menu" in ~/.myclirc!
+
+use the host alias in the prompt with "login_path_as_host" in ~/.myclirc!
+
+auto-display wide results vertically with "auto_vertical_output" in ~/.myclirc!
+
+control keyword casing in completions using "keyword_casing" in ~/.myclirc!
+
+disable pager on startup using "enable_pager" in ~/.myclirc!
+
+choose a pager command with "pager" in ~/.myclirc!
+
+customize colors using the "[colors]" section in ~/.myclirc!
+
+customize LLM commands using the "[llm]" section in ~/.myclirc!
+
+customize history search using "control_r" in ~/.myclirc!
+
+edit favorite queries directly using the "[favorite_queries]" section in ~/.myclirc!
+
+set up initial commands using the "[init-commands]" section in ~/.myclirc!
+
+create DSN shortcuts using the "[alias_dsn]" section in ~/.myclirc!
+
+set up per-DSN initial commands using the "[alias_dsn.init-commands]" section in ~/.myclirc!
+
+set up connection defaults using the "[connection]" section in ~/.myclirc!
 
 ###
 ### redirection
@@ -127,3 +183,5 @@ redirect query output to a shell command with "$| <command>"!
 redirect query output to a file with "$> <filename>"!
 
 append query output to a file with "$>> <filename>"!
+
+run a command after shell redirects with "post_redirect_command" in ~/.myclirc!

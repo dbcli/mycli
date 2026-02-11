@@ -5,6 +5,11 @@ Bug Fixes
 ---------
 * Fix `\dt+ table_name` returning empty results when using `table_format=ascii`.
 
+Features
+--------
+* Add all `~/.myclirc` entries/sections to startup tips.
+
+
 Internal
 --------
 * Add GitHub Issue templates.
