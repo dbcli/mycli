@@ -1,6 +1,10 @@
 Upcoming (TBD)
 ==============
 
+Bug Fixes
+---------
+* Fix `\dt+ table_name` returning empty results.
+
 Features
 --------
 * Add all `~/.myclirc` entries/sections to startup tips.

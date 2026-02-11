@@ -33,6 +33,9 @@ def list_tables(
     else:
         return [SQLResult(status="")]
 
+    # Fetch results before potentially executing another query
+    results = list(cur.fetchall()) if verbose and arg else cur
+
     if verbose and arg:
         query = f'SHOW CREATE TABLE {arg}'
         logger.debug(query)
@@ -40,7 +43,7 @@ def list_tables(
         if one := cur.fetchone():
             status = one[1]
 
-    return [SQLResult(results=cur, headers=headers, status=status)]
+    return [SQLResult(results=results, headers=headers, status=status)]
 
 
 @special_command("\\l", "\\l", "List databases.", arg_type=ArgType.RAW_QUERY, case_sensitive=True)
