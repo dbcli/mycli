@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Internal
+--------
+* Add GitHub Issue templates.
+
+
 1.52.0 (2026/02/11)
 ==============
 
