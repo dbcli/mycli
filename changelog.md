@@ -3,7 +3,7 @@ Upcoming (TBD)
 
 Bug Fixes
 ---------
-* Fix `\dt+ table_name` returning empty results when using `table_format=ascii`.
+* Fix `\dt+ table_name` returning empty results.
 
 Features
 --------
