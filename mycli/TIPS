@@ -1,42 +1,20 @@
-set "less_chatty = True" in ~/.myclirc to turn off these tips!
+###
+### CLI arguments
+###
 
-set a fancy table format like "table_format = psql_unicode" in ~/.myclirc!
+check your ~/.myclirc settings using the --checkup flag!
 
-change the string for NULLs with "null_string = <null>" in ~/.myclirc!
+###
+### commands
+###
 
 interact with an LLM using the \llm command!
-
-display query result vertically using \G at the end of a query!
 
 copy a query to the clipboard using \clip at the end of the query!
 
 \dt lists tables; \dt <table> describes <table>!
 
 edit a query in an external editor using \e!
-
-edit a query in an external editor using keystrokes control-x + control-e!
-
-toggle smart completion using keystroke F2!
-
-toggle multi-line mode using keystroke F3!
-
-toggle vi mode using keystroke F4!
-
-complete at cursor using the tab key!
-
-prettify a query using keystrokes control-x + p!
-
-un-prettify a query using keystrokes control-x + u!
-
-insert the current date using keystrokes control-o + d!
-
-insert the quoted current date using keystrokes control-o + control-d!
-
-insert the current datetime using keystrokes control-o + t!
-
-insert the quoted current date using keystrokes control-o + control-t!
-
-search query history using keystroke control-r!
 
 \f lists favorite queries; \f <name> executes a favorite!
 
@@ -88,11 +66,51 @@ use "system <command>" to execute a shell command!
 
 the "watch" command executes a query every N seconds!
 
-redirect query output to a shell command with "$| <command>"!
+###
+### general
+###
 
-redirect query output to a file with "$> <filename>"!
+display query output vertically using \G at the end of a query!
 
-append query output to a file with "$>> <filename>"!
+###
+### keystrokes
+###
+
+edit a query in an external editor using keystrokes control-x + control-e!
+
+toggle smart completion using keystroke F2!
+
+toggle multi-line mode using keystroke F3!
+
+toggle vi mode using keystroke F4!
+
+complete at cursor using the tab key!
+
+prettify a query using keystrokes control-x + p!
+
+un-prettify a query using keystrokes control-x + u!
+
+insert the current date using keystrokes control-o + d!
+
+insert the quoted current date using keystrokes control-o + control-d!
+
+insert the current datetime using keystrokes control-o + t!
+
+insert the quoted current date using keystrokes control-o + control-t!
+
+search query history using keystroke control-r!
+
+use keystroke control-g to cancel completion popups!
+
+###
+### myclirc options
+###
+
+set "less_chatty = True" in ~/.myclirc to turn off these tips!
+
+set a fancy table format like "table_format = psql_unicode" in ~/.myclirc!
+
+change the string for NULLs with "null_string = <null>" in ~/.myclirc!
 
 choose a color theme with "syntax_style" in ~/.myclirc!
 
@@ -100,6 +118,12 @@ design a prompt with the "prompt" option in ~/.myclirc!
 
 save passwords in the system keyring with "use_keyring" in ~/.myclirc!
 
-check your ~/.myclirc settings using the --checkup flag!
+###
+### redirection
+###
 
-use keystroke control-g to cancel completion popups!
+redirect query output to a shell command with "$| <command>"!
+
+redirect query output to a file with "$> <filename>"!
+
+append query output to a file with "$>> <filename>"!
