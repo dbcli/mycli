@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Features
+--------
+* Add all `~/.myclirc` entries/sections to startup tips.
+
+
 Internal
 --------
 * Add GitHub Issue templates.
