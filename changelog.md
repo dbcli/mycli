@@ -10,6 +10,7 @@ Bug Fixes
 --------
 * Reduce duplicated `--checkup` output.
 * Handle errors generating completions on stored procedures.
+* Fix whitespace/inline comments breaking destructive `UPDATE … WHERE` statement detection.
 
 
 Internal
