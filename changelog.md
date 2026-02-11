@@ -9,6 +9,7 @@ Features
 Bug Fixes
 --------
 * Reduce duplicated `--checkup` output.
+* Handle errors generating completions on stored procedures.
 
 
 Internal
