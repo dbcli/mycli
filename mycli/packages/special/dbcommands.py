@@ -41,6 +41,8 @@ def list_tables(
         logger.debug(query)
         cur.execute(query)
         if one := cur.fetchone():
+            # Returning the SHOW CREATE TABLE as a "status" keeps it unformatted,
+            # which is a hack.  There should be an unformmatted_results argument.
             status = one[1]
 
     return [SQLResult(results=results, headers=headers, status=status)]
