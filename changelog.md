@@ -6,6 +6,11 @@ Features
 * Add many CLI flags to startup tips.
 
 
+Bug Fixes
+---------
+* Correct parameterization for completion queries.
+
+
 Internal
 --------
 * Prefer `yield from` over yielding in a loop.

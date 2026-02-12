@@ -97,17 +97,17 @@ class SQLExecute:
     users_query = """SELECT CONCAT("'", user, "'@'",host,"'") FROM mysql.user"""
 
     functions_query = '''SELECT ROUTINE_NAME FROM INFORMATION_SCHEMA.ROUTINES
-    WHERE ROUTINE_TYPE="FUNCTION" AND ROUTINE_SCHEMA = "%s"'''
+    WHERE ROUTINE_TYPE="FUNCTION" AND ROUTINE_SCHEMA = %s'''
 
     procedures_query = '''SELECT ROUTINE_NAME FROM INFORMATION_SCHEMA.ROUTINES
     WHERE ROUTINE_TYPE="PROCEDURE" AND ROUTINE_SCHEMA = %s'''
 
     table_columns_query = """select TABLE_NAME, COLUMN_NAME from information_schema.columns
-                                    where table_schema = '%s'
+                                    where table_schema = %s
                                     order by table_name,ordinal_position"""
 
     enum_values_query = """select TABLE_NAME, COLUMN_NAME, COLUMN_TYPE from information_schema.columns
-                                    where table_schema = '%s' and data_type = 'enum'
+                                    where table_schema = %s and data_type = 'enum'
                                     order by table_name,ordinal_position"""
 
     now_query = """SELECT NOW()"""
@@ -421,7 +421,7 @@ class SQLExecute:
         assert isinstance(self.conn, Connection)
         with self.conn.cursor() as cur:
             _logger.debug("Columns Query. sql: %r", self.table_columns_query)
-            cur.execute(self.table_columns_query % self.dbname)
+            cur.execute(self.table_columns_query, (self.dbname,))
             yield from cur
 
     def enum_values(self) -> Generator[tuple[str, str, list[str]], None, None]:
@@ -429,7 +429,7 @@ class SQLExecute:
         assert isinstance(self.conn, Connection)
         with self.conn.cursor() as cur:
             _logger.debug("Enum Values Query. sql: %r", self.enum_values_query)
-            cur.execute(self.enum_values_query % self.dbname)
+            cur.execute(self.enum_values_query, (self.dbname,))
             for table_name, column_name, column_type in cur:
                 values = self._parse_enum_values(column_type)
                 if values:
@@ -448,7 +448,7 @@ class SQLExecute:
         assert isinstance(self.conn, Connection)
         with self.conn.cursor() as cur:
             _logger.debug("Functions Query. sql: %r", self.functions_query)
-            cur.execute(self.functions_query % self.dbname)
+            cur.execute(self.functions_query, (self.dbname,))
             yield from cur
 
     def procedures(self) -> Generator[tuple, None, None]:
