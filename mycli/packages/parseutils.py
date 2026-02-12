@@ -132,8 +132,7 @@ def extract_from_part(parsed: TokenList, stop_at_punctuation: bool = True) -> Ge
     for item in parsed.tokens:
         if tbl_prefix_seen:
             if is_subselect(item):
-                for x in extract_from_part(item, stop_at_punctuation):
-                    yield x
+                yield from extract_from_part(item, stop_at_punctuation)
             elif stop_at_punctuation and item.ttype is Punctuation:
                 return None
             # Multiple JOINs in the same query won't work properly since

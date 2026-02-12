@@ -264,8 +264,7 @@ def set_redirect(command_part: str | None, file_operator_part: str | None, file_
 def execute_favorite_query(cur: Cursor, arg: str, **_) -> Generator[SQLResult, None, None]:
     """Returns (title, rows, headers, status)"""
     if arg == "":
-        for result in list_favorite_queries():
-            yield result
+        yield from list_favorite_queries()
 
     # Parse out favorite name and optional substitution parameters
     name, _separator, arg_str = arg.partition(" ")
@@ -628,5 +627,4 @@ def get_current_delimiter() -> str:
 
 
 def split_queries(input_str: str) -> Generator[str, None, None]:
-    for query in delimiter_command.queries_iter(input_str):
-        yield query
+    yield from delimiter_command.queries_iter(input_str)
