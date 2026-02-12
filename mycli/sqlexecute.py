@@ -374,8 +374,7 @@ class SQLExecute:
             cur = self.conn.cursor()
             try:  # Special command
                 _logger.debug("Trying a dbspecial command. sql: %r", sql)
-                for result in execute(cur, sql):
-                    yield result
+                yield from execute(cur, sql)
             except CommandNotFound:  # Regular SQL
                 _logger.debug("Regular sql statement. sql: %r", sql)
                 cur.execute(sql)
@@ -415,8 +414,7 @@ class SQLExecute:
         with self.conn.cursor() as cur:
             _logger.debug("Tables Query. sql: %r", self.tables_query)
             cur.execute(self.tables_query)
-            for row in cur:
-                yield row
+            yield from cur
 
     def table_columns(self) -> Generator[tuple[str, str], None, None]:
         """Yields (table name, column name) pairs"""
@@ -424,8 +422,7 @@ class SQLExecute:
         with self.conn.cursor() as cur:
             _logger.debug("Columns Query. sql: %r", self.table_columns_query)
             cur.execute(self.table_columns_query % self.dbname)
-            for row in cur:
-                yield row
+            yield from cur
 
     def enum_values(self) -> Generator[tuple[str, str, list[str]], None, None]:
         """Yields (table name, column name, enum values) tuples"""
@@ -452,8 +449,7 @@ class SQLExecute:
         with self.conn.cursor() as cur:
             _logger.debug("Functions Query. sql: %r", self.functions_query)
             cur.execute(self.functions_query % self.dbname)
-            for row in cur:
-                yield row
+            yield from cur
 
     def procedures(self) -> Generator[tuple, None, None]:
         """Yields tuples of (procedure_name, )"""
@@ -467,8 +463,7 @@ class SQLExecute:
                 _logger.error('No procedure completions due to %r', e)
                 yield ()
             else:
-                for row in cur:
-                    yield row
+                yield from cur
 
     def show_candidates(self) -> Generator[tuple, None, None]:
         assert isinstance(self.conn, Connection)
@@ -493,8 +488,7 @@ class SQLExecute:
                 _logger.error("No user completions due to %r", e)
                 yield ()
             else:
-                for row in cur:
-                    yield row
+                yield from cur
 
     def now(self) -> datetime.datetime:
         assert isinstance(self.conn, Connection)

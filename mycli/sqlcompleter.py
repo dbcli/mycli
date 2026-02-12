@@ -993,8 +993,7 @@ class SQLCompleter(Completer):
         completions: list[tuple[str, int]] = []
 
         def empty_generator():
-            for item in []:
-                yield item
+            yield from []
 
         if re.match(r'^[\d\.]', text):
             return empty_generator()

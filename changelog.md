@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Internal
+--------
+* Prefer `yield from` over yielding in a loop.
+
+
 1.53.0 (2026/02/12)
 ==============
 
