@@ -933,12 +933,18 @@ class SQLCompleter(Completer):
             metadata[self.dbname][func[0]] = None
             self.all_completions.add(func[0])
 
-    def extend_procedures(self, procedure_data: Generator[tuple[str, str]]) -> None:
+    def extend_procedures(self, procedure_data: Generator[tuple]) -> None:
         metadata = self.dbmetadata["procedures"]
         if self.dbname not in metadata:
             metadata[self.dbname] = {}
 
         for elt in procedure_data:
+            # not sure why this happens on MariaDB in some cases
+            # see https://github.com/dbcli/mycli/issues/1531
+            if not elt:
+                continue
+            if not elt[0]:
+                continue
             metadata[self.dbname][elt[0]] = None
 
     def set_dbname(self, dbname: str | None) -> None:
