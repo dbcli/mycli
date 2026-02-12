@@ -4,6 +4,40 @@
 
 check your ~/.myclirc settings using the --checkup flag!
 
+list your aliased DSNs with the --list-dsn flag!
+
+log every query and result with the --logfile option!
+
+the --checkpoint option helps track successful queries in batch mode!
+
+the --format option helps set the output format in batch mode!
+
+the --throttle option helps slow down queries in batch mode!
+
+the --password-file option can be used with a FIFO to avoid saving creds to a file!
+
+the --charset option sets the character set for a single session!
+
+the --unbuffered flag can save memory when in batch mode!
+
+--use-keyring=true lets you access the system keyring for passwords!
+
+--use-keyring=reset resets a password saved to the system keyring!
+
+the --myclirc option can change the config file location for a single session!
+
+the --execute option lets you execute a single line of SQL!
+
+the --auto-vertical-output flag lets you automatically switch to vertical output!
+
+the --show-warnings flag turns on warnings from the MySQL server!
+
+the --no-warn flag turns off warnings befor running a destructive query!
+
+the --init-command option lets you execute initialization SQL before a session!
+
+the --login-path option lets you work with login-path files!
+
 ###
 ### commands
 ###

@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Features
+--------
+* Add many CLI flags to startup tips.
+
+
 Internal
 --------
 * Prefer `yield from` over yielding in a loop.

@@ -4,9 +4,9 @@ on:
   pull_request:
     paths-ignore:
       - '**.md'
-      - 'AUTHORS'
-      - 'SPONSORS'
-      - 'TIPS'
+      - '**/AUTHORS'
+      - '**/SPONSORS'
+      - '**/TIPS'
 
 jobs:
   linters:
