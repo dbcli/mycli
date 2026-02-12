@@ -100,7 +100,7 @@ class SQLExecute:
     WHERE ROUTINE_TYPE="FUNCTION" AND ROUTINE_SCHEMA = "%s"'''
 
     procedures_query = '''SELECT ROUTINE_NAME FROM INFORMATION_SCHEMA.ROUTINES
-    WHERE ROUTINE_TYPE="PROCEDURE" AND ROUTINE_SCHEMA = "%s"'''
+    WHERE ROUTINE_TYPE="PROCEDURE" AND ROUTINE_SCHEMA = %s'''
 
     table_columns_query = """select TABLE_NAME, COLUMN_NAME from information_schema.columns
                                     where table_schema = '%s'
@@ -462,7 +462,7 @@ class SQLExecute:
         with self.conn.cursor() as cur:
             _logger.debug("Procedures Query. sql: %r", self.procedures_query)
             try:
-                cur.execute(self.procedures_query % self.dbname)
+                cur.execute(self.procedures_query, (self.dbname,))
             except pymysql.DatabaseError as e:
                 _logger.error('No procedure completions due to %r', e)
                 yield ()

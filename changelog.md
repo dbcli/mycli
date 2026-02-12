@@ -1,4 +1,4 @@
-Upcoming (TBD)
+1.53.0 (2026/02/12)
 ==============
 
 Features
@@ -9,6 +9,7 @@ Features
 Bug Fixes
 ---------
 * Fix `\dt+ table_name` returning empty results.
+* Further bulletproof generating completions on stored procedures.
 
 
 Internal
