@@ -49,9 +49,6 @@ def _multiline_exception(text: str) -> bool:
         # uppercase variants accepted
         first_word.lower() in SPECIAL_COMMANDS
         or
-        # To all teh vim fans out there
-        (first_word == ":q")
-        or
         # just a plain enter without any text
         (first_word == "")
     )
