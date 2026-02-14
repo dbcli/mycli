@@ -42,6 +42,7 @@ from prompt_toolkit.key_binding.bindings.named_commands import register as promp
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from prompt_toolkit.layout.processors import ConditionalProcessor, HighlightMatchingBracketProcessor
 from prompt_toolkit.lexers import PygmentsLexer
+from prompt_toolkit.output import ColorDepth
 from prompt_toolkit.shortcuts import CompleteStyle, PromptSession
 import pymysql
 from pymysql.constants.ER import HANDSHAKE_ERROR
@@ -1168,6 +1169,7 @@ class MyCli:
                 editing_mode = EditingMode.EMACS
 
             self.prompt_app = PromptSession(
+                color_depth=ColorDepth.DEPTH_24_BIT if 'truecolor' in os.getenv('COLORTERM', '').lower() else None,
                 lexer=PygmentsLexer(MyCliLexer),
                 reserve_space_for_menu=self.get_reserved_space(),
                 message=get_message,
