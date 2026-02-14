@@ -162,6 +162,7 @@ class MyCli:
         self.login_path = login_path
         self.toolbar_error_message: str | None = None
         self.prompt_app: PromptSession | None = None
+        self._keepalive_counter = 0
 
         # self.cnf_files is a class variable that stores the list of mysql
         # config files to read in at launch.
@@ -185,6 +186,7 @@ class MyCli:
         special.set_timing_enabled(c["main"].as_bool("timing"))
         special.set_show_favorite_query(c["main"].as_bool("show_favorite_query"))
         self.beep_after_seconds = float(c["main"]["beep_after_seconds"] or 0)
+        self.default_keepalive_ticks = c['connection'].as_int('default_keepalive_ticks')
 
         FavoriteQueries.instance = FavoriteQueries.from_config(self.config)
 
@@ -782,6 +784,7 @@ class MyCli:
             while True:
                 try:
                     assert isinstance(self.prompt_app, PromptSession)
+                    # buglet: this prompt() invocation doesn't have an inputhook for keepalive pings
                     text = self.prompt_app.prompt(default=sql)
                     break
                 except KeyboardInterrupt:
@@ -986,11 +989,35 @@ class MyCli:
                         self.echo("")
                         self.output(formatted, status)
 
+        def keepalive_hook(_context):
+            """
+            prompt_toolkit shares the event loop with this hook, which seems
+            to get called a bit faster than once/second on one machine.
+
+            It would be nice to reset the counter whenever user input is made,
+            but was not clear how to do that with context.input_is_ready().
+
+            Example at https://github.com/prompt-toolkit/python-prompt-toolkit/blob/main/examples/prompts/inputhook.py
+            """
+            if self.default_keepalive_ticks < 1:
+                return
+            self._keepalive_counter += 1
+            if self._keepalive_counter > self.default_keepalive_ticks:
+                self._keepalive_counter = 0
+                self.logger.debug('keepalive ping')
+                try:
+                    assert self.sqlexecute is not None
+                    assert self.sqlexecute.conn is not None
+                    self.sqlexecute.conn.ping(reconnect=False)
+                except Exception as e:
+                    self.logger.debug('keepalive ping error %r', e)
+
         def one_iteration(text: str | None = None) -> None:
+            inputhook = keepalive_hook if self.default_keepalive_ticks >= 1 else None
             if text is None:
                 try:
                     assert self.prompt_app is not None
-                    text = self.prompt_app.prompt()
+                    text = self.prompt_app.prompt(inputhook=inputhook)
                 except KeyboardInterrupt:
                     return
 
@@ -1033,7 +1060,7 @@ class MyCli:
                             click.echo("---")
                         if special.is_timing_enabled():
                             click.echo(f"Time: {duration:.2f} seconds")
-                        text = self.prompt_app.prompt(default=sql or '')
+                        text = self.prompt_app.prompt(default=sql or '', inputhook=inputhook)
                     except KeyboardInterrupt:
                         return
                     except special.FinishIteration as e:

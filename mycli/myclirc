@@ -159,6 +159,10 @@ default_character_set = utf8mb4
 # whether to enable LOAD DATA LOCAL INFILE for connections without --local-infile being set
 default_local_infile = False
 
+# How often to send periodic background pings to the server when input is idle.  Ticks are
+# roughly in seconds, but may be faster.  Set to zero to disable.  Suggestion: 300.
+default_keepalive_ticks = 0
+
 # Sets the desired behavior for handling secure connections to the database server.
 # Possible values:
 # auto = SSL is preferred. Will attempt to connect via SSL, but will fallback to cleartext as needed.
