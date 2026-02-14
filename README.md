@@ -50,20 +50,26 @@ Features
 
 * Auto-completion as you type for SQL keywords as well as tables, views and
   columns in the database.
+* Fuzzy history search using [fzf](https://github.com/junegunn/fzf).
 * Syntax highlighting using Pygments.
 * Smart-completion (enabled by default) will suggest context-sensitive completion.
     - `SELECT * FROM <tab>` will only show table names.
     - `SELECT * FROM users WHERE <tab>` will only show column names.
 * Support for multiline queries.
 * Favorite queries with optional positional parameters. Save a query using
-  `\fs alias query` and execute it with `\f alias` whenever you need.
+  `\fs <alias> <query>` and execute it with `\f <alias>`.
 * Timing of sql statements and table rendering.
-* Config file is automatically created at ``~/.myclirc`` at first launch.
 * Log every query and its results to a file (disabled by default).
-* Pretty prints tabular data (with colors!)
+* Pretty print tabular data (with colors!).
 * Support for SSL connections
 * Shell-style trailing redirects with `$>`, `$>>` and `$|` operators.
-* Some features are only exposed as [key bindings](doc/key_bindings.rst)
+* Support for querying LLMs with context derived from your schema.
+* Support for storing passwords in the system keyring.
+
+Mycli creates a config file `~/.myclirc` on first run; you can use the
+options in that file to configure the above features, and more.
+
+Some features are only exposed as [key bindings](doc/key_bindings.rst).
 
 Contributions:
 --------------
