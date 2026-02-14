@@ -31,6 +31,7 @@ Internal
 * Add a GitHub Actions workflow to run Codex review on pull requests.
 * Remove vim-style exit sequence which had no effect.
 * Pin dependencies more tightly in `pyproject.toml`.
+* Exclude more documentation files from CI.
 
 
 1.53.0 (2026/02/12)
