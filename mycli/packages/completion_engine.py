@@ -1,3 +1,4 @@
+import functools
 import re
 from typing import Any
 
@@ -42,6 +43,7 @@ def _is_where_or_having(token: Token | None) -> bool:
     return bool(token and token.value and token.value.lower() in ("where", "having"))
 
 
+@functools.lru_cache(maxsize=128)
 def _is_inside_quotes(text: str, pos: int) -> bool:
     in_single = False
     in_double = False
@@ -137,7 +139,7 @@ def suggest_type(full_text: str, text_before_cursor: str) -> list[dict[str, Any]
     last_token = statement and statement.token_prev(len(statement.tokens))[1] or ""
 
     # todo: unsure about empty string as identifier
-    return suggest_based_on_last_token(last_token, text_before_cursor, full_text, identifier or Identifier(''))
+    return suggest_based_on_last_token(last_token, text_before_cursor, word_before_cursor, full_text, identifier or Identifier(''))
 
 
 def suggest_special(text: str) -> list[dict[str, Any]]:
@@ -180,9 +182,24 @@ def suggest_special(text: str) -> list[dict[str, Any]]:
 def suggest_based_on_last_token(
     token: str | Token | None,
     text_before_cursor: str,
+    word_before_cursor: str | None,
     full_text: str,
     identifier: Identifier,
 ) -> list[dict[str, Any]]:
+
+    # don't suggest anything inside a string or number
+    if word_before_cursor:
+        if re.match(r'^[\d\.]', word_before_cursor[0]):
+            return []
+        # more efficient if no space was typed yet in the string
+        if word_before_cursor[0] in ('"', "'"):
+            return []
+        # less efficient, but handles all cases
+        # in fact, this is quite slow, but not as slow as offering completions!
+        # faster would be to peek inside the Pygments lexer run by prompt_toolkit -- how?
+        if _is_inside_quotes(text_before_cursor, -1):
+            return []
+
     if isinstance(token, str):
         token_v = token.lower()
     elif isinstance(token, Comparison):
@@ -201,7 +218,7 @@ def suggest_based_on_last_token(
         original_text = text_before_cursor
         prev_keyword, text_before_cursor = find_prev_keyword(text_before_cursor)
         enum_suggestion = _enum_value_suggestion(original_text, full_text)
-        fallback = suggest_based_on_last_token(prev_keyword, text_before_cursor, full_text, identifier)
+        fallback = suggest_based_on_last_token(prev_keyword, text_before_cursor, None, full_text, identifier)
         if enum_suggestion and _is_where_or_having(prev_keyword):
             return [enum_suggestion] + fallback
         return fallback
@@ -231,7 +248,7 @@ def suggest_based_on_last_token(
             #        Suggest columns/functions AND keywords. (If we wanted to be
             #        really fancy, we could suggest only array-typed columns)
 
-            column_suggestions = suggest_based_on_last_token("where", text_before_cursor, full_text, identifier)
+            column_suggestions = suggest_based_on_last_token("where", text_before_cursor, None, full_text, identifier)
 
             # Check for a subquery expression (cases 3 & 4)
             where = p.tokens[-1]
@@ -366,14 +383,18 @@ def suggest_based_on_last_token(
         # "CREATE DATABASE <newdb> WITH TEMPLATE <db>"
         return [{"type": "database"}]
 
+    elif _is_inside_quotes(text_before_cursor, -1):
+        return []
+
     elif token_v.endswith(",") or is_operand(token_v) or token_v in ["=", "and", "or"]:
         original_text = text_before_cursor
         prev_keyword, text_before_cursor = find_prev_keyword(text_before_cursor)
         enum_suggestion = _enum_value_suggestion(original_text, full_text)
-        fallback = suggest_based_on_last_token(prev_keyword, text_before_cursor, full_text, identifier) if prev_keyword else []
+        fallback = suggest_based_on_last_token(prev_keyword, text_before_cursor, None, full_text, identifier) if prev_keyword else []
         if enum_suggestion and _is_where_or_having(prev_keyword):
             return [enum_suggestion] + fallback
         return fallback
+
     else:
         return [{"type": "keyword"}]
 
