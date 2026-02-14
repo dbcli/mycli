@@ -6,6 +6,7 @@ Features
 * Add many CLI flags to startup tips.
 * Accept all special commands without trailing semicolons in multi-line mode.
 * Add prompt format strings for socket connections.
+* Optionally defer auto-completions until a minimum number of characters is typed.
 
 
 Bug Fixes

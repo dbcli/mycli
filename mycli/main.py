@@ -31,11 +31,12 @@ from cli_helpers.utils import strip_ansi
 import click
 from configobj import ConfigObj
 import keyring
+from prompt_toolkit.application.current import get_app
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.completion import Completion, DynamicCompleter
 from prompt_toolkit.document import Document
 from prompt_toolkit.enums import DEFAULT_BUFFER, EditingMode
-from prompt_toolkit.filters import HasFocus, IsDone
+from prompt_toolkit.filters import Condition, HasFocus, IsDone
 from prompt_toolkit.formatted_text import ANSI, AnyFormattedText
 from prompt_toolkit.key_binding.bindings.named_commands import register as prompt_register
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
@@ -84,6 +85,36 @@ Query = namedtuple("Query", ["query", "successful", "mutating"])
 SUPPORT_INFO = "Home: http://mycli.net\nBug tracker: https://github.com/dbcli/mycli/issues"
 DEFAULT_WIDTH = 80
 DEFAULT_HEIGHT = 25
+MIN_COMPLETION_TRIGGER = 1
+
+
+@Condition
+def complete_while_typing_filter() -> bool:
+    """Whether enough characters have been typed to trigger completion.
+
+    Written in a verbose way, with a string slice, for efficiency."""
+    if MIN_COMPLETION_TRIGGER <= 1:
+        return True
+    app = get_app()
+    text = app.current_buffer.text.lstrip()
+    text_len = len(text)
+    if text_len < MIN_COMPLETION_TRIGGER:
+        return False
+    last_word = text[-MIN_COMPLETION_TRIGGER:]
+    if len(last_word) == text_len:
+        return text_len >= MIN_COMPLETION_TRIGGER
+    if text[:6].lower() in ['source', r'\.']:
+        # Different word characters for paths; see comment below.
+        # In fact, it might be nice if paths had a different threshold.
+        return not bool(re.search(r'[\s!-,:-@\[-^\{\}-]', last_word))
+    else:
+        # This is "whitespace and all punctuation except underscore and backtick"
+        # acting as word breaks, but it would be neat if we could complete differently
+        # when inside a backtick, accepting all legal characters towards the trigger
+        # limit.  We would have to parse the statement, or at least go back more
+        # characters, costing performance.  This still works within a backtick!  So
+        # long as there are three trailing non-punctuation characters.
+        return not bool(re.search(r'[\s!-/:-@\[-^\{-~]', last_word))
 
 
 class MyCli:
@@ -122,6 +153,8 @@ class MyCli:
         warn: bool | None = None,
         myclirc: str = "~/.myclirc",
     ) -> None:
+        global MIN_COMPLETION_TRIGGER
+
         self.sqlexecute = sqlexecute
         self.logfile = logfile
         self.defaults_suffix = defaults_suffix
@@ -221,6 +254,9 @@ class MyCli:
             self.smart_completion, supported_formats=self.main_formatter.supported_formats, keyword_casing=keyword_casing
         )
         self._completer_lock = threading.Lock()
+
+        self.min_completion_trigger = c["main"].as_int("min_completion_trigger")
+        MIN_COMPLETION_TRIGGER = self.min_completion_trigger
 
         # Register custom special commands.
         self.register_special_commands()
@@ -1147,7 +1183,7 @@ class MyCli:
                 completer=DynamicCompleter(lambda: self.completer),
                 history=history,
                 auto_suggest=AutoSuggestFromHistory(),
-                complete_while_typing=True,
+                complete_while_typing=complete_while_typing_filter,
                 multiline=cli_is_multiline(self),
                 style=style_factory(self.syntax_style, self.cli_style),
                 include_default_pygments_style=False,

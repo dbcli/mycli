@@ -9,6 +9,10 @@ show_warnings = False
 # possible completions will be listed.
 smart_completion = True
 
+# Minimum characters typed before offering completion suggestions.
+# Suggestion: 3.
+min_completion_trigger = 1
+
 # Multi-line mode allows breaking up the sql statements into multiple lines. If
 # this is set to True, then the end of the statements must have a semi-colon.
 # If this is set to False then sql statements can't be split into multiple
