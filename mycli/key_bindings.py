@@ -24,6 +24,12 @@ def ctrl_d_condition() -> bool:
     return not app.current_buffer.text
 
 
+@Condition
+def in_completion() -> bool:
+    app = get_app()
+    return bool(app.current_buffer.complete_state)
+
+
 def mycli_bindings(mycli) -> KeyBindings:
     """Custom key bindings for mycli."""
     kb = KeyBindings()
@@ -60,6 +66,16 @@ def mycli_bindings(mycli) -> KeyBindings:
             b.complete_next()
         else:
             b.start_completion(select_first=True)
+
+    @kb.add("escape", eager=True, filter=in_completion)
+    def _(event: KeyPressEvent) -> None:
+        """Cancel completion menu.
+
+        There will be a lag when canceling Escape due to the processing of
+        Alt- keystrokes as Escape- sequences.
+
+        There will be no lag when using control-g to cancel."""
+        event.app.current_buffer.cancel_completion()
 
     @kb.add("c-space")
     def _(event: KeyPressEvent) -> None:
