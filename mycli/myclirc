@@ -96,20 +96,21 @@ key_bindings = emacs
 wider_completion_menu = False
 
 # MySQL prompt
-# \D - The full current date
-# \d - Database name
-# \h - Hostname of the server
-# \m - Minutes of the current time
-# \n - Newline
-# \P - AM/PM
-# \p - Port
-# \R - The current time, in 24-hour military time (0-23)
-# \r - The current time, standard 12-hour time (1-12)
-# \s - Seconds of the current time
-# \t - Product type (Percona, MySQL, MariaDB, TiDB)
-# \A - DSN alias name (from the [alias_dsn] section)
-# \u - Username
-# \x1b[...m - insert ANSI escape sequence
+# * \D - the full current date, e.g. Sat Feb 14 15:55:48 2026
+# * \R - the current hour in 24-hour time (0–23)
+# * \r - the current hour 12-hour time (1–12)
+# * \m - minutes of the current time
+# * \s - seconds of the current time
+# * \P - AM/PM
+# * \d - selected database/schema
+# * \h - hostname of the server
+# * \p - the connection port
+# * \t - database vendor (Percona, MySQL, MariaDB, TiDB)
+# * \u - username
+# * \A - DSN alias
+# * \n - a newline
+# * \_ - a space
+# * \x1b[...m - an ANSI escape sequence (can style with color)
 prompt = '\t \u@\h:\d> '
 prompt_continuation = '->'
 
