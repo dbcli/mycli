@@ -1181,6 +1181,7 @@ class MyCli:
                 ],
                 tempfile_suffix=".sql",
                 completer=DynamicCompleter(lambda: self.completer),
+                complete_in_thread=True,
                 history=history,
                 auto_suggest=AutoSuggestFromHistory(),
                 complete_while_typing=complete_while_typing_filter,
