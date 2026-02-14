@@ -8,6 +8,7 @@ Features
 * Add prompt format strings for socket connections.
 * Optionally defer auto-completions until a minimum number of characters is typed.
 * Make the completion interface more responsive using a background thread.
+* Option to suppress control-d exit behavior.
 
 
 Bug Fixes
