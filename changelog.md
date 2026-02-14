@@ -4,6 +4,7 @@ Upcoming (TBD)
 Features
 --------
 * Add many CLI flags to startup tips.
+* Accept all special commands without trailing semicolons in multi-line mode.
 
 
 Bug Fixes

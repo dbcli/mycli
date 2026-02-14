@@ -3,6 +3,7 @@ from prompt_toolkit.enums import DEFAULT_BUFFER
 from prompt_toolkit.filters import Condition, Filter
 
 from mycli.packages.special import iocommands
+from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
 
 
 def cli_is_multiline(mycli) -> Filter:
@@ -21,38 +22,36 @@ def cli_is_multiline(mycli) -> Filter:
 def _multiline_exception(text: str) -> bool:
     orig = text
     text = text.strip()
+    first_word = text.split(' ')[0]
 
     # Multi-statement favorite query is a special case. Because there will
     # be a semicolon separating statements, we can't consider semicolon an
     # EOL. Let's consider an empty line an EOL instead.
-    if text.startswith("\\fs"):
+    if first_word.startswith("\\fs"):
         return orig.endswith("\n")
 
     return (
         # Special Command
-        text.startswith("\\")
-        or
-        # Delimiter declaration
-        text.lower().startswith("delimiter")
-        or
-        # Ended with the current delimiter (usually a semi-column)
-        text.endswith((
+        first_word.startswith("\\")
+        or text.endswith((
+            # Ended with the current delimiter (usually a semi-column)
             iocommands.get_current_delimiter(),
+            # or ended with certain commands
             "\\g",
             "\\G",
             r"\e",
             r"\clip",
         ))
         or
-        # Exit doesn't need semi-column`
-        (text == "exit")
+        # non-backslashed special commands such as "exit" or "help" don't need semicolon
+        first_word in SPECIAL_COMMANDS
         or
-        # Quit doesn't need semi-column
-        (text == "quit")
+        # uppercase variants accepted
+        first_word.lower() in SPECIAL_COMMANDS
         or
         # To all teh vim fans out there
-        (text == ":q")
+        (first_word == ":q")
         or
         # just a plain enter without any text
-        (text == "")
+        (first_word == "")
     )
