@@ -18,6 +18,7 @@ Internal
 * Prefer `yield from` over yielding in a loop.
 * Update `ruff` linter and CI.
 * Update `LICENSE.txt` for dates and GitHub detection.
+* Update key feature list in `README.md`, syncing with web.
 
 
 1.53.0 (2026/02/12)
