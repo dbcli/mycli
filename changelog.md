@@ -15,6 +15,7 @@ Bug Fixes
 Internal
 --------
 * Prefer `yield from` over yielding in a loop.
+* Update `ruff` linter and CI.
 
 
 1.53.0 (2026/02/12)
