@@ -39,9 +39,12 @@ class SQLCompleter(Completer):
         'GROUP BY',
         'ORDER BY',
         'JOIN',
+        'LEFT JOIN',
         'INSERT INTO',
         'LIKE',
         'LIMIT',
+        'WITH',
+        'EXPLAIN',
     ]
     keywords_raw = [
         x.upper()
