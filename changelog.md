@@ -10,6 +10,7 @@ Features
 Bug Fixes
 ---------
 * Correct parameterization for completion queries.
+* Grammar nits in help display.
 
 
 Internal

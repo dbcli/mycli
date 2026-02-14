@@ -196,6 +196,6 @@ def stub():
 
 if LLM_IMPORTED:
 
-    @special_command("\\llm", "\\ai", "Interrogate LLM.", arg_type=ArgType.RAW_QUERY, case_sensitive=True)
+    @special_command("\\llm", "\\ai", "Interrogate an LLM.", arg_type=ArgType.RAW_QUERY, case_sensitive=True)
     def llm_stub():
         raise NotImplementedError
