@@ -20,6 +20,7 @@ Internal
 * Update `LICENSE.txt` for dates and GitHub detection.
 * Update key feature list in `README.md`, syncing with web.
 * Sync prompt format string commentary with web.
+* Add a GitHub Actions workflow to run Codex review on pull requests.
 
 
 1.53.0 (2026/02/12)
