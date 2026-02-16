@@ -10,6 +10,7 @@ Bug Fixes
 Internal
 --------
 * Tune Codex reviews.
+* Refactor `is_inside_quotes()` detection.
 
 
 1.54.0 (2026/02/16)
