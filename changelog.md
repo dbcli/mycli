@@ -4,6 +4,7 @@ Upcoming (TBD)
 Bug Fixes
 --------
 * Don't offer autocomplete suggestions when the cursor is within a string.
+* Catch `getpwuid` error on unknown socket owner.
 
 
 1.54.0 (2026/02/16)
