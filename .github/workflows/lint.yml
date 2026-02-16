@@ -4,6 +4,11 @@ on:
   pull_request:
     paths-ignore:
       - '**.md'
+      - 'LICENSE.txt'
+      - 'AUTHORS.rst'
+      - 'SPONSORS.rst'
+      - 'doc/**/*.txt'
+      - 'doc/**/*.rst'
       - '**/AUTHORS'
       - '**/SPONSORS'
       - '**/TIPS'
