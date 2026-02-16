@@ -10,6 +10,7 @@ Features
 * Make the completion interface more responsive using a background thread.
 * Option to suppress control-d exit behavior.
 * Better support Truecolor terminals.
+* Ability to send app-layer keepalive pings to the server.
 
 
 Bug Fixes
