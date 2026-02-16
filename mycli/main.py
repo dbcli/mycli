@@ -1401,6 +1401,10 @@ class MyCli:
         string = string.replace("\\r", now.strftime("%I"))
         string = string.replace("\\s", now.strftime("%S"))
         string = string.replace("\\p", str(sqlexecute.port))
+        string = string.replace("\\j", os.path.basename(sqlexecute.socket or '(none)'))
+        string = string.replace("\\J", sqlexecute.socket or '(none)')
+        string = string.replace("\\k", os.path.basename(sqlexecute.socket or str(sqlexecute.port)))
+        string = string.replace("\\K", sqlexecute.socket or str(sqlexecute.port))
         string = string.replace("\\A", self.dsn_alias or "(none)")
         string = string.replace("\\_", " ")
         return string

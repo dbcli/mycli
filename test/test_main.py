@@ -338,6 +338,21 @@ def test_prompt_no_host_only_socket(executor):
 
 
 @dbtest
+def test_prompt_socket_overrides_port(executor):
+    mycli = MyCli()
+    mycli.prompt_format = "\\t \\u@\\h:\\k \\d> "
+    mycli.sqlexecute = SQLExecute
+    mycli.sqlexecute.server_info = ServerInfo.from_version_string("8.0.44-0ubuntu0.24.04.1")
+    mycli.sqlexecute.host = None
+    mycli.sqlexecute.socket = "/var/run/mysqld/mysqld.sock"
+    mycli.sqlexecute.user = "root"
+    mycli.sqlexecute.dbname = "mysql"
+    mycli.sqlexecute.port = "3306"
+    prompt = mycli.get_prompt(mycli.prompt_format)
+    assert prompt == "MySQL root@localhost:mysqld.sock mysql> "
+
+
+@dbtest
 def test_enable_show_warnings(executor):
     mycli = MyCli()
     mycli.register_special_commands()
@@ -596,6 +611,7 @@ def output(monkeypatch, terminal_size, testdata, explicit_pager, expect_pager):
         dbname = "test"
         server_info = ServerInfo.from_version_string("unknown")
         port = 0
+        socket = ''
 
         def server_type(self):
             return ["test"]
