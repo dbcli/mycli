@@ -7,6 +7,7 @@ Features
 * Accept all special commands without trailing semicolons in multi-line mode.
 * Add prompt format strings for socket connections.
 * Optionally defer auto-completions until a minimum number of characters is typed.
+* Make the completion interface more responsive using a background thread.
 
 
 Bug Fixes
