@@ -22,6 +22,7 @@ Internal
 * Update key feature list in `README.md`, syncing with web.
 * Sync prompt format string commentary with web.
 * Add a GitHub Actions workflow to run Codex review on pull requests.
+* Remove vim-style exit sequence which had no effect.
 
 
 1.53.0 (2026/02/12)
