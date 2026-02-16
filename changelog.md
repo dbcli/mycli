@@ -12,6 +12,7 @@ Features
 * Better support Truecolor terminals.
 * Ability to send app-layer keepalive pings to the server.
 * Add `WITH`, `EXPLAIN`, and `LEFT JOIN` to favorite keyword suggestions.
+* Let the Escape key cancel completion popups.
 
 
 Bug Fixes
