@@ -58,7 +58,7 @@ jobs:
 
     steps:
       - name: Post Codex review as PR comment
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           CODEX_FINAL_MESSAGE: ${{ needs.codex-review.outputs.final_message }}
         with:
