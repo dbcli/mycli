@@ -7,6 +7,11 @@ Bug Fixes
 * Catch `getpwuid` error on unknown socket owner.
 
 
+Internal
+--------
+* Tune Codex reviews.
+
+
 1.54.0 (2026/02/16)
 ==============
 
