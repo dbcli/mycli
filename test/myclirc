@@ -195,6 +195,10 @@ prompt_field_truncate = None
 prompt_section_truncate = None
 
 [keys]
+
+# possible values: exit, none
+control_d = exit
+
 # possible values: auto, fzf, reverse_isearch
 control_r = auto
 
