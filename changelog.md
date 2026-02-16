@@ -11,6 +11,7 @@ Features
 * Option to suppress control-d exit behavior.
 * Better support Truecolor terminals.
 * Ability to send app-layer keepalive pings to the server.
+* Add `WITH`, `EXPLAIN`, and `LEFT JOIN` to favorite keyword suggestions.
 
 
 Bug Fixes

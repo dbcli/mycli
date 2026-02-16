@@ -597,8 +597,8 @@ def test_deleted_keyword_completion(completer, complete_event):
     assert result == [
         Completion(text="exit", start_position=-3),
         Completion(text='exists', start_position=-3),
-        Completion(text='expire', start_position=-3),
         Completion(text='explain', start_position=-3),
+        Completion(text='expire', start_position=-3),
     ]
 
 
