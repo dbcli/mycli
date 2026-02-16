@@ -3,7 +3,11 @@
 import pytest
 
 from mycli.packages import special
-from mycli.packages.completion_engine import suggest_type
+from mycli.packages.completion_engine import (
+    _find_doubled_backticks,
+    is_inside_quotes,
+    suggest_type,
+)
 
 
 def sorted_dicts(dicts):
@@ -628,3 +632,81 @@ def test_quoted_where():
     text = "'where i=';"
     suggestions = suggest_type(text, text)
     assert suggestions == [{"type": "keyword"}]
+
+
+def test_find_doubled_backticks_none():
+    text = 'select `ab`'
+    assert _find_doubled_backticks(text) == []
+
+
+def test_find_doubled_backticks_some():
+    text = 'select `a``b`'
+    assert _find_doubled_backticks(text) == [9, 10]
+
+
+def test_inside_quotes_01():
+    text = "select '"
+    assert is_inside_quotes(text, len(text)) == 'single'
+
+
+def test_inside_quotes_02():
+    text = "select '\\'"
+    assert is_inside_quotes(text, len(text)) == 'single'
+
+
+def test_inside_quotes_03():
+    text = "select '`"
+    assert is_inside_quotes(text, len(text)) == 'single'
+
+
+def test_inside_quotes_04():
+    text = 'select "'
+    assert is_inside_quotes(text, len(text)) == 'double'
+
+
+def test_inside_quotes_05():
+    text = 'select "\\"\''
+    assert is_inside_quotes(text, len(text)) == 'double'
+
+
+def test_inside_quotes_06():
+    text = 'select ""'
+    assert is_inside_quotes(text, len(text)) is False
+
+
+@pytest.mark.parametrize(
+    ["text", "position", "expected"],
+    [
+        ("select `'",      len("select `'"),  'backtick'),
+        ("select `' ",     len("select `' "), 'backtick'),
+        ("select `'",      -1,  'backtick'),
+        ("select `'",      -2,  False),
+        ('select `ab` ',   -1,  False),
+        ('select `ab` ',   -2,  'backtick'),
+        ('select `a``b` ', -1,  False),
+        ('select `a``b` ', -2,  'backtick'),
+        ('select `a``b` ', -3,  'backtick'),
+        ('select `a``b` ', -4,  'backtick'),
+        ('select `a``b` ', -5,  'backtick'),
+        ('select `a``b` ', -6,  'backtick'),
+        ('select `a``b` ', -7,  False),
+    ]
+)  # fmt: skip
+def test_inside_quotes_backtick_01(text, position, expected):
+    assert is_inside_quotes(text, position) == expected
+
+
+def test_inside_quotes_backtick_02():
+    """Empty backtick pairs are treated as a doubled (escaped) backtick.
+    This is okay because it is invalid SQL, and we don't have to complete on it.
+    """
+    text = 'select ``'
+    assert is_inside_quotes(text, -1) is False
+
+
+def test_inside_quotes_backtick_03():
+    """Empty backtick pairs are treated as a doubled (escaped) backtick.
+    This is okay because it is invalid SQL, and we don't have to complete on it.
+    """
+    text = 'select ``'
+    assert is_inside_quotes(text, -2) is False
