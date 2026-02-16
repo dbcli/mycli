@@ -722,7 +722,10 @@ class MyCli:
 
         try:
             if not WIN and socket:
-                socket_owner = getpwuid(os.stat(socket).st_uid).pw_name
+                try:
+                    socket_owner = getpwuid(os.stat(socket).st_uid).pw_name
+                except KeyError:
+                    socket_owner = '<unknown>'
                 self.echo(f"Connecting to socket {socket}, owned by user {socket_owner}", err=True)
                 try:
                     _connect()
