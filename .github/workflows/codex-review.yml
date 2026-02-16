@@ -6,7 +6,7 @@ on:
 
 jobs:
   codex-review:
-    if: github.event.pull_request.draft == false or (github.event.action == 'labeled' and contains(github.event.pull_request.labels.*.name, 'codex'))
+    if: github.event.pull_request.draft == false or contains(github.event.pull_request.labels.*.name, 'codex')
     runs-on: ubuntu-latest
     permissions:
       contents: read
