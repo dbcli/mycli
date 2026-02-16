@@ -2,11 +2,11 @@ name: Codex Review
 
 on:
   pull_request_target:
-    types: [opened, reopened, ready_for_review]
+    types: [opened, labeled, reopened, ready_for_review]
 
 jobs:
   codex-review:
-    if: github.event.pull_request.draft == false
+    if: github.event.pull_request.draft == false or (github.event.action == 'labeled' and contains(github.event.pull_request.labels.*.name, 'codex'))
     runs-on: ubuntu-latest
     permissions:
       contents: read
