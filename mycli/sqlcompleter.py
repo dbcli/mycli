@@ -995,12 +995,6 @@ class SQLCompleter(Completer):
 
         completions: list[tuple[str, int]] = []
 
-        def empty_generator():
-            yield from []
-
-        if re.match(r'^[\d\.]', text):
-            return empty_generator()
-
         if fuzzy:
             regex = ".{0,3}?".join(map(re.escape, text))
             pat = re.compile(f'({regex})')

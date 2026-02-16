@@ -695,3 +695,38 @@ def test_source_eager_completion(completer, complete_event):
         os.remove(script_filename)
     if not success:
         raise AssertionError(error)
+
+
+def test_string_no_completion(completer, complete_event):
+    text = 'select "json'
+    position = len(text)
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    assert result == []
+
+
+def test_string_no_completion_single_quote(completer, complete_event):
+    text = "select 'json"
+    position = len(text)
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    assert result == []
+
+
+def test_string_no_completion_spaces(completer, complete_event):
+    text = 'select "nocomplete json'
+    position = len(text)
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    assert result == []
+
+
+def test_string_no_completion_spaces_inner_1(completer, complete_event):
+    text = 'select "json nocomplete'
+    position = len('select "json')
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    assert result == []
+
+
+def test_string_no_completion_spaces_inner_2(completer, complete_event):
+    text = 'select "json nocomplete'
+    position = len('select "json ')
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    assert result == []
