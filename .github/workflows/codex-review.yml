@@ -3,6 +3,14 @@ name: Codex Review
 on:
   pull_request_target:
     types: [opened, labeled, reopened, ready_for_review]
+    paths-ignore:
+      - '**.md'
+      - '**.rst'
+      - 'LICENSE.txt'
+      - 'doc/**/*.txt'
+      - '**/AUTHORS'
+      - '**/SPONSORS'
+      - '**/TIPS'
 
 jobs:
   codex-review:
