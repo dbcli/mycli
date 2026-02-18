@@ -45,8 +45,12 @@ def _is_where_or_having(token: Token | None) -> bool:
 
 def _find_doubled_backticks(text: str) -> list[int]:
     length = len(text)
-    doubled_backticks: list[int] = []
+    doubled_backtick_positions: list[int] = []
     backtick = '`'
+    two_backticks = backtick + backtick
+
+    if two_backticks not in text:
+        return doubled_backtick_positions
 
     for index in range(0, length):
         ch = text[index]
@@ -54,13 +58,13 @@ def _find_doubled_backticks(text: str) -> list[int]:
             index += 1
             continue
         if index + 1 < length and text[index + 1] == backtick:
-            doubled_backticks.append(index)
-            doubled_backticks.append(index + 1)
+            doubled_backtick_positions.append(index)
+            doubled_backtick_positions.append(index + 1)
             index += 2
             continue
         index += 1
 
-    return doubled_backticks
+    return doubled_backtick_positions
 
 
 @functools.lru_cache(maxsize=128)
@@ -76,8 +80,7 @@ def is_inside_quotes(text: str, pos: int) -> Literal[False, 'single', 'double', 
     backslash = '\\'
 
     # scanning the string twice seems to be needed to handle doubled backticks
-    if backtick in text:
-        doubled_backtick_positions = _find_doubled_backticks(text)
+    doubled_backtick_positions = _find_doubled_backticks(text)
 
     length = len(text)
     if pos < 0:

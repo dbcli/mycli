@@ -752,3 +752,209 @@ def test_string_no_completion_spaces_inner_2(completer, complete_event):
     position = len('select "json ')
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
     assert result == []
+
+
+def test_backticked_column_completion(completer, complete_event):
+    text = 'select `Tim'
+    position = len(text)
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    assert result == [
+        # todo it would be nicer if the column names sorted to the top
+        Completion(text='`time`', start_position=-4),
+        Completion(text='`timediff`', start_position=-4),
+        Completion(text='`timestamp`', start_position=-4),
+        Completion(text='`time_format`', start_position=-4),
+        Completion(text='`time_to_sec`', start_position=-4),
+        Completion(text='`Time_zone_id`', start_position=-4),
+        Completion(text='`timestampadd`', start_position=-4),
+        Completion(text='`timestampdiff`', start_position=-4),
+        Completion(text='`datetime`', start_position=-4),
+        Completion(text='`optimize`', start_position=-4),
+        Completion(text='`optimizer_costs`', start_position=-4),
+        Completion(text='`utc_time`', start_position=-4),
+        Completion(text='`utc_timestamp`', start_position=-4),
+        Completion(text='`current_time`', start_position=-4),
+        Completion(text='`current_timestamp`', start_position=-4),
+        Completion(text='`localtime`', start_position=-4),
+        Completion(text='`localtimestamp`', start_position=-4),
+        Completion(text='`password_lock_time`', start_position=-4),
+    ]
+
+
+def test_backticked_column_completion_component(completer, complete_event):
+    text = 'select `com'
+    position = len(text)
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    assert result == [
+        # todo it would be nicer if "comment" sorted to the top because it is a column name,
+        #      and because it is a reserved word
+        Completion(text='`commit`', start_position=-4),
+        Completion(text='`comment`', start_position=-4),
+        Completion(text='`compact`', start_position=-4),
+        Completion(text='`compress`', start_position=-4),
+        Completion(text='`committed`', start_position=-4),
+        Completion(text='`component`', start_position=-4),
+        Completion(text='`completion`', start_position=-4),
+        Completion(text='`compressed`', start_position=-4),
+        Completion(text='`compression`', start_position=-4),
+        Completion(text='`column`', start_position=-4),
+        Completion(text='`column_format`', start_position=-4),
+        Completion(text='`column_name`', start_position=-4),
+        Completion(text='`columns`', start_position=-4),
+        Completion(text='`second_microsecond`', start_position=-4),
+        Completion(text='`uncommitted`', start_position=-4),
+    ]
+
+
+def test_backticked_column_completion_two_character(completer, complete_event):
+    text = 'select `f'
+    position = len(text)
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    assert result == [
+        # todo it would be nicer if the column name "first_name" sorted to the top
+        Completion(text='`for`', start_position=-2),
+        Completion(text='`from`', start_position=-2),
+        Completion(text='`fast`', start_position=-2),
+        Completion(text='`file`', start_position=-2),
+        Completion(text='`full`', start_position=-2),
+        Completion(text='`field`', start_position=-2),
+        Completion(text='`floor`', start_position=-2),
+        Completion(text='`fixed`', start_position=-2),
+        Completion(text='`float`', start_position=-2),
+        Completion(text='`false`', start_position=-2),
+        Completion(text='`fetch`', start_position=-2),
+        Completion(text='`first`', start_position=-2),
+        Completion(text='`flush`', start_position=-2),
+        Completion(text='`force`', start_position=-2),
+        Completion(text='`found`', start_position=-2),
+        Completion(text='`float4`', start_position=-2),
+        Completion(text='`float8`', start_position=-2),
+        Completion(text='`factor`', start_position=-2),
+        Completion(text='`faults`', start_position=-2),
+        Completion(text='`fields`', start_position=-2),
+        Completion(text='`filter`', start_position=-2),
+        Completion(text='`finish`', start_position=-2),
+        Completion(text='`format`', start_position=-2),
+        Completion(text='`follows`', start_position=-2),
+        Completion(text='`foreign`', start_position=-2),
+        Completion(text='`fulltext`', start_position=-2),
+        Completion(text='`function`', start_position=-2),
+        Completion(text='`from_days`', start_position=-2),
+        Completion(text='`following`', start_position=-2),
+        Completion(text='`first_name`', start_position=-2),
+        Completion(text='`found_rows`', start_position=-2),
+        Completion(text='`find_in_set`', start_position=-2),
+        Completion(text='`from_base64`', start_position=-2),
+        Completion(text='`first_value`', start_position=-2),
+        Completion(text='`foreign key`', start_position=-2),
+        Completion(text='`format_bytes`', start_position=-2),
+        Completion(text='`from_unixtime`', start_position=-2),
+        Completion(text='`file_block_size`', start_position=-2),
+        Completion(text='`format_pico_time`', start_position=-2),
+        Completion(text='`failed_login_attempts`', start_position=-2),
+        Completion(text='`left join`', start_position=-2),
+        Completion(text='`after`', start_position=-2),
+        Completion(text='`before`', start_position=-2),
+        Completion(text='`default`', start_position=-2),
+        Completion(text='`default_auth`', start_position=-2),
+        Completion(text='`definer`', start_position=-2),
+        Completion(text='`definition`', start_position=-2),
+        Completion(text='`enforced`', start_position=-2),
+        Completion(text='`if`', start_position=-2),
+        Completion(text='`infile`', start_position=-2),
+        Completion(text='`left`', start_position=-2),
+        Completion(text='`logfile`', start_position=-2),
+        Completion(text='`of`', start_position=-2),
+        Completion(text='`off`', start_position=-2),
+        Completion(text='`offset`', start_position=-2),
+        Completion(text='`outfile`', start_position=-2),
+        Completion(text='`profile`', start_position=-2),
+        Completion(text='`profiles`', start_position=-2),
+        Completion(text='`reference`', start_position=-2),
+        Completion(text='`references`', start_position=-2),
+    ]
+
+
+def test_backticked_column_completion_three_character(completer, complete_event):
+    text = 'select `fi'
+    position = len(text)
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    assert result == [
+        # todo it would be nicer if the column name "first_name" sorted to the top
+        Completion(text='`file`', start_position=-3),
+        Completion(text='`field`', start_position=-3),
+        Completion(text='`fixed`', start_position=-3),
+        Completion(text='`first`', start_position=-3),
+        Completion(text='`fields`', start_position=-3),
+        Completion(text='`filter`', start_position=-3),
+        Completion(text='`finish`', start_position=-3),
+        Completion(text='`first_name`', start_position=-3),
+        Completion(text='`find_in_set`', start_position=-3),
+        Completion(text='`first_value`', start_position=-3),
+        Completion(text='`file_block_size`', start_position=-3),
+        Completion(text='`definer`', start_position=-3),
+        Completion(text='`definition`', start_position=-3),
+        Completion(text='`failed_login_attempts`', start_position=-3),
+        Completion(text='`foreign`', start_position=-3),
+        Completion(text='`infile`', start_position=-3),
+        Completion(text='`logfile`', start_position=-3),
+        Completion(text='`outfile`', start_position=-3),
+        Completion(text='`profile`', start_position=-3),
+        Completion(text='`profiles`', start_position=-3),
+        Completion(text='`foreign key`', start_position=-3),
+    ]
+
+
+def test_backticked_column_completion_four_character(completer, complete_event):
+    text = 'select `fir'
+    position = len(text)
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    assert result == [
+        # todo it would be nicer if the column name "first_name" sorted to the top
+        Completion(text='`first`', start_position=-4),
+        Completion(text='`first_name`', start_position=-4),
+        Completion(text='`first_value`', start_position=-4),
+        Completion(text='`definer`', start_position=-4),
+        Completion(text='`filter`', start_position=-4),
+    ]
+
+
+def test_backticked_table_completion_required(completer, complete_event):
+    text = 'select ABC from `rév'
+    position = len(text)
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    assert result == [
+        Completion(text='`réveillé`', start_position=-4),
+    ]
+
+
+def test_backticked_table_completion_not_required(completer, complete_event):
+    text = 'select * from `t'
+    position = len(text)
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    assert result == [
+        Completion(text='`test`', start_position=-2),
+        Completion(text='`test 2`', start_position=-2),
+        Completion(text='`time_zone`', start_position=-2),
+        Completion(text='`time_zone_name`', start_position=-2),
+        Completion(text='`time_zone_transition`', start_position=-2),
+        Completion(text='`time_zone_leap_second`', start_position=-2),
+        Completion(text='`time_zone_transition_type`', start_position=-2),
+    ]
+
+
+def test_string_no_completion_backtick(completer, complete_event):
+    text = 'select * from "`t'
+    position = len(text)
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    assert result == []
+
+
+# todo this shouldn't suggest anything but the space resets the logic
+# and it completes on "bar" alone
+@pytest.mark.xfail
+def test_backticked_no_completion_spaces(completer, complete_event):
+    text = 'select * from `nocomplete bar'
+    position = len(text)
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    assert result == []
