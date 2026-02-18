@@ -5,6 +5,7 @@ Bug Fixes
 ---------
 * Watch command now returns correct time when ran as part of a multi-part query (#1565)
 * Don't diagnose free-entry sections such as `[favorite_queries]` in `--checkup`.
+* When accepting a filename completion, fill in leading `./` if given.
 
 
 1.54.1 (2026/02/17)
