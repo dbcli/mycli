@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Bug Fixes
+---------
+* Watch command now returns correct time when ran as part of a multi-part query (#1565)
+
+
 1.54.1 (2026/02/17)
 ==============
 
