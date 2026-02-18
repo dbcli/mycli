@@ -900,7 +900,7 @@ class MyCli:
 
         def output_res(results: Generator[SQLResult], start: float) -> None:
             nonlocal mutating
-            result_count = 0
+            result_count = watch_count = 0
             for result in results:
                 title = result.title
                 cur = result.results
@@ -915,13 +915,15 @@ class MyCli:
                 # If this is a watch query, offset the start time on the 2nd+ iteration
                 # to account for the sleep duration
                 if command is not None and command["name"] == "watch":
-                    if result_count > 0:
+                    if watch_count > 0:
                         try:
                             watch_seconds = float(command["seconds"])
                             start += watch_seconds
                         except ValueError as e:
                             self.echo(f"Invalid watch sleep time provided ({e}).", err=True, fg="red")
                             sys.exit(1)
+                    else:
+                        watch_count += 1
                 if is_select(status) and isinstance(cur, Cursor) and cur.rowcount > threshold:
                     self.echo(
                         f"The result set has more than {threshold} rows.",
