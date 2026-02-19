@@ -11,7 +11,7 @@ from prompt_toolkit.completion.base import Document
 from pygments.lexers._mysql_builtins import MYSQL_DATATYPES, MYSQL_FUNCTIONS, MYSQL_KEYWORDS
 import rapidfuzz
 
-from mycli.packages.completion_engine import suggest_type
+from mycli.packages.completion_engine import is_inside_quotes, suggest_type
 from mycli.packages.filepaths import complete_path, parse_path, suggest_path
 from mycli.packages.parseutils import extract_columns_from_select, last_word
 from mycli.packages.special import llm
@@ -810,13 +810,6 @@ class SQLCompleter(Completer):
 
         return name
 
-    def unescape_name(self, name: str) -> str:
-        """Unquote a string."""
-        if name and name[0] == '"' and name[-1] == '"':
-            name = name[1:-1]
-
-        return name
-
     def escaped_names(self, names: Collection[str]) -> list[str]:
         return [self.escape_name(name) for name in names]
 
@@ -974,6 +967,7 @@ class SQLCompleter(Completer):
         start_only: bool = False,
         fuzzy: bool = True,
         casing: str | None = None,
+        text_before_cursor: str = '',
     ) -> Generator[tuple[str, int], None, None]:
         """Find completion matches for the given text.
 
@@ -995,13 +989,26 @@ class SQLCompleter(Completer):
 
         completions: list[tuple[str, int]] = []
 
+        def maybe_quote_identifier(item: str) -> str:
+            if item.startswith('`'):
+                return item
+            if item == '*':
+                return item
+            return '`' + item + '`'
+
+        # checking text.startswith() first is an optimization; is_inside_quotes() covers more cases
+        if text.startswith('`') or is_inside_quotes(text_before_cursor, len(text_before_cursor)) == 'backtick':
+            quoted_collection: Collection[Any] = [maybe_quote_identifier(x) if isinstance(x, str) else x for x in collection]
+        else:
+            quoted_collection = collection
+
         if fuzzy:
             regex = ".{0,3}?".join(map(re.escape, text))
             pat = re.compile(f'({regex})')
             under_words_text = [x for x in text.split('_') if x]
             case_words_text = re.split(case_change_pat, last)
 
-            for item in collection:
+            for item in quoted_collection:
                 r = pat.search(item.lower())
                 if r:
                     completions.append((item, Fuzziness.REGEX))
@@ -1032,7 +1039,7 @@ class SQLCompleter(Completer):
             if len(text) >= 4:
                 rapidfuzz_matches = rapidfuzz.process.extract(
                     text,
-                    collection,
+                    quoted_collection,
                     scorer=rapidfuzz.fuzz.WRatio,
                     # todo: maybe make our own processor which only does case-folding
                     # because underscores are valuable info
@@ -1050,7 +1057,7 @@ class SQLCompleter(Completer):
 
         else:
             match_end_limit = len(text) if start_only else None
-            for item in collection:
+            for item in quoted_collection:
                 match_point = item.lower().find(text, 0, match_end_limit)
                 if match_point >= 0:
                     completions.append((item, Fuzziness.PERFECT))
@@ -1083,7 +1090,13 @@ class SQLCompleter(Completer):
         # If smart_completion is off then match any word that starts with
         # 'word_before_cursor'.
         if not smart_completion:
-            matches = self.find_matches(word_before_cursor, self.all_completions, start_only=True, fuzzy=False)
+            matches = self.find_matches(
+                word_before_cursor,
+                self.all_completions,
+                start_only=True,
+                fuzzy=False,
+                text_before_cursor=document.text_before_cursor,
+            )
             return (Completion(x[0], -len(text_for_len)) for x in matches)
 
         completions: list[tuple[str, int, int]] = []
@@ -1110,13 +1123,21 @@ class SQLCompleter(Completer):
                     # showing all columns. So make them unique and sort them.
                     scoped_cols = sorted(set(scoped_cols), key=lambda s: s.strip('`'))
 
-                cols = self.find_matches(word_before_cursor, scoped_cols)
+                cols = self.find_matches(
+                    word_before_cursor,
+                    scoped_cols,
+                    text_before_cursor=document.text_before_cursor,
+                )
                 completions.extend([(*x, rank) for x in cols])
 
             elif suggestion["type"] == "function":
                 # suggest user-defined functions using substring matching
                 funcs = self.populate_schema_objects(suggestion["schema"], "functions")
-                user_funcs = self.find_matches(word_before_cursor, funcs)
+                user_funcs = self.find_matches(
+                    word_before_cursor,
+                    funcs,
+                    text_before_cursor=document.text_before_cursor,
+                )
                 completions.extend([(*x, rank) for x in user_funcs])
 
                 # suggest hardcoded functions using startswith matching only if
@@ -1125,13 +1146,22 @@ class SQLCompleter(Completer):
                 # eg: SELECT * FROM users u WHERE u.
                 if not suggestion["schema"]:
                     predefined_funcs = self.find_matches(
-                        word_before_cursor, self.functions, start_only=True, fuzzy=False, casing=self.keyword_casing
+                        word_before_cursor,
+                        self.functions,
+                        start_only=True,
+                        fuzzy=False,
+                        casing=self.keyword_casing,
+                        text_before_cursor=document.text_before_cursor,
                     )
                     completions.extend([(*x, rank) for x in predefined_funcs])
 
             elif suggestion["type"] == "procedure":
                 procs = self.populate_schema_objects(suggestion["schema"], "procedures")
-                procs_m = self.find_matches(word_before_cursor, procs)
+                procs_m = self.find_matches(
+                    word_before_cursor,
+                    procs,
+                    text_before_cursor=document.text_before_cursor,
+                )
                 completions.extend([(*x, rank) for x in procs_m])
 
             elif suggestion["type"] == "table":
@@ -1144,53 +1174,107 @@ class SQLCompleter(Completer):
                     tables = self.populate_schema_objects(suggestion["schema"], "tables", columns)
                 else:
                     tables = self.populate_schema_objects(suggestion["schema"], "tables")
-                tables_m = self.find_matches(word_before_cursor, tables)
+                tables_m = self.find_matches(
+                    word_before_cursor,
+                    tables,
+                    text_before_cursor=document.text_before_cursor,
+                )
                 completions.extend([(*x, rank) for x in tables_m])
 
             elif suggestion["type"] == "view":
                 views = self.populate_schema_objects(suggestion["schema"], "views")
-                views_m = self.find_matches(word_before_cursor, views)
+                views_m = self.find_matches(
+                    word_before_cursor,
+                    views,
+                    text_before_cursor=document.text_before_cursor,
+                )
                 completions.extend([(*x, rank) for x in views_m])
 
             elif suggestion["type"] == "alias":
                 aliases = suggestion["aliases"]
-                aliases_m = self.find_matches(word_before_cursor, aliases)
+                aliases_m = self.find_matches(
+                    word_before_cursor,
+                    aliases,
+                    text_before_cursor=document.text_before_cursor,
+                )
                 completions.extend([(*x, rank) for x in aliases_m])
 
             elif suggestion["type"] == "database":
-                dbs_m = self.find_matches(word_before_cursor, self.databases)
+                dbs_m = self.find_matches(
+                    word_before_cursor,
+                    self.databases,
+                    text_before_cursor=document.text_before_cursor,
+                )
                 completions.extend([(*x, rank) for x in dbs_m])
 
             elif suggestion["type"] == "keyword":
-                keywords_m = self.find_matches(word_before_cursor, self.keywords, casing=self.keyword_casing)
+                keywords_m = self.find_matches(
+                    word_before_cursor,
+                    self.keywords,
+                    casing=self.keyword_casing,
+                    text_before_cursor=document.text_before_cursor,
+                )
                 completions.extend([(*x, rank) for x in keywords_m])
 
             elif suggestion["type"] == "show":
                 show_items_m = self.find_matches(
-                    word_before_cursor, self.show_items, start_only=False, fuzzy=True, casing=self.keyword_casing
+                    word_before_cursor,
+                    self.show_items,
+                    start_only=False,
+                    fuzzy=True,
+                    casing=self.keyword_casing,
+                    text_before_cursor=document.text_before_cursor,
                 )
                 completions.extend([(*x, rank) for x in show_items_m])
 
             elif suggestion["type"] == "change":
-                change_items_m = self.find_matches(word_before_cursor, self.change_items, start_only=False, fuzzy=True)
+                change_items_m = self.find_matches(
+                    word_before_cursor,
+                    self.change_items,
+                    start_only=False,
+                    fuzzy=True,
+                    text_before_cursor=document.text_before_cursor,
+                )
                 completions.extend([(*x, rank) for x in change_items_m])
 
             elif suggestion["type"] == "user":
-                users_m = self.find_matches(word_before_cursor, self.users, start_only=False, fuzzy=True)
+                users_m = self.find_matches(
+                    word_before_cursor,
+                    self.users,
+                    start_only=False,
+                    fuzzy=True,
+                    text_before_cursor=document.text_before_cursor,
+                )
                 completions.extend([(*x, rank) for x in users_m])
 
             elif suggestion["type"] == "special":
-                special_m = self.find_matches(word_before_cursor, self.special_commands, start_only=True, fuzzy=False)
+                special_m = self.find_matches(
+                    word_before_cursor,
+                    self.special_commands,
+                    start_only=True,
+                    fuzzy=False,
+                    text_before_cursor=document.text_before_cursor,
+                )
                 # specials are special, and go early in the candidates, first if possible
                 completions.extend([(*x, 0) for x in special_m])
 
             elif suggestion["type"] == "favoritequery":
                 if hasattr(FavoriteQueries, 'instance') and hasattr(FavoriteQueries.instance, 'list'):
-                    queries_m = self.find_matches(word_before_cursor, FavoriteQueries.instance.list(), start_only=False, fuzzy=True)
+                    queries_m = self.find_matches(
+                        word_before_cursor,
+                        FavoriteQueries.instance.list(),
+                        start_only=False,
+                        fuzzy=True,
+                        text_before_cursor=document.text_before_cursor,
+                    )
                     completions.extend([(*x, rank) for x in queries_m])
 
             elif suggestion["type"] == "table_format":
-                formats_m = self.find_matches(word_before_cursor, self.table_formats)
+                formats_m = self.find_matches(
+                    word_before_cursor,
+                    self.table_formats,
+                    text_before_cursor=document.text_before_cursor,
+                )
                 completions.extend([(*x, rank) for x in formats_m])
 
             elif suggestion["type"] == "file_name":
@@ -1210,6 +1294,7 @@ class SQLCompleter(Completer):
                     possible_entries,
                     start_only=False,
                     fuzzy=True,
+                    text_before_cursor=document.text_before_cursor,
                 )
                 completions.extend([(*x, rank) for x in subcommands_m])
             elif suggestion["type"] == "enum_value":
@@ -1220,7 +1305,14 @@ class SQLCompleter(Completer):
                 )
                 if enum_values:
                     quoted_values = [self._quote_sql_string(value) for value in enum_values]
-                    completions = [(*x, rank) for x in self.find_matches(word_before_cursor, quoted_values)]
+                    completions = [
+                        (*x, rank)
+                        for x in self.find_matches(
+                            word_before_cursor,
+                            quoted_values,
+                            text_before_cursor=document.text_before_cursor,
+                        )
+                    ]
                     break
 
         def completion_sort_key(item: tuple[str, int, int], text_for_len: str):
