@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Generator
+from typing import Any, Generator, Literal
 
 import sqlglot
 import sqlparse
@@ -34,7 +34,15 @@ def is_valid_connection_scheme(text: str) -> tuple[bool, str | None]:
         return True, None
 
 
-def last_word(text: str, include: str = "alphanum_underscore") -> str:
+def last_word(
+    text: str,
+    include: Literal[
+        'alphanum_underscore',
+        'many_punctuations',
+        'most_punctuations',
+        'all_punctuations',
+    ] = 'alphanum_underscore',
+) -> str:
     r"""
     Find the last word in a sentence.
 

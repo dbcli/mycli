@@ -631,13 +631,11 @@ def dummy_list_path(dir_name):
 @patch("mycli.packages.filepaths.list_path", new=dummy_list_path)
 @pytest.mark.parametrize(
     "text,expected",
-    # it may be that the cursor positions should be 0, but the position
-    # info is currently being dropped in find_files()
     [
         ('source ', [('/', 0), ('~', 0), ('.', 0), ('..', 0)]),
-        ("source /", [("dir1", -1), ("file1.sql", -1), ("file2.sql", -1)]),
-        ("source /dir1/", [("subdir1", -6), ("subfile1.sql", -6), ("subfile2.sql", -6)]),
-        ("source /dir1/subdir1/", [("lastfile.sql", -14)]),
+        ("source /", [("dir1", 0), ("file1.sql", 0), ("file2.sql", 0)]),
+        ("source /dir1/", [("subdir1", 0), ("subfile1.sql", 0), ("subfile2.sql", 0)]),
+        ("source /dir1/subdir1/", [("lastfile.sql", 0)]),
     ],
 )
 def test_file_name_completion(completer, complete_event, text, expected):
@@ -675,6 +673,30 @@ def test_create_table_like_completion(completer, complete_event):
 
 def test_source_eager_completion(completer, complete_event):
     text = "source sc"
+    position = len(text)
+    script_filename = 'script_for_test_suite.sql'
+    f = open(script_filename, 'w')
+    f.close()
+    special.register_special_command(..., 'source', '\\. filename', 'Execute commands from file.', aliases=['\\.'])
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    success = True
+    error = 'unknown'
+    try:
+        assert [x.text for x in result] == [
+            script_filename,
+            'screenshots/',
+        ]
+    except AssertionError as e:
+        success = False
+        error = e
+    if os.path.exists(script_filename):
+        os.remove(script_filename)
+    if not success:
+        raise AssertionError(error)
+
+
+def test_source_leading_dot_suggestions_completion(completer, complete_event):
+    text = "source ./sc"
     position = len(text)
     script_filename = 'script_for_test_suite.sql'
     f = open(script_filename, 'w')

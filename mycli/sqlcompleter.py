@@ -1075,6 +1075,7 @@ class SQLCompleter(Completer):
         word_before_cursor = document.get_word_before_cursor(WORD=True)
         last_for_len = last_word(word_before_cursor, include="most_punctuations")
         text_for_len = last_for_len.lower()
+        last_for_len_paths = last_word(word_before_cursor, include='alphanum_underscore')
 
         if smart_completion is None:
             smart_completion = self.smart_completion
@@ -1088,6 +1089,7 @@ class SQLCompleter(Completer):
         completions: list[tuple[str, int, int]] = []
         suggestions = suggest_type(document.text, document.text_before_cursor)
         rigid_sort = False
+        length_based_on_path = False
 
         rank = 0
         for suggestion in suggestions:
@@ -1196,6 +1198,7 @@ class SQLCompleter(Completer):
                 completions.extend([(*x, rank) for x in file_names_m])
                 # for filenames we _really_ want directories to go last
                 rigid_sort = True
+                length_based_on_path = True
             elif suggestion["type"] == "llm":
                 if not word_before_cursor:
                     tokens = document.text.split()[1:]
@@ -1238,7 +1241,10 @@ class SQLCompleter(Completer):
             sorted_completions = sorted(completions, key=lambda item: completion_sort_key(item, text_for_len.lower()))
             uniq_completions_str = dict.fromkeys(x[0] for x in sorted_completions)
 
-        return (Completion(x, -len(text_for_len)) for x in uniq_completions_str)
+        if length_based_on_path:
+            return (Completion(x, -len(last_for_len_paths)) for x in uniq_completions_str)
+        else:
+            return (Completion(x, -len(text_for_len)) for x in uniq_completions_str)
 
     def find_files(self, word: str) -> Generator[tuple[str, int], None, None]:
         """Yield matching directory or file names.
