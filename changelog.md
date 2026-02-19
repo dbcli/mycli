@@ -12,6 +12,10 @@ Bug Fixes
 * Don't diagnose free-entry sections such as `[favorite_queries]` in `--checkup`.
 * When accepting a filename completion, fill in leading `./` if given.
 
+Internal
+--------
+* Bump `cli_helpers` to non-yanked version.
+
 
 1.54.1 (2026/02/17)
 ==============
