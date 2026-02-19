@@ -2395,6 +2395,14 @@ def do_config_checkup(mycli: MyCli) -> None:
                 if section_name == 'colors' and item_name.startswith('sql.'):
                     # these are commented out in the package myclirc
                     continue
+                if section_name in [
+                    'favorite_queries',
+                    'init-commands',
+                    'alias_dsn',
+                    'alias_dsn.init-commands',
+                ]:
+                    # these are free-entry sections, so a comparison per item is not meaningful
+                    continue
                 transition_key = f'{indent}[{section_name}]\n{indent}{item_name}'
                 if transition_key in transitions:
                     continue
