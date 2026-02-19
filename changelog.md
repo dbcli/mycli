@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Features
+---------
+* `--checkup` now checks for external executables.
+
+
 Bug Fixes
 ---------
 * Watch command now returns correct time when ran as part of a multi-part query (#1565)

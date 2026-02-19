@@ -2356,6 +2356,16 @@ def do_config_checkup(mycli: MyCli) -> None:
     did_output_unsupported = False
     did_output_deprecated = False
 
+    print('\n### External executables:\n')
+    for executable in [
+        'less',
+        'fzf',
+    ]:
+        if shutil.which(executable):
+            print(f'The "{executable}" executable was found — good!')
+        else:
+            print(f'The recommended "{executable}" executable was not found — some functionality will suffer.')
+
     indent = '    '
     transitions = {
         f'{indent}[main]\n{indent}default_character_set': f'{indent}[connection]\n{indent}default_character_set',
@@ -2364,7 +2374,8 @@ def do_config_checkup(mycli: MyCli) -> None:
     reverse_transitions = {v: k for k, v in transitions.items()}
 
     if not list(mycli.config.keys()):
-        print('\nThe local ~/,myclirc is missing or empty.\n')
+        print('\n### Missing file:\n')
+        print('The local ~/,myclirc is missing or empty.\n')
         did_output_missing = True
     else:
         for section_name in mycli.config:
@@ -2432,7 +2443,8 @@ def do_config_checkup(mycli: MyCli) -> None:
             'For more info on supported features, see the commentary and defaults at:\n\n    * https://github.com/dbcli/mycli/blob/main/mycli/myclirc\n'
         )
     else:
-        print('User configuration all up to date!')
+        print('\n### Configuration:\n')
+        print('User configuration all up to date!\n')
 
 
 if __name__ == "__main__":
