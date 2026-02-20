@@ -16,7 +16,7 @@ the --throttle option helps slow down queries in batch mode!
 
 the --password-file option can be used with a FIFO to avoid saving creds to a file!
 
-the --charset option sets the character set for a single session!
+the --character-set option sets the character set for a single session!
 
 the --unbuffered flag can save memory when in batch mode!
 

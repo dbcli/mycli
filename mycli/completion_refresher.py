@@ -65,7 +65,7 @@ class CompletionRefresher:
             e.host,
             e.port,
             e.socket,
-            e.charset,
+            e.character_set,
             e.local_infile,
             e.ssl,
             e.ssh_user,

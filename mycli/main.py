@@ -532,7 +532,7 @@ class MyCli:
         host: str | None = "",
         port: str | int | None = "",
         socket: str | None = "",
-        charset: str | None = "",
+        character_set: str | None = "",
         local_infile: bool = False,
         ssl: dict[str, Any] | None = None,
         ssh_user: str | None = "",
@@ -590,17 +590,17 @@ class MyCli:
         # default_character_set doesn't check in self.config_without_package_defaults, because the
         # option already existed before the my.cnf deprecation.  For the same reason,
         # default_character_set can be in [connection] or [main].
-        if not charset:
+        if not character_set:
             if 'default_character_set' in self.config['connection']:
-                charset = self.config['connection']['default_character_set']
+                character_set = self.config['connection']['default_character_set']
             elif 'default_character_set' in self.config['main']:
-                charset = self.config['main']['default_character_set']
+                character_set = self.config['main']['default_character_set']
             elif 'default_character_set' in cnf:
-                charset = cnf['default_character_set']
+                character_set = cnf['default_character_set']
             elif 'default-character-set' in cnf:
-                charset = cnf['default-character-set']
-        if not charset:
-            charset = 'utf8mb4'
+                character_set = cnf['default-character-set']
+        if not character_set:
+            character_set = 'utf8mb4'
 
         # Favor whichever local_infile option is set.
         use_local_infile = False
@@ -683,7 +683,7 @@ class MyCli:
                     host,
                     int_port,
                     socket,
-                    charset,
+                    character_set,
                     use_local_infile,
                     ssl_config_or_none,
                     ssh_user,
@@ -704,7 +704,7 @@ class MyCli:
                             host,
                             int_port,
                             socket,
-                            charset,
+                            character_set,
                             use_local_infile,
                             None,
                             ssh_user,
@@ -1712,7 +1712,7 @@ class MyCli:
 @click.option(
     "--unbuffered", is_flag=True, help="Instead of copying every row of data into a buffer, fetch rows as needed, to save memory."
 )
-@click.option("--charset", type=str, help="Character set for MySQL session.")
+@click.option("--character-set", "--charset", type=str, help="Character set for MySQL session.")
 @click.option(
     "--password-file", type=click.Path(), help="File or FIFO path containing the password to connect to the db if not specified otherwise."
 )
@@ -1777,7 +1777,7 @@ def cli(
     ssh_warning_off: bool | None,
     init_command: str | None,
     unbuffered: bool | None,
-    charset: str | None,
+    character_set: str | None,
     password_file: str | None,
     noninteractive: bool,
     batch_format: str | None,
@@ -2165,7 +2165,7 @@ def cli(
         ssh_key_filename=ssh_key_filename,
         init_command=combined_init_cmd,
         unbuffered=unbuffered,
-        charset=charset,
+        character_set=character_set,
         use_keyring=use_keyring,
         reset_keyring=reset_keyring,
     )

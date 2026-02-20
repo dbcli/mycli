@@ -156,7 +156,7 @@ class SQLExecute:
         host: str | None,
         port: int | None,
         socket: str | None,
-        charset: str | None,
+        character_set: str | None,
         local_infile: bool | None,
         ssl: dict[str, Any] | None,
         ssh_user: str | None,
@@ -173,7 +173,7 @@ class SQLExecute:
         self.host = host
         self.port = port
         self.socket = socket
-        self.charset = charset
+        self.character_set = character_set
         self.local_infile = local_infile
         self.ssl = ssl
         self.server_info: ServerInfo | None = None
@@ -196,7 +196,7 @@ class SQLExecute:
         host: str | None = None,
         port: int | None = None,
         socket: str | None = None,
-        charset: str | None = None,
+        character_set: str | None = None,
         local_infile: bool | None = None,
         ssl: dict[str, Any] | None = None,
         ssh_host: str | None = None,
@@ -213,7 +213,7 @@ class SQLExecute:
         host = host if host is not None else self.host
         port = port if port is not None else self.port
         socket = socket if socket is not None else self.socket
-        charset = charset if charset is not None else self.charset
+        character_set = character_set if character_set is not None else self.character_set
         local_infile = local_infile if local_infile is not None else self.local_infile
         ssl = ssl if ssl is not None else self.ssl
         ssh_user = ssh_user if ssh_user is not None else self.ssh_user
@@ -230,7 +230,7 @@ class SQLExecute:
             "\thost: %r"
             "\tport: %r"
             "\tsocket: %r"
-            "\tcharset: %r"
+            "\tcharacter_set: %r"
             "\tlocal_infile: %r"
             "\tssl: %r"
             "\tssh_user: %r"
@@ -245,7 +245,7 @@ class SQLExecute:
             host,
             port,
             socket,
-            charset,
+            character_set,
             local_infile,
             ssl,
             ssh_user,
@@ -285,7 +285,7 @@ class SQLExecute:
             port=port or 0,
             unix_socket=socket,
             use_unicode=True,
-            charset=charset or '',
+            charset=character_set or '',
             autocommit=True,
             client_flag=client_flag,
             local_infile=local_infile or False,
@@ -331,7 +331,7 @@ class SQLExecute:
         self.host = host
         self.port = port
         self.socket = socket
-        self.charset = charset
+        self.character_set = character_set
         self.ssl = ssl
         self.init_command = init_command
         self.unbuffered = unbuffered

@@ -3,7 +3,7 @@
 import pytest
 
 import mycli.sqlexecute
-from test.utils import CHARSET, DATABASE, HOST, PASSWORD, PORT, SSH_HOST, SSH_PORT, SSH_USER, USER, create_db, db_connection
+from test.utils import CHARACTER_SET, DATABASE, HOST, PASSWORD, PORT, SSH_HOST, SSH_PORT, SSH_USER, USER, create_db, db_connection
 
 
 @pytest.fixture(scope="function")
@@ -30,7 +30,7 @@ def executor(connection):
         password=PASSWORD,
         port=PORT,
         socket=None,
-        charset=CHARSET,
+        character_set=CHARACTER_SET,
         local_infile=False,
         ssl=None,
         ssh_user=SSH_USER,
