@@ -45,7 +45,7 @@ from prompt_toolkit.lexers import PygmentsLexer
 from prompt_toolkit.output import ColorDepth
 from prompt_toolkit.shortcuts import CompleteStyle, PromptSession
 import pymysql
-from pymysql.constants.ER import HANDSHAKE_ERROR
+from pymysql.constants.ER import ACCESS_DENIED_ERROR, HANDSHAKE_ERROR
 from pymysql.cursors import Cursor
 import sqlglot
 import sqlparse
@@ -660,63 +660,61 @@ class MyCli:
             passwd = keyring.get_password(keychain_domain, keychain_identifier)
             keychain_retrieved = True
 
-        # if no password was found from all of the above sources, ask for a password
-        if passwd is None or passwd == "MYCLI_ASK_PASSWORD":
-            passwd = click.prompt(f"Enter password for {user}", hide_input=True, show_default=False, default='', type=str, err=True)
+        # prompt for password if requested by user
+        if passwd == "MYCLI_ASK_PASSWORD":
+            passwd = click.prompt(f"Enter password for {user}", hide_input=True, show_default=False, default='', type=str)
 
-        if reset_keyring or (use_keyring and not keychain_retrieved):
-            try:
-                saved_pw = keyring.get_password(keychain_domain, keychain_identifier)
-                if passwd != saved_pw or reset_keyring:
-                    keyring.set_password(keychain_domain, keychain_identifier, passwd)
-                    click.secho('Password saved to the system keyring', err=True)
-            except Exception as e:
-                click.secho(f'Password not saved to the system keyring: {e}', err=True, fg='red')
+        connection_info: dict[Any, Any] = {
+            "database": database,
+            "user": user,
+            "password": passwd,
+            "host": host,
+            "port": int_port,
+            "socket": socket,
+            "charset": charset,
+            "local_infile": use_local_infile,
+            "ssl": ssl_config_or_none,
+            "ssh_user": ssh_user,
+            "ssh_host": ssh_host,
+            "ssh_port": int(ssh_port) if ssh_port else None,
+            "ssh_password": ssh_password,
+            "ssh_key_filename": ssh_key_filename,
+            "init_command": init_command,
+            "unbuffered": unbuffered,
+        }
 
-        # Connect to the database.
-        def _connect() -> None:
+        def _update_keyring(password: str | None):
+            if not password:
+                return
+            if reset_keyring or (use_keyring and not keychain_retrieved):
+                try:
+                    saved_pw = keyring.get_password(keychain_domain, keychain_identifier)
+                    if password != saved_pw or reset_keyring:
+                        keyring.set_password(keychain_domain, keychain_identifier, password)
+                        click.secho('Password saved to the system keyring', err=True)
+                except Exception as e:
+                    click.secho(f'Password not saved to the system keyring: {e}', err=True, fg='red')
+
+        def _connect(retry_ssl: bool = False, retry_password: bool = False) -> None:
             try:
-                self.sqlexecute = SQLExecute(
-                    database,
-                    user,
-                    passwd,
-                    host,
-                    int_port,
-                    socket,
-                    charset,
-                    use_local_infile,
-                    ssl_config_or_none,
-                    ssh_user,
-                    ssh_host,
-                    int(ssh_port) if ssh_port else None,
-                    ssh_password,
-                    ssh_key_filename,
-                    init_command,
-                    unbuffered,
-                )
+                _update_keyring(connection_info["password"])
+                self.sqlexecute = SQLExecute(**connection_info)
             except pymysql.OperationalError as e1:
                 if e1.args[0] == HANDSHAKE_ERROR and ssl is not None and ssl.get("mode", None) == "auto":
-                    try:
-                        self.sqlexecute = SQLExecute(
-                            database,
-                            user,
-                            passwd,
-                            host,
-                            int_port,
-                            socket,
-                            charset,
-                            use_local_infile,
-                            None,
-                            ssh_user,
-                            ssh_host,
-                            int(ssh_port) if ssh_port else None,
-                            ssh_password,
-                            ssh_key_filename,
-                            init_command,
-                            unbuffered,
-                        )
-                    except Exception as e2:
-                        raise e2
+                    # if we already tried and failed to connect without SSL, raise the error
+                    if retry_ssl:
+                        raise e1
+                    # disable SSL and try to connect again
+                    connection_info["ssl"] = None
+                    _connect(retry_ssl=True)
+                elif e1.args[0] == ACCESS_DENIED_ERROR and connection_info["password"] is None:
+                    # if we already tried and failed to connect with a new password, raise the error
+                    if retry_password:
+                        raise e1
+                    # ask the user for a new password and try to connect again
+                    new_password = click.prompt(f"Enter password for {user}", hide_input=True, show_default=False, default='', type=str)
+                    connection_info["password"] = new_password
+                    _connect(retry_password=True)
                 else:
                     raise e1
 
