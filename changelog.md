@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Features
+---------
+* Let the `--dsn` argument accept literal DSNs as well as aliases.
+
+
 Bug Fixes
 ---------
 * Make `--ssl-capath` argument a directory.
