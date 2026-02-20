@@ -912,6 +912,23 @@ def test_dsn(monkeypatch):
         and MockMyCli.connect_args["ssl"]["enable"] is True
     )
 
+    # Accept a literal DSN with the --dsn flag (not only an alias)
+    result = runner.invoke(
+        mycli.main.cli,
+        args=[
+            '--dsn',
+            'mysql://dsn_user:dsn_passwd@dsn_host:6/dsn_database',
+        ],
+    )
+    assert result.exit_code == 0, result.output + ' ' + str(result.exception)
+    assert (
+        MockMyCli.connect_args['user'] == 'dsn_user'
+        and MockMyCli.connect_args['passwd'] == 'dsn_passwd'
+        and MockMyCli.connect_args['host'] == 'dsn_host'
+        and MockMyCli.connect_args['port'] == 6
+        and MockMyCli.connect_args['database'] == 'dsn_database'
+    )
+
 
 def test_ssh_config(monkeypatch):
     # Setup classes to mock mycli.main.MyCli

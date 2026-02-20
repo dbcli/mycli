@@ -532,7 +532,7 @@ class MyCli:
         host: str | None = "",
         port: str | int | None = "",
         socket: str | None = "",
-        charset: str | None = "",
+        character_set: str | None = "",
         local_infile: bool = False,
         ssl: dict[str, Any] | None = None,
         ssh_user: str | None = "",
@@ -590,17 +590,17 @@ class MyCli:
         # default_character_set doesn't check in self.config_without_package_defaults, because the
         # option already existed before the my.cnf deprecation.  For the same reason,
         # default_character_set can be in [connection] or [main].
-        if not charset:
+        if not character_set:
             if 'default_character_set' in self.config['connection']:
-                charset = self.config['connection']['default_character_set']
+                character_set = self.config['connection']['default_character_set']
             elif 'default_character_set' in self.config['main']:
-                charset = self.config['main']['default_character_set']
+                character_set = self.config['main']['default_character_set']
             elif 'default_character_set' in cnf:
-                charset = cnf['default_character_set']
+                character_set = cnf['default_character_set']
             elif 'default-character-set' in cnf:
-                charset = cnf['default-character-set']
-        if not charset:
-            charset = 'utf8mb4'
+                character_set = cnf['default-character-set']
+        if not character_set:
+            character_set = 'utf8mb4'
 
         # Favor whichever local_infile option is set.
         use_local_infile = False
@@ -671,7 +671,7 @@ class MyCli:
             "host": host,
             "port": int_port,
             "socket": socket,
-            "charset": charset,
+            "character_set": character_set,
             "local_infile": use_local_infile,
             "ssl": ssl_config_or_none,
             "ssh_user": ssh_user,
@@ -1663,7 +1663,7 @@ class MyCli:
 )
 @click.option("--ssl/--no-ssl", "ssl_enable", default=None, help="Enable SSL for connection (automatically enabled with other flags).")
 @click.option("--ssl-ca", help="CA file in PEM format.", type=click.Path(exists=True))
-@click.option("--ssl-capath", help="CA directory.")
+@click.option("--ssl-capath", help="CA directory.", type=click.Path(exists=True, file_okay=False, dir_okay=True))
 @click.option("--ssl-cert", help="X509 cert in PEM format.", type=click.Path(exists=True))
 @click.option("--ssl-key", help="X509 key in PEM format.", type=click.Path(exists=True))
 @click.option("--ssl-cipher", help="SSL cipher to use.")
@@ -1679,9 +1679,11 @@ class MyCli:
 )
 @click.version_option(__version__, "-V", "--version", help="Output mycli's version.")
 @click.option("-v", "--verbose", is_flag=True, help="Verbose output.")
-@click.option("-D", "--database", "dbname", help="Database to use.")
-@click.option("-d", "--dsn", default="", envvar="DSN", help="Use DSN configured into the [alias_dsn] section of myclirc file.")
-@click.option("--list-dsn", "list_dsn", is_flag=True, help="list of DSN configured into the [alias_dsn] section of myclirc file.")
+@click.option("-D", "--database", "dbname", help="Database or DSN to use for the connection.")
+@click.option("-d", "--dsn", 'dsn_alias', default="", envvar="DSN", help="DSN alias configured in the ~/.myclirc file, or a full DSN.")
+@click.option(
+    "--list-dsn", "list_dsn", is_flag=True, help="list of DSN aliases configured in the [alias_dsn] section of the ~/.myclirc file."
+)
 @click.option("--list-ssh-config", "list_ssh_config", is_flag=True, help="list ssh configurations in the ssh config (requires paramiko).")
 @click.option("--ssh-warning-off", is_flag=True, help="Suppress the SSH deprecation notice.")
 @click.option("-R", "--prompt", "prompt", help=f'Prompt format (Default: "{MyCli.default_prompt}").')
@@ -1710,7 +1712,7 @@ class MyCli:
 @click.option(
     "--unbuffered", is_flag=True, help="Instead of copying every row of data into a buffer, fetch rows as needed, to save memory."
 )
-@click.option("--charset", type=str, help="Character set for MySQL session.")
+@click.option("--character-set", "--charset", type=str, help="Character set for MySQL session.")
 @click.option(
     "--password-file", type=click.Path(), help="File or FIFO path containing the password to connect to the db if not specified otherwise."
 )
@@ -1762,7 +1764,7 @@ def cli(
     warn: bool | None,
     execute: str | None,
     myclirc: str,
-    dsn: str,
+    dsn_alias: str,
     list_dsn: str | None,
     ssh_user: str | None,
     ssh_host: str | None,
@@ -1775,7 +1777,7 @@ def cli(
     ssh_warning_off: bool | None,
     init_command: str | None,
     unbuffered: bool | None,
-    charset: str | None,
+    character_set: str | None,
     password_file: str | None,
     noninteractive: bool,
     batch_format: str | None,
@@ -1928,23 +1930,27 @@ def cli(
         and not any([user, password, host, port, login_path])
         and database in mycli.config.get("alias_dsn", {})
     ):
-        dsn, database = database, ""
+        dsn_alias, database = database, ""
 
     if database and "://" in database:
         dsn_uri, database = database, ""
 
-    if dsn:
+    if dsn_alias:
         try:
-            dsn_uri = mycli.config["alias_dsn"][dsn]
+            dsn_uri = mycli.config["alias_dsn"][dsn_alias]
         except KeyError:
-            click.secho(
-                "Could not find the specified DSN in the config file. Please check the \"[alias_dsn]\" section in your myclirc.",
-                err=True,
-                fg="red",
-            )
-            sys.exit(1)
+            is_valid_scheme, scheme = is_valid_connection_scheme(dsn_alias)
+            if is_valid_scheme:
+                dsn_uri = dsn_alias
+            else:
+                click.secho(
+                    "Could not find the specified DSN in the config file. Please check the \"[alias_dsn]\" section in your myclirc.",
+                    err=True,
+                    fg="red",
+                )
+                sys.exit(1)
         else:
-            mycli.dsn_alias = dsn
+            mycli.dsn_alias = dsn_alias
 
     if dsn_uri:
         uri = urlparse(dsn_uri)
@@ -2039,10 +2045,10 @@ def cli(
         elif val:
             init_cmds.append(val)
     # 2) DSN-specific init-commands
-    if dsn:
+    if dsn_alias:
         alias_section = mycli.config.get("alias_dsn.init-commands", {})
-        if dsn in alias_section:
-            val = alias_section.get(dsn)
+        if dsn_alias in alias_section:
+            val = alias_section.get(dsn_alias)
             if isinstance(val, (list, tuple)):
                 init_cmds.extend(val)
             elif val:
@@ -2159,7 +2165,7 @@ def cli(
         ssh_key_filename=ssh_key_filename,
         init_command=combined_init_cmd,
         unbuffered=unbuffered,
-        charset=charset,
+        character_set=character_set,
         use_keyring=use_keyring,
         reset_keyring=reset_keyring,
     )

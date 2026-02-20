@@ -1,9 +1,16 @@
 Upcoming (TBD)
 ==============
 
+Features
+---------
+* Let the `--dsn` argument accept literal DSNs as well as aliases.
+* Accept `--character-set` as an alias for `--charset` at the CLI.
+
+
 Bug Fixes
 ---------
-* Allow users to use empty passwords without prompting or any configuration (#1584) 
+* Make `--ssl-capath` argument a directory.
+* Allow users to use empty passwords without prompting or any configuration (#1584).
 
 
 1.55.0 (2026/02/20)
