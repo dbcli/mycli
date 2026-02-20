@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Bug Fixes
+---------
+* Make `--ssl-capath` argument a directory.
+
+
 1.55.0 (2026/02/20)
 ==============
 
