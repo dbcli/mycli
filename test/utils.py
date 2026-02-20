@@ -16,14 +16,14 @@ PASSWORD = os.getenv("PYTEST_PASSWORD")
 USER = os.getenv("PYTEST_USER", "root")
 HOST = os.getenv("PYTEST_HOST", "localhost")
 PORT = int(os.getenv("PYTEST_PORT", "3306"))
-CHARSET = os.getenv("PYTEST_CHARSET", "utf8mb4")
+CHARACTER_SET = os.getenv("PYTEST_CHARSET", "utf8mb4")
 SSH_USER = os.getenv("PYTEST_SSH_USER", None)
 SSH_HOST = os.getenv("PYTEST_SSH_HOST", None)
 SSH_PORT = int(os.getenv("PYTEST_SSH_PORT", "22"))
 
 
 def db_connection(dbname=None):
-    conn = pymysql.connect(user=USER, host=HOST, port=PORT, database=dbname, password=PASSWORD, charset=CHARSET, local_infile=False)
+    conn = pymysql.connect(user=USER, host=HOST, port=PORT, database=dbname, password=PASSWORD, charset=CHARACTER_SET, local_infile=False)
     conn.autocommit = True
     return conn
 

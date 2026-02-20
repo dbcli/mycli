@@ -151,7 +151,7 @@ use_keyring = False
 
 [connection]
 
-# character set for connections without --charset being set
+# character set for connections without --character-set being set
 default_character_set = utf8mb4
 
 # whether to enable LOAD DATA LOCAL INFILE for connections without --local-infile being set
