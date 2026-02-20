@@ -10,6 +10,7 @@ Features
 Bug Fixes
 ---------
 * Make `--ssl-capath` argument a directory.
+* Allow users to use empty passwords without prompting or any configuration (#1584).
 
 
 1.55.0 (2026/02/20)
