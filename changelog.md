@@ -1,15 +1,15 @@
-Upcoming (TBD)
+1.55.0 (2026/02/20)
 ==============
 
 Features
 ---------
 * `--checkup` now checks for external executables.
-* Improve completion suggestions within backticks.
 
 
 Bug Fixes
 ---------
-* Watch command now returns correct time when ran as part of a multi-part query (#1565)
+* Improve completion suggestions within backticks.
+* Watch command now returns correct time when run as part of a multi-part query (#1565).
 * Don't diagnose free-entry sections such as `[favorite_queries]` in `--checkup`.
 * When accepting a filename completion, fill in leading `./` if given.
 
