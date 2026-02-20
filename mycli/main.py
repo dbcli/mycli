@@ -1663,7 +1663,7 @@ class MyCli:
 )
 @click.option("--ssl/--no-ssl", "ssl_enable", default=None, help="Enable SSL for connection (automatically enabled with other flags).")
 @click.option("--ssl-ca", help="CA file in PEM format.", type=click.Path(exists=True))
-@click.option("--ssl-capath", help="CA directory.")
+@click.option("--ssl-capath", help="CA directory.", type=click.Path(exists=True, file_okay=False, dir_okay=True))
 @click.option("--ssl-cert", help="X509 cert in PEM format.", type=click.Path(exists=True))
 @click.option("--ssl-key", help="X509 key in PEM format.", type=click.Path(exists=True))
 @click.option("--ssl-cipher", help="SSL cipher to use.")
