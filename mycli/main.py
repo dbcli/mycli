@@ -662,7 +662,7 @@ class MyCli:
 
         # prompt for password if requested by user
         if passwd == "MYCLI_ASK_PASSWORD":
-            passwd = click.prompt(f"Enter password for {user}", hide_input=True, show_default=False, default='', type=str)
+            passwd = click.prompt(f"Enter password for {user}", hide_input=True, show_default=False, default='', type=str, err=True)
 
         connection_info: dict[Any, Any] = {
             "database": database,
@@ -712,7 +712,9 @@ class MyCli:
                     if retry_password:
                         raise e1
                     # ask the user for a new password and try to connect again
-                    new_password = click.prompt(f"Enter password for {user}", hide_input=True, show_default=False, default='', type=str)
+                    new_password = click.prompt(
+                        f"Enter password for {user}", hide_input=True, show_default=False, default='', type=str, err=True
+                    )
                     connection_info["password"] = new_password
                     _connect(retry_password=True)
                 else:
