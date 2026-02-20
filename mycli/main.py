@@ -1679,9 +1679,11 @@ class MyCli:
 )
 @click.version_option(__version__, "-V", "--version", help="Output mycli's version.")
 @click.option("-v", "--verbose", is_flag=True, help="Verbose output.")
-@click.option("-D", "--database", "dbname", help="Database to use.")
-@click.option("-d", "--dsn", default="", envvar="DSN", help="Use DSN configured into the [alias_dsn] section of myclirc file.")
-@click.option("--list-dsn", "list_dsn", is_flag=True, help="list of DSN configured into the [alias_dsn] section of myclirc file.")
+@click.option("-D", "--database", "dbname", help="Database or DSN to use for the connection.")
+@click.option("-d", "--dsn", 'dsn_alias', default="", envvar="DSN", help="DSN alias configured in the ~/.myclirc file, or a full DSN.")
+@click.option(
+    "--list-dsn", "list_dsn", is_flag=True, help="list of DSN aliases configured in the [alias_dsn] section of the ~/.myclirc file."
+)
 @click.option("--list-ssh-config", "list_ssh_config", is_flag=True, help="list ssh configurations in the ssh config (requires paramiko).")
 @click.option("--ssh-warning-off", is_flag=True, help="Suppress the SSH deprecation notice.")
 @click.option("-R", "--prompt", "prompt", help=f'Prompt format (Default: "{MyCli.default_prompt}").')
@@ -1762,7 +1764,7 @@ def cli(
     warn: bool | None,
     execute: str | None,
     myclirc: str,
-    dsn: str,
+    dsn_alias: str,
     list_dsn: str | None,
     ssh_user: str | None,
     ssh_host: str | None,
@@ -1928,23 +1930,27 @@ def cli(
         and not any([user, password, host, port, login_path])
         and database in mycli.config.get("alias_dsn", {})
     ):
-        dsn, database = database, ""
+        dsn_alias, database = database, ""
 
     if database and "://" in database:
         dsn_uri, database = database, ""
 
-    if dsn:
+    if dsn_alias:
         try:
-            dsn_uri = mycli.config["alias_dsn"][dsn]
+            dsn_uri = mycli.config["alias_dsn"][dsn_alias]
         except KeyError:
-            click.secho(
-                "Could not find the specified DSN in the config file. Please check the \"[alias_dsn]\" section in your myclirc.",
-                err=True,
-                fg="red",
-            )
-            sys.exit(1)
+            is_valid_scheme, scheme = is_valid_connection_scheme(dsn_alias)
+            if is_valid_scheme:
+                dsn_uri = dsn_alias
+            else:
+                click.secho(
+                    "Could not find the specified DSN in the config file. Please check the \"[alias_dsn]\" section in your myclirc.",
+                    err=True,
+                    fg="red",
+                )
+                sys.exit(1)
         else:
-            mycli.dsn_alias = dsn
+            mycli.dsn_alias = dsn_alias
 
     if dsn_uri:
         uri = urlparse(dsn_uri)
@@ -2039,10 +2045,10 @@ def cli(
         elif val:
             init_cmds.append(val)
     # 2) DSN-specific init-commands
-    if dsn:
+    if dsn_alias:
         alias_section = mycli.config.get("alias_dsn.init-commands", {})
-        if dsn in alias_section:
-            val = alias_section.get(dsn)
+        if dsn_alias in alias_section:
+            val = alias_section.get(dsn_alias)
             if isinstance(val, (list, tuple)):
                 init_cmds.extend(val)
             elif val:
