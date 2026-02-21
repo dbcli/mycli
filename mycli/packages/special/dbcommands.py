@@ -128,7 +128,7 @@ def status(cur: Cursor, **_) -> list[SQLResult]:
     output.append(("Protocol version:", variables["protocol_version"]))
     output.append(('SSL/TLS version:', get_ssl_version(cur)))
 
-    if "unix" in cur.connection.host_info.lower():
+    if getattr(cur.connection, 'unix_socket', None) is not None:
         host_info = cur.connection.host_info
     else:
         host_info = f'{cur.connection.host} via TCP/IP'
