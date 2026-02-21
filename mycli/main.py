@@ -163,6 +163,7 @@ class MyCli:
         self.toolbar_error_message: str | None = None
         self.prompt_app: PromptSession | None = None
         self._keepalive_counter = 0
+        self.keepalive_ticks: int | None = 0
 
         # self.cnf_files is a class variable that stores the list of mysql
         # config files to read in at launch.
@@ -544,6 +545,7 @@ class MyCli:
         unbuffered: bool | None = None,
         use_keyring: bool | None = None,
         reset_keyring: bool | None = None,
+        keepalive_ticks: int | None = None,
     ) -> None:
         cnf = {
             "database": None,
@@ -572,6 +574,7 @@ class MyCli:
         port = port or cnf["port"]
         ssl_config: dict[str, Any] = ssl or {}
         user_connection_config = self.config_without_package_defaults.get('connection', {})
+        self.keepalive_ticks = keepalive_ticks
 
         int_port = port and int(port)
         if not int_port:
@@ -1004,10 +1007,12 @@ class MyCli:
 
             Example at https://github.com/prompt-toolkit/python-prompt-toolkit/blob/main/examples/prompts/inputhook.py
             """
-            if self.default_keepalive_ticks < 1:
+            if self.keepalive_ticks is None:
+                return
+            if self.keepalive_ticks < 1:
                 return
             self._keepalive_counter += 1
-            if self._keepalive_counter > self.default_keepalive_ticks:
+            if self._keepalive_counter > self.keepalive_ticks:
                 self._keepalive_counter = 0
                 self.logger.debug('keepalive ping')
                 try:
@@ -1018,7 +1023,7 @@ class MyCli:
                     self.logger.debug('keepalive ping error %r', e)
 
         def one_iteration(text: str | None = None) -> None:
-            inputhook = keepalive_hook if self.default_keepalive_ticks >= 1 else None
+            inputhook = keepalive_hook if self.keepalive_ticks and self.keepalive_ticks >= 1 else None
             if text is None:
                 try:
                     assert self.prompt_app is not None
@@ -1729,6 +1734,11 @@ class MyCli:
     default=None,
     help='Store and retrieve passwords from the system keyring: true/false/reset.',
 )
+@click.option(
+    '--keepalive-ticks',
+    type=int,
+    help='Send regular keepalive pings to the connection, roughly every <int> seconds.',
+)
 @click.option("--checkup", is_flag=True, help="Run a checkup on your config file.")
 @click.pass_context
 def cli(
@@ -1784,6 +1794,7 @@ def cli(
     throttle: float,
     use_keyring_cli_opt: str | None,
     checkup: bool,
+    keepalive_ticks: int | None,
 ) -> None:
     """A MySQL terminal client with auto-completion and syntax highlighting.
 
@@ -1993,6 +2004,11 @@ def cli(
         if params := dsn_params.get('ssl_verify_server_cert'):
             ssl_verify_server_cert = ssl_verify_server_cert or (params[0].lower() == 'true')
             ssl_enable = True
+        if params := dsn_params.get('keepalive_ticks'):
+            if keepalive_ticks is None:
+                keepalive_ticks = int(params[0])
+
+    keepalive_ticks = keepalive_ticks if keepalive_ticks is not None else mycli.default_keepalive_ticks
 
     ssl_mode = ssl_mode or mycli.ssl_mode  # cli option or config option
 
@@ -2168,6 +2184,7 @@ def cli(
         character_set=character_set,
         use_keyring=use_keyring,
         reset_keyring=reset_keyring,
+        keepalive_ticks=keepalive_ticks,
     )
 
     if combined_init_cmd:
