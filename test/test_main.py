@@ -155,6 +155,17 @@ def test_ssl_mode_on(executor, capsys):
 
 
 @dbtest
+def test_ssl_mode_true(executor, capsys):
+    runner = CliRunner()
+    ssl_mode = 'true'
+    sql = 'select * from performance_schema.session_status where variable_name = "Ssl_cipher"'
+    result = runner.invoke(cli, args=CLI_ARGS + ['--csv', '--ssl-mode', ssl_mode], input=sql)
+    result_dict = next(csv.DictReader(result.stdout.split('\n')))
+    ssl_cipher = result_dict.get('VARIABLE_VALUE', None)
+    assert ssl_cipher
+
+
+@dbtest
 def test_ssl_mode_auto(executor, capsys):
     runner = CliRunner()
     ssl_mode = "auto"
@@ -173,6 +184,17 @@ def test_ssl_mode_off(executor, capsys):
     result = runner.invoke(cli, args=CLI_ARGS + ["--csv", "--ssl-mode", ssl_mode], input=sql)
     result_dict = next(csv.DictReader(result.stdout.split("\n")))
     ssl_cipher = result_dict.get("VARIABLE_VALUE", None)
+    assert not ssl_cipher
+
+
+@dbtest
+def test_ssl_mode_false(executor, capsys):
+    runner = CliRunner()
+    ssl_mode = 'False'
+    sql = 'select * from performance_schema.session_status where variable_name = "Ssl_cipher"'
+    result = runner.invoke(cli, args=CLI_ARGS + ['--csv', '--ssl-mode', ssl_mode], input=sql)
+    result_dict = next(csv.DictReader(result.stdout.split('\n')))
+    ssl_cipher = result_dict.get('VARIABLE_VALUE', None)
     assert not ssl_cipher
 
 
