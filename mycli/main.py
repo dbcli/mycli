@@ -1658,7 +1658,7 @@ class MyCli:
 @click.option(
     "--ssl-mode",
     "ssl_mode",
-    help="Set desired SSL behavior. auto=preferred, on=required, off=off.",
+    help="Set desired SSL behavior. auto=preferred if TCP/IP, on=required, off=off.",
     type=click.Choice(["auto", "on", "off"]),
 )
 @click.option("--ssl/--no-ssl", "ssl_enable", default=None, help="Enable SSL for connection (automatically enabled with other flags).")
@@ -2009,19 +2009,22 @@ def cli(
     # configure SSL if ssl_mode is auto/on or if
     # ssl_enable = True (from --ssl or a DSN URI) and ssl_mode is None
     if ssl_mode in ("auto", "on") or (ssl_enable and ssl_mode is None):
-        ssl = {
-            "mode": ssl_mode,
-            "enable": ssl_enable,
-            "ca": ssl_ca and os.path.expanduser(ssl_ca),
-            "cert": ssl_cert and os.path.expanduser(ssl_cert),
-            "key": ssl_key and os.path.expanduser(ssl_key),
-            "capath": ssl_capath,
-            "cipher": ssl_cipher,
-            "tls_version": tls_version,
-            "check_hostname": ssl_verify_server_cert,
-        }
-        # remove empty ssl options
-        ssl = {k: v for k, v in ssl.items() if v is not None}
+        if socket and ssl_mode == 'auto':
+            ssl = None
+        else:
+            ssl = {
+                "mode": ssl_mode,
+                "enable": ssl_enable,
+                "ca": ssl_ca and os.path.expanduser(ssl_ca),
+                "cert": ssl_cert and os.path.expanduser(ssl_cert),
+                "key": ssl_key and os.path.expanduser(ssl_key),
+                "capath": ssl_capath,
+                "cipher": ssl_cipher,
+                "tls_version": tls_version,
+                "check_hostname": ssl_verify_server_cert,
+            }
+            # remove empty ssl options
+            ssl = {k: v for k, v in ssl.items() if v is not None}
     else:
         ssl = None
 
