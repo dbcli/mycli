@@ -115,6 +115,8 @@ wider_completion_menu = False
 # * \K - full connection socket path OR the port
 # * \t - database vendor (Percona, MySQL, MariaDB, TiDB)
 # * \u - username
+# * \y - uptime in seconds (requires frequent trips to the server)
+# * \Y - uptime in words (requires frequent trips to the server)
 # * \A - DSN alias
 # * \n - a newline
 # * \_ - a space
