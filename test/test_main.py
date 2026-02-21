@@ -930,6 +930,61 @@ def test_dsn(monkeypatch):
     )
 
 
+def test_keyring_arg(monkeypatch):
+    # Setup classes to mock mycli.main.MyCli
+    class Formatter:
+        format_name = None
+
+    class Logger:
+        def debug(self, *args, **args_dict):
+            pass
+
+        def warning(self, *args, **args_dict):
+            pass
+
+    class MockMyCli:
+        config = {
+            'main': {},
+            'alias_dsn': {},
+        }
+
+        def __init__(self, **args):
+            self.logger = Logger()
+            self.destructive_warning = False
+            self.main_formatter = Formatter()
+            self.redirect_formatter = Formatter()
+            self.ssl_mode = 'auto'
+            self.my_cnf = {'client': {}, 'mysqld': {}}
+
+        def connect(self, **args):
+            MockMyCli.connect_args = args
+
+        def run_query(self, query, new_line=True):
+            pass
+
+    import mycli.main
+
+    monkeypatch.setattr(mycli.main, 'MyCli', MockMyCli)
+    runner = CliRunner()
+
+    result = runner.invoke(mycli.main.cli, args=['--use-keyring', 'True'])
+    assert result.exit_code == 0, result.output + ' ' + str(result.exception)
+    assert MockMyCli.connect_args['use_keyring'] is True
+
+    result = runner.invoke(mycli.main.cli, args=['--use-keyring', 'on'])
+    assert result.exit_code == 0, result.output + ' ' + str(result.exception)
+    assert MockMyCli.connect_args['use_keyring'] is True
+
+    result = runner.invoke(mycli.main.cli, args=['--use-keyring', 'off'])
+    assert result.exit_code == 0, result.output + ' ' + str(result.exception)
+    assert MockMyCli.connect_args['use_keyring'] is False
+
+    result = runner.invoke(mycli.main.cli, args=['--use-keyring', 'Reset'])
+    assert result.exit_code == 0, result.output + ' ' + str(result.exception)
+    assert MockMyCli.connect_args['use_keyring'] is True
+    assert MockMyCli.connect_args['reset_keyring'] is True
+
+
 def test_ssh_config(monkeypatch):
     # Setup classes to mock mycli.main.MyCli
     class Formatter:
