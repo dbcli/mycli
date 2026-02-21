@@ -429,7 +429,7 @@ class MyCli:
             message = "Missing required argument, format."
             return [SQLResult(status=message)]
 
-        self.prompt_format = self.get_prompt(arg)
+        self.prompt_format = arg
         return [SQLResult(status=f"Changed prompt format to {arg}")]
 
     def initialize_logging(self) -> None:
