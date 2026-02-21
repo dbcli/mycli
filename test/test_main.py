@@ -929,6 +929,35 @@ def test_dsn(monkeypatch):
         and MockMyCli.connect_args['database'] == 'dsn_database'
     )
 
+    # accept character_set as a query parameter
+    result = runner.invoke(
+        mycli.main.cli,
+        args=[
+            'mysql://dsn_user:dsn_passwd@localhost/dsn_database?character_set=latin1',
+        ],
+    )
+    assert result.exit_code == 0, result.output + ' ' + str(result.exception)
+    assert MockMyCli.connect_args['user'] == 'dsn_user'
+    assert MockMyCli.connect_args['passwd'] == 'dsn_passwd'
+    assert MockMyCli.connect_args['host'] == 'localhost'
+    assert MockMyCli.connect_args['database'] == 'dsn_database'
+    assert MockMyCli.connect_args['character_set'] == 'latin1'
+
+    # --character_set overrides character_set as a query parameter
+    result = runner.invoke(
+        mycli.main.cli,
+        args=[
+            'mysql://dsn_user:dsn_passwd@localhost/dsn_database?character_set=latin1',
+            '--character-set=utf8mb3',
+        ],
+    )
+    assert result.exit_code == 0, result.output + ' ' + str(result.exception)
+    assert MockMyCli.connect_args['user'] == 'dsn_user'
+    assert MockMyCli.connect_args['passwd'] == 'dsn_passwd'
+    assert MockMyCli.connect_args['host'] == 'localhost'
+    assert MockMyCli.connect_args['database'] == 'dsn_database'
+    assert MockMyCli.connect_args['character_set'] == 'utf8mb3'
+
 
 def test_ssh_config(monkeypatch):
     # Setup classes to mock mycli.main.MyCli
