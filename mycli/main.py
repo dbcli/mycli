@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import defaultdict, namedtuple
 from decimal import Decimal
+import functools
 from io import TextIOWrapper
 import logging
 import os
@@ -260,6 +261,7 @@ class MyCli:
 
         self.min_completion_trigger = c["main"].as_int("min_completion_trigger")
         MIN_COMPLETION_TRIGGER = self.min_completion_trigger
+        self.last_prompt_message = ANSI('')
 
         # Register custom special commands.
         self.register_special_commands()
@@ -873,12 +875,15 @@ class MyCli:
             else:
                 print("Tip —", tips_picker())
 
-        def get_message() -> ANSI:
+        def get_prompt_message(app) -> ANSI:
+            if app.current_buffer.text:
+                return self.last_prompt_message
             prompt = self.get_prompt(self.prompt_format)
             if self.prompt_format == self.default_prompt and len(prompt) > self.max_len_prompt:
                 prompt = self.get_prompt(self.default_prompt_splitln)
             prompt = prompt.replace("\\x1b", "\x1b")
-            return ANSI(prompt)
+            self.last_prompt_message = ANSI(prompt)
+            return self.last_prompt_message
 
         def get_continuation(width: int, _two: int, _three: int) -> AnyFormattedText:
             if self.multiline_continuation_char == "":
@@ -1022,7 +1027,11 @@ class MyCli:
             if text is None:
                 try:
                     assert self.prompt_app is not None
-                    text = self.prompt_app.prompt(inputhook=inputhook)
+                    loaded_message_fn = functools.partial(get_prompt_message, self.prompt_app.app)
+                    text = self.prompt_app.prompt(
+                        inputhook=inputhook,
+                        message=loaded_message_fn,
+                    )
                 except KeyboardInterrupt:
                     return
 
@@ -1204,7 +1213,6 @@ class MyCli:
                 color_depth=ColorDepth.DEPTH_24_BIT if 'truecolor' in os.getenv('COLORTERM', '').lower() else None,
                 lexer=PygmentsLexer(MyCliLexer),
                 reserve_space_for_menu=self.get_reserved_space(),
-                message=get_message,
                 prompt_continuation=get_continuation,
                 bottom_toolbar=get_toolbar_tokens,
                 complete_style=complete_style,
