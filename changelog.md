@@ -9,6 +9,7 @@ Features
 Bug Fixes
 ---------
 * Let interactive changes to the prompt format respect dynamically-computed values.
+* Better handle arguments to `system cd`.
 
 
 1.56.0 (2026/02/23)

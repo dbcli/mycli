@@ -222,7 +222,32 @@ def test_special_command(executor):
 @dbtest
 def test_cd_command_without_a_folder_name(executor):
     results = run(executor, "system cd")
-    assert_result_equal(results, status="No folder name was provided.")
+    assert_result_equal(results, status="Exactly one directory name must be provided.")
+
+
+@dbtest
+def test_cd_command_with_one_nonexistent_folder_name(executor):
+    results = run(executor, 'system cd nonexistent_folder_name')
+    assert_result_equal(results, status='No such file or directory')
+
+
+@dbtest
+def test_cd_command_with_one_real_folder_name(executor):
+    results = run(executor, 'system cd screenshots')
+    # todo would be better to capture stderr but there was a problem with capsys
+    assert results[0]['status'] == ''
+
+
+@dbtest
+def test_cd_command_with_two_folder_names(executor):
+    results = run(executor, "system cd one two")
+    assert_result_equal(results, status='Exactly one directory name must be provided.')
+
+
+@dbtest
+def test_cd_command_unbalanced(executor):
+    results = run(executor, "system cd 'one")
+    assert_result_equal(results, status='Cannot parse cd command.')
 
 
 @dbtest

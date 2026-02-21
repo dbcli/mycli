@@ -1,9 +1,12 @@
 import logging
 import os
-import subprocess
+import shlex
 
+import click
 import pymysql
 from pymysql.cursors import Cursor
+
+from mycli.compat import WIN
 
 logger = logging.getLogger(__name__)
 
@@ -13,13 +16,21 @@ CACHED_SSL_VERSION: dict[tuple, str | None] = {}
 def handle_cd_command(arg: str) -> tuple[bool, str | None]:
     """Handles a `cd` shell command by calling python's os.chdir."""
     CD_CMD = "cd"
-    tokens = arg.split(CD_CMD + " ")
-    directory = tokens[-1] if len(tokens) > 1 else None
-    if not directory:
-        return False, "No folder name was provided."
+    tokens: list[str] = []
+    try:
+        tokens = shlex.split(arg, posix=not WIN)
+    except ValueError:
+        return False, 'Cannot parse cd command.'
+    if not tokens:
+        return False, 'Not a cd command.'
+    if not tokens[0].lower() == CD_CMD:
+        return False, 'Not a cd command.'
+    if len(tokens) != 2:
+        return False, 'Exactly one directory name must be provided.'
+    directory = tokens[1]
     try:
         os.chdir(directory)
-        subprocess.call(["pwd"])
+        click.echo(os.getcwd(), err=True)
         return True, None
     except OSError as e:
         return False, e.strerror
