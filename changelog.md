@@ -13,6 +13,7 @@ Features
 * Accept `character_set` as a DSN query parameter.
 * Don't attempt SSL for local socket connections when in "auto" SSL mode.
 * Add prompt format string for SSL/TLS version of the connection.
+* Add prompt format strings for displaying uptime.
 
 
 Bug Fixes

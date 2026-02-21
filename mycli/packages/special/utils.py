@@ -56,6 +56,22 @@ def format_uptime(uptime_in_seconds: str) -> str:
     return uptime
 
 
+def get_uptime(cur: Cursor) -> int:
+    query = 'SHOW STATUS LIKE "Uptime"'
+    logger.debug(query)
+
+    uptime = 0
+
+    try:
+        cur.execute(query)
+        if one := cur.fetchone():
+            uptime = int(one[1] or 0)
+    except pymysql.err.OperationalError:
+        pass
+
+    return uptime
+
+
 def get_ssl_version(cur: Cursor) -> str | None:
     cache_key = (id(cur.connection), cur.connection.thread_id())
 
