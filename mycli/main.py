@@ -87,6 +87,7 @@ SUPPORT_INFO = "Home: http://mycli.net\nBug tracker: https://github.com/dbcli/my
 DEFAULT_WIDTH = 80
 DEFAULT_HEIGHT = 25
 MIN_COMPLETION_TRIGGER = 1
+MAX_MULTILINE_BATCH_STATEMENT = 5000
 
 
 @Condition
@@ -2199,49 +2200,77 @@ def cli(
             click.secho(str(e), err=True, fg="red")
             sys.exit(1)
 
+    def dispatch_batch_statements(statements: str, batch_counter: int) -> None:
+        if batch_counter:
+            # this is imperfect if the first line of input has multiple statements
+            if batch_format == 'csv':
+                mycli.main_formatter.format_name = 'csv-noheader'
+            elif batch_format == 'tsv':
+                mycli.main_formatter.format_name = 'tsv_noheader'
+            elif batch_format == 'table':
+                mycli.main_formatter.format_name = 'ascii'
+            else:
+                mycli.main_formatter.format_name = 'tsv'
+        else:
+            if batch_format == 'csv':
+                mycli.main_formatter.format_name = 'csv'
+            elif batch_format == 'tsv':
+                mycli.main_formatter.format_name = 'tsv'
+            elif batch_format == 'table':
+                mycli.main_formatter.format_name = 'ascii'
+            else:
+                mycli.main_formatter.format_name = 'tsv'
+
+        warn_confirmed: bool | None = True
+        if not noninteractive and mycli.destructive_warning and is_destructive(mycli.destructive_keywords, statements):
+            try:
+                # this seems to work, even though we are reading from stdin above
+                sys.stdin = open("/dev/tty")
+                # bug: the prompt will not be visible if stdout is redirected
+                warn_confirmed = confirm_destructive_query(mycli.destructive_keywords, statements)
+            except (IOError, OSError):
+                mycli.logger.warning("Unable to open TTY as stdin.")
+                sys.exit(1)
+        try:
+            if warn_confirmed:
+                if throttle and batch_counter >= 1:
+                    sleep(throttle)
+                mycli.run_query(statements, checkpoint=checkpoint, new_line=True)
+        except Exception as e:
+            click.secho(str(e), err=True, fg="red")
+            sys.exit(1)
+
     if sys.stdin.isatty():
         mycli.run_cli()
     else:
         stdin = click.get_text_stream("stdin")
-        counter = 0
+        statements = ''
+        line_counter = 0
+        batch_counter = 0
         for stdin_text in stdin:
-            if counter:
-                if batch_format == 'csv':
-                    mycli.main_formatter.format_name = 'csv-noheader'
-                elif batch_format == 'tsv':
-                    mycli.main_formatter.format_name = 'tsv_noheader'
-                elif batch_format == 'table':
-                    mycli.main_formatter.format_name = 'ascii'
-                else:
-                    mycli.main_formatter.format_name = 'tsv'
-            else:
-                if batch_format == 'csv':
-                    mycli.main_formatter.format_name = 'csv'
-                elif batch_format == 'tsv':
-                    mycli.main_formatter.format_name = 'tsv'
-                elif batch_format == 'table':
-                    mycli.main_formatter.format_name = 'ascii'
-                else:
-                    mycli.main_formatter.format_name = 'tsv'
-            counter += 1
-            warn_confirmed: bool | None = True
-            if not noninteractive and mycli.destructive_warning and is_destructive(mycli.destructive_keywords, stdin_text):
-                try:
-                    # this seems to work, even though we are reading from stdin above
-                    sys.stdin = open("/dev/tty")
-                    # bug: the prompt will not be visible if stdout is redirected
-                    warn_confirmed = confirm_destructive_query(mycli.destructive_keywords, stdin_text)
-                except (IOError, OSError):
-                    mycli.logger.warning("Unable to open TTY as stdin.")
-                    sys.exit(1)
-            try:
-                if warn_confirmed:
-                    if throttle and counter > 1:
-                        sleep(throttle)
-                    mycli.run_query(stdin_text, checkpoint=checkpoint, new_line=True)
-            except Exception as e:
-                click.secho(str(e), err=True, fg="red")
+            line_counter += 1
+            if line_counter > MAX_MULTILINE_BATCH_STATEMENT:
+                click.secho(
+                    f'Saw single input statement greater than {MAX_MULTILINE_BATCH_STATEMENT} lines; assuming a parsing error.',
+                    err=True,
+                    fg="red",
+                )
                 sys.exit(1)
+            statements += stdin_text
+            try:
+                tokens = sqlglot.tokenize(statements, read='mysql')
+                if not tokens:
+                    continue
+                # we don't handle changing the delimiter within the batch input
+                if tokens[-1].text == ';':
+                    dispatch_batch_statements(statements, batch_counter)
+                    batch_counter += 1
+                    statements = ''
+                    line_counter = 0
+            except sqlglot.errors.TokenError:
+                continue
+        if statements:
+            dispatch_batch_statements(statements, batch_counter)
         sys.exit(0)
     mycli.close()
 

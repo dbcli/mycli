@@ -12,6 +12,7 @@ Bug Fixes
 ---------
 * Make `--ssl-capath` argument a directory.
 * Allow users to use empty passwords without prompting or any configuration (#1584).
+* Allow multi-line SQL statements in batch mode on the standard input.
 
 
 1.55.0 (2026/02/20)
