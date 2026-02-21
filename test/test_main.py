@@ -882,7 +882,7 @@ def test_dsn(monkeypatch):
     )
 
     # Use a DSN with query parameters
-    result = runner.invoke(mycli.main.cli, args=["mysql://dsn_user:dsn_passwd@dsn_host:6/dsn_database?ssl=True"])
+    result = runner.invoke(mycli.main.cli, args=["mysql://dsn_user:dsn_passwd@dsn_host:6/dsn_database?ssl_mode=off"])
     assert result.exit_code == 0, result.output + " " + str(result.exception)
     assert (
         MockMyCli.connect_args["user"] == "dsn_user"
@@ -890,27 +890,25 @@ def test_dsn(monkeypatch):
         and MockMyCli.connect_args["host"] == "dsn_host"
         and MockMyCli.connect_args["port"] == 6
         and MockMyCli.connect_args["database"] == "dsn_database"
-        and MockMyCli.connect_args["ssl"]["enable"] is True
+        and MockMyCli.connect_args["ssl"] is None
     )
 
-    # When a user uses a DSN with query parameters, and used command line
-    # arguments, use the command line arguments.
+    # When a user uses a DSN with query parameters, and also used command line
+    # arguments, prefer the command line arguments.
     result = runner.invoke(
         mycli.main.cli,
         args=[
-            "mysql://dsn_user:dsn_passwd@dsn_host:6/dsn_database?ssl=False",
-            "--ssl",
+            'mysql://dsn_user:dsn_passwd@dsn_host:6/dsn_database?ssl_mode=off',
+            '--ssl-mode=on',
         ],
     )
-    assert result.exit_code == 0, result.output + " " + str(result.exception)
-    assert (
-        MockMyCli.connect_args["user"] == "dsn_user"
-        and MockMyCli.connect_args["passwd"] == "dsn_passwd"
-        and MockMyCli.connect_args["host"] == "dsn_host"
-        and MockMyCli.connect_args["port"] == 6
-        and MockMyCli.connect_args["database"] == "dsn_database"
-        and MockMyCli.connect_args["ssl"]["enable"] is True
-    )
+    assert result.exit_code == 0, result.output + ' ' + str(result.exception)
+    assert MockMyCli.connect_args['user'] == 'dsn_user'
+    assert MockMyCli.connect_args['passwd'] == 'dsn_passwd'
+    assert MockMyCli.connect_args['host'] == 'dsn_host'
+    assert MockMyCli.connect_args['port'] == 6
+    assert MockMyCli.connect_args['database'] == 'dsn_database'
+    assert MockMyCli.connect_args['ssl']['mode'] == 'on'
 
     # Accept a literal DSN with the --dsn flag (not only an alias)
     result = runner.invoke(
