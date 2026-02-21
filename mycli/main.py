@@ -1883,8 +1883,8 @@ def cli(
     # ssh_port and ssh_config_path have truthy defaults and are not included
     if any([ssh_user, ssh_host, ssh_password, ssh_key_filename, list_ssh_config, ssh_config_host]) and not ssh_warning_off:
         click.secho(
-            "Warning: The built-in SSH functionality is soft deprecated and may be removed in a future release. "
-            "Please discuss or vote on this at https://github.com/dbcli/mycli/issues/1464",
+            "Warning: The built-in SSH functionality is deprecated and will be removed in a future release. "
+            "See Issue https://github.com/dbcli/mycli/issues/1464",
             err=True,
             fg="red",
         )
