@@ -8,7 +8,7 @@ from pymysql.cursors import Cursor
 from mycli import __version__
 from mycli.packages.special import iocommands
 from mycli.packages.special.main import ArgType, special_command
-from mycli.packages.special.utils import format_uptime
+from mycli.packages.special.utils import format_uptime, get_ssl_version
 from mycli.packages.sqlresult import SQLResult
 
 logger = logging.getLogger(__name__)
@@ -126,6 +126,7 @@ def status(cur: Cursor, **_) -> list[SQLResult]:
 
     output.append(("Server version:", f'{variables["version"]} {variables["version_comment"]}'))
     output.append(("Protocol version:", variables["protocol_version"]))
+    output.append(('SSL/TLS version:', get_ssl_version(cur)))
 
     if "unix" in cur.connection.host_info.lower():
         host_info = cur.connection.host_info
