@@ -6,6 +6,7 @@ Features
 * Let the `--dsn` argument accept literal DSNs as well as aliases.
 * Accept `--character-set` as an alias for `--charset` at the CLI.
 * Add SSL/TLS version to `status` output.
+* Accept new-style `ssl_mode` in DSN URI query parameters, to match CLI argument.
 
 
 Bug Fixes
