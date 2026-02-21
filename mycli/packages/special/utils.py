@@ -2,6 +2,7 @@ import logging
 import os
 import subprocess
 
+import pymysql
 from pymysql.cursors import Cursor
 
 logger = logging.getLogger(__name__)
@@ -52,6 +53,22 @@ def format_uptime(uptime_in_seconds: str) -> str:
         uptime_values.append(f'{value} {unit}')
 
     uptime = " ".join(uptime_values)
+    return uptime
+
+
+def get_uptime(cur: Cursor) -> int:
+    query = 'SHOW STATUS LIKE "Uptime"'
+    logger.debug(query)
+
+    uptime = 0
+
+    try:
+        cur.execute(query)
+        if one := cur.fetchone():
+            uptime = int(one[1] or 0)
+    except pymysql.err.OperationalError:
+        pass
+
     return uptime
 
 

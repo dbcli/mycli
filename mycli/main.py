@@ -66,6 +66,7 @@ from mycli.packages.parseutils import is_destructive, is_dropping_database, is_v
 from mycli.packages.prompt_utils import confirm, confirm_destructive_query
 from mycli.packages.special.favoritequeries import FavoriteQueries
 from mycli.packages.special.main import ArgType
+from mycli.packages.special.utils import format_uptime, get_uptime
 from mycli.packages.sqlresult import SQLResult
 from mycli.packages.tabular_output import sql_format
 from mycli.packages.toolkit.history import FileHistoryWithTimestamp
@@ -1448,6 +1449,7 @@ class MyCli:
         with self._completer_lock:
             return self.completer.get_completions(Document(text=text, cursor_position=cursor_position), None)
 
+    # todo: time/uptime update on every character typed, instead of after every return
     def get_prompt(self, string: str) -> str:
         sqlexecute = self.sqlexecute
         assert sqlexecute is not None
@@ -1477,6 +1479,18 @@ class MyCli:
         string = string.replace("\\k", os.path.basename(sqlexecute.socket or str(sqlexecute.port)))
         string = string.replace("\\K", sqlexecute.socket or str(sqlexecute.port))
         string = string.replace("\\A", self.dsn_alias or "(none)")
+        # jump through hoops for the test environment, and for efficiency
+        if hasattr(sqlexecute, 'conn') and sqlexecute.conn is not None:
+            if '\\y' in string:
+                with sqlexecute.conn.cursor() as cur:
+                    string = string.replace('\\y', str(get_uptime(cur)) or '(none)')
+            if '\\Y' in string:
+                with sqlexecute.conn.cursor() as cur:
+                    string = string.replace('\\Y', format_uptime(str(get_uptime(cur))) or '(none)')
+        else:
+            string = string.replace('\\y', '(none)')
+            string = string.replace('\\Y', '(none)')
+
         string = string.replace("\\_", " ")
         return string
 
