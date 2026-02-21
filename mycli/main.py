@@ -1725,9 +1725,9 @@ class MyCli:
 @click.option(
     '--use-keyring',
     'use_keyring_cli_opt',
-    type=click.Choice(['true', 'false', 'reset']),
+    type=str,
     default=None,
-    help='Store and retrieve passwords from the system keyring: true/false/reset.',
+    help='Store and retrieve passwords from the system keyring: on/off/reset.',
 )
 @click.option("--checkup", is_flag=True, help="Run a checkup on your config file.")
 @click.pass_context
@@ -2070,7 +2070,11 @@ def cli(
         use_keyring = str_to_bool(mycli.config['main'].get('use_keyring', 'False'))
         reset_keyring = False
     else:
-        use_keyring = str_to_bool(use_keyring_cli_opt)
+        try:
+            use_keyring = str_to_bool(use_keyring_cli_opt)
+        except ValueError:
+            click.secho('Unknown value for --use_keyring', err=True, fg='red')
+            sys.exit(1)
         reset_keyring = False
 
     # todo: removeme after a period of transition
