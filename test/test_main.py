@@ -754,6 +754,9 @@ def test_dsn(monkeypatch):
         config = {
             "main": {},
             "alias_dsn": {},
+            "connection": {
+                "default_keepalive_ticks": 0,
+            },
         }
 
         def __init__(self, **args):
@@ -763,6 +766,7 @@ def test_dsn(monkeypatch):
             self.redirect_formatter = Formatter()
             self.ssl_mode = "auto"
             self.my_cnf = {"client": {}, "mysqld": {}}
+            self.default_keepalive_ticks = 0
 
         def connect(self, **args):
             MockMyCli.connect_args = args
@@ -820,6 +824,9 @@ def test_dsn(monkeypatch):
     MockMyCli.config = {
         "main": {},
         "alias_dsn": {"test": "mysql://alias_dsn_user:alias_dsn_passwd@alias_dsn_host:4/alias_dsn_database"},
+        "connection": {
+            "default_keepalive_ticks": 0,
+        },
     }
     MockMyCli.connect_args = None
 
@@ -838,6 +845,9 @@ def test_dsn(monkeypatch):
     MockMyCli.config = {
         "main": {},
         "alias_dsn": {"test": "mysql://alias_dsn_user:alias_dsn_passwd@alias_dsn_host:4/alias_dsn_database"},
+        "connection": {
+            "default_keepalive_ticks": 0,
+        },
     }
     MockMyCli.connect_args = None
 
@@ -895,6 +905,24 @@ def test_dsn(monkeypatch):
 
     # When a user uses a DSN with query parameters, and also used command line
     # arguments, prefer the command line arguments.
+    MockMyCli.connect_args = None
+    MockMyCli.config = {
+        "main": {},
+        "alias_dsn": {},
+        "connection": {
+            "default_keepalive_ticks": 0,
+        },
+    }
+
+    # keepalive_ticks as a query parameter
+    result = runner.invoke(mycli.main.cli, args=["mysql://dsn_user:dsn_passwd@dsn_host:6/dsn_database?keepalive_ticks=30"])
+    assert result.exit_code == 0, result.output + " " + str(result.exception)
+    assert MockMyCli.connect_args["keepalive_ticks"] == 30
+
+    MockMyCli.connect_args = None
+
+    # When a user uses a DSN with query parameters, and also used command line
+    # arguments, use the command line arguments.
     result = runner.invoke(
         mycli.main.cli,
         args=[
@@ -958,6 +986,9 @@ def test_ssh_config(monkeypatch):
         config = {
             "main": {},
             "alias_dsn": {},
+            "connection": {
+                "default_keepalive_ticks": 0,
+            },
         }
 
         def __init__(self, **args):
@@ -967,6 +998,7 @@ def test_ssh_config(monkeypatch):
             self.redirect_formatter = Formatter()
             self.ssl_mode = "auto"
             self.my_cnf = {"client": {}, "mysqld": {}}
+            self.default_keepalive_ticks = 0
 
         def connect(self, **args):
             MockMyCli.connect_args = args
