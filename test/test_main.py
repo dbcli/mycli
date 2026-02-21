@@ -533,6 +533,20 @@ def test_batch_mode(executor):
 
 
 @dbtest
+def test_batch_mode_multiline_statement(executor):
+    run(executor, """create table test(a text)""")
+    run(executor, """insert into test values('abc'), ('def'), ('ghi')""")
+
+    sql = "select count(*)\nfrom test;\nselect * from test limit 1;"
+
+    runner = CliRunner()
+    result = runner.invoke(cli, args=CLI_ARGS, input=sql)
+
+    assert result.exit_code == 0
+    assert "count(*)\n3\na\nabc\n" in "".join(result.output)
+
+
+@dbtest
 def test_batch_mode_table(executor):
     run(executor, """create table test(a text)""")
     run(executor, """insert into test values('abc'), ('def'), ('ghi')""")
