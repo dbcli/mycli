@@ -1874,7 +1874,7 @@ def cli(
     if ssl_enable is not None:
         click.secho(
             "Warning: The --ssl/--no-ssl CLI options are deprecated and will be removed in a future release. "
-            "Please use the ssl_mode config or --ssl-mode CLI options instead. "
+            "Please use the \"default_ssl_mode\" config option or --ssl-mode CLI flag instead. "
             "See issue https://github.com/dbcli/mycli/issues/1507",
             err=True,
             fg="yellow",
@@ -1971,28 +1971,38 @@ def cli(
             dsn_params = {}
 
         if params := dsn_params.get('ssl'):
-            ssl_enable = ssl_enable or (params[0].lower() == 'true')
+            click.secho(
+                'Warning: The "ssl" DSN URI parameter is deprecated and will be removed in a future release. '
+                'Please use the "ssl_mode" parameter instead. '
+                'See issue https://github.com/dbcli/mycli/issues/1507',
+                err=True,
+                fg='yellow',
+            )
+            if params[0].lower() == 'true':
+                ssl_mode = 'on'
+        if params := dsn_params.get('ssl_mode'):
+            ssl_mode = ssl_mode or params[0]
         if params := dsn_params.get('ssl_ca'):
             ssl_ca = ssl_ca or params[0]
-            ssl_enable = True
+            ssl_mode = ssl_mode or 'on'
         if params := dsn_params.get('ssl_capath'):
             ssl_capath = ssl_capath or params[0]
-            ssl_enable = True
+            ssl_mode = ssl_mode or 'on'
         if params := dsn_params.get('ssl_cert'):
             ssl_cert = ssl_cert or params[0]
-            ssl_enable = True
+            ssl_mode = ssl_mode or 'on'
         if params := dsn_params.get('ssl_key'):
             ssl_key = ssl_key or params[0]
-            ssl_enable = True
+            ssl_mode = ssl_mode or 'on'
         if params := dsn_params.get('ssl_cipher'):
             ssl_cipher = ssl_cipher or params[0]
-            ssl_enable = True
+            ssl_mode = ssl_mode or 'on'
         if params := dsn_params.get('tls_version'):
             tls_version = tls_version or params[0]
-            ssl_enable = True
+            ssl_mode = ssl_mode or 'on'
         if params := dsn_params.get('ssl_verify_server_cert'):
             ssl_verify_server_cert = ssl_verify_server_cert or (params[0].lower() == 'true')
-            ssl_enable = True
+            ssl_mode = ssl_mode or 'on'
 
     ssl_mode = ssl_mode or mycli.ssl_mode  # cli option or config option
 
