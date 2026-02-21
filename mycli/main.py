@@ -66,6 +66,7 @@ from mycli.packages.parseutils import is_destructive, is_dropping_database, is_v
 from mycli.packages.prompt_utils import confirm, confirm_destructive_query
 from mycli.packages.special.favoritequeries import FavoriteQueries
 from mycli.packages.special.main import ArgType
+from mycli.packages.special.utils import get_ssl_version
 from mycli.packages.sqlresult import SQLResult
 from mycli.packages.tabular_output import sql_format
 from mycli.packages.toolkit.history import FileHistoryWithTimestamp
@@ -1478,6 +1479,13 @@ class MyCli:
         string = string.replace("\\K", sqlexecute.socket or str(sqlexecute.port))
         string = string.replace("\\A", self.dsn_alias or "(none)")
         string = string.replace("\\_", " ")
+        # jump through hoops for the test environment and for efficiency
+        if hasattr(sqlexecute, 'conn') and sqlexecute.conn is not None:
+            if '\\T' in string:
+                with sqlexecute.conn.cursor() as cur:
+                    string = string.replace('\\T', get_ssl_version(cur) or '(none)')
+        else:
+            string = string.replace('\\T', '(none)')
         return string
 
     def run_query(
