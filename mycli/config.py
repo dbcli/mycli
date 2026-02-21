@@ -305,6 +305,13 @@ def str_to_bool(s: str | bool) -> bool:
         raise ValueError(f'not a recognized boolean value: {s}')
 
 
+def str_to_on_off(s: str | bool) -> str:
+    bool_str = str(str_to_bool(s))
+    if bool_str == 'True':
+        return 'on'
+    return 'off'
+
+
 def strip_matching_quotes(s: str) -> str:
     """Remove matching, surrounding quotes from a string.
 

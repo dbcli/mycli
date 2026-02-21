@@ -56,7 +56,15 @@ from mycli.clistyle import style_factory, style_factory_output
 from mycli.clitoolbar import create_toolbar_tokens_func
 from mycli.compat import WIN
 from mycli.completion_refresher import CompletionRefresher
-from mycli.config import get_mylogin_cnf_path, open_mylogin_cnf, read_config_files, str_to_bool, strip_matching_quotes, write_default_config
+from mycli.config import (
+    get_mylogin_cnf_path,
+    open_mylogin_cnf,
+    read_config_files,
+    str_to_bool,
+    str_to_on_off,
+    strip_matching_quotes,
+    write_default_config,
+)
 from mycli.key_bindings import mycli_bindings
 from mycli.lexer import MyCliLexer
 from mycli.packages import special
@@ -220,7 +228,9 @@ class MyCli:
 
         # set ssl_mode if a valid option is provided in a config file, otherwise None
         ssl_mode = c["main"].get("ssl_mode", None) or c["connection"].get("default_ssl_mode", None)
-        if ssl_mode not in ("auto", "on", "off", None):
+        if ssl_mode is None:
+            self.ssl_mode = ssl_mode
+        elif ssl_mode.lower() not in ("auto", "on", "off", "1", "0", "true", "false"):
             self.echo(f"Invalid config option provided for ssl_mode ({ssl_mode}); ignoring.", err=True, fg="red")
             self.ssl_mode = None
         else:
@@ -1659,7 +1669,7 @@ class MyCli:
     "--ssl-mode",
     "ssl_mode",
     help="Set desired SSL behavior. auto=preferred, on=required, off=off.",
-    type=click.Choice(["auto", "on", "off"]),
+    type=str,
 )
 @click.option("--ssl/--no-ssl", "ssl_enable", default=None, help="Enable SSL for connection (automatically enabled with other flags).")
 @click.option("--ssl-ca", help="CA file in PEM format.", type=click.Path(exists=True))
@@ -1995,6 +2005,14 @@ def cli(
             ssl_enable = True
 
     ssl_mode = ssl_mode or mycli.ssl_mode  # cli option or config option
+    if ssl_mode:
+        ssl_mode = ssl_mode.lower()
+    if ssl_mode and ssl_mode != 'auto':
+        try:
+            ssl_mode = str_to_on_off(ssl_mode)
+        except ValueError:
+            click.secho('Unknown value for ssl_mode', err=True, fg='red')
+            sys.exit(1)
 
     # if there is a mismatch between the ssl_mode value and other sources of ssl config, show a warning
     # specifically using "is False" to not pickup the case where ssl_enable is None (not set by the user)
