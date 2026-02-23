@@ -14,6 +14,7 @@ Features
 * Don't attempt SSL for local socket connections when in "auto" SSL mode.
 * Add prompt format string for SSL/TLS version of the connection.
 * Add prompt format strings for displaying uptime.
+* Add batch mode to startup tips.
 
 
 Bug Fixes
