@@ -2019,6 +2019,8 @@ def cli(
         if params := dsn_params.get('keepalive_ticks'):
             if keepalive_ticks is None:
                 keepalive_ticks = int(params[0])
+        if params := dsn_params.get('character_set'):
+            character_set = character_set or params[0]
 
     keepalive_ticks = keepalive_ticks if keepalive_ticks is not None else mycli.default_keepalive_ticks
     ssl_mode = ssl_mode or mycli.ssl_mode  # cli option or config option

@@ -10,6 +10,7 @@ Features
 * Accept new-style `ssl_mode` in DSN URI query parameters, to match CLI argument.
 * Fully deprecate the built-in SSH functionality.
 * Let `--keepalive-ticks` be set per-connection, as a CLI option or DSN parameter.
+* Accept `character_set` as a DSN query parameter.
 
 
 Bug Fixes
