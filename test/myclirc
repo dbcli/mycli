@@ -163,9 +163,11 @@ default_keepalive_ticks = 0
 
 # Sets the desired behavior for handling secure connections to the database server.
 # Possible values:
-# auto = SSL is preferred. Will attempt to connect via SSL, but will fallback to cleartext as needed.
-# on = SSL is required. Will attempt to connect via SSL and will fail if a secure connection is not established.
-# off = do not use SSL. Will fail if the server requires a secure connection.
+# auto = SSL is preferred for TCP/IP connections. Will attempt to connect via SSL, but will fall
+#        back to cleartext as needed.  Will not attempt to connect with SSL over local sockets.
+# on   = SSL is required. Will attempt to connect via SSL even on a local socket, and will fail if
+#        a secure connection is not established.
+# off  = do not use SSL. Will fail if the server requires a secure connection.
 default_ssl_mode = auto
 
 # SSL CA file for connections without --ssl-ca being set
