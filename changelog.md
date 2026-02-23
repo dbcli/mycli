@@ -15,6 +15,7 @@ Features
 * Add prompt format string for SSL/TLS version of the connection.
 * Add prompt format strings for displaying uptime.
 * Add batch mode to startup tips.
+* Update startup tips with new options.
 
 
 Bug Fixes
