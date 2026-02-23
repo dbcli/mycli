@@ -785,6 +785,7 @@ class MyCli:
     def handle_editor_command(
         self,
         text: str,
+        inputhook: Callable | None,
         loaded_message_fn: Callable,
     ) -> str:
         r"""Editor command is any query that is prefixed or suffixed by a '\e'.
@@ -809,9 +810,9 @@ class MyCli:
             while True:
                 try:
                     assert isinstance(self.prompt_app, PromptSession)
-                    # buglet: this prompt() invocation doesn't have an inputhook for keepalive pings
                     text = self.prompt_app.prompt(
                         default=sql,
+                        inputhook=inputhook,
                         message=loaded_message_fn,
                     )
                     break
@@ -1066,6 +1067,7 @@ class MyCli:
                 try:
                     text = self.handle_editor_command(
                         text,
+                        inputhook,
                         loaded_message_fn,
                     )
                 except RuntimeError as e:
