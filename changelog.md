@@ -23,6 +23,7 @@ Bug Fixes
 * Allow users to use empty passwords without prompting or any configuration (#1584).
 * Check the existence of a socket more directly in `status`.
 * Allow multi-line SQL statements in batch mode on the standard input.
+* Fix extraneous prompt refresh on every keystroke.
 
 
 1.55.0 (2026/02/20)

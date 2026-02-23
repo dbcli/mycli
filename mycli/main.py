@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import defaultdict, namedtuple
 from decimal import Decimal
+import functools
 from io import TextIOWrapper
 import logging
 import os
@@ -11,7 +12,7 @@ import shutil
 import sys
 import threading
 import traceback
-from typing import IO, Any, Generator, Iterable, Literal
+from typing import IO, Any, Callable, Generator, Iterable, Literal
 
 try:
     from pwd import getpwuid
@@ -263,6 +264,7 @@ class MyCli:
 
         self.min_completion_trigger = c["main"].as_int("min_completion_trigger")
         MIN_COMPLETION_TRIGGER = self.min_completion_trigger
+        self.last_prompt_message = ANSI('')
 
         # Register custom special commands.
         self.register_special_commands()
@@ -769,7 +771,11 @@ class MyCli:
             self.echo(str(e), err=True, fg="red")
             sys.exit(1)
 
-    def handle_editor_command(self, text: str) -> str:
+    def handle_editor_command(
+        self,
+        text: str,
+        loaded_message_fn: Callable,
+    ) -> str:
         r"""Editor command is any query that is prefixed or suffixed by a '\e'.
         The reason for a while loop is because a user might edit a query
         multiple times. For eg:
@@ -793,7 +799,10 @@ class MyCli:
                 try:
                     assert isinstance(self.prompt_app, PromptSession)
                     # buglet: this prompt() invocation doesn't have an inputhook for keepalive pings
-                    text = self.prompt_app.prompt(default=sql)
+                    text = self.prompt_app.prompt(
+                        default=sql,
+                        message=loaded_message_fn,
+                    )
                     break
                 except KeyboardInterrupt:
                     sql = ""
@@ -878,12 +887,15 @@ class MyCli:
             else:
                 print("Tip —", tips_picker())
 
-        def get_message() -> ANSI:
+        def get_prompt_message(app) -> ANSI:
+            if app.current_buffer.text:
+                return self.last_prompt_message
             prompt = self.get_prompt(self.prompt_format)
             if self.prompt_format == self.default_prompt and len(prompt) > self.max_len_prompt:
                 prompt = self.get_prompt(self.default_prompt_splitln)
             prompt = prompt.replace("\\x1b", "\x1b")
-            return ANSI(prompt)
+            self.last_prompt_message = ANSI(prompt)
+            return self.last_prompt_message
 
         def get_continuation(width: int, _two: int, _three: int) -> AnyFormattedText:
             if self.multiline_continuation_char == "":
@@ -1029,7 +1041,11 @@ class MyCli:
             if text is None:
                 try:
                     assert self.prompt_app is not None
-                    text = self.prompt_app.prompt(inputhook=inputhook)
+                    loaded_message_fn = functools.partial(get_prompt_message, self.prompt_app.app)
+                    text = self.prompt_app.prompt(
+                        inputhook=inputhook,
+                        message=loaded_message_fn,
+                    )
                 except KeyboardInterrupt:
                     return
 
@@ -1037,7 +1053,10 @@ class MyCli:
                 special.set_forced_horizontal_output(False)
 
                 try:
-                    text = self.handle_editor_command(text)
+                    text = self.handle_editor_command(
+                        text,
+                        loaded_message_fn,
+                    )
                 except RuntimeError as e:
                     logger.error("sql: %r, error: %r", text, e)
                     logger.error("traceback: %r", traceback.format_exc())
@@ -1072,7 +1091,11 @@ class MyCli:
                             click.echo("---")
                         if special.is_timing_enabled():
                             click.echo(f"Time: {duration:.2f} seconds")
-                        text = self.prompt_app.prompt(default=sql or '', inputhook=inputhook)
+                        text = self.prompt_app.prompt(
+                            default=sql or '',
+                            inputhook=inputhook,
+                            message=loaded_message_fn,
+                        )
                     except KeyboardInterrupt:
                         return
                     except special.FinishIteration as e:
@@ -1211,7 +1234,6 @@ class MyCli:
                 color_depth=ColorDepth.DEPTH_24_BIT if 'truecolor' in os.getenv('COLORTERM', '').lower() else None,
                 lexer=PygmentsLexer(MyCliLexer),
                 reserve_space_for_menu=self.get_reserved_space(),
-                message=get_message,
                 prompt_continuation=get_continuation,
                 bottom_toolbar=get_toolbar_tokens,
                 complete_style=complete_style,
