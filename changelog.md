@@ -7,6 +7,7 @@ Features
 * Accept `--character-set` as an alias for `--charset` at the CLI.
 * Add SSL/TLS version to `status` output.
 * Accept `socket` as a DSN query parameter.
+* Accept new-style `ssl_mode` in DSN URI query parameters, to match CLI argument.
 
 
 Bug Fixes
