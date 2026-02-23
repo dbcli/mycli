@@ -929,6 +929,20 @@ def test_dsn(monkeypatch):
         and MockMyCli.connect_args['database'] == 'dsn_database'
     )
 
+    # accept socket as a query parameter
+    result = runner.invoke(
+        mycli.main.cli,
+        args=[
+            'mysql://dsn_user:dsn_passwd@localhost/dsn_database?socket=mysql.sock',
+        ],
+    )
+    assert result.exit_code == 0, result.output + ' ' + str(result.exception)
+    assert MockMyCli.connect_args['user'] == 'dsn_user'
+    assert MockMyCli.connect_args['passwd'] == 'dsn_passwd'
+    assert MockMyCli.connect_args['host'] == 'localhost'
+    assert MockMyCli.connect_args['database'] == 'dsn_database'
+    assert MockMyCli.connect_args['socket'] == 'mysql.sock'
+
 
 def test_ssh_config(monkeypatch):
     # Setup classes to mock mycli.main.MyCli

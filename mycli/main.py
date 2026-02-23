@@ -1993,6 +1993,8 @@ def cli(
         if params := dsn_params.get('ssl_verify_server_cert'):
             ssl_verify_server_cert = ssl_verify_server_cert or (params[0].lower() == 'true')
             ssl_enable = True
+        if params := dsn_params.get('socket'):
+            socket = socket or params[0]
 
     ssl_mode = ssl_mode or mycli.ssl_mode  # cli option or config option
 
