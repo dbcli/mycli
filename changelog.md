@@ -12,6 +12,7 @@ Features
 * Let `--keepalive-ticks` be set per-connection, as a CLI option or DSN parameter.
 * Accept `character_set` as a DSN query parameter.
 * Don't attempt SSL for local socket connections when in "auto" SSL mode.
+* Add prompt format string for SSL/TLS version of the connection.
 
 
 Bug Fixes
