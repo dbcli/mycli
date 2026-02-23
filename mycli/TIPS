@@ -106,6 +106,8 @@ the "watch" command executes a query every N seconds!
 
 display query output vertically using \G at the end of a query!
 
+run SQL scripts in batch mode using the standard input!
+
 ###
 ### keystrokes
 ###
