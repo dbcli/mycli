@@ -194,7 +194,7 @@ def open_external_editor(filename: str | None = None, sql: str | None = None) ->
                 query = f.read()
         except IOError:
             message = f'Error reading file: {filename}'
-        return (query, message)
+        return (query.rstrip('\n'), message)
 
     # Populate the editor buffer with the partial sql (if available) and a
     # placeholder comment.
