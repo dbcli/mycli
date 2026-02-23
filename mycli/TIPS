@@ -38,6 +38,8 @@ the --init-command option lets you execute initialization SQL before a session!
 
 the --login-path option lets you work with login-path files!
 
+--keepalive-ticks=<num> sets keepalive pings for a single session!
+
 ###
 ### commands
 ###
