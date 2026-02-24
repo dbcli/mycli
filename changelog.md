@@ -4,6 +4,7 @@ Upcoming (TBD)
 Features
 ---------
 * Add extra error output on connection failure for possible SSL mismatch (#1584).
+* Bind alternate terminal sequences for function keys F2 - F4.
 
 
 Bug Fixes
