@@ -1,3 +1,16 @@
+Upcoming (TBD)
+==============
+
+Features
+---------
+* Add extra error output on connection failure for possible SSL mismatch (#1584).
+
+
+Bug Fixes
+---------
+* Let interactive changes to the prompt format respect dynamically-computed values.
+
+
 1.56.0 (2026/02/23)
 ==============
 
@@ -6,7 +19,6 @@ Features
 * Let the `--dsn` argument accept literal DSNs as well as aliases.
 * Accept `--character-set` as an alias for `--charset` at the CLI.
 * Add SSL/TLS version to `status` output.
-* Add extra error output on connection failure for possible SSL mismatch (#1584)
 * Accept `socket` as a DSN query parameter.
 * Accept new-style `ssl_mode` in DSN URI query parameters, to match CLI argument.
 * Fully deprecate the built-in SSH functionality.
