@@ -43,9 +43,18 @@ def search_history(event: KeyPressEvent, incremental: bool = False) -> None:
         formatted_history_items.append(f"{timestamp}  {formatted_item}")
         original_history_items.append(item)
 
+    options = [
+        '--info=hidden',
+        '--scheme=history',
+        '--tiebreak=index',
+        '--bind=ctrl-r:up,alt-r:up',
+        '--preview-window=down:wrap',
+        '--preview="printf \'%s\' {}"',
+    ]
+
     result = fzf.prompt(
         formatted_history_items,
-        fzf_options="--scheme=history --tiebreak=index --bind ctrl-r:up,alt-r:up --preview-window=down:wrap --preview=\"printf '%s' {}\"",
+        fzf_options=' '.join(options),
     )
 
     if result:
