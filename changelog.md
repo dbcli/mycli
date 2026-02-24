@@ -17,6 +17,7 @@ Bug Fixes
 Internal
 ---------
 * Remove outdated email address in `pyproject.toml`.
+* Set well-known URL values in `pyproject.toml`.
 
 
 1.56.0 (2026/02/23)

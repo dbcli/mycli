@@ -6,7 +6,6 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = "BSD-3-Clause"
 authors = [{ name = "Mycli Core Team" }]
-urls = { homepage = "http://mycli.net" }
 
 dependencies = [
     "click ~= 8.3.1",
@@ -24,6 +23,13 @@ dependencies = [
     "rapidfuzz ~= 3.14.3",
     "keyring ~= 25.7.0",
 ]
+
+[project.urls]
+Homepage = 'https://mycli.net'
+Documentation = 'https://mycli.net/docs'
+Source = 'https://github.com/dbcli/mycli'
+Issues = 'https://github.com/dbcli/mycli/issues'
+Changelog = 'https://github.com/dbcli/mycli/blob/main/changelog.md'
 
 [build-system]
 requires = ["setuptools>=64.0", "setuptools-scm>=8"]
