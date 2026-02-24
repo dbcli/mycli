@@ -5,6 +5,7 @@ Features
 ---------
 * Add extra error output on connection failure for possible SSL mismatch (#1584).
 * Bind alternate terminal sequences for function keys F2 - F4.
+* Add `llm help` subcommand.
 
 
 Bug Fixes
@@ -13,6 +14,7 @@ Bug Fixes
 * Better handle arguments to `system cd`.
 * Fix missing keepalives in `\e` prompt loop.
 * Always strip trailing newlines with `\e`.
+* Fix `\llm` without arguments, and remove debug output.
 
 
 Documentation
