@@ -5,7 +5,7 @@ description = "CLI for MySQL Database. With auto-completion and syntax highlight
 readme = "README.md"
 requires-python = ">=3.10"
 license = "BSD-3-Clause"
-authors = [{ name = "Mycli Core Team", email = "mycli-dev@googlegroups.com" }]
+authors = [{ name = "Mycli Core Team" }]
 urls = { homepage = "http://mycli.net" }
 
 dependencies = [
