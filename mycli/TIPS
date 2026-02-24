@@ -124,6 +124,10 @@ toggle vi mode using keystroke F4!
 
 complete at cursor using the tab key!
 
+summon completion candidates using control-space!
+
+control-space works well with "min_completion_trigger" in ~/.myclirc!
+
 prettify a query using keystrokes control-x + p!
 
 un-prettify a query using keystrokes control-x + u!
@@ -213,6 +217,8 @@ create DSN shortcuts using the "[alias_dsn]" section in ~/.myclirc!
 set up per-DSN initial commands using the "[alias_dsn.init-commands]" section in ~/.myclirc!
 
 set up connection defaults using the "[connection]" section in ~/.myclirc!
+
+use "min_completion_trigger" in ~/.myclirc to defer completions!
 
 ###
 ### redirection

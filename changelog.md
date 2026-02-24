@@ -17,6 +17,7 @@ Bug Fixes
 Documentation
 ---------
 * Startup tips: add right-arrow key binding.
+* Startup tips: add control-space and the `min_completion_trigger` setting.
 * Prefer `https` protocol over `http` in documentation.
 
 
