@@ -14,6 +14,11 @@ Bug Fixes
 * Always strip trailing newlines with `\e`.
 
 
+Internal
+---------
+* Remove outdated email address in `pyproject.toml`.
+
+
 1.56.0 (2026/02/23)
 ==============
 
