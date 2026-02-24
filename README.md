@@ -4,13 +4,13 @@
 
 A command line client for MySQL that can do auto-completion and syntax highlighting.
 
-Homepage: [http://mycli.net](http://mycli.net)
-Documentation: [http://mycli.net/docs](http://mycli.net/docs)
+Homepage: [https://mycli.net](https://mycli.net)
+Documentation: [https://mycli.net/docs](https://mycli.net/docs)
 
 ![Completion](screenshots/tables.png)
 ![CompletionGif](screenshots/main.gif)
 
-Postgres Equivalent: [http://pgcli.com](http://pgcli.com)
+Postgres Equivalent: [https://pgcli.com](https://pgcli.com)
 
 Quick Start
 -----------
@@ -115,7 +115,7 @@ sudo dnf install mycli
 
 Install the `less` pager, for example by `scoop install less`.
 
-Follow the instructions on this blogpost: http://web.archive.org/web/20221006045208/https://www.codewall.co.uk/installing-using-mycli-on-windows/
+Follow the instructions on this blogpost: https://web.archive.org/web/20221006045208/https://www.codewall.co.uk/installing-using-mycli-on-windows/
 
 **Mycli is not tested on Windows**, but the libraries used in the app are Windows-compatible.
 This means it should work without any modifications, but isn't supported.
@@ -130,15 +130,15 @@ Mycli on Windows.
 
 ### Thanks:
 
-This project was funded through kickstarter. My thanks to the [backers](http://mycli.net/sponsors) who supported the project.
+This project was funded through kickstarter. My thanks to the [backers](https://mycli.net/sponsors) who supported the project.
 
 A special thanks to [Jonathan Slenders](https://twitter.com/jonathan_s) for
-creating [Python Prompt Toolkit](http://github.com/jonathanslenders/python-prompt-toolkit),
+creating [Python Prompt Toolkit](https://github.com/jonathanslenders/python-prompt-toolkit),
 which is quite literally the backbone library, that made this app possible.
 Jonathan has also provided valuable feedback and support during the development
 of this app.
 
-[Click](http://click.pocoo.org/) is used for command line option parsing
+[Click](https://palletsprojects.com/projects/click) is used for command line option parsing
 and printing error messages.
 
 Thanks to [PyMysql](https://github.com/PyMySQL/PyMySQL) for a pure python adapter to MySQL database.
@@ -159,9 +159,9 @@ or set `--charset=utf8` when invoking MyCLI.
 
 ### Configuration and Usage
 
-For more information on using and configuring mycli, [check out our documentation](http://mycli.net/docs).
+For more information on using and configuring mycli, [check out our documentation](https://mycli.net/docs).
 
 Common topics include:
-- [Configuring mycli](http://mycli.net/config)
-- [Using/Disabling the pager](http://mycli.net/pager)
-- [Syntax colors](http://mycli.net/syntax)
+- [Configuring mycli](https://mycli.net/config)
+- [Using/Disabling the pager](https://mycli.net/pager)
+- [Syntax colors](https://mycli.net/syntax)
