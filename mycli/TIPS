@@ -146,6 +146,8 @@ use keystroke control-g to cancel completion popups!
 
 use keystroke right-arrow to accept a full-line suggestion from your history!
 
+cancel history search using keystrokes Escape or control-g!
+
 ###
 ### myclirc options
 ###
