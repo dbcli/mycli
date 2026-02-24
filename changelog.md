@@ -18,6 +18,7 @@ Documentation
 ---------
 * Startup tips: add right-arrow key binding.
 * Startup tips: add control-space and the `min_completion_trigger` setting.
+* Startup tips: add history-search bindings.
 * Prefer `https` protocol over `http` in documentation.
 
 
