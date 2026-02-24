@@ -4,6 +4,7 @@ Upcoming (TBD)
 Features
 ---------
 * Add extra error output on connection failure for possible SSL mismatch (#1584).
+* Startup tips: add right-arrow key binding.
 
 
 Bug Fixes

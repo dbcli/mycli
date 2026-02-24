@@ -140,6 +140,8 @@ search query history using keystroke control-r!
 
 use keystroke control-g to cancel completion popups!
 
+use keystroke right-arrow to accept a full-line suggestion from your history!
+
 ###
 ### myclirc options
 ###
