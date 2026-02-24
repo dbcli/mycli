@@ -606,7 +606,7 @@ def test_after_as(expression):
 )
 def test_source_is_file(expression):
     # "source" has to be registered by hand because that usually happens inside MyCLI in mycli/main.py
-    special.register_special_command(..., 'source', '\\. filename', 'Execute commands from file.', aliases=['\\.'])
+    special.register_special_command(..., 'source', '\\. <filename>', 'Execute commands from file.', aliases=['\\.'])
     suggestions = suggest_type(expression, expression)
     assert suggestions == [{"type": "file_name"}]
 

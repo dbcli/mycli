@@ -61,7 +61,7 @@ def list_databases(cur: Cursor, **_) -> list[SQLResult]:
 
 
 @special_command(
-    "status", "\\s", "Get status information from the server.", arg_type=ArgType.RAW_QUERY, aliases=["\\s"], case_sensitive=True
+    "status", "status", "Get status information from the server.", arg_type=ArgType.RAW_QUERY, aliases=["\\s"], case_sensitive=True
 )
 def status(cur: Cursor, **_) -> list[SQLResult]:
     query = "SHOW GLOBAL STATUS;"

@@ -80,7 +80,7 @@ def complete_event():
 def test_use_database_completion(completer, complete_event):
     text = "USE "
     position = len(text)
-    special.register_special_command(..., 'use', '\\u', 'Change to a new database.', aliases=['\\u'])
+    special.register_special_command(..., 'use', '\\u [database]', 'Change to a new database.', aliases=['\\u'])
     result = completer.get_completions(Document(text=text, cursor_position=position), complete_event)
     assert list(result) == [
         Completion(text="test", start_position=0),
@@ -640,7 +640,7 @@ def dummy_list_path(dir_name):
 )
 def test_file_name_completion(completer, complete_event, text, expected):
     position = len(text)
-    special.register_special_command(..., 'source', '\\. filename', 'Execute commands from file.', aliases=['\\.'])
+    special.register_special_command(..., 'source', '\\. <filename>', 'Execute commands from file.', aliases=['\\.'])
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
     expected = [Completion(txt, pos) for txt, pos in expected]
     assert result == expected
@@ -677,7 +677,7 @@ def test_source_eager_completion(completer, complete_event):
     script_filename = 'script_for_test_suite.sql'
     f = open(script_filename, 'w')
     f.close()
-    special.register_special_command(..., 'source', '\\. filename', 'Execute commands from file.', aliases=['\\.'])
+    special.register_special_command(..., 'source', '\\. <filename>', 'Execute commands from file.', aliases=['\\.'])
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
     success = True
     error = 'unknown'
@@ -701,7 +701,7 @@ def test_source_leading_dot_suggestions_completion(completer, complete_event):
     script_filename = 'script_for_test_suite.sql'
     f = open(script_filename, 'w')
     f.close()
-    special.register_special_command(..., 'source', '\\. filename', 'Execute commands from file.', aliases=['\\.'])
+    special.register_special_command(..., 'source', '\\. <filename>', 'Execute commands from file.', aliases=['\\.'])
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
     success = True
     error = 'unknown'

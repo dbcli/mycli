@@ -300,30 +300,30 @@ class MyCli:
             self.sqlexecute.close()
 
     def register_special_commands(self) -> None:
-        special.register_special_command(self.change_db, "use", "\\u", "Change to a new database.", aliases=["\\u"])
+        special.register_special_command(self.change_db, "use", "use <database>", "Change to a new database.", aliases=["\\u"])
         special.register_special_command(
             self.manual_reconnect,
             "connect",
-            "\\r",
-            "Reconnect to the database. Optional database argument.",
+            "connect [database]",
+            "Reconnect to the server, optionally switching databases.",
             aliases=["\\r"],
             case_sensitive=True,
         )
         special.register_special_command(
-            self.refresh_completions, "rehash", "\\#", "Refresh auto-completions.", arg_type=ArgType.NO_QUERY, aliases=["\\#"]
+            self.refresh_completions, "rehash", "rehash", "Refresh auto-completions.", arg_type=ArgType.NO_QUERY, aliases=["\\#"]
         )
         special.register_special_command(
             self.change_table_format,
             "tableformat",
-            "\\T",
-            "Change the table format used to output results.",
+            "tableformat <format>",
+            "Change the table format used to output interactive results.",
             aliases=["\\T"],
             case_sensitive=True,
         )
         special.register_special_command(
             self.change_redirect_format,
             "redirectformat",
-            "\\Tr",
+            "redirectformat <format>",
             "Change the table format used to output redirected results.",
             aliases=["\\Tr"],
             case_sensitive=True,
@@ -331,7 +331,7 @@ class MyCli:
         special.register_special_command(
             self.disable_show_warnings,
             "nowarnings",
-            "\\w",
+            "nowarnings",
             "Disable automatic warnings display.",
             aliases=["\\w"],
             case_sensitive=True,
@@ -339,14 +339,16 @@ class MyCli:
         special.register_special_command(
             self.enable_show_warnings,
             "warnings",
-            "\\W",
+            "warnings",
             "Enable automatic warnings display.",
             aliases=["\\W"],
             case_sensitive=True,
         )
-        special.register_special_command(self.execute_from_file, "source", "\\. filename", "Execute commands from file.", aliases=["\\."])
         special.register_special_command(
-            self.change_prompt_format, "prompt", "\\R", "Change prompt format.", aliases=["\\R"], case_sensitive=True
+            self.execute_from_file, "source", "source <filename>", "Execute commands from file.", aliases=["\\."]
+        )
+        special.register_special_command(
+            self.change_prompt_format, "prompt", "prompt <string>", "Change prompt format.", aliases=["\\R"], case_sensitive=True
         )
 
     def manual_reconnect(self, arg: str = "", **_) -> Generator[SQLResult, None, None]:
