@@ -9,6 +9,7 @@ from mycli.packages.special.llm import (
     is_llm_command,
     sql_using_llm,
 )
+from mycli.packages.sqlresult import SQLResult
 
 
 # Override executor fixture to avoid real DB connections during llm tests
@@ -28,19 +29,33 @@ def test_llm_command_without_args(mock_llm, executor):
     with pytest.raises(FinishIteration) as exc_info:
         handle_llm(test_text, executor, 'mysql', 0, 0)
     # Should return usage message when no args provided
-    assert exc_info.value.args[0] == [(None, None, None, USAGE)]
+    assert exc_info.value.results == [SQLResult(title=USAGE, results=[])]
+
+
+@patch("mycli.packages.special.llm.llm")
+def test_llm_command_with_help_subcommand(mock_llm, executor):
+    r"""
+    Invoking \llm with "help" should print the usage and raise FinishIteration.
+    """
+    assert mock_llm is not None
+    test_text = r"\llm help"
+    with pytest.raises(FinishIteration) as exc_info:
+        handle_llm(test_text, executor, 'mysql', 0, 0)
+    # Should return usage message when "help" subcommand or variant is provided
+    assert exc_info.value.results == [SQLResult(title=USAGE, results=[])]
 
 
 @patch("mycli.packages.special.llm.llm")
 @patch("mycli.packages.special.llm.run_external_cmd")
 def test_llm_command_with_c_flag(mock_run_cmd, mock_llm, executor):
+    string = "Hello, no SQL today."
     # Suppose the LLM returns some text without fenced SQL
-    mock_run_cmd.return_value = (0, "Hello, no SQL today.")
+    mock_run_cmd.return_value = (0, string)
     test_text = r"\llm -c 'Something?'"
     with pytest.raises(FinishIteration) as exc_info:
         handle_llm(test_text, executor, 'mysql', 0, 0)
     # Expect raw output when no SQL fence found
-    assert exc_info.value.args[0] == [(None, None, None, "Hello, no SQL today.")]
+    assert exc_info.value.results == [SQLResult(title=string, results=[])]
 
 
 @patch("mycli.packages.special.llm.llm")
@@ -66,7 +81,7 @@ def test_llm_command_known_subcommand(mock_run_cmd, mock_llm, executor):
     with pytest.raises(FinishIteration) as exc_info:
         handle_llm(test_text, executor, 'mysql', 0, 0)
     mock_run_cmd.assert_called_once_with("llm", "models", restart_cli=False)
-    assert exc_info.value.args[0] is None
+    assert exc_info.value.results is None
 
 
 @patch("mycli.packages.special.llm.llm")
@@ -76,7 +91,7 @@ def test_llm_command_with_help_flag(mock_run_cmd, mock_llm, executor):
     with pytest.raises(FinishIteration) as exc_info:
         handle_llm(test_text, executor, 'mysql', 0, 0)
     mock_run_cmd.assert_called_once_with("llm", "--help", restart_cli=False)
-    assert exc_info.value.args[0] is None
+    assert exc_info.value.results is None
 
 
 @patch("mycli.packages.special.llm.llm")
@@ -86,7 +101,7 @@ def test_llm_command_with_install_flag(mock_run_cmd, mock_llm, executor):
     with pytest.raises(FinishIteration) as exc_info:
         handle_llm(test_text, executor, 'mysql', 0, 0)
     mock_run_cmd.assert_called_once_with("llm", "install", "openai", restart_cli=True)
-    assert exc_info.value.args[0] is None
+    assert exc_info.value.results is None
 
 
 @patch("mycli.packages.special.llm.llm")
@@ -195,4 +210,4 @@ def test_handle_llm_aliases_without_args(prefix, executor, monkeypatch):
     monkeypatch.setattr(llm_module, "llm", object())
     with pytest.raises(FinishIteration) as exc_info:
         handle_llm(prefix, executor, 'mysql', 0, 0)
-    assert exc_info.value.args[0] == [(None, None, None, USAGE)]
+    assert exc_info.value.results == [SQLResult(title=USAGE, results=[])]
