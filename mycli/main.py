@@ -46,6 +46,7 @@ from prompt_toolkit.lexers import PygmentsLexer
 from prompt_toolkit.output import ColorDepth
 from prompt_toolkit.shortcuts import CompleteStyle, PromptSession
 import pymysql
+from pymysql.constants.CR import CR_SERVER_LOST
 from pymysql.constants.ER import ACCESS_DENIED_ERROR, HANDSHAKE_ERROR
 from pymysql.cursors import Cursor
 import sqlglot
@@ -724,6 +725,16 @@ class MyCli:
                     )
                     connection_info["password"] = new_password
                     _connect(retry_password=True)
+                elif e1.args[0] == CR_SERVER_LOST:
+                    self.echo(
+                        (
+                            "Connection to server lost. If this error persists, it may be a mismatch between the server and "
+                            "client SSL configuration. To troubleshoot the issue, try --ssl-mode=off or --ssl-mode=on."
+                        ),
+                        err=True,
+                        fg='red',
+                    )
+                    raise e1
                 else:
                     raise e1
 
