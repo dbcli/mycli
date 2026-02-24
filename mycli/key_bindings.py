@@ -40,10 +40,22 @@ def mycli_bindings(mycli) -> KeyBindings:
         _logger.debug("Detected F2 key.")
         mycli.completer.smart_completion = not mycli.completer.smart_completion
 
+    @kb.add('escape', '[', 'Q')
+    def _(_event: KeyPressEvent) -> None:
+        """Enable/Disable SmartCompletion Mode."""
+        _logger.debug("Detected alternate F2 key sequence.")
+        mycli.completer.smart_completion = not mycli.completer.smart_completion
+
     @kb.add("f3")
     def _(_event: KeyPressEvent) -> None:
         """Enable/Disable Multiline Mode."""
         _logger.debug("Detected F3 key.")
+        mycli.multi_line = not mycli.multi_line
+
+    @kb.add('escape', '[', 'R')
+    def _(_event: KeyPressEvent) -> None:
+        """Enable/Disable Multiline Mode."""
+        _logger.debug('Detected alternate F3 key sequence.')
         mycli.multi_line = not mycli.multi_line
 
     @kb.add("f4")
@@ -56,6 +68,17 @@ def mycli_bindings(mycli) -> KeyBindings:
         else:
             event.app.editing_mode = EditingMode.VI
             mycli.key_bindings = "vi"
+
+    @kb.add('escape', '[', 'S')
+    def _(event: KeyPressEvent) -> None:
+        """Toggle between Vi and Emacs mode."""
+        _logger.debug('Detected alternate F4 key sequence.')
+        if mycli.key_bindings == 'vi':
+            event.app.editing_mode = EditingMode.EMACS
+            mycli.key_bindings = 'emacs'
+        else:
+            event.app.editing_mode = EditingMode.VI
+            mycli.key_bindings = 'vi'
 
     @kb.add("tab")
     def _(event: KeyPressEvent) -> None:
