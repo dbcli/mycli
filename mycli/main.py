@@ -86,7 +86,7 @@ sqlparse.engine.grouping.MAX_GROUPING_TOKENS = None  # type: ignore[assignment]
 # Query tuples are used for maintaining history
 Query = namedtuple("Query", ["query", "successful", "mutating"])
 
-SUPPORT_INFO = "Home: http://mycli.net\nBug tracker: https://github.com/dbcli/mycli/issues"
+SUPPORT_INFO = "Home: https://mycli.net\nBug tracker: https://github.com/dbcli/mycli/issues"
 DEFAULT_WIDTH = 80
 DEFAULT_HEIGHT = 25
 MIN_COMPLETION_TRIGGER = 1

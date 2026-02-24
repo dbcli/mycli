@@ -4,7 +4,6 @@ Upcoming (TBD)
 Features
 ---------
 * Add extra error output on connection failure for possible SSL mismatch (#1584).
-* Startup tips: add right-arrow key binding.
 
 
 Bug Fixes
@@ -13,6 +12,12 @@ Bug Fixes
 * Better handle arguments to `system cd`.
 * Fix missing keepalives in `\e` prompt loop.
 * Always strip trailing newlines with `\e`.
+
+
+Documentation
+---------
+* Startup tips: add right-arrow key binding.
+* Prefer `https` protocol over `http` in documentation.
 
 
 Internal
@@ -1636,7 +1641,7 @@ Features
   ```
 
 * Add `--defaults-group-suffix` to the command line. This lets the user specify
-  a group to use in the my.cnf files. (Thanks: [Irina Truong](http://github.com/j-bennet))
+  a group to use in the my.cnf files. (Thanks: [Irina Truong](https://github.com/j-bennet))
 
   In the my.cnf file a user can specify credentials for different databases and
   invoke mycli with the group name to use the appropriate credentials.
@@ -1701,7 +1706,7 @@ Features
 
 * Fuzzy completion is now case-insensitive. (Thanks: [bjarnagin](https://github.com/bjarnagin))
 * Added new-line (`\n`) to the list of special characters to use in prompt. (Thanks: [brewneaux](https://github.com/brewneaux))
-* Honor the `pager` setting in my.cnf files. (Thanks: [Irina Truong](http://github.com/j-bennet))
+* Honor the `pager` setting in my.cnf files. (Thanks: [Irina Truong](https://github.com/j-bennet))
 
 Bug Fixes
 ----------
@@ -1771,7 +1776,7 @@ Bug Fixes
 [Amjith Ramanujam]: https://blog.amjith.com
 [Artem Bezsmertnyi]: https://github.com/mrdeathless
 [BuonOmo]: https://github.com/BuonOmo
-[Daniel West]: http://github.com/danieljwest
+[Daniel West]: https://github.com/danieljwest
 [Dick Marinus]: https://github.com/meeuw
 [François Pietka]: https://github.com/fpietka
 [Frederic Aoustin]: https://github.com/fraoustin
