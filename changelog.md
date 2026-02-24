@@ -1,4 +1,4 @@
-Upcoming (TBD)
+1.56.0 (2026/02/23)
 ==============
 
 Features
@@ -7,12 +7,25 @@ Features
 * Accept `--character-set` as an alias for `--charset` at the CLI.
 * Add SSL/TLS version to `status` output.
 * Add extra error output on connection failure for possible SSL mismatch (#1584)
+* Accept `socket` as a DSN query parameter.
+* Accept new-style `ssl_mode` in DSN URI query parameters, to match CLI argument.
+* Fully deprecate the built-in SSH functionality.
+* Let `--keepalive-ticks` be set per-connection, as a CLI option or DSN parameter.
+* Accept `character_set` as a DSN query parameter.
+* Don't attempt SSL for local socket connections when in "auto" SSL mode.
+* Add prompt format string for SSL/TLS version of the connection.
+* Add prompt format strings for displaying uptime.
+* Add batch mode to startup tips.
+* Update startup tips with new options.
 
 
 Bug Fixes
 ---------
 * Make `--ssl-capath` argument a directory.
 * Allow users to use empty passwords without prompting or any configuration (#1584).
+* Check the existence of a socket more directly in `status`.
+* Allow multi-line SQL statements in batch mode on the standard input.
+* Fix extraneous prompt refresh on every keystroke.
 
 
 1.55.0 (2026/02/20)

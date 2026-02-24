@@ -533,6 +533,20 @@ def test_batch_mode(executor):
 
 
 @dbtest
+def test_batch_mode_multiline_statement(executor):
+    run(executor, """create table test(a text)""")
+    run(executor, """insert into test values('abc'), ('def'), ('ghi')""")
+
+    sql = "select count(*)\nfrom test;\nselect * from test limit 1;"
+
+    runner = CliRunner()
+    result = runner.invoke(cli, args=CLI_ARGS, input=sql)
+
+    assert result.exit_code == 0
+    assert "count(*)\n3\na\nabc\n" in "".join(result.output)
+
+
+@dbtest
 def test_batch_mode_table(executor):
     run(executor, """create table test(a text)""")
     run(executor, """insert into test values('abc'), ('def'), ('ghi')""")
@@ -754,6 +768,9 @@ def test_dsn(monkeypatch):
         config = {
             "main": {},
             "alias_dsn": {},
+            "connection": {
+                "default_keepalive_ticks": 0,
+            },
         }
 
         def __init__(self, **args):
@@ -763,6 +780,7 @@ def test_dsn(monkeypatch):
             self.redirect_formatter = Formatter()
             self.ssl_mode = "auto"
             self.my_cnf = {"client": {}, "mysqld": {}}
+            self.default_keepalive_ticks = 0
 
         def connect(self, **args):
             MockMyCli.connect_args = args
@@ -820,6 +838,9 @@ def test_dsn(monkeypatch):
     MockMyCli.config = {
         "main": {},
         "alias_dsn": {"test": "mysql://alias_dsn_user:alias_dsn_passwd@alias_dsn_host:4/alias_dsn_database"},
+        "connection": {
+            "default_keepalive_ticks": 0,
+        },
     }
     MockMyCli.connect_args = None
 
@@ -838,6 +859,9 @@ def test_dsn(monkeypatch):
     MockMyCli.config = {
         "main": {},
         "alias_dsn": {"test": "mysql://alias_dsn_user:alias_dsn_passwd@alias_dsn_host:4/alias_dsn_database"},
+        "connection": {
+            "default_keepalive_ticks": 0,
+        },
     }
     MockMyCli.connect_args = None
 
@@ -882,7 +906,7 @@ def test_dsn(monkeypatch):
     )
 
     # Use a DSN with query parameters
-    result = runner.invoke(mycli.main.cli, args=["mysql://dsn_user:dsn_passwd@dsn_host:6/dsn_database?ssl=True"])
+    result = runner.invoke(mycli.main.cli, args=["mysql://dsn_user:dsn_passwd@dsn_host:6/dsn_database?ssl_mode=off"])
     assert result.exit_code == 0, result.output + " " + str(result.exception)
     assert (
         MockMyCli.connect_args["user"] == "dsn_user"
@@ -890,27 +914,43 @@ def test_dsn(monkeypatch):
         and MockMyCli.connect_args["host"] == "dsn_host"
         and MockMyCli.connect_args["port"] == 6
         and MockMyCli.connect_args["database"] == "dsn_database"
-        and MockMyCli.connect_args["ssl"]["enable"] is True
+        and MockMyCli.connect_args["ssl"] is None
     )
 
-    # When a user uses a DSN with query parameters, and used command line
+    # When a user uses a DSN with query parameters, and also used command line
+    # arguments, prefer the command line arguments.
+    MockMyCli.connect_args = None
+    MockMyCli.config = {
+        "main": {},
+        "alias_dsn": {},
+        "connection": {
+            "default_keepalive_ticks": 0,
+        },
+    }
+
+    # keepalive_ticks as a query parameter
+    result = runner.invoke(mycli.main.cli, args=["mysql://dsn_user:dsn_passwd@dsn_host:6/dsn_database?keepalive_ticks=30"])
+    assert result.exit_code == 0, result.output + " " + str(result.exception)
+    assert MockMyCli.connect_args["keepalive_ticks"] == 30
+
+    MockMyCli.connect_args = None
+
+    # When a user uses a DSN with query parameters, and also used command line
     # arguments, use the command line arguments.
     result = runner.invoke(
         mycli.main.cli,
         args=[
-            "mysql://dsn_user:dsn_passwd@dsn_host:6/dsn_database?ssl=False",
-            "--ssl",
+            'mysql://dsn_user:dsn_passwd@dsn_host:6/dsn_database?ssl_mode=off',
+            '--ssl-mode=on',
         ],
     )
-    assert result.exit_code == 0, result.output + " " + str(result.exception)
-    assert (
-        MockMyCli.connect_args["user"] == "dsn_user"
-        and MockMyCli.connect_args["passwd"] == "dsn_passwd"
-        and MockMyCli.connect_args["host"] == "dsn_host"
-        and MockMyCli.connect_args["port"] == 6
-        and MockMyCli.connect_args["database"] == "dsn_database"
-        and MockMyCli.connect_args["ssl"]["enable"] is True
-    )
+    assert result.exit_code == 0, result.output + ' ' + str(result.exception)
+    assert MockMyCli.connect_args['user'] == 'dsn_user'
+    assert MockMyCli.connect_args['passwd'] == 'dsn_passwd'
+    assert MockMyCli.connect_args['host'] == 'dsn_host'
+    assert MockMyCli.connect_args['port'] == 6
+    assert MockMyCli.connect_args['database'] == 'dsn_database'
+    assert MockMyCli.connect_args['ssl']['mode'] == 'on'
 
     # Accept a literal DSN with the --dsn flag (not only an alias)
     result = runner.invoke(
@@ -929,6 +969,49 @@ def test_dsn(monkeypatch):
         and MockMyCli.connect_args['database'] == 'dsn_database'
     )
 
+    # accept socket as a query parameter
+    result = runner.invoke(
+        mycli.main.cli,
+        args=[
+            'mysql://dsn_user:dsn_passwd@localhost/dsn_database?socket=mysql.sock',
+        ],
+    )
+    assert result.exit_code == 0, result.output + ' ' + str(result.exception)
+    assert MockMyCli.connect_args['user'] == 'dsn_user'
+    assert MockMyCli.connect_args['passwd'] == 'dsn_passwd'
+    assert MockMyCli.connect_args['host'] == 'localhost'
+    assert MockMyCli.connect_args['database'] == 'dsn_database'
+    assert MockMyCli.connect_args['socket'] == 'mysql.sock'
+
+    # accept character_set as a query parameter
+    result = runner.invoke(
+        mycli.main.cli,
+        args=[
+            'mysql://dsn_user:dsn_passwd@localhost/dsn_database?character_set=latin1',
+        ],
+    )
+    assert result.exit_code == 0, result.output + ' ' + str(result.exception)
+    assert MockMyCli.connect_args['user'] == 'dsn_user'
+    assert MockMyCli.connect_args['passwd'] == 'dsn_passwd'
+    assert MockMyCli.connect_args['host'] == 'localhost'
+    assert MockMyCli.connect_args['database'] == 'dsn_database'
+    assert MockMyCli.connect_args['character_set'] == 'latin1'
+
+    # --character_set overrides character_set as a query parameter
+    result = runner.invoke(
+        mycli.main.cli,
+        args=[
+            'mysql://dsn_user:dsn_passwd@localhost/dsn_database?character_set=latin1',
+            '--character-set=utf8mb3',
+        ],
+    )
+    assert result.exit_code == 0, result.output + ' ' + str(result.exception)
+    assert MockMyCli.connect_args['user'] == 'dsn_user'
+    assert MockMyCli.connect_args['passwd'] == 'dsn_passwd'
+    assert MockMyCli.connect_args['host'] == 'localhost'
+    assert MockMyCli.connect_args['database'] == 'dsn_database'
+    assert MockMyCli.connect_args['character_set'] == 'utf8mb3'
+
 
 def test_ssh_config(monkeypatch):
     # Setup classes to mock mycli.main.MyCli
@@ -946,6 +1029,9 @@ def test_ssh_config(monkeypatch):
         config = {
             "main": {},
             "alias_dsn": {},
+            "connection": {
+                "default_keepalive_ticks": 0,
+            },
         }
 
         def __init__(self, **args):
@@ -955,6 +1041,7 @@ def test_ssh_config(monkeypatch):
             self.redirect_formatter = Formatter()
             self.ssl_mode = "auto"
             self.my_cnf = {"client": {}, "mysqld": {}}
+            self.default_keepalive_ticks = 0
 
         def connect(self, **args):
             MockMyCli.connect_args = args

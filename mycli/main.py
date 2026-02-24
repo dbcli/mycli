@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import defaultdict, namedtuple
 from decimal import Decimal
+import functools
 from io import TextIOWrapper
 import logging
 import os
@@ -11,7 +12,7 @@ import shutil
 import sys
 import threading
 import traceback
-from typing import IO, Any, Generator, Iterable, Literal
+from typing import IO, Any, Callable, Generator, Iterable, Literal
 
 try:
     from pwd import getpwuid
@@ -67,6 +68,7 @@ from mycli.packages.parseutils import is_destructive, is_dropping_database, is_v
 from mycli.packages.prompt_utils import confirm, confirm_destructive_query
 from mycli.packages.special.favoritequeries import FavoriteQueries
 from mycli.packages.special.main import ArgType
+from mycli.packages.special.utils import format_uptime, get_ssl_version, get_uptime
 from mycli.packages.sqlresult import SQLResult
 from mycli.packages.tabular_output import sql_format
 from mycli.packages.toolkit.history import FileHistoryWithTimestamp
@@ -88,6 +90,7 @@ SUPPORT_INFO = "Home: http://mycli.net\nBug tracker: https://github.com/dbcli/my
 DEFAULT_WIDTH = 80
 DEFAULT_HEIGHT = 25
 MIN_COMPLETION_TRIGGER = 1
+MAX_MULTILINE_BATCH_STATEMENT = 5000
 
 
 @Condition
@@ -164,6 +167,7 @@ class MyCli:
         self.toolbar_error_message: str | None = None
         self.prompt_app: PromptSession | None = None
         self._keepalive_counter = 0
+        self.keepalive_ticks: int | None = 0
 
         # self.cnf_files is a class variable that stores the list of mysql
         # config files to read in at launch.
@@ -261,6 +265,7 @@ class MyCli:
 
         self.min_completion_trigger = c["main"].as_int("min_completion_trigger")
         MIN_COMPLETION_TRIGGER = self.min_completion_trigger
+        self.last_prompt_message = ANSI('')
 
         # Register custom special commands.
         self.register_special_commands()
@@ -545,6 +550,7 @@ class MyCli:
         unbuffered: bool | None = None,
         use_keyring: bool | None = None,
         reset_keyring: bool | None = None,
+        keepalive_ticks: int | None = None,
     ) -> None:
         cnf = {
             "database": None,
@@ -573,6 +579,7 @@ class MyCli:
         port = port or cnf["port"]
         ssl_config: dict[str, Any] = ssl or {}
         user_connection_config = self.config_without_package_defaults.get('connection', {})
+        self.keepalive_ticks = keepalive_ticks
 
         int_port = port and int(port)
         if not int_port:
@@ -722,7 +729,7 @@ class MyCli:
                     self.echo(
                         (
                             "Connection to server lost. If this error persists, it may be a mismatch between the server and "
-                            "client SSL configuration. To troubleshoot the issue, try --ssl-mode off or --ssl-mode on."
+                            "client SSL configuration. To troubleshoot the issue, try --ssl-mode=off or --ssl-mode=on."
                         ),
                         err=True,
                         fg='red',
@@ -775,7 +782,11 @@ class MyCli:
             self.echo(str(e), err=True, fg="red")
             sys.exit(1)
 
-    def handle_editor_command(self, text: str) -> str:
+    def handle_editor_command(
+        self,
+        text: str,
+        loaded_message_fn: Callable,
+    ) -> str:
         r"""Editor command is any query that is prefixed or suffixed by a '\e'.
         The reason for a while loop is because a user might edit a query
         multiple times. For eg:
@@ -799,7 +810,10 @@ class MyCli:
                 try:
                     assert isinstance(self.prompt_app, PromptSession)
                     # buglet: this prompt() invocation doesn't have an inputhook for keepalive pings
-                    text = self.prompt_app.prompt(default=sql)
+                    text = self.prompt_app.prompt(
+                        default=sql,
+                        message=loaded_message_fn,
+                    )
                     break
                 except KeyboardInterrupt:
                     sql = ""
@@ -884,12 +898,15 @@ class MyCli:
             else:
                 print("Tip —", tips_picker())
 
-        def get_message() -> ANSI:
+        def get_prompt_message(app) -> ANSI:
+            if app.current_buffer.text:
+                return self.last_prompt_message
             prompt = self.get_prompt(self.prompt_format)
             if self.prompt_format == self.default_prompt and len(prompt) > self.max_len_prompt:
                 prompt = self.get_prompt(self.default_prompt_splitln)
             prompt = prompt.replace("\\x1b", "\x1b")
-            return ANSI(prompt)
+            self.last_prompt_message = ANSI(prompt)
+            return self.last_prompt_message
 
         def get_continuation(width: int, _two: int, _three: int) -> AnyFormattedText:
             if self.multiline_continuation_char == "":
@@ -1015,10 +1032,12 @@ class MyCli:
 
             Example at https://github.com/prompt-toolkit/python-prompt-toolkit/blob/main/examples/prompts/inputhook.py
             """
-            if self.default_keepalive_ticks < 1:
+            if self.keepalive_ticks is None:
+                return
+            if self.keepalive_ticks < 1:
                 return
             self._keepalive_counter += 1
-            if self._keepalive_counter > self.default_keepalive_ticks:
+            if self._keepalive_counter > self.keepalive_ticks:
                 self._keepalive_counter = 0
                 self.logger.debug('keepalive ping')
                 try:
@@ -1029,11 +1048,15 @@ class MyCli:
                     self.logger.debug('keepalive ping error %r', e)
 
         def one_iteration(text: str | None = None) -> None:
-            inputhook = keepalive_hook if self.default_keepalive_ticks >= 1 else None
+            inputhook = keepalive_hook if self.keepalive_ticks and self.keepalive_ticks >= 1 else None
             if text is None:
                 try:
                     assert self.prompt_app is not None
-                    text = self.prompt_app.prompt(inputhook=inputhook)
+                    loaded_message_fn = functools.partial(get_prompt_message, self.prompt_app.app)
+                    text = self.prompt_app.prompt(
+                        inputhook=inputhook,
+                        message=loaded_message_fn,
+                    )
                 except KeyboardInterrupt:
                     return
 
@@ -1041,7 +1064,10 @@ class MyCli:
                 special.set_forced_horizontal_output(False)
 
                 try:
-                    text = self.handle_editor_command(text)
+                    text = self.handle_editor_command(
+                        text,
+                        loaded_message_fn,
+                    )
                 except RuntimeError as e:
                     logger.error("sql: %r, error: %r", text, e)
                     logger.error("traceback: %r", traceback.format_exc())
@@ -1076,7 +1102,11 @@ class MyCli:
                             click.echo("---")
                         if special.is_timing_enabled():
                             click.echo(f"Time: {duration:.2f} seconds")
-                        text = self.prompt_app.prompt(default=sql or '', inputhook=inputhook)
+                        text = self.prompt_app.prompt(
+                            default=sql or '',
+                            inputhook=inputhook,
+                            message=loaded_message_fn,
+                        )
                     except KeyboardInterrupt:
                         return
                     except special.FinishIteration as e:
@@ -1215,7 +1245,6 @@ class MyCli:
                 color_depth=ColorDepth.DEPTH_24_BIT if 'truecolor' in os.getenv('COLORTERM', '').lower() else None,
                 lexer=PygmentsLexer(MyCliLexer),
                 reserve_space_for_menu=self.get_reserved_space(),
-                message=get_message,
                 prompt_continuation=get_continuation,
                 bottom_toolbar=get_toolbar_tokens,
                 complete_style=complete_style,
@@ -1459,6 +1488,7 @@ class MyCli:
         with self._completer_lock:
             return self.completer.get_completions(Document(text=text, cursor_position=cursor_position), None)
 
+    # todo: time/uptime update on every character typed, instead of after every return
     def get_prompt(self, string: str) -> str:
         sqlexecute = self.sqlexecute
         assert sqlexecute is not None
@@ -1488,7 +1518,26 @@ class MyCli:
         string = string.replace("\\k", os.path.basename(sqlexecute.socket or str(sqlexecute.port)))
         string = string.replace("\\K", sqlexecute.socket or str(sqlexecute.port))
         string = string.replace("\\A", self.dsn_alias or "(none)")
+        # jump through hoops for the test environment, and for efficiency
+        if hasattr(sqlexecute, 'conn') and sqlexecute.conn is not None:
+            if '\\y' in string:
+                with sqlexecute.conn.cursor() as cur:
+                    string = string.replace('\\y', str(get_uptime(cur)) or '(none)')
+            if '\\Y' in string:
+                with sqlexecute.conn.cursor() as cur:
+                    string = string.replace('\\Y', format_uptime(str(get_uptime(cur))) or '(none)')
+        else:
+            string = string.replace('\\y', '(none)')
+            string = string.replace('\\Y', '(none)')
+
         string = string.replace("\\_", " ")
+        # jump through hoops for the test environment and for efficiency
+        if hasattr(sqlexecute, 'conn') and sqlexecute.conn is not None:
+            if '\\T' in string:
+                with sqlexecute.conn.cursor() as cur:
+                    string = string.replace('\\T', get_ssl_version(cur) or '(none)')
+        else:
+            string = string.replace('\\T', '(none)')
         return string
 
     def run_query(
@@ -1669,7 +1718,7 @@ class MyCli:
 @click.option(
     "--ssl-mode",
     "ssl_mode",
-    help="Set desired SSL behavior. auto=preferred, on=required, off=off.",
+    help="Set desired SSL behavior. auto=preferred if TCP/IP, on=required, off=off.",
     type=click.Choice(["auto", "on", "off"]),
 )
 @click.option("--ssl/--no-ssl", "ssl_enable", default=None, help="Enable SSL for connection (automatically enabled with other flags).")
@@ -1740,6 +1789,11 @@ class MyCli:
     default=None,
     help='Store and retrieve passwords from the system keyring: true/false/reset.',
 )
+@click.option(
+    '--keepalive-ticks',
+    type=int,
+    help='Send regular keepalive pings to the connection, roughly every <int> seconds.',
+)
 @click.option("--checkup", is_flag=True, help="Run a checkup on your config file.")
 @click.pass_context
 def cli(
@@ -1795,6 +1849,7 @@ def cli(
     throttle: float,
     use_keyring_cli_opt: str | None,
     checkup: bool,
+    keepalive_ticks: int | None,
 ) -> None:
     """A MySQL terminal client with auto-completion and syntax highlighting.
 
@@ -1885,7 +1940,7 @@ def cli(
     if ssl_enable is not None:
         click.secho(
             "Warning: The --ssl/--no-ssl CLI options are deprecated and will be removed in a future release. "
-            "Please use the ssl_mode config or --ssl-mode CLI options instead. "
+            "Please use the \"default_ssl_mode\" config option or --ssl-mode CLI flag instead. "
             "See issue https://github.com/dbcli/mycli/issues/1507",
             err=True,
             fg="yellow",
@@ -1894,8 +1949,8 @@ def cli(
     # ssh_port and ssh_config_path have truthy defaults and are not included
     if any([ssh_user, ssh_host, ssh_password, ssh_key_filename, list_ssh_config, ssh_config_host]) and not ssh_warning_off:
         click.secho(
-            "Warning: The built-in SSH functionality is soft deprecated and may be removed in a future release. "
-            "Please discuss or vote on this at https://github.com/dbcli/mycli/issues/1464",
+            "Warning: The built-in SSH functionality is deprecated and will be removed in a future release. "
+            "See Issue https://github.com/dbcli/mycli/issues/1464",
             err=True,
             fg="red",
         )
@@ -1982,29 +2037,47 @@ def cli(
             dsn_params = {}
 
         if params := dsn_params.get('ssl'):
-            ssl_enable = ssl_enable or (params[0].lower() == 'true')
+            click.secho(
+                'Warning: The "ssl" DSN URI parameter is deprecated and will be removed in a future release. '
+                'Please use the "ssl_mode" parameter instead. '
+                'See issue https://github.com/dbcli/mycli/issues/1507',
+                err=True,
+                fg='yellow',
+            )
+            if params[0].lower() == 'true':
+                ssl_mode = 'on'
+        if params := dsn_params.get('ssl_mode'):
+            ssl_mode = ssl_mode or params[0]
         if params := dsn_params.get('ssl_ca'):
             ssl_ca = ssl_ca or params[0]
-            ssl_enable = True
+            ssl_mode = ssl_mode or 'on'
         if params := dsn_params.get('ssl_capath'):
             ssl_capath = ssl_capath or params[0]
-            ssl_enable = True
+            ssl_mode = ssl_mode or 'on'
         if params := dsn_params.get('ssl_cert'):
             ssl_cert = ssl_cert or params[0]
-            ssl_enable = True
+            ssl_mode = ssl_mode or 'on'
         if params := dsn_params.get('ssl_key'):
             ssl_key = ssl_key or params[0]
-            ssl_enable = True
+            ssl_mode = ssl_mode or 'on'
         if params := dsn_params.get('ssl_cipher'):
             ssl_cipher = ssl_cipher or params[0]
-            ssl_enable = True
+            ssl_mode = ssl_mode or 'on'
         if params := dsn_params.get('tls_version'):
             tls_version = tls_version or params[0]
-            ssl_enable = True
+            ssl_mode = ssl_mode or 'on'
         if params := dsn_params.get('ssl_verify_server_cert'):
             ssl_verify_server_cert = ssl_verify_server_cert or (params[0].lower() == 'true')
-            ssl_enable = True
+            ssl_mode = ssl_mode or 'on'
+        if params := dsn_params.get('socket'):
+            socket = socket or params[0]
+        if params := dsn_params.get('keepalive_ticks'):
+            if keepalive_ticks is None:
+                keepalive_ticks = int(params[0])
+        if params := dsn_params.get('character_set'):
+            character_set = character_set or params[0]
 
+    keepalive_ticks = keepalive_ticks if keepalive_ticks is not None else mycli.default_keepalive_ticks
     ssl_mode = ssl_mode or mycli.ssl_mode  # cli option or config option
 
     # if there is a mismatch between the ssl_mode value and other sources of ssl config, show a warning
@@ -2020,19 +2093,22 @@ def cli(
     # configure SSL if ssl_mode is auto/on or if
     # ssl_enable = True (from --ssl or a DSN URI) and ssl_mode is None
     if ssl_mode in ("auto", "on") or (ssl_enable and ssl_mode is None):
-        ssl = {
-            "mode": ssl_mode,
-            "enable": ssl_enable,
-            "ca": ssl_ca and os.path.expanduser(ssl_ca),
-            "cert": ssl_cert and os.path.expanduser(ssl_cert),
-            "key": ssl_key and os.path.expanduser(ssl_key),
-            "capath": ssl_capath,
-            "cipher": ssl_cipher,
-            "tls_version": tls_version,
-            "check_hostname": ssl_verify_server_cert,
-        }
-        # remove empty ssl options
-        ssl = {k: v for k, v in ssl.items() if v is not None}
+        if socket and ssl_mode == 'auto':
+            ssl = None
+        else:
+            ssl = {
+                "mode": ssl_mode,
+                "enable": ssl_enable,
+                "ca": ssl_ca and os.path.expanduser(ssl_ca),
+                "cert": ssl_cert and os.path.expanduser(ssl_cert),
+                "key": ssl_key and os.path.expanduser(ssl_key),
+                "capath": ssl_capath,
+                "cipher": ssl_cipher,
+                "tls_version": tls_version,
+                "check_hostname": ssl_verify_server_cert,
+            }
+            # remove empty ssl options
+            ssl = {k: v for k, v in ssl.items() if v is not None}
     else:
         ssl = None
 
@@ -2179,6 +2255,7 @@ def cli(
         character_set=character_set,
         use_keyring=use_keyring,
         reset_keyring=reset_keyring,
+        keepalive_ticks=keepalive_ticks,
     )
 
     if combined_init_cmd:
@@ -2210,49 +2287,77 @@ def cli(
             click.secho(str(e), err=True, fg="red")
             sys.exit(1)
 
+    def dispatch_batch_statements(statements: str, batch_counter: int) -> None:
+        if batch_counter:
+            # this is imperfect if the first line of input has multiple statements
+            if batch_format == 'csv':
+                mycli.main_formatter.format_name = 'csv-noheader'
+            elif batch_format == 'tsv':
+                mycli.main_formatter.format_name = 'tsv_noheader'
+            elif batch_format == 'table':
+                mycli.main_formatter.format_name = 'ascii'
+            else:
+                mycli.main_formatter.format_name = 'tsv'
+        else:
+            if batch_format == 'csv':
+                mycli.main_formatter.format_name = 'csv'
+            elif batch_format == 'tsv':
+                mycli.main_formatter.format_name = 'tsv'
+            elif batch_format == 'table':
+                mycli.main_formatter.format_name = 'ascii'
+            else:
+                mycli.main_formatter.format_name = 'tsv'
+
+        warn_confirmed: bool | None = True
+        if not noninteractive and mycli.destructive_warning and is_destructive(mycli.destructive_keywords, statements):
+            try:
+                # this seems to work, even though we are reading from stdin above
+                sys.stdin = open("/dev/tty")
+                # bug: the prompt will not be visible if stdout is redirected
+                warn_confirmed = confirm_destructive_query(mycli.destructive_keywords, statements)
+            except (IOError, OSError):
+                mycli.logger.warning("Unable to open TTY as stdin.")
+                sys.exit(1)
+        try:
+            if warn_confirmed:
+                if throttle and batch_counter >= 1:
+                    sleep(throttle)
+                mycli.run_query(statements, checkpoint=checkpoint, new_line=True)
+        except Exception as e:
+            click.secho(str(e), err=True, fg="red")
+            sys.exit(1)
+
     if sys.stdin.isatty():
         mycli.run_cli()
     else:
         stdin = click.get_text_stream("stdin")
-        counter = 0
+        statements = ''
+        line_counter = 0
+        batch_counter = 0
         for stdin_text in stdin:
-            if counter:
-                if batch_format == 'csv':
-                    mycli.main_formatter.format_name = 'csv-noheader'
-                elif batch_format == 'tsv':
-                    mycli.main_formatter.format_name = 'tsv_noheader'
-                elif batch_format == 'table':
-                    mycli.main_formatter.format_name = 'ascii'
-                else:
-                    mycli.main_formatter.format_name = 'tsv'
-            else:
-                if batch_format == 'csv':
-                    mycli.main_formatter.format_name = 'csv'
-                elif batch_format == 'tsv':
-                    mycli.main_formatter.format_name = 'tsv'
-                elif batch_format == 'table':
-                    mycli.main_formatter.format_name = 'ascii'
-                else:
-                    mycli.main_formatter.format_name = 'tsv'
-            counter += 1
-            warn_confirmed: bool | None = True
-            if not noninteractive and mycli.destructive_warning and is_destructive(mycli.destructive_keywords, stdin_text):
-                try:
-                    # this seems to work, even though we are reading from stdin above
-                    sys.stdin = open("/dev/tty")
-                    # bug: the prompt will not be visible if stdout is redirected
-                    warn_confirmed = confirm_destructive_query(mycli.destructive_keywords, stdin_text)
-                except (IOError, OSError):
-                    mycli.logger.warning("Unable to open TTY as stdin.")
-                    sys.exit(1)
-            try:
-                if warn_confirmed:
-                    if throttle and counter > 1:
-                        sleep(throttle)
-                    mycli.run_query(stdin_text, checkpoint=checkpoint, new_line=True)
-            except Exception as e:
-                click.secho(str(e), err=True, fg="red")
+            line_counter += 1
+            if line_counter > MAX_MULTILINE_BATCH_STATEMENT:
+                click.secho(
+                    f'Saw single input statement greater than {MAX_MULTILINE_BATCH_STATEMENT} lines; assuming a parsing error.',
+                    err=True,
+                    fg="red",
+                )
                 sys.exit(1)
+            statements += stdin_text
+            try:
+                tokens = sqlglot.tokenize(statements, read='mysql')
+                if not tokens:
+                    continue
+                # we don't handle changing the delimiter within the batch input
+                if tokens[-1].text == ';':
+                    dispatch_batch_statements(statements, batch_counter)
+                    batch_counter += 1
+                    statements = ''
+                    line_counter = 0
+            except sqlglot.errors.TokenError:
+                continue
+        if statements:
+            dispatch_batch_statements(statements, batch_counter)
         sys.exit(0)
     mycli.close()
 
