@@ -7,6 +7,7 @@ Features
 * Bind alternate terminal sequences for function keys F2 - F4.
 * Add `llm help` subcommand.
 * Rewrite `help` table.
+* Remove "info" counter from fzf history-search UI.
 
 
 Bug Fixes
