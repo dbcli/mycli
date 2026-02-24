@@ -82,8 +82,8 @@ def set_destructive_keywords(val: list[str]) -> None:
 
 @special_command(
     "pager",
-    "\\P [command]",
-    "Set PAGER. Print the query results via PAGER.",
+    "pager [command]",
+    "Set pager to [command]. Print query results via pager.",
     arg_type=ArgType.PARSED_QUERY,
     aliases=["\\P"],
     case_sensitive=True,
@@ -104,13 +104,13 @@ def set_pager(arg: str, **_) -> list[SQLResult]:
     return [SQLResult(status=msg)]
 
 
-@special_command("nopager", "\\n", "Disable pager, print to stdout.", arg_type=ArgType.NO_QUERY, aliases=["\\n"], case_sensitive=True)
+@special_command("nopager", "nopager", "Disable pager, print to stdout.", arg_type=ArgType.NO_QUERY, aliases=["\\n"], case_sensitive=True)
 def disable_pager() -> list[SQLResult]:
     set_pager_enabled(False)
     return [SQLResult(status="Pager disabled.")]
 
 
-@special_command("\\timing", "\\t", "Toggle timing of commands.", arg_type=ArgType.NO_QUERY, aliases=["\\t"], case_sensitive=True)
+@special_command("\\timing", "\\timing", "Toggle timing of commands.", arg_type=ArgType.NO_QUERY, aliases=["\\t"], case_sensitive=True)
 def toggle_timing() -> list[SQLResult]:
     global TIMING_ENABLED
     TIMING_ENABLED = not TIMING_ENABLED
@@ -331,7 +331,7 @@ def subst_favorite_query_args(query: str, args: list[str]) -> list[str | None]:
     return [query, None]
 
 
-@special_command("\\fs", "\\fs name query", "Save a favorite query.")
+@special_command("\\fs", "\\fs <name> <query>", "Save a favorite query.")
 def save_favorite_query(arg: str, **_) -> list[SQLResult]:
     """Save a new favorite query.
     Returns (title, rows, headers, status)"""
@@ -350,7 +350,7 @@ def save_favorite_query(arg: str, **_) -> list[SQLResult]:
     return [SQLResult(status="Saved.")]
 
 
-@special_command("\\fd", "\\fd [name]", "Delete a favorite query.")
+@special_command("\\fd", "\\fd <name>", "Delete a favorite query.")
 def delete_favorite_query(arg: str, **_) -> list[SQLResult]:
     """Delete an existing favorite query."""
     usage = "Syntax: \\fd name.\n\n" + FavoriteQueries.instance.usage
@@ -362,7 +362,7 @@ def delete_favorite_query(arg: str, **_) -> list[SQLResult]:
     return [SQLResult(status=status)]
 
 
-@special_command("system", "system [command]", "Execute a system shell commmand.")
+@special_command("system", "system <command>", "Execute a system shell commmand.")
 def execute_system_command(arg: str, **_) -> list[SQLResult]:
     """Execute a system shell command."""
     usage = "Syntax: system [command].\n"
@@ -405,7 +405,7 @@ def parseargfile(arg: str) -> tuple[str, str]:
     return (os.path.expanduser(filename), mode)
 
 
-@special_command("tee", "tee [-o] filename", "Append all results to an output file (overwrite using -o).")
+@special_command("tee", "tee [-o] <filename>", "Append all results to an output file (overwrite using -o).")
 def set_tee(arg: str, **_) -> list[SQLResult]:
     global tee_file
 
@@ -438,7 +438,7 @@ def write_tee(output: str) -> None:
         tee_file.flush()
 
 
-@special_command("\\once", "\\o [-o] filename", "Append next result to an output file (overwrite using -o).", aliases=["\\o"])
+@special_command("\\once", "\\once [-o] <filename>", "Append next result to an output file (overwrite using -o).", aliases=["\\o"])
 def set_once(arg: str, **_) -> list[SQLResult]:
     global once_file, written_to_once_file
 
@@ -491,7 +491,7 @@ def _run_post_redirect_hook(post_redirect_command: str, filename: str) -> None:
         raise OSError(f"Redirect post hook failed: {e}") from e
 
 
-@special_command("\\pipe_once", "\\| command", "Send next result to a subprocess.", aliases=["\\|"])
+@special_command("\\pipe_once", "\\pipe_once <command>", "Send next result to a subprocess.", aliases=["\\|"])
 def set_pipe_once(arg: str, **_) -> list[SQLResult]:
     if not arg:
         raise OSError("pipe_once requires a command")
@@ -550,7 +550,7 @@ def flush_pipe_once_if_written(post_redirect_command: str) -> None:
     PIPE_ONCE['stdout_mode'] = None
 
 
-@special_command("watch", "watch [seconds] [-c] query", "Executes the query every [seconds] seconds (by default 5).")
+@special_command("watch", "watch [seconds] [-c] <query>", "Executes the query every [seconds] seconds (by default 5).")
 def watch_query(arg: str, **kwargs) -> Generator[SQLResult, None, None]:
     usage = """Syntax: watch [seconds] [-c] query.
     * seconds: The interval at the query will be repeated, in seconds.
@@ -617,7 +617,7 @@ def watch_query(arg: str, **kwargs) -> Generator[SQLResult, None, None]:
             set_pager_enabled(old_pager_enabled)
 
 
-@special_command("delimiter", None, "Change SQL delimiter.")
+@special_command("delimiter", "delimiter <string>", "Change end-of-statement delimiter.")
 def set_delimiter(arg: str, **_) -> list[SQLResult]:
     return delimiter_command.set(arg)
 

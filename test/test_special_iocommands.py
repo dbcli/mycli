@@ -118,7 +118,7 @@ def test_special_favorite_query():
     with db_connection().cursor() as cur:
         query = r'\?'
         mycli.packages.special.execute(cur, rf"\fs special {query}")
-        assert (r'\G', r'\G', 'Display current query results vertically.') in next(
+        assert (r'\G', None, r'<query>\G', 'Display query results vertically.') in next(
             mycli.packages.special.execute(cur, r'\f special')
         ).results
 
