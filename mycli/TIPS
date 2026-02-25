@@ -118,6 +118,8 @@ run SQL scripts in batch mode using the standard input!
 
 edit a query in an external editor using keystrokes control-x + control-e!
 
+open a documentation browser using keystroke F1!
+
 toggle smart completion using keystroke F2!
 
 toggle multi-line mode using keystroke F3!

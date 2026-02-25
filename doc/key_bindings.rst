@@ -7,6 +7,12 @@ Most key bindings are simply inherited from `prompt-toolkit <https://python-prom
 The following key bindings are special to mycli:
 
 ###
+F1
+###
+
+Open documentation index in a browser tab.
+
+###
 F2
 ###
 
