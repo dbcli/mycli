@@ -3,7 +3,9 @@ from enum import Enum
 import logging
 import os
 from typing import Callable
+import webbrowser
 
+from mycli.constants import ISSUES_URL
 from mycli.packages.sqlresult import SQLResult
 
 try:
@@ -184,6 +186,12 @@ def show_keyword_help(cur: Cursor, arg: str) -> list[SQLResult]:
         return [SQLResult(results=cur, headers=headers, status="")]
     else:
         return [SQLResult(status=f'No help found for {keyword}.')]
+
+
+@special_command('\\bug', '\\bug', 'File a bug on GitHub.', arg_type=ArgType.NO_QUERY)
+def file_bug(*_args) -> list[SQLResult]:
+    webbrowser.open_new_tab(ISSUES_URL)
+    return [SQLResult(status=f'{ISSUES_URL} — press "New Issue"')]
 
 
 @special_command("exit", "exit", "Exit.", arg_type=ArgType.NO_QUERY, aliases=["\\q"])
