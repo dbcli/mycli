@@ -6,6 +6,7 @@ from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from pyfzf import FzfPrompt
 
 from mycli.packages.toolkit.history import FileHistoryWithTimestamp
+from mycli.packages.toolkit.utils import safe_invalidate_display
 
 
 class Fzf(FzfPrompt):
@@ -56,6 +57,7 @@ def search_history(event: KeyPressEvent, incremental: bool = False) -> None:
         formatted_history_items,
         fzf_options=' '.join(options),
     )
+    safe_invalidate_display(event.app)
 
     if result:
         selected_index = formatted_history_items.index(result[0])

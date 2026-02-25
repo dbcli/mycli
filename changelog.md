@@ -6,6 +6,11 @@ Features
 * Add `\bug` command.
 
 
+Bug Fixes
+---------
+* Force a prompt_toolkit refresh after fzf history search to avoid display glitches.
+
+
 1.57.0 (2026/02/25)
 ==============
 
