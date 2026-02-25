@@ -7,6 +7,7 @@ Features
 * Let the `F1` key open a browser to mycli.net/docs and emit help text.
 * Add documentation index URL to inline help.
 * Rewrite bottom toolbar, showing more statuses, but staying compact.
+* Let `help <keyword>` list similar keywords when not found.
 
 
 Bug Fixes

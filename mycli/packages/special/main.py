@@ -172,20 +172,25 @@ def show_help(*_args) -> list[SQLResult]:
 
 def show_keyword_help(cur: Cursor, arg: str) -> list[SQLResult]:
     """
-    Call the built-in "show <command>", to display help for an SQL keyword.
+    Call the built-in "show <keyword>", to display help for an SQL keyword.
     :param cur: cursor
     :param arg: string
     :return: list
     """
-    keyword = arg.strip('"').strip("'")
-    query = f"help '{keyword}'"
+    keyword = arg.strip().strip('"\'')
+    query = 'help %s'
     logger.debug(query)
-    cur.execute(query)
+    cur.execute(query, keyword)
     if cur.description and cur.rowcount > 0:
         headers = [x[0] for x in cur.description]
-        return [SQLResult(results=cur, headers=headers, status="")]
+        return [SQLResult(results=cur, headers=headers)]
+    logger.debug(query)
+    cur.execute(query, (f'%{keyword}%',))
+    if cur.description and cur.rowcount > 0:
+        headers = [x[0] for x in cur.description]
+        return [SQLResult(title='Similar terms:', results=cur, headers=headers)]
     else:
-        return [SQLResult(status=f'No help found for {keyword}.')]
+        return [SQLResult(status=f'No help found for "{keyword}".')]
 
 
 @special_command('\\bug', '\\bug', 'File a bug on GitHub.', arg_type=ArgType.NO_QUERY)
