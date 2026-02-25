@@ -5,6 +5,7 @@ Features
 ---------
 * Add `\bug` command.
 * Let the `F1` key open a browser to mycli.net/docs and emit help text.
+* Add documentation index URL to inline help.
 
 
 Bug Fixes
