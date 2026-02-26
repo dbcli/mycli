@@ -922,7 +922,7 @@ class MyCli:
                 continuation = " "
             return [("class:continuation", continuation)]
 
-        def show_suggestion_tip() -> bool:
+        def show_initial_toolbar_help() -> bool:
             return iterations < 2
 
         # Keep track of whether or not the query is mutating. In case
@@ -1228,7 +1228,7 @@ class MyCli:
             query = Query(text, successful, mutating)
             self.query_history.append(query)
 
-        get_toolbar_tokens = create_toolbar_tokens_func(self, show_suggestion_tip)
+        get_toolbar_tokens = create_toolbar_tokens_func(self, show_initial_toolbar_help)
         if self.wider_completion_menu:
             complete_style = CompleteStyle.MULTI_COLUMN
         else:
