@@ -151,11 +151,16 @@ def editor_command(command: str) -> bool:
     """
     # It is possible to have `\e filename` or `SELECT * FROM \e`. So we check
     # for both conditions.
-    return command.strip().endswith("\\e") or command.strip().startswith("\\e")
+    return (
+        command.strip().endswith("\\e")
+        or command.strip().startswith("\\e ")
+        or command.strip().endswith("\\edit")
+        or command.strip().startswith("\\edit ")
+    )
 
 
 def get_filename(sql: str) -> str | None:
-    if sql.strip().startswith("\\e"):
+    if sql.strip().startswith("\\e ") or sql.strip().startswith("\\edit "):
         command, _, filename = sql.partition(" ")
         return filename.strip() or None
     else:
@@ -169,7 +174,7 @@ def get_editor_query(sql: str) -> str:
     # The reason we can't simply do .strip('\e') is that it strips characters,
     # not a substring. So it'll strip "e" in the end of the sql also!
     # Ex: "select * from style\e" -> "select * from styl".
-    pattern = re.compile(r"(^\\e|\\e$)")
+    pattern = re.compile(r"(\\e$|\\edit$)")
     while pattern.search(sql):
         sql = pattern.sub("", sql)
 

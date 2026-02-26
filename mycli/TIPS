@@ -50,7 +50,9 @@ copy a query to the clipboard using \clip at the end of the query!
 
 \dt lists tables; \dt <table> describes <table>!
 
-edit a query in an external editor using \e!
+edit a query in an external editor using <query>\edit!
+
+edit a query in an external editor using \edit <filename>!
 
 \f lists favorite queries; \f <name> executes a favorite!
 

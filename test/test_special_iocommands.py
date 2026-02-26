@@ -44,8 +44,13 @@ def test_set_get_expanded_output():
 
 def test_editor_command():
     assert mycli.packages.special.editor_command(r"hello\e")
-    assert mycli.packages.special.editor_command(r"\ehello")
+    assert mycli.packages.special.editor_command(r"hello\edit")
+    assert mycli.packages.special.editor_command(r"\e hello")
+    assert mycli.packages.special.editor_command(r"\edit hello")
+
     assert not mycli.packages.special.editor_command(r"hello")
+    assert not mycli.packages.special.editor_command(r"\ehello")
+    assert not mycli.packages.special.editor_command(r"\edithello")
 
     assert mycli.packages.special.get_filename(r"\e filename") == "filename"
 

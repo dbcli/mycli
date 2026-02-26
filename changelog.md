@@ -9,6 +9,7 @@ Features
 * Rewrite bottom toolbar, showing more statuses, but staying compact.
 * Let `help <keyword>` list similar keywords when not found.
 * Optionally highlight fuzzy search previews.
+* Make `\edit` synonymous with the `\e` command.
 
 
 Bug Fixes
