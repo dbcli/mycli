@@ -5,7 +5,7 @@ import os
 from typing import Callable
 import webbrowser
 
-from mycli.constants import ISSUES_URL
+from mycli.constants import DOCS_URL, ISSUES_URL
 from mycli.packages.sqlresult import SQLResult
 
 try:
@@ -167,7 +167,7 @@ def show_help(*_args) -> list[SQLResult]:
     for _, value in sorted(COMMANDS.items()):
         if not value.hidden:
             result.append((value.command, value.shortcut, value.usage, value.description))
-    return [SQLResult(results=result, headers=headers)]
+    return [SQLResult(results=result, headers=headers, postamble=f'Docs index — {DOCS_URL}')]
 
 
 def show_keyword_help(cur: Cursor, arg: str) -> list[SQLResult]:
