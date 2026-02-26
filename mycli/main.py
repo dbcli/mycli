@@ -934,29 +934,25 @@ class MyCli:
             nonlocal mutating
             result_count = watch_count = 0
             for result in results:
-                title = result.title
-                cur = result.results
-                headers = result.headers
-                status = result.status
-                command = result.command
-                logger.debug("title: %r", title)
-                logger.debug("headers: %r", headers)
-                logger.debug("rows: %r", cur)
-                logger.debug("status: %r", status)
+                logger.debug("title: %r", result.title)
+                logger.debug("headers: %r", result.headers)
+                logger.debug("rows: %r", result.results)
+                logger.debug("status: %r", result.status)
+                logger.debug("command: %r", result.command)
                 threshold = 1000
                 # If this is a watch query, offset the start time on the 2nd+ iteration
                 # to account for the sleep duration
-                if command is not None and command["name"] == "watch":
+                if result.command is not None and result.command["name"] == "watch":
                     if watch_count > 0:
                         try:
-                            watch_seconds = float(command["seconds"])
+                            watch_seconds = float(result.command["seconds"])
                             start += watch_seconds
                         except ValueError as e:
                             self.echo(f"Invalid watch sleep time provided ({e}).", err=True, fg="red")
                             sys.exit(1)
                     else:
                         watch_count += 1
-                if is_select(status) and isinstance(cur, Cursor) and cur.rowcount > threshold:
+                if is_select(result.status) and isinstance(result.results, Cursor) and result.results.rowcount > threshold:
                     self.echo(
                         f"The result set has more than {threshold} rows.",
                         fg="red",
@@ -974,9 +970,10 @@ class MyCli:
                     max_width = None
 
                 formatted = self.format_output(
-                    title,
-                    cur,
-                    headers,
+                    result.title,
+                    result.results,
+                    result.headers,
+                    result.postamble,
                     special.is_expanded_output(),
                     special.is_redirected(),
                     self.null_string,
@@ -990,7 +987,7 @@ class MyCli:
                     if result_count > 0:
                         self.echo("")
                     try:
-                        self.output(formatted, status)
+                        self.output(formatted, result.status)
                     except KeyboardInterrupt:
                         pass
                     if self.beep_after_seconds > 0 and t >= self.beep_after_seconds:
@@ -1002,20 +999,17 @@ class MyCli:
 
                 start = time()
                 result_count += 1
-                mutating = mutating or is_mutating(status)
+                mutating = mutating or is_mutating(result.status)
 
                 # get and display warnings if enabled
-                if self.show_warnings and isinstance(cur, Cursor) and cur.warning_count > 0:
+                if self.show_warnings and isinstance(result.results, Cursor) and result.results.warning_count > 0:
                     warnings = sqlexecute.run("SHOW WARNINGS")
                     for warning in warnings:
-                        title = warning.title
-                        cur = warning.results
-                        headers = warning.headers
-                        status = warning.status
                         formatted = self.format_output(
-                            title,
-                            cur,
-                            headers,
+                            warning.title,
+                            warning.results,
+                            warning.headers,
+                            warning.postamble,
                             special.is_expanded_output(),
                             special.is_redirected(),
                             self.null_string,
@@ -1024,7 +1018,7 @@ class MyCli:
                             max_width,
                         )
                         self.echo("")
-                        self.output(formatted, status)
+                        self.output(formatted, warning.status)
 
         def keepalive_hook(_context):
             """
@@ -1556,15 +1550,13 @@ class MyCli:
         self.log_query(query)
         results = self.sqlexecute.run(query)
         for result in results:
-            title = result.title
-            cur = result.results
-            headers = result.headers
             self.main_formatter.query = query
             self.redirect_formatter.query = query
             output = self.format_output(
-                title,
-                cur,
-                headers,
+                result.title,
+                result.results,
+                result.headers,
+                result.postamble,
                 special.is_expanded_output(),
                 special.is_redirected(),
                 self.null_string,
@@ -1576,16 +1568,14 @@ class MyCli:
                 click.echo(line, nl=new_line)
 
             # get and display warnings if enabled
-            if self.show_warnings and isinstance(cur, Cursor) and cur.warning_count > 0:
+            if self.show_warnings and isinstance(result.results, Cursor) and result.results.warning_count > 0:
                 warnings = self.sqlexecute.run("SHOW WARNINGS")
                 for warning in warnings:
-                    title = warning.title
-                    cur = warning.results
-                    headers = warning.headers
                     output = self.format_output(
-                        title,
-                        cur,
-                        headers,
+                        warning.title,
+                        warning.results,
+                        warning.headers,
+                        warning.postamble,
                         special.is_expanded_output(),
                         special.is_redirected(),
                         self.null_string,
@@ -1603,6 +1593,7 @@ class MyCli:
         title: str | None,
         cur: Cursor | list[tuple] | None,
         headers: list[str] | str | None,
+        postamble: str | None,
         expanded: bool = False,
         is_redirected: bool = False,
         null_string: str | None = None,
@@ -1633,7 +1624,7 @@ class MyCli:
             # will run before preprocessors defined as part of the format in cli_helpers
             output_kwargs["preprocessors"] = (preprocessors.convert_to_undecoded_string,)
 
-        if title:  # Only print the title if it's not None.
+        if title:
             output = itertools.chain(output, [title])
 
         if headers or (cur and title):
@@ -1683,6 +1674,9 @@ class MyCli:
                     formatted = itertools.chain([first_line], formatted)
 
             output = itertools.chain(output, formatted)
+
+        if postamble:
+            output = itertools.chain(output, [postamble])
 
         return output
 
