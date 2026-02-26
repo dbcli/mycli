@@ -13,6 +13,7 @@ Bug Fixes
 ---------
 * Force a prompt_toolkit refresh after fzf history search to avoid display glitches.
 * Include `status` footer in paged output.
+* Ensure fullscreen in fuzzy history search.
 
 
 1.57.0 (2026/02/25)

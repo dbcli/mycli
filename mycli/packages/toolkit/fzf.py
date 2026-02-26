@@ -49,7 +49,8 @@ def search_history(event: KeyPressEvent, incremental: bool = False) -> None:
         '--scheme=history',
         '--tiebreak=index',
         '--bind=ctrl-r:up,alt-r:up',
-        '--preview-window=down:wrap',
+        '--preview-window=down:wrap:nohidden',
+        '--no-height',
         '--preview="printf \'%s\' {}"',
     ]
 
