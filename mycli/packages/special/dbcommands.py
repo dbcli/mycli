@@ -173,4 +173,5 @@ def status(cur: Cursor, **_) -> list[SQLResult]:
         footer.append("\n" + stats_str)
 
     footer.append("--------------")
-    return [SQLResult(title="\n".join(title), results=output, headers="", status="\n".join(footer))]
+
+    return [SQLResult(title="\n".join(title), results=output, headers="", postamble="\n".join(footer))]
