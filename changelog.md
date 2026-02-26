@@ -4,6 +4,7 @@ Upcoming (TBD)
 Features
 ---------
 * Add `\bug` command.
+* Let the `F1` key open a browser to mycli.net/docs and emit help text.
 
 
 Bug Fixes
