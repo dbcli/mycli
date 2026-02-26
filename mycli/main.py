@@ -59,6 +59,7 @@ from mycli.clitoolbar import create_toolbar_tokens_func
 from mycli.compat import WIN
 from mycli.completion_refresher import CompletionRefresher
 from mycli.config import get_mylogin_cnf_path, open_mylogin_cnf, read_config_files, str_to_bool, strip_matching_quotes, write_default_config
+from mycli.constants import ISSUES_URL
 from mycli.key_bindings import mycli_bindings
 from mycli.lexer import MyCliLexer
 from mycli.packages import special
@@ -86,7 +87,7 @@ sqlparse.engine.grouping.MAX_GROUPING_TOKENS = None  # type: ignore[assignment]
 # Query tuples are used for maintaining history
 Query = namedtuple("Query", ["query", "successful", "mutating"])
 
-SUPPORT_INFO = "Home: https://mycli.net\nBug tracker: https://github.com/dbcli/mycli/issues"
+SUPPORT_INFO = f"Home: https://mycli.net\nBug tracker: {ISSUES_URL}"
 DEFAULT_WIDTH = 80
 DEFAULT_HEIGHT = 25
 MIN_COMPLETION_TRIGGER = 1

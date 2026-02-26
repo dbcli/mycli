@@ -2,6 +2,7 @@
 | Command        | Shortcut | Usage                        | Description                                                 |
 +----------------+----------+------------------------------+-------------------------------------------------------------+
 | \G             | <nope>   | <query>\G                    | Display query results vertically.                           |
+| \bug           | <nope>   | \bug                         | File a bug on GitHub.                                       |
 | \clip          | <nope>   | <query>\clip                 | Copy query to the system clipboard.                         |
 | \dt            | <nope>   | \dt[+] [table]               | List or describe tables.                                    |
 | \e             | <nope>   | <query>\e | \e <filename>    | Edit query with editor (uses $EDITOR).                      |
