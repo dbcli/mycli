@@ -1,4 +1,5 @@
 import re
+import shlex
 from shutil import which
 
 from prompt_toolkit import search
@@ -19,7 +20,12 @@ class Fzf(FzfPrompt):
         return self.executable is not None
 
 
-def search_history(event: KeyPressEvent, incremental: bool = False) -> None:
+def search_history(
+    event: KeyPressEvent,
+    highlight_preview: bool = False,
+    highlight_style: str = 'default',
+    incremental: bool = False,
+) -> None:
     buffer = event.current_buffer
     history = buffer.history
 
@@ -51,8 +57,12 @@ def search_history(event: KeyPressEvent, incremental: bool = False) -> None:
         '--bind=ctrl-r:up,alt-r:up',
         '--preview-window=down:wrap:nohidden',
         '--no-height',
-        '--preview="printf \'%s\' {}"',
     ]
+
+    if highlight_preview and which('pygmentize'):
+        options.append(f'--preview="printf \'%s\' {{}} | pygmentize -l mysql -P style={shlex.quote(highlight_style)}"')
+    else:
+        options.append('--preview="printf \'%s\' {}"')
 
     result = fzf.prompt(
         formatted_history_items,

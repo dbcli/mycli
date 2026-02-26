@@ -8,6 +8,7 @@ Features
 * Add documentation index URL to inline help.
 * Rewrite bottom toolbar, showing more statuses, but staying compact.
 * Let `help <keyword>` list similar keywords when not found.
+* Optionally highlight fuzzy search previews.
 
 
 Bug Fixes

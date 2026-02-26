@@ -226,6 +226,8 @@ set up connection defaults using the "[connection]" section in ~/.myclirc!
 
 use "min_completion_trigger" in ~/.myclirc to defer completions!
 
+colorize search previews with "highlight_preview" in ~/.myclirc!
+
 ###
 ### redirection
 ###
