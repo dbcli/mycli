@@ -16,7 +16,7 @@ from mycli.packages.parseutils import is_valid_connection_scheme
 import mycli.packages.special
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
 from mycli.sqlexecute import ServerInfo, SQLExecute
-from test.utils import DATABASE, HOST, PASSWORD, PORT, USER, dbtest, run
+from test.utils import DATABASE, HOST, PASSWORD, PORT, TEMPFILE_PREFIX, USER, dbtest, run
 
 test_dir = os.path.abspath(os.path.dirname(__file__))
 project_dir = os.path.dirname(test_dir)
@@ -464,7 +464,7 @@ def test_execute_arg_with_checkpoint(executor):
     sql = "select * from test;"
     runner = CliRunner()
 
-    with NamedTemporaryFile(mode="w", delete=False) as checkpoint:
+    with NamedTemporaryFile(prefix=TEMPFILE_PREFIX, mode="w", delete=False) as checkpoint:
         checkpoint.close()
 
     result = runner.invoke(cli, args=CLI_ARGS + ["--execute", sql, f"--checkpoint={checkpoint.name}"])
@@ -687,10 +687,10 @@ def test_reserved_space_is_integer(monkeypatch):
 
 def test_list_dsn(monkeypatch):
     monkeypatch.setattr(MyCli, "system_config_files", [])
-    monkeypatch.setattr(MyCli, "pwd_config_file", os.path.join(test_dir, "does_not_exist.myclirc"))
+    monkeypatch.setattr(MyCli, "pwd_config_file", os.devnull)
     runner = CliRunner()
     # keep Windows from locking the file with delete=False
-    with NamedTemporaryFile(mode="w", delete=False) as myclirc:
+    with NamedTemporaryFile(prefix=TEMPFILE_PREFIX, mode="w", delete=False) as myclirc:
         myclirc.write(
             dedent("""\
             [alias_dsn]
@@ -729,7 +729,7 @@ def test_unprettify_statement():
 def test_list_ssh_config():
     runner = CliRunner()
     # keep Windows from locking the file with delete=False
-    with NamedTemporaryFile(mode="w", delete=False) as ssh_config:
+    with NamedTemporaryFile(prefix=TEMPFILE_PREFIX, mode="w", delete=False) as ssh_config:
         ssh_config.write(
             dedent("""\
             Host test
@@ -1058,7 +1058,7 @@ def test_ssh_config(monkeypatch):
 
     # Setup temporary configuration
     # keep Windows from locking the file with delete=False
-    with NamedTemporaryFile(mode="w", delete=False) as ssh_config:
+    with NamedTemporaryFile(prefix=TEMPFILE_PREFIX, mode="w", delete=False) as ssh_config:
         ssh_config.write(
             dedent("""\
             Host test
@@ -1161,7 +1161,7 @@ def test_execute_with_logfile(executor):
     sql = 'select 1'
     runner = CliRunner()
 
-    with NamedTemporaryFile(mode="w", delete=False) as logfile:
+    with NamedTemporaryFile(prefix=TEMPFILE_PREFIX, mode="w", delete=False) as logfile:
         result = runner.invoke(mycli.main.cli, args=CLI_ARGS + ["--logfile", logfile.name, "--execute", sql])
         assert result.exit_code == 0
 

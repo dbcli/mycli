@@ -16,7 +16,8 @@ from test.utils import HOST, PASSWORD, PORT, USER, dbtest
 def mycli():
     cli = MyCli()
     cli.connect(None, USER, PASSWORD, HOST, PORT, None, init_command=None)
-    return cli
+    yield cli
+    cli.sqlexecute.conn.close()
 
 
 @dbtest

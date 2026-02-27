@@ -14,6 +14,8 @@ from textwrap import dedent
 from behave import then, when
 import wrappers
 
+from test.utils import TEMPFILE_PREFIX
+
 
 @when("we run dbcli")
 def step_run_cli(context):
@@ -55,7 +57,7 @@ def step_send_help(context):
 
 @when("we send source command")
 def step_send_source_command(context):
-    with tempfile.NamedTemporaryFile() as f:
+    with tempfile.NamedTemporaryFile(prefix=TEMPFILE_PREFIX) as f:
         f.write(b"\\?")
         f.flush()
         context.cli.sendline(f"\\. {f.name}")

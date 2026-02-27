@@ -22,6 +22,7 @@ Bug Fixes
 Internal
 ---------
 * Better tests for `null_string` configuration option.
+* Better cleanup of resources in the test suite.
 
 
 Documentation

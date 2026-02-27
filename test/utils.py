@@ -20,6 +20,7 @@ CHARACTER_SET = os.getenv("PYTEST_CHARSET", "utf8mb4")
 SSH_USER = os.getenv("PYTEST_SSH_USER", None)
 SSH_HOST = os.getenv("PYTEST_SSH_HOST", None)
 SSH_PORT = int(os.getenv("PYTEST_SSH_PORT", "22"))
+TEMPFILE_PREFIX = 'mycli_test_suite_'
 
 
 def db_connection(dbname=None):
