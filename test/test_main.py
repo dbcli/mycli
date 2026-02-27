@@ -70,7 +70,7 @@ def test_binary_display_hex(executor, capsys):
         sqlresult.postamble,
         False,
         False,
-        "<nope>",
+        "<null>",
         "right",
         "hex",
         None,
@@ -110,7 +110,7 @@ def test_binary_display_utf8(executor, capsys):
         sqlresult.postamble,
         False,
         False,
-        "<nope>",
+        "<null>",
         "right",
         "utf8",
         None,
@@ -1172,3 +1172,29 @@ def test_execute_with_logfile(executor):
             os.remove(logfile.name)
     except Exception as e:
         print(f"An error occurred while attempting to delete the file: {e}")
+
+
+def test_null_string_config(monkeypatch):
+    monkeypatch.setattr(MyCli, 'system_config_files', [])
+    monkeypatch.setattr(MyCli, 'pwd_config_file', os.devnull)
+    runner = CliRunner()
+    # keep Windows from locking the file with delete=False
+    with NamedTemporaryFile(mode='w', delete=False) as myclirc:
+        myclirc.write(
+            dedent("""\
+            [main]
+            null_string = <nope>
+            """)
+        )
+        myclirc.flush()
+        args = CLI_ARGS + ['--myclirc', myclirc.name, '--format=table', '--execute', 'SELECT NULL']
+        result = runner.invoke(mycli.main.cli, args=args)
+        assert '<nope>' in result.output
+        assert '<null>' not in result.output
+
+    # delete=False means we should try to clean up
+    try:
+        if os.path.exists(myclirc.name):
+            os.remove(myclirc.name)
+    except Exception as e:
+        print(f'An error occurred while attempting to delete the file: {e}')

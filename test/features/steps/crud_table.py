@@ -118,7 +118,7 @@ def step_see_null_selected(context):
             +--------+\r
             | NULL   |\r
             +--------+\r
-            | <nope> |\r
+            | <null> |\r
             +--------+
             """
         ).strip()
