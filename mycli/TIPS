@@ -76,6 +76,8 @@ edit a query in an external editor using \edit <filename>!
 
 \? or "help" for help!
 
+"help <keyword>" for help on SQL keywords!
+
 \n or "nopager" to disable the pager!
 
 use "tee"/"notee" to write/stop-writing results to a output file!
