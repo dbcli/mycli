@@ -19,6 +19,11 @@ Bug Fixes
 * Ensure fullscreen in fuzzy history search.
 
 
+Documentation
+---------
+* Add `help <keyword>` to TIPS.
+
+
 1.57.0 (2026/02/25)
 ==============
 
