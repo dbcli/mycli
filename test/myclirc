@@ -152,6 +152,15 @@ my_cnf_transition_done = False
 # A password can be reset with --use-keyring=reset at the CLI.
 use_keyring = False
 
+[search]
+
+# Whether to apply syntax highlighting to the preview window in fuzzy history
+# search.  There is a small performance penalty to enabling this.  The "pygmentize"
+# CLI tool must also be available.  The syntax style from the "syntax_style"
+# option will be respected, though additional customizations from [colors] will
+# not be applied.
+highlight_preview = False
+
 [connection]
 
 # character set for connections without --character-set being set

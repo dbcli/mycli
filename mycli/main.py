@@ -255,6 +255,8 @@ class MyCli:
 
         keyword_casing = c["main"].get("keyword_casing", "auto")
 
+        self.highlight_preview = c['search'].as_bool('highlight_preview')
+
         self.query_history: list[Query] = []
 
         # Initialize completer.
@@ -2481,6 +2483,7 @@ def do_config_checkup(mycli: MyCli) -> None:
     for executable in [
         'less',
         'fzf',
+        'pygmentize',
     ]:
         if shutil.which(executable):
             print(f'The "{executable}" executable was found — good!')

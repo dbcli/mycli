@@ -238,13 +238,21 @@ def mycli_bindings(mycli) -> KeyBindings:
         if mode == 'reverse_isearch':
             search_history(event, incremental=True)
         else:
-            search_history(event)
+            search_history(
+                event,
+                highlight_preview=mycli.highlight_preview,
+                highlight_style=mycli.syntax_style,
+            )
 
     @kb.add("escape", "r", filter=control_is_searchable & emacs_mode)
     def _(event: KeyPressEvent) -> None:
         """Search history using fzf when available."""
         _logger.debug("Detected <alt-r> key.")
-        search_history(event)
+        search_history(
+            event,
+            highlight_preview=mycli.highlight_preview,
+            highlight_style=mycli.syntax_style,
+        )
 
     @kb.add('c-d', filter=ctrl_d_condition)
     def _(event: KeyPressEvent) -> None:
