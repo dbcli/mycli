@@ -10,6 +10,7 @@ Features
 * Let `help <keyword>` list similar keywords when not found.
 * Optionally highlight fuzzy search previews.
 * Make `\edit` synonymous with the `\e` command.
+* More liberally accept `on`/`off` values for `true`/`false`, and vice versa.
 
 
 Bug Fixes

@@ -16,6 +16,7 @@ from mycli.config import (
     read_and_decrypt_mylogin_cnf,
     read_config_file,
     str_to_bool,
+    str_to_on_off,
     strip_matching_quotes,
 )
 
@@ -147,6 +148,25 @@ def test_str_to_bool():
 
     with pytest.raises(TypeError):
         str_to_bool(None)
+
+
+def test_str_to_on_off():
+    assert str_to_on_off(False) == 'off'
+    assert str_to_on_off(True) == 'on'
+    assert str_to_on_off("False") == 'off'
+    assert str_to_on_off("True") == 'on'
+    assert str_to_on_off("TRUE") == 'on'
+    assert str_to_on_off("1") == 'on'
+    assert str_to_on_off("0") == 'off'
+    assert str_to_on_off("on") == 'on'
+    assert str_to_on_off("off") == 'off'
+    assert str_to_on_off("off") == 'off'
+
+    with pytest.raises(ValueError):
+        str_to_on_off("foo")
+
+    with pytest.raises(TypeError):
+        str_to_on_off(None)
 
 
 def test_read_config_file_list_values_default():
