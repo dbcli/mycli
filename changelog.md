@@ -19,6 +19,11 @@ Bug Fixes
 * Ensure fullscreen in fuzzy history search.
 
 
+Internal
+---------
+* Better tests for `null_string` configuration option.
+
+
 Documentation
 ---------
 * Add `help <keyword>` to TIPS.

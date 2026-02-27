@@ -66,7 +66,7 @@ redirect_format = csv
 # How to display the missing value (ie NULL).  Only certain table formats
 # support configuring the missing value.  CSV for example always uses the
 # empty string, and JSON formats use native nulls.
-null_string = <nope>
+null_string = <null>
 
 # How to align numeric data in tabular output: right or left.
 numeric_alignment = right
