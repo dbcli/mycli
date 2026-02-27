@@ -845,31 +845,39 @@ class MyCli:
         return False
 
     def handle_prettify_binding(self, text: str) -> str:
+        if not text:
+            return ''
         try:
-            statements = sqlglot.parse(text, read="mysql")
+            statements = sqlglot.parse(text, read='mysql')
         except Exception:
             statements = []
         if len(statements) == 1 and statements[0]:
-            pretty_text = statements[0].sql(pretty=True, pad=4, dialect="mysql")
+            parse_succeeded = True
+            pretty_text = statements[0].sql(pretty=True, pad=4, dialect='mysql')
         else:
-            pretty_text = ""
-            self.toolbar_error_message = "Prettify failed to parse statement"
-        if len(pretty_text) > 0:
-            pretty_text = pretty_text + ";"
+            parse_succeeded = False
+            pretty_text = text.rstrip(';')
+            self.toolbar_error_message = 'Prettify failed to parse single statement'
+        if pretty_text and parse_succeeded:
+            pretty_text = pretty_text + ';'
         return pretty_text
 
     def handle_unprettify_binding(self, text: str) -> str:
+        if not text:
+            return ''
         try:
-            statements = sqlglot.parse(text, read="mysql")
+            statements = sqlglot.parse(text, read='mysql')
         except Exception:
             statements = []
         if len(statements) == 1 and statements[0]:
-            unpretty_text = statements[0].sql(pretty=False, dialect="mysql")
+            parse_succeeded = True
+            unpretty_text = statements[0].sql(pretty=False, dialect='mysql')
         else:
-            unpretty_text = ""
-            self.toolbar_error_message = "Unprettify failed to parse statement"
-        if len(unpretty_text) > 0:
-            unpretty_text = unpretty_text + ";"
+            parse_succeeded = False
+            unpretty_text = text.rstrip(';')
+            self.toolbar_error_message = 'Unprettify failed to parse single statement'
+        if unpretty_text and parse_succeeded:
+            unpretty_text = unpretty_text + ';'
         return unpretty_text
 
     def run_cli(self) -> None:
