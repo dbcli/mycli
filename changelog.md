@@ -20,17 +20,18 @@ Bug Fixes
 * Ensure fullscreen in fuzzy history search.
 
 
-Internal
----------
-* Better tests for `null_string` configuration option.
-* Better cleanup of resources in the test suite.
-
-
 Documentation
 ---------
 * Add `help <keyword>` to TIPS.
 * Refine inline help descriptions.
 * Add `$VISUAL` environment variable hint to TIPS.
+
+
+Internal
+---------
+* Better tests for `null_string` configuration option.
+* Better cleanup of resources in the test suite.
+* Simplify prettify/unprettify handlers.
 
 
 1.57.0 (2026/02/25)

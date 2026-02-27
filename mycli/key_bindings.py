@@ -166,14 +166,8 @@ def mycli_bindings(mycli) -> KeyBindings:
         _logger.debug("Detected <C-x p>/> key.")
 
         b = event.app.current_buffer
-        cursorpos_relative = b.cursor_position / max(1, len(b.text))
-        pretty_text = mycli.handle_prettify_binding(b.text)
-        if len(pretty_text) > 0:
-            b.text = pretty_text
-            cursorpos_abs = int(round(cursorpos_relative * len(b.text)))
-            while 0 < cursorpos_abs < len(b.text) and b.text[cursorpos_abs] in (" ", "\n"):
-                cursorpos_abs -= 1
-            b.cursor_position = min(cursorpos_abs, len(b.text))
+        if b.text:
+            b.transform_region(0, len(b.text), mycli.handle_prettify_binding)
 
     @kb.add("c-x", "u", filter=emacs_mode)
     def _(event: KeyPressEvent) -> None:
@@ -185,14 +179,8 @@ def mycli_bindings(mycli) -> KeyBindings:
         _logger.debug("Detected <C-x u>/< key.")
 
         b = event.app.current_buffer
-        cursorpos_relative = b.cursor_position / max(1, len(b.text))
-        unpretty_text = mycli.handle_unprettify_binding(b.text)
-        if len(unpretty_text) > 0:
-            b.text = unpretty_text
-            cursorpos_abs = int(round(cursorpos_relative * len(b.text)))
-            while 0 < cursorpos_abs < len(b.text) and b.text[cursorpos_abs] in (" ", "\n"):
-                cursorpos_abs -= 1
-            b.cursor_position = min(cursorpos_abs, len(b.text))
+        if b.text:
+            b.transform_region(0, len(b.text), mycli.handle_unprettify_binding)
 
     @kb.add("c-o", "d", filter=emacs_mode)
     def _(event: KeyPressEvent) -> None:
