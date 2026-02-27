@@ -206,7 +206,12 @@ def quit_(*_args):
 
 
 @special_command(
-    "\\e", "<query>\\e | \\e <filename>", "Edit query with editor (uses $EDITOR).", arg_type=ArgType.NO_QUERY, case_sensitive=True
+    "\\edit",
+    "<query>\\edit | \\edit <filename>",
+    "Edit query with editor (uses $EDITOR).",
+    arg_type=ArgType.NO_QUERY,
+    case_sensitive=True,
+    aliases=['\\e'],
 )
 @special_command("\\clip", "<query>\\clip", "Copy query to the system clipboard.", arg_type=ArgType.NO_QUERY, case_sensitive=True)
 @special_command("\\G", "<query>\\G", "Display query results vertically.", arg_type=ArgType.NO_QUERY, case_sensitive=True)

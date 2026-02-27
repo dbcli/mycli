@@ -40,6 +40,7 @@ def _multiline_exception(text: str) -> bool:
             "\\g",
             "\\G",
             r"\e",
+            r"\edit",
             r"\clip",
         ))
         or
