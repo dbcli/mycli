@@ -208,7 +208,7 @@ def quit_(*_args):
 @special_command(
     "\\edit",
     "<query>\\edit | \\edit <filename>",
-    "Edit query with editor (uses $EDITOR).",
+    "Edit query with editor (uses $VISUAL or $EDITOR).",
     arg_type=ArgType.NO_QUERY,
     case_sensitive=True,
     aliases=['\\e'],
@@ -221,6 +221,13 @@ def stub():
 
 if LLM_IMPORTED:
 
-    @special_command("\\llm", "\\llm [arguments]", "Interrogate an LLM.", arg_type=ArgType.RAW_QUERY, case_sensitive=True, aliases=["\\ai"])
+    @special_command(
+        "\\llm",
+        "\\llm [arguments]",
+        "Interrogate an LLM.  See \"\\llm help\".",
+        arg_type=ArgType.RAW_QUERY,
+        case_sensitive=True,
+        aliases=["\\ai"],
+    )
     def llm_stub():
         raise NotImplementedError

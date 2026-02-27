@@ -348,7 +348,7 @@ class MyCli:
             case_sensitive=True,
         )
         special.register_special_command(
-            self.execute_from_file, "source", "source <filename>", "Execute commands from file.", aliases=["\\."]
+            self.execute_from_file, "source", "source <filename>", "Execute queries from a file.", aliases=["\\."]
         )
         special.register_special_command(
             self.change_prompt_format, "prompt", "prompt <string>", "Change prompt format.", aliases=["\\R"], case_sensitive=True
