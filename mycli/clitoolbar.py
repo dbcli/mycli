@@ -43,7 +43,7 @@ def create_toolbar_tokens_func(mycli, show_initial_toolbar_help: Callable) -> Ca
 
         if mycli.toolbar_error_message:
             result.append(divider)
-            result.append(("class:bottom-toolbar", mycli.toolbar_error_message))
+            result.append(("class:bottom-toolbar.transaction.failed", mycli.toolbar_error_message))
             mycli.toolbar_error_message = None
 
         if mycli.multi_line:
