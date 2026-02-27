@@ -22,6 +22,7 @@ Bug Fixes
 Documentation
 ---------
 * Add `help <keyword>` to TIPS.
+* Refine inline help descriptions.
 
 
 1.57.0 (2026/02/25)

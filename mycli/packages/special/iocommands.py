@@ -104,13 +104,13 @@ def set_pager(arg: str, **_) -> list[SQLResult]:
     return [SQLResult(status=msg)]
 
 
-@special_command("nopager", "nopager", "Disable pager, print to stdout.", arg_type=ArgType.NO_QUERY, aliases=["\\n"], case_sensitive=True)
+@special_command("nopager", "nopager", "Disable pager; print to stdout.", arg_type=ArgType.NO_QUERY, aliases=["\\n"], case_sensitive=True)
 def disable_pager() -> list[SQLResult]:
     set_pager_enabled(False)
     return [SQLResult(status="Pager disabled.")]
 
 
-@special_command("\\timing", "\\timing", "Toggle timing of commands.", arg_type=ArgType.NO_QUERY, aliases=["\\t"], case_sensitive=True)
+@special_command("\\timing", "\\timing", "Toggle timing of queries.", arg_type=ArgType.NO_QUERY, aliases=["\\t"], case_sensitive=True)
 def toggle_timing() -> list[SQLResult]:
     global TIMING_ENABLED
     TIMING_ENABLED = not TIMING_ENABLED
@@ -555,7 +555,7 @@ def flush_pipe_once_if_written(post_redirect_command: str) -> None:
     PIPE_ONCE['stdout_mode'] = None
 
 
-@special_command("watch", "watch [seconds] [-c] <query>", "Executes the query every [seconds] seconds (by default 5).")
+@special_command("watch", "watch [seconds] [-c] <query>", "Execute query every [seconds] seconds (5 by default).")
 def watch_query(arg: str, **kwargs) -> Generator[SQLResult, None, None]:
     usage = """Syntax: watch [seconds] [-c] query.
     * seconds: The interval at the query will be repeated, in seconds.
