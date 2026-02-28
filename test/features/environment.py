@@ -31,6 +31,7 @@ def before_all(context):
     """Set env parameters."""
     os.environ["LINES"] = "100"
     os.environ["COLUMNS"] = "100"
+    os.environ["VISUAL"] = "ex"
     os.environ["EDITOR"] = "ex"
     os.environ["LC_ALL"] = "en_US.UTF-8"
     os.environ["PROMPT_TOOLKIT_NO_CPR"] = "1"
