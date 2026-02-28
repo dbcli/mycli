@@ -1001,7 +1001,8 @@ class MyCli:
                     except KeyboardInterrupt:
                         pass
                     if self.beep_after_seconds > 0 and t >= self.beep_after_seconds:
-                        self.bell()
+                        assert self.prompt_app is not None
+                        self.prompt_app.output.bell()
                     if special.is_timing_enabled():
                         self.echo(f"Time: {t:0.03f}s")
                 except KeyboardInterrupt:
@@ -1364,10 +1365,6 @@ class MyCli:
         """
         self.log_output(s)
         click.secho(s, **kwargs)
-
-    def bell(self) -> None:
-        """Print a bell on the stderr."""
-        click.secho("\a", err=True, nl=False)
 
     def get_output_margin(self, status: str | None = None) -> int:
         """Get the output margin (number of rows for the prompt, footer and

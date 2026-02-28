@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Internal
+---------
+* Use prompt_toolkit's `bell()`.
+
+
 1.58.0 (2026/02/28)
 ==============
 
