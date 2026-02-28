@@ -4,6 +4,7 @@ Upcoming (TBD)
 Features
 ---------
 * Offer filename completions on more special commands, such as `\edit`.
+* Allow styling of status, timing, and warnings text.
 
 
 Bug Fixes

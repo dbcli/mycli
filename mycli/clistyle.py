@@ -36,6 +36,14 @@ TOKEN_TO_PROMPT_STYLE: dict[Token, str] = {
     Token.Output.OddRow: "output.odd-row",
     Token.Output.EvenRow: "output.even-row",
     Token.Output.Null: "output.null",
+    Token.Output.Status: "output.status",
+    Token.Output.Timing: "output.timing",
+    Token.Warnings.Header: "warnings.header",
+    Token.Warnings.OddRow: "warnings.odd-row",
+    Token.Warnings.EvenRow: "warnings.even-row",
+    Token.Warnings.Null: "warnings.null",
+    Token.Warnings.Status: "warnings.status",
+    Token.Warnings.Timing: "warnings.timing",
     Token.Prompt: "prompt",
     Token.Continuation: "continuation",
 }
@@ -96,7 +104,7 @@ def parse_pygments_style(
         return token_type, style_dict[token_name]
 
 
-def style_factory(name: str, cli_style: dict[str, str]) -> _MergedStyle:
+def style_factory_toolkit(name: str, cli_style: dict[str, str]) -> _MergedStyle:
     try:
         style: PygmentsStyle = pygments.styles.get_style_by_name(name)
     except ClassNotFound:
@@ -124,7 +132,11 @@ def style_factory(name: str, cli_style: dict[str, str]) -> _MergedStyle:
     return merge_styles([style_from_pygments_cls(style), override_style, Style(prompt_styles)])
 
 
-def style_factory_output(name: str, cli_style: dict[str, str]) -> PygmentsStyle:
+def style_factory_helpers(
+    name: str,
+    cli_style: dict[str, str],
+    warnings: bool = False,
+) -> PygmentsStyle:
     try:
         style: dict[PygmentsStyle | str, str] = pygments.styles.get_style_by_name(name).styles
     except ClassNotFound:
@@ -143,6 +155,15 @@ def style_factory_output(name: str, cli_style: dict[str, str]) -> PygmentsStyle:
         else:
             # TODO: cli helpers will have to switch to ptk.Style
             logger.error("Unhandled style / class name: %s", token)
+
+    if warnings:
+        for warning_token in style:
+            if 'Warnings' not in str(warning_token):
+                continue
+            warning_str = str(warning_token)
+            output_str = warning_str.replace('Warnings', 'Output')
+            output_token = string_to_tokentype(output_str)
+            style[output_token] = style[warning_token]
 
     class OutputStyle(PygmentsStyle):
         default_style = ""
