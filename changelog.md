@@ -7,6 +7,7 @@ Features
 * Allow styling of status, timing, and warnings text.
 * Set up customization of prompt/continuation colors in `~/.myclirc`.
 * Allow customization of the toolbar with prompt format strings.
+* Add warnings-count prompt format strings: `\w` and `\W`.
 
 
 Bug Fixes

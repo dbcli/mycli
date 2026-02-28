@@ -83,6 +83,22 @@ def get_uptime(cur: Cursor) -> int:
     return uptime
 
 
+def get_warning_count(cur: Cursor) -> int:
+    query = 'SHOW COUNT(*) WARNINGS'
+    logger.debug(query)
+
+    warning_count = 0
+
+    try:
+        cur.execute(query)
+        if one := cur.fetchone():
+            warning_count = int(one[0] or 0)
+    except pymysql.err.OperationalError:
+        pass
+
+    return warning_count
+
+
 def get_ssl_version(cur: Cursor) -> str | None:
     cache_key = (id(cur.connection), cur.connection.thread_id())
 
