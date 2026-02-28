@@ -231,7 +231,19 @@ def suggest_special(text: str) -> list[dict[str, Any]]:
             {"type": "view", "schema": []},
             {"type": "schema"},
         ]
-    elif cmd.lower() in ["\\.", "source"]:
+    elif cmd.lower() in [
+        r'\.',
+        'source',
+        r'\o',
+        r'\once',
+        r'tee',
+    ]:
+        return [{"type": "file_name"}]
+    # todo: why is \edit case-sensitive?
+    elif cmd in [
+        r'\e',
+        r'\edit',
+    ]:
         return [{"type": "file_name"}]
     if cmd in ["\\llm", "\\ai"]:
         return [{"type": "llm"}]

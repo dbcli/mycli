@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Features
+---------
+* Offer filename completions on more special commands, such as `\edit`.
+
+
 Bug Fixes
 ---------
 * Make toolbar widths consistent on toggle actions.
