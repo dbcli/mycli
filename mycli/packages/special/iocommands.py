@@ -11,8 +11,8 @@ from typing import Any, Generator
 
 import click
 from configobj import ConfigObj
+from prompt_toolkit.clipboard.pyperclip import PyperclipClipboard
 from pymysql.cursors import Cursor
-import pyperclip
 import sqlparse
 
 from mycli.compat import WIN
@@ -246,7 +246,8 @@ def copy_query_to_clipboard(sql: str | None = None) -> str | None:
     message = None
 
     try:
-        pyperclip.copy(f"{sql}")
+        clipboard = PyperclipClipboard()
+        clipboard.set_text(sql)
     except RuntimeError as e:
         message = f"Error clipping query: {e}."
 

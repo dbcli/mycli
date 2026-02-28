@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Internal
+---------
+* Use the clipboard provided by prompt_toolkit for `\clip`.
+
+
 1.58.0 (2026/02/28)
 ==============
 
