@@ -226,9 +226,9 @@ def handle_llm(
 ) -> tuple[str, str | None, float]:
     _, verbosity, arg = parse_special_command(text)
     if not LLM_IMPORTED:
-        raise FinishIteration(results=[SQLResult(title=NEED_DEPENDENCIES, results=[])])
+        raise FinishIteration(results=[SQLResult(preamble=NEED_DEPENDENCIES)])
     if arg.strip().lower() in ['', 'help', '?', r'\?']:
-        raise FinishIteration(results=[SQLResult(title=USAGE, results=[])])
+        raise FinishIteration(results=[SQLResult(preamble=USAGE)])
     parts = shlex.split(arg)
     restart = False
     if "-c" in parts:
@@ -255,14 +255,14 @@ def handle_llm(
         if capture_output:
             click.echo("Calling llm command")
             start = time()
-            _, result = run_external_cmd("llm", *args, capture_output=capture_output)
+            _, output = run_external_cmd("llm", *args, capture_output=capture_output)
             end = time()
-            match = re.search(_SQL_CODE_FENCE, result, re.DOTALL)
+            match = re.search(_SQL_CODE_FENCE, output, re.DOTALL)
             if match:
                 sql = match.group(1).strip()
             else:
-                raise FinishIteration(results=[SQLResult(title=result, results=[])])
-            return (result if verbosity == Verbosity.SUCCINCT else "", sql, end - start)
+                raise FinishIteration(results=[SQLResult(preamble=output)])
+            return (output if verbosity == Verbosity.SUCCINCT else "", sql, end - start)
         else:
             run_external_cmd("llm", *args, restart_cli=restart)
             raise FinishIteration(results=None)

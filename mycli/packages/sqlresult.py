@@ -5,9 +5,9 @@ from pymysql.cursors import Cursor
 
 @dataclass
 class SQLResult:
-    title: str | None = None
-    results: Cursor | list[tuple] | None = None
-    headers: list[str] | str | None = None
+    preamble: str | None = None
+    header: list[str] | str | None = None
+    rows: Cursor | list[tuple] | None = None
     postamble: str | None = None
     status: str | None = None
     command: dict[str, str | float] | None = None
@@ -16,4 +16,4 @@ class SQLResult:
         return self
 
     def __str__(self):
-        return f"{self.title}, {self.results}, {self.headers}, {self.postamble}, {self.status}, {self.command}"
+        return f"{self.preamble}, {self.header}, {self.rows}, {self.postamble}, {self.status}, {self.command}"

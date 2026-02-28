@@ -9,6 +9,7 @@ Bug Fixes
 Internal
 ---------
 * Use prompt_toolkit's `bell()`.
+* Refactor `SQLResult` dataclass.
 
 
 1.58.0 (2026/02/28)

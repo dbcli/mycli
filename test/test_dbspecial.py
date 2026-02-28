@@ -56,18 +56,18 @@ def test_list_tables_verbose_preserves_field_results():
     assert len(results) == 1
     result = results[0]
 
-    # The headers should be from SHOW FIELDS
-    assert result.headers == ['Field', 'Type', 'Null', 'Key', 'Default', 'Extra']
+    # The header should be from SHOW FIELDS
+    assert result.header == ['Field', 'Type', 'Null', 'Key', 'Default', 'Extra']
 
     # The results should contain the field data, not be empty
     # Convert to list if it's a cursor or iterable
-    result_data = list(result.results) if hasattr(result.results, '__iter__') else result.results
+    result_data = list(result.rows) if hasattr(result.rows, '__iter__') else result.rows
     assert len(result_data) == 2
     assert result_data[0][0] == 'id'
     assert result_data[1][0] == 'name'
 
-    # The status should contain the CREATE TABLE statement
-    assert 'CREATE TABLE' in result.status
+    # The postamble should contain the CREATE TABLE statement
+    assert 'CREATE TABLE' in result.postamble
 
 
 def test_u_suggests_databases():

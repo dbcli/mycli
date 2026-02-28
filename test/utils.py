@@ -52,12 +52,14 @@ def run(executor, sql, rows_as_list=True):
     results = []
 
     for result in executor.run(sql):
-        title = result.title
-        rows = result.results
-        headers = result.headers
-        status = result.status
-        rows = list(rows) if (rows_as_list and rows) else rows
-        results.append({"title": title, "rows": rows, "headers": headers, "status": status})
+        rows = list(result.rows) if (rows_as_list and result.rows) else result.rows
+        results.append({
+            "preamble": result.preamble,
+            "header": result.header,
+            "rows": rows,
+            "postamble": result.postamble,
+            "status": result.status,
+        })
 
     return results
 
