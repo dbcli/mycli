@@ -89,17 +89,12 @@ def test_corrupted_pad():
     assert "user" not in contents
 
 
-def test_get_mylogin_cnf_path():
+def test_get_mylogin_cnf_path(monkeypatch):
     """Tests that the path for .mylogin.cnf is detected."""
-    original_env = None
-    if "MYSQL_TEST_LOGIN_FILE" in os.environ:
-        original_env = os.environ.pop("MYSQL_TEST_LOGIN_FILE")
+    monkeypatch.delenv('MYSQL_TEST_LOGIN_FILE', raising=False)
     is_windows = sys.platform == "win32"
 
     login_cnf_path = get_mylogin_cnf_path()
-
-    if original_env is not None:
-        os.environ["MYSQL_TEST_LOGIN_FILE"] = original_env
 
     if login_cnf_path is not None:
         assert login_cnf_path.endswith(".mylogin.cnf")
@@ -111,21 +106,21 @@ def test_get_mylogin_cnf_path():
             assert login_cnf_path.startswith(home_dir)
 
 
-def test_alternate_get_mylogin_cnf_path():
+def test_alternate_get_mylogin_cnf_path(monkeypatch):
     """Tests that the alternate path for .mylogin.cnf is detected."""
-    original_env = None
-    if "MYSQL_TEST_LOGIN_FILE" in os.environ:
-        original_env = os.environ.pop("MYSQL_TEST_LOGIN_FILE")
 
-    _, temp_path = tempfile.mkstemp()
-    os.environ["MYSQL_TEST_LOGIN_FILE"] = temp_path
+    fd, temp_path = tempfile.mkstemp()
+    monkeypatch.setenv('MYSQL_TEST_LOGIN_FILE', temp_path)
 
     login_cnf_path = get_mylogin_cnf_path()
 
-    if original_env is not None:
-        os.environ["MYSQL_TEST_LOGIN_FILE"] = original_env
-
     assert temp_path == login_cnf_path
+
+    try:
+        os.close(fd)
+        os.remove(temp_path)
+    except Exception:
+        pass
 
 
 def test_str_to_bool():
