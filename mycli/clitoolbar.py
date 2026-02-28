@@ -21,7 +21,7 @@ def create_toolbar_tokens_func(mycli, show_initial_toolbar_help: Callable) -> Ca
         if mycli.completer.smart_completion:
             result.append(divider)
             result.append(("class:bottom-toolbar", "[F2] Smart-complete:"))
-            result.append(("class:bottom-toolbar.on", "ON"))
+            result.append(("class:bottom-toolbar.on", "ON "))
         else:
             result.append(divider)
             result.append(("class:bottom-toolbar", "[F2] Smart-complete:"))
@@ -30,7 +30,7 @@ def create_toolbar_tokens_func(mycli, show_initial_toolbar_help: Callable) -> Ca
         if mycli.multi_line:
             result.append(divider)
             result.append(("class:bottom-toolbar", "[F3] Multiline:"))
-            result.append(("class:bottom-toolbar.on", "ON"))
+            result.append(("class:bottom-toolbar.on", "ON "))
         else:
             result.append(divider)
             result.append(("class:bottom-toolbar", "[F3] Multiline:"))
