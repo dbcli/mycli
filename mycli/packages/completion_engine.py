@@ -384,13 +384,22 @@ def suggest_based_on_last_token(
                 {"type": "view", "schema": parent},
                 {"type": "function", "schema": parent},
             ]
-        else:
+        elif is_inside_quotes(text_before_cursor, -1) == 'backtick':
+            # todo: this should be revised, since we complete too exuberantly within
+            # backticks, including keywords
             aliases = [alias or table for (schema, table, alias) in tables]
             return [
                 {"type": "column", "tables": tables},
                 {"type": "function", "schema": []},
                 {"type": "alias", "aliases": aliases},
                 {"type": "keyword"},
+            ]
+        else:
+            aliases = [alias or table for (schema, table, alias) in tables]
+            return [
+                {"type": "column", "tables": tables},
+                {"type": "function", "schema": []},
+                {"type": "alias", "aliases": aliases},
             ]
     elif (
         (token_v.endswith("join") and isinstance(token, Token) and token.is_keyword)

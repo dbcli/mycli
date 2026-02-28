@@ -10,6 +10,7 @@ Features
 * Add warnings-count prompt format strings: `\w` and `\W`.
 * Handle/document more attributes in the `[colors]` section of `~/.myclirc`.
 * Enable customization of table border color/attributes in `~/.myclirc`.
+* Complete much more precisely in the "value" position.
 
 
 Bug Fixes

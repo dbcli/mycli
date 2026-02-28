@@ -743,7 +743,113 @@ class SQLCompleter(Completer):
         "ZEROFILL",
     ]
 
-    functions = [x.upper() for x in MYSQL_FUNCTIONS]
+    # misclassified as keywords
+    # do they need to also be subtracted from keywords?
+    pygments_misclassified_functions = (
+        'ASCII',
+        'AVG',
+        'CHARSET',
+        'COALESCE',
+        'COLLATION',
+        'CONVERT',
+        'CUME_DIST',
+        'CURRENT_DATE',
+        'CURRENT_TIME',
+        'CURRENT_TIMESTAMP',
+        'CURRENT_USER',
+        'DATABASE',
+        'DAY',
+        'DEFAULT',
+        'DENSE_RANK',
+        'EXISTS',
+        'FIRST_VALUE',
+        'FORMAT',
+        'GEOMCOLLECTION',
+        'GET_FORMAT',
+        'GROUPING',
+        'HOUR',
+        'IF',
+        'INSERT',
+        'INTERVAL',
+        'JSON_TABLE',
+        'JSON_VALUE',
+        'LAG',
+        'LAST_VALUE',
+        'LEAD',
+        'LEFT',
+        'LOCALTIME',
+        'LOCALTIMESTAMP',
+        'MATCH',
+        'MICROSECOND',
+        'MINUTE',
+        'MOD',
+        'MONTH',
+        'NTH_VALUE',
+        'NTILE',
+        'PERCENT_RANK',
+        'QUARTER',
+        'RANK',
+        'REPEAT',
+        'REPLACE',
+        'REVERSE',
+        'RIGHT',
+        'ROW_COUNT',
+        'ROW_NUMBER',
+        'SCHEMA',
+        'SECOND',
+        'TIMESTAMPADD',
+        'TIMESTAMPDIFF',
+        'TRUNCATE',
+        'USER',
+        'UTC_DATE',
+        'UTC_TIME',
+        'UTC_TIMESTAMP',
+        'VALUES',
+        'WEEK',
+        'WEIGHT_STRING',
+    )
+
+    pygments_missing_functions = (
+        'BINARY',  # deprecated function, but available everywhere
+        'CHAR',
+        'DATE',
+        'DISTANCE',
+        'ETAG',
+        'GeometryCollection',
+        'JSON_DUALITY_OBJECT',
+        'LineString',
+        'MultiLineString',
+        'MultiPoint',
+        'MultiPolygon',
+        'Point',
+        'Polygon',
+        'STRING_TO_VECTOR',
+        'TIME',
+        'TIMESTAMP',
+        'VECTOR_DIM',
+        'VECTOR_TO_STRING',
+        'YEAR',
+    )
+
+    # so far an incomplete list
+    # these should be spun out and completed independently from functions
+    pygments_value_position_nonfunction_keywords = (
+        'BETWEEN',
+        'CASE',
+        'FALSE',
+        'NOT',
+        'NULL',
+        'TRUE',
+    )
+
+    # should https://dev.mysql.com/doc/refman/9.6/en/loadable-function-reference.html also be added?
+    functions = sorted({
+        x.upper()
+        for x in MYSQL_FUNCTIONS
+        + pygments_misclassified_functions
+        + pygments_missing_functions
+        + pygments_value_position_nonfunction_keywords
+    })
 
     # https://docs.pingcap.com/tidb/dev/tidb-functions
     tidb_functions = [
