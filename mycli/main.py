@@ -67,7 +67,7 @@ from mycli.clitoolbar import create_toolbar_tokens_func
 from mycli.compat import WIN
 from mycli.completion_refresher import CompletionRefresher
 from mycli.config import get_mylogin_cnf_path, open_mylogin_cnf, read_config_files, str_to_bool, strip_matching_quotes, write_default_config
-from mycli.constants import ISSUES_URL
+from mycli.constants import HOME_URL, ISSUES_URL, REPO_URL
 from mycli.key_bindings import mycli_bindings
 from mycli.lexer import MyCliLexer
 from mycli.packages import special
@@ -95,7 +95,7 @@ sqlparse.engine.grouping.MAX_GROUPING_TOKENS = None  # type: ignore[assignment]
 # Query tuples are used for maintaining history
 Query = namedtuple("Query", ["query", "successful", "mutating"])
 
-SUPPORT_INFO = f"Home: https://mycli.net\nBug tracker: {ISSUES_URL}"
+SUPPORT_INFO = f"Home: {HOME_URL}\nBug tracker: {ISSUES_URL}"
 DEFAULT_WIDTH = 80
 DEFAULT_HEIGHT = 25
 MIN_COMPLETION_TRIGGER = 1
@@ -2002,7 +2002,7 @@ def cli(
         click.secho(
             "Warning: The --ssl/--no-ssl CLI options are deprecated and will be removed in a future release. "
             "Please use the \"default_ssl_mode\" config option or --ssl-mode CLI flag instead. "
-            "See issue https://github.com/dbcli/mycli/issues/1507",
+            f"See issue {ISSUES_URL}/1507",
             err=True,
             fg="yellow",
         )
@@ -2010,8 +2010,7 @@ def cli(
     # ssh_port and ssh_config_path have truthy defaults and are not included
     if any([ssh_user, ssh_host, ssh_password, ssh_key_filename, list_ssh_config, ssh_config_host]) and not ssh_warning_off:
         click.secho(
-            "Warning: The built-in SSH functionality is deprecated and will be removed in a future release. "
-            "See Issue https://github.com/dbcli/mycli/issues/1464",
+            f"Warning: The built-in SSH functionality is deprecated and will be removed in a future release. See issue {ISSUES_URL}/1464",
             err=True,
             fg="red",
         )
@@ -2101,7 +2100,7 @@ def cli(
             click.secho(
                 'Warning: The "ssl" DSN URI parameter is deprecated and will be removed in a future release. '
                 'Please use the "ssl_mode" parameter instead. '
-                'See issue https://github.com/dbcli/mycli/issues/1507',
+                f'See issue {ISSUES_URL}/1507',
                 err=True,
                 fg='yellow',
             )
@@ -2265,7 +2264,7 @@ def cli(
                 dedent(
                     f"""
                     Reading configuration from my.cnf files is deprecated.
-                    See https://github.com/dbcli/mycli/issues/1490 .
+                    See {ISSUES_URL}/1490 .
                     The cause of this message is the following in a my.cnf file without a corresponding
                     ~/.myclirc entry:
 
@@ -2279,7 +2278,7 @@ def cli(
 
                     The ~/.myclirc setting will take precedence.  In the future, the my.cnf will be ignored.
 
-                    Values are documented at https://github.com/dbcli/mycli/blob/main/mycli/myclirc .  An
+                    Values are documented at {REPO_URL}/blob/main/mycli/myclirc .  An
                     empty <value> is generally accepted.
 
                     To ignore all of this, set
@@ -2633,9 +2632,7 @@ def do_config_checkup(mycli: MyCli) -> None:
                     did_output_deprecated = True
 
     if did_output_missing or did_output_unsupported or did_output_deprecated:
-        print(
-            'For more info on supported features, see the commentary and defaults at:\n\n    * https://github.com/dbcli/mycli/blob/main/mycli/myclirc\n'
-        )
+        print(f'For more info on supported features, see the commentary and defaults at:\n\n    * {REPO_URL}/blob/main/mycli/myclirc\n')
     else:
         print('\n### Configuration:\n')
         print('User configuration all up to date!\n')

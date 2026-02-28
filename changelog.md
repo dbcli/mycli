@@ -20,6 +20,7 @@ Internal
 * Use prompt_toolkit's `bell()`.
 * Refactor `SQLResult` dataclass.
 * Avoid depending on string matches into host info.
+* Add more URL constants.
 
 
 1.58.0 (2026/02/28)
