@@ -2490,6 +2490,16 @@ def do_config_checkup(mycli: MyCli) -> None:
         else:
             print(f'The recommended "{executable}" executable was not found — some functionality will suffer.')
 
+    print('\n### Environment variables:\n')
+    for variable in [
+        'EDITOR',
+        'VISUAL',
+    ]:
+        if value := os.environ.get(variable):
+            print(f'The ${variable} environment variable was set to "{value}" — good!')
+        else:
+            print(f'The ${variable} environment variable was not set — some functionality will suffer.')
+
     indent = '    '
     transitions = {
         f'{indent}[main]\n{indent}default_character_set': f'{indent}[connection]\n{indent}default_character_set',

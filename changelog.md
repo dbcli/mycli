@@ -10,6 +10,7 @@ Features
 * Let `help <keyword>` list similar keywords when not found.
 * Optionally highlight fuzzy search previews.
 * Make `\edit` synonymous with the `\e` command.
+* Add environment variable section to `--checkup`.
 
 
 Bug Fixes
@@ -29,6 +30,7 @@ Documentation
 ---------
 * Add `help <keyword>` to TIPS.
 * Refine inline help descriptions.
+* Add `$VISUAL` environment variable hint to TIPS.
 
 
 1.57.0 (2026/02/25)

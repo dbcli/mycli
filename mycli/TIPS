@@ -54,6 +54,8 @@ edit a query in an external editor using <query>\edit!
 
 edit a query in an external editor using \edit <filename>!
 
+set "export VISUAL='code --wait'" in your shell to `\edit` queries using VS Code!
+
 \f lists favorite queries; \f <name> executes a favorite!
 
 \fs <name> <query> saves a favorite query!
