@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Bug Fixes
+---------
+* Make toolbar widths consistent on toggle actions.
+
+
 Internal
 ---------
 * Use prompt_toolkit's `bell()`.
