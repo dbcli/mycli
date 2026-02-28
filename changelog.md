@@ -22,6 +22,7 @@ Internal
 * Avoid depending on string matches into host info.
 * Add more URL constants.
 * Set `$VISUAL` whenever `$EDITOR` is set.
+* Fix tempfile leak in test suite.
 
 
 1.58.0 (2026/02/28)

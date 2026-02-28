@@ -3,13 +3,14 @@
 import os
 import shutil
 import sys
-from tempfile import mkstemp
+from tempfile import NamedTemporaryFile
 
 import db_utils as dbutils
 import fixture_utils as fixutils
 import pexpect
 
 from steps.wrappers import run_cli, wait_prompt
+from test.utils import TEMPFILE_PREFIX
 
 test_log_file = os.path.join(os.environ["HOME"], ".mycli.test.log")
 
@@ -65,13 +66,12 @@ def before_all(context):
         "pager_boundary": "---boundary---",
     }
 
-    _, my_cnf = mkstemp()
-    with open(my_cnf, "w") as f:
-        f.write(
+    with NamedTemporaryFile(prefix=TEMPFILE_PREFIX, mode='w', delete=False) as my_cnf:
+        my_cnf.write(
             f'[client]\npager={sys.executable} '
             f'{os.path.join(context.package_root, "test/features/wrappager.py")} {context.conf["pager_boundary"]}\n'
         )
-    context.conf["defaults-file"] = my_cnf
+    context.conf["defaults-file"] = my_cnf.name
     context.conf["myclirc"] = os.path.join(context.package_root, "test", "myclirc")
 
     context.cn = dbutils.create_db(
@@ -85,6 +85,11 @@ def after_all(context):
     """Unset env parameters."""
     dbutils.close_cn(context.cn)
     dbutils.drop_db(context.conf["host"], context.conf["port"], context.conf["user"], context.conf["pass"], context.conf["dbname"])
+    try:
+        if os.path.exists(context.conf["defaults-file"]):
+            os.remove(context.conf["defaults-file"])
+    except Exception:
+        pass
 
     # Restore env vars.
     # for k, v in context.pgenv.items():

@@ -6,7 +6,7 @@ from io import BytesIO, StringIO, TextIOWrapper
 import os
 import struct
 import sys
-import tempfile
+from tempfile import NamedTemporaryFile
 
 import pytest
 
@@ -18,6 +18,7 @@ from mycli.config import (
     str_to_bool,
     strip_matching_quotes,
 )
+from test.utils import TEMPFILE_PREFIX
 
 LOGIN_PATH_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "mylogin.cnf"))
 
@@ -109,18 +110,17 @@ def test_get_mylogin_cnf_path(monkeypatch):
 def test_alternate_get_mylogin_cnf_path(monkeypatch):
     """Tests that the alternate path for .mylogin.cnf is detected."""
 
-    fd, temp_path = tempfile.mkstemp()
-    monkeypatch.setenv('MYSQL_TEST_LOGIN_FILE', temp_path)
-
-    login_cnf_path = get_mylogin_cnf_path()
-
-    assert temp_path == login_cnf_path
+    with NamedTemporaryFile(prefix=TEMPFILE_PREFIX, mode='w', delete=False) as login_file:
+        monkeypatch.setenv('MYSQL_TEST_LOGIN_FILE', login_file.name)
+        login_cnf_path = get_mylogin_cnf_path()
 
     try:
-        os.close(fd)
-        os.remove(temp_path)
-    except Exception:
-        pass
+        assert login_file.name == login_cnf_path
+    except AssertionError as e:
+        assert AssertionError(e)
+    finally:
+        if os.path.exists(login_file.name):
+            os.remove(login_file.name)
 
 
 def test_str_to_bool():
