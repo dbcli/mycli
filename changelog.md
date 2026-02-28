@@ -5,6 +5,7 @@ Features
 ---------
 * Offer filename completions on more special commands, such as `\edit`.
 * Allow styling of status, timing, and warnings text.
+* Set up customization of prompt/continuation colors in `~/.myclirc`.
 
 
 Bug Fixes
