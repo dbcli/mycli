@@ -125,6 +125,17 @@ wider_completion_menu = False
 prompt = '\t \u@\h:\d> '
 prompt_continuation = '->'
 
+# Use the same prompt format strings to construct a status line in the toolbar,
+# where \B in the first position refers to the default toolbar showing keystrokes
+# and state.  Example:
+#
+#     toolbar = '\B\d \D'
+#
+# If \B is included, the additional content will begin on the next line.  More
+# lines can be added with \n.  If \B is not included, the customized toolbar
+# can be a single line.
+toolbar = ''
+
 # Skip intro info on startup and outro info on exit
 less_chatty = False
 
