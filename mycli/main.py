@@ -32,13 +32,21 @@ from cli_helpers.utils import strip_ansi
 import click
 from configobj import ConfigObj
 import keyring
+from prompt_toolkit import print_formatted_text
 from prompt_toolkit.application.current import get_app
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.completion import Completion, DynamicCompleter
 from prompt_toolkit.document import Document
 from prompt_toolkit.enums import DEFAULT_BUFFER, EditingMode
 from prompt_toolkit.filters import Condition, HasFocus, IsDone
-from prompt_toolkit.formatted_text import ANSI, AnyFormattedText
+from prompt_toolkit.formatted_text import (
+    ANSI,
+    HTML,
+    AnyFormattedText,
+    FormattedText,
+    to_formatted_text,
+    to_plain_text,
+)
 from prompt_toolkit.key_binding.bindings.named_commands import register as prompt_register
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from prompt_toolkit.layout.processors import ConditionalProcessor, HighlightMatchingBracketProcessor
@@ -54,7 +62,7 @@ import sqlparse
 
 from mycli import __version__
 from mycli.clibuffer import cli_is_multiline
-from mycli.clistyle import style_factory, style_factory_output
+from mycli.clistyle import style_factory_helpers, style_factory_toolkit
 from mycli.clitoolbar import create_toolbar_tokens_func
 from mycli.compat import WIN
 from mycli.completion_refresher import CompletionRefresher
@@ -206,7 +214,9 @@ class MyCli:
         self.syntax_style = c["main"]["syntax_style"]
         self.less_chatty = c["main"].as_bool("less_chatty")
         self.cli_style = c["colors"]
-        self.output_style = style_factory_output(self.syntax_style, self.cli_style)
+        self.toolkit_style = style_factory_toolkit(self.syntax_style, self.cli_style)
+        self.helpers_style = style_factory_helpers(self.syntax_style, self.cli_style)
+        self.helpers_warnings_style = style_factory_helpers(self.syntax_style, self.cli_style, warnings=True)
         self.wider_completion_menu = c["main"].as_bool("wider_completion_menu")
         c_dest_warning = c["main"].as_bool("destructive_warning")
         self.destructive_warning = c_dest_warning if warn is None else warn
@@ -880,6 +890,13 @@ class MyCli:
             unpretty_text = unpretty_text + ';'
         return unpretty_text
 
+    def output_timing(self, timing: str, is_warnings_style: bool = False) -> None:
+        self.log_output(timing)
+        add_style = 'class:warnings.timing' if is_warnings_style else 'class:output.timing'
+        formatted_timing = FormattedText([('', timing)])
+        styled_timing = to_formatted_text(formatted_timing, style=add_style)
+        print_formatted_text(styled_timing, style=self.toolkit_style)
+
     def run_cli(self) -> None:
         iterations = 0
         sqlexecute = self.sqlexecute
@@ -1001,7 +1018,7 @@ class MyCli:
                         assert self.prompt_app is not None
                         self.prompt_app.output.bell()
                     if special.is_timing_enabled():
-                        self.echo(f"Time: {t:0.03f}s")
+                        self.output_timing(f"Time: {t:0.03f}s")
                 except KeyboardInterrupt:
                     pass
 
@@ -1012,7 +1029,10 @@ class MyCli:
                 # get and display warnings if enabled
                 if self.show_warnings and isinstance(result.rows, Cursor) and result.rows.warning_count > 0:
                     warnings = sqlexecute.run("SHOW WARNINGS")
+                    t = time() - start
+                    saw_warning = False
                     for warning in warnings:
+                        saw_warning = True
                         formatted = self.format_sqlresult(
                             warning,
                             is_expanded=special.is_expanded_output(),
@@ -1021,9 +1041,13 @@ class MyCli:
                             numeric_alignment=self.numeric_alignment,
                             binary_display=self.binary_display,
                             max_width=max_width,
+                            is_warnings_style=True,
                         )
                         self.echo("")
-                        self.output(formatted, warning.status)
+                        self.output(formatted, warning.status, is_warnings_style=True)
+
+                    if saw_warning and special.is_timing_enabled():
+                        self.output_timing(f"Time: {t:0.03f}s", is_warnings_style=True)
 
         def keepalive_hook(_context):
             """
@@ -1105,7 +1129,7 @@ class MyCli:
                             click.echo(context)
                             click.echo("---")
                         if special.is_timing_enabled():
-                            click.echo(f"Time: {duration:.2f} seconds")
+                            self.output_timing(f"Time: {duration:.2f} seconds")
                         text = self.prompt_app.prompt(
                             default=sql or '',
                             inputhook=inputhook,
@@ -1264,7 +1288,8 @@ class MyCli:
                 auto_suggest=AutoSuggestFromHistory(),
                 complete_while_typing=complete_while_typing_filter,
                 multiline=cli_is_multiline(self),
-                style=style_factory(self.syntax_style, self.cli_style),
+                # why not self.toolkit_style here?
+                style=style_factory_toolkit(self.syntax_style, self.cli_style),
                 include_default_pygments_style=False,
                 key_bindings=key_bindings,
                 enable_open_in_editor=True,
@@ -1344,8 +1369,10 @@ class MyCli:
             self.logfile.write(query)
             self.logfile.write("\n")
 
-    def log_output(self, output: str) -> None:
+    def log_output(self, output: str | AnyFormattedText) -> None:
         """Log the output in the audit log, if it's enabled."""
+        if isinstance(output, (ANSI, HTML, FormattedText)):
+            output = to_plain_text(output)
         if isinstance(self.logfile, TextIOWrapper):
             click.echo(output, file=self.logfile)
 
@@ -1371,7 +1398,12 @@ class MyCli:
 
         return margin
 
-    def output(self, output: itertools.chain[str], status: str | None = None) -> None:
+    def output(
+        self,
+        output: itertools.chain[str],
+        status: str | None = None,
+        is_warnings_style: bool = False,
+    ) -> None:
         """Output text to stdout or a pager command.
 
         The status text is not outputted to pager or files.
@@ -1433,8 +1465,12 @@ class MyCli:
                         click.secho(line)
 
         if status:
+            # todo allow status to be a FormattedText, but strip before logging
             self.log_output(status)
-            click.secho(status)
+            add_style = 'class:warnings.status' if is_warnings_style else 'class:output.status'
+            formatted_status = FormattedText([('', status)])
+            styled_status = to_formatted_text(formatted_status, style=add_style)
+            print_formatted_text(styled_status, style=self.toolkit_style)
 
     def configure_pager(self) -> None:
         # Provide sane defaults for less if they are empty.
@@ -1576,6 +1612,7 @@ class MyCli:
                         null_string=self.null_string,
                         numeric_alignment=self.numeric_alignment,
                         binary_display=self.binary_display,
+                        is_warnings_style=True,
                     )
                     for line in output:
                         click.echo(line, nl=new_line)
@@ -1592,6 +1629,7 @@ class MyCli:
         numeric_alignment: str = 'right',
         binary_display: str | None = None,
         max_width: int | None = None,
+        is_warnings_style: bool = False,
     ) -> itertools.chain[str]:
         if is_redirected:
             use_formatter = self.redirect_formatter
@@ -1605,7 +1643,7 @@ class MyCli:
             "dialect": "unix",
             "disable_numparse": True,
             "preserve_whitespace": True,
-            "style": self.output_style,
+            "style": self.helpers_warnings_style if is_warnings_style else self.helpers_style,
         }
         default_kwargs = use_formatter._output_formats[use_formatter.format_name].formatter_args
 

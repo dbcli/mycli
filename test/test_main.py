@@ -1,7 +1,9 @@
 # type: ignore
 
 from collections import namedtuple
+from contextlib import redirect_stdout
 import csv
+import io
 import os
 import shutil
 from tempfile import NamedTemporaryFile
@@ -42,7 +44,7 @@ CLI_ARGS = [
 
 
 @dbtest
-def test_binary_display_hex(executor, capsys):
+def test_binary_display_hex(executor):
     m = MyCli()
     m.sqlexecute = SQLExecute(
         None,
@@ -72,14 +74,16 @@ def test_binary_display_hex(executor, capsys):
         binary_display="hex",
         max_width=None,
     )
-    m.output(formatted, sqlresult.status)
+    f = io.StringIO()
+    with redirect_stdout(f):
+        m.output(formatted, sqlresult.status)
     expected = " 0x6a "
-    stdout = capsys.readouterr().out
-    assert expected in stdout
+    output = f.getvalue()
+    assert expected in output
 
 
 @dbtest
-def test_binary_display_utf8(executor, capsys):
+def test_binary_display_utf8(executor):
     m = MyCli()
     m.sqlexecute = SQLExecute(
         None,
@@ -109,10 +113,12 @@ def test_binary_display_utf8(executor, capsys):
         binary_display="utf8",
         max_width=None,
     )
-    m.output(formatted, sqlresult.status)
+    f = io.StringIO()
+    with redirect_stdout(f):
+        m.output(formatted, sqlresult.status)
     expected = " j "
-    stdout = capsys.readouterr().out
-    assert expected in stdout
+    output = f.getvalue()
+    assert expected in output
 
 
 @dbtest

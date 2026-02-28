@@ -6,15 +6,15 @@ from pygments.style import Style
 from pygments.token import Token
 import pytest
 
-from mycli.clistyle import style_factory
+from mycli.clistyle import style_factory_toolkit
 
 
 @pytest.mark.skip(reason="incompatible with new prompt toolkit")
-def test_style_factory():
+def test_style_factory_toolkit():
     """Test that a Pygments Style class is created."""
     header = "bold underline #ansired"
     cli_style = {"Token.Output.Header": header}
-    style = style_factory("default", cli_style)
+    style = style_factory_toolkit("default", cli_style)
 
     assert isinstance(style(), Style)
     assert Token.Output.Header in style.styles
@@ -22,8 +22,8 @@ def test_style_factory():
 
 
 @pytest.mark.skip(reason="incompatible with new prompt toolkit")
-def test_style_factory_unknown_name():
+def test_style_factory_toolkit_unknown_name():
     """Test that an unrecognized name will not throw an error."""
-    style = style_factory("foobar", {})
+    style = style_factory_toolkit("foobar", {})
 
     assert isinstance(style(), Style)
