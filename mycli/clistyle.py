@@ -104,6 +104,28 @@ def parse_pygments_style(
         return token_type, style_dict[token_name]
 
 
+def is_valid_pygments(name: str) -> bool:
+    try:
+
+        class TestStyle(PygmentsStyle):
+            default_style = ''
+            styles = {Token.Default: name}
+
+        return True
+    except AssertionError:
+        # can't emit error because some styles are valid pygments and not valid ptoolkit
+        return False
+
+
+def is_valid_ptoolkit(name: str) -> bool:
+    try:
+        _s = Style([("default", name)])
+        return True
+    except ValueError:
+        # can't emit error because some styles are valid pygments and not valid ptoolkit
+        return False
+
+
 def style_factory_toolkit(name: str, cli_style: dict[str, str]) -> _MergedStyle:
     try:
         style: PygmentsStyle = pygments.styles.get_style_by_name(name)
@@ -119,14 +141,16 @@ def style_factory_toolkit(name: str, cli_style: dict[str, str]) -> _MergedStyle:
             token_type, style_value = parse_pygments_style(token, style, cli_style)
             if token_type in TOKEN_TO_PROMPT_STYLE:
                 prompt_style = TOKEN_TO_PROMPT_STYLE[token_type]
-                prompt_styles.append((prompt_style, style_value))
+                if is_valid_ptoolkit(style_value):
+                    prompt_styles.append((prompt_style, style_value))
             else:
                 # we don't want to support tokens anymore
                 logger.error("Unhandled style / class name: %s", token)
         else:
             # treat as prompt style name (2.0). See default style names here:
             # https://github.com/jonathanslenders/python-prompt-toolkit/blob/master/prompt_toolkit/styles/defaults.py
-            prompt_styles.append((token, cli_style[token]))
+            if is_valid_ptoolkit(cli_style[token]):
+                prompt_styles.append((token, cli_style[token]))
 
     override_style: Style = Style([("bottom-toolbar", "noreverse")])
     return merge_styles([style_from_pygments_cls(style), override_style, Style(prompt_styles)])
@@ -145,13 +169,16 @@ def style_factory_helpers(
     for token in cli_style:
         if token.startswith("Token."):
             token_type, style_value = parse_pygments_style(token, style, cli_style)
-            style.update({token_type: style_value})
+            if is_valid_pygments(style_value):
+                style.update({token_type: style_value})
         elif token in PROMPT_STYLE_TO_TOKEN:
             token_type = PROMPT_STYLE_TO_TOKEN[token]
-            style.update({token_type: cli_style[token]})
+            if is_valid_pygments(cli_style[token]):
+                style.update({token_type: cli_style[token]})
         elif token in OVERRIDE_STYLE_TO_TOKEN:
             token_type = OVERRIDE_STYLE_TO_TOKEN[token]
-            style.update({token_type: cli_style[token]})
+            if is_valid_pygments(cli_style[token]):
+                style.update({token_type: cli_style[token]})
         else:
             # TODO: cli helpers will have to switch to ptk.Style
             logger.error("Unhandled style / class name: %s", token)
