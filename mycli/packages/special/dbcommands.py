@@ -128,7 +128,7 @@ def status(cur: Cursor, **_) -> list[SQLResult]:
     output.append(("Protocol version:", variables["protocol_version"]))
     output.append(('SSL/TLS version:', get_ssl_version(cur)))
 
-    if getattr(cur.connection, 'unix_socket', None) is not None:
+    if getattr(cur.connection, 'unix_socket', None):
         host_info = cur.connection.host_info
     else:
         host_info = f'{cur.connection.host} via TCP/IP'
@@ -147,10 +147,10 @@ def status(cur: Cursor, **_) -> list[SQLResult]:
     output.append(("Client characterset:", charset[2]))
     output.append(("Conn. characterset:", charset[3]))
 
-    if "TCP/IP" in host_info:
-        output.append(("TCP port:", cur.connection.port))
+    if getattr(cur.connection, 'unix_socket', None):
+        output.append(('UNIX socket:', variables['socket']))
     else:
-        output.append(("UNIX socket:", variables["socket"]))
+        output.append(('TCP port:', cur.connection.port))
 
     if "Uptime" in status:
         output.append(("Uptime:", format_uptime(status["Uptime"])))
