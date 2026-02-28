@@ -32,6 +32,7 @@ Internal
 * Better tests for `null_string` configuration option.
 * Better cleanup of resources in the test suite.
 * Simplify prettify/unprettify handlers.
+* Make prettify/unprettify logic more robust.
 
 
 1.57.0 (2026/02/25)
