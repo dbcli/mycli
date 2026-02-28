@@ -158,6 +158,7 @@ class MyCli:
         self,
         sqlexecute: SQLExecute | None = None,
         prompt: str | None = None,
+        toolbar_format: str | None = None,
         logfile: TextIOWrapper | Literal[False] | None = None,
         defaults_suffix: str | None = None,
         defaults_file: str | None = None,
@@ -279,6 +280,7 @@ class MyCli:
         self.min_completion_trigger = c["main"].as_int("min_completion_trigger")
         MIN_COMPLETION_TRIGGER = self.min_completion_trigger
         self.last_prompt_message = ANSI('')
+        self.last_custom_toolbar_message = ANSI('')
 
         # Register custom special commands.
         self.register_special_commands()
@@ -302,6 +304,7 @@ class MyCli:
         prompt_cnf = self.read_my_cnf(self.my_cnf, ["prompt"])["prompt"]
         self.prompt_format = prompt or prompt_cnf or c["main"]["prompt"] or self.default_prompt
         self.multiline_continuation_char = c["main"]["prompt_continuation"]
+        self.toolbar_format = toolbar_format or c['main']['toolbar']
         self.prompt_app = None
         self.destructive_keywords = [
             keyword for keyword in c["main"].get("destructive_keywords", "DROP SHUTDOWN DELETE TRUNCATE ALTER UPDATE").split(' ') if keyword
@@ -1257,7 +1260,11 @@ class MyCli:
             query = Query(text, successful, mutating)
             self.query_history.append(query)
 
-        get_toolbar_tokens = create_toolbar_tokens_func(self, show_initial_toolbar_help)
+        get_toolbar_tokens = create_toolbar_tokens_func(
+            self,
+            show_initial_toolbar_help,
+            self.toolbar_format,
+        )
         if self.wider_completion_menu:
             complete_style = CompleteStyle.MULTI_COLUMN
         else:
@@ -1524,6 +1531,14 @@ class MyCli:
         with self._completer_lock:
             return self.completer.get_completions(Document(text=text, cursor_position=cursor_position), None)
 
+    def get_custom_toolbar(self, toolbar_format: str) -> ANSI:
+        if self.prompt_app and self.prompt_app.app.current_buffer.text:
+            return self.last_custom_toolbar_message
+        toolbar = self.get_prompt(toolbar_format)
+        toolbar = toolbar.replace("\\x1b", "\x1b")
+        self.last_custom_toolbar_message = ANSI(toolbar)
+        return self.last_custom_toolbar_message
+
     # todo: time/uptime update on every character typed, instead of after every return
     def get_prompt(self, string: str) -> str:
         sqlexecute = self.sqlexecute
@@ -1778,6 +1793,7 @@ class MyCli:
 @click.option("--list-ssh-config", "list_ssh_config", is_flag=True, help="list ssh configurations in the ssh config (requires paramiko).")
 @click.option("--ssh-warning-off", is_flag=True, help="Suppress the SSH deprecation notice.")
 @click.option("-R", "--prompt", "prompt", help=f'Prompt format (Default: "{MyCli.default_prompt}").')
+@click.option('--toolbar', 'toolbar_format', help='Toolbar format.')
 @click.option("-l", "--logfile", type=click.File(mode="a", encoding="utf-8"), help="Log every query and its results to a file.")
 @click.option(
     "--checkpoint", type=click.File(mode="a", encoding="utf-8"), help="In batch or --execute mode, log successful queries to a file."
@@ -1838,6 +1854,7 @@ def cli(
     dbname: str | None,
     verbose: bool,
     prompt: str | None,
+    toolbar_format: str | None,
     logfile: TextIOWrapper | None,
     checkpoint: TextIOWrapper | None,
     defaults_group_suffix: str | None,
@@ -1938,6 +1955,7 @@ def cli(
 
     mycli = MyCli(
         prompt=prompt,
+        toolbar_format=toolbar_format,
         logfile=logfile,
         defaults_suffix=defaults_group_suffix,
         defaults_file=defaults_file,

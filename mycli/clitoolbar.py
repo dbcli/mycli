@@ -2,18 +2,20 @@ from typing import Callable
 
 from prompt_toolkit.application import get_app
 from prompt_toolkit.enums import EditingMode
+from prompt_toolkit.formatted_text import to_formatted_text
 from prompt_toolkit.key_binding.vi_state import InputMode
 
 from mycli.packages import special
 
 
-def create_toolbar_tokens_func(mycli, show_initial_toolbar_help: Callable) -> Callable:
+def create_toolbar_tokens_func(mycli, show_initial_toolbar_help: Callable, format_string: str | None) -> Callable:
     """Return a function that generates the toolbar tokens."""
 
     def get_toolbar_tokens() -> list[tuple[str, str]]:
         divider = ('class:bottom-toolbar', ' │ ')
 
         result = [("class:bottom-toolbar", "[Tab] Complete")]
+        dynamic = []
 
         result.append(divider)
         result.append(("class:bottom-toolbar", "[F1] Help"))
@@ -42,26 +44,39 @@ def create_toolbar_tokens_func(mycli, show_initial_toolbar_help: Callable) -> Ca
             result.append(("class:bottom-toolbar.on", _get_vi_mode()))
 
         if mycli.toolbar_error_message:
-            result.append(divider)
-            result.append(("class:bottom-toolbar.transaction.failed", mycli.toolbar_error_message))
+            dynamic.append(divider)
+            dynamic.append(("class:bottom-toolbar.transaction.failed", mycli.toolbar_error_message))
             mycli.toolbar_error_message = None
 
         if mycli.multi_line:
             delimiter = special.get_current_delimiter()
             if delimiter != ';' or show_initial_toolbar_help():
-                result.append(divider)
-                result.append(('class:bottom-toolbar', '"'))
-                result.append(('class:bottom-toolbar.on', delimiter))
-                result.append(('class:bottom-toolbar', '" ends a statement'))
+                dynamic.append(divider)
+                dynamic.append(('class:bottom-toolbar', '"'))
+                dynamic.append(('class:bottom-toolbar.on', delimiter))
+                dynamic.append(('class:bottom-toolbar', '" ends a statement'))
 
         if show_initial_toolbar_help():
-            result.append(divider)
-            result.append(("class:bottom-toolbar", "right-arrow accepts full-line suggestion"))
+            dynamic.append(divider)
+            dynamic.append(("class:bottom-toolbar", "right-arrow accepts full-line suggestion"))
 
         if mycli.completion_refresher.is_refreshing():
-            result.append(divider)
-            result.append(("class:bottom-toolbar", "Refreshing completions…"))
+            dynamic.append(divider)
+            dynamic.append(("class:bottom-toolbar", "Refreshing completions…"))
 
+        if format_string and format_string != r'\B':
+            if format_string.startswith(r'\B'):
+                amended_format = format_string[2:]
+                result.extend(dynamic)
+                dynamic = []
+                result.append(('class:bottom-toolbar', '\n'))
+            else:
+                amended_format = format_string
+                result = []
+            formatted = to_formatted_text(mycli.get_custom_toolbar(amended_format), style='class:bottom-toolbar')
+            result.extend([*formatted])  # coerce to list for mypy
+
+        result.extend(dynamic)
         return result
 
     return get_toolbar_tokens
