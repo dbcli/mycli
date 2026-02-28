@@ -233,7 +233,10 @@ control_d = exit
 # possible values: auto, fzf, reverse_isearch
 control_r = auto
 
-# Custom colors for the completion menu, toolbar, etc.
+# Custom colors for the completion menu, toolbar, etc, with actual support
+# depending on the terminal, and the property being set.
+# Colors: #ffffff, bg:#ffffff, border:#ffffff.
+# Attributes: (no)blink, bold, dim, hidden, inherit, italic, reverse, strike, underline.
 [colors]
 completion-menu.completion.current = "bg:#ffffff #000000"
 completion-menu.completion = "bg:#008888 #ffffff"
