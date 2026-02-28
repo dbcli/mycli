@@ -10,11 +10,26 @@ from mycli.sqlexecute import ServerInfo, ServerSpecies
 from test.utils import dbtest, is_expanded_output, run, set_expanded_output
 
 
-def assert_result_equal(result, title=None, rows=None, headers=None, status=None, auto_status=True, assert_contains=False):
+def assert_result_equal(
+    result,
+    preamble=None,
+    header=None,
+    rows=None,
+    status=None,
+    postamble=None,
+    auto_status=True,
+    assert_contains=False,
+):
     """Assert that an sqlexecute.run() result matches the expected values."""
     if status is None and auto_status and rows:
         status = f"{len(rows)} row{'s' if len(rows) > 1 else ''} in set"
-    fields = {"title": title, "rows": rows, "headers": headers, "status": status}
+    fields = {
+        "preamble": preamble,
+        "header": header,
+        "rows": rows,
+        "postamble": postamble,
+        "status": status,
+    }
 
     if assert_contains:
         # Do a loose match on the results using the *in* operator.
@@ -62,7 +77,7 @@ def test_conn(executor):
     run(executor, """insert into test values('abc')""")
     results = run(executor, """select * from test""")
 
-    assert_result_equal(results, headers=["a"], rows=[("abc",)])
+    assert_result_equal(results, header=["a"], rows=[("abc",)])
 
 
 @dbtest
@@ -71,7 +86,7 @@ def test_bools(executor):
     run(executor, """insert into test values(True)""")
     results = run(executor, """select * from test""")
 
-    assert_result_equal(results, headers=["a"], rows=[(1,)])
+    assert_result_equal(results, header=["a"], rows=[(1,)])
 
 
 @dbtest
@@ -86,7 +101,7 @@ def test_binary(executor):
         b"\xac\xdeC@"
     )
 
-    assert_result_equal(results, headers=["geom"], rows=[(geom,)])
+    assert_result_equal(results, header=["geom"], rows=[(geom,)])
 
 
 @dbtest
@@ -125,7 +140,7 @@ def test_unicode_support_in_output(executor):
 
     # See issue #24, this raises an exception without proper handling
     results = run(executor, "select * from unicodechars")
-    assert_result_equal(results, headers=["t"], rows=[("é",)])
+    assert_result_equal(results, header=["t"], rows=[("é",)])
 
 
 @dbtest
@@ -133,8 +148,8 @@ def test_multiple_queries_same_line(executor):
     results = run(executor, "select 'foo'; select 'bar'")
 
     expected = [
-        {"title": None, "headers": ["foo"], "rows": [("foo",)], "status": "1 row in set"},
-        {"title": None, "headers": ["bar"], "rows": [("bar",)], "status": "1 row in set"},
+        {"preamble": None, "header": ["foo"], "rows": [("foo",)], "postamble": None, "status": "1 row in set"},
+        {"preamble": None, "header": ["bar"], "rows": [("bar",)], "postamble": None, "status": "1 row in set"},
     ]
     assert expected == results
 
@@ -158,7 +173,7 @@ def test_favorite_query(executor):
     assert_result_equal(results, status="Saved.")
 
     results = run(executor, "\\f test-a")
-    assert_result_equal(results, title="> select * from test where a like 'a%'", headers=["a"], rows=[("abc",)], auto_status=False)
+    assert_result_equal(results, preamble="> select * from test where a like 'a%'", header=["a"], rows=[("abc",)], auto_status=False)
 
     results = run(executor, "\\fd test-a")
     assert_result_equal(results, status="test-a: Deleted.")
@@ -177,8 +192,8 @@ def test_favorite_query_multiple_statement(executor):
 
     results = run(executor, "\\f test-ad")
     expected = [
-        {"title": "> select * from test where a like 'a%'", "headers": ["a"], "rows": [("abc",)], "status": None},
-        {"title": "> select * from test where a like 'd%'", "headers": ["a"], "rows": [("def",)], "status": None},
+        {"preamble": "> select * from test where a like 'a%'", "header": ["a"], "rows": [("abc",)], "postamble": None, "status": None},
+        {"preamble": "> select * from test where a like 'd%'", "header": ["a"], "rows": [("def",)], "postamble": None, "status": None},
     ]
     assert expected == results
 
@@ -198,7 +213,7 @@ def test_favorite_query_expanded_output(executor):
 
     results = run(executor, "\\f test-ae \\G")
     assert is_expanded_output() is True
-    assert_result_equal(results, title="> select * from test", headers=["a"], rows=[("abc",)], auto_status=False)
+    assert_result_equal(results, preamble="> select * from test", header=["a"], rows=[("abc",)], auto_status=False)
 
     set_expanded_output(False)
 
@@ -216,7 +231,7 @@ def test_collapsed_output_special_command(executor):
 @dbtest
 def test_special_command(executor):
     results = run(executor, "\\?")
-    assert_result_equal(results, rows=("quit", "\\q", "quit", "Quit."), headers="Command", assert_contains=True, auto_status=False)
+    assert_result_equal(results, rows=("quit", "\\q", "quit", "Quit."), header="Command", assert_contains=True, auto_status=False)
 
 
 @dbtest
@@ -278,7 +293,7 @@ def test_cd_command_current_dir(executor):
 @dbtest
 def test_unicode_support(executor):
     results = run(executor, "SELECT '日本語' AS japanese;")
-    assert_result_equal(results, headers=["japanese"], rows=[("日本語",)])
+    assert_result_equal(results, header=["japanese"], rows=[("日本語",)])
 
 
 @dbtest
@@ -286,7 +301,7 @@ def test_timestamp_null(executor):
     run(executor, """create table ts_null(a timestamp null)""")
     run(executor, """insert into ts_null values(null)""")
     results = run(executor, """select * from ts_null""")
-    assert_result_equal(results, headers=["a"], rows=[(None,)])
+    assert_result_equal(results, header=["a"], rows=[(None,)])
 
 
 @dbtest
@@ -294,7 +309,7 @@ def test_datetime_null(executor):
     run(executor, """create table dt_null(a datetime null)""")
     run(executor, """insert into dt_null values(null)""")
     results = run(executor, """select * from dt_null""")
-    assert_result_equal(results, headers=["a"], rows=[(None,)])
+    assert_result_equal(results, header=["a"], rows=[(None,)])
 
 
 @dbtest
@@ -302,7 +317,7 @@ def test_date_null(executor):
     run(executor, """create table date_null(a date null)""")
     run(executor, """insert into date_null values(null)""")
     results = run(executor, """select * from date_null""")
-    assert_result_equal(results, headers=["a"], rows=[(None,)])
+    assert_result_equal(results, header=["a"], rows=[(None,)])
 
 
 @dbtest
@@ -310,7 +325,7 @@ def test_time_null(executor):
     run(executor, """create table time_null(a time null)""")
     run(executor, """insert into time_null values(null)""")
     results = run(executor, """select * from time_null""")
-    assert_result_equal(results, headers=["a"], rows=[(None,)])
+    assert_result_equal(results, header=["a"], rows=[(None,)])
 
 
 @dbtest
@@ -324,8 +339,8 @@ def test_multiple_results(executor):
 
     results = run(executor, "call dmtest;")
     expected = [
-        {"title": None, "rows": [(1,)], "headers": ["1"], "status": "1 row in set"},
-        {"title": None, "rows": [(2,)], "headers": ["2"], "status": "1 row in set"},
+        {"preamble": None, "header": ["1"], "rows": [(1,)], "postamble": None, "status": "1 row in set"},
+        {"preamble": None, "header": ["2"], "rows": [(2,)], "postamble": None, "status": "1 row in set"},
     ]
     assert results == expected
 

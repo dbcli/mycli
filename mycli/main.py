@@ -944,9 +944,9 @@ class MyCli:
             nonlocal mutating
             result_count = watch_count = 0
             for result in results:
-                logger.debug("title: %r", result.title)
-                logger.debug("headers: %r", result.headers)
-                logger.debug("rows: %r", result.results)
+                logger.debug("preamble: %r", result.preamble)
+                logger.debug("header: %r", result.header)
+                logger.debug("rows: %r", result.rows)
                 logger.debug("status: %r", result.status)
                 logger.debug("command: %r", result.command)
                 threshold = 1000
@@ -962,7 +962,7 @@ class MyCli:
                             sys.exit(1)
                     else:
                         watch_count += 1
-                if is_select(result.status) and isinstance(result.results, Cursor) and result.results.rowcount > threshold:
+                if is_select(result.status) and isinstance(result.rows, Cursor) and result.rows.rowcount > threshold:
                     self.echo(
                         f"The result set has more than {threshold} rows.",
                         fg="red",
@@ -979,17 +979,14 @@ class MyCli:
                 else:
                     max_width = None
 
-                formatted = self.format_output(
-                    result.title,
-                    result.results,
-                    result.headers,
-                    result.postamble,
-                    special.is_expanded_output(),
-                    special.is_redirected(),
-                    self.null_string,
-                    self.numeric_alignment,
-                    self.binary_display,
-                    max_width,
+                formatted = self.format_sqlresult(
+                    result,
+                    is_expanded=special.is_expanded_output(),
+                    is_redirected=special.is_redirected(),
+                    null_string=self.null_string,
+                    numeric_alignment=self.numeric_alignment,
+                    binary_display=self.binary_display,
+                    max_width=max_width,
                 )
 
                 t = time() - start
@@ -1013,20 +1010,17 @@ class MyCli:
                 mutating = mutating or is_mutating(result.status)
 
                 # get and display warnings if enabled
-                if self.show_warnings and isinstance(result.results, Cursor) and result.results.warning_count > 0:
+                if self.show_warnings and isinstance(result.rows, Cursor) and result.rows.warning_count > 0:
                     warnings = sqlexecute.run("SHOW WARNINGS")
                     for warning in warnings:
-                        formatted = self.format_output(
-                            warning.title,
-                            warning.results,
-                            warning.headers,
-                            warning.postamble,
-                            special.is_expanded_output(),
-                            special.is_redirected(),
-                            self.null_string,
-                            self.numeric_alignment,
-                            self.binary_display,
-                            max_width,
+                        formatted = self.format_sqlresult(
+                            warning,
+                            is_expanded=special.is_expanded_output(),
+                            is_redirected=special.is_redirected(),
+                            null_string=self.null_string,
+                            numeric_alignment=self.numeric_alignment,
+                            binary_display=self.binary_display,
+                            max_width=max_width,
                         )
                         self.echo("")
                         self.output(formatted, warning.status)
@@ -1190,7 +1184,7 @@ class MyCli:
                     # Restart connection to the database
                     sqlexecute.connect()
                     try:
-                        for _title, _cur, _headers, status in sqlexecute.run(f"kill {connection_id_to_kill}"):
+                        for _preamble, _cur, _headers, status in sqlexecute.run(f"kill {connection_id_to_kill}"):
                             status_str = str(status).lower()
                             if status_str.find("ok") > -1:
                                 logger.debug("cancelled query, connection id: %r, sql: %r", connection_id_to_kill, text)
@@ -1559,35 +1553,29 @@ class MyCli:
         for result in results:
             self.main_formatter.query = query
             self.redirect_formatter.query = query
-            output = self.format_output(
-                result.title,
-                result.results,
-                result.headers,
-                result.postamble,
-                special.is_expanded_output(),
-                special.is_redirected(),
-                self.null_string,
-                self.numeric_alignment,
-                self.binary_display,
+            output = self.format_sqlresult(
+                result,
+                is_expanded=special.is_expanded_output(),
+                is_redirected=special.is_redirected(),
+                null_string=self.null_string,
+                numeric_alignment=self.numeric_alignment,
+                binary_display=self.binary_display,
             )
             for line in output:
                 self.log_output(line)
                 click.echo(line, nl=new_line)
 
             # get and display warnings if enabled
-            if self.show_warnings and isinstance(result.results, Cursor) and result.results.warning_count > 0:
+            if self.show_warnings and isinstance(result.rows, Cursor) and result.rows.warning_count > 0:
                 warnings = self.sqlexecute.run("SHOW WARNINGS")
                 for warning in warnings:
-                    output = self.format_output(
-                        warning.title,
-                        warning.results,
-                        warning.headers,
-                        warning.postamble,
-                        special.is_expanded_output(),
-                        special.is_redirected(),
-                        self.null_string,
-                        self.numeric_alignment,
-                        self.binary_display,
+                    output = self.format_sqlresult(
+                        warning,
+                        is_expanded=special.is_expanded_output(),
+                        is_redirected=special.is_redirected(),
+                        null_string=self.null_string,
+                        numeric_alignment=self.numeric_alignment,
+                        binary_display=self.binary_display,
                     )
                     for line in output:
                         click.echo(line, nl=new_line)
@@ -1595,13 +1583,10 @@ class MyCli:
             checkpoint.write(query.rstrip('\n') + '\n')
             checkpoint.flush()
 
-    def format_output(
+    def format_sqlresult(
         self,
-        title: str | None,
-        cur: Cursor | list[tuple] | None,
-        headers: list[str] | str | None,
-        postamble: str | None,
-        expanded: bool = False,
+        result,
+        is_expanded: bool = False,
         is_redirected: bool = False,
         null_string: str | None = None,
         numeric_alignment: str = 'right',
@@ -1613,7 +1598,7 @@ class MyCli:
         else:
             use_formatter = self.main_formatter
 
-        expanded = expanded or use_formatter.format_name == "vertical"
+        is_expanded = is_expanded or use_formatter.format_name == "vertical"
         output: itertools.chain[str] = itertools.chain()
 
         output_kwargs = {
@@ -1631,31 +1616,33 @@ class MyCli:
             # will run before preprocessors defined as part of the format in cli_helpers
             output_kwargs["preprocessors"] = (preprocessors.convert_to_undecoded_string,)
 
-        if title:
-            output = itertools.chain(output, [title])
+        if result.preamble:
+            output = itertools.chain(output, [result.preamble])
 
-        if headers or (cur and title):
+        if result.header or (result.rows and result.preamble):
             column_types = None
             colalign = None
-            if isinstance(cur, Cursor):
+            if isinstance(result.rows, Cursor):
 
                 def get_col_type(col) -> type:
                     col_type = FIELD_TYPES.get(col[1], str)
                     return col_type if type(col_type) is type else str
 
-                if cur.rowcount > 0:
-                    column_types = [get_col_type(tup) for tup in cur.description]
+                if result.rows.rowcount > 0:
+                    column_types = [get_col_type(tup) for tup in result.rows.description]
                     colalign = [numeric_alignment if x in (int, float, Decimal) else 'left' for x in column_types]
                 else:
                     column_types, colalign = [], []
 
-            if max_width is not None and isinstance(cur, Cursor):
-                cur = list(cur)
+            if max_width is not None and isinstance(result.rows, Cursor):
+                result_rows = list(result.rows)
+            else:
+                result_rows = result.rows
 
             formatted = use_formatter.format_output(
-                cur,
-                headers,
-                format_name="vertical" if expanded else None,
+                result_rows,
+                result.header or [],
+                format_name="vertical" if is_expanded else None,
                 column_types=column_types,
                 colalign=colalign,
                 **output_kwargs,
@@ -1665,12 +1652,12 @@ class MyCli:
                 formatted = formatted.splitlines()
             formatted = iter(formatted)
 
-            if not expanded and max_width and headers and cur:
+            if not is_expanded and max_width and result.header and result_rows:
                 first_line = next(formatted)
                 if len(strip_ansi(first_line)) > max_width:
                     formatted = use_formatter.format_output(
-                        cur,
-                        headers,
+                        result_rows,
+                        result.header,
                         format_name="vertical",
                         column_types=column_types,
                         **output_kwargs,
@@ -1682,8 +1669,8 @@ class MyCli:
 
             output = itertools.chain(output, formatted)
 
-        if postamble:
-            output = itertools.chain(output, [postamble])
+        if result.postamble:
+            output = itertools.chain(output, [result.postamble])
 
         return output
 

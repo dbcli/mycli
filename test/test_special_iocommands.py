@@ -116,7 +116,7 @@ def test_favorite_query():
     with db_connection().cursor() as cur:
         query = 'select "✔"'
         mycli.packages.special.execute(cur, f"\\fs check {query}")
-        assert next(mycli.packages.special.execute(cur, "\\f check")).title == "> " + query
+        assert next(mycli.packages.special.execute(cur, "\\f check")).preamble == "> " + query
 
 
 @dbtest
@@ -127,7 +127,7 @@ def test_special_favorite_query():
         mycli.packages.special.execute(cur, rf"\fs special {query}")
         assert (r'\G', None, r'<query>\G', 'Display query results vertically.') in next(
             mycli.packages.special.execute(cur, r'\f special')
-        ).results
+        ).rows
 
 
 def test_once_command():
@@ -216,11 +216,11 @@ def test_watch_query_iteration():
     the desired query and returns the given results."""
     expected_value = "1"
     query = f"SELECT {expected_value}"
-    expected_title = f"> {query}"
+    expected_preamble = f"> {query}"
     with db_connection().cursor() as cur:
         result = next(mycli.packages.special.iocommands.watch_query(arg=query, cur=cur))
-    assert result.title == expected_title
-    assert result.headers[0] == expected_value
+    assert result.preamble == expected_preamble
+    assert result.header[0] == expected_value
 
 
 @dbtest
@@ -239,7 +239,7 @@ def test_watch_query_full():
     wait_interval = 1
     expected_value = "1"
     query = f"SELECT {expected_value}"
-    expected_title = f"> {query}"
+    expected_preamble = f"> {query}"
     expected_results = [4, 5, 6, 7]  # Python 3.14 is skipping ahead to 6 or 7
     ctrl_c_process = send_ctrl_c(wait_interval)
     with db_connection().cursor() as cur:
@@ -247,8 +247,8 @@ def test_watch_query_full():
     ctrl_c_process.join(1)
     assert len(results) in expected_results
     for result in results:
-        assert result.title == expected_title
-        assert result.headers[0] == expected_value
+        assert result.preamble == expected_preamble
+        assert result.header[0] == expected_value
 
 
 @dbtest

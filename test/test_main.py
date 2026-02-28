@@ -63,17 +63,14 @@ def test_binary_display_hex(executor, capsys):
     )
     m.explicit_pager = False
     sqlresult = next(m.sqlexecute.run("select b'01101010' AS binary_test"))
-    formatted = m.format_output(
-        sqlresult.title,
-        sqlresult.results,
-        sqlresult.headers,
-        sqlresult.postamble,
-        False,
-        False,
-        "<null>",
-        "right",
-        "hex",
-        None,
+    formatted = m.format_sqlresult(
+        sqlresult,
+        is_expanded=False,
+        is_redirected=False,
+        null_string="<null>",
+        numeric_alignment="right",
+        binary_display="hex",
+        max_width=None,
     )
     m.output(formatted, sqlresult.status)
     expected = " 0x6a "
@@ -103,17 +100,14 @@ def test_binary_display_utf8(executor, capsys):
     )
     m.explicit_pager = False
     sqlresult = next(m.sqlexecute.run("select b'01101010' AS binary_test"))
-    formatted = m.format_output(
-        sqlresult.title,
-        sqlresult.results,
-        sqlresult.headers,
-        sqlresult.postamble,
-        False,
-        False,
-        "<null>",
-        "right",
-        "utf8",
-        None,
+    formatted = m.format_sqlresult(
+        sqlresult,
+        is_expanded=False,
+        is_redirected=False,
+        null_string="<null>",
+        numeric_alignment="right",
+        binary_display="utf8",
+        max_width=None,
     )
     m.output(formatted, sqlresult.status)
     expected = " j "
@@ -230,7 +224,7 @@ def test_reconnect_database_is_selected(executor, capsys):
         raise e
     m.reconnect()
     try:
-        next(m.sqlexecute.run("show tables")).results.fetchall()
+        next(m.sqlexecute.run("show tables")).rows.fetchall()
     except Exception as e:
         raise e
 

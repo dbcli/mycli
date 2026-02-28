@@ -29,7 +29,7 @@ def test_llm_command_without_args(mock_llm, executor):
     with pytest.raises(FinishIteration) as exc_info:
         handle_llm(test_text, executor, 'mysql', 0, 0)
     # Should return usage message when no args provided
-    assert exc_info.value.results == [SQLResult(title=USAGE, results=[])]
+    assert exc_info.value.results == [SQLResult(preamble=USAGE)]
 
 
 @patch("mycli.packages.special.llm.llm")
@@ -42,7 +42,7 @@ def test_llm_command_with_help_subcommand(mock_llm, executor):
     with pytest.raises(FinishIteration) as exc_info:
         handle_llm(test_text, executor, 'mysql', 0, 0)
     # Should return usage message when "help" subcommand or variant is provided
-    assert exc_info.value.results == [SQLResult(title=USAGE, results=[])]
+    assert exc_info.value.results == [SQLResult(preamble=USAGE)]
 
 
 @patch("mycli.packages.special.llm.llm")
@@ -55,7 +55,7 @@ def test_llm_command_with_c_flag(mock_run_cmd, mock_llm, executor):
     with pytest.raises(FinishIteration) as exc_info:
         handle_llm(test_text, executor, 'mysql', 0, 0)
     # Expect raw output when no SQL fence found
-    assert exc_info.value.results == [SQLResult(title=string, results=[])]
+    assert exc_info.value.results == [SQLResult(preamble=string)]
 
 
 @patch("mycli.packages.special.llm.llm")
@@ -210,4 +210,4 @@ def test_handle_llm_aliases_without_args(prefix, executor, monkeypatch):
     monkeypatch.setattr(llm_module, "llm", object())
     with pytest.raises(FinishIteration) as exc_info:
         handle_llm(prefix, executor, 'mysql', 0, 0)
-    assert exc_info.value.results == [SQLResult(title=USAGE, results=[])]
+    assert exc_info.value.results == [SQLResult(preamble=USAGE)]

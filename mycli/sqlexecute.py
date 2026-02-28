@@ -340,10 +340,7 @@ class SQLExecute:
         self.server_info = ServerInfo.from_version_string(conn.server_version)  # type: ignore[attr-defined]
 
     def run(self, statement: str) -> Generator[SQLResult, None, None]:
-        """Execute the sql in the database and return the results. The results
-        are a list of tuples. Each tuple has 4 values
-        (title, rows, headers, status).
-        """
+        """Execute the sql in the database and return the results."""
 
         # Remove spaces and EOL
         statement = statement.strip()
@@ -389,13 +386,13 @@ class SQLExecute:
 
     def get_result(self, cursor: Cursor) -> SQLResult:
         """Get the current result's data from the cursor."""
-        title = headers = None
+        preamble = header = None
 
         # cursor.description is not None for queries that return result sets,
         # e.g. SELECT or SHOW.
         plural = '' if cursor.rowcount == 1 else 's'
         if cursor.description:
-            headers = [x[0] for x in cursor.description]
+            header = [x[0] for x in cursor.description]
             status = f'{cursor.rowcount} row{plural} in set'
         else:
             _logger.debug("No rows in result.")
@@ -405,7 +402,7 @@ class SQLExecute:
             plural = '' if cursor.warning_count == 1 else 's'
             status = f'{status}, {cursor.warning_count} warning{plural}'
 
-        return SQLResult(title=title, results=cursor, headers=headers, status=status)
+        return SQLResult(preamble=preamble, header=header, rows=cursor, status=status)
 
     def tables(self) -> Generator[tuple[str], None, None]:
         """Yields table names"""
@@ -511,7 +508,7 @@ class SQLExecute:
         try:
             results = self.run("select connection_id()")
             for result in results:
-                cur = result.results
+                cur = result.rows
                 if isinstance(cur, Cursor):
                     v = cur.fetchone()
                     self.connection_id = v[0] if v is not None else -1

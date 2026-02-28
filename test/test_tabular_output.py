@@ -23,7 +23,7 @@ def mycli():
 @dbtest
 def test_sql_output(mycli):
     """Test the sql output adapter."""
-    headers = ["letters", "number", "optional", "float", "binary"]
+    header = ["letters", "number", "optional", "float", "binary"]
 
     class FakeCursor:
         def __init__(self):
@@ -52,7 +52,7 @@ def test_sql_output(mycli):
     assert list(mycli.change_table_format("sql-update")) == [SQLResult(status="Changed table format to sql-update")]
     mycli.main_formatter.query = ""
     mycli.redirect_formatter.query = ""
-    output = mycli.format_output(None, FakeCursor(), headers, None, False, False)
+    output = mycli.format_sqlresult(SQLResult(header=header, rows=FakeCursor()))
     actual = "\n".join(output)
     assert actual == dedent("""\
             UPDATE `DUAL` SET
@@ -71,7 +71,7 @@ def test_sql_output(mycli):
     assert list(mycli.change_table_format("sql-update-2")) == [SQLResult(status="Changed table format to sql-update-2")]
     mycli.main_formatter.query = ""
     mycli.redirect_formatter.query = ""
-    output = mycli.format_output(None, FakeCursor(), headers, None, False, False)
+    output = mycli.format_sqlresult(SQLResult(header=header, rows=FakeCursor()))
     assert "\n".join(output) == dedent("""\
             UPDATE `DUAL` SET
               `optional` = NULL
@@ -87,7 +87,7 @@ def test_sql_output(mycli):
     assert list(mycli.change_table_format("sql-insert")) == [SQLResult(status="Changed table format to sql-insert")]
     mycli.main_formatter.query = ""
     mycli.redirect_formatter.query = ""
-    output = mycli.format_output(None, FakeCursor(), headers, None, False, False)
+    output = mycli.format_sqlresult(SQLResult(header=header, rows=FakeCursor()))
     assert "\n".join(output) == dedent("""\
             INSERT INTO `DUAL` (`letters`, `number`, `optional`, `float`, `binary`) VALUES
               ('abc', 1, NULL, 10.0e0, 0xaa)
@@ -97,7 +97,7 @@ def test_sql_output(mycli):
     assert list(mycli.change_table_format("sql-insert")) == [SQLResult(status="Changed table format to sql-insert")]
     mycli.main_formatter.query = "SELECT * FROM `table`"
     mycli.redirect_formatter.query = "SELECT * FROM `table`"
-    output = mycli.format_output(None, FakeCursor(), headers, None, False, False)
+    output = mycli.format_sqlresult(SQLResult(header=header, rows=FakeCursor()))
     assert "\n".join(output) == dedent("""\
             INSERT INTO table (`letters`, `number`, `optional`, `float`, `binary`) VALUES
               ('abc', 1, NULL, 10.0e0, 0xaa)
@@ -107,7 +107,7 @@ def test_sql_output(mycli):
     assert list(mycli.change_table_format("sql-insert")) == [SQLResult(status="Changed table format to sql-insert")]
     mycli.main_formatter.query = "SELECT * FROM `database`.`table`"
     mycli.redirect_formatter.query = "SELECT * FROM `database`.`table`"
-    output = mycli.format_output(None, FakeCursor(), headers, None, False, False)
+    output = mycli.format_sqlresult(SQLResult(header=header, rows=FakeCursor()))
     assert "\n".join(output) == dedent("""\
             INSERT INTO database.table (`letters`, `number`, `optional`, `float`, `binary`) VALUES
               ('abc', 1, NULL, 10.0e0, 0xaa)
@@ -115,14 +115,14 @@ def test_sql_output(mycli):
             ;""")
     # Test binary output format is a hex string
     assert list(mycli.change_table_format("psql")) == [SQLResult(status="Changed table format to psql")]
-    output = mycli.format_output(None, FakeCursor(), headers, None, False, False)
+    output = mycli.format_sqlresult(SQLResult(header=header, rows=FakeCursor()))
     assert '0xaabb' in '\n'.join(output)
 
 
 @dbtest
 def test_postamble_output(mycli):
     """Test the postamble output property."""
-    headers = ['letters', 'number', 'optional', 'float']
+    header = ['letters', 'number', 'optional', 'float']
 
     class FakeCursor:
         def __init__(self):
@@ -149,6 +149,6 @@ def test_postamble_output(mycli):
     postamble = 'postamble:\nfooter content'
     mycli.change_table_format('ascii')
     mycli.main_formatter.query = ''
-    output = mycli.format_output(None, FakeCursor(), headers, postamble, False, False)
+    output = mycli.format_sqlresult(SQLResult(header=header, rows=FakeCursor(), postamble=postamble))
     actual = "\n".join(output)
     assert actual.endswith(postamble)

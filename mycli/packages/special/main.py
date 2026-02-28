@@ -161,13 +161,13 @@ def execute(cur: Cursor, sql: str) -> list[SQLResult]:
     "help", "help [term]", "Show this help, or search for a term on the server.", arg_type=ArgType.NO_QUERY, aliases=["\\?", "?"]
 )
 def show_help(*_args) -> list[SQLResult]:
-    headers = ["Command", "Shortcut", "Usage", "Description"]
+    header = ["Command", "Shortcut", "Usage", "Description"]
     result = []
 
     for _, value in sorted(COMMANDS.items()):
         if not value.hidden:
             result.append((value.command, value.shortcut, value.usage, value.description))
-    return [SQLResult(results=result, headers=headers, postamble=f'Docs index — {DOCS_URL}')]
+    return [SQLResult(header=header, rows=result, postamble=f'Docs index — {DOCS_URL}')]
 
 
 def show_keyword_help(cur: Cursor, arg: str) -> list[SQLResult]:
@@ -182,13 +182,13 @@ def show_keyword_help(cur: Cursor, arg: str) -> list[SQLResult]:
     logger.debug(query)
     cur.execute(query, keyword)
     if cur.description and cur.rowcount > 0:
-        headers = [x[0] for x in cur.description]
-        return [SQLResult(results=cur, headers=headers)]
+        header = [x[0] for x in cur.description]
+        return [SQLResult(header=header, rows=cur)]
     logger.debug(query)
     cur.execute(query, (f'%{keyword}%',))
     if cur.description and cur.rowcount > 0:
-        headers = [x[0] for x in cur.description]
-        return [SQLResult(title='Similar terms:', results=cur, headers=headers)]
+        header = [x[0] for x in cur.description]
+        return [SQLResult(preamble='Similar terms:', header=header, rows=cur)]
     else:
         return [SQLResult(status=f'No help found for "{keyword}".')]
 

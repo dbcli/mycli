@@ -267,7 +267,6 @@ def set_redirect(command_part: str | None, file_operator_part: str | None, file_
 
 @special_command("\\f", "\\f [name [args..]]", "List or execute favorite queries.", arg_type=ArgType.PARSED_QUERY, case_sensitive=True)
 def execute_favorite_query(cur: Cursor, arg: str, **_) -> Generator[SQLResult, None, None]:
-    """Returns (title, rows, headers, status)"""
     if arg == "":
         yield from list_favorite_queries()
 
@@ -286,7 +285,7 @@ def execute_favorite_query(cur: Cursor, arg: str, **_) -> Generator[SQLResult, N
         else:
             for sql in sqlparse.split(query):
                 sql = sql.rstrip(";")
-                title = f"> {sql}" if is_show_favorite_query() else None
+                preamble = f"> {sql}" if is_show_favorite_query() else None
                 is_special = False
                 for special in SPECIAL_COMMANDS:
                     if sql.lower().startswith(special.lower()):
@@ -294,30 +293,29 @@ def execute_favorite_query(cur: Cursor, arg: str, **_) -> Generator[SQLResult, N
                         break
                 if is_special:
                     for result in special_execute(cur, sql):
-                        result.title = title
+                        result.preamble = preamble
                         # special_execute() already returns a SQLResult
                         yield result
                 else:
                     cur.execute(sql)
                     if cur.description:
-                        headers = [x[0] for x in cur.description]
-                        yield SQLResult(title=title, results=cur, headers=headers)
+                        header = [x[0] for x in cur.description]
+                        yield SQLResult(preamble=preamble, header=header, rows=cur)
                     else:
-                        yield SQLResult(title=title)
+                        yield SQLResult(preamble=preamble)
 
 
 def list_favorite_queries() -> list[SQLResult]:
-    """List of all favorite queries.
-    Returns (title, rows, headers, status)"""
+    """List of all favorite queries."""
 
-    headers = ["Name", "Query"]
+    header = ["Name", "Query"]
     rows = [(r, FavoriteQueries.instance.get(r)) for r in FavoriteQueries.instance.list()]
 
     if not rows:
         status = "\nNo favorite queries found." + FavoriteQueries.instance.usage
     else:
         status = ""
-    return [SQLResult(title="", results=rows, headers=headers, status=status)]
+    return [SQLResult(header=header, rows=rows, status=status)]
 
 
 def subst_favorite_query_args(query: str, args: list[str]) -> list[str | None]:
@@ -338,8 +336,7 @@ def subst_favorite_query_args(query: str, args: list[str]) -> list[str | None]:
 
 @special_command("\\fs", "\\fs <name> <query>", "Save a favorite query.")
 def save_favorite_query(arg: str, **_) -> list[SQLResult]:
-    """Save a new favorite query.
-    Returns (title, rows, headers, status)"""
+    """Save a new favorite query."""
 
     usage = "Syntax: \\fs name query.\n\n" + FavoriteQueries.instance.usage
     if not arg:
@@ -601,17 +598,17 @@ def watch_query(arg: str, **kwargs) -> Generator[SQLResult, None, None]:
             # Somewhere in the code the pager its activated after every yield,
             # so we disable it in every iteration
             set_pager_enabled(False)
-            for sql, title in sql_list:
+            for sql, preamble in sql_list:
                 cur.execute(sql)
                 command: dict[str, str | float] = {
                     "name": "watch",
                     "seconds": seconds,
                 }
                 if cur.description:
-                    headers = [x[0] for x in cur.description]
-                    yield SQLResult(title=title, results=cur, headers=headers, command=command)
+                    header = [x[0] for x in cur.description]
+                    yield SQLResult(preamble=preamble, header=header, rows=cur, command=command)
                 else:
-                    yield SQLResult(title=title, command=command)
+                    yield SQLResult(preamble=preamble, command=command)
             sleep(seconds)
         except KeyboardInterrupt:
             # This prints the Ctrl-C character in its own line, which prevents
