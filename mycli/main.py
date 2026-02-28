@@ -77,7 +77,7 @@ from mycli.packages.parseutils import is_destructive, is_dropping_database, is_v
 from mycli.packages.prompt_utils import confirm, confirm_destructive_query
 from mycli.packages.special.favoritequeries import FavoriteQueries
 from mycli.packages.special.main import ArgType
-from mycli.packages.special.utils import format_uptime, get_ssl_version, get_uptime
+from mycli.packages.special.utils import format_uptime, get_ssl_version, get_uptime, get_warning_count
 from mycli.packages.sqlresult import SQLResult
 from mycli.packages.tabular_output import sql_format
 from mycli.packages.toolkit.history import FileHistoryWithTimestamp
@@ -1589,6 +1589,18 @@ class MyCli:
                     string = string.replace('\\T', get_ssl_version(cur) or '(none)')
         else:
             string = string.replace('\\T', '(none)')
+        if hasattr(sqlexecute, 'conn') and sqlexecute.conn is not None:
+            if '\\w' in string:
+                with sqlexecute.conn.cursor() as cur:
+                    string = string.replace('\\w', str(get_warning_count(cur) or '(none)'))
+        else:
+            string = string.replace('\\w', '(none)')
+        if hasattr(sqlexecute, 'conn') and sqlexecute.conn is not None:
+            if '\\W' in string:
+                with sqlexecute.conn.cursor() as cur:
+                    string = string.replace('\\W', str(get_warning_count(cur) or ''))
+        else:
+            string = string.replace('\\W', '')
         return string
 
     def run_query(

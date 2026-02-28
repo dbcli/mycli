@@ -116,6 +116,8 @@ wider_completion_menu = False
 # * \T - connection SSL/TLS version
 # * \t - database vendor (Percona, MySQL, MariaDB, TiDB)
 # * \u - username
+# * \w - number of warnings, or "(none)" (requires frequent trips to the server)
+# * \W - number of warnings, or the empty string (requires frequent trips to the server)
 # * \y - uptime in seconds (requires frequent trips to the server)
 # * \Y - uptime in words (requires frequent trips to the server)
 # * \A - DSN alias
