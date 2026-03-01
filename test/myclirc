@@ -262,12 +262,14 @@ prompt = ''
 continuation = ''
 
 # style classes for colored table output
+output.table-separator = ""
 output.header = "#00ff5f bold"
 output.odd-row = ""
 output.even-row = ""
 output.null = "#808080"
 output.status = ""
 output.timing = ""
+warnings.table-separator = ""
 warnings.header = "#00ff5f bold"
 warnings.odd-row = ""
 warnings.even-row = ""

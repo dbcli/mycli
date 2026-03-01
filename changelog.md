@@ -9,6 +9,7 @@ Features
 * Allow customization of the toolbar with prompt format strings.
 * Add warnings-count prompt format strings: `\w` and `\W`.
 * Handle/document more attributes in the `[colors]` section of `~/.myclirc`.
+* Enable customization of table border color/attributes in `~/.myclirc`.
 
 
 Bug Fixes
