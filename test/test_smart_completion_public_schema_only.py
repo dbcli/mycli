@@ -199,75 +199,11 @@ def test_function_name_completion(completer, complete_event):
     assert list(result) == [
         Completion(text='MAX', start_position=-2),
         Completion(text='MATCH', start_position=-2),
-        Completion(text='MASTER', start_position=-2),
-        Completion(text='MAKE_SET', start_position=-2),
         Completion(text='MAKEDATE', start_position=-2),
         Completion(text='MAKETIME', start_position=-2),
-        Completion(text='MAX_ROWS', start_position=-2),
-        Completion(text='MAX_SIZE', start_position=-2),
-        Completion(text='MAXVALUE', start_position=-2),
-        Completion(text='MASTER_SSL', start_position=-2),
-        Completion(text='MASTER_BIND', start_position=-2),
-        Completion(text='MASTER_HOST', start_position=-2),
-        Completion(text='MASTER_PORT', start_position=-2),
-        Completion(text='MASTER_USER', start_position=-2),
-        Completion(text='MASTER_DELAY', start_position=-2),
-        Completion(text='MASTER_SSL_CA', start_position=-2),
-        Completion(text='MASTER_LOG_POS', start_position=-2),
-        Completion(text='MASTER_SSL_CRL', start_position=-2),
-        Completion(text='MASTER_SSL_KEY', start_position=-2),
+        Completion(text='MAKE_SET', start_position=-2),
         Completion(text='MASTER_POS_WAIT', start_position=-2),
-        Completion(text='MASTER_LOG_FILE', start_position=-2),
-        Completion(text='MASTER_PASSWORD', start_position=-2),
-        Completion(text='MASTER_SSL_CERT', start_position=-2),
-        Completion(text='MASTER_SSL_CAPATH', start_position=-2),
-        Completion(text='MASTER_SSL_CIPHER', start_position=-2),
-        Completion(text='MASTER_RETRY_COUNT', start_position=-2),
-        Completion(text='MASTER_SSL_CRLPATH', start_position=-2),
-        Completion(text='MASTER_TLS_VERSION', start_position=-2),
-        Completion(text='MASTER_AUTO_POSITION', start_position=-2),
-        Completion(text='MASTER_CONNECT_RETRY', start_position=-2),
-        Completion(text='MAX_QUERIES_PER_HOUR', start_position=-2),
-        Completion(text='MAX_UPDATES_PER_HOUR', start_position=-2),
-        Completion(text='MAX_USER_CONNECTIONS', start_position=-2),
-        Completion(text='MASTER_PUBLIC_KEY_PATH', start_position=-2),
-        Completion(text='MASTER_HEARTBEAT_PERIOD', start_position=-2),
-        Completion(text='MASTER_TLS_CIPHERSUITES', start_position=-2),
-        Completion(text='MAX_CONNECTIONS_PER_HOUR', start_position=-2),
-        Completion(text='MASTER_COMPRESSION_ALGORITHMS', start_position=-2),
-        Completion(text='MASTER_SSL_VERIFY_SERVER_CERT', start_position=-2),
-        Completion(text='MASTER_ZSTD_COMPRESSION_LEVEL', start_position=-2),
         Completion(text='email', start_position=-2),
-        Completion(text='DECIMAL', start_position=-2),
-        Completion(text='SMALLINT', start_position=-2),
-        Completion(text='TIMESTAMP', start_position=-2),
-        Completion(text='COLUMN_FORMAT', start_position=-2),
-        Completion(text='COLUMN_NAME', start_position=-2),
-        Completion(text='COMPACT', start_position=-2),
-        Completion(text='CONSTRAINT_SCHEMA', start_position=-2),
-        Completion(text='CURRENT_TIMESTAMP', start_position=-2),
-        Completion(text='FORMAT', start_position=-2),
-        Completion(text='GET_FORMAT', start_position=-2),
-        Completion(text='GET_MASTER_PUBLIC_KEY', start_position=-2),
-        Completion(text='LOCALTIMESTAMP', start_position=-2),
-        Completion(text='MESSAGE_TEXT', start_position=-2),
-        Completion(text='MIGRATE', start_position=-2),
-        Completion(text='NETWORK_NAMESPACE', start_position=-2),
-        Completion(text='PRIMARY', start_position=-2),
-        Completion(text='REQUIRE_ROW_FORMAT', start_position=-2),
-        Completion(text='REQUIRE_TABLE_PRIMARY_KEY_CHECK', start_position=-2),
-        Completion(text='ROW_FORMAT', start_position=-2),
-        Completion(text='SCHEMA', start_position=-2),
-        Completion(text='SCHEMA_NAME', start_position=-2),
-        Completion(text='SCHEMAS', start_position=-2),
-        Completion(text='SQL_SMALL_RESULT', start_position=-2),
-        Completion(text='TEMPORARY', start_position=-2),
-        Completion(text='TEMPTABLE', start_position=-2),
-        Completion(text='TERMINATED', start_position=-2),
-        Completion(text='TIMESTAMPADD', start_position=-2),
-        Completion(text='TIMESTAMPDIFF', start_position=-2),
-        Completion(text='UTC_TIMESTAMP', start_position=-2),
-        Completion(text='CHANGE MASTER TO', start_position=-2),
     ]
 
 
@@ -292,12 +228,11 @@ def test_suggested_column_names(completer, complete_event):
         ]
         + list(map(Completion, completer.functions))
         + [Completion(text="users", start_position=0)]
-        + [x for x in map(Completion, completer.keywords) if x.text not in completer.functions]
     )
 
 
 def test_suggested_column_names_empty_db(empty_completer, complete_event):
-    """Suggest * and function/keywords when selecting from no-table db.
+    """Suggest * and function when selecting from no-table db.
 
     :param empty_completer:
     :param complete_event:
@@ -312,7 +247,6 @@ def test_suggested_column_names_empty_db(empty_completer, complete_event):
             Completion(text="*", start_position=0),
         ]
         + list(map(Completion, empty_completer.functions))
-        + [x for x in map(Completion, empty_completer.keywords) if x.text not in empty_completer.functions]
     )
 
 
@@ -399,7 +333,6 @@ def test_suggested_multiple_column_names(completer, complete_event):
         ]
         + list(map(Completion, completer.functions))
         + [Completion(text="u", start_position=0)]
-        + [x for x in map(Completion, completer.keywords) if x.text not in completer.functions]
     )
 
 
@@ -551,7 +484,6 @@ def test_auto_escaped_col_names(completer, complete_event):
         ]
         + completer.functions
         + ["select"]
-        + [x for x in completer.keywords if x not in completer.functions]
     )
     assert result == expected
 
@@ -565,7 +497,7 @@ def test_un_escaped_table_names(completer, complete_event):
         "id",
         "`insert`",
         "ABC",
-    ] + completer.functions + ["réveillé"] + [x for x in completer.keywords if x not in completer.functions]
+    ] + completer.functions + ["réveillé"]
 
 
 # todo: the fixtures are insufficient; the database name should also appear in the result
@@ -647,14 +579,12 @@ def test_file_name_completion(completer, complete_event, text, expected):
 
 
 def test_auto_case_heuristic(completer, complete_event):
-    text = "select jon_"
-    position = len("select jon_")
+    text = "select json_v"
+    position = len("select json_v")
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
     assert [x.text for x in result] == [
-        'json_table',
+        'json_valid',
         'json_value',
-        'join',
-        'json',
     ]
 
 
@@ -817,16 +747,17 @@ def test_backticked_column_completion_two_character(completer, complete_event):
         Completion(text='`fast`', start_position=-2),
         Completion(text='`file`', start_position=-2),
         Completion(text='`full`', start_position=-2),
+        Completion(text='`false`', start_position=-2),
         Completion(text='`field`', start_position=-2),
         Completion(text='`floor`', start_position=-2),
         Completion(text='`fixed`', start_position=-2),
         Completion(text='`float`', start_position=-2),
-        Completion(text='`false`', start_position=-2),
         Completion(text='`fetch`', start_position=-2),
         Completion(text='`first`', start_position=-2),
         Completion(text='`flush`', start_position=-2),
         Completion(text='`force`', start_position=-2),
         Completion(text='`found`', start_position=-2),
+        Completion(text='`format`', start_position=-2),
         Completion(text='`float4`', start_position=-2),
         Completion(text='`float8`', start_position=-2),
         Completion(text='`factor`', start_position=-2),
@@ -834,7 +765,6 @@ def test_backticked_column_completion_two_character(completer, complete_event):
         Completion(text='`fields`', start_position=-2),
         Completion(text='`filter`', start_position=-2),
         Completion(text='`finish`', start_position=-2),
-        Completion(text='`format`', start_position=-2),
         Completion(text='`follows`', start_position=-2),
         Completion(text='`foreign`', start_position=-2),
         Completion(text='`fulltext`', start_position=-2),
@@ -844,8 +774,8 @@ def test_backticked_column_completion_two_character(completer, complete_event):
         Completion(text='`first_name`', start_position=-2),
         Completion(text='`found_rows`', start_position=-2),
         Completion(text='`find_in_set`', start_position=-2),
-        Completion(text='`from_base64`', start_position=-2),
         Completion(text='`first_value`', start_position=-2),
+        Completion(text='`from_base64`', start_position=-2),
         Completion(text='`foreign key`', start_position=-2),
         Completion(text='`format_bytes`', start_position=-2),
         Completion(text='`from_unixtime`', start_position=-2),
