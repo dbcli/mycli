@@ -269,13 +269,6 @@ output.even-row = ""
 output.null = "#808080"
 output.status = ""
 output.timing = ""
-warnings.table-separator = ""
-warnings.header = "#00ff5f bold"
-warnings.odd-row = ""
-warnings.even-row = ""
-warnings.null = "#808080"
-warnings.status = ""
-warnings.timing = ""
 
 # SQL syntax highlighting overrides
 # sql.comment = 'italic #408080'
