@@ -303,6 +303,7 @@ class MyCli:
             self.my_cnf['mysqld'] = {}
         prompt_cnf = self.read_my_cnf(self.my_cnf, ["prompt"])["prompt"]
         self.prompt_format = prompt or prompt_cnf or c["main"]["prompt"] or self.default_prompt
+        self.prompt_lines = 0
         self.multiline_continuation_char = c["main"]["prompt_continuation"]
         self.toolbar_format = toolbar_format or c['main']['toolbar']
         self.prompt_app = None
@@ -935,10 +936,13 @@ class MyCli:
         def get_prompt_message(app) -> ANSI:
             if app.current_buffer.text:
                 return self.last_prompt_message
-            prompt = self.get_prompt(self.prompt_format)
+            prompt = self.get_prompt(self.prompt_format, app.render_counter)
             if self.prompt_format == self.default_prompt and len(prompt) > self.max_len_prompt:
-                prompt = self.get_prompt(self.default_prompt_splitln)
+                prompt = self.get_prompt(self.default_prompt_splitln, app.render_counter)
+                self.prompt_lines = prompt.count('\n') + 1
             prompt = prompt.replace("\\x1b", "\x1b")
+            if not self.prompt_lines:
+                self.prompt_lines = prompt.count('\n') + 1
             self.last_prompt_message = ANSI(prompt)
             return self.last_prompt_message
 
@@ -1182,7 +1186,8 @@ class MyCli:
             try:
                 logger.debug("sql: %r", text)
 
-                special.write_tee(self.get_prompt(self.prompt_format) + text)
+                special.write_tee(self.last_prompt_message, nl=False)
+                special.write_tee(text)
                 self.log_query(text)
 
                 successful = False
@@ -1397,7 +1402,11 @@ class MyCli:
     def get_output_margin(self, status: str | None = None) -> int:
         """Get the output margin (number of rows for the prompt, footer and
         timing message."""
-        margin = self.get_reserved_space() + self.get_prompt(self.prompt_format).count("\n") + 1
+        if not self.prompt_lines:
+            # self.prompt_app.app.render_counter failed in the test suite
+            app = get_app()
+            self.prompt_lines = self.get_prompt(self.prompt_format, app.render_counter).count('\n') + 1
+        margin = self.get_reserved_space() + self.prompt_lines
         if special.is_timing_enabled():
             margin += 1
         if status:
@@ -1534,13 +1543,18 @@ class MyCli:
     def get_custom_toolbar(self, toolbar_format: str) -> ANSI:
         if self.prompt_app and self.prompt_app.app.current_buffer.text:
             return self.last_custom_toolbar_message
-        toolbar = self.get_prompt(toolbar_format)
+        app = get_app()
+        toolbar = self.get_prompt(toolbar_format, app.render_counter)
         toolbar = toolbar.replace("\\x1b", "\x1b")
         self.last_custom_toolbar_message = ANSI(toolbar)
         return self.last_custom_toolbar_message
 
-    # todo: time/uptime update on every character typed, instead of after every return
-    def get_prompt(self, string: str) -> str:
+    # Memoizing a method leaks the instance, but we only expect one MyCli instance.
+    # Before memoizing, get_prompt() was called dozens of times per prompt.
+    # Even after memoizing, get_prompt's logic gets called twice per prompt, which
+    # should be addressed, because some format strings take a trip to the server.
+    @functools.lru_cache(maxsize=256)  # noqa: B019
+    def get_prompt(self, string: str, _render_counter: int) -> str:
         sqlexecute = self.sqlexecute
         assert sqlexecute is not None
         assert sqlexecute.server_info is not None
@@ -1569,6 +1583,8 @@ class MyCli:
         string = string.replace("\\k", os.path.basename(sqlexecute.socket or str(sqlexecute.port)))
         string = string.replace("\\K", sqlexecute.socket or str(sqlexecute.port))
         string = string.replace("\\A", self.dsn_alias or "(none)")
+        string = string.replace("\\_", " ")
+
         # jump through hoops for the test environment, and for efficiency
         if hasattr(sqlexecute, 'conn') and sqlexecute.conn is not None:
             if '\\y' in string:
@@ -1581,14 +1597,13 @@ class MyCli:
             string = string.replace('\\y', '(none)')
             string = string.replace('\\Y', '(none)')
 
-        string = string.replace("\\_", " ")
-        # jump through hoops for the test environment and for efficiency
         if hasattr(sqlexecute, 'conn') and sqlexecute.conn is not None:
             if '\\T' in string:
                 with sqlexecute.conn.cursor() as cur:
                     string = string.replace('\\T', get_ssl_version(cur) or '(none)')
         else:
             string = string.replace('\\T', '(none)')
+
         if hasattr(sqlexecute, 'conn') and sqlexecute.conn is not None:
             if '\\w' in string:
                 with sqlexecute.conn.cursor() as cur:
@@ -1601,6 +1616,7 @@ class MyCli:
                     string = string.replace('\\W', str(get_warning_count(cur) or ''))
         else:
             string = string.replace('\\W', '')
+
         return string
 
     def run_query(

@@ -15,6 +15,7 @@ Features
 Bug Fixes
 ---------
 * Make toolbar widths consistent on toggle actions.
+* Don't write ANSI prompt escapes to `tee` output.
 
 
 Internal
@@ -25,6 +26,7 @@ Internal
 * Add more URL constants.
 * Set `$VISUAL` whenever `$EDITOR` is set.
 * Fix tempfile leak in test suite.
+* Avoid refreshing the prompt unless needed.
 
 
 1.58.0 (2026/02/28)

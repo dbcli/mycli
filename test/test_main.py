@@ -335,7 +335,7 @@ def test_prompt_no_host_only_socket(executor):
     mycli.sqlexecute.user = "root"
     mycli.sqlexecute.dbname = "mysql"
     mycli.sqlexecute.port = "3306"
-    prompt = mycli.get_prompt(mycli.prompt_format)
+    prompt = mycli.get_prompt(mycli.prompt_format, 0)
     assert prompt == "MySQL root@localhost:mysql> "
 
 
@@ -350,7 +350,7 @@ def test_prompt_socket_overrides_port(executor):
     mycli.sqlexecute.user = "root"
     mycli.sqlexecute.dbname = "mysql"
     mycli.sqlexecute.port = "3306"
-    prompt = mycli.get_prompt(mycli.prompt_format)
+    prompt = mycli.get_prompt(mycli.prompt_format, 0)
     assert prompt == "MySQL root@localhost:mysqld.sock mysql> "
 
 

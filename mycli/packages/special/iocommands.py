@@ -11,6 +11,7 @@ from typing import Any, Generator
 
 import click
 from configobj import ConfigObj
+from prompt_toolkit.formatted_text import ANSI, FormattedText, to_plain_text
 from pymysql.cursors import Cursor
 import pyperclip
 import sqlparse
@@ -432,12 +433,14 @@ def no_tee(arg: str, **_) -> list[SQLResult]:
     return [SQLResult(status="")]
 
 
-def write_tee(output: str) -> None:
+def write_tee(output: str | ANSI | FormattedText, nl: bool = True) -> None:
     global tee_file
-    if tee_file:
-        click.echo(output, file=tee_file, nl=False)
-        click.echo("\n", file=tee_file, nl=False)
-        tee_file.flush()
+    if not tee_file:
+        return
+    click.echo(to_plain_text(output), file=tee_file, nl=False)
+    if nl:
+        click.echo('\n', file=tee_file, nl=False)
+    tee_file.flush()
 
 
 @special_command("\\once", "\\once [-o] <filename>", "Append next result to an output file (overwrite using -o).", aliases=["\\o"])
