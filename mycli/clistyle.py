@@ -186,7 +186,7 @@ def style_factory_helpers(
             logger.error("Unhandled style / class name: %s", token)
 
     if warnings:
-        for warning_token in style:
+        for warning_token in list(style.keys()):
             if 'Warnings' not in str(warning_token):
                 continue
             warning_str = str(warning_token)
