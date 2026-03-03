@@ -837,6 +837,7 @@ class SQLCompleter(Completer):
     pygments_value_position_nonfunction_keywords = [
         'BETWEEN',
         'CASE',
+        'DISTINCT',
         'FALSE',
         'NOT',
         'NULL',
