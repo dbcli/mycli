@@ -745,7 +745,7 @@ class SQLCompleter(Completer):
 
     # misclassified as keywords
     # do they need to also be subtracted from keywords?
-    pygments_misclassified_functions = (
+    pygments_misclassified_functions = [
         'ASCII',
         'AVG',
         'CHARSET',
@@ -807,9 +807,10 @@ class SQLCompleter(Completer):
         'VALUES',
         'WEEK',
         'WEIGHT_STRING',
-    )
+    ]
 
-    pygments_missing_functions = (
+    # should case be respected for functions styled as CamelCase?
+    pygments_missing_functions = [
         'BINARY',  # deprecated function, but available everywhere
         'CHAR',
         'DATE',
@@ -829,27 +830,33 @@ class SQLCompleter(Completer):
         'VECTOR_DIM',
         'VECTOR_TO_STRING',
         'YEAR',
-    )
+    ]
 
     # so far an incomplete list
-    # these should be spun out and completed independently from functions
-    pygments_value_position_nonfunction_keywords = (
+    # these should be spun out and completed independently from functions in the value position
+    pygments_value_position_nonfunction_keywords = [
         'BETWEEN',
         'CASE',
         'FALSE',
         'NOT',
         'NULL',
         'TRUE',
-    )
+    ]
 
     # should https://dev.mysql.com/doc/refman/9.6/en/loadable-function-reference.html also be added?
-    functions = sorted({
-        x.upper()
-        for x in MYSQL_FUNCTIONS
-        + pygments_misclassified_functions
-        + pygments_missing_functions
-        + pygments_value_position_nonfunction_keywords
-    })
+    pygments_functions_supplemented = sorted(
+        [x.upper() for x in MYSQL_FUNCTIONS]
+        + [x.upper() for x in pygments_misclassified_functions]
+        + [x.upper() for x in pygments_missing_functions]
+        + [x.upper() for x in pygments_value_position_nonfunction_keywords]
+    )
+
+    favorite_functions = [
+        'JSON_EXTRACT',
+        'JSON_VALUE',
+    ]
+    functions_raw = favorite_functions + pygments_functions_supplemented
+    functions = list(dict.fromkeys(functions_raw))
 
     # https://docs.pingcap.com/tidb/dev/tidb-functions
     tidb_functions = [

@@ -583,8 +583,8 @@ def test_auto_case_heuristic(completer, complete_event):
     position = len("select json_v")
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
     assert [x.text for x in result] == [
-        'json_valid',
         'json_value',
+        'json_valid',
     ]
 
 

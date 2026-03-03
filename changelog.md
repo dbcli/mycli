@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Features
+---------
+* Prioritize common functions in the "value" position.
+
+
 1.59.0 (2026/03/03)
 ==============
 
