@@ -4,6 +4,7 @@ Upcoming (TBD)
 Features
 ---------
 * Prioritize common functions in the "value" position.
+* Improve value-position keywords.
 
 
 1.59.0 (2026/03/03)
