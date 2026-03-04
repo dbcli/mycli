@@ -5,6 +5,7 @@ Features
 ---------
 * Prioritize common functions in the "value" position.
 * Improve value-position keywords.
+* Allow warning-count in status output to be styled.
 
 
 Bug Fixes

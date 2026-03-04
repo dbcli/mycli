@@ -986,7 +986,7 @@ class MyCli:
                             sys.exit(1)
                     else:
                         watch_count += 1
-                if is_select(result.status) and isinstance(result.rows, Cursor) and result.rows.rowcount > threshold:
+                if is_select(result.status_plain) and isinstance(result.rows, Cursor) and result.rows.rowcount > threshold:
                     self.echo(
                         f"The result set has more than {threshold} rows.",
                         fg="red",
@@ -1018,7 +1018,7 @@ class MyCli:
                     if result_count > 0:
                         self.echo("")
                     try:
-                        self.output(formatted, result.status)
+                        self.output(formatted, result)
                     except KeyboardInterrupt:
                         pass
                     if self.beep_after_seconds > 0 and t >= self.beep_after_seconds:
@@ -1031,7 +1031,7 @@ class MyCli:
 
                 start = time()
                 result_count += 1
-                mutating = mutating or is_mutating(result.status)
+                mutating = mutating or is_mutating(result.status_plain)
 
                 # get and display warnings if enabled
                 if self.show_warnings and isinstance(result.rows, Cursor) and result.rows.warning_count > 0:
@@ -1051,7 +1051,7 @@ class MyCli:
                             is_warnings_style=True,
                         )
                         self.echo("")
-                        self.output(formatted, warning.status, is_warnings_style=True)
+                        self.output(formatted, warning, is_warnings_style=True)
 
                     if saw_warning and special.is_timing_enabled():
                         self.output_timing(f"Time: {t:0.03f}s", is_warnings_style=True)
@@ -1417,7 +1417,7 @@ class MyCli:
     def output(
         self,
         output: itertools.chain[str],
-        status: str | None = None,
+        result: SQLResult,
         is_warnings_style: bool = False,
     ) -> None:
         """Output text to stdout or a pager command.
@@ -1438,7 +1438,7 @@ class MyCli:
                 size_columns = DEFAULT_WIDTH
                 size_rows = DEFAULT_HEIGHT
 
-            margin = self.get_output_margin(status)
+            margin = self.get_output_margin(result.status_plain)
 
             fits = True
             buf = []
@@ -1480,12 +1480,14 @@ class MyCli:
                     for line in buf:
                         click.secho(line)
 
-        if status:
-            # todo allow status to be a FormattedText, but strip before logging
-            self.log_output(status)
+        if result.status:
+            self.log_output(result.status_plain)
             add_style = 'class:warnings.status' if is_warnings_style else 'class:output.status'
-            formatted_status = FormattedText([('', status)])
-            styled_status = to_formatted_text(formatted_status, style=add_style)
+            if isinstance(result.status, FormattedText):
+                status = result.status
+            else:
+                status = FormattedText([('', result.status_plain)])
+            styled_status = to_formatted_text(status, style=add_style)
             print_formatted_text(styled_status, style=self.toolkit_style)
 
     def configure_pager(self) -> None:
@@ -2466,20 +2468,20 @@ def need_completion_reset(queries: str) -> bool:
     return False
 
 
-def is_mutating(status: str | None) -> bool:
+def is_mutating(status_plain: str | None) -> bool:
     """Determines if the statement is mutating based on the status."""
-    if not status:
+    if not status_plain:
         return False
 
     mutating = {"insert", "update", "delete", "alter", "create", "drop", "replace", "truncate", "load", "rename"}
-    return status.split(None, 1)[0].lower() in mutating
+    return status_plain.split(None, 1)[0].lower() in mutating
 
 
-def is_select(status: str | None) -> bool:
+def is_select(status_plain: str | None) -> bool:
     """Returns true if the first word in status is 'select'."""
-    if not status:
+    if not status_plain:
         return False
-    return status.split(None, 1)[0].lower() == "select"
+    return status_plain.split(None, 1)[0].lower() == "select"
 
 
 def thanks_picker() -> str:
