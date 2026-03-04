@@ -3,6 +3,7 @@
 from datetime import time
 import os
 
+from prompt_toolkit.formatted_text import FormattedText
 import pymysql
 import pytest
 
@@ -16,19 +17,22 @@ def assert_result_equal(
     header=None,
     rows=None,
     status=None,
+    status_plain=None,
     postamble=None,
     auto_status=True,
     assert_contains=False,
 ):
     """Assert that an sqlexecute.run() result matches the expected values."""
-    if status is None and auto_status and rows:
-        status = f"{len(rows)} row{'s' if len(rows) > 1 else ''} in set"
+    if status_plain is None and auto_status and rows:
+        status_plain = f"{len(rows)} row{'s' if len(rows) > 1 else ''} in set"
+        status = FormattedText([('', status_plain)])
     fields = {
         "preamble": preamble,
         "header": header,
         "rows": rows,
         "postamble": postamble,
         "status": status,
+        "status_plain": status_plain,
     }
 
     if assert_contains:
@@ -61,14 +65,19 @@ def test_timediff_positive_value(executor):
 def test_get_result_status_without_warning(executor):
     sql = "select 1"
     result = run(executor, sql)
-    assert result[0]["status"] == "1 row in set"
+    assert result[0]["status_plain"] == "1 row in set"
 
 
 @dbtest
 def test_get_result_status_with_warning(executor):
     sql = "SELECT 1 + '0 foo'"
     result = run(executor, sql)
-    assert result[0]["status"] == "1 row in set, 1 warning"
+    assert result[0]["status"] == FormattedText([
+        ('', '1 row in set'),
+        ('', ', '),
+        ('class:output.status.warning-count', '1 warning'),
+    ])
+    assert result[0]["status_plain"] == "1 row in set, 1 warning"
 
 
 @dbtest
@@ -148,8 +157,22 @@ def test_multiple_queries_same_line(executor):
     results = run(executor, "select 'foo'; select 'bar'")
 
     expected = [
-        {"preamble": None, "header": ["foo"], "rows": [("foo",)], "postamble": None, "status": "1 row in set"},
-        {"preamble": None, "header": ["bar"], "rows": [("bar",)], "postamble": None, "status": "1 row in set"},
+        {
+            "preamble": None,
+            "header": ["foo"],
+            "rows": [("foo",)],
+            "postamble": None,
+            "status_plain": "1 row in set",
+            'status': FormattedText([('', '1 row in set')]),
+        },
+        {
+            "preamble": None,
+            "header": ["bar"],
+            "rows": [("bar",)],
+            "postamble": None,
+            "status_plain": "1 row in set",
+            'status': FormattedText([('', '1 row in set')]),
+        },
     ]
     assert expected == results
 
@@ -170,13 +193,13 @@ def test_favorite_query(executor):
     run(executor, "insert into test values('def')")
 
     results = run(executor, "\\fs test-a select * from test where a like 'a%'")
-    assert_result_equal(results, status="Saved.")
+    assert_result_equal(results, status="Saved.", status_plain="Saved.")
 
     results = run(executor, "\\f test-a")
     assert_result_equal(results, preamble="> select * from test where a like 'a%'", header=["a"], rows=[("abc",)], auto_status=False)
 
     results = run(executor, "\\fd test-a")
-    assert_result_equal(results, status="test-a: Deleted.")
+    assert_result_equal(results, status="test-a: Deleted.", status_plain="test-a: Deleted.")
 
 
 @dbtest
@@ -188,17 +211,31 @@ def test_favorite_query_multiple_statement(executor):
     run(executor, "insert into test values('def')")
 
     results = run(executor, "\\fs test-ad select * from test where a like 'a%'; select * from test where a like 'd%'")
-    assert_result_equal(results, status="Saved.")
+    assert_result_equal(results, status="Saved.", status_plain="Saved.")
 
     results = run(executor, "\\f test-ad")
     expected = [
-        {"preamble": "> select * from test where a like 'a%'", "header": ["a"], "rows": [("abc",)], "postamble": None, "status": None},
-        {"preamble": "> select * from test where a like 'd%'", "header": ["a"], "rows": [("def",)], "postamble": None, "status": None},
+        {
+            "preamble": "> select * from test where a like 'a%'",
+            "header": ["a"],
+            "rows": [("abc",)],
+            "postamble": None,
+            "status": None,
+            "status_plain": None,
+        },
+        {
+            "preamble": "> select * from test where a like 'd%'",
+            "header": ["a"],
+            "rows": [("def",)],
+            "postamble": None,
+            "status": None,
+            "status_plain": None,
+        },
     ]
     assert expected == results
 
     results = run(executor, "\\fd test-ad")
-    assert_result_equal(results, status="test-ad: Deleted.")
+    assert_result_equal(results, status="test-ad: Deleted.", status_plain="test-ad: Deleted.")
 
 
 @dbtest
@@ -209,7 +246,7 @@ def test_favorite_query_expanded_output(executor):
     run(executor, """insert into test values('abc')""")
 
     results = run(executor, "\\fs test-ae select * from test")
-    assert_result_equal(results, status="Saved.")
+    assert_result_equal(results, status="Saved.", status_plain="Saved.")
 
     results = run(executor, "\\f test-ae \\G")
     assert is_expanded_output() is True
@@ -218,7 +255,7 @@ def test_favorite_query_expanded_output(executor):
     set_expanded_output(False)
 
     results = run(executor, "\\fd test-ae")
-    assert_result_equal(results, status="test-ae: Deleted.")
+    assert_result_equal(results, status="test-ae: Deleted.", status_plain="test-ae: Deleted.")
 
 
 @dbtest
@@ -237,41 +274,45 @@ def test_special_command(executor):
 @dbtest
 def test_cd_command_without_a_folder_name(executor):
     results = run(executor, "system cd")
-    assert_result_equal(results, status="Exactly one directory name must be provided.")
+    assert_result_equal(
+        results, status="Exactly one directory name must be provided.", status_plain="Exactly one directory name must be provided."
+    )
 
 
 @dbtest
 def test_cd_command_with_one_nonexistent_folder_name(executor):
     results = run(executor, 'system cd nonexistent_folder_name')
-    assert_result_equal(results, status='No such file or directory')
+    assert_result_equal(results, status='No such file or directory', status_plain='No such file or directory')
 
 
 @dbtest
 def test_cd_command_with_one_real_folder_name(executor):
     results = run(executor, 'system cd screenshots')
     # todo would be better to capture stderr but there was a problem with capsys
-    assert results[0]['status'] == ''
+    assert results[0]['status_plain'] == ''
 
 
 @dbtest
 def test_cd_command_with_two_folder_names(executor):
     results = run(executor, "system cd one two")
-    assert_result_equal(results, status='Exactly one directory name must be provided.')
+    assert_result_equal(
+        results, status='Exactly one directory name must be provided.', status_plain='Exactly one directory name must be provided.'
+    )
 
 
 @dbtest
 def test_cd_command_unbalanced(executor):
     results = run(executor, "system cd 'one")
-    assert_result_equal(results, status='Cannot parse cd command.')
+    assert_result_equal(results, status='Cannot parse cd command.', status_plain='Cannot parse cd command.')
 
 
 @dbtest
 def test_system_command_not_found(executor):
     results = run(executor, "system xyz")
     if os.name == "nt":
-        assert_result_equal(results, status="OSError: The system cannot find the file specified", assert_contains=True)
+        assert_result_equal(results, status_plain="OSError: The system cannot find the file specified", assert_contains=True)
     else:
-        assert_result_equal(results, status="OSError: No such file or directory", assert_contains=True)
+        assert_result_equal(results, status_plain="OSError: No such file or directory", assert_contains=True)
 
 
 @dbtest
@@ -280,7 +321,7 @@ def test_system_command_output(executor):
     test_dir = os.path.abspath(os.path.dirname(__file__))
     test_file_path = os.path.join(test_dir, "test.txt")
     results = run(executor, f"system cat {test_file_path}")
-    assert_result_equal(results, status=f"mycli rocks!{eol}")
+    assert_result_equal(results, status=f"mycli rocks!{eol}", status_plain=f"mycli rocks!{eol}")
 
 
 @dbtest
@@ -339,8 +380,22 @@ def test_multiple_results(executor):
 
     results = run(executor, "call dmtest;")
     expected = [
-        {"preamble": None, "header": ["1"], "rows": [(1,)], "postamble": None, "status": "1 row in set"},
-        {"preamble": None, "header": ["2"], "rows": [(2,)], "postamble": None, "status": "1 row in set"},
+        {
+            "preamble": None,
+            "header": ["1"],
+            "rows": [(1,)],
+            "postamble": None,
+            "status_plain": "1 row in set",
+            'status': FormattedText([('', '1 row in set')]),
+        },
+        {
+            "preamble": None,
+            "header": ["2"],
+            "rows": [(2,)],
+            "postamble": None,
+            "status_plain": "1 row in set",
+            'status': FormattedText([('', '1 row in set')]),
+        },
     ]
     assert results == expected
 

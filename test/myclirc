@@ -268,6 +268,7 @@ output.odd-row = ""
 output.even-row = ""
 output.null = "#808080"
 output.status = ""
+output.status.warning-count = ""
 output.timing = ""
 
 # SQL syntax highlighting overrides

@@ -59,6 +59,7 @@ def run(executor, sql, rows_as_list=True):
             "rows": rows,
             "postamble": result.postamble,
             "status": result.status,
+            "status_plain": result.status_plain,
         })
 
     return results

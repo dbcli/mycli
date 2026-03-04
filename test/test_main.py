@@ -17,6 +17,7 @@ from mycli.main import MyCli, cli, thanks_picker
 from mycli.packages.parseutils import is_valid_connection_scheme
 import mycli.packages.special
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
+from mycli.packages.sqlresult import SQLResult
 from mycli.sqlexecute import ServerInfo, SQLExecute
 from test.utils import DATABASE, HOST, PASSWORD, PORT, TEMPFILE_PREFIX, USER, dbtest, run
 
@@ -76,7 +77,7 @@ def test_binary_display_hex(executor):
     )
     f = io.StringIO()
     with redirect_stdout(f):
-        m.output(formatted, sqlresult.status)
+        m.output(formatted, sqlresult)
     expected = " 0x6a "
     output = f.getvalue()
     assert expected in output
@@ -115,7 +116,7 @@ def test_binary_display_utf8(executor):
     )
     f = io.StringIO()
     with redirect_stdout(f):
-        m.output(formatted, sqlresult.status)
+        m.output(formatted, sqlresult)
     expected = " j "
     output = f.getvalue()
     assert expected in output
@@ -651,7 +652,7 @@ def output(monkeypatch, terminal_size, testdata, explicit_pager, expect_pager):
 
     monkeypatch.setattr(click, "echo_via_pager", echo_via_pager)
     monkeypatch.setattr(click, "secho", secho)
-    m.output(testdata)
+    m.output(testdata, SQLResult())
     if clickoutput.endswith("\n"):
         clickoutput = clickoutput[:-1]
     assert clickoutput == "\n".join(testdata)

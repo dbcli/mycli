@@ -7,6 +7,7 @@ import re
 import ssl
 from typing import Any, Generator, Iterable
 
+from prompt_toolkit.formatted_text import FormattedText
 import pymysql
 from pymysql.connections import Connection
 from pymysql.constants import FIELD_TYPE
@@ -393,14 +394,17 @@ class SQLExecute:
         plural = '' if cursor.rowcount == 1 else 's'
         if cursor.description:
             header = [x[0] for x in cursor.description]
-            status = f'{cursor.rowcount} row{plural} in set'
+            status = FormattedText([('', f'{cursor.rowcount} row{plural} in set')])
         else:
             _logger.debug("No rows in result.")
-            status = f'Query OK, {cursor.rowcount} row{plural} affected'
+            status = FormattedText([('', f'Query OK, {cursor.rowcount} row{plural} affected')])
 
         if cursor.warning_count > 0:
             plural = '' if cursor.warning_count == 1 else 's'
-            status = f'{status}, {cursor.warning_count} warning{plural}'
+            comma = FormattedText([('', ', ')])
+            warning_count = FormattedText([('class:output.status.warning-count', f'{cursor.warning_count} warning{plural}')])
+            status.extend(comma)
+            status.extend(warning_count)
 
         return SQLResult(preamble=preamble, header=header, rows=cursor, status=status)
 
