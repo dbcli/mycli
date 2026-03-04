@@ -259,7 +259,12 @@ def extract_columns_from_select(sql: str) -> list[str]:
             if isinstance(token, IdentifierList):
                 # multiple columns
                 for identifier in token.get_identifiers():
-                    column = identifier.get_real_name()
+                    if isinstance(identifier, Identifier):
+                        column = identifier.get_real_name()
+                    elif isinstance(identifier, Token):
+                        column = identifier.value
+                    else:
+                        continue
                     columns.append(column)
             elif isinstance(token, Identifier):
                 # single column

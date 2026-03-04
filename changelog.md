@@ -7,6 +7,11 @@ Features
 * Improve value-position keywords.
 
 
+Bug Fixes
+---------
+* Fix crash for completion edge case (#1668)
+
+
 1.59.0 (2026/03/03)
 ==============
 

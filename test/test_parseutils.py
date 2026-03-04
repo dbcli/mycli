@@ -3,6 +3,7 @@
 import pytest
 
 from mycli.packages.parseutils import (
+    extract_columns_from_select,
     extract_tables,
     extract_tables_from_complete_statements,
     is_destructive,
@@ -11,6 +12,14 @@ from mycli.packages.parseutils import (
     query_has_where_clause,
     query_starts_with,
 )
+
+
+def test_extract_columns_from_select():
+    try:
+        columns = extract_columns_from_select("SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT FROM INFORMATION_SCHEMA.COLUMNS")
+    except Exception:
+        columns = []
+    assert columns == ["COLUMN_NAME", "DATA_TYPE", "IS_NULLABLE", "COLUMN_DEFAULT"]
 
 
 def test_empty_string():
