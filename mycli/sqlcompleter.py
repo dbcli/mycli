@@ -853,8 +853,37 @@ class SQLCompleter(Completer):
     )
 
     favorite_functions = [
+        'COUNT',
+        'CONVERT',
+        'BINARY',
+        'CAST',
+        'COALESCE',
+        'MAX',
+        'MIN',
+        'SUM',
+        'AVG',
         'JSON_EXTRACT',
         'JSON_VALUE',
+        'JSON_REMOVE',
+        'JSON_SET',
+        'CONCAT',
+        'GROUP_CONCAT',
+        'CHAR_LENGTH',
+        'ROUND',
+        'FLOOR',
+        'CEIL',
+        'IF',
+        'IFNULL',
+        'SUBSTR',
+        'SUBSTRING_INDEX',
+        'REPLACE',
+        'RIGHT',
+        'LEFT',
+        'UNIX_TIMESTAMP',
+        'FROM_UNIXTIME',
+        'RAND',
+        'DATEDIFF',
+        'DATE_SUB',
     ]
     functions_raw = favorite_functions + pygments_functions_supplemented
     functions = list(dict.fromkeys(functions_raw))
