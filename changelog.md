@@ -10,7 +10,8 @@ Features
 
 Bug Fixes
 ---------
-* Fix crash for completion edge case (#1668)
+* Fix crash for completion edge case (#1668).
+* Update to a `cli_helpers` version with a `tabulate` bugfix.
 
 
 1.59.0 (2026/03/03)
