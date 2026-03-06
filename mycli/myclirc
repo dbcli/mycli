@@ -108,6 +108,7 @@ wider_completion_menu = False
 # * \P - AM/PM
 # * \d - selected database/schema
 # * \h - hostname of the server
+# * \H - shortened hostname of the server
 # * \p - connection port
 # * \j - connection socket basename
 # * \J - full connection socket path
