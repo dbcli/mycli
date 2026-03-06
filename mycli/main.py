@@ -198,6 +198,8 @@ class MyCli:
         self.config_without_user_options = read_config_files(config_files, ignore_user_options=True)
         self.multi_line = c["main"].as_bool("multi_line")
         self.key_bindings = c["main"]["key_bindings"]
+        self.emacs_ttimeoutlen = c['keys'].as_float('emacs_ttimeoutlen')
+        self.vi_ttimeoutlen = c['keys'].as_float('vi_ttimeoutlen')
         special.set_timing_enabled(c["main"].as_bool("timing"))
         special.set_show_favorite_query(c["main"].as_bool("show_favorite_query"))
         self.beep_after_seconds = float(c["main"]["beep_after_seconds"] or 0)
@@ -1310,6 +1312,11 @@ class MyCli:
                 editing_mode=editing_mode,
                 search_ignore_case=True,
             )
+
+            if self.key_bindings == 'vi':
+                self.prompt_app.app.ttimeoutlen = self.vi_ttimeoutlen
+            else:
+                self.prompt_app.app.ttimeoutlen = self.emacs_ttimeoutlen
 
         try:
             while True:
