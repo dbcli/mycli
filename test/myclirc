@@ -134,7 +134,8 @@ prompt_continuation = ->
 #
 # If \B is included, the additional content will begin on the next line.  More
 # lines can be added with \n.  If \B is not included, the customized toolbar
-# can be a single line.
+# can be a single line.  An empty value is the same as the default "\B".  The
+# special literal value "None" will suppress the toolbar from appearing.
 toolbar = ''
 
 # Use the same prompt format strings to construct a terminal tab title.
