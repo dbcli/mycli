@@ -9,6 +9,7 @@ import os
 import random
 import re
 import shutil
+import subprocess
 import sys
 import threading
 import traceback
@@ -79,6 +80,7 @@ from mycli.packages.special.favoritequeries import FavoriteQueries
 from mycli.packages.special.main import ArgType
 from mycli.packages.special.utils import format_uptime, get_ssl_version, get_uptime, get_warning_count
 from mycli.packages.sqlresult import SQLResult
+from mycli.packages.string_utils import sanitize_terminal_title
 from mycli.packages.tabular_output import sql_format
 from mycli.packages.toolkit.history import FileHistoryWithTimestamp
 from mycli.sqlcompleter import SQLCompleter
@@ -308,6 +310,10 @@ class MyCli:
         self.prompt_lines = 0
         self.multiline_continuation_char = c["main"]["prompt_continuation"]
         self.toolbar_format = toolbar_format or c['main']['toolbar']
+        self.terminal_tab_title_format = c['main']['terminal_tab_title']
+        self.terminal_window_title_format = c['main']['terminal_window_title']
+        self.multiplex_window_title_format = c['main']['multiplex_window_title']
+        self.multiplex_pane_title_format = c['main']['multiplex_pane_title']
         self.prompt_app = None
         self.destructive_keywords = [
             keyword for keyword in c["main"].get("destructive_keywords", "DROP SHUTDOWN DELETE TRUNCATE ALTER UPDATE").split(' ') if keyword
@@ -428,6 +434,8 @@ class MyCli:
         else:
             self.sqlexecute.change_db(arg)
             msg = f'You are now connected to database "{self.sqlexecute.dbname}" as user "{self.sqlexecute.user}"'
+
+        self.set_all_external_titles()
 
         yield SQLResult(status=msg)
 
@@ -1318,6 +1326,8 @@ class MyCli:
             else:
                 self.prompt_app.app.ttimeoutlen = self.emacs_ttimeoutlen
 
+        self.set_all_external_titles()
+
         try:
             while True:
                 one_iteration()
@@ -1548,6 +1558,66 @@ class MyCli:
     def get_completions(self, text: str, cursor_position: int) -> Iterable[Completion]:
         with self._completer_lock:
             return self.completer.get_completions(Document(text=text, cursor_position=cursor_position), None)
+
+    def set_all_external_titles(self) -> None:
+        self.set_external_terminal_tab_title()
+        self.set_external_terminal_window_title()
+        self.set_external_multiplex_window_title()
+        self.set_external_multiplex_pane_title()
+
+    def set_external_terminal_tab_title(self) -> None:
+        if not self.terminal_tab_title_format:
+            return
+        if not self.prompt_app:
+            return
+        if not sys.stderr.isatty():
+            return
+        title = sanitize_terminal_title(self.get_prompt(self.terminal_tab_title_format, self.prompt_app.app.render_counter))
+        print(f'\x1b]1;{title}\a', file=sys.stderr, end='')
+        sys.stderr.flush()
+
+    def set_external_terminal_window_title(self) -> None:
+        if not self.terminal_window_title_format:
+            return
+        if not self.prompt_app:
+            return
+        if not sys.stderr.isatty():
+            return
+        title = sanitize_terminal_title(self.get_prompt(self.terminal_window_title_format, self.prompt_app.app.render_counter))
+        print(f'\x1b]2;{title}\a', file=sys.stderr, end='')
+        sys.stderr.flush()
+
+    def set_external_multiplex_window_title(self) -> None:
+        if not self.multiplex_window_title_format:
+            return
+        if not os.getenv('TMUX'):
+            return
+        if not self.prompt_app:
+            return
+        title = sanitize_terminal_title(self.get_prompt(self.multiplex_window_title_format, self.prompt_app.app.render_counter))
+        try:
+            subprocess.run(
+                ['tmux', 'rename-window', title],
+                check=False,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        except FileNotFoundError:
+            pass
+
+    def set_external_multiplex_pane_title(self) -> None:
+        if not self.multiplex_pane_title_format:
+            return
+        if not os.getenv('TMUX'):
+            return
+        if not self.prompt_app:
+            return
+        if not sys.stderr.isatty():
+            return
+        title = sanitize_terminal_title(self.get_prompt(self.multiplex_pane_title_format, self.prompt_app.app.render_counter))
+        print(f'\x1b]2;{title}\x1b\\', file=sys.stderr, end='')
+        sys.stderr.flush()
 
     def get_custom_toolbar(self, toolbar_format: str) -> ANSI:
         if self.prompt_app and self.prompt_app.app.current_buffer.text:

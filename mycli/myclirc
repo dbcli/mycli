@@ -139,6 +139,28 @@ prompt_continuation = '->'
 # can be a single line.
 toolbar = ''
 
+# Use the same prompt format strings to construct a terminal tab title.
+# The original XTerm docs call this title the "window title", but it now
+# probably refers to a terminal tab.  This title is only updated as frequently
+# as the database is changed.
+terminal_tab_title = ''
+
+# Use the same prompt format strings to construct a terminal window title.
+# The original XTerm docs call this title the "icon title", but it now
+# probably refers to a terminal window which contains tabs.  This title is
+# only updated as frequently as the database is changed.
+terminal_window_title = ''
+
+# Use the same prompt format strings to construct a window title in a terminal
+# multiplexer.  Currently only tmux is supported.  This title is only updated
+# as frequently as the database is changed.
+multiplex_window_title = ''
+
+# Use the same prompt format strings to construct a pane title in a terminal
+# multiplexer.  Currently only tmux is supported.  This title is only updated
+# as frequently as the database is changed.
+multiplex_pane_title = ''
+
 # Skip intro info on startup and outro info on exit
 less_chatty = False
 
