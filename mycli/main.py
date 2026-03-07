@@ -102,6 +102,7 @@ DEFAULT_WIDTH = 80
 DEFAULT_HEIGHT = 25
 MIN_COMPLETION_TRIGGER = 1
 MAX_MULTILINE_BATCH_STATEMENT = 5000
+EMPTY_PASSWORD_FLAG_SENTINEL = -1
 
 
 @Condition
@@ -131,6 +132,23 @@ def complete_while_typing_filter() -> bool:
         # characters, costing performance.  This still works within a backtick!  So
         # long as there are three trailing non-punctuation characters.
         return not bool(re.search(r'[\s!-/:-@\[-^\{-~]', last_word))
+
+
+class IntOrStringClickParamType(click.ParamType):
+    name = 'string'  # display as STRING in helpdoc
+
+    def convert(self, value, param, ctx):
+        if isinstance(value, int):
+            return value
+        elif isinstance(value, str):
+            return value
+        elif value is None:
+            return value
+        else:
+            self.fail('Not a valid password string', param, ctx)
+
+
+INT_OR_STRING_CLICK_TYPE = IntOrStringClickParamType()
 
 
 class MyCli:
@@ -563,7 +581,7 @@ class MyCli:
         self,
         database: str | None = "",
         user: str | None = "",
-        passwd: str | None = None,
+        passwd: str | int | None = None,
         host: str | None = "",
         port: str | int | None = "",
         socket: str | None = "",
@@ -622,7 +640,7 @@ class MyCli:
                     or guess_socket_location()
                 )
 
-        passwd = passwd if isinstance(passwd, str) else cnf["password"]
+        passwd = passwd if isinstance(passwd, (str, int)) else cnf["password"]
 
         # default_character_set doesn't check in self.config_without_package_defaults, because the
         # option already existed before the my.cnf deprecation.  For the same reason,
@@ -699,9 +717,12 @@ class MyCli:
                 keyring_retrieved_cleanly = True
 
         # prompt for password if requested by user
-        if passwd == "MYCLI_ASK_PASSWORD":
+        if passwd == EMPTY_PASSWORD_FLAG_SENTINEL:
             passwd = click.prompt(f"Enter password for {user}", hide_input=True, show_default=False, default='', type=str, err=True)
             keyring_retrieved_cleanly = False
+
+        # should not fail, but will help the typechecker
+        assert not isinstance(passwd, int)
 
         connection_info: dict[Any, Any] = {
             "database": database,
@@ -1886,9 +1907,9 @@ class MyCli:
     "--password",
     "password",
     is_flag=False,
-    flag_value="MYCLI_ASK_PASSWORD",
-    type=str,
-    help="Prompt for (or enter in cleartext) password to connect to the database.",
+    flag_value=EMPTY_PASSWORD_FLAG_SENTINEL,
+    type=INT_OR_STRING_CLICK_TYPE,
+    help="Prompt for (or pass in cleartext) the password to connect to the database.",
 )
 @click.option("--ssh-user", help="User name to connect to ssh server.")
 @click.option("--ssh-host", help="Host name to connect to ssh server.")
@@ -1986,7 +2007,7 @@ def cli(
     host: str | None,
     port: int | None,
     socket: str | None,
-    password: str | None,
+    password: str | int | None,
     dbname: str | None,
     verbose: bool,
     prompt: str | None,
@@ -2067,7 +2088,7 @@ def cli(
 
     # if the password value looks like a DSN, treat it as such and
     # prompt for password
-    if database is None and password is not None and "://" in password:
+    if database is None and isinstance(password, str) and "://" in password:
         # check if the scheme is valid. We do not actually have any logic for these, but
         # it will most usefully catch the case where we erroneously catch someone's
         # password, and give them an easy error message to follow / report
@@ -2076,7 +2097,7 @@ def cli(
             click.secho(f"Error: Unknown connection scheme provided for DSN URI ({scheme}://)", err=True, fg="red")
             sys.exit(1)
         database = password
-        password = "MYCLI_ASK_PASSWORD"
+        password = EMPTY_PASSWORD_FLAG_SENTINEL
 
     # if the password is not specified try to set it using the password_file option
     if password is None and password_file:
@@ -2174,10 +2195,12 @@ def cli(
     dsn_uri = None
 
     # Treat the database argument as a DSN alias only if it matches a configured alias
+    # todo why is port tested but not socket?
+    truthy_password = password not in (None, EMPTY_PASSWORD_FLAG_SENTINEL)
     if (
         database
         and "://" not in database
-        and not any([user, password, host, port, login_path])
+        and not any([user, truthy_password, host, port, login_path])
         and database in mycli.config.get("alias_dsn", {})
     ):
         dsn_alias, database = database, ""
@@ -2208,6 +2231,7 @@ def cli(
             database = uri.path[1:]  # ignore the leading fwd slash
         if not user and uri.username is not None:
             user = unquote(uri.username)
+        # todo: rationalize the behavior of empty-string passwords here
         if not password and uri.password is not None:
             password = unquote(uri.password)
         if not host:
