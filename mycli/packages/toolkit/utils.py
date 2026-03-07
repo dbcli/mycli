@@ -17,4 +17,7 @@ def safe_invalidate_display(app: Application) -> None:
     def print_empty_string():
         app.print_text('')
 
-    run_in_terminal(print_empty_string)
+    try:
+        run_in_terminal(print_empty_string)
+    except RuntimeError:
+        pass

@@ -9,7 +9,7 @@ Features
 Internal
 ---------
 * Require a more recent version of the `wcwidth` library.
-
+* Make `safe_invalidate_display` function safer.
 
 
 1.61.0 (2026/03/07)
