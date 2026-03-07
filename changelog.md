@@ -4,6 +4,7 @@ Upcoming (TBD)
 Features
 ---------
 * Dynamic terminal titles based on prompt format strings.
+* Ability to turn off the toolbar.
 
 
 Internal

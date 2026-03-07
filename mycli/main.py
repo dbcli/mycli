@@ -1275,11 +1275,15 @@ class MyCli:
             query = Query(text, successful, mutating)
             self.query_history.append(query)
 
-        get_toolbar_tokens = create_toolbar_tokens_func(
-            self,
-            show_initial_toolbar_help,
-            self.toolbar_format,
-        )
+        if self.toolbar_format.lower() == 'none':
+            get_toolbar_tokens = None
+        else:
+            get_toolbar_tokens = create_toolbar_tokens_func(
+                self,
+                show_initial_toolbar_help,
+                self.toolbar_format,
+            )
+
         if self.wider_completion_menu:
             complete_style = CompleteStyle.MULTI_COLUMN
         else:
