@@ -4,6 +4,7 @@ Upcoming (TBD)
 Features
 ---------
 * Allow shorter timeout lengths after pressing Esc, for vi-mode.
+* Let tab and control-space behaviors be configurable.
 
 
 1.60.0 (2026/03/05)

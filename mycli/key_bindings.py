@@ -12,6 +12,7 @@ from prompt_toolkit.filters import (
 )
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
+from prompt_toolkit.selection import SelectionType
 
 from mycli.constants import DOCS_URL
 from mycli.packages import shortcuts
@@ -124,13 +125,31 @@ def mycli_bindings(mycli) -> KeyBindings:
 
     @kb.add("tab")
     def _(event: KeyPressEvent) -> None:
-        """Force autocompletion at cursor."""
+        """Complete action at cursor."""
         _logger.debug("Detected <Tab> key.")
         b = event.app.current_buffer
+
+        behaviors = mycli.config['keys'].as_list('tab')
+
+        if 'toolkit_default' in behaviors:
+            if b.complete_state:
+                b.complete_next()
+            else:
+                b.start_completion(select_first=True)
+
         if b.complete_state:
-            b.complete_next()
-        else:
+            if 'advance' in behaviors:
+                b.complete_next()
+            elif 'cancel' in behaviors:
+                b.cancel_completion()
+            return
+
+        if 'advancing_summon' in behaviors:
             b.start_completion(select_first=True)
+        elif 'prefixing_summon' in behaviors:
+            b.start_completion(insert_common_part=True)
+        elif 'summon' in behaviors:
+            b.start_completion(select_first=False)
 
     @kb.add("escape", eager=True, filter=in_completion)
     def _(event: KeyPressEvent) -> None:
@@ -145,9 +164,9 @@ def mycli_bindings(mycli) -> KeyBindings:
     @kb.add("c-space")
     def _(event: KeyPressEvent) -> None:
         """
-        Initialize autocompletion at cursor.
+        Complete action at cursor.
 
-        If the autocompletion menu is not showing, display it with the
+        By default, if the autocompletion menu is not showing, display it with the
         appropriate completions for the context.
 
         If the menu is showing, select the next completion.
@@ -155,9 +174,26 @@ def mycli_bindings(mycli) -> KeyBindings:
         _logger.debug("Detected <C-Space> key.")
 
         b = event.app.current_buffer
+
+        behaviors = mycli.config['keys'].as_list('control_space')
+
+        if 'toolkit_default' in behaviors:
+            if b.text:
+                b.start_selection(selection_type=SelectionType.CHARACTERS)
+            return
+
         if b.complete_state:
-            b.complete_next()
-        else:
+            if 'advance' in behaviors:
+                b.complete_next()
+            elif 'cancel' in behaviors:
+                b.cancel_completion()
+            return
+
+        if 'advancing_summon' in behaviors:
+            b.start_completion(select_first=True)
+        elif 'prefixing_summon' in behaviors:
+            b.start_completion(insert_common_part=True)
+        elif 'summon' in behaviors:
             b.start_completion(select_first=False)
 
     @kb.add("c-x", "p", filter=emacs_mode)

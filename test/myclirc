@@ -233,6 +233,19 @@ control_d = exit
 # possible values: auto, fzf, reverse_isearch
 control_r = auto
 
+# comma-separated list: toolkit_default, summon, advancing_summon, prefixing_summon, advance, cancel
+#
+# * toolkit_default - ignore other behaviors and use prompt_toolkit's default bindings
+# * summon - when completions are not visible, summon them
+# * advancing_summon - when completions are not visible, summon them _and_ advance in the list
+# * prefixing_summon - when completions are not visible, summon them _and_ insert the common prefix
+# * advance - when completions are visible, advance in the list
+# * cancel - when completions are visible, toggle the list off
+control_space = summon, advance
+
+# comma-separated list: toolkit_default, summon, advancing_summon, prefixing_summon, advance, cancel
+tab = advancing_summon, advance
+
 # How long to wait for an Escape key sequence in vi mode.
 # 0.5 seconds is the prompt_toolkit default, but vi users may find that too long.
 # Shorter values mean that "Escape" alone is recognized more quickly.
