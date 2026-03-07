@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Internal
+---------
+* Require a more recent version of the `wcwidth` library.
+
+
 1.61.0 (2026/03/07)
 ==============
 

@@ -17,6 +17,7 @@ dependencies = [
     "sqlglot[rs] == 27.*",
     "configobj ~= 5.0.9",
     "cli_helpers[styles] ~= 2.11.0",
+    "wcwidth ~= 0.6.0",
     "pyperclip ~= 1.11.0",
     "pycryptodomex ~= 3.23.0",
     "pyfzf ~= 0.3.1",
