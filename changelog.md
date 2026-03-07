@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Features
+---------
+* Allow shorter timeout lengths after pressing Esc, for vi-mode.
+
+
 1.60.0 (2026/03/05)
 ==============
 

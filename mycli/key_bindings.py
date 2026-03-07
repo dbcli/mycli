@@ -103,9 +103,11 @@ def mycli_bindings(mycli) -> KeyBindings:
         if mycli.key_bindings == "vi":
             event.app.editing_mode = EditingMode.EMACS
             mycli.key_bindings = "emacs"
+            event.app.ttimeoutlen = mycli.emacs_ttimeoutlen
         else:
             event.app.editing_mode = EditingMode.VI
             mycli.key_bindings = "vi"
+            event.app.ttimeoutlen = mycli.vi_ttimeoutlen
 
     @kb.add('escape', '[', 'S')
     def _(event: KeyPressEvent) -> None:
@@ -114,9 +116,11 @@ def mycli_bindings(mycli) -> KeyBindings:
         if mycli.key_bindings == 'vi':
             event.app.editing_mode = EditingMode.EMACS
             mycli.key_bindings = 'emacs'
+            event.app.ttimeoutlen = mycli.emacs_ttimeoutlen
         else:
             event.app.editing_mode = EditingMode.VI
             mycli.key_bindings = 'vi'
+            event.app.ttimeoutlen = mycli.vi_ttimeoutlen
 
     @kb.add("tab")
     def _(event: KeyPressEvent) -> None:
