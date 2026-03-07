@@ -1574,9 +1574,13 @@ class MyCli:
             prompt_host = sqlexecute.host
         else:
             prompt_host = "localhost"
+        short_prompt_host, _, _ = prompt_host.partition('.')
+        if re.match(r'^[\d\.]+$', short_prompt_host):
+            short_prompt_host = prompt_host
         now = datetime.now()
         string = string.replace("\\u", sqlexecute.user or "(none)")
         string = string.replace("\\h", prompt_host or "(none)")
+        string = string.replace("\\H", short_prompt_host or "(none)")
         string = string.replace("\\d", sqlexecute.dbname or "(none)")
         string = string.replace("\\t", sqlexecute.server_info.species.name)
         string = string.replace("\\n", "\n")
