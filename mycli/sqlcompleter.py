@@ -1086,6 +1086,18 @@ class SQLCompleter(Completer):
                 continue
             metadata[self.dbname][elt[0]] = None
 
+    def extend_character_sets(self, character_set_data: Generator[tuple]) -> None:
+        metadata = self.dbmetadata["character_sets"]
+        if self.dbname not in metadata:
+            metadata[self.dbname] = {}
+
+        for elt in character_set_data:
+            if not elt:
+                continue
+            if not elt[0]:
+                continue
+            metadata[self.dbname][elt[0]] = None
+
     def set_dbname(self, dbname: str | None) -> None:
         self.dbname = dbname or ''
 
@@ -1099,6 +1111,7 @@ class SQLCompleter(Completer):
             "views": {},
             "functions": {},
             "procedures": {},
+            "character_sets": {},
             "enum_values": {},
         }
         self.all_completions = set(self.keywords + self.functions)
@@ -1307,6 +1320,16 @@ class SQLCompleter(Completer):
                 )
                 completions.extend([(*x, rank) for x in procs_m])
 
+            elif suggestion['type'] == 'introducer':
+                charsets = self.populate_schema_objects(suggestion['schema'], 'character_sets')
+                introducers = [f'_{x}' for x in charsets]
+                introducers_m = self.find_matches(
+                    word_before_cursor,
+                    introducers,
+                    text_before_cursor=document.text_before_cursor,
+                )
+                completions.extend([(*x, rank) for x in introducers_m])
+
             elif suggestion["type"] == "table":
                 # If this is a select and columns are given, parse the columns and
                 # then only return tables that have one or more of the given columns.
@@ -1440,6 +1463,7 @@ class SQLCompleter(Completer):
                     text_before_cursor=document.text_before_cursor,
                 )
                 completions.extend([(*x, rank) for x in subcommands_m])
+
             elif suggestion["type"] == "enum_value":
                 enum_values = self.populate_enum_values(
                     suggestion["tables"],

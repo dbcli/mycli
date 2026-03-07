@@ -125,6 +125,16 @@ def test_select_star(completer, complete_event):
     assert list(result) == list(map(Completion, completer.keywords))
 
 
+def test_introducer_completion(completer, complete_event):
+    completer.extend_character_sets([('latin1',), ('utf8mb4',)])
+    text = 'SELECT _'
+    position = len(text)
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    result_text = [item.text for item in result]
+    assert '_latin1' in result_text
+    assert '_utf8mb4' in result_text
+
+
 def test_table_completion(completer, complete_event):
     text = "SELECT * FROM "
     position = len(text)

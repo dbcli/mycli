@@ -5,6 +5,7 @@ Features
 ---------
 * Dynamic terminal titles based on prompt format strings.
 * Ability to turn off the toolbar.
+* Add completions for introducers on literals.
 
 
 Bug Fixes

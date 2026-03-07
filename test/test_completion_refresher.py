@@ -30,6 +30,7 @@ def test_ctor(refresher):
         "users",
         "functions",
         "procedures",
+        "character_sets",
         "special_commands",
         "show_commands",
         "keywords",

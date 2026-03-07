@@ -103,6 +103,8 @@ class SQLExecute:
     procedures_query = '''SELECT ROUTINE_NAME FROM INFORMATION_SCHEMA.ROUTINES
     WHERE ROUTINE_TYPE="PROCEDURE" AND ROUTINE_SCHEMA = %s'''
 
+    character_sets_query = '''SHOW CHARACTER SET'''
+
     table_columns_query = """select TABLE_NAME, COLUMN_NAME from information_schema.columns
                                     where table_schema = %s
                                     order by table_name,ordinal_position"""
@@ -462,6 +464,20 @@ class SQLExecute:
                 cur.execute(self.procedures_query, (self.dbname,))
             except pymysql.DatabaseError as e:
                 _logger.error('No procedure completions due to %r', e)
+                yield ()
+            else:
+                yield from cur
+
+    def character_sets(self) -> Generator[tuple, None, None]:
+        """Yields tuples of (character_set_name, )"""
+
+        assert isinstance(self.conn, Connection)
+        with self.conn.cursor() as cur:
+            _logger.debug("Character sets Query. sql: %r", self.character_sets_query)
+            try:
+                cur.execute(self.character_sets_query)
+            except pymysql.DatabaseError as e:
+                _logger.error('No character_set completions due to %r', e)
                 yield ()
             else:
                 yield from cur
