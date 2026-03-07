@@ -1423,9 +1423,11 @@ class MyCli:
         """Get the output margin (number of rows for the prompt, footer and
         timing message."""
         if not self.prompt_lines:
-            # self.prompt_app.app.render_counter failed in the test suite
-            app = get_app()
-            self.prompt_lines = self.get_prompt(self.prompt_format, app.render_counter).count('\n') + 1
+            if self.prompt_app and self.prompt_app.app:
+                render_counter = self.prompt_app.app.render_counter
+            else:
+                render_counter = 0
+            self.prompt_lines = self.get_prompt(self.prompt_format, render_counter).count('\n') + 1
         margin = self.get_reserved_space() + self.prompt_lines
         if special.is_timing_enabled():
             margin += 1
@@ -1623,10 +1625,13 @@ class MyCli:
         sys.stderr.flush()
 
     def get_custom_toolbar(self, toolbar_format: str) -> ANSI:
-        if self.prompt_app and self.prompt_app.app.current_buffer.text:
+        if not self.prompt_app:
+            return ANSI('')
+        if not self.prompt_app.app:
+            return ANSI('')
+        if self.prompt_app.app.current_buffer.text:
             return self.last_custom_toolbar_message
-        app = get_app()
-        toolbar = self.get_prompt(toolbar_format, app.render_counter)
+        toolbar = self.get_prompt(toolbar_format, self.prompt_app.app.render_counter)
         toolbar = toolbar.replace("\\x1b", "\x1b")
         self.last_custom_toolbar_message = ANSI(toolbar)
         return self.last_custom_toolbar_message
