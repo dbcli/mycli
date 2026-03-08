@@ -14,6 +14,7 @@ Bug Fixes
 * Improve query cancellation on control-c.
 * Improve refresh of some format strings in the toolbar.
 * Improve keyring storage, requiring re-entering most keyring passwords.
+* Improve sentinel value for `--password` without argument.
 
 
 Internal
