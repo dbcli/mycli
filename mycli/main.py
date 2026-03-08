@@ -35,7 +35,7 @@ from configobj import ConfigObj
 import keyring
 from prompt_toolkit import print_formatted_text
 from prompt_toolkit.application.current import get_app
-from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
+from prompt_toolkit.auto_suggest import AutoSuggestFromHistory, ThreadedAutoSuggest
 from prompt_toolkit.completion import Completion, DynamicCompleter
 from prompt_toolkit.document import Document
 from prompt_toolkit.enums import DEFAULT_BUFFER, EditingMode
@@ -1310,7 +1310,7 @@ class MyCli:
                 completer=DynamicCompleter(lambda: self.completer),
                 complete_in_thread=True,
                 history=history,
-                auto_suggest=AutoSuggestFromHistory(),
+                auto_suggest=ThreadedAutoSuggest(AutoSuggestFromHistory()),
                 complete_while_typing=complete_while_typing_filter,
                 multiline=cli_is_multiline(self),
                 # why not self.toolkit_style here?

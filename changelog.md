@@ -6,6 +6,7 @@ Features
 * Dynamic terminal titles based on prompt format strings.
 * Ability to turn off the toolbar.
 * Add completions for introducers on literals.
+* Load whole-line autosuggest candidates in a background thread for speed.
 
 
 Bug Fixes
