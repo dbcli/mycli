@@ -1005,7 +1005,7 @@ class MyCli:
             return [("class:continuation", continuation)]
 
         def show_initial_toolbar_help() -> bool:
-            return iterations < 2
+            return iterations == 0
 
         # Keep track of whether or not the query is mutating. In case
         # of a multi-statement query, the overall query is considered
