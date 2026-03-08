@@ -7,6 +7,11 @@ Features
 * Ability to turn off the toolbar.
 
 
+Bug Fixes
+---------
+* Improve query cancellation on control-c.
+
+
 Internal
 ---------
 * Require a more recent version of the `wcwidth` library.

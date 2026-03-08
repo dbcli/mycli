@@ -133,7 +133,7 @@ def execute(cur: Cursor, sql: str) -> list[SQLResult]:
     command, verbosity, arg = parse_special_command(sql)
 
     if (command not in COMMANDS) and (command.lower() not in COMMANDS):
-        raise CommandNotFound()
+        raise CommandNotFound(f'Command not found: {command}')
 
     try:
         special_cmd = COMMANDS[command]
