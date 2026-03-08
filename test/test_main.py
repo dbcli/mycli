@@ -650,6 +650,7 @@ def output(monkeypatch, terminal_size, testdata, explicit_pager, expect_pager):
 
     class PromptBuffer:
         output = TestOutput()
+        app = None
 
     m.prompt_app = PromptBuffer()
     m.sqlexecute = TestExecute()
