@@ -21,6 +21,7 @@ def test_select_suggests_cols_with_visible_table_scope():
         {"type": "alias", "aliases": ["tabl"]},
         {"type": "column", "tables": [(None, "tabl", None)]},
         {"type": "function", "schema": []},
+        {"type": "introducer", "schema": []},
     ])
 
 
@@ -30,6 +31,7 @@ def test_select_suggests_cols_with_qualified_table_scope():
         {"type": "alias", "aliases": ["tabl"]},
         {"type": "column", "tables": [("sch", "tabl", None)]},
         {"type": "function", "schema": []},
+        {"type": "introducer", "schema": []},
     ])
 
 
@@ -53,6 +55,7 @@ def test_where_suggests_columns_functions(expression):
         {"type": "alias", "aliases": ["tabl"]},
         {"type": "column", "tables": [(None, "tabl", None)]},
         {"type": "function", "schema": []},
+        {"type": "introducer", "schema": []},
     ])
 
 
@@ -64,6 +67,7 @@ def test_where_equals_suggests_enum_values_first():
         {"type": "alias", "aliases": ["tabl"]},
         {"type": "column", "tables": [(None, "tabl", None)]},
         {"type": "function", "schema": []},
+        {"type": "introducer", "schema": []},
     ])
 
 
@@ -80,6 +84,7 @@ def test_where_in_suggests_columns(expression):
         {"type": "alias", "aliases": ["tabl"]},
         {"type": "column", "tables": [(None, "tabl", None)]},
         {"type": "function", "schema": []},
+        {"type": "introducer", "schema": []},
     ])
 
 
@@ -90,6 +95,7 @@ def test_where_equals_any_suggests_columns_or_keywords():
         {"type": "alias", "aliases": ["tabl"]},
         {"type": "column", "tables": [(None, "tabl", None)]},
         {"type": "function", "schema": []},
+        {"type": "introducer", "schema": []},
     ])
 
 
@@ -114,6 +120,7 @@ def test_select_suggests_cols_and_funcs():
         {"type": "alias", "aliases": []},
         {"type": "column", "tables": []},
         {"type": "function", "schema": []},
+        {"type": "introducer", "schema": []},
     ])
 
 
@@ -186,6 +193,7 @@ def test_col_comma_suggests_cols():
         {"type": "alias", "aliases": ["tbl"]},
         {"type": "column", "tables": [(None, "tbl", None)]},
         {"type": "function", "schema": []},
+        {"type": "introducer", "schema": []},
     ])
 
 
@@ -228,6 +236,7 @@ def test_partially_typed_col_name_suggests_col_names():
         {"type": "alias", "aliases": ["tabl"]},
         {"type": "column", "tables": [(None, "tabl", None)]},
         {"type": "function", "schema": []},
+        {"type": "introducer", "schema": []},
     ])
 
 
@@ -322,6 +331,7 @@ def test_sub_select_col_name_completion():
         {"type": "alias", "aliases": ["abc"]},
         {"type": "column", "tables": [(None, "abc", None)]},
         {"type": "function", "schema": []},
+        {"type": "introducer", "schema": []},
     ])
 
 
@@ -331,6 +341,7 @@ def test_sub_select_multiple_col_name_completion():
     assert sorted_dicts(suggestions) == sorted_dicts([
         {"type": "column", "tables": [(None, "abc", None)]},
         {"type": "function", "schema": []},
+        {"type": "introducer", "schema": []},
     ])
 
 
@@ -474,6 +485,7 @@ def test_2_statements_2nd_current():
         {"type": "alias", "aliases": ["b"]},
         {"type": "column", "tables": [(None, "b", None)]},
         {"type": "function", "schema": []},
+        {"type": "introducer", "schema": []},
     ])
 
     # Should work even if first statement is invalid
@@ -498,6 +510,7 @@ def test_2_statements_1st_current():
         {"type": "alias", "aliases": ["a"]},
         {"type": "column", "tables": [(None, "a", None)]},
         {"type": "function", "schema": []},
+        {"type": "introducer", "schema": []},
     ])
 
 
@@ -514,6 +527,7 @@ def test_3_statements_2nd_current():
         {"type": "alias", "aliases": ["b"]},
         {"type": "column", "tables": [(None, "b", None)]},
         {"type": "function", "schema": []},
+        {"type": "introducer", "schema": []},
     ])
 
 

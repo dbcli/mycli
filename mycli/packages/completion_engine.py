@@ -399,6 +399,7 @@ def suggest_based_on_last_token(
             return [
                 {"type": "column", "tables": tables},
                 {"type": "function", "schema": []},
+                {"type": "introducer", "schema": []},
                 {"type": "alias", "aliases": aliases},
             ]
     elif (

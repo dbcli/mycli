@@ -160,6 +160,11 @@ def refresh_procedures(completer: SQLCompleter, executor: SQLExecute) -> None:
     completer.extend_procedures(executor.procedures())
 
 
+@refresher("character_sets")
+def refresh_character_sets(completer: SQLCompleter, executor: SQLExecute) -> None:
+    completer.extend_character_sets(executor.character_sets())
+
+
 @refresher("special_commands")
 def refresh_special(completer: SQLCompleter, executor: SQLExecute) -> None:
     completer.extend_special_commands(list(COMMANDS.keys()))
