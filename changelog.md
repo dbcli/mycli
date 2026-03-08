@@ -3,7 +3,7 @@ Upcoming (TBD)
 
 Features
 ---------
-* Makes short toolbar show after initial prompt
+* Makes short toolbar message show after initial prompt
 
 
 1.62.0 (2026/03/07)
