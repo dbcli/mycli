@@ -9,14 +9,21 @@ import time
 import pymysql
 import pytest
 
+from mycli.constants import (
+    DEFAULT_CHARSET,
+    DEFAULT_HOST,
+    DEFAULT_PORT,
+    DEFAULT_USER,
+    TEST_DATABASE,
+)
 from mycli.main import special
 
-DATABASE = "mycli_test_db"
+DATABASE = TEST_DATABASE
 PASSWORD = os.getenv("PYTEST_PASSWORD")
-USER = os.getenv("PYTEST_USER", "root")
-HOST = os.getenv("PYTEST_HOST", "localhost")
-PORT = int(os.getenv("PYTEST_PORT", "3306"))
-CHARACTER_SET = os.getenv("PYTEST_CHARSET", "utf8mb4")
+USER = os.getenv("PYTEST_USER", DEFAULT_USER)
+HOST = os.getenv("PYTEST_HOST", DEFAULT_HOST)
+PORT = int(os.getenv("PYTEST_PORT", DEFAULT_PORT))
+CHARACTER_SET = os.getenv("PYTEST_CHARSET", DEFAULT_CHARSET)
 SSH_USER = os.getenv("PYTEST_SSH_USER", None)
 SSH_HOST = os.getenv("PYTEST_SSH_HOST", None)
 SSH_PORT = int(os.getenv("PYTEST_SSH_PORT", "22"))
@@ -35,14 +42,14 @@ try:
 except Exception:
     CAN_CONNECT_TO_DB = False
 
-dbtest = pytest.mark.skipif(not CAN_CONNECT_TO_DB, reason="Need a mysql instance at localhost accessible by user 'root'")
+dbtest = pytest.mark.skipif(not CAN_CONNECT_TO_DB, reason=f"Need a mysql instance at {DEFAULT_HOST} accessible by user '{DEFAULT_USER}'")
 
 
 def create_db(dbname):
     with db_connection().cursor() as cur:
         try:
-            cur.execute("""DROP DATABASE IF EXISTS mycli_test_db""")
-            cur.execute("""CREATE DATABASE mycli_test_db""")
+            cur.execute(f"DROP DATABASE IF EXISTS {TEST_DATABASE}")
+            cur.execute(f"CREATE DATABASE {TEST_DATABASE}")
         except Exception:
             pass
 

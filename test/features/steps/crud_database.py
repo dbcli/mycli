@@ -11,6 +11,8 @@ from behave import then, when
 import pexpect
 import wrappers
 
+from mycli.constants import DEFAULT_DATABASE
+
 
 @when("we create database")
 def step_db_create(context):
@@ -53,8 +55,8 @@ def step_db_connect_tmp(context):
 @when("we connect to dbserver")
 def step_db_connect_dbserver(context):
     """Send connect to database."""
-    context.currentdb = "mysql"
-    context.cli.sendline("use mysql")
+    context.currentdb = DEFAULT_DATABASE
+    context.cli.sendline(f"use {DEFAULT_DATABASE}")
 
 
 @then("dbcli exits")

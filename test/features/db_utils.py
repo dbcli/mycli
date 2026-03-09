@@ -2,8 +2,10 @@
 
 import pymysql
 
+from mycli.constants import DEFAULT_CHARSET, DEFAULT_HOST, DEFAULT_PORT
 
-def create_db(hostname="localhost", port=3306, username=None, password=None, dbname=None):
+
+def create_db(hostname=DEFAULT_HOST, port=DEFAULT_PORT, username=None, password=None, dbname=None):
     """Create test database.
 
     :param hostname: string
@@ -15,7 +17,7 @@ def create_db(hostname="localhost", port=3306, username=None, password=None, dbn
 
     """
     cn = pymysql.connect(
-        host=hostname, port=port, user=username, password=password, charset="utf8mb4", cursorclass=pymysql.cursors.DictCursor
+        host=hostname, port=port, user=username, password=password, charset=DEFAULT_CHARSET, cursorclass=pymysql.cursors.DictCursor
     )
 
     with cn.cursor() as cr:
@@ -45,14 +47,14 @@ def create_cn(hostname, port, password, username, dbname):
         user=username,
         password=password,
         db=dbname,
-        charset="utf8mb4",
+        charset=DEFAULT_CHARSET,
         cursorclass=pymysql.cursors.DictCursor,
     )
 
     return cn
 
 
-def drop_db(hostname="localhost", port=3306, username=None, password=None, dbname=None):
+def drop_db(hostname=DEFAULT_HOST, port=DEFAULT_PORT, username=None, password=None, dbname=None):
     """Drop database.
 
     :param hostname: string
@@ -68,7 +70,7 @@ def drop_db(hostname="localhost", port=3306, username=None, password=None, dbnam
         user=username,
         password=password,
         db=dbname,
-        charset="utf8mb4",
+        charset=DEFAULT_CHARSET,
         cursorclass=pymysql.cursors.DictCursor,
     )
 

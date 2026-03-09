@@ -3,7 +3,12 @@ Upcoming (TBD)
 
 Features
 ---------
-* Makes short toolbar message show after initial prompt
+* Make short toolbar message show after initial prompt.
+
+
+Internal
+---------
+* Migrate more repeated values to `constants.py`.
 
 
 1.62.0 (2026/03/07)

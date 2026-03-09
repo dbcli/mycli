@@ -68,7 +68,14 @@ from mycli.clitoolbar import create_toolbar_tokens_func
 from mycli.compat import WIN
 from mycli.completion_refresher import CompletionRefresher
 from mycli.config import get_mylogin_cnf_path, open_mylogin_cnf, read_config_files, str_to_bool, strip_matching_quotes, write_default_config
-from mycli.constants import HOME_URL, ISSUES_URL, REPO_URL
+from mycli.constants import (
+    DEFAULT_CHARSET,
+    DEFAULT_HOST,
+    DEFAULT_PORT,
+    HOME_URL,
+    ISSUES_URL,
+    REPO_URL,
+)
 from mycli.key_bindings import mycli_bindings
 from mycli.lexer import MyCliLexer
 from mycli.packages import special
@@ -630,8 +637,8 @@ class MyCli:
 
         int_port = port and int(port)
         if not int_port:
-            int_port = 3306
-            if not host or host == "localhost":
+            int_port = DEFAULT_PORT
+            if not host or host == DEFAULT_HOST:
                 socket = (
                     socket
                     or user_connection_config.get("default_socket")
@@ -655,7 +662,7 @@ class MyCli:
             elif 'default-character-set' in cnf:
                 character_set = cnf['default-character-set']
         if not character_set:
-            character_set = 'utf8mb4'
+            character_set = DEFAULT_CHARSET
 
         # Favor whichever local_infile option is set.
         use_local_infile = False
@@ -824,15 +831,15 @@ class MyCli:
 
                         # Else fall back to TCP/IP localhost
                         socket = ""
-                        host = "localhost"
-                        port = 3306
+                        host = DEFAULT_HOST
+                        port = DEFAULT_PORT
                         # todo should reload the keyring identifier here instead of invalidating
                         _connect(keyring_save_eligible=False)
                     else:
                         raise e
             else:
-                host = host or "localhost"
-                port = port or 3306
+                host = host or DEFAULT_HOST
+                port = port or DEFAULT_PORT
                 # could try loading the keyring again here instead of assuming nothing important changed
 
                 # Bad ports give particularly daft error messages
@@ -1689,7 +1696,7 @@ class MyCli:
         elif sqlexecute.host is not None:
             prompt_host = sqlexecute.host
         else:
-            prompt_host = "localhost"
+            prompt_host = DEFAULT_HOST
         short_prompt_host, _, _ = prompt_host.partition('.')
         if re.match(r'^[\d\.]+$', short_prompt_host):
             short_prompt_host = prompt_host

@@ -9,6 +9,7 @@ import db_utils as dbutils
 import fixture_utils as fixutils
 import pexpect
 
+from mycli.constants import DEFAULT_HOST, DEFAULT_PORT, DEFAULT_USER
 from steps.wrappers import run_cli, wait_prompt
 from test.utils import TEMPFILE_PREFIX
 
@@ -54,9 +55,9 @@ def before_all(context):
 
     # Store get params from config/environment variables
     context.conf = {
-        "host": context.config.userdata.get("my_test_host", os.getenv("PYTEST_HOST", "localhost")),
-        "port": context.config.userdata.get("my_test_port", int(os.getenv("PYTEST_PORT", "3306"))),
-        "user": context.config.userdata.get("my_test_user", os.getenv("PYTEST_USER", "root")),
+        "host": context.config.userdata.get("my_test_host", os.getenv("PYTEST_HOST", DEFAULT_HOST)),
+        "port": context.config.userdata.get("my_test_port", int(os.getenv("PYTEST_PORT", DEFAULT_PORT))),
+        "user": context.config.userdata.get("my_test_user", os.getenv("PYTEST_USER", DEFAULT_USER)),
         "pass": context.config.userdata.get("my_test_pass", os.getenv("PYTEST_PASSWORD", None)),
         "cli_command": context.config.userdata.get("my_cli_command", None)
         or sys.executable + ' -c "import coverage ; coverage.process_startup(); import mycli.main; mycli.main.cli()"',
