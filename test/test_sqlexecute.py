@@ -7,6 +7,7 @@ from prompt_toolkit.formatted_text import FormattedText
 import pymysql
 import pytest
 
+from mycli.constants import TEST_DATABASE
 from mycli.sqlexecute import ServerInfo, ServerSpecies
 from test.utils import dbtest, is_expanded_output, run, set_expanded_output
 
@@ -125,7 +126,7 @@ def test_table_and_columns_query(executor):
 @dbtest
 def test_database_list(executor):
     databases = executor.databases()
-    assert "mycli_test_db" in databases
+    assert TEST_DATABASE in databases
 
 
 @dbtest

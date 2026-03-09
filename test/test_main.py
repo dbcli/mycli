@@ -13,6 +13,13 @@ import click
 from click.testing import CliRunner
 from pymysql.err import OperationalError
 
+from mycli.constants import (
+    DEFAULT_DATABASE,
+    DEFAULT_HOST,
+    DEFAULT_PORT,
+    DEFAULT_USER,
+    TEST_DATABASE,
+)
 from mycli.main import EMPTY_PASSWORD_FLAG_SENTINEL, MyCli, cli, thanks_picker
 from mycli.packages.parseutils import is_valid_connection_scheme
 import mycli.packages.special
@@ -40,7 +47,7 @@ CLI_ARGS = [
     default_config_file,
     "--defaults-file",
     default_config_file,
-    "mycli_test_db",
+    TEST_DATABASE,
 ]
 
 
@@ -137,12 +144,12 @@ def test_select_from_empty_table(executor):
 
 
 def test_is_valid_connection_scheme_valid(executor, capsys):
-    is_valid, scheme = is_valid_connection_scheme("mysql://test@localhost:3306/dev")
+    is_valid, scheme = is_valid_connection_scheme(f"mysql://test@{DEFAULT_HOST}:{DEFAULT_PORT}/dev")
     assert is_valid
 
 
 def test_is_valid_connection_scheme_invalid(executor, capsys):
-    is_valid, scheme = is_valid_connection_scheme("nope://test@localhost:3306/dev")
+    is_valid, scheme = is_valid_connection_scheme(f"nope://test@{DEFAULT_HOST}:{DEFAULT_PORT}/dev")
     assert not is_valid
 
 
@@ -285,8 +292,8 @@ def test_reconnect_with_different_database(executor):
         None,
         None,
     )
-    database_1 = "mycli_test_db"
-    database_2 = "mysql"
+    database_1 = TEST_DATABASE
+    database_2 = DEFAULT_DATABASE
     sql_1 = f"use {database_1}"
     sql_2 = f"\\r {database_2}"
     _result_1 = next(mycli.packages.special.execute(executor, sql_1))
@@ -316,7 +323,7 @@ def test_reconnect_with_same_database(executor):
         None,
         None,
     )
-    database = "mysql"
+    database = DEFAULT_DATABASE
     sql = f"\\u {database}"
     result = next(mycli.packages.special.execute(executor, sql))
     sql = f"\\r {database}"
@@ -333,11 +340,11 @@ def test_prompt_no_host_only_socket(executor):
     mycli.sqlexecute.server_info = ServerInfo.from_version_string("8.0.44-0ubuntu0.24.04.1")
     mycli.sqlexecute.host = None
     mycli.sqlexecute.socket = "/var/run/mysqld/mysqld.sock"
-    mycli.sqlexecute.user = "root"
-    mycli.sqlexecute.dbname = "mysql"
-    mycli.sqlexecute.port = "3306"
+    mycli.sqlexecute.user = DEFAULT_USER
+    mycli.sqlexecute.dbname = DEFAULT_DATABASE
+    mycli.sqlexecute.port = DEFAULT_PORT
     prompt = mycli.get_prompt(mycli.prompt_format, 0)
-    assert prompt == "MySQL root@localhost:mysql> "
+    assert prompt == f"MySQL {DEFAULT_USER}@{DEFAULT_HOST}:{DEFAULT_DATABASE}> "
 
 
 @dbtest
@@ -348,11 +355,11 @@ def test_prompt_socket_overrides_port(executor):
     mycli.sqlexecute.server_info = ServerInfo.from_version_string("8.0.44-0ubuntu0.24.04.1")
     mycli.sqlexecute.host = None
     mycli.sqlexecute.socket = "/var/run/mysqld/mysqld.sock"
-    mycli.sqlexecute.user = "root"
-    mycli.sqlexecute.dbname = "mysql"
-    mycli.sqlexecute.port = "3306"
+    mycli.sqlexecute.user = DEFAULT_USER
+    mycli.sqlexecute.dbname = DEFAULT_DATABASE
+    mycli.sqlexecute.port = DEFAULT_PORT
     prompt = mycli.get_prompt(mycli.prompt_format, 0)
-    assert prompt == "MySQL root@localhost:mysqld.sock mysql> "
+    assert prompt == f"MySQL {DEFAULT_USER}@{DEFAULT_HOST}:mysqld.sock {DEFAULT_DATABASE}> "
 
 
 @dbtest
@@ -361,13 +368,13 @@ def test_prompt_socket_short_host(executor):
     mycli.prompt_format = "\\t \\u@\\H:\\k \\d> "
     mycli.sqlexecute = SQLExecute
     mycli.sqlexecute.server_info = ServerInfo.from_version_string("8.0.44-0ubuntu0.24.04.1")
-    mycli.sqlexecute.host = 'localhost.localdomain'
+    mycli.sqlexecute.host = f'{DEFAULT_HOST}.localdomain'
     mycli.sqlexecute.socket = None
-    mycli.sqlexecute.user = "root"
-    mycli.sqlexecute.dbname = "mysql"
-    mycli.sqlexecute.port = "3306"
+    mycli.sqlexecute.user = DEFAULT_USER
+    mycli.sqlexecute.dbname = DEFAULT_DATABASE
+    mycli.sqlexecute.port = DEFAULT_PORT
     prompt = mycli.get_prompt(mycli.prompt_format, 0)
-    assert prompt == "MySQL root@localhost:3306 mysql> "
+    assert prompt == f"MySQL {DEFAULT_USER}@{DEFAULT_HOST}:{DEFAULT_PORT} {DEFAULT_DATABASE}> "
 
 
 @dbtest
@@ -391,11 +398,11 @@ def test_disable_show_warnings(executor):
 @dbtest
 def test_output_ddl_with_warning_and_show_warnings_enabled(executor):
     runner = CliRunner()
-    db = "mycli_test_db"
+    db = TEST_DATABASE
     table = "table_that_definitely_does_not_exist_1234"
     sql = f"DROP TABLE IF EXISTS {db}.{table}"
     result = runner.invoke(cli, args=CLI_ARGS + ["--show-warnings", "--no-warn"], input=sql)
-    expected = "Level\tCode\tMessage\nNote\t1051\tUnknown table 'mycli_test_db.table_that_definitely_does_not_exist_1234'\n"
+    expected = f"Level\tCode\tMessage\nNote\t1051\tUnknown table '{db}.table_that_definitely_does_not_exist_1234'\n"
     assert expected in result.output
 
 
@@ -992,13 +999,13 @@ def test_dsn(monkeypatch):
     result = runner.invoke(
         mycli.main.cli,
         args=[
-            'mysql://dsn_user:dsn_passwd@localhost/dsn_database?socket=mysql.sock',
+            f'mysql://dsn_user:dsn_passwd@{DEFAULT_HOST}/dsn_database?socket=mysql.sock',
         ],
     )
     assert result.exit_code == 0, result.output + ' ' + str(result.exception)
     assert MockMyCli.connect_args['user'] == 'dsn_user'
     assert MockMyCli.connect_args['passwd'] == 'dsn_passwd'
-    assert MockMyCli.connect_args['host'] == 'localhost'
+    assert MockMyCli.connect_args['host'] == DEFAULT_HOST
     assert MockMyCli.connect_args['database'] == 'dsn_database'
     assert MockMyCli.connect_args['socket'] == 'mysql.sock'
 
@@ -1006,13 +1013,13 @@ def test_dsn(monkeypatch):
     result = runner.invoke(
         mycli.main.cli,
         args=[
-            'mysql://dsn_user:dsn_passwd@localhost/dsn_database?character_set=latin1',
+            f'mysql://dsn_user:dsn_passwd@{DEFAULT_HOST}/dsn_database?character_set=latin1',
         ],
     )
     assert result.exit_code == 0, result.output + ' ' + str(result.exception)
     assert MockMyCli.connect_args['user'] == 'dsn_user'
     assert MockMyCli.connect_args['passwd'] == 'dsn_passwd'
-    assert MockMyCli.connect_args['host'] == 'localhost'
+    assert MockMyCli.connect_args['host'] == DEFAULT_HOST
     assert MockMyCli.connect_args['database'] == 'dsn_database'
     assert MockMyCli.connect_args['character_set'] == 'latin1'
 
@@ -1020,14 +1027,14 @@ def test_dsn(monkeypatch):
     result = runner.invoke(
         mycli.main.cli,
         args=[
-            'mysql://dsn_user:dsn_passwd@localhost/dsn_database?character_set=latin1',
+            f'mysql://dsn_user:dsn_passwd@{DEFAULT_HOST}/dsn_database?character_set=latin1',
             '--character-set=utf8mb3',
         ],
     )
     assert result.exit_code == 0, result.output + ' ' + str(result.exception)
     assert MockMyCli.connect_args['user'] == 'dsn_user'
     assert MockMyCli.connect_args['passwd'] == 'dsn_passwd'
-    assert MockMyCli.connect_args['host'] == 'localhost'
+    assert MockMyCli.connect_args['host'] == DEFAULT_HOST
     assert MockMyCli.connect_args['database'] == 'dsn_database'
     assert MockMyCli.connect_args['character_set'] == 'utf8mb3'
 
@@ -1078,9 +1085,9 @@ def test_password_flag_uses_sentinel(monkeypatch):
             '--user',
             'user',
             '--host',
-            'localhost',
+            DEFAULT_HOST,
             '--port',
-            '3306',
+            f'{DEFAULT_PORT}',
             '--database',
             'database',
             '--password',
