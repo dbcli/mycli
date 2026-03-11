@@ -9,6 +9,7 @@ Features
 Internal
 ---------
 * Migrate more repeated values to `constants.py`.
+* Support `sqlglot` 28 and 29.
 
 
 1.62.0 (2026/03/07)
