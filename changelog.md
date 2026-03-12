@@ -1,9 +1,9 @@
-Upcoming (TBD)
+1.63.0 (2026/03/12)
 ==============
 
 Features
 ---------
-* Make short toolbar message show after initial prompt.
+* Make short toolbar message show after one prompt.
 
 
 Internal
