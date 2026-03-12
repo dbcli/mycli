@@ -1,33 +1,22 @@
 import logging
 import os
-import shlex
 
 import click
 import pymysql
 from pymysql.cursors import Cursor
-
-from mycli.compat import WIN
 
 logger = logging.getLogger(__name__)
 
 CACHED_SSL_VERSION: dict[tuple, str | None] = {}
 
 
-def handle_cd_command(arg: str) -> tuple[bool, str | None]:
+def handle_cd_command(command: list[str]) -> tuple[bool, str | None]:
     """Handles a `cd` shell command by calling python's os.chdir."""
-    CD_CMD = "cd"
-    tokens: list[str] = []
-    try:
-        tokens = shlex.split(arg, posix=not WIN)
-    except ValueError:
-        return False, 'Cannot parse cd command.'
-    if not tokens:
+    if not command[0].lower() == 'cd':
         return False, 'Not a cd command.'
-    if not tokens[0].lower() == CD_CMD:
-        return False, 'Not a cd command.'
-    if len(tokens) != 2:
+    if len(command) != 2:
         return False, 'Exactly one directory name must be provided.'
-    directory = tokens[1]
+    directory = command[1]
     try:
         os.chdir(directory)
         click.echo(os.getcwd(), err=True)

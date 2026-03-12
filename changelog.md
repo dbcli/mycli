@@ -1,3 +1,12 @@
+Upcoming (TBD)
+==============
+
+Features
+---------
+* Add `-r` raw mode to `system` command.
+* Set timeouts, show exit codes, and better formatting for `system` commands.
+
+
 1.63.0 (2026/03/12)
 ==============
 
