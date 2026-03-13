@@ -365,31 +365,65 @@ def delete_favorite_query(arg: str, **_) -> list[SQLResult]:
     return [SQLResult(status=status)]
 
 
-@special_command("system", "system <command>", "Execute a system shell commmand.")
+@special_command("system", "system [-r] <command>", "Execute a system shell command (raw mode with -r).")
 def execute_system_command(arg: str, **_) -> list[SQLResult]:
     """Execute a system shell command."""
-    usage = "Syntax: system [command].\n"
+    usage = "Syntax: system [-r] [command].\n-r denotes \"raw\" mode, in which output is passed through without formatting."
 
-    if not arg:
+    IMPLICIT_RAW_MODE_COMMANDS = {
+        'clear',
+        'vim',
+        'vi',
+        'bash',
+        'zsh',
+    }
+
+    if not arg.strip():
         return [SQLResult(status=usage)]
 
     try:
-        command = arg.strip()
-        if command.startswith("cd"):
-            ok, error_message = handle_cd_command(arg)
-            if not ok:
-                return [SQLResult(status=error_message)]
-            return [SQLResult(status="")]
+        command = shlex.split(arg.strip(), posix=not WIN)
+    except ValueError as e:
+        return [SQLResult(status=f"Cannot parse system command: {e}")]
 
-        args = arg.split(" ")
-        process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        output, error = process.communicate()
-        response = output if not error else error
+    raw = False
+    if command[0] == '-r':
+        command.pop(0)
+        raw = True
+    elif command[0].lower() in IMPLICIT_RAW_MODE_COMMANDS:
+        raw = True
 
-        encoding = locale.getpreferredencoding(False)
-        response_str = response.decode(encoding)
+    if not command:
+        return [SQLResult(status=usage)]
 
-        return [SQLResult(status=response_str)]
+    if command[0].lower() == 'cd':
+        ok, error_message = handle_cd_command(command)
+        if not ok:
+            return [SQLResult(status=error_message)]
+        return [SQLResult()]
+
+    try:
+        if raw:
+            completed_process = subprocess.run(command, check=False)
+            if completed_process.returncode:
+                return [SQLResult(status=f'Command exited with return code {completed_process.returncode}')]
+            else:
+                return [SQLResult()]
+        else:
+            process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            try:
+                output, error = process.communicate(timeout=60)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                output, error = process.communicate()
+            response = output if not error else error
+            encoding = locale.getpreferredencoding(False)
+            response_str = response.decode(encoding)
+            if process.returncode:
+                status = f'Command exited with return code {process.returncode}'
+            else:
+                status = None
+            return [SQLResult(preamble=response_str, status=status)]
     except OSError as e:
         return [SQLResult(status=f"OSError: {e.strerror}")]
 

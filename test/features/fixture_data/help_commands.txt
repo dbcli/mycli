@@ -28,7 +28,7 @@
 | rehash         | \#       | rehash                          | Refresh auto-completions.                                   |
 | source         | \.       | source <filename>               | Execute queries from a file.                                |
 | status         | \s       | status                          | Get status information from the server.                     |
-| system         | <null>   | system <command>                | Execute a system shell commmand.                            |
+| system         | <null>   | system [-r] <command>           | Execute a system shell command (raw mode with -r).          |
 | tableformat    | \T       | tableformat <format>            | Change the table format used to output interactive results. |
 | tee            | <null>   | tee [-o] <filename>             | Append all results to an output file (overwrite using -o).  |
 | use            | \u       | use <database>                  | Change to a new database.                                   |

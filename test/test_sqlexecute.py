@@ -290,7 +290,7 @@ def test_cd_command_with_one_nonexistent_folder_name(executor):
 def test_cd_command_with_one_real_folder_name(executor):
     results = run(executor, 'system cd screenshots')
     # todo would be better to capture stderr but there was a problem with capsys
-    assert results[0]['status_plain'] == ''
+    assert results[0]['status_plain'] is None
 
 
 @dbtest
@@ -304,7 +304,11 @@ def test_cd_command_with_two_folder_names(executor):
 @dbtest
 def test_cd_command_unbalanced(executor):
     results = run(executor, "system cd 'one")
-    assert_result_equal(results, status='Cannot parse cd command.', status_plain='Cannot parse cd command.')
+    assert_result_equal(
+        results,
+        status='Cannot parse system command: No closing quotation',
+        status_plain='Cannot parse system command: No closing quotation',
+    )
 
 
 @dbtest
@@ -322,7 +326,7 @@ def test_system_command_output(executor):
     test_dir = os.path.abspath(os.path.dirname(__file__))
     test_file_path = os.path.join(test_dir, "test.txt")
     results = run(executor, f"system cat {test_file_path}")
-    assert_result_equal(results, status=f"mycli rocks!{eol}", status_plain=f"mycli rocks!{eol}")
+    assert_result_equal(results, preamble=f"mycli rocks!{eol}")
 
 
 @dbtest
