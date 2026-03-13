@@ -8,6 +8,11 @@ Features
 * Add a dependencies section to `--checkup`.
 
 
+Bug Fixes
+---------
+* Require `sqlglot` 29.x, suppressing a deprecation warning.
+
+
 1.63.0 (2026/03/12)
 ==============
 
