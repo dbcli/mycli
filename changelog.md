@@ -5,6 +5,7 @@ Features
 ---------
 * Add `-r` raw mode to `system` command.
 * Set timeouts, show exit codes, and better formatting for `system` commands.
+* Add a dependencies section to `--checkup`.
 
 
 1.63.0 (2026/03/12)
