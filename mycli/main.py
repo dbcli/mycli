@@ -1702,6 +1702,8 @@ class MyCli:
         if re.match(r'^[\d\.]+$', short_prompt_host):
             short_prompt_host = prompt_host
         now = datetime.now()
+        backslash_placeholder = '\ufffc_backslash'
+        string = string.replace('\\\\', backslash_placeholder)
         string = string.replace("\\u", sqlexecute.user or "(none)")
         string = string.replace("\\h", prompt_host or "(none)")
         string = string.replace("\\H", short_prompt_host or "(none)")
@@ -1721,6 +1723,7 @@ class MyCli:
         string = string.replace("\\K", sqlexecute.socket or str(sqlexecute.port))
         string = string.replace("\\A", self.dsn_alias or "(none)")
         string = string.replace("\\_", " ")
+        string = string.replace(backslash_placeholder, '\\')
 
         # jump through hoops for the test environment, and for efficiency
         if hasattr(sqlexecute, 'conn') and sqlexecute.conn is not None:

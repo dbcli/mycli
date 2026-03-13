@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Features
+---------
+* Add prompt format string for literal backslash.
+
+
 1.64.0 (2026/03/13)
 ==============
 
