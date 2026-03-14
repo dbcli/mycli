@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Features
+---------
+* Add collation completions, and complete charsets in more positions.
+
+
 1.64.0 (2026/03/13)
 ==============
 
