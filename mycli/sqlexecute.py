@@ -105,6 +105,8 @@ class SQLExecute:
 
     character_sets_query = '''SHOW CHARACTER SET'''
 
+    collations_query = '''SHOW COLLATION'''
+
     table_columns_query = """select TABLE_NAME, COLUMN_NAME from information_schema.columns
                                     where table_schema = %s
                                     order by table_name,ordinal_position"""
@@ -478,6 +480,20 @@ class SQLExecute:
                 cur.execute(self.character_sets_query)
             except pymysql.DatabaseError as e:
                 _logger.error('No character_set completions due to %r', e)
+                yield ()
+            else:
+                yield from cur
+
+    def collations(self) -> Generator[tuple, None, None]:
+        """Yields tuples of (collation_name, )"""
+
+        assert isinstance(self.conn, Connection)
+        with self.conn.cursor() as cur:
+            _logger.debug("Collations Query. sql: %r", self.collations_query)
+            try:
+                cur.execute(self.collations_query)
+            except pymysql.DatabaseError as e:
+                _logger.error('No collations completions due to %r', e)
                 yield ()
             else:
                 yield from cur

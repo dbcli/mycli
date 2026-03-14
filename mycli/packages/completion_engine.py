@@ -39,6 +39,23 @@ def _enum_value_suggestion(text_before_cursor: str, full_text: str) -> dict[str,
     }
 
 
+def _charset_suggestion(tokens: list[Token]) -> list[dict[str, str]] | None:
+    token_values = [token.value.lower() for token in tokens if token.value]
+
+    if len(token_values) >= 2 and token_values[-1] == 'set' and token_values[-2] == 'character':
+        return [{'type': 'character_set'}]
+    if len(token_values) >= 3 and token_values[-2] == 'set' and token_values[-3] == 'character':
+        return [{'type': 'character_set'}]
+    if len(token_values) >= 5 and token_values[-1] == 'using' and token_values[-4] == 'convert':
+        return [{'type': 'character_set'}]
+    if len(token_values) >= 6 and token_values[-2] == 'using' and token_values[-5] == 'convert':
+        return [{'type': 'character_set'}]
+    if len(token_values) >= 1 and token_values[-1] == 'collate':
+        return [{'type': 'collation'}]
+
+    return None
+
+
 def _is_where_or_having(token: Token | None) -> bool:
     return bool(token and token.value and token.value.lower() in ("where", "having"))
 
@@ -261,6 +278,7 @@ def suggest_based_on_last_token(
 
     # don't suggest anything inside a string or number
     if word_before_cursor:
+        # todo: example where this fails: completing on COLLATE with string "0900"
         if re.match(r'^[\d\.]', word_before_cursor[0]):
             return []
         # more efficient if no space was typed yet in the string
@@ -271,6 +289,14 @@ def suggest_based_on_last_token(
         # faster would be to peek inside the Pygments lexer run by prompt_toolkit -- how?
         if is_inside_quotes(text_before_cursor, -1) in ['single', 'double']:
             return []
+
+    try:
+        # todo: pass in the complete list of tokens to avoid multiple parsing passes
+        parsed = sqlparse.parse(text_before_cursor)[0]
+        tokens_wo_space = [x for x in parsed.tokens if x.ttype != sqlparse.tokens.Token.Text.Whitespace]
+    except (AttributeError, IndexError, ValueError, sqlparse.exceptions.SQLParseError):
+        parsed = sqlparse.sql.Statement()
+        tokens_wo_space = []
 
     if isinstance(token, str):
         token_v = token.lower()
@@ -286,7 +312,15 @@ def suggest_based_on_last_token(
         # sqlparse groups all tokens from the where clause into a single token
         # list. This means that token.value may be something like
         # 'where foo > 5 and '. We need to look "inside" token.tokens to handle
-        # suggestions in complicated where clauses correctly
+        # suggestions in complicated where clauses correctly.
+        #
+        # This logic also needs to look even deeper in to the WHERE clause.
+        # We recapitulate some transcoding suggestions here, but cannot
+        # recapitulate the entire logic of this function.
+        where_tokens = [x for x in token.tokens if x.ttype != sqlparse.tokens.Token.Text.Whitespace]
+        if transcoding_suggestion := _charset_suggestion(where_tokens):
+            return transcoding_suggestion
+
         original_text = text_before_cursor
         prev_keyword, text_before_cursor = find_prev_keyword(text_before_cursor)
         enum_suggestion = _enum_value_suggestion(original_text, full_text)
@@ -303,12 +337,12 @@ def suggest_based_on_last_token(
 
     if not token:
         return [{"type": "keyword"}, {"type": "special"}]
-    elif token_v == "*":
-        return [{"type": "keyword"}]
-    elif token_v.endswith("("):
-        p = sqlparse.parse(text_before_cursor)[0]
 
-        if p.tokens and isinstance(p.tokens[-1], Where):
+    if token_v == "*":
+        return [{"type": "keyword"}]
+
+    if token_v.endswith("("):
+        if parsed.tokens and isinstance(parsed.tokens[-1], Where):
             # Four possibilities:
             #  1 - Parenthesized clause like "WHERE foo AND ("
             #        Suggest columns/functions
@@ -323,7 +357,7 @@ def suggest_based_on_last_token(
             column_suggestions = suggest_based_on_last_token("where", text_before_cursor, None, full_text, identifier)
 
             # Check for a subquery expression (cases 3 & 4)
-            where = p.tokens[-1]
+            where = parsed.tokens[-1]
             _idx, prev_tok = where.token_prev(len(where.tokens) - 1)
 
             if isinstance(prev_tok, Comparison):
@@ -337,25 +371,29 @@ def suggest_based_on_last_token(
                 return column_suggestions
 
         # Get the token before the parens
-        idx, prev_tok = p.token_prev(len(p.tokens) - 1)
+        idx, prev_tok = parsed.token_prev(len(parsed.tokens) - 1)
         if prev_tok and prev_tok.value and prev_tok.value.lower() == "using":
             # tbl1 INNER JOIN tbl2 USING (col1, col2)
             tables = extract_tables(full_text)
 
             # suggest columns that are present in more than one table
             return [{"type": "column", "tables": tables, "drop_unique": True}]
-        elif p.token_first().value.lower() == "select":
+        elif parsed.tokens and parsed.token_first().value.lower() == "select":
             # If the lparen is preceeded by a space chances are we're about to
             # do a sub-select.
             if last_word(text_before_cursor, "all_punctuations").startswith("("):
                 return [{"type": "keyword"}]
-        elif p.token_first().value.lower() == "show":
+        elif parsed.tokens and parsed.token_first().value.lower() == "show":
             return [{"type": "show"}]
 
         # We're probably in a function argument list
         return [{"type": "column", "tables": extract_tables(full_text)}]
     elif token_v in ("call"):
         return [{"type": "procedure", "schema": []}]
+    elif token_v in ('set') and len(tokens_wo_space) >= 3 and tokens_wo_space[-3].value.lower() == 'character':
+        return [{'type': 'character_set'}]
+    elif token_v in ('set') and len(tokens_wo_space) >= 2 and tokens_wo_space[-2].value.lower() == 'character':
+        return [{'type': 'character_set'}]
     elif token_v in ("set", "order by", "distinct"):
         return [{"type": "column", "tables": extract_tables(full_text)}]
     elif token_v == "as":
@@ -364,13 +402,19 @@ def suggest_based_on_last_token(
     elif token_v in ("show"):
         return [{"type": "show"}]
     elif token_v in ("to",):
-        p = sqlparse.parse(text_before_cursor)[0]
-        if p.token_first().value.lower() == "change":
+        if parsed.tokens and parsed.token_first().value.lower() == "change":
             return [{"type": "change"}]
         else:
             return [{"type": "user"}]
     elif token_v in ("user", "for"):
         return [{"type": "user"}]
+    elif token_v in ('collate'):
+        return [{'type': 'collation'}]
+    # some duplication with _charset_suggestion()
+    elif token_v in ('using') and len(tokens_wo_space) >= 5 and tokens_wo_space[-5].value.lower() == 'convert':
+        return [{'type': 'character_set'}]
+    elif token_v in ('using') and len(tokens_wo_space) >= 4 and tokens_wo_space[-4].value.lower() == 'convert':
+        return [{'type': 'character_set'}]
     elif token_v in ("select", "where", "having"):
         # Check for a table alias or schema qualification
         parent = (identifier and identifier.get_parent_name()) or []
@@ -399,7 +443,7 @@ def suggest_based_on_last_token(
             return [
                 {"type": "column", "tables": tables},
                 {"type": "function", "schema": []},
-                {"type": "introducer", "schema": []},
+                {"type": "introducer"},
                 {"type": "alias", "aliases": aliases},
             ]
     elif (
