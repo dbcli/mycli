@@ -17,6 +17,30 @@ _ENUM_VALUE_RE = re.compile(
     re.IGNORECASE,
 )
 
+# missing because not binary
+#   BETWEEN
+#   CASE
+# missing because parens are used
+#   IN(), and others
+# unary operands might need to have another set
+#   not, !, ~
+# arrow operators only take a literal on the right
+#   and so might need different treatment
+# := might also need a different context
+# sqlparse would call these identifiers, so they are excluded
+#   xor
+# these are hitting the recursion guard, and so not completing after
+# so we might as well leave them out:
+#   is, 'is not', mod
+# sqlparse might also parse "not null" together
+# should also verify how sqlparse parses every space-containing case
+BINARY_OPERANDS = {
+    '&', '>', '>>', '>=', '<', '<>', '!=', '<<', '<=', '<=>', '%',
+    '*', '+', '-', '->', '->>', '/', ':=', '=', '^', 'and', '&&', 'div',
+    'like', 'not like', 'not regexp', 'or', '||', 'regexp', 'rlike',
+    'sounds like', '|',
+}  # fmt: skip
+
 
 def _enum_value_suggestion(text_before_cursor: str, full_text: str) -> dict[str, Any] | None:
     match = _ENUM_VALUE_RE.search(text_before_cursor)
@@ -299,8 +323,6 @@ def suggest_based_on_last_token(
     else:
         token_v = token.value.lower()
 
-    is_operand = lambda x: x and any(x.endswith(op) for op in ["+", "-", "*", "/"])  # noqa: E731
-
     if not token:
         return [{"type": "keyword"}, {"type": "special"}]
     elif token_v == "*":
@@ -468,11 +490,19 @@ def suggest_based_on_last_token(
     elif is_inside_quotes(text_before_cursor, -1) in ['single', 'double']:
         return []
 
-    elif token_v.endswith(",") or is_operand(token_v) or token_v in ["=", "and", "or"]:
+    elif token_v.endswith(",") or token_v in BINARY_OPERANDS:
         original_text = text_before_cursor
         prev_keyword, text_before_cursor = find_prev_keyword(text_before_cursor)
         enum_suggestion = _enum_value_suggestion(original_text, full_text)
-        fallback = suggest_based_on_last_token(prev_keyword, text_before_cursor, None, full_text, identifier) if prev_keyword else []
+
+        # guard against non-progressing parser rewinds, which can otherwise
+        # recurse forever on some operator shapes.
+        if prev_keyword and text_before_cursor.rstrip() != original_text.rstrip():
+            fallback = suggest_based_on_last_token(prev_keyword, text_before_cursor, None, full_text, identifier)
+        else:
+            # perhaps this fallback should include columns
+            fallback = [{"type": "keyword"}]
+
         if enum_suggestion and _is_where_or_having(prev_keyword):
             return [enum_suggestion] + fallback
         return fallback

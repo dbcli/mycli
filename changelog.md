@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Features
+---------
+* Improve completions after operators, by recognizing more operators.
+
+
 1.64.0 (2026/03/13)
 ==============
 
