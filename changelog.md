@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Bug Fixes
+---------
+* Suppress warnings when `sqlglotrs` is installed.
+
+
 1.64.0 (2026/03/13)
 ==============
 
