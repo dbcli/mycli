@@ -10,6 +10,7 @@ Features
 Bug Fixes
 ---------
 * Suppress warnings when `sqlglotrs` is installed.
+* Improve completions after operators, by recognizing more operators.
 
 
 1.64.0 (2026/03/13)
