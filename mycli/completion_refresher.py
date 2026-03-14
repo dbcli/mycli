@@ -165,6 +165,11 @@ def refresh_character_sets(completer: SQLCompleter, executor: SQLExecute) -> Non
     completer.extend_character_sets(executor.character_sets())
 
 
+@refresher("collations")
+def refresh_collations(completer: SQLCompleter, executor: SQLExecute) -> None:
+    completer.extend_collations(executor.collations())
+
+
 @refresher("special_commands")
 def refresh_special(completer: SQLCompleter, executor: SQLExecute) -> None:
     completer.extend_special_commands(list(COMMANDS.keys()))
