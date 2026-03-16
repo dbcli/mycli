@@ -135,6 +135,76 @@ def test_introducer_completion(completer, complete_event):
     assert '_utf8mb4' in result_text
 
 
+def test_collation_completion(completer, complete_event):
+    completer.extend_collations([('utf16le_bin',), ('utf8mb4_unicode_ci',)])
+    text = 'SELECT "text" COLLATE '
+    position = len(text)
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    result_text = [item.text for item in result]
+    assert 'utf16le_bin' in result_text
+    assert 'utf8mb4_unicode_ci' in result_text
+
+
+def test_transcoding_completion_1(completer, complete_event):
+    completer.extend_character_sets([('latin1',), ('utf8mb4',)])
+    text = 'SELECT CONVERT("text" USING '
+    position = len(text)
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    result_text = [item.text for item in result]
+    assert 'latin1' in result_text
+    assert 'utf8mb4' in result_text
+
+
+def test_transcoding_completion_2(completer, complete_event):
+    completer.extend_character_sets([('utf8mb3',), ('utf8mb4',)])
+    text = 'SELECT CONVERT("text" USING u'
+    position = len(text)
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    result_text = [item.text for item in result]
+    assert 'utf8mb3' in result_text
+    assert 'utf8mb4' in result_text
+
+
+def test_transcoding_completion_3(completer, complete_event):
+    completer.extend_character_sets([('latin1',), ('utf8mb4',)])
+    text = 'SELECT CAST("text" AS CHAR CHARACTER SET '
+    position = len(text)
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    result_text = [item.text for item in result]
+    assert 'latin1' in result_text
+    assert 'utf8mb4' in result_text
+
+
+def test_transcoding_completion_4(completer, complete_event):
+    completer.extend_character_sets([('utf8mb3',), ('utf8mb4',)])
+    text = 'SELECT CAST("text" AS CHAR CHARACTER SET u'
+    position = len(text)
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    result_text = [item.text for item in result]
+    assert 'utf8mb3' in result_text
+    assert 'utf8mb4' in result_text
+
+
+def test_where_transcoding_completion_1(completer, complete_event):
+    completer.extend_character_sets([('latin1',), ('utf8mb4',)])
+    text = 'SELECT * FROM users WHERE CONVERT(email USING '
+    position = len(text)
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    result_text = [item.text for item in result]
+    assert 'latin1' in result_text
+    assert 'utf8mb4' in result_text
+
+
+def test_where_transcoding_completion_2(completer, complete_event):
+    completer.extend_character_sets([('latin1',), ('utf8mb4',)])
+    text = 'SELECT * FROM users WHERE CAST(email AS CHAR CHARACTER SET '
+    position = len(text)
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    result_text = [item.text for item in result]
+    assert 'latin1' in result_text
+    assert 'utf8mb4' in result_text
+
+
 def test_table_completion(completer, complete_event):
     text = "SELECT * FROM "
     position = len(text)
