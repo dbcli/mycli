@@ -122,6 +122,7 @@ wider_completion_menu = False
 # * \A - DSN alias
 # * \n - a newline
 # * \_ - a space
+# * \\ - a literal backslash
 # * \x1b[...m - an ANSI escape sequence (can style with color)
 prompt = "\t \u@\h:\d> "
 prompt_continuation = ->
