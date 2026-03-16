@@ -126,6 +126,27 @@ def test_operand_inside_function_suggests_cols2():
     assert suggestion == [{"type": "column", "tables": [(None, "tbl", None)]}]
 
 
+def test_operand_inside_function_suggests_cols3():
+    suggestion = suggest_type("SELECT MAX(col1 ||  FROM tbl", "SELECT MAX(col1 || ")
+    assert suggestion == [{"type": "column", "tables": [(None, "tbl", None)]}]
+
+
+def test_operand_inside_function_suggests_cols4():
+    suggestion = suggest_type("SELECT MAX(col1 LIKE  FROM tbl", "SELECT MAX(col1 LIKE ")
+    assert suggestion == [{"type": "column", "tables": [(None, "tbl", None)]}]
+
+
+def test_operand_inside_function_suggests_cols5():
+    suggestion = suggest_type("SELECT MAX(col1 DIV  FROM tbl", "SELECT MAX(col1 DIV ")
+    assert suggestion == [{"type": "column", "tables": [(None, "tbl", None)]}]
+
+
+@pytest.mark.xfail
+def test_arrow_op_inside_function_suggests_nothing():
+    suggestion = suggest_type("SELECT MAX(col1->  FROM tbl", "SELECT MAX(col1->")
+    assert suggestion == []
+
+
 def test_select_suggests_cols_and_funcs():
     suggestions = suggest_type("SELECT ", "SELECT ")
     assert sorted_dicts(suggestions) == sorted_dicts([
@@ -418,6 +439,8 @@ def test_join_alias_dot_suggests_cols2(sql):
     [
         "select a.x, b.y from abc a join bcd b on ",
         "select a.x, b.y from abc a join bcd b on a.id = b.id OR ",
+        "select a.x, b.y from abc a join bcd b on a.id = b.id + ",
+        "select a.x, b.y from abc a join bcd b on a.id = b.id < ",
     ],
 )
 def test_on_suggests_aliases(sql):
