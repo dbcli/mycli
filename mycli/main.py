@@ -2022,7 +2022,7 @@ class MyCli:
 )
 @click.option("--checkup", is_flag=True, help="Run a checkup on your config file.")
 @click.pass_context
-def cli(
+def click_entrypoint(
     ctx: click.Context,
     database: str | None,
     user: str | None,
@@ -2696,5 +2696,31 @@ def read_ssh_config(ssh_config_path: str):
         return ssh_config
 
 
+def main() -> int | None:
+    try:
+        result = click_entrypoint.main(
+            sys.argv[1:],
+            standalone_mode=False,  # disable builtin exception handling
+            prog_name='mycli',
+        )
+    except click.Abort:
+        print('Aborted!', file=sys.stderr)
+        sys.exit(1)
+    except BrokenPipeError:
+        sys.exit(1)
+    except click.ClickException as e:
+        e.show()
+        if hasattr(e, 'exit_code'):
+            sys.exit(e.exit_code)
+        else:
+            sys.exit(2)
+    if result is None:
+        return 0
+    elif isinstance(result, int):
+        return result
+    else:
+        return 1
+
+
 if __name__ == "__main__":
-    cli()
+    sys.exit(main())

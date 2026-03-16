@@ -20,7 +20,7 @@ from mycli.constants import (
     DEFAULT_USER,
     TEST_DATABASE,
 )
-from mycli.main import EMPTY_PASSWORD_FLAG_SENTINEL, MyCli, cli, thanks_picker
+from mycli.main import EMPTY_PASSWORD_FLAG_SENTINEL, MyCli, click_entrypoint, thanks_picker
 from mycli.packages.parseutils import is_valid_connection_scheme
 import mycli.packages.special
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
@@ -134,7 +134,7 @@ def test_select_from_empty_table(executor):
     run(executor, """create table t1(id int)""")
     sql = "select * from t1"
     runner = CliRunner()
-    result = runner.invoke(cli, args=CLI_ARGS + ["-t"], input=sql)
+    result = runner.invoke(click_entrypoint, args=CLI_ARGS + ["-t"], input=sql)
     expected = dedent("""\
         +----+
         | id |
@@ -158,7 +158,7 @@ def test_ssl_mode_on(executor, capsys):
     runner = CliRunner()
     ssl_mode = "on"
     sql = "select * from performance_schema.session_status where variable_name = 'Ssl_cipher'"
-    result = runner.invoke(cli, args=CLI_ARGS + ["--csv", "--ssl-mode", ssl_mode], input=sql)
+    result = runner.invoke(click_entrypoint, args=CLI_ARGS + ["--csv", "--ssl-mode", ssl_mode], input=sql)
     result_dict = next(csv.DictReader(result.stdout.split("\n")))
     ssl_cipher = result_dict.get("VARIABLE_VALUE", None)
     assert ssl_cipher
@@ -169,7 +169,7 @@ def test_ssl_mode_auto(executor, capsys):
     runner = CliRunner()
     ssl_mode = "auto"
     sql = "select * from performance_schema.session_status where variable_name = 'Ssl_cipher'"
-    result = runner.invoke(cli, args=CLI_ARGS + ["--csv", "--ssl-mode", ssl_mode], input=sql)
+    result = runner.invoke(click_entrypoint, args=CLI_ARGS + ["--csv", "--ssl-mode", ssl_mode], input=sql)
     result_dict = next(csv.DictReader(result.stdout.split("\n")))
     ssl_cipher = result_dict.get("VARIABLE_VALUE", None)
     assert ssl_cipher
@@ -180,7 +180,7 @@ def test_ssl_mode_off(executor, capsys):
     runner = CliRunner()
     ssl_mode = "off"
     sql = "select * from performance_schema.session_status where variable_name = 'Ssl_cipher'"
-    result = runner.invoke(cli, args=CLI_ARGS + ["--csv", "--ssl-mode", ssl_mode], input=sql)
+    result = runner.invoke(click_entrypoint, args=CLI_ARGS + ["--csv", "--ssl-mode", ssl_mode], input=sql)
     result_dict = next(csv.DictReader(result.stdout.split("\n")))
     ssl_cipher = result_dict.get("VARIABLE_VALUE", None)
     assert not ssl_cipher
@@ -191,7 +191,7 @@ def test_ssl_mode_overrides_ssl(executor, capsys):
     runner = CliRunner()
     ssl_mode = "off"
     sql = "select * from performance_schema.session_status where variable_name = 'Ssl_cipher'"
-    result = runner.invoke(cli, args=CLI_ARGS + ["--csv", "--ssl-mode", ssl_mode, "--ssl"], input=sql)
+    result = runner.invoke(click_entrypoint, args=CLI_ARGS + ["--csv", "--ssl-mode", ssl_mode, "--ssl"], input=sql)
     result_dict = next(csv.DictReader(result.stdout.split("\n")))
     ssl_cipher = result_dict.get("VARIABLE_VALUE", None)
     assert not ssl_cipher
@@ -202,7 +202,7 @@ def test_ssl_mode_overrides_no_ssl(executor, capsys):
     runner = CliRunner()
     ssl_mode = "on"
     sql = "select * from performance_schema.session_status where variable_name = 'Ssl_cipher'"
-    result = runner.invoke(cli, args=CLI_ARGS + ["--csv", "--ssl-mode", ssl_mode, "--no-ssl"], input=sql)
+    result = runner.invoke(click_entrypoint, args=CLI_ARGS + ["--csv", "--ssl-mode", ssl_mode, "--no-ssl"], input=sql)
     result_dict = next(csv.DictReader(result.stdout.split("\n")))
     ssl_cipher = result_dict.get("VARIABLE_VALUE", None)
     assert ssl_cipher
@@ -401,7 +401,7 @@ def test_output_ddl_with_warning_and_show_warnings_enabled(executor):
     db = TEST_DATABASE
     table = "table_that_definitely_does_not_exist_1234"
     sql = f"DROP TABLE IF EXISTS {db}.{table}"
-    result = runner.invoke(cli, args=CLI_ARGS + ["--show-warnings", "--no-warn"], input=sql)
+    result = runner.invoke(click_entrypoint, args=CLI_ARGS + ["--show-warnings", "--no-warn"], input=sql)
     expected = f"Level\tCode\tMessage\nNote\t1051\tUnknown table '{db}.table_that_definitely_does_not_exist_1234'\n"
     assert expected in result.output
 
@@ -410,7 +410,7 @@ def test_output_ddl_with_warning_and_show_warnings_enabled(executor):
 def test_output_with_warning_and_show_warnings_enabled(executor):
     runner = CliRunner()
     sql = "SELECT 1 + '0 foo'"
-    result = runner.invoke(cli, args=CLI_ARGS + ["--show-warnings"], input=sql)
+    result = runner.invoke(click_entrypoint, args=CLI_ARGS + ["--show-warnings"], input=sql)
     expected = "1 + '0 foo'\n1.0\nLevel\tCode\tMessage\nWarning\t1292\tTruncated incorrect DOUBLE value: '0 foo'\n"
     assert expected in result.output
 
@@ -419,7 +419,7 @@ def test_output_with_warning_and_show_warnings_enabled(executor):
 def test_output_with_warning_and_show_warnings_disabled(executor):
     runner = CliRunner()
     sql = "SELECT 1 + '0 foo'"
-    result = runner.invoke(cli, args=CLI_ARGS + ["--no-show-warnings"], input=sql)
+    result = runner.invoke(click_entrypoint, args=CLI_ARGS + ["--no-show-warnings"], input=sql)
     expected = "1 + '0 foo'\n1.0\nLevel\tCode\tMessage\nWarning\t1292\tTruncated incorrect DOUBLE value: '0 foo'\n"
     assert expected not in result.output
 
@@ -428,7 +428,7 @@ def test_output_with_warning_and_show_warnings_disabled(executor):
 def test_output_with_multiple_warnings_in_single_statement(executor):
     runner = CliRunner()
     sql = "SELECT 1 + '0 foo', 2 + '0 foo'"
-    result = runner.invoke(cli, args=CLI_ARGS + ["--show-warnings"], input=sql)
+    result = runner.invoke(click_entrypoint, args=CLI_ARGS + ["--show-warnings"], input=sql)
     expected = (
         "1 + '0 foo'\t2 + '0 foo'\n"
         "1.0\t2.0\n"
@@ -443,7 +443,7 @@ def test_output_with_multiple_warnings_in_single_statement(executor):
 def test_output_with_multiple_warnings_in_multiple_statements(executor):
     runner = CliRunner()
     sql = "SELECT 1 + '0 foo'; SELECT 2 + '0 foo'"
-    result = runner.invoke(cli, args=CLI_ARGS + ["--show-warnings"], input=sql)
+    result = runner.invoke(click_entrypoint, args=CLI_ARGS + ["--show-warnings"], input=sql)
     expected = (
         "1 + '0 foo'\n"
         "1.0\n"
@@ -464,12 +464,12 @@ def test_execute_arg(executor):
 
     sql = "select * from test;"
     runner = CliRunner()
-    result = runner.invoke(cli, args=CLI_ARGS + ["-e", sql])
+    result = runner.invoke(click_entrypoint, args=CLI_ARGS + ["-e", sql])
 
     assert result.exit_code == 0
     assert "abc" in result.output
 
-    result = runner.invoke(cli, args=CLI_ARGS + ["--execute", sql])
+    result = runner.invoke(click_entrypoint, args=CLI_ARGS + ["--execute", sql])
 
     assert result.exit_code == 0
     assert "abc" in result.output
@@ -490,7 +490,7 @@ def test_execute_arg_with_checkpoint(executor):
     with NamedTemporaryFile(prefix=TEMPFILE_PREFIX, mode="w", delete=False) as checkpoint:
         checkpoint.close()
 
-    result = runner.invoke(cli, args=CLI_ARGS + ["--execute", sql, f"--checkpoint={checkpoint.name}"])
+    result = runner.invoke(click_entrypoint, args=CLI_ARGS + ["--execute", sql, f"--checkpoint={checkpoint.name}"])
     assert result.exit_code == 0
 
     with open(checkpoint.name, 'r') as f:
@@ -499,7 +499,7 @@ def test_execute_arg_with_checkpoint(executor):
     os.remove(checkpoint.name)
 
     sql = 'select 10 from nonexistent_table;'
-    result = runner.invoke(cli, args=CLI_ARGS + ["--execute", sql, f"--checkpoint={checkpoint.name}"])
+    result = runner.invoke(click_entrypoint, args=CLI_ARGS + ["--execute", sql, f"--checkpoint={checkpoint.name}"])
     assert result.exit_code != 0
 
     with open(checkpoint.name, 'r') as f:
@@ -522,7 +522,7 @@ def test_execute_arg_with_table(executor):
 
     sql = "select * from test;"
     runner = CliRunner()
-    result = runner.invoke(cli, args=CLI_ARGS + ["-e", sql] + ["--table"])
+    result = runner.invoke(click_entrypoint, args=CLI_ARGS + ["-e", sql] + ["--table"])
     expected = "+-----+\n| a   |\n+-----+\n| abc |\n+-----+\n"
 
     assert result.exit_code == 0
@@ -536,7 +536,7 @@ def test_execute_arg_with_csv(executor):
 
     sql = "select * from test;"
     runner = CliRunner()
-    result = runner.invoke(cli, args=CLI_ARGS + ["-e", sql] + ["--csv"])
+    result = runner.invoke(click_entrypoint, args=CLI_ARGS + ["-e", sql] + ["--csv"])
     expected = '"a"\n"abc"\n'
 
     assert result.exit_code == 0
@@ -551,7 +551,7 @@ def test_batch_mode(executor):
     sql = "select count(*) from test;\nselect * from test limit 1;"
 
     runner = CliRunner()
-    result = runner.invoke(cli, args=CLI_ARGS, input=sql)
+    result = runner.invoke(click_entrypoint, args=CLI_ARGS, input=sql)
 
     assert result.exit_code == 0
     assert "count(*)\n3\na\nabc\n" in "".join(result.output)
@@ -565,7 +565,7 @@ def test_batch_mode_multiline_statement(executor):
     sql = "select count(*)\nfrom test;\nselect * from test limit 1;"
 
     runner = CliRunner()
-    result = runner.invoke(cli, args=CLI_ARGS, input=sql)
+    result = runner.invoke(click_entrypoint, args=CLI_ARGS, input=sql)
 
     assert result.exit_code == 0
     assert "count(*)\n3\na\nabc\n" in "".join(result.output)
@@ -579,7 +579,7 @@ def test_batch_mode_table(executor):
     sql = "select count(*) from test;\nselect * from test limit 1;"
 
     runner = CliRunner()
-    result = runner.invoke(cli, args=CLI_ARGS + ["-t"], input=sql)
+    result = runner.invoke(click_entrypoint, args=CLI_ARGS + ["-t"], input=sql)
 
     expected = dedent("""\
         +----------+
@@ -605,7 +605,7 @@ def test_batch_mode_csv(executor):
     sql = "select * from test;"
 
     runner = CliRunner()
-    result = runner.invoke(cli, args=CLI_ARGS + ["--csv"], input=sql)
+    result = runner.invoke(click_entrypoint, args=CLI_ARGS + ["--csv"], input=sql)
 
     expected = '"a","b"\n"abc","de\nf"\n"ghi","jkl"\n'
 
@@ -620,7 +620,7 @@ def test_thanks_picker_utf8():
 
 def test_help_strings_end_with_periods():
     """Make sure click options have help text that end with a period."""
-    for param in cli.params:
+    for param in click_entrypoint.params:
         if isinstance(param, click.core.Option):
             assert hasattr(param, "help")
             assert param.help.endswith(".")
@@ -723,9 +723,9 @@ def test_list_dsn(monkeypatch):
         )
         myclirc.flush()
         args = ["--list-dsn", "--myclirc", myclirc.name]
-        result = runner.invoke(cli, args=args)
+        result = runner.invoke(click_entrypoint, args=args)
         assert result.output == "test\n"
-        result = runner.invoke(cli, args=args + ["--verbose"])
+        result = runner.invoke(click_entrypoint, args=args + ["--verbose"])
         assert result.output == "test : mysql://test/test\n"
 
     # delete=False means we should try to clean up
@@ -765,9 +765,9 @@ def test_list_ssh_config():
         )
         ssh_config.flush()
         args = ["--list-ssh-config", "--ssh-config-path", ssh_config.name]
-        result = runner.invoke(cli, args=args)
+        result = runner.invoke(click_entrypoint, args=args)
         assert "test\n" in result.output
-        result = runner.invoke(cli, args=args + ["--verbose"])
+        result = runner.invoke(click_entrypoint, args=args + ["--verbose"])
         assert "test : test.example.com\n" in result.output
 
     # delete=False means we should try to clean up
@@ -821,7 +821,7 @@ def test_dsn(monkeypatch):
 
     # When a user supplies a DSN as database argument to mycli,
     # use these values.
-    result = runner.invoke(mycli.main.cli, args=["mysql://dsn_user:dsn_passwd@dsn_host:1/dsn_database"])
+    result = runner.invoke(mycli.main.click_entrypoint, args=["mysql://dsn_user:dsn_passwd@dsn_host:1/dsn_database"])
     assert result.exit_code == 0, result.output + " " + str(result.exception)
     assert (
         MockMyCli.connect_args["user"] == "dsn_user"
@@ -837,7 +837,7 @@ def test_dsn(monkeypatch):
     # and used command line arguments, use the command line
     # arguments.
     result = runner.invoke(
-        mycli.main.cli,
+        mycli.main.click_entrypoint,
         args=[
             "mysql://dsn_user:dsn_passwd@dsn_host:2/dsn_database",
             "--user",
@@ -872,7 +872,7 @@ def test_dsn(monkeypatch):
 
     # When a user uses a DSN from the configuration file (alias_dsn),
     # use these values.
-    result = runner.invoke(cli, args=["--dsn", "test"])
+    result = runner.invoke(click_entrypoint, args=["--dsn", "test"])
     assert result.exit_code == 0, result.output + " " + str(result.exception)
     assert (
         MockMyCli.connect_args["user"] == "alias_dsn_user"
@@ -894,7 +894,7 @@ def test_dsn(monkeypatch):
     # When a user uses a DSN from the configuration file (alias_dsn)
     # and used command line arguments, use the command line arguments.
     result = runner.invoke(
-        cli,
+        click_entrypoint,
         args=[
             "--dsn",
             "test",
@@ -921,7 +921,7 @@ def test_dsn(monkeypatch):
     )
 
     # Use a DSN without password
-    result = runner.invoke(mycli.main.cli, args=["mysql://dsn_user@dsn_host:6/dsn_database"])
+    result = runner.invoke(mycli.main.click_entrypoint, args=["mysql://dsn_user@dsn_host:6/dsn_database"])
     assert result.exit_code == 0, result.output + " " + str(result.exception)
     assert (
         MockMyCli.connect_args["user"] == "dsn_user"
@@ -932,7 +932,7 @@ def test_dsn(monkeypatch):
     )
 
     # Use a DSN with query parameters
-    result = runner.invoke(mycli.main.cli, args=["mysql://dsn_user:dsn_passwd@dsn_host:6/dsn_database?ssl_mode=off"])
+    result = runner.invoke(mycli.main.click_entrypoint, args=["mysql://dsn_user:dsn_passwd@dsn_host:6/dsn_database?ssl_mode=off"])
     assert result.exit_code == 0, result.output + " " + str(result.exception)
     assert (
         MockMyCli.connect_args["user"] == "dsn_user"
@@ -955,7 +955,7 @@ def test_dsn(monkeypatch):
     }
 
     # keepalive_ticks as a query parameter
-    result = runner.invoke(mycli.main.cli, args=["mysql://dsn_user:dsn_passwd@dsn_host:6/dsn_database?keepalive_ticks=30"])
+    result = runner.invoke(mycli.main.click_entrypoint, args=["mysql://dsn_user:dsn_passwd@dsn_host:6/dsn_database?keepalive_ticks=30"])
     assert result.exit_code == 0, result.output + " " + str(result.exception)
     assert MockMyCli.connect_args["keepalive_ticks"] == 30
 
@@ -964,7 +964,7 @@ def test_dsn(monkeypatch):
     # When a user uses a DSN with query parameters, and also used command line
     # arguments, use the command line arguments.
     result = runner.invoke(
-        mycli.main.cli,
+        mycli.main.click_entrypoint,
         args=[
             'mysql://dsn_user:dsn_passwd@dsn_host:6/dsn_database?ssl_mode=off',
             '--ssl-mode=on',
@@ -980,7 +980,7 @@ def test_dsn(monkeypatch):
 
     # Accept a literal DSN with the --dsn flag (not only an alias)
     result = runner.invoke(
-        mycli.main.cli,
+        mycli.main.click_entrypoint,
         args=[
             '--dsn',
             'mysql://dsn_user:dsn_passwd@dsn_host:6/dsn_database',
@@ -997,7 +997,7 @@ def test_dsn(monkeypatch):
 
     # accept socket as a query parameter
     result = runner.invoke(
-        mycli.main.cli,
+        mycli.main.click_entrypoint,
         args=[
             f'mysql://dsn_user:dsn_passwd@{DEFAULT_HOST}/dsn_database?socket=mysql.sock',
         ],
@@ -1011,7 +1011,7 @@ def test_dsn(monkeypatch):
 
     # accept character_set as a query parameter
     result = runner.invoke(
-        mycli.main.cli,
+        mycli.main.click_entrypoint,
         args=[
             f'mysql://dsn_user:dsn_passwd@{DEFAULT_HOST}/dsn_database?character_set=latin1',
         ],
@@ -1025,7 +1025,7 @@ def test_dsn(monkeypatch):
 
     # --character_set overrides character_set as a query parameter
     result = runner.invoke(
-        mycli.main.cli,
+        mycli.main.click_entrypoint,
         args=[
             f'mysql://dsn_user:dsn_passwd@{DEFAULT_HOST}/dsn_database?character_set=latin1',
             '--character-set=utf8mb3',
@@ -1080,7 +1080,7 @@ def test_password_flag_uses_sentinel(monkeypatch):
     runner = CliRunner()
 
     result = runner.invoke(
-        mycli.main.cli,
+        mycli.main.click_entrypoint,
         args=[
             '--user',
             'user',
@@ -1153,7 +1153,7 @@ def test_ssh_config(monkeypatch):
         ssh_config.flush()
 
         # When a user supplies a ssh config.
-        result = runner.invoke(mycli.main.cli, args=["--ssh-config-path", ssh_config.name, "--ssh-config-host", "test"])
+        result = runner.invoke(mycli.main.click_entrypoint, args=["--ssh-config-path", ssh_config.name, "--ssh-config-host", "test"])
         assert result.exit_code == 0, result.output + " " + str(result.exception)
         assert (
             MockMyCli.connect_args["ssh_user"] == "joe"
@@ -1166,7 +1166,7 @@ def test_ssh_config(monkeypatch):
         # and used command line arguments, use the command line
         # arguments.
         result = runner.invoke(
-            mycli.main.cli,
+            mycli.main.click_entrypoint,
             args=[
                 "--ssh-config-path",
                 ssh_config.name,
@@ -1203,7 +1203,7 @@ def test_init_command_arg(executor):
     init_command = "set sql_select_limit=1000"
     sql = 'show variables like "sql_select_limit";'
     runner = CliRunner()
-    result = runner.invoke(cli, args=CLI_ARGS + ["--init-command", init_command], input=sql)
+    result = runner.invoke(click_entrypoint, args=CLI_ARGS + ["--init-command", init_command], input=sql)
 
     expected = "sql_select_limit\t1000\n"
     assert result.exit_code == 0
@@ -1215,7 +1215,7 @@ def test_init_command_multiple_arg(executor):
     init_command = "set sql_select_limit=2000; set max_join_size=20000"
     sql = 'show variables like "sql_select_limit";\nshow variables like "max_join_size"'
     runner = CliRunner()
-    result = runner.invoke(cli, args=CLI_ARGS + ["--init-command", init_command], input=sql)
+    result = runner.invoke(click_entrypoint, args=CLI_ARGS + ["--init-command", init_command], input=sql)
 
     expected_sql_select_limit = "sql_select_limit\t2000\n"
     expected_max_join_size = "max_join_size\t20000\n"
@@ -1231,7 +1231,7 @@ def test_global_init_commands(executor):
     # The global init-commands section in test/myclirc sets sql_select_limit=9999
     sql = 'show variables like "sql_select_limit";'
     runner = CliRunner()
-    result = runner.invoke(cli, args=CLI_ARGS, input=sql)
+    result = runner.invoke(click_entrypoint, args=CLI_ARGS, input=sql)
     expected = "sql_select_limit\t9999\n"
     assert result.exit_code == 0
     assert expected in result.output
@@ -1244,7 +1244,7 @@ def test_execute_with_logfile(executor):
     runner = CliRunner()
 
     with NamedTemporaryFile(prefix=TEMPFILE_PREFIX, mode="w", delete=False) as logfile:
-        result = runner.invoke(mycli.main.cli, args=CLI_ARGS + ["--logfile", logfile.name, "--execute", sql])
+        result = runner.invoke(mycli.main.click_entrypoint, args=CLI_ARGS + ["--logfile", logfile.name, "--execute", sql])
         assert result.exit_code == 0
 
     assert os.path.getsize(logfile.name) > 0
@@ -1320,7 +1320,7 @@ def test_batch_file(monkeypatch):
 
     try:
         result = runner.invoke(
-            mycli_main.cli,
+            mycli_main.click_entrypoint,
             args=['--batch', batch_file.name],
         )
         assert result.exit_code == 0
@@ -1334,7 +1334,7 @@ def test_execute_arg_warns_about_ignoring_stdin(monkeypatch):
     runner = CliRunner()
 
     # the test env should make sure stdin is not a TTY
-    result = runner.invoke(mycli_main.cli, args=['--execute', 'select 1;'])
+    result = runner.invoke(mycli_main.click_entrypoint, args=['--execute', 'select 1;'])
 
     # this exit_code is as written currently, but a debatable choice,
     # since there was a warning
@@ -1346,7 +1346,7 @@ def test_batch_file_open_error(monkeypatch):
     mycli_main, MockMyCli = _noninteractive_mock_mycli(monkeypatch)
     runner = CliRunner()
 
-    result = runner.invoke(mycli_main.cli, args=['--batch', 'definitely_missing_file.sql'])
+    result = runner.invoke(mycli_main.click_entrypoint, args=['--batch', 'definitely_missing_file.sql'])
 
     assert result.exit_code != 0
     assert 'Failed to open --batch file' in result.output
@@ -1362,7 +1362,7 @@ def test_execute_arg_supersedes_batch_file(monkeypatch):
 
     try:
         result = runner.invoke(
-            mycli_main.cli,
+            mycli_main.click_entrypoint,
             args=['--execute', 'select 1;', '--batch', batch_file.name],
         )
         # this exit_code is as written currently, but a debatable choice,
@@ -1387,7 +1387,7 @@ def test_null_string_config(monkeypatch):
         )
         myclirc.flush()
         args = CLI_ARGS + ['--myclirc', myclirc.name, '--format=table', '--execute', 'SELECT NULL']
-        result = runner.invoke(mycli.main.cli, args=args)
+        result = runner.invoke(mycli.main.click_entrypoint, args=args)
         assert '<nope>' in result.output
         assert '<null>' not in result.output
 
