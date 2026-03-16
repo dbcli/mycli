@@ -1,7 +1,16 @@
 import functools
 import logging
+import warnings
 
-import sqlglot
+with warnings.catch_warnings():
+    # for sqlglot v29.0.1
+    warnings.filterwarnings(
+        'ignore',
+        message=r'sqlglot\[rs\] is deprecated',
+        category=UserWarning,
+        module='sqlglot',
+    )
+    import sqlglot
 
 from mycli.compat import WIN
 from mycli.packages.special.delimitercommand import DelimiterCommand

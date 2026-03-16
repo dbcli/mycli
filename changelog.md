@@ -6,6 +6,12 @@ Features
 * Add prompt format string for literal backslash.
 
 
+Bug Fixes
+---------
+* Suppress warnings when `sqlglotrs` is installed.
+
+
+
 1.64.0 (2026/03/13)
 ==============
 

@@ -2,11 +2,21 @@ from __future__ import annotations
 
 import re
 from typing import Any, Generator, Literal
+import warnings
 
-import sqlglot
 import sqlparse
 from sqlparse.sql import Function, Identifier, IdentifierList, Token, TokenList
 from sqlparse.tokens import DML, Keyword, Punctuation
+
+with warnings.catch_warnings():
+    # for sqlglot v29.0.1
+    warnings.filterwarnings(
+        'ignore',
+        message=r'sqlglot\[rs\] is deprecated',
+        category=UserWarning,
+        module='sqlglot',
+    )
+    import sqlglot
 
 sqlparse.engine.grouping.MAX_GROUPING_DEPTH = None  # type: ignore[assignment]
 sqlparse.engine.grouping.MAX_GROUPING_TOKENS = None  # type: ignore[assignment]
