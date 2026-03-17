@@ -72,9 +72,9 @@ from mycli.constants import (
     DEFAULT_CHARSET,
     DEFAULT_HOST,
     DEFAULT_PORT,
-    HOME_URL,
     ISSUES_URL,
     REPO_URL,
+    SUPPORT_INFO,
 )
 from mycli.key_bindings import mycli_bindings
 from mycli.lexer import MyCliLexer
@@ -105,7 +105,6 @@ sqlparse.engine.grouping.MAX_GROUPING_TOKENS = None  # type: ignore[assignment]
 # Query tuples are used for maintaining history
 Query = namedtuple("Query", ["query", "successful", "mutating"])
 
-SUPPORT_INFO = f"Home: {HOME_URL}\nBug tracker: {ISSUES_URL}"
 DEFAULT_WIDTH = 80
 DEFAULT_HEIGHT = 25
 MIN_COMPLETION_TRIGGER = 1

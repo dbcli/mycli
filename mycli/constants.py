@@ -2,6 +2,7 @@ HOME_URL = 'https://mycli.net'
 REPO_URL = 'https://github.com/dbcli/mycli'
 DOCS_URL = f'{HOME_URL}/docs'
 ISSUES_URL = f'{REPO_URL}/issues'
+SUPPORT_INFO = f"Home: {HOME_URL}\nBug tracker: {ISSUES_URL}"
 
 DEFAULT_CHARSET = 'utf8mb4'
 DEFAULT_DATABASE = 'mysql'
