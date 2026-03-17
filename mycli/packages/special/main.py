@@ -54,6 +54,61 @@ class Verbosity(Enum):
     VERBOSE = "verbose"
 
 
+class ArgTypeExecutor:
+    def execute(
+        self,
+        special_cmd: SpecialCommand,
+        cur: Cursor,
+        sql: str,
+        arg: str,
+        verbosity: Verbosity,
+    ) -> list[SQLResult]:
+        raise NotImplementedError
+
+
+class NoQueryExecutor(ArgTypeExecutor):
+    def execute(
+        self,
+        special_cmd: SpecialCommand,
+        cur: Cursor,
+        sql: str,
+        arg: str,
+        verbosity: Verbosity,
+    ) -> list[SQLResult]:
+        return special_cmd.handler()
+
+
+class ParsedQueryExecutor(ArgTypeExecutor):
+    def execute(
+        self,
+        special_cmd: SpecialCommand,
+        cur: Cursor,
+        sql: str,
+        arg: str,
+        verbosity: Verbosity,
+    ) -> list[SQLResult]:
+        return special_cmd.handler(cur=cur, arg=arg, verbose=(verbosity == Verbosity.VERBOSE))
+
+
+class RawQueryExecutor(ArgTypeExecutor):
+    def execute(
+        self,
+        special_cmd: SpecialCommand,
+        cur: Cursor,
+        sql: str,
+        arg: str,
+        verbosity: Verbosity,
+    ) -> list[SQLResult]:
+        return special_cmd.handler(cur=cur, query=sql)
+
+
+ARG_TYPE_EXECUTORS: dict[ArgType, ArgTypeExecutor] = {
+    ArgType.NO_QUERY: NoQueryExecutor(),
+    ArgType.PARSED_QUERY: ParsedQueryExecutor(),
+    ArgType.RAW_QUERY: RawQueryExecutor(),
+}
+
+
 def parse_special_command(sql: str) -> tuple[str, Verbosity, str]:
     command, _, arg = sql.partition(" ")
     verbosity = Verbosity.NORMAL
@@ -147,14 +202,11 @@ def execute(cur: Cursor, sql: str) -> list[SQLResult]:
     if command == "help" and arg:
         return show_keyword_help(cur=cur, arg=arg)
 
-    if special_cmd.arg_type == ArgType.NO_QUERY:
-        return special_cmd.handler()
-    elif special_cmd.arg_type == ArgType.PARSED_QUERY:
-        return special_cmd.handler(cur=cur, arg=arg, verbose=(verbosity == Verbosity.VERBOSE))
-    elif special_cmd.arg_type == ArgType.RAW_QUERY:
-        return special_cmd.handler(cur=cur, query=sql)
+    executor = ARG_TYPE_EXECUTORS.get(special_cmd.arg_type)
+    if executor is None:
+        raise CommandNotFound(f"Command type not found: {command}")
 
-    raise CommandNotFound(f"Command type not found: {command}")
+    return executor.execute(special_cmd, cur=cur, sql=sql, arg=arg, verbosity=verbosity)
 
 
 @special_command(
