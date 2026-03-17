@@ -1,9 +1,5 @@
 import logging
-import webbrowser
-
-import prompt_toolkit
 from prompt_toolkit.application.current import get_app
-from prompt_toolkit.enums import EditingMode
 from prompt_toolkit.filters import (
     Condition,
     completion_is_selected,
@@ -13,11 +9,9 @@ from prompt_toolkit.filters import (
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from prompt_toolkit.selection import SelectionType
-
-from mycli.constants import DOCS_URL
+from mycli.key_binding_actions import KeyBindingActions
 from mycli.packages import shortcuts
 from mycli.packages.toolkit.fzf import search_history
-from mycli.packages.toolkit.utils import safe_invalidate_display
 
 _logger = logging.getLogger(__name__)
 
@@ -35,121 +29,78 @@ def in_completion() -> bool:
     return bool(app.current_buffer.complete_state)
 
 
-def print_f1_help():
-    app = get_app()
-    app.print_text('\n')
-    app.print_text([
-        ('', 'Inline help — type "'),
-        ('bold', 'help'),
-        ('', '" or "'),
-        ('bold', r'\?'),
-        ('', '"\n'),
-    ])
-    app.print_text([
-        ('', 'Docs index — '),
-        ('bold', DOCS_URL),
-        ('', '\n'),
-    ])
-    app.print_text('\n')
-
-
 def mycli_bindings(mycli) -> KeyBindings:
     """Custom key bindings for mycli."""
     kb = KeyBindings()
+    actions = KeyBindingActions(mycli)
 
     @kb.add('f1')
     def _(event: KeyPressEvent) -> None:
         """Open browser to documentation index."""
-        _logger.debug('Detected F1 key.')
-        webbrowser.open_new_tab(DOCS_URL)
-        prompt_toolkit.application.run_in_terminal(print_f1_help)
-        safe_invalidate_display(event.app)
+        actions.open_docs(event, 'Detected F1 key.')
 
     @kb.add('escape', '[', 'P')
     def _(event: KeyPressEvent) -> None:
         """Open browser to documentation index."""
-        _logger.debug("Detected alternate F1 key sequence.")
-        webbrowser.open_new_tab(DOCS_URL)
-        prompt_toolkit.application.run_in_terminal(print_f1_help)
-        safe_invalidate_display(event.app)
+        actions.open_docs(event, "Detected alternate F1 key sequence.")
 
     @kb.add("f2")
     def _(_event: KeyPressEvent) -> None:
         """Enable/Disable SmartCompletion Mode."""
-        _logger.debug("Detected F2 key.")
-        mycli.completer.smart_completion = not mycli.completer.smart_completion
+        actions.toggle_smart_completion("Detected F2 key.")
 
     @kb.add('escape', '[', 'Q')
     def _(_event: KeyPressEvent) -> None:
         """Enable/Disable SmartCompletion Mode."""
-        _logger.debug("Detected alternate F2 key sequence.")
-        mycli.completer.smart_completion = not mycli.completer.smart_completion
+        actions.toggle_smart_completion("Detected alternate F2 key sequence.")
 
     @kb.add("f3")
     def _(_event: KeyPressEvent) -> None:
         """Enable/Disable Multiline Mode."""
-        _logger.debug("Detected F3 key.")
-        mycli.multi_line = not mycli.multi_line
+        actions.toggle_multiline("Detected F3 key.")
 
     @kb.add('escape', '[', 'R')
     def _(_event: KeyPressEvent) -> None:
         """Enable/Disable Multiline Mode."""
-        _logger.debug('Detected alternate F3 key sequence.')
-        mycli.multi_line = not mycli.multi_line
+        actions.toggle_multiline('Detected alternate F3 key sequence.')
 
     @kb.add("f4")
     def _(event: KeyPressEvent) -> None:
         """Toggle between Vi and Emacs mode."""
-        _logger.debug("Detected F4 key.")
-        if mycli.key_bindings == "vi":
-            event.app.editing_mode = EditingMode.EMACS
-            mycli.key_bindings = "emacs"
-            event.app.ttimeoutlen = mycli.emacs_ttimeoutlen
-        else:
-            event.app.editing_mode = EditingMode.VI
-            mycli.key_bindings = "vi"
-            event.app.ttimeoutlen = mycli.vi_ttimeoutlen
+        actions.toggle_editing_mode(event, "Detected F4 key.")
 
     @kb.add('escape', '[', 'S')
     def _(event: KeyPressEvent) -> None:
         """Toggle between Vi and Emacs mode."""
-        _logger.debug('Detected alternate F4 key sequence.')
-        if mycli.key_bindings == 'vi':
-            event.app.editing_mode = EditingMode.EMACS
-            mycli.key_bindings = 'emacs'
-            event.app.ttimeoutlen = mycli.emacs_ttimeoutlen
-        else:
-            event.app.editing_mode = EditingMode.VI
-            mycli.key_bindings = 'vi'
-            event.app.ttimeoutlen = mycli.vi_ttimeoutlen
+        actions.toggle_editing_mode(event, 'Detected alternate F4 key sequence.')
 
     @kb.add("tab")
     def _(event: KeyPressEvent) -> None:
         """Complete action at cursor."""
         _logger.debug("Detected <Tab> key.")
-        b = event.app.current_buffer
+        buffer = event.app.current_buffer
 
         behaviors = mycli.config['keys'].as_list('tab')
 
         if 'toolkit_default' in behaviors:
-            if b.complete_state:
-                b.complete_next()
+            if buffer.complete_state:
+                buffer.complete_next()
             else:
-                b.start_completion(select_first=True)
+                buffer.start_completion(select_first=True)
 
-        if b.complete_state:
+        if buffer.complete_state:
             if 'advance' in behaviors:
-                b.complete_next()
+                buffer.complete_next()
             elif 'cancel' in behaviors:
-                b.cancel_completion()
+                buffer.cancel_completion()
             return
 
         if 'advancing_summon' in behaviors:
-            b.start_completion(select_first=True)
+            buffer.start_completion(select_first=True)
         elif 'prefixing_summon' in behaviors:
-            b.start_completion(insert_common_part=True)
+            buffer.start_completion(insert_common_part=True)
         elif 'summon' in behaviors:
-            b.start_completion(select_first=False)
+            buffer.start_completion(select_first=False)
 
     @kb.add("escape", eager=True, filter=in_completion)
     def _(event: KeyPressEvent) -> None:
@@ -173,28 +124,28 @@ def mycli_bindings(mycli) -> KeyBindings:
         """
         _logger.debug("Detected <C-Space> key.")
 
-        b = event.app.current_buffer
+        buffer = event.app.current_buffer
 
         behaviors = mycli.config['keys'].as_list('control_space')
 
         if 'toolkit_default' in behaviors:
-            if b.text:
-                b.start_selection(selection_type=SelectionType.CHARACTERS)
+            if buffer.text:
+                buffer.start_selection(selection_type=SelectionType.CHARACTERS)
             return
 
-        if b.complete_state:
+        if buffer.complete_state:
             if 'advance' in behaviors:
-                b.complete_next()
+                buffer.complete_next()
             elif 'cancel' in behaviors:
-                b.cancel_completion()
+                buffer.cancel_completion()
             return
 
         if 'advancing_summon' in behaviors:
-            b.start_completion(select_first=True)
+            buffer.start_completion(select_first=True)
         elif 'prefixing_summon' in behaviors:
-            b.start_completion(insert_common_part=True)
+            buffer.start_completion(insert_common_part=True)
         elif 'summon' in behaviors:
-            b.start_completion(select_first=False)
+            buffer.start_completion(select_first=False)
 
     @kb.add("c-x", "p", filter=emacs_mode)
     def _(event: KeyPressEvent) -> None:
@@ -205,9 +156,9 @@ def mycli_bindings(mycli) -> KeyBindings:
         """
         _logger.debug("Detected <C-x p>/> key.")
 
-        b = event.app.current_buffer
-        if b.text:
-            b.transform_region(0, len(b.text), mycli.handle_prettify_binding)
+        buffer = event.app.current_buffer
+        if buffer.text:
+            buffer.transform_region(0, len(buffer.text), mycli.handle_prettify_binding)
 
     @kb.add("c-x", "u", filter=emacs_mode)
     def _(event: KeyPressEvent) -> None:
@@ -218,9 +169,9 @@ def mycli_bindings(mycli) -> KeyBindings:
         """
         _logger.debug("Detected <C-x u>/< key.")
 
-        b = event.app.current_buffer
-        if b.text:
-            b.transform_region(0, len(b.text), mycli.handle_unprettify_binding)
+        buffer = event.app.current_buffer
+        if buffer.text:
+            buffer.transform_region(0, len(buffer.text), mycli.handle_unprettify_binding)
 
     @kb.add("c-o", "d", filter=emacs_mode)
     def _(event: KeyPressEvent) -> None:
@@ -304,8 +255,8 @@ def mycli_bindings(mycli) -> KeyBindings:
         _logger.debug("Detected enter key.")
 
         event.current_buffer.complete_state = None
-        b = event.app.current_buffer
-        b.complete_state = None
+        buffer = event.app.current_buffer
+        buffer.complete_state = None
 
     @kb.add("escape", "enter")
     def _(event: KeyPressEvent) -> None:
