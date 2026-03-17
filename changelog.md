@@ -3,7 +3,7 @@ Upcoming (TBD)
 
 Internal
 ---------
-* Require `sqlglot` 30.x.
+* Allow `sqlglot` library 29.x through 30.x.
 
 
 1.65.0 (2026/03/16)
