@@ -1256,6 +1256,123 @@ def test_execute_with_logfile(executor):
         print(f"An error occurred while attempting to delete the file: {e}")
 
 
+def _noninteractive_mock_mycli(monkeypatch):
+    class Formatter:
+        format_name = None
+
+    class Logger:
+        def debug(self, *args, **args_dict):
+            pass
+
+        def error(self, *args, **args_dict):
+            pass
+
+        def warning(self, *args, **args_dict):
+            pass
+
+    class MockMyCli:
+        connect_calls = 0
+        ran_queries = []
+
+        config = {
+            'main': {
+                'use_keyring': 'False',
+                'my_cnf_transition_done': 'True',
+            },
+            'connection': {},
+        }
+
+        def __init__(self, **_args):
+            self.logger = Logger()
+            self.destructive_warning = False
+            self.main_formatter = Formatter()
+            self.redirect_formatter = Formatter()
+            self.ssl_mode = 'auto'
+            self.my_cnf = {'client': {}, 'mysqld': {}}
+            self.default_keepalive_ticks = 0
+            self.config_without_package_defaults = {'connection': {}}
+
+        def connect(self, **_args):
+            MockMyCli.connect_calls += 1
+
+        def run_query(self, query, checkpoint=None, new_line=True):
+            MockMyCli.ran_queries.append(query)
+
+        def run_cli(self):
+            raise AssertionError('should not enter interactive cli')
+
+        def close(self):
+            pass
+
+    import mycli.main
+
+    monkeypatch.setattr(mycli.main, 'MyCli', MockMyCli)
+    return mycli.main, MockMyCli
+
+
+def test_batch_file(monkeypatch):
+    mycli_main, MockMyCli = _noninteractive_mock_mycli(monkeypatch)
+    runner = CliRunner()
+
+    with NamedTemporaryFile(prefix=TEMPFILE_PREFIX, mode='w', delete=False) as batch_file:
+        batch_file.write('select 2;')
+        batch_file.flush()
+
+    try:
+        result = runner.invoke(
+            mycli_main.cli,
+            args=['--batch', batch_file.name],
+        )
+        assert result.exit_code == 0
+        assert MockMyCli.ran_queries == ['select 2;']
+    finally:
+        os.remove(batch_file.name)
+
+
+def test_execute_arg_warns_about_ignoring_stdin(monkeypatch):
+    mycli_main, MockMyCli = _noninteractive_mock_mycli(monkeypatch)
+    runner = CliRunner()
+
+    # the test env should make sure stdin is not a TTY
+    result = runner.invoke(mycli_main.cli, args=['--execute', 'select 1;'])
+
+    # this exit_code is as written currently, but a debatable choice,
+    # since there was a warning
+    assert result.exit_code == 0
+    assert 'Ignoring STDIN' in result.output
+
+
+def test_batch_file_open_error(monkeypatch):
+    mycli_main, MockMyCli = _noninteractive_mock_mycli(monkeypatch)
+    runner = CliRunner()
+
+    result = runner.invoke(mycli_main.cli, args=['--batch', 'definitely_missing_file.sql'])
+
+    assert result.exit_code != 0
+    assert 'Failed to open --batch file' in result.output
+
+
+def test_execute_arg_supersedes_batch_file(monkeypatch):
+    mycli_main, MockMyCli = _noninteractive_mock_mycli(monkeypatch)
+    runner = CliRunner()
+
+    with NamedTemporaryFile(prefix=TEMPFILE_PREFIX, mode='w', delete=False) as batch_file:
+        batch_file.write('select 2;\n')
+        batch_file.flush()
+
+    try:
+        result = runner.invoke(
+            mycli_main.cli,
+            args=['--execute', 'select 1;', '--batch', batch_file.name],
+        )
+        # this exit_code is as written currently, but a debatable choice,
+        # since there was a warning
+        assert result.exit_code == 0
+        assert MockMyCli.ran_queries == ['select 1;']
+    finally:
+        os.remove(batch_file.name)
+
+
 def test_null_string_config(monkeypatch):
     monkeypatch.setattr(MyCli, 'system_config_files', [])
     monkeypatch.setattr(MyCli, 'pwd_config_file', os.devnull)

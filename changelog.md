@@ -1,7 +1,12 @@
-1.65.2 (2026/03/19)
+Upcoming (TBD)
 ==============
 
-Security
+Features
+---------
+* Add a `--batch` option as an alternative to STDIN.
+
+
+Internal
 --------
 * Harden `codex-review` workflow against script injection from untrusted PR metadata.
 

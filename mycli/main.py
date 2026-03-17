@@ -89,6 +89,7 @@ from mycli.constants import (
 from mycli.key_bindings import mycli_bindings
 from mycli.lexer import MyCliLexer
 from mycli.packages import special
+from mycli.packages.batch_utils import statements_from_filehandle
 from mycli.packages.checkup import do_checkup
 from mycli.packages.filepaths import dir_path_exists, guess_socket_location
 from mycli.packages.hybrid_redirection import get_redirect_components, is_redirect_command
@@ -119,7 +120,6 @@ SUPPORT_INFO = f"Home: {HOME_URL}\nBug tracker: {ISSUES_URL}"
 DEFAULT_WIDTH = 80
 DEFAULT_HEIGHT = 25
 MIN_COMPLETION_TRIGGER = 1
-MAX_MULTILINE_BATCH_STATEMENT = 5000
 EMPTY_PASSWORD_FLAG_SENTINEL = -1
 
 
@@ -2002,6 +2002,7 @@ class MyCli:
     "--password-file", type=click.Path(), help="File or FIFO path containing the password to connect to the db if not specified otherwise."
 )
 @click.argument("database", default=None, nargs=1)
+@click.option('--batch', 'batch_file', type=str, help='SQL script to execute in batch mode.')
 @click.option("--noninteractive", is_flag=True, help="Don't prompt during batch input.  Recommended.")
 @click.option(
     '--format', 'batch_format', type=click.Choice(['default', 'csv', 'tsv', 'table']), help='Format for batch or --execute output.'
@@ -2071,6 +2072,7 @@ def cli(
     character_set: str | None,
     password_file: str | None,
     noninteractive: bool,
+    batch_file: str | None,
     batch_format: str | None,
     throttle: float,
     use_keyring_cli_opt: str | None,
@@ -2494,6 +2496,10 @@ def cli(
 
     #  --execute argument
     if execute:
+        if not sys.stdin.isatty():
+            click.secho('Ignoring STDIN since --execute was also given.', err=True, fg='red')
+        if batch_file:
+            click.secho('Ignoring --batch since --execute was also given.', err=True, fg='red')
         try:
             if batch_format == 'csv':
                 mycli.main_formatter.format_name = 'csv'
@@ -2556,38 +2562,26 @@ def cli(
             click.secho(str(e), err=True, fg="red")
             sys.exit(1)
 
-    if sys.stdin.isatty():
-        mycli.run_cli()
-    else:
-        stdin = click.get_text_stream("stdin")
-        statements = ''
-        line_counter = 0
-        batch_counter = 0
-        for stdin_text in stdin:
-            line_counter += 1
-            if line_counter > MAX_MULTILINE_BATCH_STATEMENT:
-                click.secho(
-                    f'Saw single input statement greater than {MAX_MULTILINE_BATCH_STATEMENT} lines; assuming a parsing error.',
-                    err=True,
-                    fg="red",
-                )
-                sys.exit(1)
-            statements += stdin_text
+    if batch_file or not sys.stdin.isatty():
+        if batch_file:
+            if not sys.stdin.isatty() and batch_file != '-':
+                click.secho('Ignoring STDIN since --batch was also given.', err=True, fg='red')
             try:
-                tokens = sqlglot.tokenize(statements, read='mysql')
-                if not tokens:
-                    continue
-                # we don't handle changing the delimiter within the batch input
-                if tokens[-1].text == ';':
-                    dispatch_batch_statements(statements, batch_counter)
-                    batch_counter += 1
-                    statements = ''
-                    line_counter = 0
-            except sqlglot.errors.TokenError:
-                continue
-        if statements:
-            dispatch_batch_statements(statements, batch_counter)
+                batch_h = click.open_file(batch_file)
+            except (OSError, FileNotFoundError):
+                click.secho(f'Failed to open --batch file: {batch_file}', err=True, fg='red')
+                sys.exit(1)
+        else:
+            batch_h = click.get_text_stream('stdin')
+        try:
+            for statement, counter in statements_from_filehandle(batch_h):
+                dispatch_batch_statements(statement, counter)
+        except ValueError as e:
+            click.secho(str(e), err=True, fg='red')
+            sys.exit(1)
         sys.exit(0)
+
+    mycli.run_cli()
     mycli.close()
 
 
