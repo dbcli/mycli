@@ -16,6 +16,7 @@ Internal
 --------
 * Harden `codex-review` workflow against script injection from untrusted PR metadata.
 * Handle Click exceptions by hand.
+* Connect toolbar tests to the test database.
 
 
 1.65.1 (2026/03/18)
