@@ -1910,7 +1910,14 @@ class MyCli:
 @click.command()
 @click.option("-h", "--host", envvar="MYSQL_HOST", help="Host address of the database.")
 @click.option("-P", "--port", envvar="MYSQL_TCP_PORT", type=int, help="Port number to use for connection. Honors $MYSQL_TCP_PORT.")
-@click.option("-u", "--user", help="User name to connect to the database.")
+@click.option(
+    '-u',
+    '--user',
+    '--username',
+    'user',
+    envvar='MYSQL_USER',
+    help='User name to connect to the database.',
+)
 @click.option("-S", "--socket", envvar="MYSQL_UNIX_SOCKET", help="The socket file to use for connection.")
 @click.option(
     "-p",
