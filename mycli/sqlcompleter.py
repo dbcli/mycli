@@ -948,7 +948,16 @@ class SQLCompleter(Completer):
         self.reset_completions()
 
     def escape_name(self, name: str) -> str:
-        if name and ((not self.name_pattern.match(name)) or (name.upper() in self.reserved_words) or (name.upper() in self.functions)):
+        if not name:
+            return name
+
+        name_upper = name.upper()
+        needs_quoting = (
+            not self.name_pattern.match(name)
+            or name_upper in self.reserved_words
+            or name_upper in self.functions
+        )
+        if needs_quoting:
             name = f'`{name}`'
 
         return name
