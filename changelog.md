@@ -1,7 +1,7 @@
-Upcoming (TBD)
+1.65.1 (2026/03/18)
 ==============
 
-Internal
+Bug Fixes
 ---------
 * Require `sqlglot` 30.x.
 
