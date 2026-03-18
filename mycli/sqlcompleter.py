@@ -952,11 +952,7 @@ class SQLCompleter(Completer):
             return name
 
         name_upper = name.upper()
-        needs_quoting = (
-            not self.name_pattern.match(name)
-            or name_upper in self.reserved_words
-            or name_upper in self.functions
-        )
+        needs_quoting = not self.name_pattern.match(name) or name_upper in self.reserved_words or name_upper in self.functions
         if needs_quoting:
             name = f'`{name}`'
 

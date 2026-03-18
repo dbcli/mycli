@@ -1,11 +1,14 @@
 from __future__ import annotations
+
 import logging
-import webbrowser
 from typing import Any
+import webbrowser
+
 import prompt_toolkit
 from prompt_toolkit.application.current import get_app
 from prompt_toolkit.enums import EditingMode
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
+
 from mycli.constants import DOCS_URL
 from mycli.packages.toolkit.utils import safe_invalidate_display
 
