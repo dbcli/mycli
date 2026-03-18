@@ -1,4 +1,5 @@
 import logging
+
 from prompt_toolkit.application.current import get_app
 from prompt_toolkit.filters import (
     Condition,
@@ -9,6 +10,7 @@ from prompt_toolkit.filters import (
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from prompt_toolkit.selection import SelectionType
+
 from mycli.key_binding_actions import KeyBindingActions
 from mycli.packages import shortcuts
 from mycli.packages.toolkit.fzf import search_history
