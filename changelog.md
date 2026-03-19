@@ -1,3 +1,11 @@
+1.65.2 (2026/03/19)
+==============
+
+Security
+--------
+* Harden `codex-review` workflow against script injection from untrusted PR metadata.
+
+
 1.65.1 (2026/03/18)
 ==============
 
