@@ -36,6 +36,10 @@ jobs:
       - name: Run Codex review
         id: run_codex
         uses: openai/codex-action@v1
+        env:
+          # Use env variables to handle untrusted metadata safely
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
           prompt: |
@@ -53,8 +57,8 @@ jobs:
 
             Pull request title and body:
             ----
-            ${{ github.event.pull_request.title }}
-            ${{ github.event.pull_request.body }}
+            $PR_TITLE
+            $PR_BODY
 
   post-feedback:
     runs-on: ubuntu-latest
