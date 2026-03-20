@@ -4,6 +4,7 @@ Upcoming (TBD)
 Features
 ---------
 * Add a `--batch` option as an alternative to STDIN.
+* Deprecate `$MYSQL_UNIX_PORT` environment variable in favor of `$MYSQL_UNIX_SOCKET`.
 
 
 Bug Fixes
