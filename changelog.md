@@ -6,6 +6,11 @@ Features
 * Add a `--batch` option as an alternative to STDIN.
 
 
+Bug Fixes
+---------
+* Revert suppression of warnings when `sqlglotrs` is installed (fixed upstream).
+
+
 Internal
 --------
 * Harden `codex-review` workflow against script injection from untrusted PR metadata.

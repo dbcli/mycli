@@ -26,7 +26,6 @@ from random import choice
 from textwrap import dedent
 from time import sleep, time
 from urllib.parse import parse_qs, unquote, urlparse
-import warnings
 
 from cli_helpers.tabular_output import TabularOutputFormatter, preprocessors
 from cli_helpers.tabular_output.output_formatter import MISSING_VALUE as DEFAULT_MISSING_VALUE
@@ -59,17 +58,8 @@ import pymysql
 from pymysql.constants.CR import CR_SERVER_LOST
 from pymysql.constants.ER import ACCESS_DENIED_ERROR, HANDSHAKE_ERROR
 from pymysql.cursors import Cursor
+import sqlglot
 import sqlparse
-
-with warnings.catch_warnings():
-    # for sqlglot v29.0.1
-    warnings.filterwarnings(
-        'ignore',
-        message=r'sqlglot\[rs\] is deprecated',
-        category=UserWarning,
-        module='sqlglot',
-    )
-    import sqlglot
 
 from mycli import __version__
 from mycli.clibuffer import cli_is_multiline
