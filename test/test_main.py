@@ -1097,6 +1097,142 @@ def test_password_flag_uses_sentinel(monkeypatch):
     assert MockMyCli.connect_args['passwd'] == EMPTY_PASSWORD_FLAG_SENTINEL
 
 
+def test_username_option_and_mysql_user_envvar(monkeypatch):
+    class Formatter:
+        format_name = None
+
+    class Logger:
+        def debug(self, *args, **args_dict):
+            pass
+
+        def warning(self, *args, **args_dict):
+            pass
+
+    class MockMyCli:
+        config = {
+            'main': {},
+            'alias_dsn': {},
+            'connection': {
+                'default_keepalive_ticks': 0,
+            },
+        }
+
+        def __init__(self, **_args):
+            self.logger = Logger()
+            self.destructive_warning = False
+            self.main_formatter = Formatter()
+            self.redirect_formatter = Formatter()
+            self.ssl_mode = 'auto'
+            self.my_cnf = {'client': {}, 'mysqld': {}}
+            self.default_keepalive_ticks = 0
+
+        def connect(self, **args):
+            MockMyCli.connect_args = args
+
+        def run_query(self, query, new_line=True):
+            pass
+
+    import mycli.main
+
+    monkeypatch.setattr(mycli.main, 'MyCli', MockMyCli)
+    runner = CliRunner()
+
+    result = runner.invoke(
+        mycli.main.click_entrypoint,
+        args=[
+            '--username',
+            'option_user',
+            '--host',
+            DEFAULT_HOST,
+            '--port',
+            f'{DEFAULT_PORT}',
+            '--database',
+            'database',
+        ],
+    )
+    assert result.exit_code == 0, result.output + ' ' + str(result.exception)
+    assert MockMyCli.connect_args['user'] == 'option_user'
+
+    MockMyCli.connect_args = None
+    monkeypatch.setenv('MYSQL_USER', 'env_user')
+    result = runner.invoke(
+        mycli.main.click_entrypoint,
+        args=[
+            '--host',
+            DEFAULT_HOST,
+            '--port',
+            f'{DEFAULT_PORT}',
+            '--database',
+            'database',
+        ],
+    )
+    assert result.exit_code == 0, result.output + ' ' + str(result.exception)
+    assert MockMyCli.connect_args['user'] == 'env_user'
+
+
+def test_mysql_user_envvar_overrides_dsn_resolution(monkeypatch):
+    class Formatter:
+        format_name = None
+
+    class Logger:
+        def debug(self, *args, **args_dict):
+            pass
+
+        def warning(self, *args, **args_dict):
+            pass
+
+    class MockMyCli:
+        config = {
+            'main': {},
+            'alias_dsn': {
+                'prod': 'mysql://alias_user:alias_password@alias_host:4/alias_database',
+            },
+            'connection': {
+                'default_keepalive_ticks': 0,
+            },
+        }
+
+        def __init__(self, **_args):
+            self.logger = Logger()
+            self.destructive_warning = False
+            self.main_formatter = Formatter()
+            self.redirect_formatter = Formatter()
+            self.ssl_mode = 'auto'
+            self.my_cnf = {'client': {}, 'mysqld': {}}
+            self.default_keepalive_ticks = 0
+
+        def connect(self, **args):
+            MockMyCli.connect_args = args
+
+        def run_query(self, query, new_line=True):
+            pass
+
+    import mycli.main
+
+    monkeypatch.setattr(mycli.main, 'MyCli', MockMyCli)
+    monkeypatch.setenv('MYSQL_USER', 'env_user')
+    runner = CliRunner()
+
+    result = runner.invoke(mycli.main.click_entrypoint, args=['prod'])
+    assert result.exit_code == 0, result.output + ' ' + str(result.exception)
+    assert MockMyCli.connect_args['user'] == 'env_user'
+    assert MockMyCli.connect_args['passwd'] is None
+    assert MockMyCli.connect_args['host'] is None
+    assert MockMyCli.connect_args['port'] is None
+    assert MockMyCli.connect_args['database'] == 'prod'
+
+    MockMyCli.connect_args = None
+    result = runner.invoke(mycli.main.click_entrypoint, args=['mysql://dsn_user:dsn_passwd@dsn_host:6/dsn_database'])
+    assert result.exit_code == 0, result.output + ' ' + str(result.exception)
+    assert (
+        MockMyCli.connect_args['user'] == 'env_user'
+        and MockMyCli.connect_args['passwd'] == 'dsn_passwd'
+        and MockMyCli.connect_args['host'] == 'dsn_host'
+        and MockMyCli.connect_args['port'] == 6
+        and MockMyCli.connect_args['database'] == 'dsn_database'
+    )
+
+
 def test_ssh_config(monkeypatch):
     # Setup classes to mock mycli.main.MyCli
     class Formatter:
