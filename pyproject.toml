@@ -71,7 +71,7 @@ dev = [
 ]
 
 [project.scripts]
-mycli = "mycli.main:cli"
+mycli = "mycli.main:main"
 
 [tool.setuptools.package-data]
 mycli = ["myclirc", "AUTHORS", "SPONSORS", "TIPS"]

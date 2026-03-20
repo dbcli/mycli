@@ -81,7 +81,7 @@ def run_cli(context, run_args=None, exclude_args=None):
     try:
         cli_cmd = context.conf["cli_command"]
     except KeyError:
-        cli_cmd = f'{sys.executable} -c "import coverage ; coverage.process_startup(); import mycli.main; mycli.main.cli()"'
+        cli_cmd = f'{sys.executable} -c "import coverage ; coverage.process_startup(); import mycli.main; mycli.main.click_entrypoint()"'
 
     cmd_parts = [cli_cmd] + rendered_args
     cmd = " ".join(cmd_parts)

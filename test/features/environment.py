@@ -60,7 +60,7 @@ def before_all(context):
         "user": context.config.userdata.get("my_test_user", os.getenv("PYTEST_USER", DEFAULT_USER)),
         "pass": context.config.userdata.get("my_test_pass", os.getenv("PYTEST_PASSWORD", None)),
         "cli_command": context.config.userdata.get("my_cli_command", None)
-        or sys.executable + ' -c "import coverage ; coverage.process_startup(); import mycli.main; mycli.main.cli()"',
+        or sys.executable + ' -c "import coverage ; coverage.process_startup(); import mycli.main; mycli.main.click_entrypoint()"',
         "dbname": db_name,
         "dbname_tmp": db_name_full + "_tmp",
         "vi": vi,
