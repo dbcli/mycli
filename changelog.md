@@ -11,6 +11,7 @@ Features
 Bug Fixes
 ---------
 * Revert suppression of warnings when `sqlglotrs` is installed (fixed upstream).
+* Update `cli_helpers` to v2.12.0, fixing a `preserve_whitespace` bug with `tabulate`.
 
 
 Internal

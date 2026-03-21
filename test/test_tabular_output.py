@@ -2,14 +2,18 @@
 
 """Test the sql output adapter."""
 
+import os
 from textwrap import dedent
 
+from cli_helpers.utils import strip_ansi
 from pymysql.constants import FIELD_TYPE
 import pytest
 
 from mycli.main import MyCli
 from mycli.packages.sqlresult import SQLResult
 from test.utils import HOST, PASSWORD, PORT, USER, dbtest
+
+default_config_file = os.path.join(os.path.dirname(__file__), "myclirc")
 
 
 @pytest.fixture
@@ -152,3 +156,23 @@ def test_postamble_output(mycli):
     output = mycli.format_sqlresult(SQLResult(header=header, rows=FakeCursor(), postamble=postamble))
     actual = "\n".join(output)
     assert actual.endswith(postamble)
+
+
+def test_tabulate_output_preserves_multiline_whitespace(monkeypatch, tmp_path):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    mycli = MyCli(myclirc=default_config_file)
+    mycli.helpers_style = None
+    mycli.helpers_warnings_style = None
+
+    assert list(mycli.change_table_format("ascii")) == [SQLResult(status="Changed table format to ascii")]
+
+    output = mycli.format_sqlresult(SQLResult(header=["text"], rows=[["  one\n       two\nthree"]]))
+
+    assert strip_ansi("\n".join(output)) == dedent("""\
+        +------------+
+        | text       |
+        +------------+
+        |   one      |
+        |        two |
+        | three      |
+        +------------+""")
