@@ -143,7 +143,7 @@ def complete_while_typing_filter() -> bool:
 
 
 class IntOrStringClickParamType(click.ParamType):
-    name = 'string'  # display as STRING in helpdoc
+    name = 'text'  # display as TEXT in helpdoc
 
     def convert(self, value, param, ctx):
         if isinstance(value, int):
