@@ -6,6 +6,17 @@ Features
 * Respond to `-h` alone with the helpdoc.
 
 
+Bug Fixes
+---------
+* Correct how password help is rendered in the helpdoc.
+
+
+Internal
+---------
+* Collect CLI arguments into a dataclass.
+
+
+
 1.66.0 (2026/03/21)
 ==============
 
