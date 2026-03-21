@@ -1,7 +1,7 @@
 # type: ignore
 
 from collections import namedtuple
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 import csv
 import io
 import os
@@ -151,6 +151,42 @@ def test_is_valid_connection_scheme_valid(executor, capsys):
 def test_is_valid_connection_scheme_invalid(executor, capsys):
     is_valid, scheme = is_valid_connection_scheme(f"nope://test@{DEFAULT_HOST}:{DEFAULT_PORT}/dev")
     assert not is_valid
+
+
+def test_filtered_sys_argv_maps_single_dash_h_to_help(monkeypatch):
+    import mycli.main
+
+    monkeypatch.setattr(mycli.main.sys, 'argv', ['mycli', '-h'])
+
+    assert mycli.main.filtered_sys_argv() == ['--help']
+
+
+def test_filtered_sys_argv_preserves_host_option_usage(monkeypatch):
+    import mycli.main
+
+    monkeypatch.setattr(mycli.main.sys, 'argv', ['mycli', '-h', 'example.com'])
+
+    assert mycli.main.filtered_sys_argv() == ['-h', 'example.com']
+
+
+def test_main_dash_h_and_help_have_equivalent_output(monkeypatch):
+    import mycli.main
+
+    def run_main(argv):
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        monkeypatch.setattr(mycli.main.sys, 'argv', argv)
+        with redirect_stdout(stdout), redirect_stderr(stderr):
+            result = mycli.main.main()
+        return result, stdout.getvalue(), stderr.getvalue()
+
+    dash_h_result, dash_h_stdout, dash_h_stderr = run_main(['mycli', '-h'])
+    dash_help_result, dash_help_stdout, dash_help_stderr = run_main(['mycli', '--help'])
+
+    assert dash_h_result == 0
+    assert dash_help_result == 0
+    assert dash_h_stdout == dash_help_stdout
+    assert dash_h_stderr == dash_help_stderr
 
 
 @dbtest
