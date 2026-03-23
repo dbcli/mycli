@@ -2706,10 +2706,17 @@ def read_ssh_config(ssh_config_path: str):
         return ssh_config
 
 
+def filtered_sys_argv() -> list[str]:
+    args = sys.argv[1:]
+    if args == ['-h']:
+        args = ['--help']
+    return args
+
+
 def main() -> int | None:
     try:
         result = click_entrypoint.main(
-            sys.argv[1:],
+            filtered_sys_argv(),
             standalone_mode=False,  # disable builtin exception handling
             prog_name='mycli',
         )

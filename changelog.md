@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Features
+---------
+* Respond to `-h` alone with the helpdoc.
+
+
 1.66.0 (2026/03/21)
 ==============
 
