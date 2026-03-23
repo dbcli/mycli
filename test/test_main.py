@@ -1133,6 +1133,216 @@ def test_password_flag_uses_sentinel(monkeypatch):
     assert MockMyCli.connect_args['passwd'] == EMPTY_PASSWORD_FLAG_SENTINEL
 
 
+def test_password_option_uses_cleartext_value(monkeypatch):
+    class Formatter:
+        format_name = None
+
+    class Logger:
+        def debug(self, *args, **args_dict):
+            pass
+
+        def warning(self, *args, **args_dict):
+            pass
+
+    class MockMyCli:
+        config = {
+            'main': {},
+            'alias_dsn': {},
+            'connection': {
+                'default_keepalive_ticks': 0,
+            },
+        }
+
+        def __init__(self, **_args):
+            self.logger = Logger()
+            self.destructive_warning = False
+            self.main_formatter = Formatter()
+            self.redirect_formatter = Formatter()
+            self.ssl_mode = 'auto'
+            self.my_cnf = {'client': {}, 'mysqld': {}}
+            self.default_keepalive_ticks = 0
+
+        def connect(self, **args):
+            MockMyCli.connect_args = args
+
+        def run_query(self, query, new_line=True):
+            pass
+
+    import mycli.main
+
+    monkeypatch.setattr(mycli.main, 'MyCli', MockMyCli)
+    runner = CliRunner()
+
+    result = runner.invoke(
+        mycli.main.click_entrypoint,
+        args=[
+            '--user',
+            'user',
+            '--host',
+            DEFAULT_HOST,
+            '--port',
+            f'{DEFAULT_PORT}',
+            '--database',
+            'database',
+            '--password',
+            'cleartext_password',
+        ],
+    )
+    assert result.exit_code == 0, result.output + ' ' + str(result.exception)
+    assert MockMyCli.connect_args['passwd'] == 'cleartext_password'
+
+
+def test_password_option_overrides_password_file_and_mysql_pwd(monkeypatch):
+    class Formatter:
+        format_name = None
+
+    class Logger:
+        def debug(self, *args, **args_dict):
+            pass
+
+        def warning(self, *args, **args_dict):
+            pass
+
+    class MockMyCli:
+        config = {
+            'main': {},
+            'alias_dsn': {},
+            'connection': {
+                'default_keepalive_ticks': 0,
+            },
+        }
+
+        def __init__(self, **_args):
+            self.logger = Logger()
+            self.destructive_warning = False
+            self.main_formatter = Formatter()
+            self.redirect_formatter = Formatter()
+            self.ssl_mode = 'auto'
+            self.my_cnf = {'client': {}, 'mysqld': {}}
+            self.default_keepalive_ticks = 0
+
+        def connect(self, **args):
+            MockMyCli.connect_args = args
+
+        def run_query(self, query, new_line=True):
+            pass
+
+    import mycli.main
+
+    monkeypatch.setattr(mycli.main, 'MyCli', MockMyCli)
+    monkeypatch.setenv('MYSQL_PWD', 'env_password')
+    runner = CliRunner()
+
+    with NamedTemporaryFile(prefix=TEMPFILE_PREFIX, mode='w', delete=False) as password_file:
+        password_file.write('file_password\n')
+        password_file.flush()
+
+    try:
+        result = runner.invoke(
+            mycli.main.click_entrypoint,
+            args=[
+                '--user',
+                'user',
+                '--host',
+                DEFAULT_HOST,
+                '--port',
+                f'{DEFAULT_PORT}',
+                '--database',
+                'database',
+                '--password',
+                'option_password',
+                '--password-file',
+                password_file.name,
+            ],
+        )
+        assert result.exit_code == 0, result.output + ' ' + str(result.exception)
+        assert MockMyCli.connect_args['passwd'] == 'option_password'
+    finally:
+        os.remove(password_file.name)
+
+
+def test_password_file_option_reads_password(monkeypatch):
+    class Formatter:
+        format_name = None
+
+    class Logger:
+        def debug(self, *args, **args_dict):
+            pass
+
+        def warning(self, *args, **args_dict):
+            pass
+
+    class MockMyCli:
+        config = {
+            'main': {},
+            'alias_dsn': {},
+            'connection': {
+                'default_keepalive_ticks': 0,
+            },
+        }
+
+        def __init__(self, **_args):
+            self.logger = Logger()
+            self.destructive_warning = False
+            self.main_formatter = Formatter()
+            self.redirect_formatter = Formatter()
+            self.ssl_mode = 'auto'
+            self.my_cnf = {'client': {}, 'mysqld': {}}
+            self.default_keepalive_ticks = 0
+
+        def connect(self, **args):
+            MockMyCli.connect_args = args
+
+        def run_query(self, query, new_line=True):
+            pass
+
+    import mycli.main
+
+    monkeypatch.setattr(mycli.main, 'MyCli', MockMyCli)
+    runner = CliRunner()
+
+    with NamedTemporaryFile(prefix=TEMPFILE_PREFIX, mode='w', delete=False) as password_file:
+        password_file.write('file_password\nsecond line ignored\n')
+        password_file.flush()
+
+    try:
+        result = runner.invoke(
+            mycli.main.click_entrypoint,
+            args=[
+                '--user',
+                'user',
+                '--host',
+                DEFAULT_HOST,
+                '--port',
+                f'{DEFAULT_PORT}',
+                '--database',
+                'database',
+                '--password-file',
+                password_file.name,
+            ],
+        )
+        assert result.exit_code == 0, result.output + ' ' + str(result.exception)
+        assert MockMyCli.connect_args['passwd'] == 'file_password'
+    finally:
+        os.remove(password_file.name)
+
+
+def test_password_file_option_missing_file():
+    runner = CliRunner()
+    missing_path = 'definitely_missing_password_file.txt'
+
+    result = runner.invoke(
+        click_entrypoint,
+        args=[
+            '--password-file',
+            missing_path,
+        ],
+    )
+
+    assert result.exit_code == 1
+    assert f"Password file '{missing_path}' not found" in result.output
+
+
 def test_username_option_and_mysql_user_envvar(monkeypatch):
     class Formatter:
         format_name = None
@@ -1204,6 +1414,209 @@ def test_username_option_and_mysql_user_envvar(monkeypatch):
     )
     assert result.exit_code == 0, result.output + ' ' + str(result.exception)
     assert MockMyCli.connect_args['user'] == 'env_user'
+
+
+def test_host_option_and_mysql_host_envvar(monkeypatch):
+    class Formatter:
+        format_name = None
+
+    class Logger:
+        def debug(self, *args, **args_dict):
+            pass
+
+        def warning(self, *args, **args_dict):
+            pass
+
+    class MockMyCli:
+        config = {
+            'main': {},
+            'alias_dsn': {},
+            'connection': {
+                'default_keepalive_ticks': 0,
+            },
+        }
+
+        def __init__(self, **_args):
+            self.logger = Logger()
+            self.destructive_warning = False
+            self.main_formatter = Formatter()
+            self.redirect_formatter = Formatter()
+            self.ssl_mode = 'auto'
+            self.my_cnf = {'client': {}, 'mysqld': {}}
+            self.default_keepalive_ticks = 0
+
+        def connect(self, **args):
+            MockMyCli.connect_args = args
+
+        def run_query(self, query, new_line=True):
+            pass
+
+    import mycli.main
+
+    monkeypatch.setattr(mycli.main, 'MyCli', MockMyCli)
+    runner = CliRunner()
+
+    result = runner.invoke(
+        mycli.main.click_entrypoint,
+        args=[
+            '--host',
+            'option_host',
+            '--port',
+            f'{DEFAULT_PORT}',
+            '--database',
+            'database',
+        ],
+    )
+    assert result.exit_code == 0, result.output + ' ' + str(result.exception)
+    assert MockMyCli.connect_args['host'] == 'option_host'
+
+    MockMyCli.connect_args = None
+    monkeypatch.setenv('MYSQL_HOST', 'env_host')
+    result = runner.invoke(
+        mycli.main.click_entrypoint,
+        args=[
+            '--port',
+            f'{DEFAULT_PORT}',
+            '--database',
+            'database',
+        ],
+    )
+    assert result.exit_code == 0, result.output + ' ' + str(result.exception)
+    assert MockMyCli.connect_args['host'] == 'env_host'
+
+
+def test_port_option_and_mysql_tcp_port_envvar(monkeypatch):
+    class Formatter:
+        format_name = None
+
+    class Logger:
+        def debug(self, *args, **args_dict):
+            pass
+
+        def warning(self, *args, **args_dict):
+            pass
+
+    class MockMyCli:
+        config = {
+            'main': {},
+            'alias_dsn': {},
+            'connection': {
+                'default_keepalive_ticks': 0,
+            },
+        }
+
+        def __init__(self, **_args):
+            self.logger = Logger()
+            self.destructive_warning = False
+            self.main_formatter = Formatter()
+            self.redirect_formatter = Formatter()
+            self.ssl_mode = 'auto'
+            self.my_cnf = {'client': {}, 'mysqld': {}}
+            self.default_keepalive_ticks = 0
+
+        def connect(self, **args):
+            MockMyCli.connect_args = args
+
+        def run_query(self, query, new_line=True):
+            pass
+
+    import mycli.main
+
+    monkeypatch.setattr(mycli.main, 'MyCli', MockMyCli)
+    runner = CliRunner()
+
+    result = runner.invoke(
+        mycli.main.click_entrypoint,
+        args=[
+            '--host',
+            DEFAULT_HOST,
+            '--port',
+            '12345',
+            '--database',
+            'database',
+        ],
+    )
+    assert result.exit_code == 0, result.output + ' ' + str(result.exception)
+    assert MockMyCli.connect_args['port'] == 12345
+
+    MockMyCli.connect_args = None
+    monkeypatch.setenv('MYSQL_TCP_PORT', '23456')
+    result = runner.invoke(
+        mycli.main.click_entrypoint,
+        args=[
+            '--host',
+            DEFAULT_HOST,
+            '--database',
+            'database',
+        ],
+    )
+    assert result.exit_code == 0, result.output + ' ' + str(result.exception)
+    assert MockMyCli.connect_args['port'] == 23456
+
+
+def test_socket_option_and_mysql_unix_socket_envvar(monkeypatch):
+    class Formatter:
+        format_name = None
+
+    class Logger:
+        def debug(self, *args, **args_dict):
+            pass
+
+        def warning(self, *args, **args_dict):
+            pass
+
+    class MockMyCli:
+        config = {
+            'main': {},
+            'alias_dsn': {},
+            'connection': {
+                'default_keepalive_ticks': 0,
+            },
+        }
+
+        def __init__(self, **_args):
+            self.logger = Logger()
+            self.destructive_warning = False
+            self.main_formatter = Formatter()
+            self.redirect_formatter = Formatter()
+            self.ssl_mode = 'auto'
+            self.my_cnf = {'client': {}, 'mysqld': {}}
+            self.default_keepalive_ticks = 0
+
+        def connect(self, **args):
+            MockMyCli.connect_args = args
+
+        def run_query(self, query, new_line=True):
+            pass
+
+    import mycli.main
+
+    monkeypatch.setattr(mycli.main, 'MyCli', MockMyCli)
+    runner = CliRunner()
+
+    result = runner.invoke(
+        mycli.main.click_entrypoint,
+        args=[
+            '--socket',
+            'option.sock',
+            '--database',
+            'database',
+        ],
+    )
+    assert result.exit_code == 0, result.output + ' ' + str(result.exception)
+    assert MockMyCli.connect_args['socket'] == 'option.sock'
+
+    MockMyCli.connect_args = None
+    monkeypatch.setenv('MYSQL_UNIX_SOCKET', 'env.sock')
+    result = runner.invoke(
+        mycli.main.click_entrypoint,
+        args=[
+            '--database',
+            'database',
+        ],
+    )
+    assert result.exit_code == 0, result.output + ' ' + str(result.exception)
+    assert MockMyCli.connect_args['socket'] == 'env.sock'
 
 
 def test_mysql_user_envvar_overrides_dsn_resolution(monkeypatch):
@@ -1417,6 +1830,25 @@ def test_execute_with_logfile(executor):
 
     with NamedTemporaryFile(prefix=TEMPFILE_PREFIX, mode="w", delete=False) as logfile:
         result = runner.invoke(mycli.main.click_entrypoint, args=CLI_ARGS + ["--logfile", logfile.name, "--execute", sql])
+        assert result.exit_code == 0
+
+    assert os.path.getsize(logfile.name) > 0
+
+    try:
+        if os.path.exists(logfile.name):
+            os.remove(logfile.name)
+    except Exception as e:
+        print(f"An error occurred while attempting to delete the file: {e}")
+
+
+@dbtest
+def test_execute_with_short_logfile_option(executor):
+    """Test that --execute combines with -l"""
+    sql = 'select 1'
+    runner = CliRunner()
+
+    with NamedTemporaryFile(prefix=TEMPFILE_PREFIX, mode="w", delete=False) as logfile:
+        result = runner.invoke(mycli.main.click_entrypoint, args=CLI_ARGS + ["-l", logfile.name, "--execute", sql])
         assert result.exit_code == 0
 
     assert os.path.getsize(logfile.name) > 0
