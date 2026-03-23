@@ -4,6 +4,7 @@ Upcoming (TBD)
 Features
 ---------
 * Respond to `-h` alone with the helpdoc.
+* Allow `--hostname` as an alias for `--host`.
 
 
 Bug Fixes

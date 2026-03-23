@@ -1920,6 +1920,8 @@ class CliArgs:
     )
     host: str | None = clickdc.option(
         '-h',
+        '--hostname',
+        'host',
         type=str,
         envvar='MYSQL_HOST',
         help='Host address of the database.',

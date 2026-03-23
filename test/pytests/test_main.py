@@ -1528,6 +1528,61 @@ def test_host_option_and_mysql_host_envvar(monkeypatch):
     assert MockMyCli.connect_args['host'] == 'env_host'
 
 
+def test_hostname_option_alias(monkeypatch):
+    class Formatter:
+        format_name = None
+
+    class Logger:
+        def debug(self, *args, **args_dict):
+            pass
+
+        def warning(self, *args, **args_dict):
+            pass
+
+    class MockMyCli:
+        config = {
+            'main': {},
+            'alias_dsn': {},
+            'connection': {
+                'default_keepalive_ticks': 0,
+            },
+        }
+
+        def __init__(self, **_args):
+            self.logger = Logger()
+            self.destructive_warning = False
+            self.main_formatter = Formatter()
+            self.redirect_formatter = Formatter()
+            self.ssl_mode = 'auto'
+            self.my_cnf = {'client': {}, 'mysqld': {}}
+            self.default_keepalive_ticks = 0
+
+        def connect(self, **args):
+            MockMyCli.connect_args = args
+
+        def run_query(self, query, new_line=True):
+            pass
+
+    import mycli.main
+
+    monkeypatch.setattr(mycli.main, 'MyCli', MockMyCli)
+    runner = CliRunner()
+
+    result = runner.invoke(
+        mycli.main.click_entrypoint,
+        args=[
+            '--hostname',
+            'alias_host',
+            '--port',
+            f'{DEFAULT_PORT}',
+            '--database',
+            'database',
+        ],
+    )
+    assert result.exit_code == 0
+    assert MockMyCli.connect_args['host'] == 'alias_host'
+
+
 def test_port_option_and_mysql_tcp_port_envvar(monkeypatch):
     class Formatter:
         format_name = None
