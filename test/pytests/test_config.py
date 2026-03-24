@@ -20,7 +20,7 @@ from mycli.config import (
 )
 from test.utils import TEMPFILE_PREFIX
 
-LOGIN_PATH_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "mylogin.cnf"))
+LOGIN_PATH_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "../mylogin.cnf"))
 
 
 def open_bmylogin_cnf(name):

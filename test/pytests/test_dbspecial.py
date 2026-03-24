@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 from mycli.packages.completion_engine import suggest_type
 from mycli.packages.special.dbcommands import list_tables
 from mycli.packages.special.utils import format_uptime
-from test.test_completion_engine import sorted_dicts
+from test.pytests.test_completion_engine import sorted_dicts
 
 
 def test_list_tables_verbose_preserves_field_results():

@@ -323,10 +323,8 @@ def test_system_command_not_found(executor):
 @dbtest
 def test_system_command_output(executor):
     eol = os.linesep
-    test_dir = os.path.abspath(os.path.dirname(__file__))
-    test_file_path = os.path.join(test_dir, "test.txt")
-    results = run(executor, f"system cat {test_file_path}")
-    assert_result_equal(results, preamble=f"mycli rocks!{eol}")
+    results = run(executor, "system echo mycli rocks")
+    assert_result_equal(results, preamble=f"mycli rocks{eol}")
 
 
 @dbtest

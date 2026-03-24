@@ -13,7 +13,7 @@ from mycli.main import MyCli
 from mycli.packages.sqlresult import SQLResult
 from test.utils import HOST, PASSWORD, PORT, USER, dbtest
 
-default_config_file = os.path.join(os.path.dirname(__file__), "myclirc")
+default_config_file = os.path.join(os.path.dirname(__file__), "../myclirc")
 
 
 @pytest.fixture
