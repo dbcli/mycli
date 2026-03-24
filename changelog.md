@@ -18,6 +18,7 @@ Internal
 * Clean up generated files after test runs.
 * Migrate toplevel tool configurations to `pyproject.toml`.
 * Gather `pytest` files into a subdirectory, separated from `behave` tests.
+* Refactor: better naming for `prompt_toolkit` utilities.
 
 
 1.66.0 (2026/03/21)

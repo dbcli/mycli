@@ -16,8 +16,8 @@ from prompt_toolkit.selection import SelectionType
 
 from mycli.constants import DOCS_URL
 from mycli.packages import shortcuts
-from mycli.packages.toolkit.fzf import search_history
-from mycli.packages.toolkit.utils import safe_invalidate_display
+from mycli.packages.ptoolkit.fzf import search_history
+from mycli.packages.ptoolkit.utils import safe_invalidate_display
 
 _logger = logging.getLogger(__name__)
 

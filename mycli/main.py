@@ -87,13 +87,13 @@ from mycli.packages.filepaths import dir_path_exists, guess_socket_location
 from mycli.packages.hybrid_redirection import get_redirect_components, is_redirect_command
 from mycli.packages.parseutils import is_destructive, is_dropping_database, is_valid_connection_scheme
 from mycli.packages.prompt_utils import confirm, confirm_destructive_query
+from mycli.packages.ptoolkit.history import FileHistoryWithTimestamp
 from mycli.packages.special.favoritequeries import FavoriteQueries
 from mycli.packages.special.main import ArgType
 from mycli.packages.special.utils import format_uptime, get_ssl_version, get_uptime, get_warning_count
 from mycli.packages.sqlresult import SQLResult
 from mycli.packages.string_utils import sanitize_terminal_title
 from mycli.packages.tabular_output import sql_format
-from mycli.packages.toolkit.history import FileHistoryWithTimestamp
 from mycli.sqlcompleter import SQLCompleter
 from mycli.sqlexecute import FIELD_TYPES, SQLExecute
 
