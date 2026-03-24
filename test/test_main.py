@@ -461,6 +461,49 @@ def test_output_with_warning_and_show_warnings_disabled(executor):
 
 
 @dbtest
+def test_no_show_warnings_overrides_myclirc_setting(executor):
+    runner = CliRunner()
+    sql = 'EXPLAIN SELECT 1'
+    expected = 'select 1'
+
+    with NamedTemporaryFile(prefix=TEMPFILE_PREFIX, mode='w', delete=False) as myclirc:
+        myclirc.write(
+            dedent("""\
+            [main]
+            show_warnings = True
+            """)
+        )
+        myclirc.flush()
+        args = [
+            '--user',
+            USER,
+            '--host',
+            HOST,
+            '--port',
+            PORT,
+            '--password',
+            PASSWORD,
+            '--myclirc',
+            myclirc.name,
+            '--defaults-file',
+            default_config_file,
+            TEST_DATABASE,
+        ]
+
+        result = runner.invoke(click_entrypoint, args=args, input=sql)
+        assert expected in result.output
+
+        result = runner.invoke(click_entrypoint, args=args + ['--no-show-warnings'], input=sql)
+        assert expected not in result.output
+
+    try:
+        if os.path.exists(myclirc.name):
+            os.remove(myclirc.name)
+    except Exception as e:
+        print(f"An error occurred while attempting to delete the file: {e}")
+
+
+@dbtest
 def test_output_with_multiple_warnings_in_single_statement(executor):
     runner = CliRunner()
     sql = "SELECT 1 + '0 foo', 2 + '0 foo'"

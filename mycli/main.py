@@ -194,7 +194,6 @@ class MyCli:
         defaults_file: str | None = None,
         login_path: str | None = None,
         auto_vertical_output: bool = False,
-        show_warnings: bool = False,
         warn: bool | None = None,
         myclirc: str = "~/.myclirc",
     ) -> None:
@@ -277,7 +276,7 @@ class MyCli:
 
         # read from cli argument or user config file
         self.auto_vertical_output = auto_vertical_output or c["main"].as_bool("auto_vertical_output")
-        self.show_warnings = show_warnings or c["main"].as_bool("show_warnings")
+        self.show_warnings = c["main"].as_bool("show_warnings")
 
         # Write user config if system config wasn't the last config loaded.
         if c.filename not in self.system_config_files and not os.path.exists(myclirc):
@@ -608,6 +607,7 @@ class MyCli:
         use_keyring: bool | None = None,
         reset_keyring: bool | None = None,
         keepalive_ticks: int | None = None,
+        show_warnings: bool | None = None,
     ) -> None:
         cnf = {
             "database": None,
@@ -637,6 +637,8 @@ class MyCli:
         ssl_config: dict[str, Any] = ssl or {}
         user_connection_config = self.config_without_package_defaults.get('connection', {})
         self.keepalive_ticks = keepalive_ticks
+        if show_warnings is not None:
+            self.show_warnings = show_warnings
 
         int_port = port and int(port)
         if not int_port:
@@ -2093,9 +2095,10 @@ class CliArgs:
         is_flag=True,
         help='Automatically switch to vertical output mode if the result is wider than the terminal width.',
     )
-    show_warnings: bool = clickdc.option(
+    show_warnings: bool | None = clickdc.option(
         '--show-warnings/--no-show-warnings',
         is_flag=True,
+        default=None,
         clickdc=None,
         help='Automatically show warnings after executing a SQL statement.',
     )
@@ -2517,10 +2520,6 @@ def click_entrypoint(
 
     combined_init_cmd = "; ".join(cmd.strip() for cmd in init_cmds if cmd)
 
-    # --show-warnings / --no-show-warnings
-    if cli_args.show_warnings:
-        mycli.show_warnings = cli_args.show_warnings
-
     if cli_args.use_keyring is not None and cli_args.use_keyring.lower() == 'reset':
         use_keyring = True
         reset_keyring = True
@@ -2627,6 +2626,7 @@ def click_entrypoint(
         use_keyring=use_keyring,
         reset_keyring=reset_keyring,
         keepalive_ticks=keepalive_ticks,
+        show_warnings=cli_args.show_warnings,
     )
 
     if combined_init_cmd:

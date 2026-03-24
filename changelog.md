@@ -9,6 +9,7 @@ Features
 Bug Fixes
 ---------
 * Correct how password help is rendered in the helpdoc.
+* Respect `--no-show-warnings`, overriding settings in `~/.myclirc`.
 
 
 Internal
