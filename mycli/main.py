@@ -2158,7 +2158,7 @@ class CliArgs:
         help='Format for batch or --execute output.',
     )
     throttle: float = clickdc.option(
-        type=int,
+        type=float,
         default=0.0,
         help='Pause in seconds between queries in batch mode.',
     )
@@ -2702,7 +2702,7 @@ def click_entrypoint(
                 sys.exit(1)
         try:
             if warn_confirmed:
-                if cli_args.throttle and batch_counter >= 1:
+                if cli_args.throttle > 0 and batch_counter >= 1:
                     sleep(cli_args.throttle)
                 mycli.run_query(statements, checkpoint=cli_args.checkpoint, new_line=True)
         except Exception as e:
