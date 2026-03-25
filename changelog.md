@@ -15,7 +15,8 @@ Bug Fixes
 Internal
 ---------
 * Collect CLI arguments into a dataclass.
-* Clean up generate files after test runs.
+* Clean up generated files after test runs.
+* Migrate toplevel tool configurations to `pyproject.toml`.
 
 
 1.66.0 (2026/03/21)
