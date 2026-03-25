@@ -148,3 +148,6 @@ commands = [['ruff', 'check'],
 
 [tool.pytest]
 addopts = ['--ignore=mycli/packages/paramiko_stub/__init__.py']
+
+[tool.coverage.run]
+source = ['mycli']

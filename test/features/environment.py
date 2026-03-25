@@ -44,9 +44,6 @@ def before_all(context):
     #    os.environ['MYSQL_TEST_LOGIN_FILE'] = login_path_file
 
     context.package_root = os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-
-    os.environ["COVERAGE_PROCESS_START"] = os.path.join(context.package_root, ".coveragerc")
-
     context.exit_sent = False
 
     vi = "_".join([str(x) for x in sys.version_info[:3]])
