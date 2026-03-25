@@ -6,8 +6,8 @@ from prompt_toolkit import search
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from pyfzf import FzfPrompt
 
-from mycli.packages.toolkit.history import FileHistoryWithTimestamp
-from mycli.packages.toolkit.utils import safe_invalidate_display
+from mycli.packages.ptoolkit.history import FileHistoryWithTimestamp
+from mycli.packages.ptoolkit.utils import safe_invalidate_display
 
 
 class Fzf(FzfPrompt):
