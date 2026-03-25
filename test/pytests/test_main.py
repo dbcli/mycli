@@ -28,10 +28,10 @@ from mycli.packages.sqlresult import SQLResult
 from mycli.sqlexecute import ServerInfo, SQLExecute
 from test.utils import DATABASE, HOST, PASSWORD, PORT, TEMPFILE_PREFIX, USER, dbtest, run
 
-test_dir = os.path.abspath(os.path.dirname(__file__))
-project_dir = os.path.dirname(test_dir)
-default_config_file = os.path.join(project_dir, "test", "myclirc")
-login_path_file = os.path.join(test_dir, "mylogin.cnf")
+pytests_dir = os.path.abspath(os.path.dirname(__file__))
+project_root_dir = os.path.abspath(os.path.join(pytests_dir, '..', '..'))
+default_config_file = os.path.join(project_root_dir, 'test', 'myclirc')
+login_path_file = os.path.join(project_root_dir, 'test', 'mylogin.cnf')
 
 os.environ["MYSQL_TEST_LOGIN_FILE"] = login_path_file
 CLI_ARGS = [
