@@ -288,7 +288,7 @@ def test_cd_command_with_one_nonexistent_folder_name(executor):
 
 @dbtest
 def test_cd_command_with_one_real_folder_name(executor):
-    results = run(executor, 'system cd screenshots')
+    results = run(executor, 'system cd doc')
     # todo would be better to capture stderr but there was a problem with capsys
     assert results[0]['status_plain'] is None
 
