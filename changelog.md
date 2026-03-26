@@ -18,6 +18,7 @@ Internal
 * Collect CLI arguments into a dataclass.
 * Clean up generated files after test runs.
 * Migrate toplevel tool configurations to `pyproject.toml`.
+* Migrate other toplevel files to subdirectories.
 * Gather `pytest` files into a subdirectory, separated from `behave` tests.
 * Refactor: better naming for `prompt_toolkit` utilities.
 

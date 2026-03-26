@@ -682,9 +682,9 @@ def test_create_table_like_completion(completer, complete_event):
 
 
 def test_source_eager_completion(completer, complete_event):
-    text = "source sc"
+    text = "source do"
     position = len(text)
-    script_filename = 'script_for_test_suite.sql'
+    script_filename = 'do_these_statements.sql'
     f = open(script_filename, 'w')
     f.close()
     special.register_special_command(..., 'source', '\\. <filename>', 'Execute commands from file.', aliases=['\\.'])
@@ -694,7 +694,7 @@ def test_source_eager_completion(completer, complete_event):
     try:
         assert [x.text for x in result] == [
             script_filename,
-            'screenshots/',
+            'doc/',
         ]
     except AssertionError as e:
         success = False
@@ -706,9 +706,9 @@ def test_source_eager_completion(completer, complete_event):
 
 
 def test_source_leading_dot_suggestions_completion(completer, complete_event):
-    text = "source ./sc"
+    text = "source ./do"
     position = len(text)
-    script_filename = 'script_for_test_suite.sql'
+    script_filename = 'do_these_statements.sql'
     f = open(script_filename, 'w')
     f.close()
     special.register_special_command(..., 'source', '\\. <filename>', 'Execute commands from file.', aliases=['\\.'])
@@ -718,7 +718,7 @@ def test_source_leading_dot_suggestions_completion(completer, complete_event):
     try:
         assert [x.text for x in result] == [
             script_filename,
-            'screenshots/',
+            'doc/',
         ]
     except AssertionError as e:
         success = False
