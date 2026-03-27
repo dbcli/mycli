@@ -5,6 +5,7 @@ Features
 ---------
 * Respond to `-h` alone with the helpdoc.
 * Allow `--hostname` as an alias for `--host`.
+* Suggest tables with foreign key relationships for JOIN and ON (#975)
 
 
 Bug Fixes

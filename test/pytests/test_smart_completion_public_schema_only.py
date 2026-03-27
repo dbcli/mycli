@@ -968,3 +968,144 @@ def test_backticked_no_completion_spaces(completer, complete_event):
     position = len(text)
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
     assert result == []
+
+
+# Foreign key completion tests
+@pytest.fixture
+def fk_completer():
+    """SQLCompleter with tables and a FK relationship.
+
+    Schema:
+        orders (id, user_id, ordered_date, status)  FK: user_id -> users.id
+        users  (id, email, first_name)
+        tags   (id, name)                           no FK
+    """
+    import mycli.sqlcompleter as sqlcompleter
+    import mycli.packages.special.main as special
+
+    comp = sqlcompleter.SQLCompleter(smart_completion=True)
+
+    tables = [("orders",), ("users",), ("tags",)]
+    columns = [
+        ("orders", "id"), ("orders", "user_id"), ("orders", "ordered_date"), ("orders", "status"),
+        ("users", "id"), ("users", "email"), ("users", "first_name"),
+        ("tags", "id"), ("tags", "name"),
+    ]
+    fk_data = [("orders", "user_id", "users", "id")]
+
+    comp.extend_schemata("test")
+    comp.extend_database_names(["test"])
+    comp.set_dbname("test")
+    comp.extend_relations(tables, kind="tables")
+    comp.extend_columns(columns, kind="tables")
+    comp.extend_foreign_keys(fk_data)
+    comp.extend_special_commands(special.COMMANDS)
+
+    return comp
+
+
+def test_extend_foreign_keys_stores_relation(fk_completer):
+    relations = fk_completer.dbmetadata["foreign_keys"]["test"]["relations"]
+    assert ("orders", "user_id", "users", "id") in relations
+
+
+def test_extend_foreign_keys_stores_bidirectional_table_map(fk_completer):
+    tables_map = fk_completer.dbmetadata["foreign_keys"]["test"]["tables"]
+    assert "users" in tables_map["orders"]
+    assert "orders" in tables_map["users"]
+
+
+def test_extend_foreign_keys_unrelated_table_absent_from_map(fk_completer):
+    tables_map = fk_completer.dbmetadata["foreign_keys"]["test"]["tables"]
+    assert "tags" not in tables_map
+
+
+def test_fk_join_conditions_with_aliases(fk_completer):
+    conditions = fk_completer._fk_join_conditions([(None, "orders", "o"), (None, "users", "u")])
+    assert conditions == ["o.user_id = u.id"]
+
+
+def test_fk_join_conditions_without_aliases(fk_completer):
+    conditions = fk_completer._fk_join_conditions([(None, "orders", None), (None, "users", None)])
+    assert conditions == ["orders.user_id = users.id"]
+
+
+def test_fk_join_conditions_single_table_yields_nothing(fk_completer):
+    conditions = fk_completer._fk_join_conditions([(None, "orders", "o")])
+    assert conditions == []
+
+
+def test_fk_join_conditions_unrelated_tables_yields_nothing(fk_completer):
+    conditions = fk_completer._fk_join_conditions([(None, "orders", "o"), (None, "tags", "t")])
+    assert conditions == []
+
+
+def test_join_suggests_fk_table_before_unrelated(fk_completer, complete_event):
+    text = "SELECT * FROM orders JOIN "
+    result = [c.text for c in fk_completer.get_completions(
+        Document(text=text, cursor_position=len(text)), complete_event
+    )]
+    assert "users" in result
+    assert "tags" in result
+    assert result.index("users") < result.index("tags")
+
+
+def test_join_fk_lookup_is_bidirectional(fk_completer, complete_event):
+    text = "SELECT * FROM users JOIN "
+    result = [c.text for c in fk_completer.get_completions(
+        Document(text=text, cursor_position=len(text)), complete_event
+    )]
+    assert "orders" in result
+    assert "tags" in result
+    assert result.index("orders") < result.index("tags")
+
+
+def test_join_unrelated_table_still_suggests_all_tables(fk_completer, complete_event):
+    text = "SELECT * FROM tags JOIN "
+    result = [c.text for c in fk_completer.get_completions(
+        Document(text=text, cursor_position=len(text)), complete_event
+    )]
+    assert "orders" in result
+    assert "users" in result
+
+
+def test_on_suggests_fk_condition_with_aliases(fk_completer, complete_event):
+    text = "SELECT * FROM orders o JOIN users u ON "
+    result = [c.text for c in fk_completer.get_completions(
+        Document(text=text, cursor_position=len(text)), complete_event
+    )]
+    assert "o.user_id = u.id" in result
+
+
+def test_on_suggests_fk_condition_without_aliases(fk_completer, complete_event):
+    text = "SELECT * FROM orders JOIN users ON "
+    result = [c.text for c in fk_completer.get_completions(
+        Document(text=text, cursor_position=len(text)), complete_event
+    )]
+    assert "orders.user_id = users.id" in result
+
+
+def test_on_fk_condition_appears_before_aliases(fk_completer, complete_event):
+    text = "SELECT * FROM orders o JOIN users u ON "
+    result = [c.text for c in fk_completer.get_completions(
+        Document(text=text, cursor_position=len(text)), complete_event
+    )]
+    assert result.index("o.user_id = u.id") < result.index("o")
+
+
+def test_on_no_fk_condition_for_unrelated_join(fk_completer, complete_event):
+    text = "SELECT * FROM orders o JOIN tags t ON "
+    result = [c.text for c in fk_completer.get_completions(
+        Document(text=text, cursor_position=len(text)), complete_event
+    )]
+    assert not any("=" in r for r in result)
+    assert "o" in result
+    assert "t" in result
+
+
+def test_on_partial_text_filters_fk_condition(fk_completer, complete_event):
+    text = "SELECT * FROM orders JOIN users ON ord"
+    result = [c.text for c in fk_completer.get_completions(
+        Document(text=text, cursor_position=len(text)), complete_event
+    )]
+    assert "orders.user_id = users.id" in result
