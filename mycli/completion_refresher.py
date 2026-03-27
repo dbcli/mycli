@@ -132,6 +132,11 @@ def refresh_tables(completer: SQLCompleter, executor: SQLExecute) -> None:
     completer.extend_columns(table_columns_dbresult, kind="tables")
 
 
+@refresher("foreign_keys")
+def refresh_foreign_keys(completer: SQLCompleter, executor: SQLExecute) -> None:
+    completer.extend_foreign_keys(executor.foreign_keys())
+
+
 @refresher("enum_values")
 def refresh_enum_values(completer: SQLCompleter, executor: SQLExecute) -> None:
     completer.extend_enum_values(executor.enum_values())

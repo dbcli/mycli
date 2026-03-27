@@ -115,6 +115,10 @@ class SQLExecute:
                                     where table_schema = %s and data_type = 'enum'
                                     order by table_name,ordinal_position"""
 
+    foreign_keys_query = """SELECT TABLE_NAME, COLUMN_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME
+                                    FROM information_schema.KEY_COLUMN_USAGE
+                                    WHERE TABLE_SCHEMA = %s AND REFERENCED_TABLE_NAME IS NOT NULL"""
+
     now_query = """SELECT NOW()"""
 
     @staticmethod
@@ -439,6 +443,17 @@ class SQLExecute:
                 values = self._parse_enum_values(column_type)
                 if values:
                     yield (table_name, column_name, values)
+
+    def foreign_keys(self) -> Generator[tuple[str, str, str, str], None, None]:
+        """Yields (table_name, column_name, referenced_table_name, referenced_column_name) tuples"""
+        assert isinstance(self.conn, Connection)
+        with self.conn.cursor() as cur:
+            _logger.debug("Foreign Keys Query. sql: %r", self.foreign_keys_query)
+            try:
+                cur.execute(self.foreign_keys_query, (self.dbname,))
+                yield from cur
+            except Exception as e:
+                _logger.error('No foreign key completions due to %r', e)
 
     def databases(self) -> list[str]:
         assert isinstance(self.conn, Connection)

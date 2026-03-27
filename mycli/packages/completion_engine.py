@@ -476,10 +476,11 @@ def suggest_based_on_last_token(
         or (token_v == "like" and re.match(r'^\s*create\s+table\s', full_text, re.IGNORECASE))
     ):
         schema = (identifier and identifier.get_parent_name()) or []
+        is_join = token_v.endswith("join")
 
         # Suggest tables from either the currently-selected schema or the
         # public schema if no schema has been specified
-        suggest = [{"type": "table", "schema": schema}]
+        suggest = [{"type": "table", "schema": schema, "join": is_join}]
 
         if not schema:
             # Suggest schemas

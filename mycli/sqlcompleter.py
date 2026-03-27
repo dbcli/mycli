@@ -13,7 +13,7 @@ import rapidfuzz
 
 from mycli.packages.completion_engine import is_inside_quotes, suggest_type
 from mycli.packages.filepaths import complete_path, parse_path, suggest_path
-from mycli.packages.parseutils import extract_columns_from_select, last_word
+from mycli.packages.parseutils import extract_columns_from_select, extract_tables, last_word
 from mycli.packages.special import llm
 from mycli.packages.special.favoritequeries import FavoriteQueries
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
@@ -1052,6 +1052,21 @@ class SQLCompleter(Completer):
             table_meta = metadata[self.dbname].setdefault(relname_escaped, {})
             table_meta[column_escaped] = values
 
+    def extend_foreign_keys(self, fk_data: Iterable[tuple[str, str, str, str]]) -> None:
+        """Extend FK metadata.
+
+        :param fk_data: iterable of (table_name, column_name, referenced_table_name, referenced_column_name)
+        """
+        metadata = self.dbmetadata["foreign_keys"]
+        if self.dbname not in metadata:
+            metadata[self.dbname] = {}
+        fk_map = metadata[self.dbname]
+        for table, _col, ref_table, _ref_col in fk_data:
+            table = self.escape_name(table)
+            ref_table = self.escape_name(ref_table)
+            fk_map.setdefault(table, set()).add(ref_table)
+            fk_map.setdefault(ref_table, set()).add(table)
+
     def extend_functions(self, func_data: list[str] | Generator[tuple[str, str]], builtin: bool = False) -> None:
         # if 'builtin' is set this is extending the list of builtin functions
         if builtin:
@@ -1124,6 +1139,7 @@ class SQLCompleter(Completer):
             "functions": {},
             "procedures": {},
             "enum_values": {},
+            "foreign_keys": {},
         }
         self.all_completions = set(self.keywords + self.functions)
 
@@ -1366,12 +1382,36 @@ class SQLCompleter(Completer):
                     tables = self.populate_schema_objects(suggestion["schema"], "tables", columns)
                 else:
                     tables = self.populate_schema_objects(suggestion["schema"], "tables")
-                tables_m = self.find_matches(
-                    word_before_cursor,
-                    tables,
-                    text_before_cursor=document.text_before_cursor,
-                )
-                completions.extend([(*x, rank) for x in tables_m])
+
+                if suggestion.get("join"):
+                    # For JOINs, suggest FK-related tables first (lower rank = higher priority)
+                    current_tables = extract_tables(document.text)
+                    fk_map = self.dbmetadata["foreign_keys"].get(self.dbname, {})
+                    fk_related: set[str] = set()
+                    for _schema, tbl, _alias in current_tables:
+                        escaped = self.escape_name(tbl)
+                        fk_related.update(fk_map.get(escaped, set()))
+                    fk_tables = [t for t in tables if t in fk_related]
+                    other_tables = [t for t in tables if t not in fk_related]
+                    fk_tables_m = self.find_matches(
+                        word_before_cursor,
+                        fk_tables,
+                        text_before_cursor=document.text_before_cursor,
+                    )
+                    other_tables_m = self.find_matches(
+                        word_before_cursor,
+                        other_tables,
+                        text_before_cursor=document.text_before_cursor,
+                    )
+                    completions.extend([(*x, rank) for x in fk_tables_m])
+                    completions.extend([(*x, rank + 1) for x in other_tables_m])
+                else:
+                    tables_m = self.find_matches(
+                        word_before_cursor,
+                        tables,
+                        text_before_cursor=document.text_before_cursor,
+                    )
+                    completions.extend([(*x, rank) for x in tables_m])
 
             elif suggestion["type"] == "view":
                 views = self.populate_schema_objects(suggestion["schema"], "views")
