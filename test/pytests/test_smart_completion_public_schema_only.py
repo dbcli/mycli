@@ -980,16 +980,22 @@ def fk_completer():
         users  (id, email, first_name)
         tags   (id, name)                           no FK
     """
-    import mycli.sqlcompleter as sqlcompleter
     import mycli.packages.special.main as special
+    import mycli.sqlcompleter as sqlcompleter
 
     comp = sqlcompleter.SQLCompleter(smart_completion=True)
 
     tables = [("orders",), ("users",), ("tags",)]
     columns = [
-        ("orders", "id"), ("orders", "user_id"), ("orders", "ordered_date"), ("orders", "status"),
-        ("users", "id"), ("users", "email"), ("users", "first_name"),
-        ("tags", "id"), ("tags", "name"),
+        ("orders", "id"),
+        ("orders", "user_id"),
+        ("orders", "ordered_date"),
+        ("orders", "status"),
+        ("users", "id"),
+        ("users", "email"),
+        ("users", "first_name"),
+        ("tags", "id"),
+        ("tags", "name"),
     ]
     fk_data = [("orders", "user_id", "users", "id")]
 
@@ -1042,9 +1048,7 @@ def test_fk_join_conditions_unrelated_tables_yields_nothing(fk_completer):
 
 def test_join_suggests_fk_table_before_unrelated(fk_completer, complete_event):
     text = "SELECT * FROM orders JOIN "
-    result = [c.text for c in fk_completer.get_completions(
-        Document(text=text, cursor_position=len(text)), complete_event
-    )]
+    result = [c.text for c in fk_completer.get_completions(Document(text=text, cursor_position=len(text)), complete_event)]
     assert "users" in result
     assert "tags" in result
     assert result.index("users") < result.index("tags")
@@ -1052,9 +1056,7 @@ def test_join_suggests_fk_table_before_unrelated(fk_completer, complete_event):
 
 def test_join_fk_lookup_is_bidirectional(fk_completer, complete_event):
     text = "SELECT * FROM users JOIN "
-    result = [c.text for c in fk_completer.get_completions(
-        Document(text=text, cursor_position=len(text)), complete_event
-    )]
+    result = [c.text for c in fk_completer.get_completions(Document(text=text, cursor_position=len(text)), complete_event)]
     assert "orders" in result
     assert "tags" in result
     assert result.index("orders") < result.index("tags")
@@ -1062,42 +1064,32 @@ def test_join_fk_lookup_is_bidirectional(fk_completer, complete_event):
 
 def test_join_unrelated_table_still_suggests_all_tables(fk_completer, complete_event):
     text = "SELECT * FROM tags JOIN "
-    result = [c.text for c in fk_completer.get_completions(
-        Document(text=text, cursor_position=len(text)), complete_event
-    )]
+    result = [c.text for c in fk_completer.get_completions(Document(text=text, cursor_position=len(text)), complete_event)]
     assert "orders" in result
     assert "users" in result
 
 
 def test_on_suggests_fk_condition_with_aliases(fk_completer, complete_event):
     text = "SELECT * FROM orders o JOIN users u ON "
-    result = [c.text for c in fk_completer.get_completions(
-        Document(text=text, cursor_position=len(text)), complete_event
-    )]
+    result = [c.text for c in fk_completer.get_completions(Document(text=text, cursor_position=len(text)), complete_event)]
     assert "o.user_id = u.id" in result
 
 
 def test_on_suggests_fk_condition_without_aliases(fk_completer, complete_event):
     text = "SELECT * FROM orders JOIN users ON "
-    result = [c.text for c in fk_completer.get_completions(
-        Document(text=text, cursor_position=len(text)), complete_event
-    )]
+    result = [c.text for c in fk_completer.get_completions(Document(text=text, cursor_position=len(text)), complete_event)]
     assert "orders.user_id = users.id" in result
 
 
 def test_on_fk_condition_appears_before_aliases(fk_completer, complete_event):
     text = "SELECT * FROM orders o JOIN users u ON "
-    result = [c.text for c in fk_completer.get_completions(
-        Document(text=text, cursor_position=len(text)), complete_event
-    )]
+    result = [c.text for c in fk_completer.get_completions(Document(text=text, cursor_position=len(text)), complete_event)]
     assert result.index("o.user_id = u.id") < result.index("o")
 
 
 def test_on_no_fk_condition_for_unrelated_join(fk_completer, complete_event):
     text = "SELECT * FROM orders o JOIN tags t ON "
-    result = [c.text for c in fk_completer.get_completions(
-        Document(text=text, cursor_position=len(text)), complete_event
-    )]
+    result = [c.text for c in fk_completer.get_completions(Document(text=text, cursor_position=len(text)), complete_event)]
     assert not any("=" in r for r in result)
     assert "o" in result
     assert "t" in result
@@ -1105,7 +1097,5 @@ def test_on_no_fk_condition_for_unrelated_join(fk_completer, complete_event):
 
 def test_on_partial_text_filters_fk_condition(fk_completer, complete_event):
     text = "SELECT * FROM orders JOIN users ON ord"
-    result = [c.text for c in fk_completer.get_completions(
-        Document(text=text, cursor_position=len(text)), complete_event
-    )]
+    result = [c.text for c in fk_completer.get_completions(Document(text=text, cursor_position=len(text)), complete_event)]
     assert "orders.user_id = users.id" in result
