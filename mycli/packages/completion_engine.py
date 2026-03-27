@@ -480,7 +480,10 @@ def suggest_based_on_last_token(
 
         # Suggest tables from either the currently-selected schema or the
         # public schema if no schema has been specified
-        suggest = [{"type": "table", "schema": schema, "join": is_join}]
+        table_suggestion: dict[str, Any] = {"type": "table", "schema": schema}
+        if is_join:
+            table_suggestion["join"] = True
+        suggest = [table_suggestion]
 
         if not schema:
             # Suggest schemas
