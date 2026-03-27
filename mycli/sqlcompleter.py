@@ -1081,7 +1081,7 @@ class SQLCompleter(Completer):
         relations = schema_meta.get("relations", [])
 
         # Map escaped table name -> alias (or table name when no alias).
-        # Skip tables from a different schema — we only have FK metadata for the current db.
+        # Skip tables from a different schema; we only have FK metadata for the current db.
         alias_map: dict[str, str] = {}
         for tbl_schema, tbl, alias in tables:
             if tbl_schema and tbl_schema != self.dbname:
@@ -1419,7 +1419,7 @@ class SQLCompleter(Completer):
                     fk_map = self.dbmetadata["foreign_keys"].get(self.dbname, {}).get("tables", {})
                     fk_related: set[str] = set()
                     for tbl_schema, tbl, _alias in current_tables:
-                        # Skip cross-schema tables — FK metadata is only for the current db
+                        # Skip cross-schema tables; FK metadata is only for the current db
                         if tbl_schema and tbl_schema != self.dbname:
                             continue
                         escaped = self.escape_name(tbl)
