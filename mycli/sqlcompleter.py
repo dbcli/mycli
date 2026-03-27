@@ -1058,14 +1058,39 @@ class SQLCompleter(Completer):
         :param fk_data: iterable of (table_name, column_name, referenced_table_name, referenced_column_name)
         """
         metadata = self.dbmetadata["foreign_keys"]
-        if self.dbname not in metadata:
-            metadata[self.dbname] = {}
-        fk_map = metadata[self.dbname]
-        for table, _col, ref_table, _ref_col in fk_data:
+        schema_meta = metadata.setdefault(self.dbname, {})
+        schema_meta.setdefault("tables", {})
+        schema_meta.setdefault("relations", [])
+        for table, col, ref_table, ref_col in fk_data:
             table = self.escape_name(table)
             ref_table = self.escape_name(ref_table)
-            fk_map.setdefault(table, set()).add(ref_table)
-            fk_map.setdefault(ref_table, set()).add(table)
+            schema_meta["tables"].setdefault(table, set()).add(ref_table)
+            schema_meta["tables"].setdefault(ref_table, set()).add(table)
+            schema_meta["relations"].append((table, col, ref_table, ref_col))
+
+    def _fk_join_conditions(self, tables: list[tuple[str | None, str, str]]) -> list[str]:
+        """Return FK-based join condition strings for the tables currently in the query.
+
+        For each FK relation where both the FK table and the referenced table appear in
+        *tables*, yields a string like ``alias1.col = alias2.ref_col`` (using the alias
+        when one exists, otherwise the table name).
+        """
+        schema_meta = self.dbmetadata["foreign_keys"].get(self.dbname, {})
+        relations = schema_meta.get("relations", [])
+
+        # Map escaped table name -> alias (or table name when no alias)
+        alias_map: dict[str, str] = {}
+        for _schema, tbl, alias in tables:
+            escaped = self.escape_name(tbl)
+            alias_map[escaped] = alias or tbl
+
+        conditions: list[str] = []
+        for fk_table, fk_col, ref_table, ref_col in relations:
+            lhs = alias_map.get(fk_table)
+            rhs = alias_map.get(ref_table)
+            if lhs and rhs:
+                conditions.append(f"{lhs}.{fk_col} = {rhs}.{ref_col}")
+        return conditions
 
     def extend_functions(self, func_data: list[str] | Generator[tuple[str, str]], builtin: bool = False) -> None:
         # if 'builtin' is set this is extending the list of builtin functions
@@ -1386,7 +1411,7 @@ class SQLCompleter(Completer):
                 if suggestion.get("join"):
                     # For JOINs, suggest FK-related tables first (lower rank = higher priority)
                     current_tables = extract_tables(document.text)
-                    fk_map = self.dbmetadata["foreign_keys"].get(self.dbname, {})
+                    fk_map = self.dbmetadata["foreign_keys"].get(self.dbname, {}).get("tables", {})
                     fk_related: set[str] = set()
                     for _schema, tbl, _alias in current_tables:
                         escaped = self.escape_name(tbl)
@@ -1421,6 +1446,15 @@ class SQLCompleter(Completer):
                     text_before_cursor=document.text_before_cursor,
                 )
                 completions.extend([(*x, rank) for x in views_m])
+
+            elif suggestion["type"] == "fk_join":
+                fk_conditions = self._fk_join_conditions(suggestion["tables"])
+                fk_conditions_m = self.find_matches(
+                    word_before_cursor,
+                    fk_conditions,
+                    text_before_cursor=document.text_before_cursor,
+                )
+                completions.extend([(*x, rank) for x in fk_conditions_m])
 
             elif suggestion["type"] == "alias":
                 aliases = suggestion["aliases"]

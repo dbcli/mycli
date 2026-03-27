@@ -517,7 +517,7 @@ def suggest_based_on_last_token(
             # ON <suggestion>
             # Use table alias if there is one, otherwise the table name
             aliases = [alias or table for (schema, table, alias) in tables]
-            suggest = [{"type": "alias", "aliases": aliases}]
+            suggest = [{"type": "fk_join", "tables": tables}, {"type": "alias", "aliases": aliases}]
 
             # The lists of 'aliases' could be empty if we're trying to complete
             # a GRANT query. eg: GRANT SELECT, INSERT ON <tab>
