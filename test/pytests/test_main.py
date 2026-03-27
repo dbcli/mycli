@@ -6,8 +6,10 @@ import csv
 import io
 import os
 import shutil
+import sys
 from tempfile import NamedTemporaryFile
 from textwrap import dedent
+from types import SimpleNamespace
 
 import click
 from click.testing import CliRunner
@@ -2135,6 +2137,79 @@ def test_batch_file(monkeypatch):
         assert MockMyCli.ran_queries == ['select 2;']
     finally:
         os.remove(batch_file.name)
+
+
+def test_batch_file_with_progress(monkeypatch):
+    mycli_main, MockMyCli = _noninteractive_mock_mycli(monkeypatch)
+    runner = CliRunner()
+
+    class DummyProgressBar:
+        calls = []
+
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def __call__(self, iterable):
+            values = list(iterable)
+            DummyProgressBar.calls.append(values)
+            return values
+
+    monkeypatch.setattr(mycli_main, 'ProgressBar', DummyProgressBar)
+    monkeypatch.setattr(mycli_main.prompt_toolkit.output, 'create_output', lambda **kwargs: object())
+    monkeypatch.setattr(
+        mycli_main,
+        'sys',
+        SimpleNamespace(
+            stdin=SimpleNamespace(isatty=lambda: False),
+            stderr=SimpleNamespace(isatty=lambda: True),
+            exit=sys.exit,
+        ),
+    )
+
+    with NamedTemporaryFile(prefix=TEMPFILE_PREFIX, mode='w', delete=False) as batch_file:
+        batch_file.write('select 2;\nselect 2;\nselect 2;\n')
+        batch_file.flush()
+
+    try:
+        result = runner.invoke(
+            mycli_main.click_entrypoint,
+            args=['--batch', batch_file.name, '--progress'],
+        )
+        assert result.exit_code == 0
+        assert MockMyCli.ran_queries == ['select 2;\n', 'select 2;\n', 'select 2;\n']
+        assert DummyProgressBar.calls == [[0, 1, 2]]
+    finally:
+        os.remove(batch_file.name)
+
+
+def test_batch_file_with_progress_requires_plain_file(monkeypatch, tmp_path):
+    mycli_main, MockMyCli = _noninteractive_mock_mycli(monkeypatch)
+    runner = CliRunner()
+
+    monkeypatch.setattr(
+        mycli_main,
+        'sys',
+        SimpleNamespace(
+            stdin=SimpleNamespace(isatty=lambda: False),
+            stderr=SimpleNamespace(isatty=lambda: True),
+            exit=sys.exit,
+        ),
+    )
+
+    result = runner.invoke(
+        mycli_main.click_entrypoint,
+        args=['--batch', str(tmp_path), '--progress'],
+    )
+
+    assert result.exit_code != 0
+    assert '--progress is only compatible with a plain file.' in result.output
+    assert MockMyCli.ran_queries == []
 
 
 def test_execute_arg_warns_about_ignoring_stdin(monkeypatch):

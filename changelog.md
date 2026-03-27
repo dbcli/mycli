@@ -7,6 +7,7 @@ Features
 * Allow `--hostname` as an alias for `--host`.
 * Suggest tables with foreign key relationships for JOIN and ON (#975)
 * Deprecate `$DSN` environment variable in favor of `$MYSQL_DSN`.
+* Add a `--progress` progress-bar option with `--batch`.
 
 
 Bug Fixes
