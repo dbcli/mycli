@@ -1063,7 +1063,9 @@ class SQLCompleter(Completer):
         schema_meta.setdefault("relations", [])
         for table, col, ref_table, ref_col in fk_data:
             table = self.escape_name(table)
+            col = self.escape_name(col)
             ref_table = self.escape_name(ref_table)
+            ref_col = self.escape_name(ref_col)
             schema_meta["tables"].setdefault(table, set()).add(ref_table)
             schema_meta["tables"].setdefault(ref_table, set()).add(table)
             schema_meta["relations"].append((table, col, ref_table, ref_col))
@@ -1078,9 +1080,12 @@ class SQLCompleter(Completer):
         schema_meta = self.dbmetadata["foreign_keys"].get(self.dbname, {})
         relations = schema_meta.get("relations", [])
 
-        # Map escaped table name -> alias (or table name when no alias)
+        # Map escaped table name -> alias (or table name when no alias).
+        # Skip tables from a different schema — we only have FK metadata for the current db.
         alias_map: dict[str, str] = {}
-        for _schema, tbl, alias in tables:
+        for tbl_schema, tbl, alias in tables:
+            if tbl_schema and tbl_schema != self.dbname:
+                continue
             escaped = self.escape_name(tbl)
             alias_map[escaped] = alias or tbl
 
@@ -1413,7 +1418,10 @@ class SQLCompleter(Completer):
                     current_tables = extract_tables(document.text)
                     fk_map = self.dbmetadata["foreign_keys"].get(self.dbname, {}).get("tables", {})
                     fk_related: set[str] = set()
-                    for _schema, tbl, _alias in current_tables:
+                    for tbl_schema, tbl, _alias in current_tables:
+                        # Skip cross-schema tables — FK metadata is only for the current db
+                        if tbl_schema and tbl_schema != self.dbname:
+                            continue
                         escaped = self.escape_name(tbl)
                         fk_related.update(fk_map.get(escaped, set()))
                     fk_tables = [t for t in tables if t in fk_related]

@@ -1099,3 +1099,41 @@ def test_on_partial_text_filters_fk_condition(fk_completer, complete_event):
     text = "SELECT * FROM orders JOIN users ON ord"
     result = [c.text for c in fk_completer.get_completions(Document(text=text, cursor_position=len(text)), complete_event)]
     assert "orders.user_id = users.id" in result
+
+
+def test_fk_reserved_column_names_are_escaped():
+    """FK columns that are reserved words or need quoting must be backtick-escaped."""
+    import mycli.sqlcompleter as sqlcompleter
+
+    comp = sqlcompleter.SQLCompleter(smart_completion=True)
+    comp.extend_schemata("test")
+    comp.set_dbname("test")
+    comp.extend_foreign_keys([("orders", "order", "users", "select")])
+
+    relations = comp.dbmetadata["foreign_keys"]["test"]["relations"]
+    assert ("orders", "`order`", "users", "`select`") in relations
+
+    conditions = comp._fk_join_conditions([(None, "orders", "o"), (None, "users", "u")])
+    assert conditions == ["o.`order` = u.`select`"]
+
+
+def test_fk_conditions_ignore_cross_schema_tables(fk_completer):
+    """Tables qualified with a foreign schema are excluded from FK condition generation."""
+    tables = [("other_db", "orders", "o"), (None, "users", "u")]
+    conditions = fk_completer._fk_join_conditions(tables)
+    assert conditions == []
+
+
+def test_join_priority_ignores_cross_schema_table(fk_completer, complete_event):
+    """Schema-qualified tables in FROM do not trigger FK priority using current-db metadata."""
+    text = "SELECT * FROM other_db.orders JOIN "
+    result_cross_schema = [c.text for c in fk_completer.get_completions(
+        Document(text=text, cursor_position=len(text)), complete_event
+    )]
+    # A table with no FK relationships at all should give the same ordering,
+    # confirming that no FK priority was applied for the cross-schema table.
+    text_no_fk = "SELECT * FROM tags JOIN "
+    result_no_fk = [c.text for c in fk_completer.get_completions(
+        Document(text=text_no_fk, cursor_position=len(text_no_fk)), complete_event
+    )]
+    assert result_cross_schema == result_no_fk
