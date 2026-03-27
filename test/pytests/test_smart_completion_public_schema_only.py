@@ -1127,13 +1127,11 @@ def test_fk_conditions_ignore_cross_schema_tables(fk_completer):
 def test_join_priority_ignores_cross_schema_table(fk_completer, complete_event):
     """Schema-qualified tables in FROM do not trigger FK priority using current-db metadata."""
     text = "SELECT * FROM other_db.orders JOIN "
-    result_cross_schema = [c.text for c in fk_completer.get_completions(
-        Document(text=text, cursor_position=len(text)), complete_event
-    )]
+    result_cross_schema = [c.text for c in fk_completer.get_completions(Document(text=text, cursor_position=len(text)), complete_event)]
     # A table with no FK relationships at all should give the same ordering,
     # confirming that no FK priority was applied for the cross-schema table.
     text_no_fk = "SELECT * FROM tags JOIN "
-    result_no_fk = [c.text for c in fk_completer.get_completions(
-        Document(text=text_no_fk, cursor_position=len(text_no_fk)), complete_event
-    )]
+    result_no_fk = [
+        c.text for c in fk_completer.get_completions(Document(text=text_no_fk, cursor_position=len(text_no_fk)), complete_event)
+    ]
     assert result_cross_schema == result_no_fk
