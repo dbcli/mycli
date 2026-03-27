@@ -5,6 +5,7 @@ Features
 ---------
 * Respond to `-h` alone with the helpdoc.
 * Allow `--hostname` as an alias for `--host`.
+* Deprecate `$DSN` environment variable in favor of `$MYSQL_DSN`.
 
 
 Bug Fixes
