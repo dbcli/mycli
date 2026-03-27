@@ -1118,6 +1118,112 @@ def test_dsn(monkeypatch):
     assert MockMyCli.connect_args['character_set'] == 'utf8mb3'
 
 
+def test_mysql_dsn_envvar(monkeypatch):
+    class Formatter:
+        format_name = None
+
+    class Logger:
+        def debug(self, *args, **args_dict):
+            pass
+
+        def warning(self, *args, **args_dict):
+            pass
+
+    class MockMyCli:
+        config = {
+            'main': {},
+            'alias_dsn': {},
+            'connection': {
+                'default_keepalive_ticks': 0,
+            },
+        }
+
+        def __init__(self, **_args):
+            self.logger = Logger()
+            self.destructive_warning = False
+            self.main_formatter = Formatter()
+            self.redirect_formatter = Formatter()
+            self.ssl_mode = 'auto'
+            self.my_cnf = {'client': {}, 'mysqld': {}}
+            self.default_keepalive_ticks = 0
+
+        def connect(self, **args):
+            MockMyCli.connect_args = args
+
+        def run_query(self, query, new_line=True):
+            pass
+
+    import mycli.main
+
+    monkeypatch.setattr(mycli.main, 'MyCli', MockMyCli)
+    monkeypatch.setenv('MYSQL_DSN', 'mysql://dsn_user:dsn_passwd@dsn_host:7/dsn_database')
+    runner = CliRunner()
+
+    result = runner.invoke(mycli.main.click_entrypoint)
+    assert result.exit_code == 0, result.output + ' ' + str(result.exception)
+    assert 'DSN environment variable is deprecated' not in result.output
+    assert (
+        MockMyCli.connect_args['user'] == 'dsn_user'
+        and MockMyCli.connect_args['passwd'] == 'dsn_passwd'
+        and MockMyCli.connect_args['host'] == 'dsn_host'
+        and MockMyCli.connect_args['port'] == 7
+        and MockMyCli.connect_args['database'] == 'dsn_database'
+    )
+
+
+def test_legacy_dsn_envvar_warns_and_falls_back(monkeypatch):
+    class Formatter:
+        format_name = None
+
+    class Logger:
+        def debug(self, *args, **args_dict):
+            pass
+
+        def warning(self, *args, **args_dict):
+            pass
+
+    class MockMyCli:
+        config = {
+            'main': {},
+            'alias_dsn': {},
+            'connection': {
+                'default_keepalive_ticks': 0,
+            },
+        }
+
+        def __init__(self, **_args):
+            self.logger = Logger()
+            self.destructive_warning = False
+            self.main_formatter = Formatter()
+            self.redirect_formatter = Formatter()
+            self.ssl_mode = 'auto'
+            self.my_cnf = {'client': {}, 'mysqld': {}}
+            self.default_keepalive_ticks = 0
+
+        def connect(self, **args):
+            MockMyCli.connect_args = args
+
+        def run_query(self, query, new_line=True):
+            pass
+
+    import mycli.main
+
+    monkeypatch.setattr(mycli.main, 'MyCli', MockMyCli)
+    monkeypatch.setenv('DSN', 'mysql://dsn_user:dsn_passwd@dsn_host:8/dsn_database')
+    runner = CliRunner()
+
+    result = runner.invoke(mycli.main.click_entrypoint)
+    assert result.exit_code == 0, result.output + ' ' + str(result.exception)
+    assert 'The DSN environment variable is deprecated' in result.output
+    assert (
+        MockMyCli.connect_args['user'] == 'dsn_user'
+        and MockMyCli.connect_args['passwd'] == 'dsn_passwd'
+        and MockMyCli.connect_args['host'] == 'dsn_host'
+        and MockMyCli.connect_args['port'] == 8
+        and MockMyCli.connect_args['database'] == 'dsn_database'
+    )
+
+
 def test_password_flag_uses_sentinel(monkeypatch):
     class Formatter:
         format_name = None
