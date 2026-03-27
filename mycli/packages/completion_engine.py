@@ -476,10 +476,14 @@ def suggest_based_on_last_token(
         or (token_v == "like" and re.match(r'^\s*create\s+table\s', full_text, re.IGNORECASE))
     ):
         schema = (identifier and identifier.get_parent_name()) or []
+        is_join = token_v.endswith("join")
 
         # Suggest tables from either the currently-selected schema or the
         # public schema if no schema has been specified
-        suggest = [{"type": "table", "schema": schema}]
+        table_suggestion: dict[str, Any] = {"type": "table", "schema": schema}
+        if is_join:
+            table_suggestion["join"] = True
+        suggest = [table_suggestion]
 
         if not schema:
             # Suggest schemas
@@ -516,7 +520,7 @@ def suggest_based_on_last_token(
             # ON <suggestion>
             # Use table alias if there is one, otherwise the table name
             aliases = [alias or table for (schema, table, alias) in tables]
-            suggest = [{"type": "alias", "aliases": aliases}]
+            suggest = [{"type": "fk_join", "tables": tables}, {"type": "alias", "aliases": aliases}]
 
             # The lists of 'aliases' could be empty if we're trying to complete
             # a GRANT query. eg: GRANT SELECT, INSERT ON <tab>

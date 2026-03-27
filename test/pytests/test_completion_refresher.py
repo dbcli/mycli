@@ -26,6 +26,7 @@ def test_ctor(refresher):
         "databases",
         "schemata",
         "tables",
+        "foreign_keys",
         "enum_values",
         "users",
         "functions",

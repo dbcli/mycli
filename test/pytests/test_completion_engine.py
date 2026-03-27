@@ -167,13 +167,22 @@ def test_select_suggests_cols_and_funcs():
         "DESCRIBE ",
         "DESC ",
         "EXPLAIN ",
-        "SELECT * FROM foo JOIN ",
     ],
 )
 def test_expression_suggests_tables_views_and_schemas(expression):
     suggestions = suggest_type(expression, expression)
     assert sorted_dicts(suggestions) == sorted_dicts([
         {"type": "table", "schema": []},
+        {"type": "view", "schema": []},
+        {"type": "database"},
+    ])
+
+
+def test_join_expression_suggests_tables_views_and_schemas():
+    expression = "SELECT * FROM foo JOIN "
+    suggestions = suggest_type(expression, expression)
+    assert sorted_dicts(suggestions) == sorted_dicts([
+        {"type": "table", "schema": [], "join": True},
         {"type": "view", "schema": []},
         {"type": "database"},
     ])
@@ -189,13 +198,21 @@ def test_expression_suggests_tables_views_and_schemas(expression):
         "DESCRIBE sch.",
         "DESC sch.",
         "EXPLAIN sch.",
-        "SELECT * FROM foo JOIN sch.",
     ],
 )
 def test_expression_suggests_qualified_tables_views_and_schemas(expression):
     suggestions = suggest_type(expression, expression)
     assert sorted_dicts(suggestions) == sorted_dicts([
         {"type": "table", "schema": "sch"},
+        {"type": "view", "schema": "sch"},
+    ])
+
+
+def test_join_expression_suggests_qualified_tables_views_and_schemas():
+    expression = "SELECT * FROM foo JOIN sch."
+    suggestions = suggest_type(expression, expression)
+    assert sorted_dicts(suggestions) == sorted_dicts([
+        {"type": "table", "schema": "sch", "join": True},
         {"type": "view", "schema": "sch"},
     ])
 
@@ -395,7 +412,7 @@ def test_join_suggests_tables_and_schemas(tbl_alias, join_type):
     suggestion = suggest_type(text, text)
     assert sorted_dicts(suggestion) == sorted_dicts([
         {"type": "database"},
-        {"type": "table", "schema": []},
+        {"type": "table", "schema": [], "join": True},
         {"type": "view", "schema": []},
     ])
 
@@ -445,7 +462,10 @@ def test_join_alias_dot_suggests_cols2(sql):
 )
 def test_on_suggests_aliases(sql):
     suggestions = suggest_type(sql, sql)
-    assert suggestions == [{"type": "alias", "aliases": ["a", "b"]}]
+    assert suggestions == [
+        {"type": "fk_join", "tables": [(None, "abc", "a"), (None, "bcd", "b")]},
+        {"type": "alias", "aliases": ["a", "b"]},
+    ]
 
 
 @pytest.mark.parametrize(
@@ -457,7 +477,10 @@ def test_on_suggests_aliases(sql):
 )
 def test_on_suggests_tables(sql):
     suggestions = suggest_type(sql, sql)
-    assert suggestions == [{"type": "alias", "aliases": ["abc", "bcd"]}]
+    assert suggestions == [
+        {"type": "fk_join", "tables": [(None, "abc", None), (None, "bcd", None)]},
+        {"type": "alias", "aliases": ["abc", "bcd"]},
+    ]
 
 
 @pytest.mark.parametrize(
@@ -469,7 +492,10 @@ def test_on_suggests_tables(sql):
 )
 def test_on_suggests_aliases_right_side(sql):
     suggestions = suggest_type(sql, sql)
-    assert suggestions == [{"type": "alias", "aliases": ["a", "b"]}]
+    assert suggestions == [
+        {"type": "fk_join", "tables": [(None, "abc", "a"), (None, "bcd", "b")]},
+        {"type": "alias", "aliases": ["a", "b"]},
+    ]
 
 
 @pytest.mark.parametrize(
@@ -481,7 +507,10 @@ def test_on_suggests_aliases_right_side(sql):
 )
 def test_on_suggests_tables_right_side(sql):
     suggestions = suggest_type(sql, sql)
-    assert suggestions == [{"type": "alias", "aliases": ["abc", "bcd"]}]
+    assert suggestions == [
+        {"type": "fk_join", "tables": [(None, "abc", None), (None, "bcd", None)]},
+        {"type": "alias", "aliases": ["abc", "bcd"]},
+    ]
 
 
 @pytest.mark.parametrize("col_list", ["", "col1, "])
@@ -610,7 +639,7 @@ def test_cross_join():
     suggestions = suggest_type(text, text)
     assert sorted_dicts(suggestions) == sorted_dicts([
         {"type": "database"},
-        {"type": "table", "schema": []},
+        {"type": "table", "schema": [], "join": True},
         {"type": "view", "schema": []},
     ])
 

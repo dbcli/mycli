@@ -13,7 +13,7 @@ import rapidfuzz
 
 from mycli.packages.completion_engine import is_inside_quotes, suggest_type
 from mycli.packages.filepaths import complete_path, parse_path, suggest_path
-from mycli.packages.parseutils import extract_columns_from_select, last_word
+from mycli.packages.parseutils import extract_columns_from_select, extract_tables, last_word
 from mycli.packages.special import llm
 from mycli.packages.special.favoritequeries import FavoriteQueries
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
@@ -1052,6 +1052,51 @@ class SQLCompleter(Completer):
             table_meta = metadata[self.dbname].setdefault(relname_escaped, {})
             table_meta[column_escaped] = values
 
+    def extend_foreign_keys(self, fk_data: Iterable[tuple[str, str, str, str]]) -> None:
+        """Extend FK metadata.
+
+        :param fk_data: iterable of (table_name, column_name, referenced_table_name, referenced_column_name)
+        """
+        metadata = self.dbmetadata["foreign_keys"]
+        schema_meta = metadata.setdefault(self.dbname, {})
+        schema_meta.setdefault("tables", {})
+        schema_meta.setdefault("relations", [])
+        for table, col, ref_table, ref_col in fk_data:
+            table = self.escape_name(table)
+            col = self.escape_name(col)
+            ref_table = self.escape_name(ref_table)
+            ref_col = self.escape_name(ref_col)
+            schema_meta["tables"].setdefault(table, set()).add(ref_table)
+            schema_meta["tables"].setdefault(ref_table, set()).add(table)
+            schema_meta["relations"].append((table, col, ref_table, ref_col))
+
+    def _fk_join_conditions(self, tables: list[tuple[str | None, str, str]]) -> list[str]:
+        """Return FK-based join condition strings for the tables currently in the query.
+
+        For each FK relation where both the FK table and the referenced table appear in
+        *tables*, yields a string like ``alias1.col = alias2.ref_col`` (using the alias
+        when one exists, otherwise the table name).
+        """
+        schema_meta = self.dbmetadata["foreign_keys"].get(self.dbname, {})
+        relations = schema_meta.get("relations", [])
+
+        # Map escaped table name -> alias (or table name when no alias).
+        # Skip tables from a different schema; we only have FK metadata for the current db.
+        alias_map: dict[str, str] = {}
+        for tbl_schema, tbl, alias in tables:
+            if tbl_schema and tbl_schema != self.dbname:
+                continue
+            escaped = self.escape_name(tbl)
+            alias_map[escaped] = alias or tbl
+
+        conditions: list[str] = []
+        for fk_table, fk_col, ref_table, ref_col in relations:
+            lhs = alias_map.get(fk_table)
+            rhs = alias_map.get(ref_table)
+            if lhs and rhs:
+                conditions.append(f"{lhs}.{fk_col} = {rhs}.{ref_col}")
+        return conditions
+
     def extend_functions(self, func_data: list[str] | Generator[tuple[str, str]], builtin: bool = False) -> None:
         # if 'builtin' is set this is extending the list of builtin functions
         if builtin:
@@ -1124,6 +1169,7 @@ class SQLCompleter(Completer):
             "functions": {},
             "procedures": {},
             "enum_values": {},
+            "foreign_keys": {},
         }
         self.all_completions = set(self.keywords + self.functions)
 
@@ -1366,12 +1412,39 @@ class SQLCompleter(Completer):
                     tables = self.populate_schema_objects(suggestion["schema"], "tables", columns)
                 else:
                     tables = self.populate_schema_objects(suggestion["schema"], "tables")
-                tables_m = self.find_matches(
-                    word_before_cursor,
-                    tables,
-                    text_before_cursor=document.text_before_cursor,
-                )
-                completions.extend([(*x, rank) for x in tables_m])
+
+                if suggestion.get("join"):
+                    # For JOINs, suggest FK-related tables first (lower rank = higher priority)
+                    current_tables = extract_tables(document.text)
+                    fk_map = self.dbmetadata["foreign_keys"].get(self.dbname, {}).get("tables", {})
+                    fk_related: set[str] = set()
+                    for tbl_schema, tbl, _alias in current_tables:
+                        # Skip cross-schema tables; FK metadata is only for the current db
+                        if tbl_schema and tbl_schema != self.dbname:
+                            continue
+                        escaped = self.escape_name(tbl)
+                        fk_related.update(fk_map.get(escaped, set()))
+                    fk_tables = [t for t in tables if t in fk_related]
+                    other_tables = [t for t in tables if t not in fk_related]
+                    fk_tables_m = self.find_matches(
+                        word_before_cursor,
+                        fk_tables,
+                        text_before_cursor=document.text_before_cursor,
+                    )
+                    other_tables_m = self.find_matches(
+                        word_before_cursor,
+                        other_tables,
+                        text_before_cursor=document.text_before_cursor,
+                    )
+                    completions.extend([(*x, rank) for x in fk_tables_m])
+                    completions.extend([(*x, rank + 1) for x in other_tables_m])
+                else:
+                    tables_m = self.find_matches(
+                        word_before_cursor,
+                        tables,
+                        text_before_cursor=document.text_before_cursor,
+                    )
+                    completions.extend([(*x, rank) for x in tables_m])
 
             elif suggestion["type"] == "view":
                 views = self.populate_schema_objects(suggestion["schema"], "views")
@@ -1381,6 +1454,15 @@ class SQLCompleter(Completer):
                     text_before_cursor=document.text_before_cursor,
                 )
                 completions.extend([(*x, rank) for x in views_m])
+
+            elif suggestion["type"] == "fk_join":
+                fk_conditions = self._fk_join_conditions(suggestion["tables"])
+                fk_conditions_m = self.find_matches(
+                    word_before_cursor,
+                    fk_conditions,
+                    text_before_cursor=document.text_before_cursor,
+                )
+                completions.extend([(*x, rank) for x in fk_conditions_m])
 
             elif suggestion["type"] == "alias":
                 aliases = suggestion["aliases"]
