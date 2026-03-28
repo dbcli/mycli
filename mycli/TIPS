@@ -178,6 +178,30 @@ use keystroke right-arrow to accept a full-line suggestion from your history!
 
 cancel history search using keystrokes Escape or control-g!
 
+uppercase a word using keystroke alt-u!
+
+lowercase a word using keystroke alt-l!
+
+collapse multiple spaces using keystroke alt-\!
+
+undo using keystroke control-_ or control-x + control-u!
+
+ditto the last argument of the previious command with keystroke alt-.!
+
+ditto the last argument of the previious command with keystroke alt-_!
+
+turn the current query into a comment with keystroke alt-#!
+
+jump forward to a character with keystroke control-]!
+
+jump backward to a character with keystroke alt-control-]!
+
+insert all completions with keystroke alt-*!
+
+in multi-line mode, keystroke alt-Enter dispatches the query!
+
+keystroke control-q + control-j inserts a newline without dispatching the query!
+
 ###
 ### myclirc options
 ###
