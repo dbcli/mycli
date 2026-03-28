@@ -19,6 +19,7 @@ from mycli.packages.special.favoritequeries import FavoriteQueries
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
 
 _logger = logging.getLogger(__name__)
+_CASE_CHANGE_PAT = re.compile('(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])')
 
 
 class Fuzziness(IntEnum):
@@ -1173,8 +1174,135 @@ class SQLCompleter(Completer):
         }
         self.all_completions = set(self.keywords + self.functions)
 
-    @staticmethod
+    def maybe_quote_identifier(self, item: str) -> str:
+        if item.startswith('`'):
+            return item
+        if item == '*':
+            return item
+        return '`' + item + '`'
+
+    def quote_collection_if_needed(
+        self,
+        text: str,
+        collection: Collection[Any],
+        text_before_cursor: str,
+    ) -> Collection[Any]:
+        # checking text.startswith() first is an optimization; is_inside_quotes() covers more cases
+        if text.startswith('`') or is_inside_quotes(text_before_cursor, len(text_before_cursor)) == 'backtick':
+            return [self.maybe_quote_identifier(x) if isinstance(x, str) else x for x in collection]
+        return collection
+
+    def word_parts_match(
+        self,
+        text_parts: list[str],
+        item_parts: list[str],
+    ) -> bool:
+        occurrences = 0
+        for text_part in text_parts:
+            for item_part in item_parts:
+                if item_part.startswith(text_part):
+                    occurrences += 1
+                    break
+        return occurrences >= len(text_parts)
+
+    def find_fuzzy_match(
+        self,
+        item: str,
+        pattern: re.Pattern[str],
+        under_words_text: list[str],
+        case_words_text: list[str],
+    ) -> int | None:
+        if pattern.search(item.lower()):
+            return Fuzziness.REGEX
+
+        under_words_item = [x for x in item.lower().split('_') if x]
+        if self.word_parts_match(under_words_text, under_words_item):
+            return Fuzziness.UNDER_WORDS
+
+        case_words_item = re.split(_CASE_CHANGE_PAT, item)
+        if self.word_parts_match(case_words_text, case_words_item):
+            return Fuzziness.CAMEL_CASE
+
+        return None
+
+    def find_fuzzy_matches(
+        self,
+        last: str,
+        text: str,
+        collection: Collection[Any],
+    ) -> list[tuple[str, int]]:
+        completions: list[tuple[str, int]] = []
+        regex = '.{0,3}?'.join(map(re.escape, text))
+        pattern = re.compile(f'({regex})')
+        under_words_text = [x for x in text.split('_') if x]
+        case_words_text = re.split(_CASE_CHANGE_PAT, last)
+
+        for item in collection:
+            fuzziness = self.find_fuzzy_match(item, pattern, under_words_text, case_words_text)
+            if fuzziness is not None:
+                completions.append((item, fuzziness))
+
+        if len(text) >= 4:
+            rapidfuzz_matches = rapidfuzz.process.extract(
+                text,
+                collection,
+                scorer=rapidfuzz.fuzz.WRatio,
+                # todo: maybe make our own processor which only does case-folding
+                # because underscores are valuable info
+                processor=rapidfuzz.utils.default_process,
+                limit=20,
+                score_cutoff=75,
+            )
+            for item, _score, _type in rapidfuzz_matches:
+                if len(item) < len(text) / 1.5:
+                    continue
+                if item in completions:
+                    continue
+                completions.append((item, Fuzziness.RAPIDFUZZ))
+
+        return completions
+
+    def find_perfect_matches(
+        self,
+        text: str,
+        collection: Collection[Any],
+        start_only: bool,
+    ) -> list[tuple[str, int]]:
+        completions: list[tuple[str, int]] = []
+        match_end_limit = len(text) if start_only else None
+        for item in collection:
+            match_point = item.lower().find(text, 0, match_end_limit)
+            if match_point >= 0:
+                completions.append((item, Fuzziness.PERFECT))
+        return completions
+
+    def resolve_casing(
+        self,
+        casing: str | None,
+        last: str,
+    ) -> str | None:
+        if casing != 'auto':
+            return casing
+        return 'lower' if last and (last[0].islower() or last[-1].islower()) else 'upper'
+
+    def apply_casing(
+        self,
+        completions: list[tuple[str, int]],
+        casing: str | None,
+    ) -> Generator[tuple[str, int], None, None]:
+        if casing is None:
+            return (completion for completion in completions)
+
+        def apply_case(tup: tuple[str, int]) -> tuple[str, int]:
+            kw, fuzziness = tup
+            if casing == 'upper':
+                return (kw.upper(), fuzziness)
+            return (kw.lower(), fuzziness)
+
+        return (apply_case(completion) for completion in completions)
+
     def find_matches(
+        self,
         orig_text: str,
         collection: Collection,
         start_only: bool = False,
@@ -1195,96 +1323,17 @@ class SQLCompleter(Completer):
         yields prompt_toolkit Completion instances for any matches found
         in the collection of available completions.
         """
-        last = last_word(orig_text, include="most_punctuations")
+        last = last_word(orig_text, include='most_punctuations')
         text = last.lower()
-        # unicode support not possible without adding the regex dependency
-        case_change_pat = re.compile("(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])")
-
-        completions: list[tuple[str, int]] = []
-
-        def maybe_quote_identifier(item: str) -> str:
-            if item.startswith('`'):
-                return item
-            if item == '*':
-                return item
-            return '`' + item + '`'
-
-        # checking text.startswith() first is an optimization; is_inside_quotes() covers more cases
-        if text.startswith('`') or is_inside_quotes(text_before_cursor, len(text_before_cursor)) == 'backtick':
-            quoted_collection: Collection[Any] = [maybe_quote_identifier(x) if isinstance(x, str) else x for x in collection]
-        else:
-            quoted_collection = collection
+        quoted_collection = self.quote_collection_if_needed(text, collection, text_before_cursor)
 
         if fuzzy:
-            regex = ".{0,3}?".join(map(re.escape, text))
-            pat = re.compile(f'({regex})')
-            under_words_text = [x for x in text.split('_') if x]
-            case_words_text = re.split(case_change_pat, last)
-
-            for item in quoted_collection:
-                r = pat.search(item.lower())
-                if r:
-                    completions.append((item, Fuzziness.REGEX))
-                    continue
-
-                under_words_item = [x for x in item.lower().split('_') if x]
-                occurrences = 0
-                for elt_word in under_words_text:
-                    for elt_item in under_words_item:
-                        if elt_item.startswith(elt_word):
-                            occurrences += 1
-                            break
-                if occurrences >= len(under_words_text):
-                    completions.append((item, Fuzziness.UNDER_WORDS))
-                    continue
-
-                case_words_item = re.split(case_change_pat, item)
-                occurrences = 0
-                for elt_word in case_words_text:
-                    for elt_item in case_words_item:
-                        if elt_item.startswith(elt_word):
-                            occurrences += 1
-                            break
-                if occurrences >= len(case_words_text):
-                    completions.append((item, Fuzziness.CAMEL_CASE))
-                    continue
-
-            if len(text) >= 4:
-                rapidfuzz_matches = rapidfuzz.process.extract(
-                    text,
-                    quoted_collection,
-                    scorer=rapidfuzz.fuzz.WRatio,
-                    # todo: maybe make our own processor which only does case-folding
-                    # because underscores are valuable info
-                    processor=rapidfuzz.utils.default_process,
-                    limit=20,
-                    score_cutoff=75,
-                )
-                for elt in rapidfuzz_matches:
-                    item, _score, _type = elt
-                    if len(item) < len(text) / 1.5:
-                        continue
-                    if item in completions:
-                        continue
-                    completions.append((item, Fuzziness.RAPIDFUZZ))
-
+            completions = self.find_fuzzy_matches(last, text, quoted_collection)
         else:
-            match_end_limit = len(text) if start_only else None
-            for item in quoted_collection:
-                match_point = item.lower().find(text, 0, match_end_limit)
-                if match_point >= 0:
-                    completions.append((item, Fuzziness.PERFECT))
+            completions = self.find_perfect_matches(text, quoted_collection, start_only)
 
-        if casing == "auto":
-            casing = "lower" if last and (last[0].islower() or last[-1].islower()) else "upper"
-
-        def apply_case(tup: tuple[str, int]) -> tuple[str, int]:
-            kw, fuzziness = tup
-            if casing == "upper":
-                return (kw.upper(), fuzziness)
-            return (kw.lower(), fuzziness)
-
-        return (x if casing is None else apply_case(x) for x in completions)
+        casing = self.resolve_casing(casing, last)
+        return self.apply_casing(completions, casing)
 
     def get_completions(
         self,

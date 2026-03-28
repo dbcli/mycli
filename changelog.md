@@ -6,6 +6,11 @@ Features
 * Continue to expand TIPS.
 
 
+Internal
+---------
+* Refactor `find_matches()` into smaller logical units.
+
+
 1.67.1 (2026/03/28)
 ==============
 
