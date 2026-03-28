@@ -54,8 +54,6 @@ edit a query in an external editor using <query>\edit!
 
 edit a query in an external editor using \edit <filename>!
 
-set "export VISUAL='code --wait'" in your shell to `\edit` queries using VS Code!
-
 \f lists favorite queries; \f <name> executes a favorite!
 
 \fs <name> <query> saves a favorite query!
@@ -109,6 +107,28 @@ use "system <command>" to execute a shell command!
 the "watch" command executes a query every N seconds!
 
 use \bug to file a bug on GitHub!
+
+###
+### environment variables
+###
+
+run "export VISUAL='code --wait'" in your shell to \edit queries using VS Code!
+
+set environment variable MYCLI_LLM_OFF to skip loading LLM libraries!
+
+set environment variable MYCLI_HISTFILE to relocate the hitory file!
+
+set environment variable MYSQL_PWD to set a default password!
+
+set environment variable MYSQL_HOST to set a default host!
+
+set environment variable MYSQL_TCP_PORT to set a default port!
+
+set environment variable MYSQL_USER to set a default username!
+
+set environment variable MYSQL_UNIX_SOCKET to set a default socket!
+
+set environment variable MYSQL_DSN to set a default DSN!
 
 ###
 ### general
