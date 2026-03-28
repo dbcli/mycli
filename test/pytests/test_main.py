@@ -2139,6 +2139,25 @@ def test_batch_file(monkeypatch):
         os.remove(batch_file.name)
 
 
+def test_batch_file_no_progress_multiple_statements_per_line(monkeypatch):
+    mycli_main, MockMyCli = _noninteractive_mock_mycli(monkeypatch)
+    runner = CliRunner()
+
+    with NamedTemporaryFile(prefix=TEMPFILE_PREFIX, mode='w', delete=False) as batch_file:
+        batch_file.write('select 2; select 3;\nselect 4;\n')
+        batch_file.flush()
+
+    try:
+        result = runner.invoke(
+            mycli_main.click_entrypoint,
+            args=['--batch', batch_file.name],
+        )
+        assert result.exit_code == 0
+        assert MockMyCli.ran_queries == ['select 2;', 'select 3;', 'select 4;']
+    finally:
+        os.remove(batch_file.name)
+
+
 def test_batch_file_with_progress(monkeypatch):
     mycli_main, MockMyCli = _noninteractive_mock_mycli(monkeypatch)
     runner = CliRunner()
@@ -2182,7 +2201,56 @@ def test_batch_file_with_progress(monkeypatch):
             args=['--batch', batch_file.name, '--progress'],
         )
         assert result.exit_code == 0
-        assert MockMyCli.ran_queries == ['select 2;\n', 'select 2;\n', 'select 2;\n']
+        assert MockMyCli.ran_queries == ['select 2;', 'select 2;', 'select 2;']
+        assert DummyProgressBar.calls == [[0, 1, 2]]
+    finally:
+        os.remove(batch_file.name)
+
+
+def test_batch_file_with_progress_multiple_statements_per_line(monkeypatch):
+    mycli_main, MockMyCli = _noninteractive_mock_mycli(monkeypatch)
+    runner = CliRunner()
+
+    class DummyProgressBar:
+        calls = []
+
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def __call__(self, iterable):
+            values = list(iterable)
+            DummyProgressBar.calls.append(values)
+            return values
+
+    monkeypatch.setattr(mycli_main, 'ProgressBar', DummyProgressBar)
+    monkeypatch.setattr(mycli_main.prompt_toolkit.output, 'create_output', lambda **kwargs: object())
+    monkeypatch.setattr(
+        mycli_main,
+        'sys',
+        SimpleNamespace(
+            stdin=SimpleNamespace(isatty=lambda: False),
+            stderr=SimpleNamespace(isatty=lambda: True),
+            exit=sys.exit,
+        ),
+    )
+
+    with NamedTemporaryFile(prefix=TEMPFILE_PREFIX, mode='w', delete=False) as batch_file:
+        batch_file.write('select 2; select 3;\nselect 4;\n')
+        batch_file.flush()
+
+    try:
+        result = runner.invoke(
+            mycli_main.click_entrypoint,
+            args=['--batch', batch_file.name, '--progress'],
+        )
+        assert result.exit_code == 0
+        assert MockMyCli.ran_queries == ['select 2;', 'select 3;', 'select 4;']
         assert DummyProgressBar.calls == [[0, 1, 2]]
     finally:
         os.remove(batch_file.name)

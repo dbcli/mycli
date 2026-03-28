@@ -4,6 +4,12 @@ Upcoming (TBD)
 Features
 ---------
 * Continue to expand TIPS.
+* Make `--progress` and `--checkpoint` strictly by statement.
+
+
+Internal
+---------
+* Add an `AGENTS.md`.
 
 
 1.67.1 (2026/03/28)
