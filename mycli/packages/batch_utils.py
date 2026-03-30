@@ -1,6 +1,7 @@
 from typing import IO, Generator
 
 import sqlglot
+import sqlparse
 
 MAX_MULTILINE_BATCH_STATEMENT = 5000
 
@@ -20,11 +21,16 @@ def statements_from_filehandle(file_h: IO) -> Generator[tuple[str, int], None, N
                 continue
             # we don't yet handle changing the delimiter within the batch input
             if tokens[-1].text == ';':
-                yield (statements, batch_counter)
-                batch_counter += 1
+                # The advantage of sqlparse for splitting is that it preserves the input.
+                # https://github.com/tobymao/sqlglot/issues/2587#issuecomment-1823109501
+                for statement in sqlparse.split(statements):
+                    yield (statement, batch_counter)
+                    batch_counter += 1
                 statements = ''
                 line_counter = 0
         except sqlglot.errors.TokenError:
             continue
     if statements:
-        yield (statements, batch_counter)
+        for statement in sqlparse.split(statements):
+            yield (statement, batch_counter)
+            batch_counter += 1

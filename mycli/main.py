@@ -2190,7 +2190,7 @@ class CliArgs:
 
 @click.command()
 @clickdc.adddc('cli_args', CliArgs)
-@click.version_option(__version__, '--version', '-V', help='Output mycli\'s version.')
+@click.version_option(__version__, '--version', '-V', help="Output mycli's version.")
 def click_entrypoint(
     cli_args: CliArgs,
 ) -> None:
@@ -2658,7 +2658,7 @@ def click_entrypoint(
         cli_args.port,
     )
 
-    #  --execute argument
+    # --execute argument
     if cli_args.execute:
         if not sys.stdin.isatty():
             click.secho('Ignoring STDIN since --execute was also given.', err=True, fg='red')
@@ -2742,6 +2742,7 @@ def click_entrypoint(
                 goal_statements += 1
             batch_count_h.close()
             batch_h = click.open_file(cli_args.batch)
+            batch_gen = statements_from_filehandle(batch_h)
         except (OSError, FileNotFoundError):
             click.secho(f'Failed to open --batch file: {cli_args.batch}', err=True, fg='red')
             sys.exit(1)
@@ -2762,9 +2763,9 @@ def click_entrypoint(
                 ]
                 err_output = prompt_toolkit.output.create_output(stdout=sys.stderr, always_prefer_tty=True)
                 with ProgressBar(style=pb_style, formatters=custom_formatters, output=err_output) as pb:
-                    for pb_counter in pb(range(goal_statements)):
-                        statement, _untrusted_counter = next(statements_from_filehandle(batch_h))
-                        dispatch_batch_statements(statement, pb_counter)
+                    for _pb_counter in pb(range(goal_statements)):
+                        statement, statement_counter = next(batch_gen)
+                        dispatch_batch_statements(statement, statement_counter)
         except (ValueError, StopIteration) as e:
             click.secho(str(e), err=True, fg='red')
             sys.exit(1)
