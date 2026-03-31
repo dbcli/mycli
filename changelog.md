@@ -12,6 +12,7 @@ Internal
 * Add an `AGENTS.md`.
 * Refactor `find_matches()` into smaller logical units.
 * Increase test coverage.
+* Remove some unused code.
 
 
 1.67.1 (2026/03/28)

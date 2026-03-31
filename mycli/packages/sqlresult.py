@@ -14,9 +14,6 @@ class SQLResult:
     status: str | FormattedText | None = None
     command: dict[str, str | float] | None = None
 
-    def __iter__(self):
-        return self
-
     def __str__(self):
         return f"{self.preamble}, {self.header}, {self.rows}, {self.postamble}, {self.status}, {self.command}"
 
