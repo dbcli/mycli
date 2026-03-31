@@ -307,6 +307,8 @@ def _emit_on(ctx: SuggestContext) -> list[Suggestion]:
     if parent:
         # "ON parent.<suggestion>"
         # parent can be either a schema name or table alias
+        # todo recognize and separate schema and table suggestions
+        # todo remove function suggestions here
         tables = [t for t in tables if identifies(parent, *t)]
         return [
             {'type': 'column', 'tables': tables},
