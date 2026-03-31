@@ -10,11 +10,8 @@ Features
 Internal
 ---------
 * Add an `AGENTS.md`.
-
-
-Internal
----------
 * Refactor `find_matches()` into smaller logical units.
+* Increase test coverage.
 
 
 1.67.1 (2026/03/28)
