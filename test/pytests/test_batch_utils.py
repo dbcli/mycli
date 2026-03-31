@@ -52,3 +52,29 @@ def test_statements_from_filehandle_rejects_overlong_statement(monkeypatch) -> N
 
     with pytest.raises(ValueError, match='Saw single input statement greater than 2 lines'):
         list(statements_from_filehandle(StringIO('select 1,\n2\nwhere 1 = 1;')))
+
+
+def test_statements_from_filehandle_yields_incorrect_sql() -> None:
+    statements = collect_statements('select;\nselect 2')
+
+    assert statements == [
+        ('select;', 0),
+        ('select 2', 1),
+    ]
+
+
+def test_statements_from_filehandle_yields_invalid_sql_01() -> None:
+    statements = collect_statements('sellect;\nsellect 2')
+
+    assert statements == [
+        ('sellect;', 0),
+        ('sellect 2', 1),
+    ]
+
+
+def test_statements_from_filehandle_yields_invalid_sql_02() -> None:
+    statements = collect_statements('select `column;')
+
+    assert statements == [
+        ('select `column;', 0),
+    ]
