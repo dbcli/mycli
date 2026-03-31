@@ -379,13 +379,18 @@ def query_is_single_table_update(query: str) -> bool:
     if not parsed:
         return False
     statement = parsed[0]
-    return (
-        statement[0].value.lower() == 'update'
-        and statement[1].is_whitespace
-        and ',' not in statement[2].value  # multiple tables
-        and statement[3].is_whitespace
-        and statement[4].value.lower() == 'set'
-    )
+    try:
+        retval = bool(
+            statement[0].value.lower() == 'update'
+            and statement[1].is_whitespace
+            and ',' not in statement[2].value  # multiple tables
+            and statement[3].is_whitespace
+            and statement[4].value.lower() == 'set'
+        )
+    except IndexError:
+        retval = False
+
+    return retval
 
 
 def is_destructive(keywords: list[str], queries: str) -> bool:
@@ -428,8 +433,3 @@ def is_dropping_database(queries: str, dbname: str | None) -> bool:
             if database_token is not None and normalize_db_name(database_token.get_name()) == dbname:
                 result = keywords[0].normalized == "DROP"
     return result
-
-
-if __name__ == "__main__":
-    sql = "select * from (select t. from tabl t"
-    print(extract_tables(sql))
