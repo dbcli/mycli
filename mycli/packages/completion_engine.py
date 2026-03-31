@@ -55,8 +55,8 @@ class SuggestContext:
     word_before_cursor: str | None
     full_text: str
     identifier: Identifier
-    parsed: sqlparse.sql.Statement
-    tokens_wo_space: list[Token]
+    parsed_cb: Callable[[], sqlparse.sql.Statement]
+    tokens_wo_space_cb: Callable[[], list[Token]]
 
 
 @dataclass(frozen=True)
@@ -74,14 +74,18 @@ def _keyword_and_special_suggestions() -> list[Suggestion]:
     return [{'type': 'keyword'}, {'type': 'special'}]
 
 
-def _parse_suggestion_statement(text_before_cursor: str) -> tuple[sqlparse.sql.Statement, list[Token]]:
+@functools.lru_cache(maxsize=128)
+def _parse_suggestion_statement(text_before_cursor: str) -> sqlparse.sql.Statement:
     try:
-        parsed = sqlparse.parse(text_before_cursor)[0]
-        tokens_wo_space = [x for x in parsed.tokens if x.ttype != sqlparse.tokens.Token.Text.Whitespace]
+        return sqlparse.parse(text_before_cursor)[0]
     except (AttributeError, IndexError, ValueError, sqlparse.exceptions.SQLParseError):
-        return sqlparse.sql.Statement(), []
-    else:
-        return parsed, tokens_wo_space
+        return sqlparse.sql.Statement()
+
+
+@functools.lru_cache(maxsize=128)
+def _tokens_wo_space(text_before_cursor: str) -> list[Token]:
+    parsed = _parse_suggestion_statement(text_before_cursor)
+    return [x for x in parsed.tokens if x.ttype != sqlparse.tokens.Token.Text.Whitespace]
 
 
 def _normalize_token_value(token: str | Token | None) -> str | None:
@@ -107,7 +111,6 @@ def _build_suggest_context(
     full_text: str,
     identifier: Identifier,
 ) -> SuggestContext:
-    parsed, tokens_wo_space = _parse_suggestion_statement(text_before_cursor)
     return SuggestContext(
         token=token,
         token_value=_normalize_token_value(token),
@@ -115,8 +118,8 @@ def _build_suggest_context(
         word_before_cursor=word_before_cursor,
         full_text=full_text,
         identifier=identifier,
-        parsed=parsed,
-        tokens_wo_space=tokens_wo_space,
+        parsed_cb=functools.partial(_parse_suggestion_statement, text_before_cursor),
+        tokens_wo_space_cb=functools.partial(_tokens_wo_space, text_before_cursor),
     )
 
 
@@ -149,7 +152,7 @@ def _emit_star(_ctx: SuggestContext) -> list[Suggestion]:
 
 
 def _emit_lparen(ctx: SuggestContext) -> list[Suggestion]:
-    if ctx.parsed.tokens and isinstance(ctx.parsed.tokens[-1], Where):
+    if ctx.parsed_cb().tokens and isinstance(ctx.parsed_cb().tokens[-1], Where):
         # Four possibilities:
         #  1 - Parenthesized clause like "WHERE foo AND ("
         #        Suggest columns/functions
@@ -161,6 +164,7 @@ def _emit_lparen(ctx: SuggestContext) -> list[Suggestion]:
         #        Suggest columns/functions AND keywords. (If we wanted to be
         #        really fancy, we could suggest only array-typed columns)
 
+        # override a few properties in the SuggestContext
         column_suggestions = _emit_select_like(
             SuggestContext(
                 token='where',
@@ -169,13 +173,13 @@ def _emit_lparen(ctx: SuggestContext) -> list[Suggestion]:
                 word_before_cursor=None,
                 full_text=ctx.full_text,
                 identifier=ctx.identifier,
-                parsed=ctx.parsed,
-                tokens_wo_space=ctx.tokens_wo_space,
+                parsed_cb=ctx.parsed_cb,
+                tokens_wo_space_cb=ctx.tokens_wo_space_cb,
             )
         )
 
         # Check for a subquery expression (cases 3 & 4)
-        where = ctx.parsed.tokens[-1]
+        where = ctx.parsed_cb().tokens[-1]
         _idx, prev_tok = where.token_prev(len(where.tokens) - 1)
 
         if isinstance(prev_tok, Comparison):
@@ -188,17 +192,17 @@ def _emit_lparen(ctx: SuggestContext) -> list[Suggestion]:
         return column_suggestions
 
     # Get the token before the parens
-    _idx, prev_tok = ctx.parsed.token_prev(len(ctx.parsed.tokens) - 1)
+    _idx, prev_tok = ctx.parsed_cb().token_prev(len(ctx.parsed_cb().tokens) - 1)
     if prev_tok and prev_tok.value and prev_tok.value.lower() == 'using':
         # tbl1 INNER JOIN tbl2 USING (col1, col2)
         # suggest columns that are present in more than one table
         return [{'type': 'column', 'tables': _tables(ctx), 'drop_unique': True}]
-    if ctx.parsed.tokens and ctx.parsed.token_first() and ctx.parsed.token_first().value.lower() == 'select':
+    if ctx.parsed_cb().tokens and ctx.parsed_cb().token_first() and ctx.parsed_cb().token_first().value.lower() == 'select':
         # If the lparen is preceeded by a space chances are we're about to
         # do a sub-select.
         if last_word(ctx.text_before_cursor, 'all_punctuations').startswith('('):
             return _keyword_suggestions()
-    elif ctx.parsed.tokens and ctx.parsed.token_first() and ctx.parsed.token_first().value.lower() == 'show':
+    elif ctx.parsed_cb().tokens and ctx.parsed_cb().token_first() and ctx.parsed_cb().token_first().value.lower() == 'show':
         return [{'type': 'show'}]
 
     # We're probably in a function argument list
@@ -226,7 +230,7 @@ def _emit_show(_ctx: SuggestContext) -> list[Suggestion]:
 
 
 def _emit_to(ctx: SuggestContext) -> list[Suggestion]:
-    if ctx.parsed.tokens and ctx.parsed.token_first() and ctx.parsed.token_first().value.lower() == 'change':
+    if ctx.parsed_cb().tokens and ctx.parsed_cb().token_first() and ctx.parsed_cb().token_first().value.lower() == 'change':
         return [{'type': 'change'}]
     return [{'type': 'user'}]
 
@@ -464,12 +468,16 @@ SUGGEST_BASED_ON_LAST_TOKEN_RULES = [
     ),
     SuggestRule(
         'character_set_after_character',
-        lambda ctx: _token_value_is(ctx, 'set') and len(ctx.tokens_wo_space) >= 3 and ctx.tokens_wo_space[-3].value.lower() == 'character',
+        lambda ctx: (
+            _token_value_is(ctx, 'set') and len(ctx.tokens_wo_space_cb()) >= 3 and ctx.tokens_wo_space_cb()[-3].value.lower() == 'character'
+        ),
         _emit_character_set,
     ),
     SuggestRule(
         'character_set_after_character_short',
-        lambda ctx: _token_value_is(ctx, 'set') and len(ctx.tokens_wo_space) >= 2 and ctx.tokens_wo_space[-2].value.lower() == 'character',
+        lambda ctx: (
+            _token_value_is(ctx, 'set') and len(ctx.tokens_wo_space_cb()) >= 2 and ctx.tokens_wo_space_cb()[-2].value.lower() == 'character'
+        ),
         _emit_character_set,
     ),
     SuggestRule(
@@ -504,12 +512,16 @@ SUGGEST_BASED_ON_LAST_TOKEN_RULES = [
     ),
     SuggestRule(
         'using_after_convert_long',
-        lambda ctx: _token_value_is(ctx, 'using') and len(ctx.tokens_wo_space) >= 5 and ctx.tokens_wo_space[-5].value.lower() == 'convert',
+        lambda ctx: (
+            _token_value_is(ctx, 'using') and len(ctx.tokens_wo_space_cb()) >= 5 and ctx.tokens_wo_space_cb()[-5].value.lower() == 'convert'
+        ),
         _emit_character_set,
     ),
     SuggestRule(
         'using_after_convert_short',
-        lambda ctx: _token_value_is(ctx, 'using') and len(ctx.tokens_wo_space) >= 4 and ctx.tokens_wo_space[-4].value.lower() == 'convert',
+        lambda ctx: (
+            _token_value_is(ctx, 'using') and len(ctx.tokens_wo_space_cb()) >= 4 and ctx.tokens_wo_space_cb()[-4].value.lower() == 'convert'
+        ),
         _emit_character_set,
     ),
     SuggestRule(

@@ -45,6 +45,7 @@ from mycli.packages.completion_engine import (
     _token_is_none,
     _token_is_relation_keyword,
     _token_value_is,
+    _tokens_wo_space,
     _word_starts_with_digit_or_dot,
     _word_starts_with_quote,
     identifies,
@@ -190,8 +191,7 @@ def test_keyword_and_special_suggestions():
 
 
 def test_parse_suggestion_statement_returns_statement_and_nonspace_tokens():
-    statement, tokens_wo_space = _parse_suggestion_statement('select  1')
-    assert str(statement) == 'select  1'
+    tokens_wo_space = _tokens_wo_space('select  1')
     assert [token.value for token in tokens_wo_space] == ['select', '1']
 
 
@@ -234,8 +234,8 @@ def test_build_suggest_context_populates_fields():
     assert context.word_before_cursor is None
     assert context.full_text == 'show '
     assert context.identifier is identifier
-    assert str(context.parsed) == 'show '
-    assert [token.value for token in context.tokens_wo_space] == ['show']
+    assert str(context.parsed_cb()) == 'show '
+    assert [token.value for token in context.tokens_wo_space_cb()] == ['show']
 
 
 def test_build_suggest_context_handles_none_token():
@@ -249,8 +249,8 @@ def test_build_suggest_context_handles_none_token():
 
     assert context.token is None
     assert context.token_value is None
-    assert str(context.parsed) == ''
-    assert context.tokens_wo_space == []
+    assert str(context.parsed_cb()) == ''
+    assert context.tokens_wo_space_cb() == []
 
 
 @pytest.mark.parametrize(
