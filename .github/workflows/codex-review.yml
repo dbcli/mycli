@@ -73,7 +73,8 @@ jobs:
         uses: actions/github-script@v8
         env:
           CODEX_FINAL_MESSAGE: |
-            ${{ format('## Codex Review:\n\n{0}', needs.codex-review.outputs.final_message) }}
+            ${{ format('## Codex Review
+            {0}', needs.codex-review.outputs.final_message) }}
         with:
           github-token: ${{ github.token }}
           script: |
