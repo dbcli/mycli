@@ -20,6 +20,7 @@ Internal
 * Remove some unused code.
 * Better label Codex PR reviews.
 * Improve gitignored files.
+* Continue improve naming for `prompt_toolkit` utilities.
 
 
 1.67.1 (2026/03/28)

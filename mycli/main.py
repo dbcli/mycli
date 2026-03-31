@@ -67,7 +67,7 @@ import sqlparse
 
 from mycli import __version__
 from mycli.clibuffer import cli_is_multiline
-from mycli.clistyle import style_factory_helpers, style_factory_toolkit
+from mycli.clistyle import style_factory_helpers, style_factory_ptoolkit
 from mycli.clitoolbar import create_toolbar_tokens_func
 from mycli.compat import WIN
 from mycli.completion_refresher import CompletionRefresher
@@ -248,7 +248,7 @@ class MyCli:
         self.syntax_style = c["main"]["syntax_style"]
         self.less_chatty = c["main"].as_bool("less_chatty")
         self.cli_style = c["colors"]
-        self.toolkit_style = style_factory_toolkit(self.syntax_style, self.cli_style)
+        self.ptoolkit_style = style_factory_ptoolkit(self.syntax_style, self.cli_style)
         self.helpers_style = style_factory_helpers(self.syntax_style, self.cli_style)
         self.helpers_warnings_style = style_factory_helpers(self.syntax_style, self.cli_style, warnings=True)
         self.wider_completion_menu = c["main"].as_bool("wider_completion_menu")
@@ -961,7 +961,7 @@ class MyCli:
         add_style = 'class:warnings.timing' if is_warnings_style else 'class:output.timing'
         formatted_timing = FormattedText([('', timing)])
         styled_timing = to_formatted_text(formatted_timing, style=add_style)
-        print_formatted_text(styled_timing, style=self.toolkit_style)
+        print_formatted_text(styled_timing, style=self.ptoolkit_style)
 
     def run_cli(self) -> None:
         iterations = 0
@@ -1365,8 +1365,8 @@ class MyCli:
                 auto_suggest=ThreadedAutoSuggest(AutoSuggestFromHistory()),
                 complete_while_typing=complete_while_typing_filter,
                 multiline=cli_is_multiline(self),
-                # why not self.toolkit_style here?
-                style=style_factory_toolkit(self.syntax_style, self.cli_style),
+                # why not self.ptoolkit_style here?
+                style=style_factory_ptoolkit(self.syntax_style, self.cli_style),
                 include_default_pygments_style=False,
                 key_bindings=key_bindings,
                 enable_open_in_editor=True,
@@ -1562,7 +1562,7 @@ class MyCli:
             else:
                 status = FormattedText([('', result.status_plain)])
             styled_status = to_formatted_text(status, style=add_style)
-            print_formatted_text(styled_status, style=self.toolkit_style)
+            print_formatted_text(styled_status, style=self.ptoolkit_style)
 
     def configure_pager(self) -> None:
         # Provide sane defaults for less if they are empty.
