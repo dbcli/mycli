@@ -2711,7 +2711,7 @@ def need_completion_refresh(queries: str) -> bool:
             if first_token.lower() in ("alter", "create", "use", "\\r", "\\u", "connect", "drop", "rename"):
                 return True
         except Exception:
-            return False
+            continue
     return False
 
 
@@ -2722,11 +2722,14 @@ def need_completion_reset(queries: str) -> bool:
     """
     for query in sqlparse.split(queries):
         try:
-            first_token = query.split()[0]
+            tokens = query.split()
+            first_token = tokens[0]
             if first_token.lower() in ("use", "\\u"):
                 return True
+            if first_token.lower() in ("\\r", "connect") and len(tokens) > 1:
+                return True
         except Exception:
-            return False
+            continue
     return False
 
 
