@@ -7,6 +7,11 @@ Features
 * Make `--progress` and `--checkpoint` strictly by statement.
 
 
+Bug Fixes
+---------
+* Fix issue stripping multi-character end-of-statement delimiters.
+
+
 Internal
 ---------
 * Add an `AGENTS.md`.

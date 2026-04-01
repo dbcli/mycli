@@ -45,7 +45,7 @@ class DelimiterCommand:
                 sql = queries.pop(0)
                 if sql.endswith(delimiter):
                     trailing_delimiter = True
-                    sql = sql.strip(delimiter)
+                    sql = sql[: -len(delimiter)]
                 else:
                     trailing_delimiter = False
 
