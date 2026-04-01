@@ -270,6 +270,7 @@ def set_redirect(command_part: str | None, file_operator_part: str | None, file_
 def execute_favorite_query(cur: Cursor, arg: str, **_) -> Generator[SQLResult, None, None]:
     if arg == "":
         yield from list_favorite_queries()
+        return
 
     # Parse out favorite name and optional substitution parameters
     name, _separator, arg_str = arg.partition(" ")
