@@ -12,6 +12,10 @@
 .cache/
 .coverage
 .coverage.*
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.tox/
 
 .venv/
 venv/
