@@ -28,6 +28,7 @@ Internal
 * Type annotation improvements for `parse_pygments_style()`.
 * Upgrade `llm` dependency and set a minimum `pydantic_core` version.
 * Refactor suggestion logic into declarative rules.
+* Factor the `--batch` execution modes out of `main.py`.
 
 
 1.67.1 (2026/03/28)
