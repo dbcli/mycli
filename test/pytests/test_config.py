@@ -182,7 +182,7 @@ def test_log_prints_to_stderr_when_root_logger(capsys) -> None:
     assert capsys.readouterr().err == 'root warning\n'
 
 
-def test_read_config_file_from_path_and_parse_error(tmp_path, capsys) -> None:
+def test_read_config_file_from_path_and_parse_error(tmp_path, caplog) -> None:
     valid_path = tmp_path / 'valid.cnf'
     valid_path.write_text('[main]\ncolor = blue\n', encoding='utf8')
 
@@ -192,22 +192,22 @@ def test_read_config_file_from_path_and_parse_error(tmp_path, capsys) -> None:
     invalid_path = tmp_path / 'invalid.cnf'
     invalid_path.write_text('[main\nfoo=bar\n', encoding='utf8')
 
-    parsed = read_config_file(str(invalid_path))
-    assert parsed['foo'] == 'bar'
+    with caplog.at_level(logging.WARNING, logger='mycli.config'):
+        parsed = read_config_file(str(invalid_path))
+        assert parsed['foo'] == 'bar'
+        assert "Unable to parse line 1 of config file" in caplog.text
+        assert 'Using successfully parsed config values.' in caplog.text
 
-    stderr = capsys.readouterr().err
-    assert "Unable to parse line 1 of config file" in stderr
-    assert 'Using successfully parsed config values.' in stderr
 
-
-def test_read_config_file_permission_error(monkeypatch, capsys) -> None:
+def test_read_config_file_permission_error(monkeypatch, caplog) -> None:
     def raise_oserror(*_args, **_kwargs):
         raise OSError(13, 'denied', '/tmp/test.cnf')
 
     monkeypatch.setattr(config_module, 'ConfigObj', raise_oserror)
 
-    assert read_config_file('/tmp/test.cnf') is None
-    assert "You don't have permission to read config file '/tmp/test.cnf'." in capsys.readouterr().err
+    with caplog.at_level(logging.WARNING, logger='mycli.config'):
+        assert read_config_file('/tmp/test.cnf') is None
+        assert "You don't have permission to read config file '/tmp/test.cnf'." in caplog.text
 
 
 def test_get_included_configs_handles_paths_and_errors(tmp_path, monkeypatch) -> None:
@@ -285,7 +285,7 @@ def test_get_mylogin_cnf_path_returns_none_for_missing_file(monkeypatch, tmp_pat
 
 
 def test_open_mylogin_cnf_error_paths(monkeypatch, tmp_path, caplog) -> None:
-    with caplog.at_level(logging.ERROR):
+    with caplog.at_level(logging.ERROR, logger='mycli.config'):
         assert open_mylogin_cnf(str(tmp_path / 'missing.mylogin.cnf')) is None
     assert 'Unable to open login path file.' in caplog.text
 
@@ -294,7 +294,7 @@ def test_open_mylogin_cnf_error_paths(monkeypatch, tmp_path, caplog) -> None:
     existing.write_bytes(b'not-used')
     monkeypatch.setattr(config_module, 'read_and_decrypt_mylogin_cnf', lambda f: None)
 
-    with caplog.at_level(logging.ERROR):
+    with caplog.at_level(logging.ERROR, logger='mycli.config'):
         assert open_mylogin_cnf(str(existing)) is None
     assert 'Unable to read login path file.' in caplog.text
 
@@ -311,13 +311,13 @@ def test_encrypt_mylogin_cnf_round_trip() -> None:
 
 def test_read_and_decrypt_mylogin_cnf_error_branches(caplog) -> None:
     incomplete_key = BytesIO(struct.pack('i', 0) + b'a')
-    with caplog.at_level(logging.ERROR):
+    with caplog.at_level(logging.ERROR, logger='mycli.config'):
         assert read_and_decrypt_mylogin_cnf(incomplete_key) is None
     assert 'Unable to generate login path AES key.' in caplog.text
 
     caplog.clear()
     no_payload = BytesIO(struct.pack('i', 0) + b'0123456789abcdefghij')
-    with caplog.at_level(logging.ERROR):
+    with caplog.at_level(logging.ERROR, logger='mycli.config'):
         assert read_and_decrypt_mylogin_cnf(no_payload) is None
     assert 'No data successfully decrypted from login path file.' in caplog.text
 
@@ -325,14 +325,14 @@ def test_read_and_decrypt_mylogin_cnf_error_branches(caplog) -> None:
 def test_remove_pad_valid_and_invalid_cases(caplog) -> None:
     assert _remove_pad(b'hello\x03\x03\x03') == b'hello'
 
-    with caplog.at_level(logging.WARNING):
+    with caplog.at_level(logging.WARNING, logger='mycli.config'):
         assert _remove_pad(b'') is False
-    assert 'Unable to remove pad.' in caplog.text
+        assert 'Unable to remove pad.' in caplog.text
 
     caplog.clear()
-    with caplog.at_level(logging.WARNING):
+    with caplog.at_level(logging.WARNING, logger='mycli.config'):
         assert _remove_pad(b'hello\x02\x03') is False
-    assert 'Invalid pad found in login path file.' in caplog.text
+        assert 'Invalid pad found in login path file.' in caplog.text
 
 
 def test_strip_quotes_with_matching_quotes():

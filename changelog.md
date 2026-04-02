@@ -24,6 +24,7 @@ Internal
 * Better label Codex PR reviews.
 * Improve gitignored files.
 * Continue improve naming for `prompt_toolkit` utilities.
+* Run pytest tests in arbitrary order.
 
 
 1.67.1 (2026/03/28)

@@ -374,7 +374,7 @@ def test_extend_metadata_helpers_and_logging(caplog) -> None:
     completer.extend_schemata(None)
     assert '' not in completer.dbmetadata['tables']
 
-    with caplog.at_level('ERROR'):
+    with caplog.at_level('ERROR', logger='mycli.sqlcompleter'):
         completer.extend_relations([('orders',)], kind='tables')
     assert "listed in unrecognized schema 'missing'" in caplog.text
 
@@ -383,7 +383,7 @@ def test_extend_metadata_helpers_and_logging(caplog) -> None:
     completer.extend_relations([('select',)], kind='tables')
 
     caplog.clear()
-    with caplog.at_level('ERROR'):
+    with caplog.at_level('ERROR', logger='mycli.sqlcompleter'):
         completer.extend_columns([('missing', 'id'), ('select', 'from')], kind='tables')
     assert "relname 'missing' was not found in db 'test'" in caplog.text
     assert completer.dbmetadata['tables']['test']['`select`'] == ['*', '`from`']

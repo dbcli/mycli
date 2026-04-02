@@ -463,7 +463,8 @@ def test_output_with_warning_and_show_warnings_disabled(executor):
 
 
 @dbtest
-def test_no_show_warnings_overrides_myclirc_setting(executor):
+def test_no_show_warnings_overrides_myclirc_setting(executor, tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
     runner = CliRunner()
     sql = 'EXPLAIN SELECT 1'
     expected = 'select 1'
