@@ -130,7 +130,7 @@ def is_valid_ptoolkit(name: str) -> bool:
         return False
 
 
-def style_factory_toolkit(name: str, cli_style: dict[str, str]) -> _MergedStyle:
+def style_factory_ptoolkit(name: str, cli_style: dict[str, str]) -> _MergedStyle:
     try:
         style: PygmentsStyle = pygments.styles.get_style_by_name(name)
     except ClassNotFound:
