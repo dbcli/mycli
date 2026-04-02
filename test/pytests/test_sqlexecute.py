@@ -9,6 +9,7 @@ import pymysql
 import pytest
 
 from mycli.constants import TEST_DATABASE
+from mycli.packages.special import iocommands
 from mycli.packages.sqlresult import SQLResult
 import mycli.sqlexecute as sqlexecute
 from mycli.sqlexecute import ServerInfo, ServerSpecies, SQLExecute
@@ -190,7 +191,8 @@ def test_multiple_queries_same_line_syntaxerror(executor):
 
 @dbtest
 @pytest.mark.skipif(os.name == "nt", reason="Bug: fails on Windows, needs fixing, singleton of FQ not working right")
-def test_favorite_query(executor):
+def test_favorite_query(executor, monkeypatch):
+    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', iocommands.favoritequeries, raising=False)
     set_expanded_output(False)
     run(executor, "create table test(a text)")
     run(executor, "insert into test values('abc')")
@@ -208,7 +210,8 @@ def test_favorite_query(executor):
 
 @dbtest
 @pytest.mark.skipif(os.name == "nt", reason="Bug: fails on Windows, needs fixing, singleton of FQ not working right")
-def test_favorite_query_multiple_statement(executor):
+def test_favorite_query_multiple_statement(executor, monkeypatch):
+    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', iocommands.favoritequeries, raising=False)
     set_expanded_output(False)
     run(executor, "create table test(a text)")
     run(executor, "insert into test values('abc')")
@@ -244,7 +247,8 @@ def test_favorite_query_multiple_statement(executor):
 
 @dbtest
 @pytest.mark.skipif(os.name == "nt", reason="Bug: fails on Windows, needs fixing, singleton of FQ not working right")
-def test_favorite_query_expanded_output(executor):
+def test_favorite_query_expanded_output(executor, monkeypatch):
+    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', iocommands.favoritequeries, raising=False)
     set_expanded_output(False)
     run(executor, """create table test(a text)""")
     run(executor, """insert into test values('abc')""")
