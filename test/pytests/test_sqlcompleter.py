@@ -1,7 +1,9 @@
 # type: ignore
 
 import re
+from types import SimpleNamespace
 
+from prompt_toolkit.document import Document
 import pytest
 
 import mycli.sqlcompleter
@@ -28,6 +30,13 @@ def collect_matches(
             text_before_cursor=text_before_cursor,
         )
     )
+
+
+def make_completer(**kwargs) -> SQLCompleter:
+    comp = SQLCompleter(**kwargs)
+    comp.keywords = list(comp.keywords)
+    comp.functions = list(comp.functions)
+    return comp
 
 
 @pytest.mark.parametrize(
@@ -137,7 +146,7 @@ def test_find_fuzzy_matches_skips_rapidfuzz_for_short_text(monkeypatch) -> None:
     assert matches == []
 
 
-def test_find_fuzzy_matches_appends_rapidfuzz_results_and_keeps_current_duplicates(monkeypatch) -> None:
+def test_find_fuzzy_matches_appends_rapidfuzz_results_and_skips_duplicates(monkeypatch) -> None:
     monkeypatch.setattr(
         SQLCompleter,
         'find_fuzzy_match',
@@ -153,7 +162,6 @@ def test_find_fuzzy_matches_appends_rapidfuzz_results_and_keeps_current_duplicat
 
     assert matches == [
         ('alphabet', Fuzziness.REGEX),
-        ('alphabet', Fuzziness.RAPIDFUZZ),
         ('alphanumeric', Fuzziness.RAPIDFUZZ),
     ]
 
@@ -336,3 +344,204 @@ def test_find_matches_applies_casing(
     matches = collect_matches(orig_text, collection, casing=casing)
 
     assert matches == expected
+
+
+def test_init_invalid_keyword_casing_defaults_to_auto() -> None:
+    completer = SQLCompleter(keyword_casing='invalid')
+
+    assert completer.keyword_casing == 'auto'
+
+
+def test_extend_metadata_helpers_and_logging(caplog) -> None:
+    completer = make_completer()
+    completer.set_dbname('missing')
+
+    completer.extend_keywords(['ZZZ'])
+    assert 'ZZZ' in completer.keywords
+    assert 'ZZZ' in completer.all_completions
+
+    completer.extend_keywords(['ONLY_THIS'], replace=True)
+    assert completer.keywords == ['ONLY_THIS']
+    assert 'ONLY_THIS' in completer.all_completions
+
+    completer.extend_show_items([('FULL TABLES',), ('STATUS',)])
+    completer.extend_change_items([('MASTER TO',)])
+    completer.extend_users([('app_user',)])
+    assert completer.show_items == ['FULL TABLES', 'STATUS']
+    assert 'MASTER TO' in completer.change_items
+    assert 'app_user' in completer.users
+
+    completer.extend_schemata(None)
+    assert '' not in completer.dbmetadata['tables']
+
+    with caplog.at_level('ERROR'):
+        completer.extend_relations([('orders',)], kind='tables')
+    assert "listed in unrecognized schema 'missing'" in caplog.text
+
+    completer.extend_schemata('test')
+    completer.set_dbname('test')
+    completer.extend_relations([('select',)], kind='tables')
+
+    caplog.clear()
+    with caplog.at_level('ERROR'):
+        completer.extend_columns([('missing', 'id'), ('select', 'from')], kind='tables')
+    assert "relname 'missing' was not found in db 'test'" in caplog.text
+    assert completer.dbmetadata['tables']['test']['`select`'] == ['*', '`from`']
+
+    completer.set_dbname('enumdb')
+    completer.extend_enum_values([('order status', 'select', ['pending'])])
+    assert completer.dbmetadata['enum_values']['enumdb']['`order status`']['`select`'] == ['pending']
+
+
+def test_extend_functions_procedures_character_sets_and_collations() -> None:
+    completer = make_completer()
+    completer.extend_schemata('test')
+    completer.set_dbname('test')
+
+    completer.extend_functions(['BUILTIN_X'], builtin=True)
+    assert 'BUILTIN_X' in completer.functions
+
+    def broken_functions():
+        raise RuntimeError('boom')
+        yield ('ignored', 'ignored')
+
+    completer.extend_functions(broken_functions())
+    completer.extend_functions(iter([('quoted func', 'meta')]))
+    assert '`quoted func`' in completer.dbmetadata['functions']['test']
+
+    completer.extend_procedures(iter([(), (None,), ('proc_demo',)]))
+    assert 'proc_demo' in completer.dbmetadata['procedures']['test']
+
+    completer.extend_character_sets(iter([(), (None,), ('utf8mb4',)]))
+    completer.extend_collations(iter([(), (None,), ('utf8mb4_unicode_ci',)]))
+    assert completer.character_sets == ['utf8mb4']
+    assert completer.collations == ['utf8mb4_unicode_ci']
+
+
+def test_extend_procedures_initializes_schema_metadata_when_missing() -> None:
+    completer = make_completer()
+    completer.set_dbname('procdb')
+
+    completer.extend_procedures(iter([('proc_demo',)]))
+
+    assert completer.dbmetadata['procedures']['procdb']['proc_demo'] is None
+
+
+def test_get_completions_drop_unique_columns(monkeypatch) -> None:
+    completer = make_completer()
+    completer.extend_schemata('test')
+    completer.set_dbname('test')
+    completer.dbmetadata['tables']['test'] = {
+        't1': ['*', 'id', 'name'],
+        't2': ['*', 'id', 'email'],
+    }
+
+    monkeypatch.setattr(
+        mycli.sqlcompleter,
+        'suggest_type',
+        lambda text, before: [{'type': 'column', 'tables': [(None, 't1', None), (None, 't2', None)], 'drop_unique': True}],
+    )
+
+    result = [c.text for c in completer.get_completions(Document(text='SELECT ', cursor_position=7), None)]
+
+    assert result == ['id']
+
+
+@pytest.mark.parametrize(
+    ('suggestion', 'setup', 'text', 'expected'),
+    [
+        ({'type': 'procedure', 'schema': 'test'}, lambda c, m: c.extend_procedures(iter([('proc_demo',)])), 'CALL pro', 'proc_demo'),
+        ({'type': 'show'}, lambda c, m: c.extend_show_items([('TABLE STATUS',)]), 'SHOW tab', 'table status'),
+        ({'type': 'change'}, lambda c, m: c.extend_change_items([('MASTER TO',)]), 'CHANGE ma', 'MASTER TO'),
+        ({'type': 'user'}, lambda c, m: c.extend_users([('app_user',)]), 'GRANT app', 'app_user'),
+        (
+            {'type': 'favoritequery'},
+            lambda c, m: m.setattr(
+                mycli.sqlcompleter.FavoriteQueries, 'instance', SimpleNamespace(list=lambda: ['daily_report']), raising=False
+            ),
+            '\\f dai',
+            'daily_report',
+        ),
+        ({'type': 'table_format'}, lambda c, m: None, 'fmt c', 'csv'),
+    ],
+)
+def test_get_completions_branch_specific_suggestions(monkeypatch, suggestion, setup, text, expected) -> None:
+    completer = make_completer(supported_formats=('csv', 'tsv'))
+    completer.extend_schemata('test')
+    completer.set_dbname('test')
+    setup(completer, monkeypatch)
+    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda full_text, before: [suggestion])
+
+    result = [c.text for c in completer.get_completions(Document(text=text, cursor_position=len(text)), None)]
+
+    assert expected in result
+
+
+def test_get_completions_llm_branch_with_and_without_current_word(monkeypatch) -> None:
+    tokens_seen: list[list[str]] = []
+
+    def fake_get_completions(tokens: list[str]) -> list[str]:
+        tokens_seen.append(tokens)
+        return ['chat', 'explain']
+
+    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda full_text, before: [{'type': 'llm'}])
+    monkeypatch.setattr(mycli.sqlcompleter.llm, 'get_completions', fake_get_completions)
+
+    completer = make_completer()
+
+    blank_word = [c.text for c in completer.get_completions(Document(text='\\llm ', cursor_position=5), None)]
+    partial_text = '\\llm ask ch'
+    partial_word = [c.text for c in completer.get_completions(Document(text=partial_text, cursor_position=len(partial_text)), None)]
+
+    assert tokens_seen == [[], ['ask']]
+    assert 'chat' in blank_word
+    assert 'chat' in partial_word
+    assert 'explain' in blank_word
+    assert 'explain' not in partial_word
+
+
+def test_find_files_populate_scoped_cols_and_enum_helpers(monkeypatch) -> None:
+    completer = make_completer()
+    completer.extend_schemata('test')
+    completer.set_dbname('test')
+    completer.dbmetadata['tables']['test']['`select`'] = ['id']
+    completer.dbmetadata['views']['test']['orders_view'] = ['view_id']
+    completer.extend_enum_values([('orders', 'status', ['pending', 'shipped'])])
+
+    monkeypatch.setattr(mycli.sqlcompleter, 'parse_path', lambda word: ('/tmp', 'fi', 0))
+    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_path', lambda word: ['file.sql', 'folder/'])
+    monkeypatch.setattr(mycli.sqlcompleter, 'complete_path', lambda name, last_path: name if name == 'file.sql' else None)
+
+    assert list(completer.find_files('./fi')) == [('file.sql', Fuzziness.PERFECT)]
+    assert completer.populate_scoped_cols([(None, 'select', None), (None, 'orders_view', None), (None, 'missing', None)]) == [
+        'id',
+        'view_id',
+    ]
+    assert completer.populate_enum_values([(None, 'orders', 'o')], 'status', parent='other') == []
+    assert completer.populate_enum_values([(None, 'orders', 'o')], 'status', parent='o') == ['pending', 'shipped']
+    assert completer._quote_sql_string("O'Reilly") == "'O''Reilly'"
+
+
+@pytest.mark.parametrize(
+    ('name', 'expected'),
+    [
+        ('`quoted`', 'quoted'),
+        ('plain', 'plain'),
+        (None, ''),
+    ],
+)
+def test_strip_backticks(name: str | None, expected: str) -> None:
+    assert SQLCompleter._strip_backticks(name) == expected
+
+
+@pytest.mark.parametrize(
+    ('parent', 'schema', 'relname', 'alias', 'expected'),
+    [
+        ('o', None, 'orders', 'o', True),
+        ('orders', None, 'orders', None, True),
+        ('test.orders', 'test', 'orders', None, True),
+        ('other', 'test', 'orders', 'o', False),
+    ],
+)
+def test_matches_parent(parent: str, schema: str | None, relname: str, alias: str | None, expected: bool) -> None:
+    assert SQLCompleter._matches_parent(parent, schema, relname, alias) is expected
