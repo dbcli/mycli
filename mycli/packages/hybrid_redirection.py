@@ -125,6 +125,7 @@ def invalid_shell_part(
     return False
 
 
+# todo there are still corner cases combining custom delimiters, caching, and redirection
 @functools.lru_cache(maxsize=1)
 def get_redirect_components(command: str) -> tuple[str | None, str | None, str | None, str | None]:
     """Get the parts of a hybrid shell-style redirect command."""
