@@ -309,11 +309,14 @@ def truncate_table_lines(table: list[str], prompt_section_truncate: int) -> list
     if not prompt_section_truncate:
         return table
 
-    truncated_table = []
+    truncated_table: list[str] = []
     running_sum = 0
-    while table and running_sum <= prompt_section_truncate:
+    while table:
         line = table.pop(0)
-        running_sum += sys.getsizeof(line)
+        line_size = sys.getsizeof(line)
+        if running_sum + line_size > prompt_section_truncate:
+            break
+        running_sum += line_size
         truncated_table.append(line)
     return truncated_table
 
