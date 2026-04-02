@@ -25,6 +25,7 @@ Internal
 * Improve gitignored files.
 * Continue improve naming for `prompt_toolkit` utilities.
 * Run pytest tests in arbitrary order.
+* Type annotation improvements for `parse_pygments_style()`.
 
 
 1.67.1 (2026/03/28)
