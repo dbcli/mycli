@@ -61,6 +61,7 @@ dev = [
     "pexpect ~= 4.9.0",
     "pytest ~= 9.0.2",
     "pytest-cov ~= 7.0.0",
+    "pytest-random-order ~= 1.2.0",
     "tox ~= 4.35.0",
     "pdbpp ~= 0.11.7",
     "paramiko ~= 3.5.1",
@@ -147,7 +148,7 @@ commands = [['ruff', 'check'],
             ['ruff', 'format', '--diff']]
 
 [tool.pytest]
-addopts = ['--ignore=mycli/packages/paramiko_stub/__init__.py']
+addopts = ['--ignore=mycli/packages/paramiko_stub/__init__.py', '--random-order']
 
 [tool.coverage.run]
 source = ['mycli']

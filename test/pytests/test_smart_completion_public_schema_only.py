@@ -681,7 +681,9 @@ def test_create_table_like_completion(completer, complete_event):
     ]
 
 
-def test_source_eager_completion(completer, complete_event):
+def test_source_eager_completion(completer, complete_event, tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    os.mkdir('doc')
     text = "source do"
     position = len(text)
     script_filename = 'do_these_statements.sql'
@@ -705,7 +707,9 @@ def test_source_eager_completion(completer, complete_event):
         raise AssertionError(error)
 
 
-def test_source_leading_dot_suggestions_completion(completer, complete_event):
+def test_source_leading_dot_suggestions_completion(completer, complete_event, tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    os.mkdir('doc')
     text = "source ./do"
     position = len(text)
     script_filename = 'do_these_statements.sql'
