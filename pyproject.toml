@@ -46,7 +46,8 @@ ssh = [
     "sshtunnel ~= 0.4.0",
 ]
 llm = [
-    "llm ~= 0.28.0",
+    "llm ~= 0.30.0",
+    "pydantic_core ~= 2.41.5",              # Required by llm; force a newer version
     "setuptools == 82.*",                   # Required by llm commands to install models
     "pip == 26.*",
 ]
@@ -66,7 +67,8 @@ dev = [
     "pdbpp ~= 0.11.7",
     "paramiko ~= 3.5.1",
     "sshtunnel ~= 0.4.0",
-    "llm ~= 0.28.0",
+    "llm ~= 0.30.0",
+    "pydantic_core ~= 2.41.5",              # Required by llm; force a newer version
     "setuptools == 82.*",                   # Required by llm commands to install models
     "pip == 26.*",
     "ruff ~= 0.15.0",

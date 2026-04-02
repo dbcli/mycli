@@ -26,6 +26,7 @@ Internal
 * Continue improve naming for `prompt_toolkit` utilities.
 * Run pytest tests in arbitrary order.
 * Type annotation improvements for `parse_pygments_style()`.
+* Upgrade `llm` dependency and set a minimum `pydantic_core` version.
 
 
 1.67.1 (2026/03/28)
