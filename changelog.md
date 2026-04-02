@@ -10,6 +10,9 @@ Features
 Bug Fixes
 ---------
 * Fix issue stripping multi-character end-of-statement delimiters.
+* More conservative content truncation when sending to LLM APIs.
+* More careful removal of redundant fuzzy completion suggestions.
+* Fix a corner case when listing an empty list of favorite queries.
 
 
 Internal
