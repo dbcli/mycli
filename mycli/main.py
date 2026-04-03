@@ -2211,7 +2211,7 @@ def click_entrypoint(
             return None
         try:
             with open(password_file) as fp:
-                password = fp.readline().strip()
+                password = fp.readline().removesuffix('\n')
                 return password
         except FileNotFoundError:
             click.secho(f"Password file '{password_file}' not found", err=True, fg="red")

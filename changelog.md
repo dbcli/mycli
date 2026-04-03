@@ -5,6 +5,7 @@ Features
 ---------
 * Continue to expand TIPS.
 * Make `--progress` and `--checkpoint` strictly by statement.
+* Allow more characters in passwords read from a file.
 
 
 Bug Fixes
