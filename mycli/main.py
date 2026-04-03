@@ -85,8 +85,8 @@ from mycli.main_modes.batch import (
     main_batch_with_progress_bar,
     main_batch_without_progress_bar,
 )
+from mycli.main_modes.checkup import main_checkup
 from mycli.packages import special
-from mycli.packages.checkup import do_checkup
 from mycli.packages.filepaths import dir_path_exists, guess_socket_location
 from mycli.packages.hybrid_redirection import get_redirect_components, is_redirect_command
 from mycli.packages.parseutils import is_dropping_database, is_valid_connection_scheme
@@ -2263,7 +2263,7 @@ def click_entrypoint(
     )
 
     if cli_args.checkup:
-        do_checkup(mycli)
+        main_checkup(mycli)
         sys.exit(0)
 
     if cli_args.csv and cli_args.format not in [None, 'csv']:

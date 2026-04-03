@@ -32,6 +32,7 @@ Internal
 * Upgrade `llm` dependency and set a minimum `pydantic_core` version.
 * Refactor suggestion logic into declarative rules.
 * Factor the `--batch` execution modes out of `main.py`.
+* Move `--checkup` logic to the new `main_modes` with `--batch`.
 * Sort coverage report in tox suite.
 * Skip more tests when a database connection is not present.
 

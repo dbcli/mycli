@@ -3,7 +3,7 @@ import json
 from types import SimpleNamespace
 import urllib.error
 
-from mycli.packages import checkup
+from mycli.main_modes import checkup
 
 
 class FakeUrlResponse:
@@ -227,7 +227,7 @@ def test_configuration_checkup_up_to_date(capsys) -> None:
     assert 'User configuration all up to date!' in output
 
 
-def test_do_checkup_calls_all_sections(monkeypatch) -> None:
+def test_main_checkup_calls_all_sections(monkeypatch) -> None:
     calls: list[tuple[str, object]] = []
     mycli = SimpleNamespace(name='mycli')
 
@@ -236,7 +236,7 @@ def test_do_checkup_calls_all_sections(monkeypatch) -> None:
     monkeypatch.setattr(checkup, '_environment_checkup', lambda: calls.append(('environment', None)))
     monkeypatch.setattr(checkup, '_configuration_checkup', lambda arg: calls.append(('configuration', arg)))
 
-    checkup.do_checkup(mycli)
+    checkup.main_checkup(mycli)
 
     assert calls == [
         ('dependencies', None),
