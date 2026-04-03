@@ -33,6 +33,7 @@ Internal
 * Refactor suggestion logic into declarative rules.
 * Factor the `--batch` execution modes out of `main.py`.
 * Sort coverage report in tox suite.
+* Skip more tests when a database connection is not present.
 
 
 1.67.1 (2026/03/28)
