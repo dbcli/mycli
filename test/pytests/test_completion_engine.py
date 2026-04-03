@@ -687,6 +687,20 @@ def test_emit_where_token_returns_fallback_for_non_where_keyword(monkeypatch):
     assert _emit_where_token(context) == fallback
 
 
+def test_emit_where_token_handles_convert_using_with_trailing_partial_name(monkeypatch):
+    text = 'select * from tabl where convert(foo using utf'
+    where_token = next(token for token in sqlparse.parse(text)[0].tokens if isinstance(token, sqlparse.sql.Where))
+    context = _build_suggest_context(where_token, text, None, text, empty_identifier())
+
+    monkeypatch.setattr(
+        completion_engine,
+        'suggest_based_on_last_token',
+        lambda *_args: pytest.fail('suggest_based_on_last_token should not be called'),
+    )
+
+    assert _emit_where_token(context) == [{'type': 'character_set'}]
+
+
 def test_emit_binary_or_comma_prepends_enum_value_for_where_fallback(monkeypatch):
     text = 'select * from tabl where foo = '
     context = _build_suggest_context('=', text, None, text, empty_identifier())
@@ -747,6 +761,58 @@ def test_emit_binary_or_comma_returns_rewound_fallback_without_where_enum(monkey
 )
 def test_is_where_or_having(token, expected):
     assert _is_where_or_having(token) is expected
+
+
+@pytest.mark.parametrize('exc_type', [TypeError, AttributeError])
+def test_suggest_type_returns_keyword_suggestions_when_sqlparse_parse_errors(monkeypatch, exc_type):
+    monkeypatch.setattr(completion_engine.sqlparse, 'parse', lambda _text: (_ for _ in ()).throw(exc_type()))
+
+    assert suggest_type('select 1', 'select 1') == [{'type': 'keyword'}]
+
+
+@pytest.mark.parametrize('exc_type', [TypeError, AttributeError])
+def test_suggest_type_returns_keyword_suggestions_when_word_parse_errors(monkeypatch, exc_type):
+    parse_inputs: list[str] = []
+    original_parse = sqlparse.parse
+
+    def fake_parse(text: str):
+        parse_inputs.append(text)
+        if len(parse_inputs) == 1:
+            return [original_parse('select ')[0]]
+        raise exc_type()
+
+    monkeypatch.setattr(completion_engine.sqlparse, 'parse', fake_parse)
+
+    assert suggest_type('select foo', 'select foo') == [{'type': 'keyword'}]
+    assert parse_inputs == ['select ', 'foo']
+
+
+def test_suggest_type_dispatches_backslash_commands_to_suggest_special(monkeypatch):
+    parse_inputs: list[str] = []
+    special_inputs: list[str] = []
+    original_parse = sqlparse.parse
+
+    def fake_parse(text: str):
+        parse_inputs.append(text)
+        return [original_parse('\\dt ')[0]]
+
+    monkeypatch.setattr(completion_engine.sqlparse, 'parse', fake_parse)
+    monkeypatch.setattr(
+        completion_engine,
+        'suggest_special',
+        lambda text: special_inputs.append(text) or [{'type': 'special'}],
+    )
+    monkeypatch.setattr(
+        completion_engine,
+        'suggest_based_on_last_token',
+        lambda *_args: [{'type': 'keyword'}],
+    )
+
+    suggestions = suggest_type('\\dt', '\\dt')
+
+    assert parse_inputs == ['\\dt']
+    assert special_inputs == ['\\dt']
+    assert suggestions == [{'type': 'special'}]
 
 
 @pytest.mark.parametrize(
