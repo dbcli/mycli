@@ -81,6 +81,13 @@ To run the full test suite, execute `uv run -- tox`.
 Use Python features available from Python 3.10 through Python 3.14.
 Compatibility with Python 3.9 is not needed.
 
+#### Python Style
+
+Import style: prefer `from package import name` over `import package.name as name`.
+
+Quoting style: prefer single quotes for new code, but do not remove double quotes
+from existing code.
+
 #### Python Environment
 
  * Package manager: `uv` (not pip)
