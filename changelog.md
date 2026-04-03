@@ -38,6 +38,7 @@ Internal
 * Move `--checkup` logic to the new `main_modes` with `--batch`.
 * Move `--execute` logic to the new `main_modes` with `--batch`.
 * Move `--list-dsn` logic to the new `main_modes` with `--batch`.
+* Move `--list-ssh-config` logic to the new `main_modes` with `--batch`.
 * Sort coverage report in tox suite.
 * Skip more tests when a database connection is not present.
 
