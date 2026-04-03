@@ -1,7 +1,11 @@
 # type: ignore
 
+import builtins
 from datetime import time
+import importlib.util
 import os
+from pathlib import Path
+import sys
 from types import SimpleNamespace
 
 from prompt_toolkit.formatted_text import FormattedText
@@ -469,6 +473,39 @@ def test_calc_mysql_version_value_raises_for_non_numeric_parts(version_string: s
         ServerInfo.calc_mysql_version_value(version_string)
 
 
+def test_sqlexecute_import_swallows_optional_dependency_import_errors(monkeypatch) -> None:
+    assert sqlexecute.__file__ is not None
+    original_import = builtins.__import__
+
+    def fake_import(name, globals=None, locals=None, fromlist=(), level=0):  # noqa: A002
+        if name == 'paramiko':
+            raise ImportError('missing optional dependency')
+        return original_import(name, globals, locals, fromlist, level)
+
+    module_name = 'sqlexecute_importerror_test'
+    spec = importlib.util.spec_from_file_location(module_name, Path(sqlexecute.__file__))
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    monkeypatch.setattr(builtins, '__import__', fake_import)
+    sys.modules[module_name] = module
+    try:
+        spec.loader.exec_module(module)
+    finally:
+        sys.modules.pop(module_name, None)
+
+
+@pytest.mark.parametrize(
+    ('server_info', 'expected'),
+    (
+        (ServerInfo(ServerSpecies.MySQL, '8.0.36'), 'MySQL 8.0.36'),
+        (ServerInfo(None, '8.0.36'), '8.0.36'),
+    ),
+)
+def test_server_info_string_representation(server_info: ServerInfo, expected: str) -> None:
+    assert str(server_info) == expected
+
+
 @pytest.mark.parametrize(
     'column_type, expected',
     (
@@ -796,6 +833,31 @@ def test_connect_uses_ssh_tunnel_when_ssh_host_is_set(monkeypatch) -> None:
     assert executor.host == 'db.internal'
     assert executor.port == 3308
     assert executor.connection_id == 7
+
+
+def test_connect_reraises_ssh_tunnel_errors(monkeypatch) -> None:
+    executor = make_executor_for_connect_tests()
+    executor.ssl = None
+    new_conn = DummyConnection(server_version='8.0.36-0ubuntu0.22.04.1')
+
+    class FakeTunnel:
+        def __init__(self, *args, **kwargs) -> None:
+            self.local_bind_host = '127.0.0.1'
+            self.local_bind_port = 4406
+
+        def start(self) -> None:
+            raise RuntimeError('tunnel failed')
+
+    monkeypatch.setattr(sqlexecute.pymysql, 'connect', lambda **_kwargs: new_conn)
+    monkeypatch.setattr(
+        sqlexecute,
+        'sshtunnel',
+        SimpleNamespace(SSHTunnelForwarder=FakeTunnel),
+        raising=False,
+    )
+
+    with pytest.raises(RuntimeError, match='tunnel failed'):
+        executor.connect(ssh_host='bastion.internal')
 
 
 def test_run_returns_empty_result_for_blank_statement(monkeypatch) -> None:
@@ -1499,6 +1561,42 @@ def test_create_ssl_ctx_applies_cert_cipher_and_tls_version(monkeypatch) -> None
     assert ctx.cipher_string == 'ECDHE-RSA-AES256-GCM-SHA384'
     assert ctx.minimum_version == sqlexecute.ssl.TLSVersion.TLSv1_3
     assert ctx.maximum_version == sqlexecute.ssl.TLSVersion.TLSv1_3
+
+
+@pytest.mark.parametrize(
+    ('tls_version', 'expected_version'),
+    (
+        ('TLSv1', sqlexecute.ssl.TLSVersion.TLSv1),
+        ('TLSv1.1', sqlexecute.ssl.TLSVersion.TLSv1_1),
+        ('TLSv1.2', sqlexecute.ssl.TLSVersion.TLSv1_2),
+    ),
+)
+def test_create_ssl_ctx_supports_legacy_tls_version_overrides(monkeypatch, tls_version: str, expected_version) -> None:
+    executor = make_executor_for_run_tests()
+    ctx = FakeSSLContext()
+
+    monkeypatch.setattr(sqlexecute.ssl, 'create_default_context', lambda **_kwargs: ctx)
+
+    result = executor._create_ssl_ctx({'tls_version': tls_version})
+
+    assert result is ctx
+    assert ctx.minimum_version == expected_version
+    assert ctx.maximum_version == expected_version
+
+
+def test_create_ssl_ctx_logs_invalid_tls_version_and_keeps_default_minimum(monkeypatch, caplog) -> None:
+    executor = make_executor_for_run_tests()
+    ctx = FakeSSLContext()
+
+    monkeypatch.setattr(sqlexecute.ssl, 'create_default_context', lambda **_kwargs: ctx)
+
+    with caplog.at_level('ERROR', logger='mycli.sqlexecute'):
+        result = executor._create_ssl_ctx({'tls_version': 'SSLv3'})
+
+    assert result is ctx
+    assert ctx.minimum_version == sqlexecute.ssl.TLSVersion.TLSv1_2
+    assert ctx.maximum_version is None
+    assert 'Invalid tls version: SSLv3' in caplog.text
 
 
 def test_close_calls_connection_close_when_present() -> None:
