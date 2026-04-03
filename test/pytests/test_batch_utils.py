@@ -78,3 +78,24 @@ def test_statements_from_filehandle_yields_invalid_sql_02() -> None:
     assert statements == [
         ('select `column;', 0),
     ]
+
+
+def test_statements_from_filehandle_continues_when_tokenizer_returns_no_tokens(monkeypatch) -> None:
+    tokenize_calls: list[str] = []
+    original_tokenize = mycli.packages.batch_utils.sqlglot.tokenize
+
+    def fake_tokenize(sql: str, read: str):
+        tokenize_calls.append(sql)
+        if len(tokenize_calls) == 1:
+            return []
+        return original_tokenize(sql, read=read)
+
+    monkeypatch.setattr(mycli.packages.batch_utils.sqlglot, 'tokenize', fake_tokenize)
+
+    statements = list(statements_from_filehandle(StringIO('select 1;\nselect 2;')))
+
+    assert tokenize_calls[0] == 'select 1;\n'
+    assert statements == [
+        ('select 1;', 0),
+        ('select 2;', 1),
+    ]
