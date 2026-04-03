@@ -62,7 +62,7 @@ def dispatch_batch_statements(
 
 def main_batch_with_progress_bar(mycli: 'MyCli', cli_args: 'CliArgs') -> int:
     goal_statements = 0
-    if not cli_args.batch:
+    if cli_args.batch is None:
         return 1
     if not sys.stdin.isatty() and cli_args.batch != '-':
         click.secho('Ignoring STDIN since --batch was also given.', err=True, fg='yellow')
@@ -108,7 +108,7 @@ def main_batch_with_progress_bar(mycli: 'MyCli', cli_args: 'CliArgs') -> int:
 
 
 def main_batch_without_progress_bar(mycli: 'MyCli', cli_args: 'CliArgs') -> int:
-    if not cli_args.batch:
+    if cli_args.batch is None:
         return 1
     if not sys.stdin.isatty() and cli_args.batch != '-':
         click.secho('Ignoring STDIN since --batch was also given.', err=True, fg='red')

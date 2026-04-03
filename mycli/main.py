@@ -2664,10 +2664,10 @@ def click_entrypoint(
     if cli_args.execute is not None:
         sys.exit(main_execute_from_cli(mycli, cli_args))
 
-    if cli_args.batch and cli_args.batch != '-' and cli_args.progress and sys.stderr.isatty():
+    if cli_args.batch is not None and cli_args.batch != '-' and cli_args.progress and sys.stderr.isatty():
         sys.exit(main_batch_with_progress_bar(mycli, cli_args))
 
-    if cli_args.batch:
+    if cli_args.batch is not None:
         sys.exit(main_batch_without_progress_bar(mycli, cli_args))
 
     if not sys.stdin.isatty():
