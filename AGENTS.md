@@ -21,6 +21,8 @@ A command line client for MySQL with auto-completion and syntax highlighting.
 ├── mycli/lexer.py                        # extends `MySqlLexer` from Pygments
 ├── mycli/magic.py                        # Jupyter notebook magics
 ├── mycli/main.py                         # CLI main, configuration processing, and REPL
+├── mycli/main_modes/                     # main execution paths
+├── mycli/main_modes/batch.py             # batch mode execution path
 ├── mycli/myclirc                         # project-level configuration file
 ├── mycli/packages/                       # application packages
 ├── mycli/packages/batch_utils.py         # utilities for `--batch` mode

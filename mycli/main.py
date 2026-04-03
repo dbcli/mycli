@@ -25,7 +25,7 @@ from importlib import resources
 import itertools
 from random import choice
 from textwrap import dedent
-from time import sleep, time
+from time import time
 from urllib.parse import parse_qs, unquote, urlparse
 
 from cli_helpers.tabular_output import TabularOutputFormatter, preprocessors
@@ -35,7 +35,6 @@ import click
 import clickdc
 from configobj import ConfigObj
 import keyring
-import prompt_toolkit
 from prompt_toolkit import print_formatted_text
 from prompt_toolkit.application.current import get_app
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory, ThreadedAutoSuggest
@@ -56,8 +55,7 @@ from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from prompt_toolkit.layout.processors import ConditionalProcessor, HighlightMatchingBracketProcessor
 from prompt_toolkit.lexers import PygmentsLexer
 from prompt_toolkit.output import ColorDepth
-from prompt_toolkit.shortcuts import CompleteStyle, ProgressBar, PromptSession
-from prompt_toolkit.shortcuts.progress_bar import formatters as progress_bar_formatters
+from prompt_toolkit.shortcuts import CompleteStyle, PromptSession
 import pymysql
 from pymysql.constants.CR import CR_SERVER_LOST
 from pymysql.constants.ER import ACCESS_DENIED_ERROR, HANDSHAKE_ERROR
@@ -82,12 +80,16 @@ from mycli.constants import (
 )
 from mycli.key_bindings import mycli_bindings
 from mycli.lexer import MyCliLexer
+from mycli.main_modes.batch import (
+    main_batch_from_stdin,
+    main_batch_with_progress_bar,
+    main_batch_without_progress_bar,
+)
 from mycli.packages import special
-from mycli.packages.batch_utils import statements_from_filehandle
 from mycli.packages.checkup import do_checkup
 from mycli.packages.filepaths import dir_path_exists, guess_socket_location
 from mycli.packages.hybrid_redirection import get_redirect_components, is_redirect_command
-from mycli.packages.parseutils import is_destructive, is_dropping_database, is_valid_connection_scheme
+from mycli.packages.parseutils import is_dropping_database, is_valid_connection_scheme
 from mycli.packages.prompt_utils import confirm, confirm_destructive_query
 from mycli.packages.ptoolkit.history import FileHistoryWithTimestamp
 from mycli.packages.special.favoritequeries import FavoriteQueries
@@ -2687,118 +2689,14 @@ def click_entrypoint(
             click.secho(str(e), err=True, fg="red")
             sys.exit(1)
 
-    def dispatch_batch_statements(statements: str, batch_counter: int) -> None:
-        if batch_counter:
-            # this is imperfect if the first line of input has multiple statements
-            if cli_args.format == 'csv':
-                mycli.main_formatter.format_name = 'csv-noheader'
-            elif cli_args.format == 'tsv':
-                mycli.main_formatter.format_name = 'tsv_noheader'
-            elif cli_args.format == 'table':
-                mycli.main_formatter.format_name = 'ascii'
-            else:
-                mycli.main_formatter.format_name = 'tsv'
-        else:
-            if cli_args.format == 'csv':
-                mycli.main_formatter.format_name = 'csv'
-            elif cli_args.format == 'tsv':
-                mycli.main_formatter.format_name = 'tsv'
-            elif cli_args.format == 'table':
-                mycli.main_formatter.format_name = 'ascii'
-            else:
-                mycli.main_formatter.format_name = 'tsv'
-
-        warn_confirmed: bool | None = True
-        if not cli_args.noninteractive and mycli.destructive_warning and is_destructive(mycli.destructive_keywords, statements):
-            try:
-                # this seems to work, even though we are reading from stdin above
-                sys.stdin = open("/dev/tty")
-                # bug: the prompt will not be visible if stdout is redirected
-                warn_confirmed = confirm_destructive_query(mycli.destructive_keywords, statements)
-            except (IOError, OSError):
-                mycli.logger.warning("Unable to open TTY as stdin.")
-                sys.exit(1)
-        try:
-            if warn_confirmed:
-                if cli_args.throttle > 0 and batch_counter >= 1:
-                    sleep(cli_args.throttle)
-                mycli.run_query(statements, checkpoint=cli_args.checkpoint, new_line=True)
-        except Exception as e:
-            click.secho(str(e), err=True, fg="red")
-            sys.exit(1)
-
     if cli_args.batch and cli_args.batch != '-' and cli_args.progress and sys.stderr.isatty():
-        # The actual number of SQL statements can be greater, if there is more than
-        # one statement per line, but this is how the  progress bar will count.
-        goal_statements = 0
-        if not sys.stdin.isatty() and cli_args.batch != '-':
-            click.secho('Ignoring STDIN since --batch was also given.', err=True, fg='yellow')
-        if os.path.exists(cli_args.batch) and not os.path.isfile(cli_args.batch):
-            click.secho('--progress is only compatible with a plain file.', err=True, fg='red')
-            sys.exit(1)
-        try:
-            batch_count_h = click.open_file(cli_args.batch)
-            for _statement, _counter in statements_from_filehandle(batch_count_h):
-                goal_statements += 1
-            batch_count_h.close()
-            batch_h = click.open_file(cli_args.batch)
-            batch_gen = statements_from_filehandle(batch_h)
-        except (OSError, FileNotFoundError):
-            click.secho(f'Failed to open --batch file: {cli_args.batch}', err=True, fg='red')
-            sys.exit(1)
-        except ValueError as e:
-            click.secho(f'Error reading --batch file: {cli_args.batch}: {e}', err=True, fg='red')
-            sys.exit(1)
-        try:
-            if goal_statements:
-                pb_style = prompt_toolkit.styles.Style.from_dict({'bar-a': 'reverse'})
-                custom_formatters = [
-                    progress_bar_formatters.Bar(start='[', end=']', sym_a=' ', sym_b=' ', sym_c=' '),
-                    progress_bar_formatters.Text(' '),
-                    progress_bar_formatters.Progress(),
-                    progress_bar_formatters.Text(' '),
-                    progress_bar_formatters.Text('eta ', style='class:time-left'),
-                    progress_bar_formatters.TimeLeft(),
-                    progress_bar_formatters.Text(' ', style='class:time-left'),
-                ]
-                err_output = prompt_toolkit.output.create_output(stdout=sys.stderr, always_prefer_tty=True)
-                with ProgressBar(style=pb_style, formatters=custom_formatters, output=err_output) as pb:
-                    for _pb_counter in pb(range(goal_statements)):
-                        statement, statement_counter = next(batch_gen)
-                        dispatch_batch_statements(statement, statement_counter)
-        except (ValueError, StopIteration) as e:
-            click.secho(str(e), err=True, fg='red')
-            sys.exit(1)
-        finally:
-            batch_h.close()
-        sys.exit(0)
+        sys.exit(main_batch_with_progress_bar(mycli, cli_args))
 
     if cli_args.batch:
-        if not sys.stdin.isatty() and cli_args.batch != '-':
-            click.secho('Ignoring STDIN since --batch was also given.', err=True, fg='red')
-        try:
-            batch_h = click.open_file(cli_args.batch)
-        except (OSError, FileNotFoundError):
-            click.secho(f'Failed to open --batch file: {cli_args.batch}', err=True, fg='red')
-            sys.exit(1)
-        try:
-            for statement, counter in statements_from_filehandle(batch_h):
-                dispatch_batch_statements(statement, counter)
-            batch_h.close()
-        except ValueError as e:
-            click.secho(str(e), err=True, fg='red')
-            sys.exit(1)
-        sys.exit(0)
+        sys.exit(main_batch_without_progress_bar(mycli, cli_args))
 
     if not sys.stdin.isatty():
-        batch_h = click.get_text_stream('stdin')
-        try:
-            for statement, counter in statements_from_filehandle(batch_h):
-                dispatch_batch_statements(statement, counter)
-        except ValueError as e:
-            click.secho(str(e), err=True, fg='red')
-            sys.exit(1)
-        sys.exit(0)
+        sys.exit(main_batch_from_stdin(mycli, cli_args))
 
     mycli.run_cli()
     mycli.close()
