@@ -87,6 +87,7 @@ from mycli.main_modes.batch import (
 )
 from mycli.main_modes.checkup import main_checkup
 from mycli.main_modes.execute import main_execute_from_cli
+from mycli.main_modes.list_dsn import main_list_dsn
 from mycli.packages import special
 from mycli.packages.filepaths import dir_path_exists, guess_socket_location
 from mycli.packages.hybrid_redirection import get_redirect_components, is_redirect_command
@@ -2312,20 +2313,7 @@ def click_entrypoint(
         )
 
     if cli_args.list_dsn:
-        try:
-            alias_dsn = mycli.config["alias_dsn"]
-        except KeyError:
-            click.secho("Invalid DSNs found in the config file. Please check the \"[alias_dsn]\" section in myclirc.", err=True, fg="red")
-            sys.exit(1)
-        except Exception as e:
-            click.secho(str(e), err=True, fg="red")
-            sys.exit(1)
-        for alias, value in alias_dsn.items():
-            if cli_args.verbose:
-                click.secho(f"{alias} : {value}")
-            else:
-                click.secho(alias)
-        sys.exit(0)
+        sys.exit(main_list_dsn(mycli, cli_args))
 
     if cli_args.list_ssh_config:
         ssh_config = read_ssh_config(cli_args.ssh_config_path)
