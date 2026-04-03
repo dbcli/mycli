@@ -1,11 +1,57 @@
 # type: ignore
 
-import pytest
+from types import SimpleNamespace
 
-from mycli.packages import special
+import pytest
+import sqlparse
+
+from mycli.packages import completion_engine, special
 from mycli.packages.completion_engine import (
+    _aliases,
+    _build_suggest_context,
+    _charset_suggestion,
+    _emit_binary_or_comma,
+    _emit_blank_token,
+    _emit_character_set,
+    _emit_collation,
+    _emit_column_for_tables,
+    _emit_database,
+    _emit_lparen,
+    _emit_none_token,
+    _emit_nothing,
+    _emit_on,
+    _emit_procedure,
+    _emit_relation_like,
+    _emit_relation_name,
+    _emit_select_like,
+    _emit_show,
+    _emit_star,
+    _emit_to,
+    _emit_user,
+    _emit_where_token,
+    _enum_value_suggestion,
     _find_doubled_backticks,
+    _is_single_or_double_quoted,
+    _is_where_or_having,
+    _keyword_and_special_suggestions,
+    _keyword_suggestions,
+    _normalize_token_value,
+    _parent_name,
+    _parse_suggestion_statement,
+    _tables,
+    _token_is_binary_or_comma,
+    _token_is_blank,
+    _token_is_lparen,
+    _token_is_none,
+    _token_is_relation_keyword,
+    _token_value_is,
+    _tokens_wo_space,
+    _word_starts_with_digit_or_dot,
+    _word_starts_with_quote,
+    identifies,
     is_inside_quotes,
+    suggest_based_on_last_token,
+    suggest_special,
     suggest_type,
 )
 
@@ -13,6 +59,23 @@ from mycli.packages.completion_engine import (
 def sorted_dicts(dicts):
     """input is a list of dicts."""
     return sorted(tuple(x.items()) for x in dicts)
+
+
+def flattened_tokens(text):
+    return list(sqlparse.parse(text)[0].flatten())
+
+
+def value_tokens(*values):
+    return [SimpleNamespace(value=value) for value in values]
+
+
+def empty_identifier():
+    return SimpleNamespace(get_parent_name=lambda: None)
+
+
+def last_non_whitespace_token(text):
+    parsed = sqlparse.parse(text)[0]
+    return parsed.token_prev(len(parsed.tokens) - 1)[1]
 
 
 def test_select_suggests_cols_with_visible_table_scope():
@@ -69,6 +132,877 @@ def test_where_equals_suggests_enum_values_first():
         {"type": "function", "schema": []},
         {"type": "introducer"},
     ])
+
+
+def test_enum_value_suggestion_returns_none_without_equals_context():
+    expression = 'SELECT * FROM tabl WHERE foo'
+    suggestion = _enum_value_suggestion(expression, expression)
+    assert suggestion is None
+
+
+def test_enum_value_suggestion_returns_column_and_tables():
+    expression = 'SELECT * FROM tabl WHERE foo = '
+    suggestion = _enum_value_suggestion(expression, expression)
+    assert suggestion == {
+        'type': 'enum_value',
+        'tables': [(None, 'tabl', None)],
+        'column': 'foo',
+        'parent': None,
+    }
+
+
+def test_enum_value_suggestion_handles_qualified_backticked_identifier():
+    expression = 'SELECT * FROM sch.tabl WHERE `tabl`.`foo` = '
+    suggestion = _enum_value_suggestion(expression, expression)
+    assert suggestion == {
+        'type': 'enum_value',
+        'tables': [('sch', 'tabl', None)],
+        'column': '`foo`',
+        'parent': '`tabl`',
+    }
+
+
+def test_enum_value_suggestion_returns_none_inside_quotes():
+    full_text = 'SELECT * FROM tabl WHERE "foo = '
+    text_before_cursor = 'SELECT * FROM tabl WHERE "foo = '
+    suggestion = _enum_value_suggestion(text_before_cursor, full_text)
+    assert suggestion is None
+
+
+@pytest.mark.parametrize(
+    ('tokens', 'expected'),
+    [
+        (value_tokens('character', 'set'), [{'type': 'character_set'}]),
+        (value_tokens('x', 'character', 'set', ' '), [{'type': 'character_set'}]),
+        (value_tokens('collate'), [{'type': 'collation'}]),
+        (value_tokens('select', 'foo'), None),
+    ],
+)
+def test_charset_suggestion(tokens, expected):
+    assert _charset_suggestion(tokens) == expected
+
+
+def test_keyword_suggestions():
+    assert _keyword_suggestions() == [{'type': 'keyword'}]
+
+
+def test_keyword_and_special_suggestions():
+    assert _keyword_and_special_suggestions() == [{'type': 'keyword'}, {'type': 'special'}]
+
+
+def test_parse_suggestion_statement_returns_statement_and_nonspace_tokens():
+    tokens_wo_space = _tokens_wo_space('select  1')
+    assert [token.value for token in tokens_wo_space] == ['select', '1']
+
+
+def test_parse_suggestion_statement_raises_type_error_for_invalid_input_type():
+    with pytest.raises(TypeError):
+        _parse_suggestion_statement(None)  # type: ignore[arg-type]
+
+
+def test_normalize_token_value_handles_string():
+    assert _normalize_token_value('SELECT') == 'select'
+
+
+def test_normalize_token_value_handles_none():
+    assert _normalize_token_value(None) is None
+
+
+def test_normalize_token_value_handles_plain_token():
+    token = SimpleNamespace(value='SHOW')
+    assert _normalize_token_value(token) == 'show'
+
+
+def test_normalize_token_value_handles_comparison_token():
+    comparison = sqlparse.parse('a.id = d.')[0].tokens[0]
+    assert _normalize_token_value(comparison) == 'd.'
+
+
+def test_build_suggest_context_populates_fields():
+    identifier = empty_identifier()
+    context = _build_suggest_context(
+        'SHOW',
+        'show ',
+        None,
+        'show ',
+        identifier,
+    )
+
+    assert context.token == 'SHOW'
+    assert context.token_value == 'show'
+    assert context.text_before_cursor == 'show '
+    assert context.word_before_cursor is None
+    assert context.full_text == 'show '
+    assert context.identifier is identifier
+    assert str(context.parsed_cb()) == 'show '
+    assert [token.value for token in context.tokens_wo_space_cb()] == ['show']
+
+
+def test_build_suggest_context_handles_none_token():
+    context = _build_suggest_context(
+        None,
+        '',
+        None,
+        '',
+        empty_identifier(),
+    )
+
+    assert context.token is None
+    assert context.token_value is None
+    assert str(context.parsed_cb()) == ''
+    assert context.tokens_wo_space_cb() == []
+
+
+@pytest.mark.parametrize(
+    ('text_before_cursor', 'expected'),
+    [
+        ("select 'foo", True),
+        ('select "foo', True),
+        ('select `foo', False),
+        ('select foo', False),
+    ],
+)
+def test_is_single_or_double_quoted(text_before_cursor, expected):
+    context = _build_suggest_context(
+        None,
+        text_before_cursor,
+        None,
+        text_before_cursor,
+        empty_identifier(),
+    )
+    assert _is_single_or_double_quoted(context) is expected
+
+
+def test_parent_name_returns_identifier_parent():
+    identifier = SimpleNamespace(get_parent_name=lambda: 'sch')
+    context = _build_suggest_context(None, '', None, '', identifier)
+    assert _parent_name(context) == 'sch'
+
+
+def test_parent_name_returns_empty_list_without_parent():
+    context = _build_suggest_context(None, '', None, '', empty_identifier())
+    assert _parent_name(context) == []
+
+
+def test_tables_returns_extracted_tables_from_full_text():
+    full_text = 'SELECT * FROM abc a, sch.def d'
+    context = _build_suggest_context(None, '', None, full_text, empty_identifier())
+    assert _tables(context) == [
+        (None, 'abc', 'a'),
+        ('sch', 'def', 'd'),
+    ]
+
+
+def test_aliases_prefers_alias_and_falls_back_to_table_name():
+    tables = [
+        (None, 'abc', 'a'),
+        ('sch', 'def', ''),
+    ]
+    assert _aliases(tables) == ['a', 'def']
+
+
+@pytest.mark.parametrize(
+    ('word_before_cursor', 'expected'),
+    [
+        ('9foo', True),
+        ('.foo', True),
+        ('foo', False),
+        (None, False),
+    ],
+)
+def test_word_starts_with_digit_or_dot(word_before_cursor, expected):
+    context = _build_suggest_context(
+        None,
+        '',
+        word_before_cursor,
+        '',
+        empty_identifier(),
+    )
+    assert _word_starts_with_digit_or_dot(context) is expected
+
+
+@pytest.mark.parametrize(
+    ('word_before_cursor', 'expected'),
+    [
+        ("'foo", True),
+        ('"foo', True),
+        ('foo', False),
+        (None, False),
+    ],
+)
+def test_word_starts_with_quote(word_before_cursor, expected):
+    context = _build_suggest_context(
+        None,
+        '',
+        word_before_cursor,
+        '',
+        empty_identifier(),
+    )
+    assert _word_starts_with_quote(context) is expected
+
+
+def test_token_is_none_true_for_none_token():
+    context = _build_suggest_context(None, '', None, '', empty_identifier())
+    assert _token_is_none(context) is True
+
+
+def test_token_is_none_false_for_non_none_token():
+    context = _build_suggest_context('select', '', None, '', empty_identifier())
+    assert _token_is_none(context) is False
+
+
+@pytest.mark.parametrize(
+    ('token', 'expected'),
+    [
+        ('', True),
+        ('select', False),
+        (None, True),
+    ],
+)
+def test_token_is_blank(token, expected):
+    context = _build_suggest_context(token, '', None, '', empty_identifier())
+    assert _token_is_blank(context) is expected
+
+
+@pytest.mark.parametrize(
+    ('token', 'values', 'expected'),
+    [
+        ('select', ('select', 'where'), True),
+        ('show', ('select', 'where'), False),
+        (None, ('select',), False),
+    ],
+)
+def test_token_value_is(token, values, expected):
+    context = _build_suggest_context(token, '', None, '', empty_identifier())
+    assert _token_value_is(context, *values) is expected
+
+
+@pytest.mark.parametrize(
+    ('token', 'expected'),
+    [
+        ('(', True),
+        ('any(', True),
+        ('select', False),
+        (None, False),
+    ],
+)
+def test_token_is_lparen(token, expected):
+    context = _build_suggest_context(token, '', None, '', empty_identifier())
+    assert _token_is_lparen(context) is expected
+
+
+@pytest.mark.parametrize(
+    ('token', 'text_before_cursor', 'full_text', 'expected'),
+    [
+        (last_non_whitespace_token('SELECT * FROM foo JOIN '), 'SELECT * FROM foo JOIN ', 'SELECT * FROM foo JOIN ', True),
+        ('from', 'from ', 'from ', True),
+        ('truncate', 'truncate ', 'truncate ', True),
+        ('like', 'like ', 'create table new like ', True),
+        ('like', 'like ', 'select * from foo like ', False),
+        ('select', 'select ', 'select ', False),
+    ],
+)
+def test_token_is_relation_keyword(token, text_before_cursor, full_text, expected):
+    context = _build_suggest_context(token, text_before_cursor, None, full_text, empty_identifier())
+    assert _token_is_relation_keyword(context) is expected
+
+
+@pytest.mark.parametrize(
+    ('token', 'expected'),
+    [
+        (',', True),
+        ('=', True),
+        ('and', True),
+        ('select', False),
+        (None, False),
+    ],
+)
+def test_token_is_binary_or_comma(token, expected):
+    context = _build_suggest_context(token, '', None, '', empty_identifier())
+    assert _token_is_binary_or_comma(context) is expected
+
+
+def test_emit_none_token():
+    context = _build_suggest_context(None, '', None, '', empty_identifier())
+    assert _emit_none_token(context) == [{'type': 'keyword'}]
+
+
+def test_emit_blank_token():
+    context = _build_suggest_context('', '', None, '', empty_identifier())
+    assert _emit_blank_token(context) == [{'type': 'keyword'}, {'type': 'special'}]
+
+
+def test_emit_star():
+    context = _build_suggest_context('*', '', None, '', empty_identifier())
+    assert _emit_star(context) == [{'type': 'keyword'}]
+
+
+def test_emit_lparen_exists_where():
+    text = 'SELECT * FROM foo WHERE EXISTS ('
+    context = _build_suggest_context('(', text, None, text, empty_identifier())
+    assert _emit_lparen(context) == [{'type': 'keyword'}]
+
+
+def test_emit_lparen_join_using():
+    text = 'select * from abc inner join def using ('
+    context = _build_suggest_context('(', text, None, text, empty_identifier())
+    assert _emit_lparen(context) == [{'type': 'column', 'tables': [(None, 'abc', None), (None, 'def', None)], 'drop_unique': True}]
+
+
+def test_emit_lparen_show():
+    text = 'SHOW ('
+    context = _build_suggest_context('(', text, None, text, empty_identifier())
+    assert _emit_lparen(context) == [{'type': 'show'}]
+
+
+def test_emit_lparen_function_argument_list():
+    text = 'SELECT MAX('
+    full_text = 'SELECT MAX( FROM tbl'
+    context = _build_suggest_context('(', text, None, full_text, empty_identifier())
+    assert _emit_lparen(context) == [{'type': 'column', 'tables': [(None, 'tbl', None)]}]
+
+
+def test_emit_procedure():
+    context = _build_suggest_context('call', '', None, '', empty_identifier())
+    assert _emit_procedure(context) == [{'type': 'procedure', 'schema': []}]
+
+
+def test_emit_character_set():
+    context = _build_suggest_context('set', '', None, '', empty_identifier())
+    assert _emit_character_set(context) == [{'type': 'character_set'}]
+
+
+def test_emit_column_for_tables():
+    full_text = 'SELECT * FROM abc a, sch.def d'
+    context = _build_suggest_context('select', '', None, full_text, empty_identifier())
+    assert _emit_column_for_tables(context) == [
+        {
+            'type': 'column',
+            'tables': [
+                (None, 'abc', 'a'),
+                ('sch', 'def', 'd'),
+            ],
+        }
+    ]
+
+
+def test_emit_nothing():
+    context = _build_suggest_context('as', '', None, '', empty_identifier())
+    assert _emit_nothing(context) == []
+
+
+def test_emit_show():
+    context = _build_suggest_context('show', '', None, '', empty_identifier())
+    assert _emit_show(context) == [{'type': 'show'}]
+
+
+def test_emit_to_for_change_statement():
+    text = 'change master to '
+    context = _build_suggest_context('to', text, None, text, empty_identifier())
+    assert _emit_to(context) == [{'type': 'change'}]
+
+
+def test_emit_to_for_non_change_statement():
+    text = 'grant all on db.* to '
+    context = _build_suggest_context('to', text, None, text, empty_identifier())
+    assert _emit_to(context) == [{'type': 'user'}]
+
+
+def test_emit_user():
+    context = _build_suggest_context('user', '', None, '', empty_identifier())
+    assert _emit_user(context) == [{'type': 'user'}]
+
+
+def test_emit_collation():
+    context = _build_suggest_context('collate', '', None, '', empty_identifier())
+    assert _emit_collation(context) == [{'type': 'collation'}]
+
+
+@pytest.mark.xfail
+def test_emit_select_like_with_parent_filters_tables():
+    identifier = SimpleNamespace(get_parent_name=lambda: 't1')
+    text = 'SELECT t1.'
+    full_text = 'SELECT t1. FROM tabl1 t1, tabl2 t2'
+    context = _build_suggest_context('select', text, None, full_text, identifier)
+    assert sorted_dicts(_emit_select_like(context)) == sorted_dicts([
+        {'type': 'column', 'tables': [(None, 'tabl1', 't1')]},
+        # xfail because these are also currently returned
+        # {'type': 'table', 'schema': 't1'},
+        # {'type': 'view', 'schema': 't1'},
+        # {'type': 'function', 'schema': 't1'},
+    ])
+
+
+def test_emit_select_like_inside_backticks_adds_keyword():
+    text = 'SELECT `a'
+    full_text = 'SELECT `a FROM tabl'
+    context = _build_suggest_context('select', text, None, full_text, empty_identifier())
+    assert sorted_dicts(_emit_select_like(context)) == sorted_dicts([
+        {'type': 'column', 'tables': [(None, 'tabl', None)]},
+        {'type': 'function', 'schema': []},
+        {'type': 'alias', 'aliases': ['tabl']},
+        {'type': 'keyword'},
+    ])
+
+
+def test_emit_select_like_default():
+    text = 'SELECT '
+    full_text = 'SELECT  FROM tabl'
+    context = _build_suggest_context('select', text, None, full_text, empty_identifier())
+    assert sorted_dicts(_emit_select_like(context)) == sorted_dicts([
+        {'type': 'column', 'tables': [(None, 'tabl', None)]},
+        {'type': 'function', 'schema': []},
+        {'type': 'introducer'},
+        {'type': 'alias', 'aliases': ['tabl']},
+    ])
+
+
+def test_emit_relation_like_with_schema_parent():
+    identifier = SimpleNamespace(get_parent_name=lambda: 'sch')
+    text = 'INSERT INTO sch.'
+    context = _build_suggest_context('into', text, None, text, identifier)
+    assert sorted_dicts(_emit_relation_like(context)) == sorted_dicts([
+        {'type': 'table', 'schema': 'sch'},
+        {'type': 'view', 'schema': 'sch'},
+    ])
+
+
+def test_emit_relation_like_join_adds_database_and_join_flag():
+    text = 'SELECT * FROM foo JOIN '
+    token = last_non_whitespace_token(text)
+    context = _build_suggest_context(token, text, None, text, empty_identifier())
+    assert sorted_dicts(_emit_relation_like(context)) == sorted_dicts([
+        {'type': 'database'},
+        {'type': 'table', 'schema': [], 'join': True},
+        {'type': 'view', 'schema': []},
+    ])
+
+
+def test_emit_relation_like_truncate_omits_view():
+    text = 'TRUNCATE '
+    context = _build_suggest_context('truncate', text, None, text, empty_identifier())
+    assert sorted_dicts(_emit_relation_like(context)) == sorted_dicts([
+        {'type': 'database'},
+        {'type': 'table', 'schema': []},
+    ])
+
+
+def test_emit_relation_name_with_schema_parent():
+    identifier = SimpleNamespace(get_parent_name=lambda: 'sch')
+    context = _build_suggest_context('table', '', None, '', identifier)
+    assert _emit_relation_name(context) == [{'type': 'table', 'schema': 'sch'}]
+
+
+def test_emit_relation_name_without_schema_parent():
+    context = _build_suggest_context('view', '', None, '', empty_identifier())
+    assert _emit_relation_name(context) == [{'type': 'schema'}, {'type': 'view', 'schema': []}]
+
+
+@pytest.mark.xfail
+def test_emit_on_with_parent_filters_tables():
+    identifier = SimpleNamespace(get_parent_name=lambda: 'a')
+    text = 'SELECT * FROM abc a JOIN def d ON a.'
+    context = _build_suggest_context('on', text, None, text, identifier)
+    assert sorted_dicts(_emit_on(context)) == sorted_dicts([
+        {'type': 'column', 'tables': [(None, 'abc', 'a')]},
+        # xfail because these currently also are returned
+        # {'type': 'table', 'schema': 'a'},
+        # {'type': 'view', 'schema': 'a'},
+        # {'type': 'function', 'schema': 'a'},
+    ])
+
+
+def test_emit_on_without_parent_uses_fk_join_and_aliases():
+    text = 'select a.x, b.y from abc a join bcd b on '
+    context = _build_suggest_context('on', text, None, text, empty_identifier())
+    assert _emit_on(context) == [
+        {'type': 'fk_join', 'tables': [(None, 'abc', 'a'), (None, 'bcd', 'b')]},
+        {'type': 'alias', 'aliases': ['a', 'b']},
+    ]
+
+
+def test_emit_on_without_visible_tables_adds_database_and_table():
+    text = 'grant select on '
+    context = _build_suggest_context('on', text, None, text, empty_identifier())
+    assert _emit_on(context) == [
+        {'type': 'fk_join', 'tables': []},
+        {'type': 'alias', 'aliases': []},
+        {'type': 'database'},
+        {'type': 'table', 'schema': []},
+    ]
+
+
+def test_emit_database():
+    context = _build_suggest_context('database', '', None, '', empty_identifier())
+    assert _emit_database(context) == [{'type': 'database'}]
+
+
+def test_emit_where_token_returns_charset_suggestion_when_available(monkeypatch):
+    text = 'select * from tabl where foo = '
+    where_token = next(token for token in sqlparse.parse(text)[0].tokens if isinstance(token, sqlparse.sql.Where))
+    context = _build_suggest_context(where_token, text, None, text, empty_identifier())
+    suggestion = [{'type': 'character_set'}]
+
+    monkeypatch.setattr(completion_engine, '_charset_suggestion', lambda _tokens: suggestion)
+    monkeypatch.setattr(
+        completion_engine,
+        'suggest_based_on_last_token',
+        lambda *_args: pytest.fail('suggest_based_on_last_token should not be called'),
+    )
+
+    assert _emit_where_token(context) == suggestion
+
+
+def test_emit_where_token_prepends_enum_value_for_where_fallback(monkeypatch):
+    text = 'select * from tabl where foo = '
+    where_token = next(token for token in sqlparse.parse(text)[0].tokens if isinstance(token, sqlparse.sql.Where))
+    context = _build_suggest_context(where_token, text, None, text, empty_identifier())
+    prev_keyword = SimpleNamespace(value='where')
+    enum_suggestion = {'type': 'enum_value'}
+    fallback = [{'type': 'keyword'}]
+
+    monkeypatch.setattr(completion_engine, '_charset_suggestion', lambda _tokens: None)
+    monkeypatch.setattr(completion_engine, 'find_prev_keyword', lambda _text: (prev_keyword, 'select * from tabl where '))
+    monkeypatch.setattr(completion_engine, '_enum_value_suggestion', lambda _original, _full: enum_suggestion)
+    monkeypatch.setattr(completion_engine, 'suggest_based_on_last_token', lambda *_args: fallback)
+
+    assert _emit_where_token(context) == [enum_suggestion] + fallback
+
+
+def test_emit_where_token_returns_fallback_for_non_where_keyword(monkeypatch):
+    text = 'select * from tabl where foo = '
+    where_token = next(token for token in sqlparse.parse(text)[0].tokens if isinstance(token, sqlparse.sql.Where))
+    context = _build_suggest_context(where_token, text, None, text, empty_identifier())
+    fallback = [{'type': 'keyword'}]
+
+    monkeypatch.setattr(completion_engine, '_charset_suggestion', lambda _tokens: None)
+    monkeypatch.setattr(
+        completion_engine,
+        'find_prev_keyword',
+        lambda _text: (SimpleNamespace(value='from'), 'select * from tabl '),
+    )
+    monkeypatch.setattr(completion_engine, '_enum_value_suggestion', lambda _original, _full: {'type': 'enum_value'})
+    monkeypatch.setattr(completion_engine, 'suggest_based_on_last_token', lambda *_args: fallback)
+
+    assert _emit_where_token(context) == fallback
+
+
+def test_emit_binary_or_comma_prepends_enum_value_for_where_fallback(monkeypatch):
+    text = 'select * from tabl where foo = '
+    context = _build_suggest_context('=', text, None, text, empty_identifier())
+    prev_keyword = SimpleNamespace(value='where')
+    enum_suggestion = {'type': 'enum_value'}
+    fallback = [{'type': 'column', 'tables': [(None, 'tabl', None)]}]
+
+    monkeypatch.setattr(completion_engine, 'find_prev_keyword', lambda _text: (prev_keyword, 'select * from tabl where '))
+    monkeypatch.setattr(completion_engine, '_enum_value_suggestion', lambda _original, _full: enum_suggestion)
+    monkeypatch.setattr(completion_engine, 'suggest_based_on_last_token', lambda *_args: fallback)
+
+    assert _emit_binary_or_comma(context) == [enum_suggestion] + fallback
+
+
+def test_emit_binary_or_comma_uses_keyword_fallback_for_nonprogressing_rewind(monkeypatch):
+    text = 'select * from tabl where foo = '
+    context = _build_suggest_context(',', text, None, text, empty_identifier())
+    prev_keyword = SimpleNamespace(value='where')
+    fallback = [{'type': 'keyword'}]
+
+    monkeypatch.setattr(completion_engine, 'find_prev_keyword', lambda _text: (prev_keyword, text.rstrip()))
+    monkeypatch.setattr(completion_engine, '_enum_value_suggestion', lambda _original, _full: None)
+    monkeypatch.setattr(
+        completion_engine,
+        'suggest_based_on_last_token',
+        lambda *_args: pytest.fail('suggest_based_on_last_token should not be called'),
+    )
+    monkeypatch.setattr(completion_engine, '_keyword_suggestions', lambda: fallback)
+
+    assert _emit_binary_or_comma(context) == fallback
+
+
+def test_emit_binary_or_comma_returns_rewound_fallback_without_where_enum(monkeypatch):
+    text = 'select * from tabl and '
+    context = _build_suggest_context('and', text, None, text, empty_identifier())
+    fallback = [{'type': 'keyword'}]
+
+    monkeypatch.setattr(
+        completion_engine,
+        'find_prev_keyword',
+        lambda _text: (SimpleNamespace(value='from'), 'select * from '),
+    )
+    monkeypatch.setattr(completion_engine, '_enum_value_suggestion', lambda _original, _full: {'type': 'enum_value'})
+    monkeypatch.setattr(completion_engine, 'suggest_based_on_last_token', lambda *_args: fallback)
+
+    assert _emit_binary_or_comma(context) == fallback
+
+
+@pytest.mark.parametrize(
+    ('token', 'expected'),
+    [
+        (None, False),
+        (SimpleNamespace(value='where'), True),
+        (SimpleNamespace(value='HAVING'), True),
+        (SimpleNamespace(value='from'), False),
+        (SimpleNamespace(value=''), False),
+    ],
+)
+def test_is_where_or_having(token, expected):
+    assert _is_where_or_having(token) is expected
+
+
+@pytest.mark.parametrize(
+    ('text', 'expected'),
+    [
+        ('\\', [{'type': 'special'}]),
+        ('use ', [{'type': 'database'}]),
+        ('connect ', [{'type': 'database'}]),
+        ('\\u ', [{'type': 'database'}]),
+        ('\\r ', [{'type': 'database'}]),
+        ('tableformat ', [{'type': 'table_format'}]),
+        ('redirectformat ', [{'type': 'table_format'}]),
+        ('\\T ', [{'type': 'table_format'}]),
+        ('\\Tr ', [{'type': 'table_format'}]),
+        ('\\f ', [{'type': 'favoritequery'}]),
+        ('\\fs ', [{'type': 'favoritequery'}]),
+        ('\\fd ', [{'type': 'favoritequery'}]),
+        ('\\dt ', [{'type': 'table', 'schema': []}, {'type': 'view', 'schema': []}, {'type': 'schema'}]),
+        ('\\dt+ ', [{'type': 'table', 'schema': []}, {'type': 'view', 'schema': []}, {'type': 'schema'}]),
+        ('\\. ', [{'type': 'file_name'}]),
+        ('source ', [{'type': 'file_name'}]),
+        ('\\o ', [{'type': 'file_name'}]),
+        ('\\once ', [{'type': 'file_name'}]),
+        ('tee ', [{'type': 'file_name'}]),
+        ('\\e ', [{'type': 'file_name'}]),
+        ('\\edit ', [{'type': 'file_name'}]),
+        ('\\llm ', [{'type': 'llm'}]),
+        ('\\ai ', [{'type': 'llm'}]),
+        ('pager ', [{'type': 'keyword'}, {'type': 'special'}]),
+    ],
+)
+def test_suggest_special(text, expected):
+    assert suggest_special(text) == expected
+
+
+@pytest.mark.parametrize(
+    ('token', 'text_before_cursor', 'word_before_cursor', 'full_text', 'expected'),
+    [
+        (None, '', None, '', [{'type': 'keyword'}]),
+        ('', '', None, '', [{'type': 'keyword'}, {'type': 'special'}]),
+        ('*', 'select *', None, 'select *', [{'type': 'keyword'}]),
+        ('as', 'select 1 as ', None, 'select 1 as ', []),
+        ('show', 'show ', None, 'show ', [{'type': 'show'}]),
+        ('to', 'grant all on db.* to ', None, 'grant all on db.* to ', [{'type': 'user'}]),
+        ('to', 'change master to ', None, 'change master to ', [{'type': 'change'}]),
+        ('where', 'select * from tabl where ', '9', 'select * from tabl where ', []),
+        ('where', 'select * from tabl where "fo', '"fo', 'select * from tabl where "fo', []),
+        ('where', "select * from tabl where 'fo", 'fo', "select * from tabl where 'fo", []),
+    ],
+)
+def test_suggest_based_on_last_token(token, text_before_cursor, word_before_cursor, full_text, expected):
+    suggestion = suggest_based_on_last_token(
+        token,
+        text_before_cursor,
+        word_before_cursor,
+        full_text,
+        empty_identifier(),
+    )
+    assert suggestion == expected
+
+
+def test_suggest_based_on_last_token_lparen_in_exists_where_suggests_keyword():
+    text = 'SELECT * FROM foo WHERE EXISTS ('
+    suggestion = suggest_based_on_last_token('(', text, None, text, empty_identifier())
+    assert suggestion == [{'type': 'keyword'}]
+
+
+def test_suggest_based_on_last_token_lparen_in_where_any_suggests_columns_functions():
+    text = 'SELECT * FROM tabl WHERE foo = ANY('
+    suggestion = suggest_based_on_last_token('(', text, None, text, empty_identifier())
+    assert sorted_dicts(suggestion) == sorted_dicts([
+        {'type': 'alias', 'aliases': ['tabl']},
+        {'type': 'column', 'tables': [(None, 'tabl', None)]},
+        {'type': 'function', 'schema': []},
+        {'type': 'introducer'},
+    ])
+
+
+def test_suggest_based_on_last_token_lparen_after_join_using_suggests_common_columns():
+    text = 'select * from abc inner join def using ('
+    suggestion = suggest_based_on_last_token('(', text, None, text, empty_identifier())
+    assert suggestion == [{'type': 'column', 'tables': [(None, 'abc', None), (None, 'def', None)], 'drop_unique': True}]
+
+
+def test_suggest_based_on_last_token_lparen_after_select_subquery_suggests_keyword():
+    text = 'SELECT * FROM ('
+    suggestion = suggest_based_on_last_token('(', text, None, text, empty_identifier())
+    assert suggestion == [{'type': 'keyword'}]
+
+
+def test_suggest_based_on_last_token_lparen_after_show_suggests_show_items():
+    text = 'SHOW ('
+    suggestion = suggest_based_on_last_token('(', text, None, text, empty_identifier())
+    assert suggestion == [{'type': 'show'}]
+
+
+def test_suggest_based_on_last_token_lparen_in_function_call_suggests_columns():
+    text = 'SELECT MAX('
+    full_text = 'SELECT MAX( FROM tbl'
+    suggestion = suggest_based_on_last_token('(', text, None, full_text, empty_identifier())
+    assert suggestion == [{'type': 'column', 'tables': [(None, 'tbl', None)]}]
+
+
+@pytest.mark.parametrize(
+    ('token', 'text_before_cursor', 'full_text', 'expected'),
+    [
+        ('call', 'call ', 'call ', [{'type': 'procedure', 'schema': []}]),
+        ('set', 'character set', 'character set', [{'type': 'character_set'}]),
+        ('distinct', 'select distinct ', 'select distinct ', [{'type': 'column', 'tables': []}]),
+        ('database', 'drop database ', 'drop database ', [{'type': 'database'}]),
+        ('template', 'create database foo with template ', 'create database foo with template ', [{'type': 'database'}]),
+        ('collate', 'collate ', 'collate ', [{'type': 'collation'}]),
+        ('table', 'drop table ', 'drop table ', [{'type': 'schema'}, {'type': 'table', 'schema': []}]),
+        ('view', 'drop view ', 'drop view ', [{'type': 'schema'}, {'type': 'view', 'schema': []}]),
+        ('function', 'drop function ', 'drop function ', [{'type': 'schema'}, {'type': 'function', 'schema': []}]),
+    ],
+)
+def test_suggest_based_on_last_token_direct_keyword_branches(token, text_before_cursor, full_text, expected):
+    suggestion = suggest_based_on_last_token(token, text_before_cursor, None, full_text, empty_identifier())
+    assert suggestion == expected
+
+
+def test_suggest_based_on_last_token_relation_keyword_with_schema_parent():
+    identifier = SimpleNamespace(get_parent_name=lambda: 'sch')
+    text = 'INSERT INTO sch.'
+    suggestion = suggest_based_on_last_token('into', text, None, text, identifier)
+    assert sorted_dicts(suggestion) == sorted_dicts([
+        {'type': 'table', 'schema': 'sch'},
+        {'type': 'view', 'schema': 'sch'},
+    ])
+
+
+def test_suggest_based_on_last_token_join_keyword_marks_join_suggestions():
+    text = 'SELECT * FROM foo JOIN '
+    suggestion = suggest_based_on_last_token(last_non_whitespace_token(text), text, None, text, empty_identifier())
+    assert sorted_dicts(suggestion) == sorted_dicts([
+        {'type': 'database'},
+        {'type': 'table', 'schema': [], 'join': True},
+        {'type': 'view', 'schema': []},
+    ])
+
+
+def test_suggest_based_on_last_token_like_in_create_table_suggests_relations():
+    text = 'CREATE TABLE new LIKE '
+    suggestion = suggest_based_on_last_token('like', text, None, text, empty_identifier())
+    assert sorted_dicts(suggestion) == sorted_dicts([
+        {'type': 'database'},
+        {'type': 'table', 'schema': []},
+        {'type': 'view', 'schema': []},
+    ])
+
+
+@pytest.mark.xfail
+def test_suggest_based_on_last_token_select_with_parent_identifier_filters_tables():
+    identifier = SimpleNamespace(get_parent_name=lambda: 't1')
+    text = 'SELECT t1.'
+    full_text = 'SELECT t1. FROM tabl1 t1, tabl2 t2'
+    suggestion = suggest_based_on_last_token('select', text, None, full_text, identifier)
+    assert sorted_dicts(suggestion) == sorted_dicts([
+        {'type': 'column', 'tables': [(None, 'tabl1', 't1')]},
+        # xfail because these are currently also returned
+        # {'type': 'table', 'schema': 't1'},
+        # {'type': 'view', 'schema': 't1'},
+        # {'type': 'function', 'schema': 't1'},
+    ])
+
+
+def test_suggest_based_on_last_token_select_inside_backticks_adds_keywords():
+    text = 'SELECT `a'
+    full_text = 'SELECT `a FROM tabl'
+    suggestion = suggest_based_on_last_token('select', text, None, full_text, empty_identifier())
+    assert sorted_dicts(suggestion) == sorted_dicts([
+        {'type': 'column', 'tables': [(None, 'tabl', None)]},
+        {'type': 'function', 'schema': []},
+        {'type': 'alias', 'aliases': ['tabl']},
+        {'type': 'keyword'},
+    ])
+
+
+def test_suggest_based_on_last_token_on_without_parent_suggests_fk_join_and_aliases():
+    text = 'select a.x, b.y from abc a join bcd b on '
+    suggestion = suggest_based_on_last_token('on', text, None, text, empty_identifier())
+    assert suggestion == [
+        {'type': 'fk_join', 'tables': [(None, 'abc', 'a'), (None, 'bcd', 'b')]},
+        {'type': 'alias', 'aliases': ['a', 'b']},
+    ]
+
+
+def test_suggest_based_on_last_token_on_without_tables_adds_database_and_table():
+    text = 'grant select on '
+    suggestion = suggest_based_on_last_token('on', text, None, text, empty_identifier())
+    assert suggestion == [
+        {'type': 'fk_join', 'tables': []},
+        {'type': 'alias', 'aliases': []},
+        {'type': 'database'},
+        {'type': 'table', 'schema': []},
+    ]
+
+
+@pytest.mark.xfail
+def test_suggest_based_on_last_token_on_with_parent_identifier_filters_tables():
+    identifier = SimpleNamespace(get_parent_name=lambda: 'a')
+    text = 'SELECT * FROM abc a JOIN def d ON a.'
+    suggestion = suggest_based_on_last_token('on', text, None, text, identifier)
+    assert sorted_dicts(suggestion) == sorted_dicts([
+        {'type': 'column', 'tables': [(None, 'abc', 'a')]},
+        # xfail because these are currently also returned
+        # {'type': 'table', 'schema': 'a'},
+        # {'type': 'view', 'schema': 'a'},
+        # {'type': 'function', 'schema': 'a'},
+    ])
+
+
+def test_suggest_based_on_last_token_binary_operand_in_where_prepends_enum_value():
+    text = 'SELECT * FROM tabl WHERE foo = '
+    suggestion = suggest_based_on_last_token('=', text, None, text, empty_identifier())
+    assert sorted_dicts(suggestion) == sorted_dicts([
+        {'type': 'enum_value', 'tables': [(None, 'tabl', None)], 'column': 'foo', 'parent': None},
+        {'type': 'alias', 'aliases': ['tabl']},
+        {'type': 'column', 'tables': [(None, 'tabl', None)]},
+        {'type': 'function', 'schema': []},
+        {'type': 'introducer'},
+    ])
+
+
+def test_suggest_based_on_last_token_comma_recurses_to_select_suggestions():
+    text = 'SELECT a, '
+    full_text = 'SELECT a, FROM tabl'
+    suggestion = suggest_based_on_last_token(',', text, None, full_text, empty_identifier())
+    assert sorted_dicts(suggestion) == sorted_dicts([
+        {'type': 'alias', 'aliases': ['tabl']},
+        {'type': 'column', 'tables': [(None, 'tabl', None)]},
+        {'type': 'function', 'schema': []},
+        {'type': 'introducer'},
+    ])
+
+
+def test_suggest_based_on_last_token_nonprogressing_comma_falls_back_to_keyword():
+    text = ','
+    suggestion = suggest_based_on_last_token(',', text, None, text, empty_identifier())
+    assert suggestion == [{'type': 'keyword'}]
+
+
+@pytest.mark.parametrize(
+    ('identifier', 'schema', 'table', 'alias', 'expected'),
+    [
+        ('t', None, 'tbl', 't', True),
+        ('tbl', None, 'tbl', 't', True),
+        ('sch.tbl', 'sch', 'tbl', 't', True),
+        ('other', 'sch', 'tbl', 't', False),
+        ('sch.other', 'sch', 'tbl', 't', False),
+        ('tbl', 'sch', 'other', 't', False),
+    ],
+)
+def test_identifies(identifier, schema, table, alias, expected):
+    assert identifies(identifier, schema, table, alias) is expected
 
 
 @pytest.mark.parametrize(
