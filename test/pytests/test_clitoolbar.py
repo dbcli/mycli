@@ -95,6 +95,26 @@ def test_create_toolbar_tokens_func_applies_custom_format(monkeypatch) -> None:
     assert ("class:bottom-toolbar", "Refreshing completions…") in result
 
 
+def test_create_toolbar_tokens_func_replaces_default_toolbar_for_plain_custom_format(monkeypatch) -> None:
+    mycli = make_mycli(multi_line=True, toolbar_error_message='boom', refreshing=True)
+    monkeypatch.setattr(clitoolbar.special, 'get_current_delimiter', lambda: '$$')
+
+    formatted = [('class:bottom-toolbar', 'PLAIN CUSTOM')]
+    to_formatted_text = MagicMock(return_value=formatted)
+    monkeypatch.setattr(clitoolbar, 'to_formatted_text', to_formatted_text)
+
+    toolbar = clitoolbar.create_toolbar_tokens_func(mycli, lambda: True, 'fmt')
+    result = toolbar()
+
+    mycli.get_custom_toolbar.assert_called_once_with('fmt')
+    to_formatted_text.assert_called_once_with('custom toolbar', style='class:bottom-toolbar')
+    assert ('class:bottom-toolbar', 'PLAIN CUSTOM') in result
+    assert ('class:bottom-toolbar', '[Tab] Complete') not in result
+    assert ('class:bottom-toolbar', '[F1] Help') not in result
+    assert ('class:bottom-toolbar', 'right-arrow accepts full-line suggestion') in result
+    assert ('class:bottom-toolbar.transaction.failed', 'boom') in result
+
+
 @pytest.mark.parametrize(
     ('input_mode', 'expected'),
     [
