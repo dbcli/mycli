@@ -16,6 +16,7 @@ Bug Fixes
 * Better completions refresh on changing databases or ALTERs.
 * Make the return value of `FavoriteQueries.list()` a copy.
 * Make multi-line detection and special cases more robust.
+* Run empty `--execute` arguments instead of ignoring the flag.
 
 
 Internal
@@ -33,6 +34,7 @@ Internal
 * Refactor suggestion logic into declarative rules.
 * Factor the `--batch` execution modes out of `main.py`.
 * Move `--checkup` logic to the new `main_modes` with `--batch`.
+* Move `--execute` logic to the new `main_modes` with `--batch`.
 * Sort coverage report in tox suite.
 * Skip more tests when a database connection is not present.
 
