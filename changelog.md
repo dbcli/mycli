@@ -13,6 +13,7 @@ Bug Fixes
 * More conservative content truncation when sending to LLM APIs.
 * More careful removal of redundant fuzzy completion suggestions.
 * Fix a corner case when listing an empty list of favorite queries.
+* Better completions refresh on changing databases or ALTERs.
 
 
 Internal
