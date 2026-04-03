@@ -149,7 +149,7 @@ def _configuration_checkup(mycli) -> None:
         print('User configuration all up to date!\n')
 
 
-def do_checkup(mycli) -> None:
+def main_checkup(mycli) -> None:
     _dependencies_checkup()
     _executables_checkup()
     _environment_checkup()

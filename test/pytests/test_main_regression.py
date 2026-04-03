@@ -1671,7 +1671,7 @@ def test_click_entrypoint_branches_with_dummy_mycli(monkeypatch: pytest.MonkeyPa
     monkeypatch.setattr(main.sys.stderr, 'isatty', lambda: True)
 
     checkup_calls: list[Any] = []
-    monkeypatch.setattr(main, 'do_checkup', lambda mycli: checkup_calls.append(mycli))
+    monkeypatch.setattr(main, 'main_checkup', lambda mycli: checkup_calls.append(mycli))
     result = runner.invoke(main.click_entrypoint, ['--checkup'])
     assert result.exit_code == 0
     assert len(checkup_calls) == 1
