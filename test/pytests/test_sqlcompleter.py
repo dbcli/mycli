@@ -166,6 +166,28 @@ def test_find_fuzzy_matches_appends_rapidfuzz_results_and_skips_duplicates(monke
     ]
 
 
+@pytest.mark.parametrize('existing_fuzziness', [Fuzziness.PERFECT, Fuzziness.CAMEL_CASE, Fuzziness.RAPIDFUZZ])
+def test_find_fuzzy_matches_skips_rapidfuzz_duplicates_for_remaining_fuzziness_types(
+    monkeypatch,
+    existing_fuzziness: Fuzziness,
+) -> None:
+    monkeypatch.setattr(
+        SQLCompleter,
+        'find_fuzzy_match',
+        lambda self, item, pattern, under_words_text, case_words_text: existing_fuzziness if item == 'alphabet' else None,
+    )
+    monkeypatch.setattr(
+        mycli.sqlcompleter.rapidfuzz.process,
+        'extract',
+        lambda *args, **kwargs: [('alphabet', 95, 0)],
+    )
+    completer = SQLCompleter()
+
+    matches = completer.find_fuzzy_matches('alpahet', 'alpahet', ['alphabet'])
+
+    assert matches == [('alphabet', existing_fuzziness)]
+
+
 @pytest.mark.parametrize(
     ('text', 'collection', 'start_only', 'expected'),
     [
