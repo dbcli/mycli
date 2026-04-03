@@ -20,7 +20,7 @@ Internal
 ---------
 * Add an `AGENTS.md`.
 * Refactor `find_matches()` into smaller logical units.
-* Increase test coverage.
+* Greatly increase test coverage.
 * Remove some unused code.
 * Better label Codex PR reviews.
 * Improve gitignored files.
