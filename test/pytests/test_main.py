@@ -143,11 +143,13 @@ def test_select_from_empty_table(executor):
     assert expected in result.output
 
 
+@dbtest
 def test_is_valid_connection_scheme_valid(executor, capsys):
     is_valid, scheme = is_valid_connection_scheme(f"mysql://test@{DEFAULT_HOST}:{DEFAULT_PORT}/dev")
     assert is_valid
 
 
+@dbtest
 def test_is_valid_connection_scheme_invalid(executor, capsys):
     is_valid, scheme = is_valid_connection_scheme(f"nope://test@{DEFAULT_HOST}:{DEFAULT_PORT}/dev")
     assert not is_valid
@@ -2154,6 +2156,7 @@ def test_execute_arg_supersedes_batch_file(monkeypatch):
         os.remove(batch_file.name)
 
 
+@dbtest
 def test_null_string_config(monkeypatch):
     monkeypatch.setattr(MyCli, 'system_config_files', [])
     monkeypatch.setattr(MyCli, 'pwd_config_file', os.devnull)
