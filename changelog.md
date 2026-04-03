@@ -14,6 +14,8 @@ Bug Fixes
 * More careful removal of redundant fuzzy completion suggestions.
 * Fix a corner case when listing an empty list of favorite queries.
 * Better completions refresh on changing databases or ALTERs.
+* Make the return value of `FavoriteQueries.list()` a copy.
+* Make multi-line detection and special cases more robust.
 
 
 Internal
@@ -31,7 +33,6 @@ Internal
 * Refactor suggestion logic into declarative rules.
 * Factor the `--batch` execution modes out of `main.py`.
 * Sort coverage report in tox suite.
-* Make multi-line detection and special cases more robust.
 
 
 1.67.1 (2026/03/28)

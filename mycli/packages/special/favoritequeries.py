@@ -44,7 +44,7 @@ Examples:
         return FavoriteQueries(config)
 
     def list(self) -> list[str | None]:
-        return self.config.get(self.section_name, [])
+        return list(self.config.get(self.section_name, {}))
 
     def get(self, name) -> str | None:
         return self.config.get(self.section_name, {}).get(name, None)
