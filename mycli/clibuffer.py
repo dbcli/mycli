@@ -9,11 +9,10 @@ from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
 def cli_is_multiline(mycli) -> Filter:
     @Condition
     def cond():
-        doc = get_app().layout.get_buffer_by_name(DEFAULT_BUFFER).document
-
         if not mycli.multi_line:
             return False
         else:
+            doc = get_app().layout.get_buffer_by_name(DEFAULT_BUFFER).document
             return not _multiline_exception(doc.text)
 
     return cond
@@ -22,7 +21,7 @@ def cli_is_multiline(mycli) -> Filter:
 def _multiline_exception(text: str) -> bool:
     orig = text
     text = text.strip()
-    first_word = text.split(' ')[0]
+    first_word = text.split()[0] if text else ''
 
     # Multi-statement favorite query is a special case. Because there will
     # be a semicolon separating statements, we can't consider semicolon an

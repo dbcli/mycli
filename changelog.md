@@ -31,6 +31,7 @@ Internal
 * Refactor suggestion logic into declarative rules.
 * Factor the `--batch` execution modes out of `main.py`.
 * Sort coverage report in tox suite.
+* Make multi-line detection and special cases more robust.
 
 
 1.67.1 (2026/03/28)
