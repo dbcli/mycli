@@ -1,3 +1,4 @@
+from functools import partial
 import logging
 import webbrowser
 
@@ -11,11 +12,12 @@ from prompt_toolkit.filters import (
     emacs_mode,
 )
 from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.key_binding.bindings.named_commands import register as ptoolkit_register
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from prompt_toolkit.selection import SelectionType
 
 from mycli.constants import DOCS_URL
-from mycli.packages import shortcuts
+from mycli.packages import key_binding_utils
 from mycli.packages.ptoolkit.fzf import search_history
 from mycli.packages.ptoolkit.utils import safe_invalidate_display
 
@@ -51,6 +53,14 @@ def print_f1_help():
         ('', '\n'),
     ])
     app.print_text('\n')
+
+
+@ptoolkit_register("edit-and-execute-command")
+def edit_and_execute(event: KeyPressEvent) -> None:
+    """Different from the prompt-toolkit default, we want to have a choice not
+    to execute a query after editing, hence validate_and_handle=False."""
+    buff = event.current_buffer
+    buff.open_in_editor(validate_and_handle=False)
 
 
 def mycli_bindings(mycli) -> KeyBindings:
@@ -207,7 +217,7 @@ def mycli_bindings(mycli) -> KeyBindings:
 
         b = event.app.current_buffer
         if b.text:
-            b.transform_region(0, len(b.text), mycli.handle_prettify_binding)
+            b.transform_region(0, len(b.text), partial(key_binding_utils.handle_prettify_binding, mycli))
 
     @kb.add("c-x", "u", filter=emacs_mode)
     def _(event: KeyPressEvent) -> None:
@@ -220,7 +230,7 @@ def mycli_bindings(mycli) -> KeyBindings:
 
         b = event.app.current_buffer
         if b.text:
-            b.transform_region(0, len(b.text), mycli.handle_unprettify_binding)
+            b.transform_region(0, len(b.text), partial(key_binding_utils.handle_unprettify_binding, mycli))
 
     @kb.add("c-o", "d", filter=emacs_mode)
     def _(event: KeyPressEvent) -> None:
@@ -229,7 +239,7 @@ def mycli_bindings(mycli) -> KeyBindings:
         """
         _logger.debug("Detected <C-o d> key.")
 
-        event.app.current_buffer.insert_text(shortcuts.server_date(mycli.sqlexecute))
+        event.app.current_buffer.insert_text(key_binding_utils.server_date(mycli.sqlexecute))
 
     @kb.add("c-o", "c-d", filter=emacs_mode)
     def _(event: KeyPressEvent) -> None:
@@ -238,7 +248,7 @@ def mycli_bindings(mycli) -> KeyBindings:
         """
         _logger.debug("Detected <C-o C-d> key.")
 
-        event.app.current_buffer.insert_text(shortcuts.server_date(mycli.sqlexecute, quoted=True))
+        event.app.current_buffer.insert_text(key_binding_utils.server_date(mycli.sqlexecute, quoted=True))
 
     @kb.add("c-o", "t", filter=emacs_mode)
     def _(event: KeyPressEvent) -> None:
@@ -247,7 +257,7 @@ def mycli_bindings(mycli) -> KeyBindings:
         """
         _logger.debug("Detected <C-o t> key.")
 
-        event.app.current_buffer.insert_text(shortcuts.server_datetime(mycli.sqlexecute))
+        event.app.current_buffer.insert_text(key_binding_utils.server_datetime(mycli.sqlexecute))
 
     @kb.add("c-o", "c-t", filter=emacs_mode)
     def _(event: KeyPressEvent) -> None:
@@ -256,7 +266,7 @@ def mycli_bindings(mycli) -> KeyBindings:
         """
         _logger.debug("Detected <C-o C-t> key.")
 
-        event.app.current_buffer.insert_text(shortcuts.server_datetime(mycli.sqlexecute, quoted=True))
+        event.app.current_buffer.insert_text(key_binding_utils.server_datetime(mycli.sqlexecute, quoted=True))
 
     @kb.add("c-r", filter=control_is_searchable)
     def _(event: KeyPressEvent) -> None:

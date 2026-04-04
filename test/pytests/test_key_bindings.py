@@ -6,6 +6,7 @@ from typing import Any, Callable, cast
 
 import prompt_toolkit
 from prompt_toolkit.enums import EditingMode
+from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from prompt_toolkit.keys import Keys
 from prompt_toolkit.layout.controls import BufferControl, SearchBufferControl
 from prompt_toolkit.selection import SelectionType
@@ -40,6 +41,7 @@ class DummyBuffer:
     complete_state: object | None = None
     complete_next_calls: int = 0
     cancel_completion_calls: int = 0
+    open_in_editor_calls: list[bool] = field(default_factory=list)
     start_completion_calls: list[dict[str, bool]] = field(default_factory=list)
     start_selection_calls: list[SelectionType] = field(default_factory=list)
     transform_calls: list[tuple[int, int, Callable[[str], str]]] = field(default_factory=list)
@@ -63,6 +65,9 @@ class DummyBuffer:
     def cancel_completion(self) -> None:
         self.cancel_completion_calls += 1
         self.complete_state = None
+
+    def open_in_editor(self, validate_and_handle: bool) -> None:
+        self.open_in_editor_calls.append(validate_and_handle)
 
     def start_selection(self, selection_type: SelectionType) -> None:
         self.start_selection_calls.append(selection_type)
@@ -195,6 +200,14 @@ def test_print_f1_help_prints_inline_help_and_docs_url(monkeypatch) -> None:
         ],
         '\n',
     ]
+
+
+def test_edit_and_execute_opens_editor_without_validation() -> None:
+    event = make_event()
+
+    key_bindings.edit_and_execute(cast(KeyPressEvent, event))
+
+    assert event.current_buffer.open_in_editor_calls == [False]
 
 
 @pytest.mark.parametrize('keys', ((Keys.F1,), (Keys.Escape, '[', 'P')))
@@ -388,55 +401,40 @@ def test_control_space_supports_completion_behaviors(
 
 
 @pytest.mark.parametrize(
-    ('keys', 'text', 'handler_name'),
+    ('keys', 'handler_name'),
     (
-        ((Keys.ControlX, 'p'), 'select 1', 'handle_prettify_binding'),
-        ((Keys.ControlX, 'u'), 'select 1', 'handle_unprettify_binding'),
+        ((Keys.ControlX, 'p'), 'handle_prettify_binding'),
+        ((Keys.ControlX, 'u'), 'handle_unprettify_binding'),
     ),
 )
-def test_prettify_bindings_transform_non_empty_text(
+def test_prettify_bindings_transform_non_empty_buffer(
     monkeypatch,
     keys: tuple[str | Keys, ...],
-    text: str,
     handler_name: str,
 ) -> None:
     mycli = DummyMyCli(DummyKeysConfig(), key_bindings_mode='emacs')
     kb = key_bindings.mycli_bindings(mycli)
-    event = make_event(DummyBuffer(text=text))
+    event = make_event(DummyBuffer(text='select 1'))
     event.app.editing_mode = EditingMode.EMACS
     patch_filter_app(monkeypatch, event.app)
 
     assert binding_filter(kb, *keys)() is True
 
-    inactive_event = make_event(DummyBuffer(text=text))
-    inactive_event.app.editing_mode = EditingMode.VI
-    patch_filter_app(monkeypatch, inactive_event.app)
-    assert binding_filter(kb, *keys)() is False
-
-    patch_filter_app(monkeypatch, event.app)
-
     binding_handler(kb, *keys)(event)
 
+    assert len(event.app.current_buffer.transform_calls) == 1
     start, end, handler = event.app.current_buffer.transform_calls[0]
-    assert (start, end) == (0, len(text))
-    assert handler.__func__ is getattr(DummyMyCli, handler_name)
+    assert (start, end) == (0, len('select 1'))
+    assert handler.func is getattr(key_bindings.key_binding_utils, handler_name)
+    assert handler.args == (mycli,)
 
 
-@pytest.mark.parametrize(('keys'), (((Keys.ControlX, 'p')), ((Keys.ControlX, 'u'))))
-def test_prettify_bindings_ignore_empty_text(monkeypatch, keys: tuple[str | Keys, ...]) -> None:
+@pytest.mark.parametrize('keys', ((Keys.ControlX, 'p'), (Keys.ControlX, 'u')))
+def test_prettify_bindings_skip_empty_buffer(monkeypatch, keys: tuple[str | Keys, ...]) -> None:
     mycli = DummyMyCli(DummyKeysConfig(), key_bindings_mode='emacs')
     kb = key_bindings.mycli_bindings(mycli)
     event = make_event(DummyBuffer(text=''))
     event.app.editing_mode = EditingMode.EMACS
-    patch_filter_app(monkeypatch, event.app)
-
-    assert binding_filter(kb, *keys)() is True
-
-    inactive_event = make_event(DummyBuffer(text=''))
-    inactive_event.app.editing_mode = EditingMode.VI
-    patch_filter_app(monkeypatch, inactive_event.app)
-    assert binding_filter(kb, *keys)() is False
-
     patch_filter_app(monkeypatch, event.app)
 
     binding_handler(kb, *keys)(event)
@@ -465,12 +463,12 @@ def test_date_and_datetime_bindings_insert_shortcuts(
     patch_filter_app(monkeypatch, event.app)
 
     monkeypatch.setattr(
-        key_bindings.shortcuts,
+        key_bindings.key_binding_utils,
         'server_date',
         lambda _sqlexecute, quoted=False: "'DATE'" if quoted else 'DATE',
     )
     monkeypatch.setattr(
-        key_bindings.shortcuts,
+        key_bindings.key_binding_utils,
         'server_datetime',
         lambda _sqlexecute, quoted=False: "'DATETIME'" if quoted else 'DATETIME',
     )

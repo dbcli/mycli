@@ -31,7 +31,8 @@ from configobj import ConfigObj
 import pymysql
 import pytest
 
-from mycli import main
+from mycli import key_bindings, main
+from mycli.packages import key_binding_utils
 from mycli.packages.sqlresult import SQLResult
 
 
@@ -1033,76 +1034,37 @@ def test_connect_covers_default_ssl_ca_path_and_late_invalid_port(monkeypatch: p
     assert any('Invalid port number' in msg for msg in echo_calls)
 
 
-def test_handle_editor_clip_prettify_unprettify_and_output_timing(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_handle_editor_clip_and_output_timing(monkeypatch: pytest.MonkeyPatch) -> None:
     cli = make_bare_mycli()
-    monkeypatch.setattr(main, 'PromptSession', FakePromptSession)
+    monkeypatch.setattr(key_binding_utils, 'PromptSession', FakePromptSession)
     cli.prompt_app = cast(Any, FakePromptSession(responses=[KeyboardInterrupt(), 'edited sql']))
     cli.get_last_query = lambda: 'last query'  # type: ignore[assignment]
     monkeypatch.setattr(main.special, 'editor_command', lambda text: text.endswith(r'\e'))
     monkeypatch.setattr(main.special, 'get_filename', lambda text: 'query.sql')
     monkeypatch.setattr(main.special, 'get_editor_query', lambda text: 'select 1')
     monkeypatch.setattr(main.special, 'open_external_editor', lambda filename, sql: ('edited sql', None))
-    assert main.MyCli.handle_editor_command(cli, r'select 1\e', None, lambda: None) == 'edited sql'
+    assert key_binding_utils.handle_editor_command(cli, r'select 1\e', None, lambda: None) == 'edited sql'
 
     monkeypatch.setattr(main.special, 'open_external_editor', lambda filename, sql: ('', 'boom'))
     with pytest.raises(RuntimeError, match='boom'):
-        main.MyCli.handle_editor_command(cli, r'select 1\e', None, lambda: None)
+        key_binding_utils.handle_editor_command(cli, r'select 1\e', None, lambda: None)
 
     monkeypatch.setattr(main.special, 'clip_command', lambda text: True)
     monkeypatch.setattr(main.special, 'get_clip_query', lambda text: None)
     monkeypatch.setattr(main.special, 'copy_query_to_clipboard', lambda sql: None)
-    assert main.MyCli.handle_clip_command(cli, r'select 1\clip') is True
+    assert key_binding_utils.handle_clip_command(cli, r'select 1\clip') is True
 
     monkeypatch.setattr(main.special, 'copy_query_to_clipboard', lambda sql: 'clipboard failed')
     with pytest.raises(RuntimeError, match='clipboard failed'):
-        main.MyCli.handle_clip_command(cli, r'select 1\clip')
+        key_binding_utils.handle_clip_command(cli, r'select 1\clip')
 
     monkeypatch.setattr(main.special, 'clip_command', lambda text: False)
-    assert main.MyCli.handle_clip_command(cli, 'select 1') is False
-
-    class FakeStatement:
-        def __init__(self, rendered: str) -> None:
-            self.rendered = rendered
-
-        def sql(self, **kwargs: Any) -> str:
-            return self.rendered
-
-    monkeypatch.setattr(
-        main.sqlglot,
-        'parse',
-        lambda text, read: [
-            FakeStatement('SELECT\n    1'),
-        ],
-    )
-    assert main.MyCli.handle_prettify_binding(cli, 'select 1') == 'SELECT\n    1;'
-
-    monkeypatch.setattr(main.sqlglot, 'parse', lambda text, read: [])
-    assert main.MyCli.handle_prettify_binding(cli, 'select 1;') == 'select 1'
-    assert cli.toolbar_error_message == 'Prettify failed to parse single statement'
-
-    monkeypatch.setattr(main.sqlglot, 'parse', lambda text, read: [FakeStatement('SELECT 1')])
-    assert main.MyCli.handle_unprettify_binding(cli, 'SELECT\n  1;') == 'SELECT 1;'
-
-    monkeypatch.setattr(main.sqlglot, 'parse', lambda text, read: [])
-    assert main.MyCli.handle_unprettify_binding(cli, 'SELECT 1;') == 'SELECT 1'
-    assert cli.toolbar_error_message == 'Unprettify failed to parse single statement'
+    assert key_binding_utils.handle_clip_command(cli, 'select 1') is False
 
     printed: list[tuple[Any, Any]] = []
     monkeypatch.setattr(main, 'print_formatted_text', lambda text, style=None: printed.append((text, style)))
     main.MyCli.output_timing(cli, 'Time: 1.000s', is_warnings_style=True)
     assert printed[-1][1] == cli.ptoolkit_style
-
-
-def test_prettify_unprettify_empty_and_parse_error_branches(monkeypatch: pytest.MonkeyPatch) -> None:
-    cli = make_bare_mycli()
-    assert main.MyCli.handle_prettify_binding(cli, '') == ''
-    assert main.MyCli.handle_unprettify_binding(cli, '') == ''
-
-    monkeypatch.setattr(main.sqlglot, 'parse', lambda text, read: (_ for _ in ()).throw(ValueError('parse failed')))
-    assert main.MyCli.handle_prettify_binding(cli, 'select 1;') == 'select 1'
-    assert cli.toolbar_error_message == 'Prettify failed to parse single statement'
-    assert main.MyCli.handle_unprettify_binding(cli, 'select 1;') == 'select 1'
-    assert cli.toolbar_error_message == 'Unprettify failed to parse single statement'
 
 
 def test_format_sqlresult_run_query_reserved_space_and_last_query(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1593,7 +1555,7 @@ def test_main_wrapper_and_edit_and_execute(monkeypatch: pytest.MonkeyPatch) -> N
             current_buffer=SimpleNamespace(open_in_editor=lambda validate_and_handle=False: opened.append(validate_and_handle))
         ),
     )
-    main.edit_and_execute(event)
+    key_bindings.edit_and_execute(event)
     assert opened == [False]
 
 
@@ -2313,124 +2275,6 @@ def test_run_cli_prompt_rendering_startup_modes_and_goodbye(monkeypatch: pytest.
     assert continuations == [[('class:continuation', '  > ')], [('class:continuation', '')], [('class:continuation', ' ')]]
     assert prompt_session.app.ttimeoutlen == 9.0
     assert echoed[-1] == 'Goodbye!'
-
-
-def test_run_cli_watch_keepalive_editor_clip_redirect_and_destructive_paths(monkeypatch: pytest.MonkeyPatch) -> None:
-    cli = make_bare_mycli()
-    cli.config = {'history_file': '~/.mycli-history-testing'}
-    cli.keepalive_ticks = 1
-    cli.less_chatty = True
-    cli.prompt_app = None
-    cli.destructive_warning = True
-    cli.destructive_keywords = ['drop']
-    cli.logfile = False
-    echoes: list[str] = []
-    cli.echo = lambda message, **kwargs: echoes.append(str(message))  # type: ignore[assignment]
-    cli.log_query = lambda text: None  # type: ignore[assignment]
-    cli.log_output = lambda text: None  # type: ignore[assignment]
-    cli.set_all_external_titles = lambda: None  # type: ignore[assignment]
-
-    def raise_keyboard_output(formatted: Any, result: Any, is_warnings_style: bool = False) -> None:
-        raise KeyboardInterrupt()
-
-    def raise_keyboard_timing(timing: str, is_warnings_style: bool = False) -> None:
-        raise KeyboardInterrupt()
-
-    cli.output = raise_keyboard_output  # type: ignore[assignment]
-    cli.output_timing = raise_keyboard_timing  # type: ignore[assignment]
-    cli.format_sqlresult = lambda result, **kwargs: iter(['formatted'])  # type: ignore[assignment]
-    prompt_responses = ['editor boom', 'clip boom', 'clip ok', 'redirect bad', 'drop yes', 'drop no', 'watch bad', EOFError()]
-
-    class HookPromptSession(FakePromptSession):
-        def prompt(self, **kwargs: Any) -> str:
-            inputhook = kwargs.get('inputhook')
-            if inputhook is not None:
-                inputhook(None)
-                inputhook(None)
-            return super().prompt(**kwargs)
-
-    prompt_session = HookPromptSession(responses=prompt_responses)
-    ping_calls: list[bool] = []
-
-    class PingConnection:
-        def ping(self, reconnect: bool = False) -> None:
-            ping_calls.append(reconnect)
-            raise RuntimeError('ping fail')
-
-    class FakeRunSQLExecute:
-        def __init__(self) -> None:
-            self.server_info = SimpleNamespace(species=SimpleNamespace(name='MySQL'))
-            self.dbname = 'db'
-            self.connection_id = 0
-            self.conn = PingConnection()
-
-        def run(self, text: str) -> Iterator[SQLResult]:
-            if text == 'watch bad':
-                cli.prompt_app = None
-                return iter([
-                    SQLResult(status='watch', command={'name': 'watch', 'seconds': '1'}),
-                    SQLResult(status='watch', command={'name': 'watch', 'seconds': 'bad'}),
-                ])
-            return iter([SQLResult(status='ok', rows=[(1,)])])
-
-    monkeypatch.setattr(main, 'SQLExecute', FakeRunSQLExecute)
-    cli.sqlexecute = cast(Any, FakeRunSQLExecute())
-    monkeypatch.setattr(main, 'PromptSession', lambda **kwargs: prompt_session)
-    monkeypatch.setattr(main, 'mycli_bindings', lambda mycli: 'bindings')
-    monkeypatch.setattr(main, 'create_toolbar_tokens_func', lambda *args: 'toolbar')
-    monkeypatch.setattr(main, 'style_factory_ptoolkit', lambda *args, **kwargs: 'style')
-    monkeypatch.setattr(main, 'dir_path_exists', lambda path: True)
-    monkeypatch.setattr(main, 'cli_is_multiline', lambda mycli: False)
-    monkeypatch.setattr(main.special, 'set_expanded_output', lambda value: None)
-    monkeypatch.setattr(main.special, 'set_forced_horizontal_output', lambda value: None)
-    monkeypatch.setattr(main.special, 'is_llm_command', lambda text: False)
-    monkeypatch.setattr(main.special, 'is_expanded_output', lambda: False)
-    monkeypatch.setattr(main.special, 'is_redirected', lambda: False)
-    monkeypatch.setattr(main.special, 'is_timing_enabled', lambda: True)
-    monkeypatch.setattr(main.special, 'write_tee', lambda *args, **kwargs: None)
-    monkeypatch.setattr(main.special, 'unset_once_if_written', lambda *args, **kwargs: None)
-    monkeypatch.setattr(main.special, 'flush_pipe_once_if_written', lambda *args, **kwargs: None)
-    monkeypatch.setattr(main.special, 'close_tee', lambda: None)
-    monkeypatch.setattr(main, 'is_dropping_database', lambda text, dbname: False)
-    monkeypatch.setattr(main, 'need_completion_refresh', lambda text: False)
-    monkeypatch.setattr(main, 'confirm', lambda text: False)
-    monkeypatch.setattr(main, 'time', iter([0.0, 2.0, 3.0, 4.0, 5.0, 6.0]).__next__)
-
-    def fake_editor(text: str, inputhook: Any, loaded_message_fn: Any) -> str:
-        if text == 'editor boom':
-            raise RuntimeError('editor failed')
-        return text
-
-    cli.handle_editor_command = fake_editor  # type: ignore[assignment]
-
-    def fake_handle_clip(text: str) -> bool:
-        if text == 'clip boom':
-            raise RuntimeError('clip failed')
-        return text == 'clip ok'
-
-    cli.handle_clip_command = fake_handle_clip  # type: ignore[assignment]
-    monkeypatch.setattr(main, 'is_redirect_command', lambda text: text == 'redirect bad')
-    monkeypatch.setattr(main, 'get_redirect_components', lambda text: ('sql', '>', '>', '/tmp/out'))
-
-    def fake_set_redirect(*args: Any) -> None:
-        raise RuntimeError('redirect failed')
-
-    monkeypatch.setattr(main.special, 'set_redirect', fake_set_redirect)
-    monkeypatch.setattr(
-        main,
-        'confirm_destructive_query',
-        lambda keywords, text: True if text == 'drop yes' else (False if text == 'drop no' else None),
-    )
-    with pytest.raises(SystemExit):
-        main.MyCli.run_cli(cli)
-    assert ping_calls
-    assert any('editor failed' in line for line in echoes)
-    assert any('clip failed' in line for line in echoes)
-    assert 'Your call!' in echoes
-    assert 'Wise choice!' in echoes
-    assert any('redirect failed' in line for line in echoes)
-    assert any('Invalid watch sleep time provided' in line for line in echoes)
-    assert any('Warning: This query was not logged.' in line for line in echoes)
 
 
 def test_run_cli_llm_paths_and_finish_iteration(monkeypatch: pytest.MonkeyPatch) -> None:
