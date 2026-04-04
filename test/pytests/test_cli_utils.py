@@ -2,9 +2,24 @@
 
 import pytest
 
+from mycli.packages import cli_utils
 from mycli.packages.cli_utils import (
+    filtered_sys_argv,
     is_valid_connection_scheme,
 )
+
+
+@pytest.mark.parametrize(
+    ('argv', 'expected'),
+    [
+        (['mycli', '-h'], ['--help']),
+        (['mycli', '-h', 'example.com'], ['-h', 'example.com']),
+    ],
+)
+def test_filtered_sys_argv(monkeypatch, argv, expected):
+    monkeypatch.setattr(cli_utils.sys, 'argv', argv)
+
+    assert filtered_sys_argv() == expected
 
 
 @pytest.mark.parametrize(
