@@ -86,6 +86,7 @@ from mycli.main_modes.batch import (
     main_batch_without_progress_bar,
 )
 from mycli.main_modes.checkup import main_checkup
+from mycli.main_modes.execute import main_execute_from_cli
 from mycli.packages import special
 from mycli.packages.filepaths import dir_path_exists, guess_socket_location
 from mycli.packages.hybrid_redirection import get_redirect_components, is_redirect_command
@@ -2660,34 +2661,8 @@ def click_entrypoint(
         cli_args.port,
     )
 
-    # --execute argument
-    if cli_args.execute:
-        if not sys.stdin.isatty():
-            click.secho('Ignoring STDIN since --execute was also given.', err=True, fg='red')
-        if cli_args.batch:
-            click.secho('Ignoring --batch since --execute was also given.', err=True, fg='red')
-        try:
-            execute_sql = cli_args.execute
-            if cli_args.format == 'csv':
-                mycli.main_formatter.format_name = 'csv'
-                if execute_sql.endswith(r'\G'):
-                    execute_sql = execute_sql[:-2]
-            elif cli_args.format == 'tsv':
-                mycli.main_formatter.format_name = 'tsv'
-                if execute_sql.endswith(r'\G'):
-                    execute_sql = execute_sql[:-2]
-            elif cli_args.format == 'table':
-                mycli.main_formatter.format_name = 'ascii'
-                if execute_sql.endswith(r'\G'):
-                    execute_sql = execute_sql[:-2]
-            else:
-                mycli.main_formatter.format_name = 'tsv'
-
-            mycli.run_query(execute_sql, checkpoint=cli_args.checkpoint)
-            sys.exit(0)
-        except Exception as e:
-            click.secho(str(e), err=True, fg="red")
-            sys.exit(1)
+    if cli_args.execute is not None:
+        sys.exit(main_execute_from_cli(mycli, cli_args))
 
     if cli_args.batch and cli_args.batch != '-' and cli_args.progress and sys.stderr.isatty():
         sys.exit(main_batch_with_progress_bar(mycli, cli_args))
