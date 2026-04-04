@@ -13,10 +13,11 @@ from typing import TYPE_CHECKING, Any, Generator
 
 import click
 import prompt_toolkit
+from prompt_toolkit.application.current import get_app
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory, ThreadedAutoSuggest
 from prompt_toolkit.completion import DynamicCompleter
 from prompt_toolkit.enums import DEFAULT_BUFFER, EditingMode
-from prompt_toolkit.filters import HasFocus, IsDone
+from prompt_toolkit.filters import Condition, HasFocus, IsDone
 from prompt_toolkit.formatted_text import (
     ANSI,
 )
@@ -66,6 +67,7 @@ if TYPE_CHECKING:
 
 
 SUPPORT_INFO = f"Home: {HOME_URL}\nBug tracker: {ISSUES_URL}"
+MIN_COMPLETION_TRIGGER = 1
 
 
 def _main_module():
@@ -78,6 +80,35 @@ def _main_module():
 class ReplState:
     iterations: int = 0
     mutating: bool = False
+
+
+@Condition
+def complete_while_typing_filter() -> bool:
+    """Whether enough characters have been typed to trigger completion.
+
+    Written in a verbose way, with a string slice, for efficiency."""
+    if MIN_COMPLETION_TRIGGER <= 1:
+        return True
+    app = get_app()
+    text = app.current_buffer.text.lstrip()
+    text_len = len(text)
+    if text_len < MIN_COMPLETION_TRIGGER:
+        return False
+    last_word = text[-MIN_COMPLETION_TRIGGER:]
+    if len(last_word) == text_len:
+        return text_len >= MIN_COMPLETION_TRIGGER
+    if text[:6].lower() in ['source', r'\.']:
+        # Different word characters for paths; see comment below.
+        # In fact, it might be nice if paths had a different threshold.
+        return not bool(re.search(r'[\s!-,:-@\[-^\{\}-]', last_word))
+    else:
+        # This is "whitespace and all punctuation except underscore and backtick"
+        # acting as word breaks, but it would be neat if we could complete differently
+        # when inside a backtick, accepting all legal characters towards the trigger
+        # limit. We would have to parse the statement, or at least go back more
+        # characters, costing performance. This still works within a backtick! So
+        # long as there are three trailing non-punctuation characters.
+        return not bool(re.search(r'[\s!-/:-@\[-^\{-~]', last_word))
 
 
 def _create_history(mycli: 'MyCli') -> FileHistoryWithTimestamp | None:
@@ -307,7 +338,7 @@ def _build_prompt_session(
             complete_in_thread=True,
             history=history,
             auto_suggest=ThreadedAutoSuggest(AutoSuggestFromHistory()),
-            complete_while_typing=_main_module().complete_while_typing_filter,
+            complete_while_typing=complete_while_typing_filter,
             multiline=cli_is_multiline(mycli),
             style=style_factory_ptoolkit(mycli.syntax_style, mycli.cli_style),
             include_default_pygments_style=False,

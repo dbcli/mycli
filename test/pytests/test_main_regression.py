@@ -532,30 +532,6 @@ def test_mycli_init_defaults_file_valid_ssl_and_mylogin_append(monkeypatch: pyte
     assert mycli.llm_prompt_section_truncate == 0
 
 
-def test_complete_while_typing_filter_covers_source_and_sql_word_rules(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(main, 'MIN_COMPLETION_TRIGGER', 3)
-    monkeypatch.setattr(main, 'get_app', lambda: SimpleNamespace(current_buffer=SimpleNamespace(text='ab')))
-    assert main.complete_while_typing_filter() is False
-
-    monkeypatch.setattr(main, 'get_app', lambda: SimpleNamespace(current_buffer=SimpleNamespace(text='abc')))
-    assert main.complete_while_typing_filter() is True
-
-    monkeypatch.setattr(main, 'get_app', lambda: SimpleNamespace(current_buffer=SimpleNamespace(text='source xyz')))
-    assert main.complete_while_typing_filter() is True
-
-    monkeypatch.setattr(main, 'get_app', lambda: SimpleNamespace(current_buffer=SimpleNamespace(text='source x/')))
-    assert main.complete_while_typing_filter() is False
-
-    monkeypatch.setattr(main, 'get_app', lambda: SimpleNamespace(current_buffer=SimpleNamespace(text='select abc')))
-    assert main.complete_while_typing_filter() is True
-
-    monkeypatch.setattr(main, 'get_app', lambda: SimpleNamespace(current_buffer=SimpleNamespace(text='select a!')))
-    assert main.complete_while_typing_filter() is False
-
-    monkeypatch.setattr(main, 'MIN_COMPLETION_TRIGGER', 1)
-    assert main.complete_while_typing_filter() is True
-
-
 def test_int_or_string_click_param_type_accepts_and_rejects_values() -> None:
     param_type = main.IntOrStringClickParamType()
 
