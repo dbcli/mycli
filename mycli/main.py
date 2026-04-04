@@ -90,7 +90,7 @@ from mycli.main_modes.execute import main_execute_from_cli
 from mycli.main_modes.list_dsn import main_list_dsn
 from mycli.main_modes.list_ssh_config import main_list_ssh_config
 from mycli.packages import special
-from mycli.packages.cli_utils import is_valid_connection_scheme
+from mycli.packages.cli_utils import filtered_sys_argv, is_valid_connection_scheme
 from mycli.packages.filepaths import dir_path_exists, guess_socket_location
 from mycli.packages.hybrid_redirection import get_redirect_components, is_redirect_command
 from mycli.packages.prompt_utils import confirm, confirm_destructive_query
@@ -2704,13 +2704,6 @@ def edit_and_execute(event: KeyPressEvent) -> None:
     to execute a query after editing, hence validate_and_handle=False."""
     buff = event.current_buffer
     buff.open_in_editor(validate_and_handle=False)
-
-
-def filtered_sys_argv() -> list[str]:
-    args = sys.argv[1:]
-    if args == ['-h']:
-        args = ['--help']
-    return args
 
 
 def main() -> int | None:
