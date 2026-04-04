@@ -43,6 +43,7 @@ Internal
 * Skip more tests when a database connection is not present.
 * Move SQL utilities to a new `sql_utils.py`.
 * Move CLI utilities to a new `cli_utils.py`.
+* Move keybinding utilities to a new `key_binding_utils.py`.
 
 
 1.67.1 (2026/03/28)

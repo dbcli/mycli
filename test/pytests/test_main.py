@@ -805,20 +805,6 @@ def test_list_dsn(monkeypatch):
         print(f"An error occurred while attempting to delete the file: {e}")
 
 
-def test_prettify_statement():
-    statement = "SELECT 1"
-    m = MyCli()
-    pretty_statement = m.handle_prettify_binding(statement)
-    assert pretty_statement == "SELECT\n    1;"
-
-
-def test_unprettify_statement():
-    statement = "SELECT\n    1"
-    m = MyCli()
-    unpretty_statement = m.handle_unprettify_binding(statement)
-    assert unpretty_statement == "SELECT 1;"
-
-
 def test_list_ssh_config():
     runner = CliRunner()
     # keep Windows from locking the file with delete=False
