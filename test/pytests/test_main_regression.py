@@ -252,7 +252,7 @@ def make_bare_mycli() -> Any:
     return cli
 
 
-def load_main_variant(monkeypatch: pytest.MonkeyPatch, *, fail_pwd: bool = False, fail_paramiko: bool = False) -> ModuleType:
+def load_main_variant(monkeypatch: pytest.MonkeyPatch, *, fail_pwd: bool = False) -> ModuleType:
     import builtins
 
     original_import = builtins.__import__
@@ -260,12 +260,10 @@ def load_main_variant(monkeypatch: pytest.MonkeyPatch, *, fail_pwd: bool = False
     def fake_import(name: str, globals: Any = None, locals: Any = None, fromlist: Any = (), level: int = 0) -> Any:  # noqa: A002
         if fail_pwd and name == 'pwd':
             raise ImportError('no pwd')
-        if fail_paramiko and name == 'paramiko':
-            raise ImportError('no paramiko')
         return original_import(name, globals, locals, fromlist, level)
 
     monkeypatch.setattr(builtins, '__import__', fake_import)
-    module_name = f'mycli_main_variant_{int(fail_pwd)}_{int(fail_paramiko)}'
+    module_name = f'mycli_main_variant_{int(fail_pwd)}'
     spec = importlib.util.spec_from_file_location(module_name, Path(main.__file__))
     assert spec is not None
     assert spec.loader is not None
@@ -322,10 +320,9 @@ def call_click_entrypoint_direct(cli_args: main.CliArgs) -> None:
     cast(Any, main.click_entrypoint.callback).__wrapped__(cli_args)
 
 
-def test_import_fallbacks_for_pwd_and_paramiko(monkeypatch: pytest.MonkeyPatch) -> None:
-    module = load_main_variant(monkeypatch, fail_pwd=True, fail_paramiko=True)
+def test_import_fallbacks_for_pwd(monkeypatch: pytest.MonkeyPatch) -> None:
+    module = load_main_variant(monkeypatch, fail_pwd=True)
 
-    assert hasattr(module, 'paramiko')
     assert module.Query('sql', True, False).query == 'sql'
 
 
@@ -1487,7 +1484,7 @@ def test_filtered_sys_argv_covers_help_and_passthrough(monkeypatch: pytest.Monke
     assert main.need_completion_refresh('') is False
 
 
-def test_completion_helpers_title_helpers_thanks_tips_and_read_ssh_config(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_completion_helpers_title_helpers_thanks_tips(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     cli = make_bare_mycli()
     cli.completer = cast(Any, SimpleNamespace(keyword_casing='auto', get_completions=lambda document, event: ['done']))
     entered_lock = {'count': 0}
@@ -1574,32 +1571,6 @@ def test_completion_helpers_title_helpers_thanks_tips_and_read_ssh_config(monkey
 
     monkeypatch.setattr(main.resources, 'files', lambda package: SponsorResource(None))
     assert main.thanks_picker() == 'Sponsor Person'
-
-    class FakeSSHConfig:
-        def __init__(self) -> None:
-            self.parsed = False
-
-        def parse(self, file_obj: Any) -> None:
-            self.parsed = True
-
-    monkeypatch.setattr(main.paramiko.config, 'SSHConfig', FakeSSHConfig)
-    ssh_file = tmp_path / 'ssh.conf'
-    ssh_file.write_text('Host prod\n', encoding='utf-8')
-    ssh_config = main.read_ssh_config(str(ssh_file))
-    assert ssh_config.parsed is True
-
-    missing_errs: list[str] = []
-    monkeypatch.setattr(click, 'secho', lambda message, **kwargs: missing_errs.append(str(message)))
-    with pytest.raises(SystemExit):
-        main.read_ssh_config(str(tmp_path / 'missing.conf'))
-
-    class BadSSHConfig(FakeSSHConfig):
-        def parse(self, file_obj: Any) -> None:
-            raise Exception('bad parse')
-
-    monkeypatch.setattr(main.paramiko.config, 'SSHConfig', BadSSHConfig)
-    with pytest.raises(SystemExit):
-        main.read_ssh_config(str(ssh_file))
 
 
 def test_main_wrapper_and_edit_and_execute(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1693,28 +1664,6 @@ def test_click_entrypoint_branches_with_dummy_mycli(monkeypatch: pytest.MonkeyPa
     result = runner.invoke(main.click_entrypoint, ['--list-dsn'])
     assert result.exit_code == 1
     assert 'Invalid DSNs found' in result.output
-
-    class FakeSSHLookup:
-        def get_hostnames(self) -> list[str]:
-            return ['prod']
-
-        def lookup(self, host: str) -> dict[str, str]:
-            return {'hostname': 'db.example'}
-
-    monkeypatch.setattr(main, 'read_ssh_config', lambda path: FakeSSHLookup())
-    monkeypatch.setattr(main, 'MyCli', make_dummy_mycli_class())
-    result = runner.invoke(main.click_entrypoint, ['--list-ssh-config', '--verbose'])
-    assert result.exit_code == 0
-    assert 'prod : db.example' in result.output
-
-    class BadSSHLookup:
-        def get_hostnames(self) -> list[str]:
-            raise KeyError()
-
-    monkeypatch.setattr(main, 'read_ssh_config', lambda path: BadSSHLookup())
-    result = runner.invoke(main.click_entrypoint, ['--list-ssh-config'])
-    assert result.exit_code == 1
-    assert 'Error reading ssh config' in result.output
 
     monkeypatch.setenv('MYSQL_UNIX_PORT', '/tmp/mysql.sock')
     monkeypatch.setenv('DSN', 'mysql://user:pw@host/db')
@@ -1924,15 +1873,8 @@ def test_click_entrypoint_callback_covers_dsn_params_init_commands_and_keyring(m
     monkeypatch.setattr(click, 'secho', lambda message='', **kwargs: click_lines.append(str(message)))
     monkeypatch.setattr(click, 'echo', lambda message='', **kwargs: click_lines.append(str(message)))
 
-    class SSHConfig:
-        def lookup(self, host: str) -> dict[str, Any]:
-            return {'hostname': 'ssh.example', 'user': 'sshuser', 'port': '2200', 'identityfile': ['/tmp/id_rsa']}
-
-    monkeypatch.setattr(main, 'read_ssh_config', lambda path: SSHConfig())
     cli_args = main.CliArgs()
     cli_args.database = 'prod'
-    cli_args.ssh_config_host = 'edge'
-    cli_args.ssh_port = 2201
     cli_args.init_command = 'set e=5'
     cli_args.use_keyring = 'reset'
     call_click_entrypoint_direct(cli_args)
@@ -1943,10 +1885,6 @@ def test_click_entrypoint_callback_covers_dsn_params_init_commands_and_keyring(m
     assert connect_kwargs['database'] == 'prod_db'
     assert connect_kwargs['user'] == 'user'
     assert connect_kwargs['passwd'] == 'pw'
-    assert connect_kwargs['ssh_host'] == 'ssh.example'
-    assert connect_kwargs['ssh_user'] == 'sshuser'
-    assert connect_kwargs['ssh_port'] == 2201
-    assert connect_kwargs['ssh_key_filename'] == '/tmp/id_rsa'
     assert connect_kwargs['ssl'] is None
     assert connect_kwargs['character_set'] == 'utf8mb4'
     assert connect_kwargs['keepalive_ticks'] == 9
@@ -1979,21 +1917,6 @@ def test_click_entrypoint_callback_covers_database_dsn_and_verbose_lists(monkeyp
     assert 'prod : mysql://u:p@h/db' in click_lines
 
     click_lines.clear()
-
-    class SSHConfig:
-        def get_hostnames(self) -> list[str]:
-            return ['prod']
-
-        def lookup(self, host: str) -> dict[str, str]:
-            return {'hostname': 'db.example'}
-
-    monkeypatch.setattr(main, 'read_ssh_config', lambda path: SSHConfig())
-    cli_args = main.CliArgs()
-    cli_args.list_ssh_config = True
-    cli_args.ssh_warning_off = True
-    with pytest.raises(SystemExit):
-        call_click_entrypoint_direct(cli_args)
-    assert click_lines == ['prod']
 
     dummy_class = make_dummy_mycli_class(
         config={
@@ -2109,40 +2032,6 @@ def test_click_entrypoint_callback_covers_misc_format_transition_and_execute_bra
     with pytest.raises(SystemExit):
         call_click_entrypoint_direct(cli_args)
     assert any('execute failed' in line for line in click_lines)
-
-
-def test_click_entrypoint_callback_covers_ssh_default_port_alias_list_and_transition_underscore(monkeypatch: pytest.MonkeyPatch) -> None:
-    click_lines: list[str] = []
-    monkeypatch.setattr(click, 'secho', lambda message='', **kwargs: click_lines.append(str(message)))
-    monkeypatch.setattr(main.sys, 'stdin', SimpleNamespace(isatty=lambda: True))
-    monkeypatch.setattr(main.sys.stderr, 'isatty', lambda: False)
-
-    dummy_class = make_dummy_mycli_class(
-        config={
-            'main': {'use_keyring': 'false', 'my_cnf_transition_done': 'false'},
-            'connection': {'default_keepalive_ticks': 0},
-            'alias_dsn': {'prod': 'mysql://u:p@h/db'},
-            'alias_dsn.init-commands': {'prod': ['set list=1']},
-        },
-        my_cnf={'client': {}, 'mysqld': {'loose_local_infile': '1'}},
-        config_without_package_defaults={'connection': {}},
-    )
-    monkeypatch.setattr(main, 'MyCli', dummy_class)
-
-    class SSHConfig:
-        def lookup(self, host: str) -> dict[str, Any]:
-            return {'hostname': 'ssh.example', 'user': 'sshuser', 'port': '2200', 'identityfile': ['/tmp/id_rsa']}
-
-    monkeypatch.setattr(main, 'read_ssh_config', lambda path: SSHConfig())
-    cli_args = main.CliArgs()
-    cli_args.database = 'prod'
-    cli_args.ssh_config_host = 'edge'
-    call_click_entrypoint_direct(cli_args)
-    dummy = dummy_class.last_instance
-    assert dummy is not None
-    assert dummy.connect_calls[-1]['ssh_port'] == 2200
-    assert dummy.connect_calls[-1]['init_command'] == 'set list=1'
-    assert any('Reading configuration from my.cnf files is deprecated.' in line for line in click_lines)
 
 
 def test_configure_pager_and_refresh_completions(monkeypatch: pytest.MonkeyPatch) -> None:

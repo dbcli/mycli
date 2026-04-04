@@ -88,6 +88,7 @@ from mycli.main_modes.batch import (
 from mycli.main_modes.checkup import main_checkup
 from mycli.main_modes.execute import main_execute_from_cli
 from mycli.main_modes.list_dsn import main_list_dsn
+from mycli.main_modes.list_ssh_config import main_list_ssh_config
 from mycli.packages import special
 from mycli.packages.filepaths import dir_path_exists, guess_socket_location
 from mycli.packages.hybrid_redirection import get_redirect_components, is_redirect_command
@@ -98,15 +99,11 @@ from mycli.packages.special.favoritequeries import FavoriteQueries
 from mycli.packages.special.main import ArgType
 from mycli.packages.special.utils import format_uptime, get_ssl_version, get_uptime, get_warning_count
 from mycli.packages.sqlresult import SQLResult
+from mycli.packages.ssh_utils import read_ssh_config
 from mycli.packages.string_utils import sanitize_terminal_title
 from mycli.packages.tabular_output import sql_format
 from mycli.sqlcompleter import SQLCompleter
 from mycli.sqlexecute import FIELD_TYPES, SQLExecute
-
-try:
-    import paramiko
-except ImportError:
-    from mycli.packages.paramiko_stub import paramiko  # type: ignore[no-redef]
 
 sqlparse.engine.grouping.MAX_GROUPING_DEPTH = None  # type: ignore[assignment]
 sqlparse.engine.grouping.MAX_GROUPING_TOKENS = None  # type: ignore[assignment]
@@ -2316,19 +2313,7 @@ def click_entrypoint(
         sys.exit(main_list_dsn(mycli, cli_args))
 
     if cli_args.list_ssh_config:
-        ssh_config = read_ssh_config(cli_args.ssh_config_path)
-        try:
-            host_entries = ssh_config.get_hostnames()
-        except KeyError:
-            click.secho('Error reading ssh config', err=True, fg="red")
-            sys.exit(1)
-        for host_entry in host_entries:
-            if cli_args.verbose:
-                host_config = ssh_config.lookup(host_entry)
-                click.secho(f"{host_entry} : {host_config.get('hostname')}")
-            else:
-                click.secho(host_entry)
-        sys.exit(0)
+        sys.exit(main_list_ssh_config(mycli, cli_args))
 
     if 'MYSQL_UNIX_PORT' in os.environ:
         # deprecated 2026-03
@@ -2759,24 +2744,6 @@ def edit_and_execute(event: KeyPressEvent) -> None:
     to execute a query after editing, hence validate_and_handle=False."""
     buff = event.current_buffer
     buff.open_in_editor(validate_and_handle=False)
-
-
-def read_ssh_config(ssh_config_path: str):
-    ssh_config = paramiko.config.SSHConfig()
-    try:
-        with open(ssh_config_path) as f:
-            ssh_config.parse(f)
-    except FileNotFoundError as e:
-        click.secho(str(e), err=True, fg="red")
-        sys.exit(1)
-    # Paramiko prior to version 2.7 raises Exception on parse errors.
-    # In 2.7 it has become paramiko.ssh_exception.SSHException,
-    # but let's catch everything for compatibility
-    except Exception as err:
-        click.secho(f"Could not parse SSH configuration file {ssh_config_path}:\n{err} ", err=True, fg="red")
-        sys.exit(1)
-    else:
-        return ssh_config
 
 
 def filtered_sys_argv() -> list[str]:
