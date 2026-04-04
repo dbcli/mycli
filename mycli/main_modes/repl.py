@@ -70,12 +70,6 @@ SUPPORT_INFO = f"Home: {HOME_URL}\nBug tracker: {ISSUES_URL}"
 MIN_COMPLETION_TRIGGER = 1
 
 
-def _main_module():
-    from mycli import main as main_module
-
-    return main_module
-
-
 @dataclass(slots=True)
 class ReplState:
     iterations: int = 0
@@ -213,8 +207,8 @@ def _output_results(
                 break
 
         if mycli.auto_vertical_output:
-            if mycli.prompt_app is not None:
-                max_width = mycli.prompt_app.output.get_size().columns
+            if mycli.prompt_session is not None:
+                max_width = mycli.prompt_session.output.get_size().columns
             else:
                 max_width = DEFAULT_WIDTH
         else:
@@ -239,8 +233,8 @@ def _output_results(
             except KeyboardInterrupt:
                 pass
             if mycli.beep_after_seconds > 0 and duration >= mycli.beep_after_seconds:
-                assert mycli.prompt_app is not None
-                mycli.prompt_app.output.bell()
+                assert mycli.prompt_session is not None
+                mycli.prompt_session.output.bell()
             if special.is_timing_enabled():
                 mycli.output_timing(f'Time: {duration:0.03f}s')
         except KeyboardInterrupt:
@@ -320,7 +314,7 @@ def _build_prompt_session(
         else:
             editing_mode = EditingMode.EMACS
 
-        mycli.prompt_app = PromptSession(
+        mycli.prompt_session = PromptSession(
             color_depth=ColorDepth.DEPTH_24_BIT if 'truecolor' in os.getenv('COLORTERM', '').lower() else None,
             lexer=PygmentsLexer(MyCliLexer),
             reserve_space_for_menu=mycli.get_reserved_space(),
@@ -351,9 +345,9 @@ def _build_prompt_session(
         )
 
         if mycli.key_bindings == 'vi':
-            mycli.prompt_app.app.ttimeoutlen = mycli.vi_ttimeoutlen
+            mycli.prompt_session.app.ttimeoutlen = mycli.vi_ttimeoutlen
         else:
-            mycli.prompt_app.app.ttimeoutlen = mycli.emacs_ttimeoutlen
+            mycli.prompt_session.app.ttimeoutlen = mycli.emacs_ttimeoutlen
 
 
 def _one_iteration(
@@ -368,9 +362,9 @@ def _one_iteration(
 
     if text is None:
         try:
-            assert mycli.prompt_app is not None
-            loaded_message_fn = partial(_get_prompt_message, mycli, mycli.prompt_app.app)
-            text = mycli.prompt_app.prompt(
+            assert mycli.prompt_session is not None
+            loaded_message_fn = partial(_get_prompt_message, mycli, mycli.prompt_session.app)
+            text = mycli.prompt_session.prompt(
                 inputhook=inputhook,
                 message=loaded_message_fn,
             )
@@ -420,8 +414,8 @@ def _one_iteration(
                     click.echo('---')
                 if special.is_timing_enabled():
                     mycli.output_timing(f'Time: {duration:.2f} seconds')
-                assert mycli.prompt_app is not None
-                text = mycli.prompt_app.prompt(
+                assert mycli.prompt_session is not None
+                text = mycli.prompt_session.prompt(
                     default=sql or '',
                     inputhook=inputhook,
                     message=loaded_message_fn,

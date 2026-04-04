@@ -153,7 +153,7 @@ class MyCli:
         self.defaults_suffix = defaults_suffix
         self.login_path = login_path
         self.toolbar_error_message: str | None = None
-        self.prompt_app: PromptSession | None = None
+        self.prompt_session: PromptSession | None = None
         self._keepalive_counter = 0
         self.keepalive_ticks: int | None = 0
 
@@ -291,7 +291,7 @@ class MyCli:
         self.terminal_window_title_format = c['main']['terminal_window_title']
         self.multiplex_window_title_format = c['main']['multiplex_window_title']
         self.multiplex_pane_title_format = c['main']['multiplex_pane_title']
-        self.prompt_app = None
+        self.prompt_session = None
         self.destructive_keywords = [
             keyword for keyword in c["main"].get("destructive_keywords", "DROP SHUTDOWN DELETE TRUNCATE ALTER UPDATE").split(' ') if keyword
         ]
@@ -904,8 +904,8 @@ class MyCli:
         """Get the output margin (number of rows for the prompt, footer and
         timing message."""
         if not self.prompt_lines:
-            if self.prompt_app and self.prompt_app.app:
-                render_counter = self.prompt_app.app.render_counter
+            if self.prompt_session and self.prompt_session.app:
+                render_counter = self.prompt_session.app.render_counter
             else:
                 render_counter = 0
             self.prompt_lines = self.get_prompt(self.prompt_format, render_counter).count('\n') + 1
@@ -933,8 +933,8 @@ class MyCli:
 
         """
         if output:
-            if self.prompt_app is not None:
-                size = self.prompt_app.output.get_size()
+            if self.prompt_session is not None:
+                size = self.prompt_session.output.get_size()
                 size_columns = size.columns
                 size_rows = size.rows
             else:
@@ -1036,10 +1036,10 @@ class MyCli:
         with self._completer_lock:
             self.completer = new_completer
 
-        if self.prompt_app:
+        if self.prompt_session:
             # After refreshing, redraw the CLI to clear the statusbar
             # "Refreshing completions..." indicator
-            self.prompt_app.app.invalidate()
+            self.prompt_session.app.invalidate()
 
     def get_completions(self, text: str, cursor_position: int) -> Iterable[Completion]:
         with self._completer_lock:
@@ -1054,22 +1054,22 @@ class MyCli:
     def set_external_terminal_tab_title(self) -> None:
         if not self.terminal_tab_title_format:
             return
-        if not self.prompt_app:
+        if not self.prompt_session:
             return
         if not sys.stderr.isatty():
             return
-        title = sanitize_terminal_title(self.get_prompt(self.terminal_tab_title_format, self.prompt_app.app.render_counter))
+        title = sanitize_terminal_title(self.get_prompt(self.terminal_tab_title_format, self.prompt_session.app.render_counter))
         print(f'\x1b]1;{title}\a', file=sys.stderr, end='')
         sys.stderr.flush()
 
     def set_external_terminal_window_title(self) -> None:
         if not self.terminal_window_title_format:
             return
-        if not self.prompt_app:
+        if not self.prompt_session:
             return
         if not sys.stderr.isatty():
             return
-        title = sanitize_terminal_title(self.get_prompt(self.terminal_window_title_format, self.prompt_app.app.render_counter))
+        title = sanitize_terminal_title(self.get_prompt(self.terminal_window_title_format, self.prompt_session.app.render_counter))
         print(f'\x1b]2;{title}\a', file=sys.stderr, end='')
         sys.stderr.flush()
 
@@ -1078,9 +1078,9 @@ class MyCli:
             return
         if not os.getenv('TMUX'):
             return
-        if not self.prompt_app:
+        if not self.prompt_session:
             return
-        title = sanitize_terminal_title(self.get_prompt(self.multiplex_window_title_format, self.prompt_app.app.render_counter))
+        title = sanitize_terminal_title(self.get_prompt(self.multiplex_window_title_format, self.prompt_session.app.render_counter))
         try:
             subprocess.run(
                 ['tmux', 'rename-window', title],
@@ -1097,22 +1097,22 @@ class MyCli:
             return
         if not os.getenv('TMUX'):
             return
-        if not self.prompt_app:
+        if not self.prompt_session:
             return
         if not sys.stderr.isatty():
             return
-        title = sanitize_terminal_title(self.get_prompt(self.multiplex_pane_title_format, self.prompt_app.app.render_counter))
+        title = sanitize_terminal_title(self.get_prompt(self.multiplex_pane_title_format, self.prompt_session.app.render_counter))
         print(f'\x1b]2;{title}\x1b\\', file=sys.stderr, end='')
         sys.stderr.flush()
 
     def get_custom_toolbar(self, toolbar_format: str) -> ANSI:
-        if not self.prompt_app:
+        if not self.prompt_session:
             return ANSI('')
-        if not self.prompt_app.app:
+        if not self.prompt_session.app:
             return ANSI('')
-        if self.prompt_app.app.current_buffer.text:
+        if self.prompt_session.app.current_buffer.text:
             return self.last_custom_toolbar_message
-        toolbar = self.get_prompt(toolbar_format, self.prompt_app.app.render_counter)
+        toolbar = self.get_prompt(toolbar_format, self.prompt_session.app.render_counter)
         toolbar = toolbar.replace("\\x1b", "\x1b")
         self.last_custom_toolbar_message = ANSI(toolbar)
         return self.last_custom_toolbar_message

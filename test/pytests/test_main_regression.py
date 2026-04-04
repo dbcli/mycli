@@ -219,7 +219,7 @@ def make_bare_mycli() -> Any:
     cli.show_warnings = False
     cli.query_history = []
     cli.toolbar_error_message = None
-    cli.prompt_app = None
+    cli.prompt_session = None
     cli.last_prompt_message = main.ANSI('')
     cli.last_custom_toolbar_message = main.ANSI('')
     cli.prompt_lines = 0
@@ -1024,7 +1024,7 @@ def test_connect_covers_default_ssl_ca_path_and_late_invalid_port(monkeypatch: p
 def test_handle_editor_clip_and_output_timing(monkeypatch: pytest.MonkeyPatch) -> None:
     cli = make_bare_mycli()
     monkeypatch.setattr(key_binding_utils, 'PromptSession', FakePromptSession)
-    cli.prompt_app = cast(Any, FakePromptSession(responses=[KeyboardInterrupt(), 'edited sql']))
+    cli.prompt_session = cast(Any, FakePromptSession(responses=[KeyboardInterrupt(), 'edited sql']))
     cli.get_last_query = lambda: 'last query'  # type: ignore[assignment]
     monkeypatch.setattr(main.special, 'editor_command', lambda text: text.endswith(r'\e'))
     monkeypatch.setattr(main.special, 'get_filename', lambda text: 'query.sql')
@@ -1144,7 +1144,7 @@ def test_reconnect_logging_output_titles_prompt(monkeypatch: pytest.MonkeyPatch,
     cli.prompt_lines = 0
     prompt_session = FakePromptSession()
     prompt_session.app.render_counter = 3
-    cli.prompt_app = cast(Any, prompt_session)
+    cli.prompt_session = cast(Any, prompt_session)
     cli.get_prompt = lambda string, render_counter: 'line1\nline2'  # type: ignore[assignment]
     monkeypatch.setattr(main.special, 'is_timing_enabled', lambda: True)
     assert main.MyCli.get_output_margin(cli, 'status\nline') == 13
@@ -1162,13 +1162,13 @@ def test_reconnect_logging_output_titles_prompt(monkeypatch: pytest.MonkeyPatch,
     assert echoed_lines == []
     assert printed_status
 
-    cli.prompt_app = None
+    cli.prompt_session = None
     assert main.to_plain_text(main.MyCli.get_custom_toolbar(cli, 'fmt')) == ''
-    cli.prompt_app = cast(Any, SimpleNamespace(app=None))
+    cli.prompt_session = cast(Any, SimpleNamespace(app=None))
     assert main.to_plain_text(main.MyCli.get_custom_toolbar(cli, 'fmt')) == ''
 
     monkeypatch.setattr(main.sys.stderr, 'isatty', lambda: False)
-    cli.prompt_app = cast(Any, FakePromptSession())
+    cli.prompt_session = cast(Any, FakePromptSession())
     cli.terminal_tab_title_format = 'tab'
     cli.terminal_window_title_format = 'window'
     cli.multiplex_window_title_format = 'mux-window'
@@ -1285,7 +1285,7 @@ def test_format_sqlresult_string_paths_and_close_and_title_early_returns(monkeyp
     assert list(main.MyCli.format_sqlresult(cli, result, max_width=10)) == ['short', 'second']
     assert list(main.MyCli.format_sqlresult(cli, result, max_width=2)) == ['vertical-a', 'vertical-b']
 
-    cli.prompt_app = None
+    cli.prompt_session = None
     cli.terminal_tab_title_format = 'tab'
     cli.terminal_window_title_format = 'window'
     cli.multiplex_window_title_format = 'mux-window'
@@ -1302,7 +1302,7 @@ def test_output_uses_stdout_and_pager_paths(monkeypatch: pytest.MonkeyPatch) -> 
     cli = make_bare_mycli()
     cli.explicit_pager = False
     cli.prompt_lines = 1
-    cli.prompt_app = None
+    cli.prompt_session = None
     cli.log_output = lambda text: None  # type: ignore[assignment]
     monkeypatch.setattr(main.special, 'write_tee', lambda text: None)
     monkeypatch.setattr(main.special, 'write_once', lambda text: None)
@@ -1334,7 +1334,7 @@ def test_format_sqlresult_output_and_prompt_helpers_cover_extra_branches(monkeyp
     cli.get_reserved_space = lambda: 1  # type: ignore[assignment]
     cli.get_prompt = lambda string, render_counter: 'a\nb'  # type: ignore[assignment]
     cli.prompt_lines = 0
-    cli.prompt_app = None
+    cli.prompt_session = None
     monkeypatch.setattr(main, 'Cursor', FakeCursorBase)
     monkeypatch.setattr(main.special, 'is_timing_enabled', lambda: False)
     rows = FakeCursorBase(rows=[], rowcount=0, description=[('id', 3, None, None, None, None, None)])
@@ -1425,7 +1425,7 @@ def test_completion_helpers_title_helpers_thanks_tips(monkeypatch: pytest.Monkey
     cli._completer_lock = cast(Any, ReusableLock(lambda: entered_lock.__setitem__('count', entered_lock['count'] + 1)))
     prompt_session = FakePromptSession()
     prompt_session.app.current_buffer.text = ''
-    cli.prompt_app = cast(Any, prompt_session)
+    cli.prompt_session = cast(Any, prompt_session)
     cli.get_prompt = lambda string, render_counter: f'title:{string}'  # type: ignore[assignment]
     monkeypatch.setattr(main, 'sanitize_terminal_title', lambda title: title.upper())
     monkeypatch.setattr(main.sys.stderr, 'isatty', lambda: True)
@@ -1444,9 +1444,9 @@ def test_completion_helpers_title_helpers_thanks_tips(monkeypatch: pytest.Monkey
     monkeypatch.setattr(main.sys.stderr, 'isatty', lambda: False)
     main.MyCli.set_external_multiplex_pane_title(cli)
 
-    cli.prompt_app.app.current_buffer.text = 'in progress'
+    cli.prompt_session.app.current_buffer.text = 'in progress'
     assert main.MyCli.get_custom_toolbar(cli, 'x') == cli.last_custom_toolbar_message
-    cli.prompt_app.app.current_buffer.text = ''
+    cli.prompt_session.app.current_buffer.text = ''
     assert 'title:x' in str(main.MyCli.get_custom_toolbar(cli, 'x'))
 
     new_completer = cast(Any, SimpleNamespace(get_completions=lambda document, event: ['done']))
@@ -2636,7 +2636,7 @@ def test_run_cli_watch_beep_auto_vertical_and_cancel_failure_paths(monkeypatch: 
     assert any('Encountered error while cancelling query' in line for line in echoes)
 
 
-def test_run_cli_auto_vertical_uses_default_width_when_prompt_app_is_cleared(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_run_cli_auto_vertical_uses_default_width_when_prompt_session_is_cleared(monkeypatch: pytest.MonkeyPatch) -> None:
     cli = make_bare_mycli()
     cli.config = {'history_file': '~/.mycli-history-testing'}
     cli.auto_vertical_output = True
@@ -2653,7 +2653,7 @@ def test_run_cli_auto_vertical_uses_default_width_when_prompt_app_is_cleared(mon
 
     cli.format_sqlresult = fake_format_default_width  # type: ignore[assignment]
     prompt_session = FakePromptSession(responses=['select 1', EOFError()])
-    cli.output = lambda formatted, result, is_warnings_style=False: setattr(cli, 'prompt_app', prompt_session)  # type: ignore[assignment]
+    cli.output = lambda formatted, result, is_warnings_style=False: setattr(cli, 'prompt_session', prompt_session)  # type: ignore[assignment]
 
     class FakeRunSQLExecute:
         def __init__(self) -> None:
@@ -2665,7 +2665,7 @@ def test_run_cli_auto_vertical_uses_default_width_when_prompt_app_is_cleared(mon
             self.user = 'root'
 
         def run(self, text: str) -> Iterator[SQLResult]:
-            cli.prompt_app = None
+            cli.prompt_session = None
             return iter([SQLResult(status='ok')])
 
     monkeypatch.setattr(main, 'SQLExecute', FakeRunSQLExecute)
