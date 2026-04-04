@@ -21,6 +21,7 @@ from mycli.constants import (
     TEST_DATABASE,
 )
 from mycli.main import EMPTY_PASSWORD_FLAG_SENTINEL, MyCli, click_entrypoint
+import mycli.main_modes.repl as repl_mode
 import mycli.packages.special
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
 from mycli.packages.sqlresult import SQLResult
@@ -368,7 +369,7 @@ def test_prompt_no_host_only_socket(executor):
     mycli.sqlexecute.user = DEFAULT_USER
     mycli.sqlexecute.dbname = DEFAULT_DATABASE
     mycli.sqlexecute.port = DEFAULT_PORT
-    prompt = mycli.get_prompt(mycli.prompt_format, 0)
+    prompt = repl_mode.get_prompt(mycli, mycli.prompt_format, 0)
     assert prompt == f"MySQL {DEFAULT_USER}@{DEFAULT_HOST}:{DEFAULT_DATABASE}> "
 
 
@@ -383,7 +384,7 @@ def test_prompt_socket_overrides_port(executor):
     mycli.sqlexecute.user = DEFAULT_USER
     mycli.sqlexecute.dbname = DEFAULT_DATABASE
     mycli.sqlexecute.port = DEFAULT_PORT
-    prompt = mycli.get_prompt(mycli.prompt_format, 0)
+    prompt = repl_mode.get_prompt(mycli, mycli.prompt_format, 0)
     assert prompt == f"MySQL {DEFAULT_USER}@{DEFAULT_HOST}:mysqld.sock {DEFAULT_DATABASE}> "
 
 
@@ -398,7 +399,7 @@ def test_prompt_socket_short_host(executor):
     mycli.sqlexecute.user = DEFAULT_USER
     mycli.sqlexecute.dbname = DEFAULT_DATABASE
     mycli.sqlexecute.port = DEFAULT_PORT
-    prompt = mycli.get_prompt(mycli.prompt_format, 0)
+    prompt = repl_mode.get_prompt(mycli, mycli.prompt_format, 0)
     assert prompt == f"MySQL {DEFAULT_USER}@{DEFAULT_HOST}:{DEFAULT_PORT} {DEFAULT_DATABASE}> "
 
 

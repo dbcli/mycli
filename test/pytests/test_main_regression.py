@@ -256,7 +256,6 @@ def make_bare_mycli() -> Any:
     cli.log_output = lambda *args, **kwargs: None  # type: ignore[assignment]
     cli.configure_pager = lambda: None  # type: ignore[assignment]
     cli.refresh_completions = lambda reset=False: [SQLResult(status='refresh')]  # type: ignore[assignment]
-    cli.set_all_external_titles = lambda: None  # type: ignore[assignment]
     cli.reconnect = lambda database='': False  # type: ignore[assignment]
     return cli
 
@@ -609,7 +608,11 @@ def test_change_db_handles_empty_same_new_and_backticks(monkeypatch: pytest.Monk
     changed_to: list[str] = []
     cli.sqlexecute.change_db = lambda arg: changed_to.append(arg)  # type: ignore[assignment]
     titles_called = {'count': 0}
-    cli.set_all_external_titles = lambda: titles_called.__setitem__('count', titles_called['count'] + 1)  # type: ignore[assignment]
+    monkeypatch.setattr(
+        main,
+        'set_all_external_titles',
+        lambda mycli: titles_called.__setitem__('count', titles_called['count'] + 1),
+    )
 
     assert list(main.MyCli.change_db(cli, '')) == []
     assert secho_calls[0][0][0] == 'No database selected'
@@ -1145,7 +1148,8 @@ def test_reconnect_logging_output_titles_prompt(monkeypatch: pytest.MonkeyPatch,
     prompt_session = FakePromptSession()
     prompt_session.app.render_counter = 3
     cli.prompt_session = cast(Any, prompt_session)
-    cli.get_prompt = lambda string, render_counter: 'line1\nline2'  # type: ignore[assignment]
+    monkeypatch.setattr(mycli.main_modes.repl, 'get_prompt', lambda mycli, string, render_counter: 'line1\nline2')
+    monkeypatch.setattr(main, 'get_prompt', lambda mycli, string, render_counter: 'line1\nline2')
     monkeypatch.setattr(main.special, 'is_timing_enabled', lambda: True)
     assert main.MyCli.get_output_margin(cli, 'status\nline') == 13
 
@@ -1163,24 +1167,24 @@ def test_reconnect_logging_output_titles_prompt(monkeypatch: pytest.MonkeyPatch,
     assert printed_status
 
     cli.prompt_session = None
-    assert main.to_plain_text(main.MyCli.get_custom_toolbar(cli, 'fmt')) == ''
+    assert main.to_plain_text(mycli.main_modes.repl.get_custom_toolbar(cli, 'fmt')) == ''
     cli.prompt_session = cast(Any, SimpleNamespace(app=None))
-    assert main.to_plain_text(main.MyCli.get_custom_toolbar(cli, 'fmt')) == ''
+    assert main.to_plain_text(mycli.main_modes.repl.get_custom_toolbar(cli, 'fmt')) == ''
 
-    monkeypatch.setattr(main.sys.stderr, 'isatty', lambda: False)
+    monkeypatch.setattr(mycli.main_modes.repl.sys.stderr, 'isatty', lambda: False)
     cli.prompt_session = cast(Any, FakePromptSession())
     cli.terminal_tab_title_format = 'tab'
     cli.terminal_window_title_format = 'window'
     cli.multiplex_window_title_format = 'mux-window'
     cli.multiplex_pane_title_format = 'mux-pane'
-    main.MyCli.set_external_terminal_tab_title(cli)
-    main.MyCli.set_external_terminal_window_title(cli)
+    mycli.main_modes.repl.set_external_terminal_tab_title(cli)
+    mycli.main_modes.repl.set_external_terminal_window_title(cli)
     monkeypatch.delenv('TMUX', raising=False)
-    main.MyCli.set_external_multiplex_window_title(cli)
-    main.MyCli.set_external_multiplex_pane_title(cli)
+    mycli.main_modes.repl.set_external_multiplex_window_title(cli)
+    mycli.main_modes.repl.set_external_multiplex_pane_title(cli)
     monkeypatch.setenv('TMUX', '1')
-    monkeypatch.setattr(main.subprocess, 'run', lambda *args, **kwargs: (_ for _ in ()).throw(FileNotFoundError()))
-    main.MyCli.set_external_multiplex_window_title(cli)
+    monkeypatch.setattr(mycli.main_modes.repl.subprocess, 'run', lambda *args, **kwargs: (_ for _ in ()).throw(FileNotFoundError()))
+    mycli.main_modes.repl.set_external_multiplex_window_title(cli)
 
 
 def test_reconnect_first_and_second_passes(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1241,7 +1245,7 @@ def test_get_prompt_and_completion_helper_fallbacks(monkeypatch: pytest.MonkeyPa
     cli.login_path = 'prod'
     cli.login_path_as_host = True
     cli.dsn_alias = 'dsn'
-    prompt = main.MyCli.get_prompt(cli, r'\h|\H|\A|\y|\Y|\T|\w|\W', 0)
+    prompt = mycli.main_modes.repl.get_prompt(cli, r'\h|\H|\A|\y|\Y|\T|\w|\W', 0)
     assert prompt == 'prod|prod|dsn|(none)|(none)|(none)|(none)|'
 
     class PromptCursor:
@@ -1257,11 +1261,11 @@ def test_get_prompt_and_completion_helper_fallbacks(monkeypatch: pytest.MonkeyPa
 
     sqlexecute.conn = cast(Any, PromptConnection())
     cli.login_path_as_host = False
-    monkeypatch.setattr(main, 'get_uptime', lambda cur: 123)
-    monkeypatch.setattr(main, 'format_uptime', lambda uptime: f'uptime:{uptime}')
-    monkeypatch.setattr(main, 'get_ssl_version', lambda cur: 'TLSv1.3')
-    monkeypatch.setattr(main, 'get_warning_count', lambda cur: 7)
-    prompt = main.MyCli.get_prompt(cli, r'\H|\y|\Y|\T|\w|\W', 1)
+    monkeypatch.setattr(mycli.main_modes.repl, 'get_uptime', lambda cur: 123)
+    monkeypatch.setattr(mycli.main_modes.repl, 'format_uptime', lambda uptime: f'uptime:{uptime}')
+    monkeypatch.setattr(mycli.main_modes.repl, 'get_ssl_version', lambda cur: 'TLSv1.3')
+    monkeypatch.setattr(mycli.main_modes.repl, 'get_warning_count', lambda cur: 7)
+    prompt = mycli.main_modes.repl.get_prompt(cli, r'\H|\y|\Y|\T|\w|\W', 1)
     assert prompt == '127.0.0.1|123|uptime:123|TLSv1.3|7|7'
 
 
@@ -1291,11 +1295,11 @@ def test_format_sqlresult_string_paths_and_close_and_title_early_returns(monkeyp
     cli.multiplex_window_title_format = 'mux-window'
     cli.multiplex_pane_title_format = 'mux-pane'
     monkeypatch.setenv('TMUX', '1')
-    monkeypatch.setattr(main.sys.stderr, 'isatty', lambda: True)
-    main.MyCli.set_external_terminal_tab_title(cli)
-    main.MyCli.set_external_terminal_window_title(cli)
-    main.MyCli.set_external_multiplex_window_title(cli)
-    main.MyCli.set_external_multiplex_pane_title(cli)
+    monkeypatch.setattr(mycli.main_modes.repl.sys.stderr, 'isatty', lambda: True)
+    mycli.main_modes.repl.set_external_terminal_tab_title(cli)
+    mycli.main_modes.repl.set_external_terminal_window_title(cli)
+    mycli.main_modes.repl.set_external_multiplex_window_title(cli)
+    mycli.main_modes.repl.set_external_multiplex_pane_title(cli)
 
 
 def test_output_uses_stdout_and_pager_paths(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1329,12 +1333,13 @@ def test_output_uses_stdout_and_pager_paths(monkeypatch: pytest.MonkeyPatch) -> 
 
 def test_format_sqlresult_output_and_prompt_helpers_cover_extra_branches(monkeypatch: pytest.MonkeyPatch) -> None:
     cli = make_bare_mycli()
+    real_get_prompt = mycli.main_modes.repl.get_prompt
     cli.main_formatter = DummyFormatter()
     cli.redirect_formatter = DummyFormatter()
     cli.get_reserved_space = lambda: 1  # type: ignore[assignment]
-    cli.get_prompt = lambda string, render_counter: 'a\nb'  # type: ignore[assignment]
     cli.prompt_lines = 0
     cli.prompt_session = None
+    monkeypatch.setattr(main, 'get_prompt', lambda mycli, string, render_counter: 'a\nb')
     monkeypatch.setattr(main, 'Cursor', FakeCursorBase)
     monkeypatch.setattr(main.special, 'is_timing_enabled', lambda: False)
     rows = FakeCursorBase(rows=[], rowcount=0, description=[('id', 3, None, None, None, None, None)])
@@ -1377,10 +1382,10 @@ def test_format_sqlresult_output_and_prompt_helpers_cover_extra_branches(monkeyp
     cli.terminal_window_title_format = ''
     cli.multiplex_window_title_format = ''
     cli.multiplex_pane_title_format = ''
-    main.MyCli.set_external_terminal_tab_title(cli)
-    main.MyCli.set_external_terminal_window_title(cli)
-    main.MyCli.set_external_multiplex_window_title(cli)
-    main.MyCli.set_external_multiplex_pane_title(cli)
+    mycli.main_modes.repl.set_external_terminal_tab_title(cli)
+    mycli.main_modes.repl.set_external_terminal_window_title(cli)
+    mycli.main_modes.repl.set_external_multiplex_window_title(cli)
+    mycli.main_modes.repl.set_external_multiplex_pane_title(cli)
 
     cli.sqlexecute = SimpleNamespace(
         server_info=SimpleNamespace(species=SimpleNamespace(name='MySQL')),
@@ -1391,7 +1396,8 @@ def test_format_sqlresult_output_and_prompt_helpers_cover_extra_branches(monkeyp
         socket=None,
         conn=None,
     )
-    prompt = main.MyCli.get_prompt(cli, '\\h \\H \\y \\Y \\T \\w \\W', 0)
+    monkeypatch.setattr(main, 'get_prompt', real_get_prompt)
+    prompt = mycli.main_modes.repl.get_prompt(cli, '\\h \\H \\y \\Y \\T \\w \\W', 0)
     assert main.DEFAULT_HOST in prompt
     assert '(none)' in prompt
 
@@ -1426,28 +1432,28 @@ def test_completion_helpers_title_helpers_thanks_tips(monkeypatch: pytest.Monkey
     prompt_session = FakePromptSession()
     prompt_session.app.current_buffer.text = ''
     cli.prompt_session = cast(Any, prompt_session)
-    cli.get_prompt = lambda string, render_counter: f'title:{string}'  # type: ignore[assignment]
-    monkeypatch.setattr(main, 'sanitize_terminal_title', lambda title: title.upper())
-    monkeypatch.setattr(main.sys.stderr, 'isatty', lambda: True)
+    monkeypatch.setattr(mycli.main_modes.repl, 'get_prompt', lambda mycli, string, render_counter: f'title:{string}')
+    monkeypatch.setattr(mycli.main_modes.repl, 'sanitize_terminal_title', lambda title: title.upper())
+    monkeypatch.setattr(mycli.main_modes.repl.sys.stderr, 'isatty', lambda: True)
     printed: list[str] = []
     monkeypatch.setattr(builtins, 'print', lambda *args, **kwargs: printed.append(args[0]))
-    monkeypatch.setattr(main.subprocess, 'run', lambda *args, **kwargs: None)
+    monkeypatch.setattr(mycli.main_modes.repl.subprocess, 'run', lambda *args, **kwargs: None)
     monkeypatch.setenv('TMUX', '1')
     cli.terminal_tab_title_format = 'tab'
     cli.terminal_window_title_format = 'window'
     cli.multiplex_window_title_format = 'mux-window'
     cli.multiplex_pane_title_format = 'mux-pane'
-    main.MyCli.set_all_external_titles(cli)
+    mycli.main_modes.repl.set_all_external_titles(cli)
     assert printed[0].startswith('\x1b]1;TITLE:TAB')
     assert printed[1].startswith('\x1b]2;TITLE:WINDOW')
     assert printed[2].startswith('\x1b]2;TITLE:MUX-PANE')
-    monkeypatch.setattr(main.sys.stderr, 'isatty', lambda: False)
-    main.MyCli.set_external_multiplex_pane_title(cli)
+    monkeypatch.setattr(mycli.main_modes.repl.sys.stderr, 'isatty', lambda: False)
+    mycli.main_modes.repl.set_external_multiplex_pane_title(cli)
 
     cli.prompt_session.app.current_buffer.text = 'in progress'
-    assert main.MyCli.get_custom_toolbar(cli, 'x') == cli.last_custom_toolbar_message
+    assert mycli.main_modes.repl.get_custom_toolbar(cli, 'x') == cli.last_custom_toolbar_message
     cli.prompt_session.app.current_buffer.text = ''
-    assert 'title:x' in str(main.MyCli.get_custom_toolbar(cli, 'x'))
+    assert 'title:x' in str(mycli.main_modes.repl.get_custom_toolbar(cli, 'x'))
 
     new_completer = cast(Any, SimpleNamespace(get_completions=lambda document, event: ['done']))
     main.MyCli._on_completions_refreshed(cli, new_completer)
@@ -2175,8 +2181,12 @@ def test_run_cli_prompt_rendering_startup_modes_and_goodbye(monkeypatch: pytest.
     cli.multiline_continuation_char = '>'
     cli.max_len_prompt = 5
     cli.config = {'history_file': '~/.mycli-history-testing'}
-    cli.get_prompt = lambda string, render_counter: '0123456789' if string == cli.default_prompt else 'a\nb'  # type: ignore[assignment]
-    cli.set_all_external_titles = lambda: None  # type: ignore[assignment]
+    monkeypatch.setattr(
+        mycli.main_modes.repl,
+        'get_prompt',
+        lambda mycli, string, render_counter: '0123456789' if string == cli.default_prompt else 'a\nb',
+    )
+    monkeypatch.setattr(mycli.main_modes.repl, 'set_all_external_titles', lambda mycli: None)
     toolbar_help: list[bool] = []
     prints: list[str] = []
     prompt_messages: list[str] = []
@@ -2214,7 +2224,7 @@ def test_run_cli_prompt_rendering_startup_modes_and_goodbye(monkeypatch: pytest.
     monkeypatch.setattr(mycli.main_modes.repl, 'PromptSession', fake_prompt_session)
     monkeypatch.setattr(mycli.main_modes.repl, 'mycli_bindings', lambda mycli: 'bindings')
 
-    def fake_create_toolbar_tokens(mycli: Any, show_help: Any, fmt: str) -> str:
+    def fake_create_toolbar_tokens(mycli: Any, show_help: Any, fmt: str, custom_toolbar: Any) -> str:
         toolbar_help.append(show_help())
         return 'toolbar'
 
