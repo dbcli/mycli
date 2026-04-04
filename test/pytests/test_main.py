@@ -21,7 +21,6 @@ from mycli.constants import (
     TEST_DATABASE,
 )
 from mycli.main import EMPTY_PASSWORD_FLAG_SENTINEL, MyCli, click_entrypoint, thanks_picker
-from mycli.packages.parseutils import is_valid_connection_scheme
 import mycli.packages.special
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
 from mycli.packages.sqlresult import SQLResult
@@ -141,18 +140,6 @@ def test_select_from_empty_table(executor):
         +----+
         +----+""")
     assert expected in result.output
-
-
-@dbtest
-def test_is_valid_connection_scheme_valid(executor, capsys):
-    is_valid, scheme = is_valid_connection_scheme(f"mysql://test@{DEFAULT_HOST}:{DEFAULT_PORT}/dev")
-    assert is_valid
-
-
-@dbtest
-def test_is_valid_connection_scheme_invalid(executor, capsys):
-    is_valid, scheme = is_valid_connection_scheme(f"nope://test@{DEFAULT_HOST}:{DEFAULT_PORT}/dev")
-    assert not is_valid
 
 
 def test_filtered_sys_argv_maps_single_dash_h_to_help(monkeypatch):

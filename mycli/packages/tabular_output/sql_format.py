@@ -6,7 +6,7 @@ from typing import Generator, Union
 
 from cli_helpers.tabular_output import TabularOutputFormatter
 
-from mycli.packages.parseutils import extract_tables_from_complete_statements
+from mycli.packages.sql_utils import extract_tables_from_complete_statements
 
 supported_formats = (
     "sql-insert",

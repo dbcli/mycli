@@ -41,6 +41,8 @@ Internal
 * Move `--list-ssh-config` logic to the new `main_modes` with `--batch`.
 * Sort coverage report in tox suite.
 * Skip more tests when a database connection is not present.
+* Move SQL utilities to a new `sql_utils.py`.
+* Move CLI utilities to a new `cli_utils.py`.
 
 
 1.67.1 (2026/03/28)
