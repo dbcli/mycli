@@ -87,14 +87,21 @@ from mycli.main_modes.batch import (
 )
 from mycli.main_modes.checkup import main_checkup
 from mycli.packages import special
+from mycli.packages.cli_utils import is_valid_connection_scheme
 from mycli.packages.filepaths import dir_path_exists, guess_socket_location
 from mycli.packages.hybrid_redirection import get_redirect_components, is_redirect_command
-from mycli.packages.parseutils import is_dropping_database, is_valid_connection_scheme
 from mycli.packages.prompt_utils import confirm, confirm_destructive_query
 from mycli.packages.ptoolkit.history import FileHistoryWithTimestamp
 from mycli.packages.special.favoritequeries import FavoriteQueries
 from mycli.packages.special.main import ArgType
 from mycli.packages.special.utils import format_uptime, get_ssl_version, get_uptime, get_warning_count
+from mycli.packages.sql_utils import (
+    is_dropping_database,
+    is_mutating,
+    is_select,
+    need_completion_refresh,
+    need_completion_reset,
+)
 from mycli.packages.sqlresult import SQLResult
 from mycli.packages.string_utils import sanitize_terminal_title
 from mycli.packages.tabular_output import sql_format
@@ -2700,53 +2707,6 @@ def click_entrypoint(
 
     mycli.run_cli()
     mycli.close()
-
-
-def need_completion_refresh(queries: str) -> bool:
-    """Determines if the completion needs a refresh by checking if the sql
-    statement is an alter, create, drop or change db."""
-    for query in sqlparse.split(queries):
-        try:
-            first_token = query.split()[0]
-            if first_token.lower() in ("alter", "create", "use", "\\r", "\\u", "connect", "drop", "rename"):
-                return True
-        except Exception:
-            continue
-    return False
-
-
-def need_completion_reset(queries: str) -> bool:
-    """Determines if the statement is a database switch such as 'use' or '\\u'.
-    When a database is changed the existing completions must be reset before we
-    start the completion refresh for the new database.
-    """
-    for query in sqlparse.split(queries):
-        try:
-            tokens = query.split()
-            first_token = tokens[0]
-            if first_token.lower() in ("use", "\\u"):
-                return True
-            if first_token.lower() in ("\\r", "connect") and len(tokens) > 1:
-                return True
-        except Exception:
-            continue
-    return False
-
-
-def is_mutating(status_plain: str | None) -> bool:
-    """Determines if the statement is mutating based on the status."""
-    if not status_plain:
-        return False
-
-    mutating = {"insert", "update", "delete", "alter", "create", "drop", "replace", "truncate", "load", "rename"}
-    return status_plain.split(None, 1)[0].lower() in mutating
-
-
-def is_select(status_plain: str | None) -> bool:
-    """Returns true if the first word in status is 'select'."""
-    if not status_plain:
-        return False
-    return status_plain.split(None, 1)[0].lower() == "select"
 
 
 def thanks_picker() -> str:

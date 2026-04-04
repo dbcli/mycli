@@ -27,11 +27,12 @@ A command line client for MySQL with auto-completion and syntax highlighting.
 ├── mycli/packages/                       # application packages
 ├── mycli/packages/batch_utils.py         # utilities for `--batch` mode
 ├── mycli/packages/checkup.py             # implementation of `--checkup` mode
+├── mycli/packages/cli_utils.py           # utilities for parsing CLI arguments
 ├── mycli/packages/completion_engine.py   # implementation of completion suggestions
 ├── mycli/packages/filepaths.py           # utilities for files, including completion suggestions
 ├── mycli/packages/hybrid_redirection.py  # implementation of shell-style redirects
 ├── mycli/packages/paramiko_stub/         # stub in case the Paramiko library is not installed
-├── mycli/packages/parseutils.py          # utilities for parsing SQL statements
+├── mycli/packages/sql_utils.py           # utilities for parsing SQL statements
 ├── mycli/packages/prompt_utils.py        # utilities for confirming on destructive statements
 ├── mycli/packages/ptoolkit/              # extends prompt_toolkit
 ├── mycli/packages/shortcuts.py           # utilities for keyboard shortcuts

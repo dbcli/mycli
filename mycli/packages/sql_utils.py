@@ -23,17 +23,6 @@ cleanup_regex: dict[str, re.Pattern] = {
 }
 
 
-def is_valid_connection_scheme(text: str) -> tuple[bool, str | None]:
-    # exit early if the text does not resemble a DSN URI
-    if "://" not in text:
-        return False, None
-    scheme = text.split("://")[0]
-    if scheme not in ("mysql", "mysqlx", "tcp", "socket", "ssh"):
-        return False, scheme
-    else:
-        return True, None
-
-
 def last_word(
     text: str,
     include: Literal[
@@ -433,3 +422,50 @@ def is_dropping_database(queries: str, dbname: str | None) -> bool:
             if database_token is not None and normalize_db_name(database_token.get_name()) == dbname:
                 result = keywords[0].normalized == "DROP"
     return result
+
+
+def need_completion_refresh(queries: str) -> bool:
+    """Determines if the completion needs a refresh by checking if the sql
+    statement is an alter, create, drop or change db."""
+    for query in sqlparse.split(queries):
+        try:
+            first_token = query.split()[0]
+            if first_token.lower() in ("alter", "create", "use", "\\r", "\\u", "connect", "drop", "rename"):
+                return True
+        except Exception:
+            continue
+    return False
+
+
+def need_completion_reset(queries: str) -> bool:
+    """Determines if the statement is a database switch such as 'use' or '\\u'.
+    When a database is changed the existing completions must be reset before we
+    start the completion refresh for the new database.
+    """
+    for query in sqlparse.split(queries):
+        try:
+            tokens = query.split()
+            first_token = tokens[0]
+            if first_token.lower() in ("use", "\\u"):
+                return True
+            if first_token.lower() in ("\\r", "connect") and len(tokens) > 1:
+                return True
+        except Exception:
+            continue
+    return False
+
+
+def is_mutating(status_plain: str | None) -> bool:
+    """Determines if the statement is mutating based on the status."""
+    if not status_plain:
+        return False
+
+    mutating = {"insert", "update", "delete", "alter", "create", "drop", "replace", "truncate", "load", "rename"}
+    return status_plain.split(None, 1)[0].lower() in mutating
+
+
+def is_select(status_plain: str | None) -> bool:
+    """Returns true if the first word in status is 'select'."""
+    if not status_plain:
+        return False
+    return status_plain.split(None, 1)[0].lower() == "select"

@@ -13,10 +13,10 @@ import rapidfuzz
 
 from mycli.packages.completion_engine import is_inside_quotes, suggest_type
 from mycli.packages.filepaths import complete_path, parse_path, suggest_path
-from mycli.packages.parseutils import extract_columns_from_select, extract_tables, last_word
 from mycli.packages.special import llm
 from mycli.packages.special.favoritequeries import FavoriteQueries
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
+from mycli.packages.sql_utils import extract_columns_from_select, extract_tables, last_word
 
 _logger = logging.getLogger(__name__)
 _CASE_CHANGE_PAT = re.compile('(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])')

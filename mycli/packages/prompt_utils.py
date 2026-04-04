@@ -2,7 +2,7 @@ import sys
 
 import click
 
-from mycli.packages.parseutils import is_destructive
+from mycli.packages.sql_utils import is_destructive
 
 
 class ConfirmBoolParamType(click.ParamType):

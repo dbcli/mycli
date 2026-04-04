@@ -1329,10 +1329,6 @@ def test_get_prompt_and_completion_helper_fallbacks(monkeypatch: pytest.MonkeyPa
     prompt = main.MyCli.get_prompt(cli, r'\H|\y|\Y|\T|\w|\W', 1)
     assert prompt == '127.0.0.1|123|uptime:123|TLSv1.3|7|7'
 
-    monkeypatch.setattr(main.sqlparse, 'split', lambda text: [None])
-    assert main.need_completion_refresh('sql') is False
-    assert main.need_completion_reset('sql') is False
-
 
 def test_format_sqlresult_string_paths_and_close_and_title_early_returns(monkeypatch: pytest.MonkeyPatch) -> None:
     cli = make_bare_mycli()
@@ -1484,7 +1480,6 @@ def test_filtered_sys_argv_covers_help_and_passthrough(monkeypatch: pytest.Monke
     assert main.filtered_sys_argv() == ['--help']
     monkeypatch.setattr(main.sys, 'argv', ['mycli', '-h', 'db.example'])
     assert main.filtered_sys_argv() == ['-h', 'db.example']
-    assert main.need_completion_refresh('') is False
 
 
 def test_completion_helpers_title_helpers_thanks_tips_and_read_ssh_config(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
@@ -1525,21 +1520,6 @@ def test_completion_helpers_title_helpers_thanks_tips_and_read_ssh_config(monkey
     assert prompt_session.app.invalidated is True
     assert list(main.MyCli.get_completions(cli, 'select', 6)) == ['done']
     assert entered_lock['count'] >= 2
-
-    monkeypatch.setattr(main.sqlparse, 'split', lambda text: ['alter table t', 'broken'])
-    assert main.need_completion_refresh('sql') is True
-    monkeypatch.setattr(main.sqlparse, 'split', lambda text: [''])
-    assert main.need_completion_refresh('sql') is False
-    monkeypatch.setattr(main.sqlparse, 'split', lambda text: ['use db'])
-    assert main.need_completion_reset('use db') is True
-    monkeypatch.setattr(main.sqlparse, 'split', lambda text: ['connect db'])
-    assert main.need_completion_reset('connect db') is True
-    monkeypatch.setattr(main.sqlparse, 'split', lambda text: ['select 1'])
-    assert main.need_completion_reset('select 1') is False
-    assert main.is_mutating('INSERT 1') is True
-    assert main.is_mutating(None) is False
-    assert main.is_select('SELECT 1') is True
-    assert main.is_select(None) is False
 
     class FakeResource:
         def __init__(self, text: str | None) -> None:
@@ -2725,6 +2705,7 @@ def test_run_cli_reconnect_and_exception_paths(monkeypatch: pytest.MonkeyPatch) 
     monkeypatch.setattr(main, 'need_completion_refresh', lambda text: text == 'dropdb')
     monkeypatch.setattr(main, 'need_completion_reset', lambda text: True)
     monkeypatch.setattr(main, 'is_dropping_database', lambda text, dbname: text == 'dropdb')
+
     main.MyCli.run_cli(cli)
     assert reconnect_calls == ['', '']
     assert any('bad op' in line for line in echoes)

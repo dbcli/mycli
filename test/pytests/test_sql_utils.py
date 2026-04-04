@@ -5,8 +5,8 @@ import sqlparse
 from sqlparse.sql import Identifier, IdentifierList, Token, TokenList
 from sqlparse.tokens import DML, Keyword, Punctuation
 
-from mycli.packages import parseutils
-from mycli.packages.parseutils import (
+from mycli.packages import sql_utils
+from mycli.packages.sql_utils import (
     extract_columns_from_select,
     extract_from_part,
     extract_table_identifiers,
@@ -16,9 +16,12 @@ from mycli.packages.parseutils import (
     get_last_select,
     is_destructive,
     is_dropping_database,
+    is_mutating,
+    is_select,
     is_subselect,
-    is_valid_connection_scheme,
     last_word,
+    need_completion_refresh,
+    need_completion_reset,
     queries_start_with,
     query_has_where_clause,
     query_is_single_table_update,
@@ -173,23 +176,6 @@ def test_queries_start_with():
     assert queries_start_with(sql, ['show', 'select']) is True
     assert queries_start_with(sql, ['use', 'drop']) is True
     assert queries_start_with(sql, ['delete', 'update']) is False
-
-
-@pytest.mark.parametrize(
-    ('text', 'is_valid', 'invalid_scheme'),
-    [
-        ('localhost', False, None),
-        ('mysql://user@localhost/db', True, None),
-        ('mysqlx://user@localhost/db', True, None),
-        ('tcp://localhost:3306', True, None),
-        ('socket:///tmp/mysql.sock', True, None),
-        ('ssh://user@example.com', True, None),
-        ('postgres://user@localhost/db', False, 'postgres'),
-        ('http://example.com', False, 'http'),
-    ],
-)
-def test_is_valid_connection_scheme(text, is_valid, invalid_scheme):
-    assert is_valid_connection_scheme(text) == (is_valid, invalid_scheme)
 
 
 @pytest.mark.parametrize(
@@ -378,7 +364,7 @@ def test_query_is_single_table_update(sql, is_single_table):
 
 
 def test_extract_columns_from_select_handles_falsey_last_select(monkeypatch):
-    monkeypatch.setattr(parseutils, 'get_last_select', lambda _parsed: [])
+    monkeypatch.setattr(sql_utils, 'get_last_select', lambda _parsed: [])
     assert extract_columns_from_select('select 1') == []
 
 
@@ -388,7 +374,7 @@ def test_extract_columns_from_select_handles_single_identifier(monkeypatch):
             return 'column_name'
 
     monkeypatch.setattr(
-        parseutils,
+        sql_utils,
         'get_last_select',
         lambda _parsed: TokenList([Token(DML, 'SELECT'), SingleIdentifier([])]),
     )
@@ -402,7 +388,7 @@ def test_extract_columns_from_select_ignores_unhandled_identifier_list_entries(m
             return [object()]
 
     monkeypatch.setattr(
-        parseutils,
+        sql_utils,
         'get_last_select',
         lambda _parsed: TokenList([Token(DML, 'SELECT'), WeirdIdentifierList([])]),
     )
@@ -412,7 +398,7 @@ def test_extract_columns_from_select_ignores_unhandled_identifier_list_entries(m
 
 def test_extract_columns_from_select_stops_at_keyword_before_collecting_columns(monkeypatch):
     monkeypatch.setattr(
-        parseutils,
+        sql_utils,
         'get_last_select',
         lambda _parsed: TokenList([Token(DML, 'SELECT'), Token(Keyword, 'FROM')]),
     )
@@ -421,7 +407,7 @@ def test_extract_columns_from_select_stops_at_keyword_before_collecting_columns(
 
 
 def test_extract_tables_from_complete_statements_returns_empty_for_falsey_rough_parse(monkeypatch):
-    monkeypatch.setattr(parseutils.sqlparse, 'parse', lambda _sql: [])
+    monkeypatch.setattr(sql_utils.sqlparse, 'parse', lambda _sql: [])
 
     assert extract_tables_from_complete_statements('select * from t') == []
 
@@ -441,14 +427,14 @@ def test_extract_tables_from_complete_statements_skips_cte_table_identifiers(mon
         def find_all(self, _table_type):
             return [FakeIdentifier()]
 
-    monkeypatch.setattr(parseutils.sqlparse, 'parse', lambda _sql: ['stmt'])
-    monkeypatch.setattr(parseutils.sqlglot, 'parse_one', lambda *_args, **_kwargs: FakeStatement())
+    monkeypatch.setattr(sql_utils.sqlparse, 'parse', lambda _sql: ['stmt'])
+    monkeypatch.setattr(sql_utils.sqlglot, 'parse_one', lambda *_args, **_kwargs: FakeStatement())
 
     assert extract_tables_from_complete_statements('with cte as (select 1) select * from cte') == []
 
 
 def test_query_is_single_table_update_returns_false_when_parse_result_is_empty(monkeypatch):
-    monkeypatch.setattr(parseutils.sqlparse, 'parse', lambda _sql: [])
+    monkeypatch.setattr(sql_utils.sqlparse, 'parse', lambda _sql: [])
 
     assert query_is_single_table_update('update test set x = 1') is False
 
@@ -479,7 +465,7 @@ def test_is_destructive_update_without_where_clause():
 
 
 def test_is_destructive_skips_empty_split_queries(monkeypatch):
-    monkeypatch.setattr(parseutils.sqlparse, 'split', lambda _queries: ['', ''])
+    monkeypatch.setattr(sql_utils.sqlparse, 'split', lambda _queries: ['', ''])
 
     assert is_destructive(['drop'], 'ignored') is False
 
@@ -521,3 +507,86 @@ def test_is_dropping_database(sql, dbname, is_dropping):
 
 def test_is_dropping_database_skips_statements_without_enough_keywords():
     assert is_dropping_database('drop foo', 'foo') is False
+
+
+@pytest.mark.parametrize(
+    ('queries', 'expected'),
+    [
+        ('select 1;', False),
+        ('alter table foo add column bar int;', True),
+        ('create table foo (id int);', True),
+        ('use foo;', True),
+        ('\\r foo localhost root', True),
+        ('\\u foo', True),
+        ('connect foo localhost root', True),
+        ('drop table foo;', True),
+        ('rename table foo to bar;', True),
+    ],
+)
+def test_need_completion_refresh(queries, expected):
+    assert need_completion_refresh(queries) is expected
+
+
+def test_need_completion_refresh_ignores_queries_that_fail_to_split(monkeypatch):
+    class BrokenQuery:
+        def split(self):
+            raise RuntimeError('broken')
+
+    monkeypatch.setattr(sql_utils.sqlparse, 'split', lambda _queries: [BrokenQuery(), 'select 1;'])
+
+    assert need_completion_refresh('ignored') is False
+
+
+@pytest.mark.parametrize(
+    ('queries', 'expected'),
+    [
+        ('select 1;', False),
+        ('use foo;', True),
+        ('\\u foo', True),
+        ('\\r', False),
+        ('\\r foo localhost root', True),
+        ('connect', False),
+        ('connect foo localhost root', True),
+    ],
+)
+def test_need_completion_reset(queries, expected):
+    assert need_completion_reset(queries) is expected
+
+
+def test_need_completion_reset_ignores_queries_that_fail_to_split(monkeypatch):
+    class BrokenQuery:
+        def split(self):
+            raise RuntimeError('broken')
+
+    monkeypatch.setattr(sql_utils.sqlparse, 'split', lambda _queries: [BrokenQuery(), 'select 1;'])
+
+    assert need_completion_reset('ignored') is False
+
+
+@pytest.mark.parametrize(
+    ('status_plain', 'expected'),
+    [
+        (None, False),
+        ('', False),
+        ('SELECT 1', False),
+        ('INSERT 1', True),
+        ('update 3', True),
+        ('rename table', True),
+    ],
+)
+def test_is_mutating(status_plain, expected):
+    assert is_mutating(status_plain) is expected
+
+
+@pytest.mark.parametrize(
+    ('status_plain', 'expected'),
+    [
+        (None, False),
+        ('', False),
+        ('SELECT 1', True),
+        ('select rows', True),
+        ('UPDATE 1', False),
+    ],
+)
+def test_is_select(status_plain, expected):
+    assert is_select(status_plain) is expected
