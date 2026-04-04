@@ -38,7 +38,7 @@ def create_toolbar_tokens_func(mycli, show_initial_toolbar_help: Callable, forma
             result.append(("class:bottom-toolbar", "[F3] Multiline:"))
             result.append(("class:bottom-toolbar.off", "OFF"))
 
-        if mycli.prompt_app.editing_mode == EditingMode.VI:
+        if mycli.prompt_session.editing_mode == EditingMode.VI:
             result.append(divider)
             result.append(("class:bottom-toolbar", "Vi:"))
             result.append(("class:bottom-toolbar.on", _get_vi_mode()))

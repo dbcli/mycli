@@ -21,7 +21,7 @@ def make_mycli(
     return SimpleNamespace(
         completer=SimpleNamespace(smart_completion=smart_completion),
         multi_line=multi_line,
-        prompt_app=SimpleNamespace(editing_mode=editing_mode),
+        prompt_session=SimpleNamespace(editing_mode=editing_mode),
         toolbar_error_message=toolbar_error_message,
         completion_refresher=SimpleNamespace(is_refreshing=MagicMock(return_value=refreshing)),
         get_custom_toolbar=MagicMock(return_value="custom toolbar"),

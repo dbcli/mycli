@@ -75,8 +75,8 @@ def handle_editor_command(
             raise RuntimeError(message)
         while True:
             try:
-                assert isinstance(mycli.prompt_app, PromptSession)
-                text = mycli.prompt_app.prompt(
+                assert isinstance(mycli.prompt_session, PromptSession)
+                text = mycli.prompt_session.prompt(
                     default=sql,
                     inputhook=inputhook,
                     message=loaded_message_fn,

@@ -12,7 +12,6 @@ from prompt_toolkit.formatted_text import to_plain_text
 import pymysql
 import pytest
 
-import mycli.main as main_module
 import mycli.main_modes.repl as repl_mode
 from mycli.packages.sqlresult import SQLResult
 
@@ -151,7 +150,7 @@ def make_repl_cli(sqlexecute: Any | None = None) -> Any:
     cli.null_string = '<null>'
     cli.numeric_alignment = 'right'
     cli.binary_display = None
-    cli.prompt_app = None
+    cli.prompt_session = None
     cli.post_redirect_command = None
     cli.logfile = None
     cli.smart_completion = False
@@ -274,12 +273,11 @@ def test_complete_while_typing_filter_covers_threshold_and_word_rules(monkeypatc
     assert repl_mode.complete_while_typing_filter() is True
 
 
-def test_repl_main_module_and_create_history(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_repl_create_history(monkeypatch: pytest.MonkeyPatch) -> None:
     cli = make_repl_cli()
     monkeypatch.setenv('MYCLI_HISTFILE', '~/override-history')
     monkeypatch.setattr(repl_mode, 'dir_path_exists', lambda path: True)
     monkeypatch.setattr(repl_mode, 'FileHistoryWithTimestamp', lambda path: f'history:{path}')
-    assert repl_mode._main_module() is main_module
     history = cast(Any, repl_mode._create_history(cli))
     assert history == f'history:{os.path.expanduser("~/override-history")}'
 
@@ -352,7 +350,7 @@ def test_output_results_covers_watch_warning_timing_beep_and_interrupts(monkeypa
 
     cli = make_repl_cli(FakeSQLExecute())
     cli.auto_vertical_output = True
-    cli.prompt_app = FakePromptSession(columns=91)
+    cli.prompt_session = FakePromptSession(columns=91)
     cli.beep_after_seconds = 0.1
     cli.show_warnings = True
     state = repl_mode.ReplState()
@@ -381,7 +379,7 @@ def test_output_results_covers_watch_warning_timing_beep_and_interrupts(monkeypa
 
     assert state.mutating is True
     assert format_widths[:2] == [91, 91]
-    assert cli.prompt_app.output.bell_count == 2
+    assert cli.prompt_session.output.bell_count == 2
     assert '' in cli.echo_calls
     assert any(is_warnings_style is True for _, _, is_warnings_style in cli.output_calls)
     assert any(is_warnings_style is False for _, is_warnings_style in cli.timing_calls)
@@ -496,7 +494,7 @@ def test_build_prompt_session_covers_toolbar_modes_and_editing_modes(monkeypatch
     assert first_kwargs['bottom_toolbar'] is None
     assert first_kwargs['complete_style'] == repl_mode.CompleteStyle.MULTI_COLUMN
     assert first_kwargs['editing_mode'] == repl_mode.EditingMode.VI
-    assert cli.prompt_app.app.ttimeoutlen == cli.vi_ttimeoutlen
+    assert cli.prompt_session.app.ttimeoutlen == cli.vi_ttimeoutlen
 
     cli.toolbar_format = 'default'
     cli.key_bindings = 'emacs'
@@ -508,7 +506,7 @@ def test_build_prompt_session_covers_toolbar_modes_and_editing_modes(monkeypatch
     assert latest_kwargs['complete_style'] == repl_mode.CompleteStyle.COLUMN
     assert latest_kwargs['editing_mode'] == repl_mode.EditingMode.EMACS
     assert toolbar_help == [True]
-    assert cli.prompt_app.app.ttimeoutlen == cli.emacs_ttimeoutlen
+    assert cli.prompt_session.app.ttimeoutlen == cli.emacs_ttimeoutlen
     assert latest_kwargs['prompt_continuation'](4, 0, 0) == [('class:continuation', '  > ')]
 
 
@@ -516,14 +514,14 @@ def test_one_iteration_handles_prompt_interrupt_empty_editor_clip_and_clip_true(
     patch_repl_runtime_defaults(monkeypatch)
     cli = make_repl_cli(SimpleNamespace(run=lambda text: iter([SQLResult(status='ok')]), conn=FakeConnection()))
     cli.keepalive_ticks = 1
-    cli.prompt_app = FakePromptSession([KeyboardInterrupt(), '   ', 'edit-error', 'clip-error', 'clip-stop'])
+    cli.prompt_session = FakePromptSession([KeyboardInterrupt(), '   ', 'edit-error', 'clip-error', 'clip-stop'])
 
     repl_mode._one_iteration(cli, repl_mode.ReplState())
     assert cli.query_history == []
 
     repl_mode._one_iteration(cli, repl_mode.ReplState())
     assert cli.query_history == []
-    inputhook = cli.prompt_app.prompt_calls[-1]['inputhook']
+    inputhook = cli.prompt_session.prompt_calls[-1]['inputhook']
     assert inputhook is not None
     inputhook(None)
 
@@ -562,7 +560,7 @@ def test_one_iteration_covers_llm_paths(monkeypatch: pytest.MonkeyPatch) -> None
         lambda text, cur, dbname, field_truncate, section_truncate: ('context', 'select 1', 1.25),
     )
     cli = make_repl_cli(FakeSQLExecute())
-    cli.prompt_app = FakePromptSession(['\\llm ask', 'select 1'])
+    cli.prompt_session = FakePromptSession(['\\llm ask', 'select 1'])
     repl_mode._one_iteration(
         cli,
         repl_mode.ReplState(),
@@ -571,7 +569,7 @@ def test_one_iteration_covers_llm_paths(monkeypatch: pytest.MonkeyPatch) -> None
     assert cli.output_calls[0][0] == ['None', 'ran:select 1']
 
     cli_finish = make_repl_cli(FakeSQLExecute())
-    cli_finish.prompt_app = FakePromptSession(['\\llm finish'])
+    cli_finish.prompt_session = FakePromptSession(['\\llm finish'])
     cli_finish.format_sqlresult = lambda result, **kwargs: iter([result.status_plain or 'row'])
     monkeypatch.setattr(
         repl_mode.special,
@@ -582,7 +580,7 @@ def test_one_iteration_covers_llm_paths(monkeypatch: pytest.MonkeyPatch) -> None
     assert cli_finish.output_calls[0][0] == ['done']
 
     cli_empty = make_repl_cli(FakeSQLExecute())
-    cli_empty.prompt_app = FakePromptSession(['\\llm empty'])
+    cli_empty.prompt_session = FakePromptSession(['\\llm empty'])
     monkeypatch.setattr(
         repl_mode.special,
         'handle_llm',
@@ -592,7 +590,7 @@ def test_one_iteration_covers_llm_paths(monkeypatch: pytest.MonkeyPatch) -> None
     assert cli_empty.output_calls == []
 
     cli_err = make_repl_cli(FakeSQLExecute())
-    cli_err.prompt_app = FakePromptSession(['\\llm err'])
+    cli_err.prompt_session = FakePromptSession(['\\llm err'])
     monkeypatch.setattr(
         repl_mode.special,
         'handle_llm',
@@ -602,7 +600,7 @@ def test_one_iteration_covers_llm_paths(monkeypatch: pytest.MonkeyPatch) -> None
     assert 'llm boom' in cli_err.echo_calls[-1]
 
     cli_interrupt = make_repl_cli(FakeSQLExecute())
-    cli_interrupt.prompt_app = FakePromptSession(['\\llm stop'])
+    cli_interrupt.prompt_session = FakePromptSession(['\\llm stop'])
     monkeypatch.setattr(
         repl_mode.special,
         'handle_llm',
@@ -612,7 +610,7 @@ def test_one_iteration_covers_llm_paths(monkeypatch: pytest.MonkeyPatch) -> None
     assert cli_interrupt.output_calls == []
 
     cli_quiet = make_repl_cli(FakeSQLExecute())
-    cli_quiet.prompt_app = FakePromptSession(['\\llm quiet', 'select 2'])
+    cli_quiet.prompt_session = FakePromptSession(['\\llm quiet', 'select 2'])
     monkeypatch.setattr(repl_mode.special, 'is_timing_enabled', lambda: False)
     monkeypatch.setattr(
         repl_mode.special,
@@ -845,7 +843,7 @@ def test_main_repl_covers_setup_loop_and_goodbye(monkeypatch: pytest.MonkeyPatch
     monkeypatch.setattr(
         repl_mode,
         '_build_prompt_session',
-        lambda mycli, state, history, key_bindings: setattr(mycli, 'prompt_app', FakePromptSession()),
+        lambda mycli, state, history, key_bindings: setattr(mycli, 'prompt_session', FakePromptSession()),
     )
 
     def fake_one_iteration(mycli: Any, state: repl_mode.ReplState) -> None:
@@ -877,7 +875,7 @@ def test_main_repl_covers_no_refresh_and_quiet_exit(monkeypatch: pytest.MonkeyPa
     monkeypatch.setattr(
         repl_mode,
         '_build_prompt_session',
-        lambda mycli, state, history, key_bindings: setattr(mycli, 'prompt_app', FakePromptSession()),
+        lambda mycli, state, history, key_bindings: setattr(mycli, 'prompt_session', FakePromptSession()),
     )
     monkeypatch.setattr(repl_mode, '_one_iteration', lambda mycli, state: (_ for _ in ()).throw(EOFError()))
     monkeypatch.setattr(repl_mode.special, 'close_tee', lambda: None)
@@ -897,7 +895,7 @@ def test_output_results_covers_remaining_watch_select_and_warning_branches(monke
     cli = make_repl_cli(WarninglessSQLExecute())
     cli.show_warnings = True
     cli.auto_vertical_output = False
-    cli.prompt_app = FakePromptSession(columns=77)
+    cli.prompt_session = FakePromptSession(columns=77)
     monkeypatch.setattr(repl_mode, 'Cursor', FakeCursorBase)
     monkeypatch.setattr(repl_mode, 'is_mutating', lambda status: False)
     monkeypatch.setattr(repl_mode, 'confirm', lambda text: True)

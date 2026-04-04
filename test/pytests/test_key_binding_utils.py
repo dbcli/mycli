@@ -35,10 +35,10 @@ class FakeMyCli:
     def __init__(
         self,
         *,
-        prompt_app: FakePromptSession | None = None,
+        prompt_session: FakePromptSession | None = None,
         last_query: str = 'last query',
     ) -> None:
-        self.prompt_app = prompt_app
+        self.prompt_session = prompt_session
         self.last_query = last_query
         self.toolbar_error_message: str | None = None
 
@@ -83,8 +83,8 @@ def test_handle_editor_command_returns_text_unchanged_when_not_editor_command(mo
 
 
 def test_handle_editor_command_opens_editor_reprompts_after_keyboard_interrupt_and_returns_text(monkeypatch: pytest.MonkeyPatch) -> None:
-    prompt_app = FakePromptSession([KeyboardInterrupt(), 'edited sql'])
-    mycli = FakeMyCli(prompt_app=prompt_app)
+    prompt_session = FakePromptSession([KeyboardInterrupt(), 'edited sql'])
+    mycli = FakeMyCli(prompt_session=prompt_session)
     open_calls: list[dict[str, str]] = []
 
     def inputhook(*args: object, **kwargs: object) -> None:
@@ -111,14 +111,14 @@ def test_handle_editor_command_opens_editor_reprompts_after_keyboard_interrupt_a
 
     assert result == 'edited sql'
     assert open_calls == [{'filename': 'query.sql', 'sql': 'last query'}]
-    assert prompt_app.prompt_calls == [
+    assert prompt_session.prompt_calls == [
         {'default': 'SELECT 1', 'inputhook': inputhook, 'message': loaded_message_fn},
         {'default': '', 'inputhook': inputhook, 'message': loaded_message_fn},
     ]
 
 
 def test_handle_editor_command_uses_explicit_editor_query_and_raises_on_editor_error(monkeypatch: pytest.MonkeyPatch) -> None:
-    mycli = FakeMyCli(prompt_app=FakePromptSession([]))
+    mycli = FakeMyCli(prompt_session=FakePromptSession([]))
 
     monkeypatch.setattr(key_binding_utils.special, 'editor_command', lambda text: True)
     monkeypatch.setattr(key_binding_utils.special, 'get_filename', lambda text: 'query.sql')

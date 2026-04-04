@@ -719,11 +719,11 @@ def output(monkeypatch, terminal_size, testdata, explicit_pager, expect_pager):
         def server_type(self):
             return ["test"]
 
-    class PromptBuffer:
+    class TestPromptSession:
         output = TestOutput()
         app = None
 
-    m.prompt_app = PromptBuffer()
+    m.prompt_session = TestPromptSession()
     m.sqlexecute = TestExecute()
     m.explicit_pager = explicit_pager
 
