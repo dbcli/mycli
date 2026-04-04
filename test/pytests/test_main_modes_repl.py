@@ -244,6 +244,36 @@ def patch_repl_runtime_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(repl_mode, 'is_mutating', lambda status: False)
 
 
+def test_complete_while_typing_filter_covers_threshold_and_word_rules(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(repl_mode, 'MIN_COMPLETION_TRIGGER', 3)
+    monkeypatch.setattr(repl_mode, 'get_app', lambda: SimpleNamespace(current_buffer=SimpleNamespace(text='ab')))
+    assert repl_mode.complete_while_typing_filter() is False
+
+    monkeypatch.setattr(repl_mode, 'get_app', lambda: SimpleNamespace(current_buffer=SimpleNamespace(text='abc')))
+    assert repl_mode.complete_while_typing_filter() is True
+
+    monkeypatch.setattr(repl_mode, 'get_app', lambda: SimpleNamespace(current_buffer=SimpleNamespace(text='source xyz')))
+    assert repl_mode.complete_while_typing_filter() is True
+
+    monkeypatch.setattr(repl_mode, 'get_app', lambda: SimpleNamespace(current_buffer=SimpleNamespace(text='source x/')))
+    assert repl_mode.complete_while_typing_filter() is False
+
+    monkeypatch.setattr(repl_mode, 'get_app', lambda: SimpleNamespace(current_buffer=SimpleNamespace(text='\\. abc')))
+    assert repl_mode.complete_while_typing_filter() is True
+
+    monkeypatch.setattr(repl_mode, 'get_app', lambda: SimpleNamespace(current_buffer=SimpleNamespace(text='\\. a/')))
+    assert repl_mode.complete_while_typing_filter() is False
+
+    monkeypatch.setattr(repl_mode, 'get_app', lambda: SimpleNamespace(current_buffer=SimpleNamespace(text='select abc')))
+    assert repl_mode.complete_while_typing_filter() is True
+
+    monkeypatch.setattr(repl_mode, 'get_app', lambda: SimpleNamespace(current_buffer=SimpleNamespace(text='select a!')))
+    assert repl_mode.complete_while_typing_filter() is False
+
+    monkeypatch.setattr(repl_mode, 'MIN_COMPLETION_TRIGGER', 1)
+    assert repl_mode.complete_while_typing_filter() is True
+
+
 def test_repl_main_module_and_create_history(monkeypatch: pytest.MonkeyPatch) -> None:
     cli = make_repl_cli()
     monkeypatch.setenv('MYCLI_HISTFILE', '~/override-history')

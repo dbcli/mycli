@@ -32,10 +32,8 @@ import clickdc
 from configobj import ConfigObj
 import keyring
 from prompt_toolkit import print_formatted_text
-from prompt_toolkit.application.current import get_app
 from prompt_toolkit.completion import Completion
 from prompt_toolkit.document import Document
-from prompt_toolkit.filters import Condition
 from prompt_toolkit.formatted_text import (
     ANSI,
     HTML,
@@ -65,6 +63,7 @@ from mycli.constants import (
     ISSUES_URL,
     REPO_URL,
 )
+from mycli.main_modes import repl as repl_package
 from mycli.main_modes.batch import (
     main_batch_from_stdin,
     main_batch_with_progress_bar,
@@ -93,37 +92,7 @@ from mycli.types import Query
 sqlparse.engine.grouping.MAX_GROUPING_DEPTH = None  # type: ignore[assignment]
 sqlparse.engine.grouping.MAX_GROUPING_TOKENS = None  # type: ignore[assignment]
 
-MIN_COMPLETION_TRIGGER = 1
 EMPTY_PASSWORD_FLAG_SENTINEL = -1
-
-
-@Condition
-def complete_while_typing_filter() -> bool:
-    """Whether enough characters have been typed to trigger completion.
-
-    Written in a verbose way, with a string slice, for efficiency."""
-    if MIN_COMPLETION_TRIGGER <= 1:
-        return True
-    app = get_app()
-    text = app.current_buffer.text.lstrip()
-    text_len = len(text)
-    if text_len < MIN_COMPLETION_TRIGGER:
-        return False
-    last_word = text[-MIN_COMPLETION_TRIGGER:]
-    if len(last_word) == text_len:
-        return text_len >= MIN_COMPLETION_TRIGGER
-    if text[:6].lower() in ['source', r'\.']:
-        # Different word characters for paths; see comment below.
-        # In fact, it might be nice if paths had a different threshold.
-        return not bool(re.search(r'[\s!-,:-@\[-^\{\}-]', last_word))
-    else:
-        # This is "whitespace and all punctuation except underscore and backtick"
-        # acting as word breaks, but it would be neat if we could complete differently
-        # when inside a backtick, accepting all legal characters towards the trigger
-        # limit.  We would have to parse the statement, or at least go back more
-        # characters, costing performance.  This still works within a backtick!  So
-        # long as there are three trailing non-punctuation characters.
-        return not bool(re.search(r'[\s!-/:-@\[-^\{-~]', last_word))
 
 
 class IntOrStringClickParamType(click.ParamType):
@@ -179,8 +148,6 @@ class MyCli:
         warn: bool | None = None,
         myclirc: str = "~/.myclirc",
     ) -> None:
-        global MIN_COMPLETION_TRIGGER
-
         self.sqlexecute = sqlexecute
         self.logfile = logfile
         self.defaults_suffix = defaults_suffix
@@ -291,7 +258,8 @@ class MyCli:
         self._completer_lock = threading.Lock()
 
         self.min_completion_trigger = c["main"].as_int("min_completion_trigger")
-        MIN_COMPLETION_TRIGGER = self.min_completion_trigger
+        # a hack, pending a better way to handle settings and state
+        repl_package.MIN_COMPLETION_TRIGGER = self.min_completion_trigger
         self.last_prompt_message = ANSI('')
         self.last_custom_toolbar_message = ANSI('')
 
