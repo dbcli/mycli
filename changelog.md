@@ -39,6 +39,7 @@ Internal
 * Move `--execute` logic to the new `main_modes` with `--batch`.
 * Move `--list-dsn` logic to the new `main_modes` with `--batch`.
 * Move `--list-ssh-config` logic to the new `main_modes` with `--batch`.
+* Move REPL logic to the new `main_modes`.
 * Sort coverage report in tox suite.
 * Skip more tests when a database connection is not present.
 * Move SQL utilities to a new `sql_utils.py`.
