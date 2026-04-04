@@ -20,7 +20,7 @@ from mycli.constants import (
     DEFAULT_USER,
     TEST_DATABASE,
 )
-from mycli.main import EMPTY_PASSWORD_FLAG_SENTINEL, MyCli, click_entrypoint, thanks_picker
+from mycli.main import EMPTY_PASSWORD_FLAG_SENTINEL, MyCli, click_entrypoint
 import mycli.packages.special
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
 from mycli.packages.sqlresult import SQLResult
@@ -680,11 +680,6 @@ def test_batch_mode_csv(executor):
 
     assert result.exit_code == 0
     assert expected in "".join(result.output)
-
-
-def test_thanks_picker_utf8():
-    name = thanks_picker()
-    assert name and isinstance(name, str)
 
 
 def test_help_strings_end_with_periods():

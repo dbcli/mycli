@@ -10,6 +10,10 @@ Therefore authors should be free about
  * migrating individual tests if content moves out of main.py
  * migrating individual tests to test_main.py after assessment of quality
  * removing and rewriting these tests if contracts change
+
+For example, since the generation of these tests, main_modes/repl.py was
+created, and all tests here touching the REPL functionality should in
+principle be removed.
 """
 
 from __future__ import annotations
@@ -21,7 +25,9 @@ from io import StringIO
 import itertools
 import os
 from pathlib import Path
+import random
 import sys
+import time
 from types import ModuleType, SimpleNamespace
 from typing import Any, Callable, Literal, cast
 
@@ -31,7 +37,9 @@ from configobj import ConfigObj
 import pymysql
 import pytest
 
-from mycli import key_bindings, main
+from mycli import main
+import mycli.key_bindings
+import mycli.main_modes.repl
 from mycli.packages import key_binding_utils
 from mycli.packages.sqlresult import SQLResult
 
@@ -677,15 +685,18 @@ def test_initialize_logging_covers_none_bad_path_and_file_handler(tmp_path: Path
     cli.echo = lambda message, **kwargs: echo_calls.append(message)  # type: ignore[assignment]
     cli.config = {'main': {'log_file': str(tmp_path / 'mycli.log'), 'log_level': 'NONE'}}
     monkeypatch.setattr(main, 'dir_path_exists', lambda path: True)
+    monkeypatch.setattr(mycli.main_modes.repl, 'dir_path_exists', lambda path: True)
     main.MyCli.initialize_logging(cli)
 
     cli.config = {'main': {'log_file': str(tmp_path / 'missing' / 'mycli.log'), 'log_level': 'INFO'}}
     monkeypatch.setattr(main, 'dir_path_exists', lambda path: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'dir_path_exists', lambda path: False)
     main.MyCli.initialize_logging(cli)
     assert echo_calls[-1].startswith('Error: Unable to open the log file')
 
     cli.config = {'main': {'log_file': str(tmp_path / 'mycli.log'), 'log_level': 'INFO'}}
     monkeypatch.setattr(main, 'dir_path_exists', lambda path: True)
+    monkeypatch.setattr(mycli.main_modes.repl, 'dir_path_exists', lambda path: True)
     main.MyCli.initialize_logging(cli)
 
 
@@ -1043,23 +1054,23 @@ def test_handle_editor_clip_and_output_timing(monkeypatch: pytest.MonkeyPatch) -
     monkeypatch.setattr(main.special, 'get_filename', lambda text: 'query.sql')
     monkeypatch.setattr(main.special, 'get_editor_query', lambda text: 'select 1')
     monkeypatch.setattr(main.special, 'open_external_editor', lambda filename, sql: ('edited sql', None))
-    assert key_binding_utils.handle_editor_command(cli, r'select 1\e', None, lambda: None) == 'edited sql'
+    assert mycli.main_modes.repl.handle_editor_command(cli, r'select 1\e', None, lambda: None) == 'edited sql'
 
     monkeypatch.setattr(main.special, 'open_external_editor', lambda filename, sql: ('', 'boom'))
     with pytest.raises(RuntimeError, match='boom'):
-        key_binding_utils.handle_editor_command(cli, r'select 1\e', None, lambda: None)
+        mycli.main_modes.repl.handle_editor_command(cli, r'select 1\e', None, lambda: None)
 
     monkeypatch.setattr(main.special, 'clip_command', lambda text: True)
     monkeypatch.setattr(main.special, 'get_clip_query', lambda text: None)
     monkeypatch.setattr(main.special, 'copy_query_to_clipboard', lambda sql: None)
-    assert key_binding_utils.handle_clip_command(cli, r'select 1\clip') is True
+    assert mycli.main_modes.repl.handle_clip_command(cli, r'select 1\clip') is True
 
     monkeypatch.setattr(main.special, 'copy_query_to_clipboard', lambda sql: 'clipboard failed')
     with pytest.raises(RuntimeError, match='clipboard failed'):
-        key_binding_utils.handle_clip_command(cli, r'select 1\clip')
+        mycli.main_modes.repl.handle_clip_command(cli, r'select 1\clip')
 
     monkeypatch.setattr(main.special, 'clip_command', lambda text: False)
-    assert key_binding_utils.handle_clip_command(cli, 'select 1') is False
+    assert mycli.main_modes.repl.handle_clip_command(cli, 'select 1') is False
 
     printed: list[tuple[Any, Any]] = []
     monkeypatch.setattr(main, 'print_formatted_text', lambda text, style=None: printed.append((text, style)))
@@ -1103,7 +1114,7 @@ def test_format_sqlresult_run_query_reserved_space_and_last_query(monkeypatch: p
     assert main.MyCli.get_last_query(cli) == 'select 1'
 
 
-def test_reconnect_logging_output_titles_prompt_and_picker_fallbacks(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_reconnect_logging_output_titles_prompt(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     cli = make_bare_mycli()
     sqlexecute = object.__new__(main.SQLExecute)
 
@@ -1194,17 +1205,6 @@ def test_reconnect_logging_output_titles_prompt_and_picker_fallbacks(monkeypatch
     monkeypatch.setenv('TMUX', '1')
     monkeypatch.setattr(main.subprocess, 'run', lambda *args, **kwargs: (_ for _ in ()).throw(FileNotFoundError()))
     main.MyCli.set_external_multiplex_window_title(cli)
-
-    class MissingResource:
-        def joinpath(self, name: str) -> 'MissingResource':
-            return self
-
-        def open(self, mode: str) -> StringIO:
-            raise FileNotFoundError()
-
-    monkeypatch.setattr(main.resources, 'files', lambda package: MissingResource())
-    assert main.thanks_picker() == 'our sponsors'
-    assert main.tips_picker() == r'\? or "help" for help!'
 
 
 def test_reconnect_first_and_second_passes(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1480,40 +1480,6 @@ def test_completion_helpers_title_helpers_thanks_tips(monkeypatch: pytest.Monkey
     assert list(main.MyCli.get_completions(cli, 'select', 6)) == ['done']
     assert entered_lock['count'] >= 2
 
-    class FakeResource:
-        def __init__(self, text: str | None) -> None:
-            self.text = text
-
-        def joinpath(self, name: str) -> 'FakeResource':
-            if name == 'AUTHORS':
-                return FakeResource('* Alice\n')
-            if name == 'SPONSORS':
-                raise FileNotFoundError()
-            if name == 'TIPS':
-                return FakeResource('# comment\nTip one\n\nTip two\n')
-            raise FileNotFoundError()
-
-        def open(self, mode: str) -> StringIO:
-            if self.text is None:
-                raise FileNotFoundError()
-            return StringIO(self.text)
-
-    monkeypatch.setattr(main.resources, 'files', lambda package: FakeResource(None))
-    monkeypatch.setattr(main, 'choice', lambda values: values[0])
-    assert main.thanks_picker() == 'Alice'
-    assert main.tips_picker() == 'Tip one'
-
-    class SponsorResource(FakeResource):
-        def joinpath(self, name: str) -> 'FakeResource':
-            if name == 'AUTHORS':
-                raise FileNotFoundError()
-            if name == 'SPONSORS':
-                return FakeResource('* Sponsor Person\n')
-            raise FileNotFoundError()
-
-    monkeypatch.setattr(main.resources, 'files', lambda package: SponsorResource(None))
-    assert main.thanks_picker() == 'Sponsor Person'
-
 
 def test_main_wrapper_and_edit_and_execute(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(main, 'filtered_sys_argv', lambda: ['--help'])
@@ -1555,7 +1521,7 @@ def test_main_wrapper_and_edit_and_execute(monkeypatch: pytest.MonkeyPatch) -> N
             current_buffer=SimpleNamespace(open_in_editor=lambda validate_and_handle=False: opened.append(validate_and_handle))
         ),
     )
-    key_bindings.edit_and_execute(event)
+    mycli.key_bindings.edit_and_execute(event)
     assert opened == [False]
 
 
@@ -2057,6 +2023,9 @@ def test_run_cli_bootstraps_and_processes_a_simple_query(monkeypatch: pytest.Mon
             self.server_info = SimpleNamespace(species=SimpleNamespace(name='MySQL'))
             self.dbname = 'db'
             self.connection_id = 0
+            self.host = 'localhost'
+            self.port = 3306
+            self.user = 'root'
 
         def run(self, text: str) -> list[SQLResult]:
             return [SQLResult(status='SELECT 1', header=['a'], rows=[(1,)])]
@@ -2065,12 +2034,13 @@ def test_run_cli_bootstraps_and_processes_a_simple_query(monkeypatch: pytest.Mon
     sqlexecute = FakeRunSQLExecute()
     cli.sqlexecute = cast(Any, sqlexecute)
     monkeypatch.setattr(main, 'SQLExecute', FakeRunSQLExecute)
-    monkeypatch.setattr(main, 'PromptSession', lambda **kwargs: prompt_session)
-    monkeypatch.setattr(main, 'mycli_bindings', lambda mycli: 'bindings')
-    monkeypatch.setattr(main, 'create_toolbar_tokens_func', lambda *args: 'toolbar')
+    monkeypatch.setattr(mycli.main_modes.repl, 'PromptSession', lambda **kwargs: prompt_session)
+    monkeypatch.setattr(mycli.main_modes.repl, 'mycli_bindings', lambda mycli: 'bindings')
+    monkeypatch.setattr(mycli.main_modes.repl, 'create_toolbar_tokens_func', lambda *args: 'toolbar')
     monkeypatch.setattr(main, 'style_factory_ptoolkit', lambda *args, **kwargs: 'style')
     monkeypatch.setattr(main, 'dir_path_exists', lambda path: False)
-    monkeypatch.setattr(main, 'cli_is_multiline', lambda mycli: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'dir_path_exists', lambda path: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'cli_is_multiline', lambda mycli: False)
     monkeypatch.setattr(main.special, 'set_expanded_output', lambda value: None)
     monkeypatch.setattr(main.special, 'set_forced_horizontal_output', lambda value: None)
     monkeypatch.setattr(main.special, 'is_llm_command', lambda text: False)
@@ -2081,16 +2051,24 @@ def test_run_cli_bootstraps_and_processes_a_simple_query(monkeypatch: pytest.Mon
     monkeypatch.setattr(main.special, 'unset_once_if_written', lambda *args, **kwargs: None)
     monkeypatch.setattr(main.special, 'flush_pipe_once_if_written', lambda *args, **kwargs: None)
     monkeypatch.setattr(main.special, 'close_tee', lambda: None)
-    monkeypatch.setattr(main, 'is_redirect_command', lambda text: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'is_redirect_command', lambda text: False)
     monkeypatch.setattr(main, 'confirm_destructive_query', lambda keywords, text: None)
-    monkeypatch.setattr(main, 'need_completion_refresh', lambda text: False)
-    monkeypatch.setattr(main, 'is_dropping_database', lambda text, dbname: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'need_completion_refresh', lambda text: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'is_dropping_database', lambda text, dbname: False)
     main.MyCli.run_cli(cli)
     assert refresh_resets == [False]
     assert outputs == [['formatted']]
     assert cli.query_history[-1].query == 'select 1'
     assert echo_calls[0].startswith('Error: Unable to open the history file')
     assert prompt_session.app.ttimeoutlen == cli.emacs_ttimeoutlen
+
+
+def test_run_cli_delegates_to_main_repl(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli = make_bare_mycli()
+    calls: list[Any] = []
+    monkeypatch.setattr(main, 'main_repl', lambda target: calls.append(target))
+    main.MyCli.run_cli(cli)
+    assert calls == [cli]
 
 
 def test_run_cli_large_select_asks_for_confirmation(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -2105,13 +2083,14 @@ def test_run_cli_large_select_asks_for_confirmation(monkeypatch: pytest.MonkeyPa
     echoed: list[str] = []
     cli.echo = lambda message, **kwargs: echoed.append(str(message))  # type: ignore[assignment]
     prompt_session = FakePromptSession(responses=['select * from t', EOFError()])
-    monkeypatch.setattr(main, 'PromptSession', lambda **kwargs: prompt_session)
-    monkeypatch.setattr(main, 'mycli_bindings', lambda mycli: 'bindings')
-    monkeypatch.setattr(main, 'create_toolbar_tokens_func', lambda *args: 'toolbar')
+    monkeypatch.setattr(mycli.main_modes.repl, 'PromptSession', lambda **kwargs: prompt_session)
+    monkeypatch.setattr(mycli.main_modes.repl, 'mycli_bindings', lambda mycli: 'bindings')
+    monkeypatch.setattr(mycli.main_modes.repl, 'create_toolbar_tokens_func', lambda *args: 'toolbar')
     monkeypatch.setattr(main, 'style_factory_ptoolkit', lambda *args, **kwargs: 'style')
     monkeypatch.setattr(main, 'dir_path_exists', lambda path: True)
-    monkeypatch.setattr(main, 'cli_is_multiline', lambda mycli: False)
-    monkeypatch.setattr(main, 'Cursor', FakeCursorBase)
+    monkeypatch.setattr(mycli.main_modes.repl, 'dir_path_exists', lambda path: True)
+    monkeypatch.setattr(mycli.main_modes.repl, 'cli_is_multiline', lambda mycli: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'Cursor', FakeCursorBase)
     monkeypatch.setattr(main.special, 'set_expanded_output', lambda value: None)
     monkeypatch.setattr(main.special, 'set_forced_horizontal_output', lambda value: None)
     monkeypatch.setattr(main.special, 'is_llm_command', lambda text: False)
@@ -2122,11 +2101,11 @@ def test_run_cli_large_select_asks_for_confirmation(monkeypatch: pytest.MonkeyPa
     monkeypatch.setattr(main.special, 'unset_once_if_written', lambda *args, **kwargs: None)
     monkeypatch.setattr(main.special, 'flush_pipe_once_if_written', lambda *args, **kwargs: None)
     monkeypatch.setattr(main.special, 'close_tee', lambda: None)
-    monkeypatch.setattr(main, 'is_redirect_command', lambda text: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'is_redirect_command', lambda text: False)
     monkeypatch.setattr(main, 'confirm_destructive_query', lambda keywords, text: None)
-    monkeypatch.setattr(main, 'need_completion_refresh', lambda text: False)
-    monkeypatch.setattr(main, 'is_dropping_database', lambda text, dbname: False)
-    monkeypatch.setattr(main, 'confirm', lambda text: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'need_completion_refresh', lambda text: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'is_dropping_database', lambda text, dbname: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'confirm', lambda text: False)
     rows = FakeCursorBase(rows=[(1,)], rowcount=1001, description=[('id', 3)], warning_count=0)
 
     class FakeRunSQLExecute:
@@ -2161,13 +2140,14 @@ def test_run_cli_outputs_warnings_and_timing(monkeypatch: pytest.MonkeyPatch) ->
     cli.output_timing = lambda timing, is_warnings_style=False: timings.append((timing, is_warnings_style))  # type: ignore[assignment]
     cli.format_sqlresult = lambda result, **kwargs: iter([result.status_plain or 'row'])  # type: ignore[assignment]
     prompt_session = FakePromptSession(responses=['select 1', EOFError()])
-    monkeypatch.setattr(main, 'PromptSession', lambda **kwargs: prompt_session)
-    monkeypatch.setattr(main, 'mycli_bindings', lambda mycli: 'bindings')
-    monkeypatch.setattr(main, 'create_toolbar_tokens_func', lambda *args: 'toolbar')
+    monkeypatch.setattr(mycli.main_modes.repl, 'PromptSession', lambda **kwargs: prompt_session)
+    monkeypatch.setattr(mycli.main_modes.repl, 'mycli_bindings', lambda mycli: 'bindings')
+    monkeypatch.setattr(mycli.main_modes.repl, 'create_toolbar_tokens_func', lambda *args: 'toolbar')
     monkeypatch.setattr(main, 'style_factory_ptoolkit', lambda *args, **kwargs: 'style')
     monkeypatch.setattr(main, 'dir_path_exists', lambda path: True)
-    monkeypatch.setattr(main, 'cli_is_multiline', lambda mycli: False)
-    monkeypatch.setattr(main, 'Cursor', FakeCursorBase)
+    monkeypatch.setattr(mycli.main_modes.repl, 'dir_path_exists', lambda path: True)
+    monkeypatch.setattr(mycli.main_modes.repl, 'cli_is_multiline', lambda mycli: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'Cursor', FakeCursorBase)
     monkeypatch.setattr(main.special, 'set_expanded_output', lambda value: None)
     monkeypatch.setattr(main.special, 'set_forced_horizontal_output', lambda value: None)
     monkeypatch.setattr(main.special, 'is_llm_command', lambda text: False)
@@ -2178,10 +2158,10 @@ def test_run_cli_outputs_warnings_and_timing(monkeypatch: pytest.MonkeyPatch) ->
     monkeypatch.setattr(main.special, 'unset_once_if_written', lambda *args, **kwargs: None)
     monkeypatch.setattr(main.special, 'flush_pipe_once_if_written', lambda *args, **kwargs: None)
     monkeypatch.setattr(main.special, 'close_tee', lambda: None)
-    monkeypatch.setattr(main, 'is_redirect_command', lambda text: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'is_redirect_command', lambda text: False)
     monkeypatch.setattr(main, 'confirm_destructive_query', lambda keywords, text: None)
-    monkeypatch.setattr(main, 'need_completion_refresh', lambda text: False)
-    monkeypatch.setattr(main, 'is_dropping_database', lambda text, dbname: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'need_completion_refresh', lambda text: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'is_dropping_database', lambda text, dbname: False)
     warning_rows = FakeCursorBase(rows=[('Level', 1, 'Message')], rowcount=1, description=[('id', 3)], warning_count=1)
     main_result = SQLResult(status='SELECT 1', header=['id'], rows=cast(Any, warning_rows))
     warning_result = SQLResult(status='Warning', header=['level'], rows=[('Warning',)])
@@ -2191,6 +2171,9 @@ def test_run_cli_outputs_warnings_and_timing(monkeypatch: pytest.MonkeyPatch) ->
             self.server_info = SimpleNamespace(species=SimpleNamespace(name='MySQL'))
             self.dbname = 'db'
             self.connection_id = 0
+            self.host = 'localhost'
+            self.port = 3306
+            self.user = 'root'
 
         def run(self, text: str) -> list[SQLResult]:
             if text == 'SHOW WARNINGS':
@@ -2237,6 +2220,9 @@ def test_run_cli_prompt_rendering_startup_modes_and_goodbye(monkeypatch: pytest.
             self.server_info = 'Server'
             self.dbname = 'db'
             self.connection_id = 0
+            self.host = 'localhost'
+            self.port = 3306
+            self.user = 'root'
 
     monkeypatch.setattr(main, 'SQLExecute', FakeRunSQLExecute)
     cli.sqlexecute = cast(Any, FakeRunSQLExecute())
@@ -2249,21 +2235,20 @@ def test_run_cli_prompt_rendering_startup_modes_and_goodbye(monkeypatch: pytest.
         continuations.append(kwargs['prompt_continuation'](4, 0, 0))
         return prompt_session
 
-    monkeypatch.setattr(main, 'PromptSession', fake_prompt_session)
-    monkeypatch.setattr(main, 'mycli_bindings', lambda mycli: 'bindings')
+    monkeypatch.setattr(mycli.main_modes.repl, 'PromptSession', fake_prompt_session)
+    monkeypatch.setattr(mycli.main_modes.repl, 'mycli_bindings', lambda mycli: 'bindings')
 
     def fake_create_toolbar_tokens(mycli: Any, show_help: Any, fmt: str) -> str:
         toolbar_help.append(show_help())
         return 'toolbar'
 
-    monkeypatch.setattr(main, 'create_toolbar_tokens_func', fake_create_toolbar_tokens)
+    monkeypatch.setattr(mycli.main_modes.repl, 'create_toolbar_tokens_func', fake_create_toolbar_tokens)
     monkeypatch.setattr(main, 'style_factory_ptoolkit', lambda *args, **kwargs: 'style')
     monkeypatch.setattr(main, 'dir_path_exists', lambda path: True)
-    monkeypatch.setattr(main, 'cli_is_multiline', lambda mycli: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'dir_path_exists', lambda path: True)
+    monkeypatch.setattr(mycli.main_modes.repl, 'cli_is_multiline', lambda mycli: False)
     monkeypatch.setattr(main.special, 'close_tee', lambda: None)
-    monkeypatch.setattr(main.random, 'random', lambda: 0.4)
-    monkeypatch.setattr(main, 'thanks_picker', lambda: 'Alice')
-    monkeypatch.setattr(main, 'tips_picker', lambda: 'Tip')
+    monkeypatch.setattr(random, 'random', lambda: 0.4)
     monkeypatch.setattr(builtins, 'print', lambda *args, **kwargs: prints.append(' '.join(str(x) for x in args)))
     echoed: list[str] = []
     cli.echo = lambda message, **kwargs: echoed.append(str(message))  # type: ignore[assignment]
@@ -2303,6 +2288,9 @@ def test_run_cli_llm_paths_and_finish_iteration(monkeypatch: pytest.MonkeyPatch)
             self.dbname = 'db'
             self.connection_id = 0
             self.conn = LLMConnection()
+            self.host = 'localhost'
+            self.port = 3306
+            self.user = 'root'
 
         def run(self, text: str) -> Iterator[SQLResult]:
             return iter([SQLResult(status=f'ran:{text}')])
@@ -2310,12 +2298,13 @@ def test_run_cli_llm_paths_and_finish_iteration(monkeypatch: pytest.MonkeyPatch)
     monkeypatch.setattr(main, 'SQLExecute', FakeRunSQLExecute)
     cli.sqlexecute = cast(Any, FakeRunSQLExecute())
     prompt_session = FakePromptSession(responses=['\\llm ask', 'select 1', '\\llm finish', '\\llm empty', '\\llm err', EOFError()])
-    monkeypatch.setattr(main, 'PromptSession', lambda **kwargs: prompt_session)
-    monkeypatch.setattr(main, 'mycli_bindings', lambda mycli: 'bindings')
-    monkeypatch.setattr(main, 'create_toolbar_tokens_func', lambda *args: 'toolbar')
+    monkeypatch.setattr(mycli.main_modes.repl, 'PromptSession', lambda **kwargs: prompt_session)
+    monkeypatch.setattr(mycli.main_modes.repl, 'mycli_bindings', lambda mycli: 'bindings')
+    monkeypatch.setattr(mycli.main_modes.repl, 'create_toolbar_tokens_func', lambda *args: 'toolbar')
     monkeypatch.setattr(main, 'style_factory_ptoolkit', lambda *args, **kwargs: 'style')
     monkeypatch.setattr(main, 'dir_path_exists', lambda path: True)
-    monkeypatch.setattr(main, 'cli_is_multiline', lambda mycli: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'dir_path_exists', lambda path: True)
+    monkeypatch.setattr(mycli.main_modes.repl, 'cli_is_multiline', lambda mycli: False)
     monkeypatch.setattr(main.special, 'set_expanded_output', lambda value: None)
     monkeypatch.setattr(main.special, 'set_forced_horizontal_output', lambda value: None)
     monkeypatch.setattr(main.special, 'is_expanded_output', lambda: False)
@@ -2325,10 +2314,10 @@ def test_run_cli_llm_paths_and_finish_iteration(monkeypatch: pytest.MonkeyPatch)
     monkeypatch.setattr(main.special, 'unset_once_if_written', lambda *args, **kwargs: None)
     monkeypatch.setattr(main.special, 'flush_pipe_once_if_written', lambda *args, **kwargs: None)
     monkeypatch.setattr(main.special, 'close_tee', lambda: None)
-    monkeypatch.setattr(main, 'is_redirect_command', lambda text: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'is_redirect_command', lambda text: False)
     monkeypatch.setattr(main, 'confirm_destructive_query', lambda keywords, text: None)
-    monkeypatch.setattr(main, 'need_completion_refresh', lambda text: False)
-    monkeypatch.setattr(main, 'is_dropping_database', lambda text, dbname: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'need_completion_refresh', lambda text: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'is_dropping_database', lambda text, dbname: False)
     monkeypatch.setattr(main.special, 'is_llm_command', lambda text: text.startswith('\\llm'))
 
     def fake_handle_llm(text: str, cur: Any, dbname: str, field_truncate: int, section_truncate: int) -> tuple[str, str, float]:
@@ -2396,6 +2385,9 @@ def test_run_cli_reconnect_and_exception_paths(monkeypatch: pytest.MonkeyPatch) 
             self.connection_id = 0
             self.conn = SimpleNamespace()
             self.calls: list[str] = []
+            self.host = 'localhost'
+            self.port = 3306
+            self.user = 'root'
 
         def connect(self) -> None:
             self.calls.append('connect')
@@ -2417,12 +2409,13 @@ def test_run_cli_reconnect_and_exception_paths(monkeypatch: pytest.MonkeyPatch) 
     monkeypatch.setattr(main, 'SQLExecute', FakeRunSQLExecute)
     sqlexecute = FakeRunSQLExecute()
     cli.sqlexecute = cast(Any, sqlexecute)
-    monkeypatch.setattr(main, 'PromptSession', lambda **kwargs: prompt_session)
-    monkeypatch.setattr(main, 'mycli_bindings', lambda mycli: 'bindings')
-    monkeypatch.setattr(main, 'create_toolbar_tokens_func', lambda *args: 'toolbar')
+    monkeypatch.setattr(mycli.main_modes.repl, 'PromptSession', lambda **kwargs: prompt_session)
+    monkeypatch.setattr(mycli.main_modes.repl, 'mycli_bindings', lambda mycli: 'bindings')
+    monkeypatch.setattr(mycli.main_modes.repl, 'create_toolbar_tokens_func', lambda *args: 'toolbar')
     monkeypatch.setattr(main, 'style_factory_ptoolkit', lambda *args, **kwargs: 'style')
     monkeypatch.setattr(main, 'dir_path_exists', lambda path: True)
-    monkeypatch.setattr(main, 'cli_is_multiline', lambda mycli: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'dir_path_exists', lambda path: True)
+    monkeypatch.setattr(mycli.main_modes.repl, 'cli_is_multiline', lambda mycli: False)
     monkeypatch.setattr(main.special, 'set_expanded_output', lambda value: None)
     monkeypatch.setattr(main.special, 'set_forced_horizontal_output', lambda value: None)
     monkeypatch.setattr(main.special, 'is_llm_command', lambda text: False)
@@ -2433,11 +2426,11 @@ def test_run_cli_reconnect_and_exception_paths(monkeypatch: pytest.MonkeyPatch) 
     monkeypatch.setattr(main.special, 'unset_once_if_written', lambda *args, **kwargs: None)
     monkeypatch.setattr(main.special, 'flush_pipe_once_if_written', lambda *args, **kwargs: None)
     monkeypatch.setattr(main.special, 'close_tee', lambda: None)
-    monkeypatch.setattr(main, 'is_redirect_command', lambda text: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'is_redirect_command', lambda text: False)
     monkeypatch.setattr(main, 'confirm_destructive_query', lambda keywords, text: None)
-    monkeypatch.setattr(main, 'need_completion_refresh', lambda text: text == 'dropdb')
-    monkeypatch.setattr(main, 'need_completion_reset', lambda text: True)
-    monkeypatch.setattr(main, 'is_dropping_database', lambda text, dbname: text == 'dropdb')
+    monkeypatch.setattr(mycli.main_modes.repl, 'need_completion_refresh', lambda text: text == 'dropdb')
+    monkeypatch.setattr(mycli.main_modes.repl, 'need_completion_reset', lambda text: True)
+    monkeypatch.setattr(mycli.main_modes.repl, 'is_dropping_database', lambda text, dbname: text == 'dropdb')
 
     main.MyCli.run_cli(cli)
     assert reconnect_calls == ['', '']
@@ -2479,6 +2472,9 @@ def test_run_cli_additional_interrupt_empty_and_cancel_paths(monkeypatch: pytest
             self.dbname = 'db'
             self.connection_id = 0
             self.conn = SimpleNamespace(cursor=lambda: 'cursor')
+            self.host = 'localhost'
+            self.port = 3306
+            self.user = 'root'
 
         def connect(self) -> None:
             return None
@@ -2496,12 +2492,13 @@ def test_run_cli_additional_interrupt_empty_and_cancel_paths(monkeypatch: pytest
                 raise EOFError()
             return iter([SQLResult(status=f'ok:{text}')])
 
-    monkeypatch.setattr(main, 'PromptSession', lambda **kwargs: prompt_session)
-    monkeypatch.setattr(main, 'mycli_bindings', lambda mycli: 'bindings')
-    monkeypatch.setattr(main, 'create_toolbar_tokens_func', lambda *args: 'toolbar')
+    monkeypatch.setattr(mycli.main_modes.repl, 'PromptSession', lambda **kwargs: prompt_session)
+    monkeypatch.setattr(mycli.main_modes.repl, 'mycli_bindings', lambda mycli: 'bindings')
+    monkeypatch.setattr(mycli.main_modes.repl, 'create_toolbar_tokens_func', lambda *args: 'toolbar')
     monkeypatch.setattr(main, 'style_factory_ptoolkit', lambda *args, **kwargs: 'style')
     monkeypatch.setattr(main, 'dir_path_exists', lambda path: True)
-    monkeypatch.setattr(main, 'cli_is_multiline', lambda mycli: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'dir_path_exists', lambda path: True)
+    monkeypatch.setattr(mycli.main_modes.repl, 'cli_is_multiline', lambda mycli: False)
     monkeypatch.setattr(main.special, 'set_expanded_output', lambda value: None)
     monkeypatch.setattr(main.special, 'set_forced_horizontal_output', lambda value: None)
     monkeypatch.setattr(main.special, 'is_expanded_output', lambda: False)
@@ -2511,10 +2508,10 @@ def test_run_cli_additional_interrupt_empty_and_cancel_paths(monkeypatch: pytest
     monkeypatch.setattr(main.special, 'unset_once_if_written', lambda *args, **kwargs: None)
     monkeypatch.setattr(main.special, 'flush_pipe_once_if_written', lambda *args, **kwargs: None)
     monkeypatch.setattr(main.special, 'close_tee', lambda: None)
-    monkeypatch.setattr(main, 'is_redirect_command', lambda text: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'is_redirect_command', lambda text: False)
     monkeypatch.setattr(main, 'confirm_destructive_query', lambda keywords, text: None)
-    monkeypatch.setattr(main, 'need_completion_refresh', lambda text: False)
-    monkeypatch.setattr(main, 'is_dropping_database', lambda text, dbname: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'need_completion_refresh', lambda text: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'is_dropping_database', lambda text, dbname: False)
     monkeypatch.setattr(main.special, 'is_llm_command', lambda text: text.startswith('\\llm'))
     monkeypatch.setattr(main.special, 'handle_llm', lambda *args, **kwargs: (_ for _ in ()).throw(KeyboardInterrupt()))
     monkeypatch.setattr(main, 'SQLExecute', FakeRunSQLExecute)
@@ -2542,18 +2539,22 @@ def test_run_cli_interface_and_operational_reconnect_false(monkeypatch: pytest.M
             self.server_info = SimpleNamespace(species=SimpleNamespace(name='MySQL'))
             self.dbname = 'db'
             self.connection_id = 0
+            self.host = 'localhost'
+            self.port = 3306
+            self.user = 'root'
 
         def run(self, text: str) -> Iterator[SQLResult]:
             if text == 'iface':
                 raise pymysql.err.InterfaceError()
             raise pymysql.OperationalError(2003, 'lost')
 
-    monkeypatch.setattr(main, 'PromptSession', lambda **kwargs: prompt_session)
-    monkeypatch.setattr(main, 'mycli_bindings', lambda mycli: 'bindings')
-    monkeypatch.setattr(main, 'create_toolbar_tokens_func', lambda *args: 'toolbar')
+    monkeypatch.setattr(mycli.main_modes.repl, 'PromptSession', lambda **kwargs: prompt_session)
+    monkeypatch.setattr(mycli.main_modes.repl, 'mycli_bindings', lambda mycli: 'bindings')
+    monkeypatch.setattr(mycli.main_modes.repl, 'create_toolbar_tokens_func', lambda *args: 'toolbar')
     monkeypatch.setattr(main, 'style_factory_ptoolkit', lambda *args, **kwargs: 'style')
     monkeypatch.setattr(main, 'dir_path_exists', lambda path: True)
-    monkeypatch.setattr(main, 'cli_is_multiline', lambda mycli: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'dir_path_exists', lambda path: True)
+    monkeypatch.setattr(mycli.main_modes.repl, 'cli_is_multiline', lambda mycli: False)
     monkeypatch.setattr(main.special, 'set_expanded_output', lambda value: None)
     monkeypatch.setattr(main.special, 'set_forced_horizontal_output', lambda value: None)
     monkeypatch.setattr(main.special, 'is_llm_command', lambda text: False)
@@ -2564,60 +2565,13 @@ def test_run_cli_interface_and_operational_reconnect_false(monkeypatch: pytest.M
     monkeypatch.setattr(main.special, 'unset_once_if_written', lambda *args, **kwargs: None)
     monkeypatch.setattr(main.special, 'flush_pipe_once_if_written', lambda *args, **kwargs: None)
     monkeypatch.setattr(main.special, 'close_tee', lambda: None)
-    monkeypatch.setattr(main, 'is_redirect_command', lambda text: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'is_redirect_command', lambda text: False)
     monkeypatch.setattr(main, 'confirm_destructive_query', lambda keywords, text: None)
-    monkeypatch.setattr(main, 'need_completion_refresh', lambda text: False)
-    monkeypatch.setattr(main, 'is_dropping_database', lambda text, dbname: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'need_completion_refresh', lambda text: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'is_dropping_database', lambda text, dbname: False)
     monkeypatch.setattr(main, 'SQLExecute', FakeRunSQLExecute)
     cli.sqlexecute = cast(Any, FakeRunSQLExecute())
     main.MyCli.run_cli(cli)
-
-
-def test_run_cli_tip_prompt_lines_toolbar_none_and_keepalive_noops(monkeypatch: pytest.MonkeyPatch) -> None:
-    cli = make_bare_mycli()
-    cli.less_chatty = False
-    cli.toolbar_format = 'none'
-    cli.keepalive_ticks = 1
-    cli.prompt_format = 'prompt'
-    cli.config = {'history_file': '~/.mycli-history-testing'}
-    cli.set_all_external_titles = lambda: None  # type: ignore[assignment]
-    cli.get_prompt = lambda string, render_counter: 'prompt'  # type: ignore[assignment]
-    printed: list[str] = []
-
-    class PromptOnce(FakePromptSession):
-        def prompt(self, **kwargs: Any) -> str:
-            inputhook = kwargs.get('inputhook')
-            if inputhook is not None:
-                cli.keepalive_ticks = None
-                inputhook(None)
-                cli.keepalive_ticks = 0
-                inputhook(None)
-            kwargs['message']()
-            raise EOFError()
-
-    class FakeRunSQLExecute:
-        def __init__(self) -> None:
-            self.server_info = 'Server'
-            self.dbname = 'db'
-            self.connection_id = 0
-
-    monkeypatch.setattr(main, 'SQLExecute', FakeRunSQLExecute)
-    cli.sqlexecute = cast(Any, FakeRunSQLExecute())
-    monkeypatch.setattr(main, 'PromptSession', lambda **kwargs: PromptOnce())
-    monkeypatch.setattr(main, 'mycli_bindings', lambda mycli: 'bindings')
-    monkeypatch.setattr(
-        main, 'create_toolbar_tokens_func', lambda *args: (_ for _ in ()).throw(AssertionError('toolbar should be disabled'))
-    )
-    monkeypatch.setattr(main, 'style_factory_ptoolkit', lambda *args, **kwargs: 'style')
-    monkeypatch.setattr(main, 'dir_path_exists', lambda path: True)
-    monkeypatch.setattr(main, 'cli_is_multiline', lambda mycli: False)
-    monkeypatch.setattr(main.special, 'close_tee', lambda: None)
-    monkeypatch.setattr(main.random, 'random', lambda: 0.6)
-    monkeypatch.setattr(main, 'tips_picker', lambda: 'Tip')
-    monkeypatch.setattr(builtins, 'print', lambda *args, **kwargs: printed.append(' '.join(str(x) for x in args)))
-    main.MyCli.run_cli(cli)
-    assert any('Tip' in line for line in printed)
-    assert cli.prompt_lines == 1
 
 
 def test_run_cli_watch_beep_auto_vertical_and_cancel_failure_paths(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -2649,6 +2603,9 @@ def test_run_cli_watch_beep_auto_vertical_and_cancel_failure_paths(monkeypatch: 
             self.dbname = 'db'
             self.connection_id = 0
             self.conn = SimpleNamespace()
+            self.host = 'localhost'
+            self.port = 3306
+            self.user = 'root'
 
         def connect(self) -> None:
             return None
@@ -2673,12 +2630,13 @@ def test_run_cli_watch_beep_auto_vertical_and_cancel_failure_paths(monkeypatch: 
 
     monkeypatch.setattr(main, 'SQLExecute', FakeRunSQLExecute)
     cli.sqlexecute = cast(Any, FakeRunSQLExecute())
-    monkeypatch.setattr(main, 'PromptSession', lambda **kwargs: prompt_session)
-    monkeypatch.setattr(main, 'mycli_bindings', lambda mycli: 'bindings')
-    monkeypatch.setattr(main, 'create_toolbar_tokens_func', lambda *args: 'toolbar')
+    monkeypatch.setattr(mycli.main_modes.repl, 'PromptSession', lambda **kwargs: prompt_session)
+    monkeypatch.setattr(mycli.main_modes.repl, 'mycli_bindings', lambda mycli: 'bindings')
+    monkeypatch.setattr(mycli.main_modes.repl, 'create_toolbar_tokens_func', lambda *args: 'toolbar')
     monkeypatch.setattr(main, 'style_factory_ptoolkit', lambda *args, **kwargs: 'style')
     monkeypatch.setattr(main, 'dir_path_exists', lambda path: True)
-    monkeypatch.setattr(main, 'cli_is_multiline', lambda mycli: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'dir_path_exists', lambda path: True)
+    monkeypatch.setattr(mycli.main_modes.repl, 'cli_is_multiline', lambda mycli: False)
     monkeypatch.setattr(main.special, 'set_expanded_output', lambda value: None)
     monkeypatch.setattr(main.special, 'set_forced_horizontal_output', lambda value: None)
     monkeypatch.setattr(main.special, 'is_llm_command', lambda text: False)
@@ -2689,11 +2647,11 @@ def test_run_cli_watch_beep_auto_vertical_and_cancel_failure_paths(monkeypatch: 
     monkeypatch.setattr(main.special, 'unset_once_if_written', lambda *args, **kwargs: None)
     monkeypatch.setattr(main.special, 'flush_pipe_once_if_written', lambda *args, **kwargs: None)
     monkeypatch.setattr(main.special, 'close_tee', lambda: None)
-    monkeypatch.setattr(main, 'is_redirect_command', lambda text: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'is_redirect_command', lambda text: False)
     monkeypatch.setattr(main, 'confirm_destructive_query', lambda keywords, text: None)
-    monkeypatch.setattr(main, 'need_completion_refresh', lambda text: False)
-    monkeypatch.setattr(main, 'is_dropping_database', lambda text, dbname: False)
-    monkeypatch.setattr(main, 'time', iter([0.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]).__next__)
+    monkeypatch.setattr(mycli.main_modes.repl, 'need_completion_refresh', lambda text: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'is_dropping_database', lambda text, dbname: False)
+    monkeypatch.setattr(time, 'time', iter([0.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]).__next__)
     main.MyCli.run_cli(cli)
     assert recorded_widths[:2] == [91, 91]
     assert '' in echoes
@@ -2726,6 +2684,9 @@ def test_run_cli_auto_vertical_uses_default_width_when_prompt_app_is_cleared(mon
             self.server_info = SimpleNamespace(species=SimpleNamespace(name='MySQL'))
             self.dbname = 'db'
             self.connection_id = 0
+            self.host = 'localhost'
+            self.port = 3306
+            self.user = 'root'
 
         def run(self, text: str) -> Iterator[SQLResult]:
             cli.prompt_app = None
@@ -2733,12 +2694,13 @@ def test_run_cli_auto_vertical_uses_default_width_when_prompt_app_is_cleared(mon
 
     monkeypatch.setattr(main, 'SQLExecute', FakeRunSQLExecute)
     cli.sqlexecute = cast(Any, FakeRunSQLExecute())
-    monkeypatch.setattr(main, 'PromptSession', lambda **kwargs: prompt_session)
-    monkeypatch.setattr(main, 'mycli_bindings', lambda mycli: 'bindings')
-    monkeypatch.setattr(main, 'create_toolbar_tokens_func', lambda *args: 'toolbar')
+    monkeypatch.setattr(mycli.main_modes.repl, 'PromptSession', lambda **kwargs: prompt_session)
+    monkeypatch.setattr(mycli.main_modes.repl, 'mycli_bindings', lambda mycli: 'bindings')
+    monkeypatch.setattr(mycli.main_modes.repl, 'create_toolbar_tokens_func', lambda *args: 'toolbar')
     monkeypatch.setattr(main, 'style_factory_ptoolkit', lambda *args, **kwargs: 'style')
     monkeypatch.setattr(main, 'dir_path_exists', lambda path: True)
-    monkeypatch.setattr(main, 'cli_is_multiline', lambda mycli: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'dir_path_exists', lambda path: True)
+    monkeypatch.setattr(mycli.main_modes.repl, 'cli_is_multiline', lambda mycli: False)
     monkeypatch.setattr(main.special, 'set_expanded_output', lambda value: None)
     monkeypatch.setattr(main.special, 'set_forced_horizontal_output', lambda value: None)
     monkeypatch.setattr(main.special, 'is_llm_command', lambda text: False)
@@ -2749,9 +2711,9 @@ def test_run_cli_auto_vertical_uses_default_width_when_prompt_app_is_cleared(mon
     monkeypatch.setattr(main.special, 'unset_once_if_written', lambda *args, **kwargs: None)
     monkeypatch.setattr(main.special, 'flush_pipe_once_if_written', lambda *args, **kwargs: None)
     monkeypatch.setattr(main.special, 'close_tee', lambda: None)
-    monkeypatch.setattr(main, 'is_redirect_command', lambda text: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'is_redirect_command', lambda text: False)
     monkeypatch.setattr(main, 'confirm_destructive_query', lambda keywords, text: None)
-    monkeypatch.setattr(main, 'need_completion_refresh', lambda text: False)
-    monkeypatch.setattr(main, 'is_dropping_database', lambda text, dbname: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'need_completion_refresh', lambda text: False)
+    monkeypatch.setattr(mycli.main_modes.repl, 'is_dropping_database', lambda text, dbname: False)
     main.MyCli.run_cli(cli)
     assert widths == [main.DEFAULT_WIDTH]
