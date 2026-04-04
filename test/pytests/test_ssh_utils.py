@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import builtins
+import importlib
 from pathlib import Path
+import sys
 from typing import TextIO
 
 import pytest
 
-from mycli.packages import ssh_utils
+from mycli.packages import paramiko_stub, ssh_utils
 
 
 class FakeSSHConfig:
@@ -66,3 +69,22 @@ def test_read_ssh_config_reports_parse_errors_and_exits(monkeypatch: pytest.Monk
 
     assert excinfo.value.code == 1
     assert secho_calls == [(f'Could not parse SSH configuration file {config_path}:\nbad config ', True, 'red')]
+
+
+def test_ssh_utils_falls_back_to_paramiko_stub_when_paramiko_is_unavailable(monkeypatch: pytest.MonkeyPatch) -> None:
+    original_import = builtins.__import__
+
+    def fake_import(name: str, globals_=None, locals_=None, fromlist=(), level: int = 0):
+        if name == 'paramiko':
+            raise ImportError('paramiko not installed')
+        return original_import(name, globals_, locals_, fromlist, level)
+
+    monkeypatch.delitem(sys.modules, 'paramiko', raising=False)
+    monkeypatch.setattr(builtins, '__import__', fake_import)
+
+    reloaded = importlib.reload(ssh_utils)
+
+    assert reloaded.paramiko is paramiko_stub.paramiko
+
+    monkeypatch.undo()
+    importlib.reload(ssh_utils)
