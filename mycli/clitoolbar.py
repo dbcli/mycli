@@ -2,13 +2,18 @@ from typing import Callable
 
 from prompt_toolkit.application import get_app
 from prompt_toolkit.enums import EditingMode
-from prompt_toolkit.formatted_text import to_formatted_text
+from prompt_toolkit.formatted_text import AnyFormattedText, to_formatted_text
 from prompt_toolkit.key_binding.vi_state import InputMode
 
 from mycli.packages import special
 
 
-def create_toolbar_tokens_func(mycli, show_initial_toolbar_help: Callable, format_string: str | None) -> Callable:
+def create_toolbar_tokens_func(
+    mycli,
+    show_initial_toolbar_help: Callable[[], bool],
+    format_string: str | None,
+    get_custom_toolbar: Callable[[str], AnyFormattedText],
+) -> Callable[[], list[tuple[str, str]]]:
     """Return a function that generates the toolbar tokens."""
 
     def get_toolbar_tokens() -> list[tuple[str, str]]:
@@ -73,7 +78,7 @@ def create_toolbar_tokens_func(mycli, show_initial_toolbar_help: Callable, forma
             else:
                 amended_format = format_string
                 result = []
-            formatted = to_formatted_text(mycli.get_custom_toolbar(amended_format), style='class:bottom-toolbar')
+            formatted = to_formatted_text(get_custom_toolbar(amended_format), style='class:bottom-toolbar')
             result.extend([*formatted])  # coerce to list for mypy
 
         result.extend(dynamic)

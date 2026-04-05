@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
+import functools
 from functools import partial
 from importlib import resources
 import os
 import random
 import re
+import subprocess
 import sys
 import time
 import traceback
@@ -34,6 +37,7 @@ from mycli.clibuffer import cli_is_multiline
 from mycli.clistyle import style_factory_ptoolkit
 from mycli.clitoolbar import create_toolbar_tokens_func
 from mycli.constants import (
+    DEFAULT_HOST,
     DEFAULT_WIDTH,
     HOME_URL,
     ISSUES_URL,
@@ -49,6 +53,7 @@ from mycli.packages.key_binding_utils import (
 )
 from mycli.packages.prompt_utils import confirm, confirm_destructive_query
 from mycli.packages.ptoolkit.history import FileHistoryWithTimestamp
+from mycli.packages.special.utils import format_uptime, get_ssl_version, get_uptime, get_warning_count
 from mycli.packages.sql_utils import (
     is_dropping_database,
     is_mutating,
@@ -57,6 +62,7 @@ from mycli.packages.sql_utils import (
     need_completion_reset,
 )
 from mycli.packages.sqlresult import SQLResult
+from mycli.packages.string_utils import sanitize_terminal_title
 from mycli.sqlexecute import SQLExecute
 from mycli.types import Query
 
@@ -68,6 +74,7 @@ if TYPE_CHECKING:
 
 SUPPORT_INFO = f"Home: {HOME_URL}\nBug tracker: {ISSUES_URL}"
 MIN_COMPLETION_TRIGGER = 1
+_PROMPT_TARGETS: dict[int, 'MyCli'] = {}
 
 
 @dataclass(slots=True)
@@ -134,6 +141,164 @@ def _show_startup_banner(
         print('Tip —', _tips_picker())
 
 
+def set_all_external_titles(mycli: 'MyCli') -> None:
+    set_external_terminal_tab_title(mycli)
+    set_external_terminal_window_title(mycli)
+    set_external_multiplex_window_title(mycli)
+    set_external_multiplex_pane_title(mycli)
+
+
+def set_external_terminal_tab_title(mycli: 'MyCli') -> None:
+    if not mycli.terminal_tab_title_format:
+        return
+    if not mycli.prompt_session:
+        return
+    if not sys.stderr.isatty():
+        return
+    title = sanitize_terminal_title(get_prompt(mycli, mycli.terminal_tab_title_format, mycli.prompt_session.app.render_counter))
+    print(f'\x1b]1;{title}\a', file=sys.stderr, end='')
+    sys.stderr.flush()
+
+
+def set_external_terminal_window_title(mycli: 'MyCli') -> None:
+    if not mycli.terminal_window_title_format:
+        return
+    if not mycli.prompt_session:
+        return
+    if not sys.stderr.isatty():
+        return
+    title = sanitize_terminal_title(get_prompt(mycli, mycli.terminal_window_title_format, mycli.prompt_session.app.render_counter))
+    print(f'\x1b]2;{title}\a', file=sys.stderr, end='')
+    sys.stderr.flush()
+
+
+def set_external_multiplex_window_title(mycli: 'MyCli') -> None:
+    if not mycli.multiplex_window_title_format:
+        return
+    if not os.getenv('TMUX'):
+        return
+    if not mycli.prompt_session:
+        return
+    title = sanitize_terminal_title(get_prompt(mycli, mycli.multiplex_window_title_format, mycli.prompt_session.app.render_counter))
+    try:
+        subprocess.run(
+            ['tmux', 'rename-window', title],
+            check=False,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except FileNotFoundError:
+        pass
+
+
+def set_external_multiplex_pane_title(mycli: 'MyCli') -> None:
+    if not mycli.multiplex_pane_title_format:
+        return
+    if not os.getenv('TMUX'):
+        return
+    if not mycli.prompt_session:
+        return
+    if not sys.stderr.isatty():
+        return
+    title = sanitize_terminal_title(get_prompt(mycli, mycli.multiplex_pane_title_format, mycli.prompt_session.app.render_counter))
+    print(f'\x1b]2;{title}\x1b\\', file=sys.stderr, end='')
+    sys.stderr.flush()
+
+
+def get_custom_toolbar(
+    mycli: 'MyCli',
+    toolbar_format: str,
+) -> ANSI:
+    if not mycli.prompt_session:
+        return ANSI('')
+    if not mycli.prompt_session.app:
+        return ANSI('')
+    if mycli.prompt_session.app.current_buffer.text:
+        return mycli.last_custom_toolbar_message
+    toolbar = get_prompt(mycli, toolbar_format, mycli.prompt_session.app.render_counter)
+    toolbar = toolbar.replace('\\x1b', '\x1b')
+    mycli.last_custom_toolbar_message = ANSI(toolbar)
+    return mycli.last_custom_toolbar_message
+
+
+@functools.lru_cache(maxsize=256)
+def get_prompt(
+    mycli: 'MyCli',
+    string: str,
+    _render_counter: int,
+) -> str:
+    sqlexecute = mycli.sqlexecute
+    assert sqlexecute is not None
+    assert sqlexecute.server_info is not None
+    assert sqlexecute.server_info.species is not None
+    if mycli.login_path and mycli.login_path_as_host:
+        prompt_host = mycli.login_path
+    elif sqlexecute.host is not None:
+        prompt_host = sqlexecute.host
+    else:
+        prompt_host = DEFAULT_HOST
+    short_prompt_host, _, _ = prompt_host.partition('.')
+    if re.match(r'^[\d\.]+$', short_prompt_host):
+        short_prompt_host = prompt_host
+    now = datetime.now()
+    backslash_placeholder = '\ufffc_backslash'
+    string = string.replace('\\\\', backslash_placeholder)
+    string = string.replace('\\u', sqlexecute.user or '(none)')
+    string = string.replace('\\h', prompt_host or '(none)')
+    string = string.replace('\\H', short_prompt_host or '(none)')
+    string = string.replace('\\d', sqlexecute.dbname or '(none)')
+    string = string.replace('\\t', sqlexecute.server_info.species.name)
+    string = string.replace('\\n', '\n')
+    string = string.replace('\\D', now.strftime('%a %b %d %H:%M:%S %Y'))
+    string = string.replace('\\m', now.strftime('%M'))
+    string = string.replace('\\P', now.strftime('%p'))
+    string = string.replace('\\R', now.strftime('%H'))
+    string = string.replace('\\r', now.strftime('%I'))
+    string = string.replace('\\s', now.strftime('%S'))
+    string = string.replace('\\p', str(sqlexecute.port))
+    string = string.replace('\\j', os.path.basename(sqlexecute.socket or '(none)'))
+    string = string.replace('\\J', sqlexecute.socket or '(none)')
+    string = string.replace('\\k', os.path.basename(sqlexecute.socket or str(sqlexecute.port)))
+    string = string.replace('\\K', sqlexecute.socket or str(sqlexecute.port))
+    string = string.replace('\\A', mycli.dsn_alias or '(none)')
+    string = string.replace('\\_', ' ')
+    string = string.replace(backslash_placeholder, '\\')
+
+    if hasattr(sqlexecute, 'conn') and sqlexecute.conn is not None:
+        if '\\y' in string:
+            with sqlexecute.conn.cursor() as cur:
+                string = string.replace('\\y', str(get_uptime(cur)) or '(none)')
+        if '\\Y' in string:
+            with sqlexecute.conn.cursor() as cur:
+                string = string.replace('\\Y', format_uptime(str(get_uptime(cur))) or '(none)')
+    else:
+        string = string.replace('\\y', '(none)')
+        string = string.replace('\\Y', '(none)')
+
+    if hasattr(sqlexecute, 'conn') and sqlexecute.conn is not None:
+        if '\\T' in string:
+            with sqlexecute.conn.cursor() as cur:
+                string = string.replace('\\T', get_ssl_version(cur) or '(none)')
+    else:
+        string = string.replace('\\T', '(none)')
+
+    if hasattr(sqlexecute, 'conn') and sqlexecute.conn is not None:
+        if '\\w' in string:
+            with sqlexecute.conn.cursor() as cur:
+                string = string.replace('\\w', str(get_warning_count(cur) or '(none)'))
+    else:
+        string = string.replace('\\w', '(none)')
+    if hasattr(sqlexecute, 'conn') and sqlexecute.conn is not None:
+        if '\\W' in string:
+            with sqlexecute.conn.cursor() as cur:
+                string = string.replace('\\W', str(get_warning_count(cur) or ''))
+    else:
+        string = string.replace('\\W', '')
+
+    return string
+
+
 def _get_prompt_message(
     mycli: 'MyCli',
     app: prompt_toolkit.application.application.Application,
@@ -141,9 +306,9 @@ def _get_prompt_message(
     if app.current_buffer.text:
         return mycli.last_prompt_message
 
-    prompt = mycli.get_prompt(mycli.prompt_format, app.render_counter)
+    prompt = get_prompt(mycli, mycli.prompt_format, app.render_counter)
     if mycli.prompt_format == mycli.default_prompt and len(prompt) > mycli.max_len_prompt:
-        prompt = mycli.get_prompt(mycli.default_prompt_splitln, app.render_counter)
+        prompt = get_prompt(mycli, mycli.default_prompt_splitln, app.render_counter)
         mycli.prompt_lines = prompt.count('\n') + 1
     prompt = prompt.replace('\\x1b', '\x1b')
     if not mycli.prompt_lines:
@@ -301,6 +466,7 @@ def _build_prompt_session(
             mycli,
             lambda: state.iterations == 0,
             mycli.toolbar_format,
+            partial(get_custom_toolbar, mycli),
         )
 
     if mycli.wider_completion_menu:
@@ -585,7 +751,7 @@ def main_repl(mycli: 'MyCli') -> None:
     key_bindings = mycli_bindings(mycli)
     _show_startup_banner(mycli, sqlexecute)
     _build_prompt_session(mycli, state, history, key_bindings)
-    mycli.set_all_external_titles()
+    set_all_external_titles(mycli)
 
     try:
         while True:
