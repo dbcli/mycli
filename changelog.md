@@ -19,6 +19,7 @@ Bug Fixes
 * Make multi-line detection and special cases more robust.
 * Run empty `--execute` arguments instead of ignoring the flag.
 * Exit with error when the `--batch` argument is an empty string.
+* Avoid logging SSH passwords.
 
 
 Internal

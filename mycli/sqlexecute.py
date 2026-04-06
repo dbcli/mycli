@@ -245,7 +245,7 @@ class SQLExecute:
             "\tssh_user: %r"
             "\tssh_host: %r"
             "\tssh_port: %r"
-            "\tssh_password: %r"
+            "\tssh_password: ***"
             "\tssh_key_filename: %r"
             "\tinit_command: %r"
             "\tunbuffered: %r",
@@ -260,7 +260,6 @@ class SQLExecute:
             ssh_user,
             ssh_host,
             ssh_port,
-            ssh_password,
             ssh_key_filename,
             init_command,
             unbuffered,
