@@ -8,11 +8,15 @@ import os
 import shutil
 from tempfile import NamedTemporaryFile
 from textwrap import dedent
+from types import SimpleNamespace
+from typing import Any, cast
 
 import click
 from click.testing import CliRunner
 from pymysql.err import OperationalError
+import pytest
 
+from mycli import main
 from mycli.constants import (
     DEFAULT_DATABASE,
     DEFAULT_HOST,
@@ -26,7 +30,20 @@ import mycli.packages.special
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
 from mycli.packages.sqlresult import SQLResult
 from mycli.sqlexecute import ServerInfo, SQLExecute
-from test.utils import DATABASE, HOST, PASSWORD, PORT, TEMPFILE_PREFIX, USER, dbtest, run
+from test.utils import (
+    DATABASE,
+    HOST,
+    PASSWORD,
+    PORT,
+    TEMPFILE_PREFIX,
+    USER,
+    ReusableLock,
+    call_click_entrypoint_direct,
+    dbtest,
+    make_bare_mycli,
+    make_dummy_mycli_class,
+    run,
+)
 
 pytests_dir = os.path.abspath(os.path.dirname(__file__))
 project_root_dir = os.path.abspath(os.path.join(pytests_dir, '..', '..'))
@@ -2150,3 +2167,160 @@ def test_null_string_config(monkeypatch):
             os.remove(myclirc.name)
     except Exception as e:
         print(f'An error occurred while attempting to delete the file: {e}')
+
+
+def test_change_prompt_format_requires_argument() -> None:
+    cli = make_bare_mycli()
+    assert main.MyCli.change_prompt_format(cli, '')[0].status == 'Missing required argument, format.'
+
+
+def test_change_prompt_format_updates_prompt() -> None:
+    cli = make_bare_mycli()
+    assert main.MyCli.change_prompt_format(cli, '\\u@\\h> ')[0].status == 'Changed prompt format to \\u@\\h> '
+
+
+def test_output_timing_logs_and_prints_with_warning_style(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli = make_bare_mycli()
+    timings_logged: list[str] = []
+    cli.log_output = lambda text: timings_logged.append(text)  # type: ignore[assignment]
+    printed: list[tuple[Any, Any]] = []
+    monkeypatch.setattr(main, 'print_formatted_text', lambda text, style=None: printed.append((text, style)))
+    main.MyCli.output_timing(cli, 'Time: 1.000s', is_warnings_style=True)
+    assert timings_logged == ['Time: 1.000s']
+    assert printed[-1][1] == cli.ptoolkit_style
+
+
+def test_run_cli_delegates_to_main_repl(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli = make_bare_mycli()
+    run_cli_calls: list[Any] = []
+    monkeypatch.setattr(main, 'main_repl', lambda target: run_cli_calls.append(target))
+    main.MyCli.run_cli(cli)
+    assert run_cli_calls == [cli]
+
+
+def test_get_output_margin_uses_prompt_session_render_counter(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli = make_bare_mycli()
+    render_counters: list[int] = []
+    cli.prompt_lines = 0
+    cli.get_reserved_space = lambda: 2  # type: ignore[assignment]
+    cli.prompt_session = cast(
+        Any,
+        SimpleNamespace(app=SimpleNamespace(render_counter=7)),
+    )
+
+    def fake_get_prompt(mycli: Any, string: str, render_counter: int) -> str:
+        render_counters.append(render_counter)
+        return 'line1\nline2'
+
+    monkeypatch.setattr(main, 'get_prompt', fake_get_prompt)
+    monkeypatch.setattr(main.special, 'is_timing_enabled', lambda: False)
+    assert main.MyCli.get_output_margin(cli, 'ok') == 5
+    assert render_counters == [7]
+
+
+def test_on_completions_refreshed_updates_completer_and_invalidates_prompt() -> None:
+    cli = make_bare_mycli()
+    entered_lock = {'count': 0}
+    invalidated: list[bool] = []
+    cli._completer_lock = cast(Any, ReusableLock(lambda: entered_lock.__setitem__('count', entered_lock['count'] + 1)))
+    cli.prompt_session = cast(Any, SimpleNamespace(app=SimpleNamespace(invalidate=lambda: invalidated.append(True))))
+    new_completer = cast(Any, SimpleNamespace(get_completions=lambda document, event: ['done']))
+    main.MyCli._on_completions_refreshed(cli, new_completer)
+    assert cli.completer is new_completer
+    assert invalidated == [True]
+    assert entered_lock['count'] == 1
+
+
+def test_get_completions_uses_current_completer() -> None:
+    cli = make_bare_mycli()
+    entered_lock = {'count': 0}
+    cli._completer_lock = cast(Any, ReusableLock(lambda: entered_lock.__setitem__('count', entered_lock['count'] + 1)))
+    cli.completer = cast(Any, SimpleNamespace(get_completions=lambda document, event: ['done']))
+    assert list(main.MyCli.get_completions(cli, 'select', 6)) == ['done']
+    assert entered_lock['count'] == 1
+
+
+def test_click_entrypoint_callback_covers_dsn_list_init_commands(monkeypatch: pytest.MonkeyPatch) -> None:
+    dummy_class = make_dummy_mycli_class(
+        config={
+            'main': {'use_keyring': 'false', 'my_cnf_transition_done': 'true'},
+            'connection': {'default_keepalive_ticks': 0},
+            'alias_dsn': {'prod': 'mysql://u:p@h/db'},
+            'alias_dsn.init-commands': {'prod': ['set a=1', 'set b=2']},
+        }
+    )
+    monkeypatch.setattr(main, 'MyCli', dummy_class)
+    monkeypatch.setattr(main.sys, 'stdin', SimpleNamespace(isatty=lambda: True))
+    monkeypatch.setattr(main.sys.stderr, 'isatty', lambda: True)
+
+    cli_args = main.CliArgs()
+    cli_args.dsn = 'prod'
+    cli_args.init_command = 'set c=3'
+    call_click_entrypoint_direct(cli_args)
+
+    dummy = dummy_class.last_instance
+    assert dummy is not None
+    assert dummy.connect_calls[-1]['init_command'] == 'set a=1; set b=2; set c=3'
+
+
+def test_click_entrypoint_callback_uses_batch_with_progress_path(monkeypatch: pytest.MonkeyPatch) -> None:
+    dummy_class = make_dummy_mycli_class(
+        config={
+            'main': {'use_keyring': 'false', 'my_cnf_transition_done': 'true'},
+            'connection': {'default_keepalive_ticks': 0},
+            'alias_dsn': {},
+        }
+    )
+    monkeypatch.setattr(main, 'MyCli', dummy_class)
+    monkeypatch.setattr(main.sys, 'stdin', SimpleNamespace(isatty=lambda: True))
+    monkeypatch.setattr(main.sys.stderr, 'isatty', lambda: True)
+    monkeypatch.setattr(main, 'main_batch_with_progress_bar', lambda mycli, cli_args: 12)
+
+    cli_args = main.CliArgs()
+    cli_args.batch = 'queries.sql'
+    cli_args.progress = True
+    with pytest.raises(SystemExit) as excinfo:
+        call_click_entrypoint_direct(cli_args)
+    assert excinfo.value.code == 12
+
+
+def test_click_entrypoint_callback_uses_batch_without_progress_path(monkeypatch: pytest.MonkeyPatch) -> None:
+    dummy_class = make_dummy_mycli_class(
+        config={
+            'main': {'use_keyring': 'false', 'my_cnf_transition_done': 'true'},
+            'connection': {'default_keepalive_ticks': 0},
+            'alias_dsn': {},
+        }
+    )
+    monkeypatch.setattr(main, 'MyCli', dummy_class)
+    monkeypatch.setattr(main.sys, 'stdin', SimpleNamespace(isatty=lambda: True))
+    monkeypatch.setattr(main.sys.stderr, 'isatty', lambda: True)
+    monkeypatch.setattr(main, 'main_batch_without_progress_bar', lambda mycli, cli_args: 13)
+
+    cli_args = main.CliArgs()
+    cli_args.batch = 'queries.sql'
+    cli_args.progress = False
+    with pytest.raises(SystemExit) as excinfo:
+        call_click_entrypoint_direct(cli_args)
+    assert excinfo.value.code == 13
+
+
+def test_click_entrypoint_callback_covers_mycnf_underscore_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
+    click_lines: list[str] = []
+    monkeypatch.setattr(click, 'secho', lambda message='', **kwargs: click_lines.append(str(message)))
+    monkeypatch.setattr(main.sys, 'stdin', SimpleNamespace(isatty=lambda: True))
+    monkeypatch.setattr(main.sys.stderr, 'isatty', lambda: False)
+
+    dummy_class = make_dummy_mycli_class(
+        config={
+            'main': {'use_keyring': 'false', 'my_cnf_transition_done': 'false'},
+            'connection': {'default_keepalive_ticks': 0},
+            'alias_dsn': {},
+        },
+        my_cnf={'client': {'ssl_ca': '/tmp/ca.pem'}, 'mysqld': {}},
+        config_without_package_defaults={'main': {}},
+    )
+    monkeypatch.setattr(main, 'MyCli', dummy_class)
+
+    call_click_entrypoint_direct(main.CliArgs())
+    assert any('ssl-ca = /tmp/ca.pem' in line for line in click_lines)
