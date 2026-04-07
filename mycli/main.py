@@ -75,7 +75,7 @@ from mycli.main_modes.repl import get_prompt, main_repl, set_all_external_titles
 from mycli.packages import special
 from mycli.packages.cli_utils import filtered_sys_argv, is_valid_connection_scheme
 from mycli.packages.filepaths import dir_path_exists, guess_socket_location
-from mycli.packages.prompt_utils import confirm_destructive_query
+from mycli.packages.interactive_utils import confirm_destructive_query
 from mycli.packages.special.favoritequeries import FavoriteQueries
 from mycli.packages.special.main import ArgType
 from mycli.packages.sqlresult import SQLResult

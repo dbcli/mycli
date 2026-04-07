@@ -12,7 +12,7 @@ from prompt_toolkit.shortcuts.progress_bar import formatters as progress_bar_for
 import pymysql
 
 from mycli.packages.batch_utils import statements_from_filehandle
-from mycli.packages.prompt_utils import confirm_destructive_query
+from mycli.packages.interactive_utils import confirm_destructive_query
 from mycli.packages.sql_utils import is_destructive
 
 if TYPE_CHECKING:

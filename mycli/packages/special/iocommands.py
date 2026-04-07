@@ -17,7 +17,7 @@ import pyperclip
 import sqlparse
 
 from mycli.compat import WIN
-from mycli.packages.prompt_utils import confirm_destructive_query
+from mycli.packages.interactive_utils import confirm_destructive_query
 from mycli.packages.special.delimitercommand import DelimiterCommand
 from mycli.packages.special.favoritequeries import FavoriteQueries
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
