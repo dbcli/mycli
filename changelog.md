@@ -6,6 +6,7 @@ Features
 * Continue to expand TIPS.
 * Make `--progress` and `--checkpoint` strictly by statement.
 * Allow more characters in passwords read from a file.
+* Show sponsors and contributors separately in startup messages.
 
 
 Bug Fixes
