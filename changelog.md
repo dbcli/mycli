@@ -47,6 +47,7 @@ Internal
 * Move SQL utilities to a new `sql_utils.py`.
 * Move CLI utilities to a new `cli_utils.py`.
 * Move keybinding utilities to a new `key_binding_utils.py`.
+* Move interactive utilities to `interactive_utils.py`.
 * Modernize orthography of prompt_toolkit filters.
 
 

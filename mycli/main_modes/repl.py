@@ -47,11 +47,11 @@ from mycli.lexer import MyCliLexer
 from mycli.packages import special
 from mycli.packages.filepaths import dir_path_exists
 from mycli.packages.hybrid_redirection import get_redirect_components, is_redirect_command
+from mycli.packages.interactive_utils import confirm, confirm_destructive_query
 from mycli.packages.key_binding_utils import (
     handle_clip_command,
     handle_editor_command,
 )
-from mycli.packages.prompt_utils import confirm, confirm_destructive_query
 from mycli.packages.ptoolkit.history import FileHistoryWithTimestamp
 from mycli.packages.special.utils import format_uptime, get_ssl_version, get_uptime, get_warning_count
 from mycli.packages.sql_utils import (
