@@ -175,6 +175,7 @@ class SQLExecute:
         ssh_key_filename: str | None,
         init_command: str | None = None,
         unbuffered: bool | None = None,
+        connect_expired_password: bool = False,
     ) -> None:
         self.dbname = database
         self.user = user
@@ -194,6 +195,7 @@ class SQLExecute:
         self.ssh_key_filename = ssh_key_filename
         self.init_command = init_command
         self.unbuffered = unbuffered
+        self.connect_expired_password = connect_expired_password
         self.conn: Connection | None = None
         self.connect()
 
@@ -280,32 +282,51 @@ class SQLExecute:
         client_flag = pymysql.constants.CLIENT.INTERACTIVE
         if init_command and len(list(iocommands.split_queries(init_command))) > 1:
             client_flag |= pymysql.constants.CLIENT.MULTI_STATEMENTS
+        if self.connect_expired_password:
+            client_flag |= pymysql.constants.CLIENT.HANDLE_EXPIRED_PASSWORDS
 
         ssl_context = None
         if ssl:
             ssl_context = self._create_ssl_ctx(ssl)
 
-        conn = pymysql.connect(
-            database=db,
-            user=user,
-            password=password or '',
-            host=host,
-            port=port or 0,
-            unix_socket=socket,
-            use_unicode=True,
-            charset=character_set or '',
-            autocommit=True,
-            client_flag=client_flag,
-            local_infile=local_infile or False,
-            conv=conv,
-            ssl=ssl_context,  # type: ignore[arg-type]
-            program_name="mycli",
-            defer_connect=defer_connect,
-            init_command=init_command or None,
-            cursorclass=pymysql.cursors.SSCursor if unbuffered else pymysql.cursors.Cursor,
-        )  # type: ignore[misc]
+        connect_kwargs: dict[str, Any] = {
+            "database": db,
+            "user": user,
+            "password": password or '',
+            "host": host,
+            "port": port or 0,
+            "unix_socket": socket,
+            "use_unicode": True,
+            "charset": character_set or '',
+            "autocommit": True,
+            "client_flag": client_flag,
+            "local_infile": local_infile or False,
+            "conv": conv,
+            "ssl": ssl_context,  # type: ignore[arg-type]
+            "program_name": "mycli",
+            "defer_connect": defer_connect,
+            "init_command": init_command or None,
+            "cursorclass": pymysql.cursors.SSCursor if unbuffered else pymysql.cursors.Cursor,
+        }
 
-        if ssh_host:
+        self.sandbox_mode = False
+        try:
+            conn = pymysql.connect(**connect_kwargs)  # type: ignore[misc]
+        except pymysql.OperationalError as e:
+            if e.args[0] == 1820 and self.connect_expired_password:
+                # Post-handshake queries (SET NAMES, SET AUTOCOMMIT, init_command)
+                # fail with ER_MUST_CHANGE_PASSWORD in sandbox mode.
+                # Reconnect with only the raw handshake.
+                connect_kwargs['defer_connect'] = True
+                connect_kwargs['autocommit'] = None
+                connect_kwargs['init_command'] = None
+                conn = pymysql.connect(**connect_kwargs)  # type: ignore[misc]
+                self._connect_sandbox(conn)
+                self.sandbox_mode = True
+            else:
+                raise
+
+        if ssh_host and not self.sandbox_mode:
             ##### paramiko.Channel is a bad socket implementation overall if you want SSL through an SSH tunnel
             #####
             # instead let's open a tunnel and rewrite host:port to local bind
@@ -343,9 +364,10 @@ class SQLExecute:
         self.ssl = ssl
         self.init_command = init_command
         self.unbuffered = unbuffered
-        # retrieve connection id
-        self.reset_connection_id()
-        self.server_info = ServerInfo.from_version_string(conn.server_version)  # type: ignore[attr-defined]
+        # retrieve connection id (skip in sandbox mode as queries will fail)
+        if not self.sandbox_mode:
+            self.reset_connection_id()
+            self.server_info = ServerInfo.from_version_string(conn.server_version)  # type: ignore[attr-defined]
 
     def run(self, statement: str) -> Generator[SQLResult, None, None]:
         """Execute the sql in the database and return the results."""
@@ -575,6 +597,24 @@ class SQLExecute:
         assert isinstance(self.conn, Connection)
         self.conn.select_db(db)
         self.dbname = db
+
+    @staticmethod
+    def _connect_sandbox(conn: Connection) -> None:
+        """Connect in sandbox mode, performing only the handshake.
+
+        pymysql's normal connect() runs post-handshake queries (SET NAMES,
+        SET AUTOCOMMIT, init_command) that all fail with ER_MUST_CHANGE_PASSWORD
+        in sandbox mode.  This method performs the raw socket connection and
+        authentication handshake only.
+        """
+        # Reuse pymysql internals for the handshake + auth, but
+        # temporarily stub out set_character_set so it becomes a no-op.
+        original_set_charset = conn.set_character_set
+        conn.set_character_set = lambda *_args, **_kwargs: None  # type: ignore[assignment]
+        try:
+            conn.connect()
+        finally:
+            conn.set_character_set = original_set_charset  # type: ignore[assignment]
 
     def _create_ssl_ctx(self, sslp: dict) -> ssl.SSLContext:
         ca = sslp.get("ca")

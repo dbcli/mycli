@@ -13,3 +13,7 @@ TEST_DATABASE = 'mycli_test_db'
 
 DEFAULT_WIDTH = 80
 DEFAULT_HEIGHT = 25
+
+# MySQL error codes not available in pymysql.constants.ER
+ER_MUST_CHANGE_PASSWORD_LOGIN = 1862
+ER_MUST_CHANGE_PASSWORD = 1820

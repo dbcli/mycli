@@ -174,6 +174,7 @@ def make_repl_cli(sqlexecute: Any | None = None) -> Any:
     cli.cli_style = {}
     cli.emacs_ttimeoutlen = 1.0
     cli.vi_ttimeoutlen = 2.0
+    cli.sandbox_mode = False
     cli.destructive_warning = False
     cli.destructive_keywords = ['drop']
     cli.llm_prompt_field_truncate = 0
@@ -791,6 +792,134 @@ def test_one_iteration_covers_llm_paths(monkeypatch: pytest.MonkeyPatch) -> None
     )
     repl_mode._one_iteration(cli_quiet, repl_mode.ReplState())
     assert cli_quiet.output_calls[0][0] == ['None', 'ran:select 2']
+
+
+@pytest.mark.parametrize(
+    'text, expected',
+    [
+        ('', True),
+        ('  ', True),
+        ("ALTER USER 'root'@'localhost' IDENTIFIED BY 'new'", True),
+        ('alter user root identified by "pw"', True),
+        ("SET PASSWORD = 'newpass'", True),
+        ("set password = 'newpass'", True),
+        ('quit', True),
+        ('exit', True),
+        ('\\q', True),
+        ('SELECT 1', False),
+        ('DROP TABLE t', False),
+        ('USE mydb', False),
+        ('SHOW DATABASES', False),
+    ],
+)
+def test_is_sandbox_allowed(text: str, expected: bool) -> None:
+    assert repl_mode._is_sandbox_allowed(text) is expected
+
+
+@pytest.mark.parametrize(
+    'text, expected',
+    [
+        ("ALTER USER 'root'@'localhost' IDENTIFIED BY 'new'", True),
+        ("SET PASSWORD = 'newpass'", True),
+        ('SELECT 1', False),
+        ('quit', False),
+    ],
+)
+def test_is_password_change(text: str, expected: bool) -> None:
+    assert repl_mode._is_password_change(text) is expected
+
+
+@pytest.mark.parametrize(
+    'text, expected',
+    [
+        ("ALTER USER 'root'@'localhost' IDENTIFIED BY 'newpass'", 'newpass'),
+        ("SET PASSWORD = 'secret123'", 'secret123'),
+        ("ALTER USER root IDENTIFIED BY 'p@ss w0rd!'", 'p@ss w0rd!'),
+        ('ALTER USER root IDENTIFIED WITH mysql_native_password', None),
+        ('SELECT 1', None),
+    ],
+)
+def test_extract_new_password(text: str, expected: str | None) -> None:
+    assert repl_mode._extract_new_password(text) == expected
+
+
+def test_one_iteration_blocks_disallowed_in_sandbox_mode(monkeypatch: pytest.MonkeyPatch) -> None:
+    patch_repl_runtime_defaults(monkeypatch)
+
+    class FakeSQLExecute:
+        def __init__(self) -> None:
+            self.dbname = 'db'
+            self.connection_id = 0
+
+        def run(self, text: str) -> Iterator[SQLResult]:
+            return iter([SQLResult(status=f'ran:{text}')])
+
+    cli = make_repl_cli(FakeSQLExecute())
+    cli.sandbox_mode = True
+
+    repl_mode._one_iteration(cli, repl_mode.ReplState(), 'SELECT 1')
+    assert any('ERROR 1820' in msg for msg in cli.echo_calls)
+    assert not cli.query_history
+
+
+def test_one_iteration_allows_alter_user_in_sandbox_mode(monkeypatch: pytest.MonkeyPatch) -> None:
+    patch_repl_runtime_defaults(monkeypatch)
+
+    class FakeSQLExecute:
+        def __init__(self) -> None:
+            self.dbname = 'db'
+            self.connection_id = 0
+            self.password = 'old'
+            self.connect_expired_password = True
+            self.connect_calls: list[bool] = []
+
+        def connect(self) -> None:
+            self.connect_calls.append(True)
+
+        def run(self, text: str) -> Iterator[SQLResult]:
+            return iter([SQLResult(status='OK')])
+
+    sqlexecute = FakeSQLExecute()
+    cli = make_repl_cli(sqlexecute)
+    cli.sandbox_mode = True
+    monkeypatch.setattr(repl_mode, 'is_mutating', lambda status: False)
+
+    repl_mode._one_iteration(
+        cli, repl_mode.ReplState(), "ALTER USER 'root'@'localhost' IDENTIFIED BY 'newpass'"
+    )
+    assert cli.sandbox_mode is False
+    assert sqlexecute.password == 'newpass'
+    assert sqlexecute.connect_expired_password is False
+    assert sqlexecute.connect_calls == [True]
+    assert any('Reconnected' in msg for msg in cli.echo_calls)
+
+
+def test_one_iteration_sandbox_reconnect_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    patch_repl_runtime_defaults(monkeypatch)
+
+    class FakeSQLExecute:
+        def __init__(self) -> None:
+            self.dbname = 'db'
+            self.connection_id = 0
+            self.password = 'old'
+            self.connect_expired_password = True
+
+        def connect(self) -> None:
+            raise RuntimeError('connection refused')
+
+        def run(self, text: str) -> Iterator[SQLResult]:
+            return iter([SQLResult(status='OK')])
+
+    sqlexecute = FakeSQLExecute()
+    cli = make_repl_cli(sqlexecute)
+    cli.sandbox_mode = True
+    monkeypatch.setattr(repl_mode, 'is_mutating', lambda status: False)
+
+    repl_mode._one_iteration(
+        cli, repl_mode.ReplState(), "ALTER USER 'root'@'localhost' IDENTIFIED BY 'newpass'"
+    )
+    assert cli.sandbox_mode is False
+    assert any('reconnection failed' in msg for msg in cli.echo_calls)
 
 
 def test_one_iteration_covers_redirect_destructive_success_refresh_and_logfile(monkeypatch: pytest.MonkeyPatch) -> None:
