@@ -305,11 +305,13 @@ def test_repl_picker_helpers_cover_present_and_missing_resources(monkeypatch: py
     }
     monkeypatch.setattr(repl_mode.resources, 'files', lambda package: FakeResourceTree(files))
     monkeypatch.setattr(repl_mode.random, 'choice', lambda seq: seq[0])
-    assert repl_mode._thanks_picker() == 'Alice'
+    assert repl_mode._contributors_picker() == 'Alice'
+    assert repl_mode._sponsors_picker() == 'Carol'
     assert repl_mode._tips_picker() == 'Tip 1'
 
     monkeypatch.setattr(repl_mode.resources, 'files', lambda package: FakeResourceTree({}))
-    assert repl_mode._thanks_picker() == 'our sponsors'
+    assert repl_mode._contributors_picker() == 'our contributors'
+    assert repl_mode._sponsors_picker() == 'our sponsors'
     assert repl_mode._tips_picker() == r'\? or "help" for help!'
 
 
@@ -318,7 +320,8 @@ def test_repl_show_startup_banner_and_prompt_helpers(monkeypatch: pytest.MonkeyP
     printed: list[str] = []
     monkeypatch.setattr(builtins, 'print', lambda *args, **kwargs: printed.append(' '.join(str(x) for x in args)))
     monkeypatch.setattr(repl_mode.random, 'random', lambda: 0.4)
-    monkeypatch.setattr(repl_mode, '_thanks_picker', lambda: 'Alice')
+    monkeypatch.setattr(repl_mode, '_contributors_picker', lambda: 'Alice')
+    monkeypatch.setattr(repl_mode, '_sponsors_picker', lambda: 'Carol')
     monkeypatch.setattr(repl_mode, '_tips_picker', lambda: 'Tip')
 
     cli.less_chatty = False

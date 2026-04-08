@@ -3,11 +3,11 @@ from types import SimpleNamespace
 import click
 import pytest
 
-from mycli.packages import prompt_utils
+from mycli.packages import interactive_utils
 
 
 def test_confirm_bool_param_type_converts_bool_and_strings() -> None:
-    boolean_type = prompt_utils.ConfirmBoolParamType()
+    boolean_type = interactive_utils.ConfirmBoolParamType()
 
     assert boolean_type.convert(True, None, None) is True
     assert boolean_type.convert(False, None, None) is False
@@ -19,7 +19,7 @@ def test_confirm_bool_param_type_converts_bool_and_strings() -> None:
 
 
 def test_confirm_bool_param_type_rejects_invalid_string() -> None:
-    boolean_type = prompt_utils.ConfirmBoolParamType()
+    boolean_type = interactive_utils.ConfirmBoolParamType()
 
     with pytest.raises(click.BadParameter, match='maybe is not a valid boolean'):
         boolean_type.convert('maybe', None, None)
@@ -38,13 +38,13 @@ def test_confirm_destructive_query_returns_none_when_not_destructive(monkeypatch
         destructive_calls.append((keywords, query))
         return False
 
-    monkeypatch.setattr(prompt_utils, 'is_destructive', fake_is_destructive)
-    monkeypatch.setattr(prompt_utils, 'prompt', fake_prompt)
-    monkeypatch.setattr(prompt_utils.sys, 'stdin', SimpleNamespace(isatty=lambda: True))
+    monkeypatch.setattr(interactive_utils, 'is_destructive', fake_is_destructive)
+    monkeypatch.setattr(interactive_utils, 'prompt', fake_prompt)
+    monkeypatch.setattr(interactive_utils.sys, 'stdin', SimpleNamespace(isatty=lambda: True))
 
     keywords = ['drop']
     query = 'select 1;'
-    assert prompt_utils.confirm_destructive_query(keywords, query) is None
+    assert interactive_utils.confirm_destructive_query(keywords, query) is None
     assert destructive_calls == [(keywords, query)]
     assert prompt_called is False
 
@@ -57,13 +57,13 @@ def test_confirm_destructive_query_returns_none_without_tty(monkeypatch: pytest.
         prompt_called = True
         return True
 
-    monkeypatch.setattr(prompt_utils, 'is_destructive', lambda keywords, query: True)
-    monkeypatch.setattr(prompt_utils, 'prompt', fake_prompt)
-    monkeypatch.setattr(prompt_utils.sys, 'stdin', SimpleNamespace(isatty=lambda: False))
+    monkeypatch.setattr(interactive_utils, 'is_destructive', lambda keywords, query: True)
+    monkeypatch.setattr(interactive_utils, 'prompt', fake_prompt)
+    monkeypatch.setattr(interactive_utils.sys, 'stdin', SimpleNamespace(isatty=lambda: False))
 
     keywords = ['drop']
     sql = 'drop database foo;'
-    assert prompt_utils.confirm_destructive_query(keywords, sql) is None
+    assert interactive_utils.confirm_destructive_query(keywords, sql) is None
     assert prompt_called is False
 
 
@@ -79,20 +79,20 @@ def test_confirm_destructive_query_prompts_and_returns_user_choice(monkeypatch: 
         destructive_calls.append((keywords, query))
         return True
 
-    monkeypatch.setattr(prompt_utils, 'is_destructive', fake_is_destructive)
-    monkeypatch.setattr(prompt_utils, 'prompt', fake_prompt)
-    monkeypatch.setattr(prompt_utils.sys, 'stdin', SimpleNamespace(isatty=lambda: True))
+    monkeypatch.setattr(interactive_utils, 'is_destructive', fake_is_destructive)
+    monkeypatch.setattr(interactive_utils, 'prompt', fake_prompt)
+    monkeypatch.setattr(interactive_utils.sys, 'stdin', SimpleNamespace(isatty=lambda: True))
 
     keywords = ['drop']
     query = 'drop database foo;'
-    result = prompt_utils.confirm_destructive_query(keywords, query)
+    result = interactive_utils.confirm_destructive_query(keywords, query)
 
     assert result is True
     assert destructive_calls == [(keywords, query)]
     assert prompt_calls == [
         (
             ("You're about to run a destructive command.\nDo you want to proceed? (y/n)",),
-            {'type': prompt_utils.BOOLEAN_TYPE},
+            {'type': interactive_utils.BOOLEAN_TYPE},
         )
     ]
 
@@ -109,18 +109,18 @@ def test_confirm_destructive_query_returns_false_when_user_rejects(monkeypatch: 
         destructive_calls.append((keywords, query))
         return True
 
-    monkeypatch.setattr(prompt_utils, 'is_destructive', fake_is_destructive)
-    monkeypatch.setattr(prompt_utils, 'prompt', fake_prompt)
-    monkeypatch.setattr(prompt_utils.sys, 'stdin', SimpleNamespace(isatty=lambda: True))
+    monkeypatch.setattr(interactive_utils, 'is_destructive', fake_is_destructive)
+    monkeypatch.setattr(interactive_utils, 'prompt', fake_prompt)
+    monkeypatch.setattr(interactive_utils.sys, 'stdin', SimpleNamespace(isatty=lambda: True))
 
     keywords = ['drop']
     query = 'drop database foo;'
-    assert prompt_utils.confirm_destructive_query(keywords, query) is False
+    assert interactive_utils.confirm_destructive_query(keywords, query) is False
     assert destructive_calls == [(keywords, query)]
     assert prompt_calls == [
         (
             ("You're about to run a destructive command.\nDo you want to proceed? (y/n)",),
-            {'type': prompt_utils.BOOLEAN_TYPE},
+            {'type': interactive_utils.BOOLEAN_TYPE},
         )
     ]
 
@@ -131,7 +131,7 @@ def test_confirm_returns_false_on_click_abort(monkeypatch: pytest.MonkeyPatch) -
 
     monkeypatch.setattr(click, 'confirm', fake_confirm)
 
-    assert prompt_utils.confirm('continue?') is False
+    assert interactive_utils.confirm('continue?') is False
 
 
 def test_confirm_delegates_to_click_confirm(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -143,7 +143,7 @@ def test_confirm_delegates_to_click_confirm(monkeypatch: pytest.MonkeyPatch) -> 
 
     monkeypatch.setattr(click, 'confirm', fake_confirm)
 
-    assert prompt_utils.confirm('continue?', default=True) is True
+    assert interactive_utils.confirm('continue?', default=True) is True
     assert calls == [(('continue?',), {'default': True})]
 
 
@@ -153,7 +153,7 @@ def test_prompt_returns_false_on_click_abort(monkeypatch: pytest.MonkeyPatch) ->
 
     monkeypatch.setattr(click, 'prompt', fake_prompt)
 
-    assert prompt_utils.prompt('continue?') is False
+    assert interactive_utils.prompt('continue?') is False
 
 
 def test_prompt_delegates_to_click_prompt(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -165,5 +165,5 @@ def test_prompt_delegates_to_click_prompt(monkeypatch: pytest.MonkeyPatch) -> No
 
     monkeypatch.setattr(click, 'prompt', fake_prompt)
 
-    assert prompt_utils.prompt('continue?', type=prompt_utils.BOOLEAN_TYPE) is True
-    assert calls == [(('continue?',), {'type': prompt_utils.BOOLEAN_TYPE})]
+    assert interactive_utils.prompt('continue?', type=interactive_utils.BOOLEAN_TYPE) is True
+    assert calls == [(('continue?',), {'type': interactive_utils.BOOLEAN_TYPE})]

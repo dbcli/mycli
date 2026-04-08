@@ -20,7 +20,7 @@ from prompt_toolkit.application.current import get_app
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory, ThreadedAutoSuggest
 from prompt_toolkit.completion import DynamicCompleter
 from prompt_toolkit.enums import DEFAULT_BUFFER, EditingMode
-from prompt_toolkit.filters import Condition, HasFocus, IsDone
+from prompt_toolkit.filters import Condition, has_focus, is_done
 from prompt_toolkit.formatted_text import (
     ANSI,
 )
@@ -48,11 +48,11 @@ from mycli.lexer import MyCliLexer
 from mycli.packages import special
 from mycli.packages.filepaths import dir_path_exists
 from mycli.packages.hybrid_redirection import get_redirect_components, is_redirect_command
+from mycli.packages.interactive_utils import confirm, confirm_destructive_query
 from mycli.packages.key_binding_utils import (
     handle_clip_command,
     handle_editor_command,
 )
-from mycli.packages.prompt_utils import confirm, confirm_destructive_query
 from mycli.packages.ptoolkit.history import FileHistoryWithTimestamp
 from mycli.packages.special.utils import format_uptime, get_ssl_version, get_uptime, get_warning_count
 from mycli.packages.sql_utils import (
@@ -137,8 +137,10 @@ def _show_startup_banner(
         print(sqlexecute.server_info)
     print('mycli', mycli_package.__version__)
     print(SUPPORT_INFO)
-    if random.random() <= 0.5:
-        print('Thanks to the contributor —', _thanks_picker())
+    if random.random() <= 0.25:
+        print('Thanks to the sponsor —', _sponsors_picker())
+    elif random.random() <= 0.5:
+        print('Thanks to the contributor —', _contributors_picker())
     else:
         print('Tip —', _tips_picker())
 
@@ -491,7 +493,7 @@ def _build_prompt_session(
             input_processors=[
                 ConditionalProcessor(
                     processor=HighlightMatchingBracketProcessor(chars='[](){}'),
-                    filter=HasFocus(DEFAULT_BUFFER) & ~IsDone(),
+                    filter=has_focus(DEFAULT_BUFFER) & ~is_done,
                 )
             ],
             tempfile_suffix='.sql',
@@ -780,7 +782,7 @@ def _one_iteration(
     mycli.query_history.append(query)
 
 
-def _thanks_picker() -> str:
+def _contributors_picker() -> str:
     lines: str = ""
 
     try:
@@ -788,6 +790,16 @@ def _thanks_picker() -> str:
             lines += f.read()
     except FileNotFoundError:
         pass
+
+    contents = []
+    for line in lines.split("\n"):
+        if m := re.match(r"^ *\* (.*)", line):
+            contents.append(m.group(1))
+    return random.choice(contents) if contents else 'our contributors'
+
+
+def _sponsors_picker() -> str:
+    lines: str = ""
 
     try:
         with resources.files(mycli_package).joinpath("SPONSORS").open('r') as f:

@@ -6,6 +6,7 @@ Features
 * Continue to expand TIPS.
 * Make `--progress` and `--checkpoint` strictly by statement.
 * Allow more characters in passwords read from a file.
+* Show sponsors and contributors separately in startup messages.
 
 
 Bug Fixes
@@ -46,6 +47,8 @@ Internal
 * Move SQL utilities to a new `sql_utils.py`.
 * Move CLI utilities to a new `cli_utils.py`.
 * Move keybinding utilities to a new `key_binding_utils.py`.
+* Move interactive utilities to `interactive_utils.py`.
+* Modernize orthography of prompt_toolkit filters.
 
 
 1.67.1 (2026/03/28)
