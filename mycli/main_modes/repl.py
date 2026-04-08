@@ -135,8 +135,10 @@ def _show_startup_banner(
     print(sqlexecute.server_info)
     print('mycli', mycli_package.__version__)
     print(SUPPORT_INFO)
-    if random.random() <= 0.5:
-        print('Thanks to the contributor —', _thanks_picker())
+    if random.random() <= 0.25:
+        print('Thanks to the sponsor —', _sponsors_picker())
+    elif random.random() <= 0.5:
+        print('Thanks to the contributor —', _contributors_picker())
     else:
         print('Tip —', _tips_picker())
 
@@ -700,7 +702,7 @@ def _one_iteration(
     mycli.query_history.append(query)
 
 
-def _thanks_picker() -> str:
+def _contributors_picker() -> str:
     lines: str = ""
 
     try:
@@ -708,6 +710,16 @@ def _thanks_picker() -> str:
             lines += f.read()
     except FileNotFoundError:
         pass
+
+    contents = []
+    for line in lines.split("\n"):
+        if m := re.match(r"^ *\* (.*)", line):
+            contents.append(m.group(1))
+    return random.choice(contents) if contents else 'our contributors'
+
+
+def _sponsors_picker() -> str:
+    lines: str = ""
 
     try:
         with resources.files(mycli_package).joinpath("SPONSORS").open('r') as f:
