@@ -34,7 +34,7 @@ default_config_file = os.path.join(project_root_dir, 'test', 'myclirc')
 login_path_file = os.path.join(project_root_dir, 'test', 'mylogin.cnf')
 
 os.environ["MYSQL_TEST_LOGIN_FILE"] = login_path_file
-CLI_ARGS = [
+CLI_ARGS_WITHOUT_DB = [
     "--user",
     USER,
     "--host",
@@ -47,8 +47,8 @@ CLI_ARGS = [
     default_config_file,
     "--defaults-file",
     default_config_file,
-    TEST_DATABASE,
 ]
+CLI_ARGS = CLI_ARGS_WITHOUT_DB + [TEST_DATABASE]
 
 
 @dbtest
@@ -2139,7 +2139,7 @@ def test_null_string_config(monkeypatch):
             """)
         )
         myclirc.flush()
-        args = CLI_ARGS + ['--myclirc', myclirc.name, '--format=table', '--execute', 'SELECT NULL']
+        args = CLI_ARGS_WITHOUT_DB + ['--myclirc', myclirc.name, '--format=table', '--execute', 'SELECT NULL']
         result = runner.invoke(mycli.main.click_entrypoint, args=args)
         assert '<nope>' in result.output
         assert '<null>' not in result.output
