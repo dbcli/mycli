@@ -20,7 +20,7 @@ from prompt_toolkit.application.current import get_app
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory, ThreadedAutoSuggest
 from prompt_toolkit.completion import DynamicCompleter
 from prompt_toolkit.enums import DEFAULT_BUFFER, EditingMode
-from prompt_toolkit.filters import Condition, HasFocus, IsDone
+from prompt_toolkit.filters import Condition, has_focus, is_done
 from prompt_toolkit.formatted_text import (
     ANSI,
 )
@@ -490,7 +490,7 @@ def _build_prompt_session(
             input_processors=[
                 ConditionalProcessor(
                     processor=HighlightMatchingBracketProcessor(chars='[](){}'),
-                    filter=HasFocus(DEFAULT_BUFFER) & ~IsDone(),
+                    filter=has_focus(DEFAULT_BUFFER) & ~is_done,
                 )
             ],
             tempfile_suffix='.sql',
