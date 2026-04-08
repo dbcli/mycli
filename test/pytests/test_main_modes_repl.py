@@ -887,9 +887,7 @@ def test_one_iteration_allows_alter_user_in_sandbox_mode(monkeypatch: pytest.Mon
     cli.sandbox_mode = True
     monkeypatch.setattr(repl_mode, 'is_mutating', lambda status: False)
 
-    repl_mode._one_iteration(
-        cli, repl_mode.ReplState(), "ALTER USER 'root'@'localhost' IDENTIFIED BY 'newpass'"
-    )
+    repl_mode._one_iteration(cli, repl_mode.ReplState(), "ALTER USER 'root'@'localhost' IDENTIFIED BY 'newpass'")
     assert cli.sandbox_mode is False
     assert sqlexecute.password == 'newpass'
     assert sqlexecute.connect_expired_password is False
@@ -918,9 +916,7 @@ def test_one_iteration_sandbox_reconnect_failure(monkeypatch: pytest.MonkeyPatch
     cli.sandbox_mode = True
     monkeypatch.setattr(repl_mode, 'is_mutating', lambda status: False)
 
-    repl_mode._one_iteration(
-        cli, repl_mode.ReplState(), "ALTER USER 'root'@'localhost' IDENTIFIED BY 'newpass'"
-    )
+    repl_mode._one_iteration(cli, repl_mode.ReplState(), "ALTER USER 'root'@'localhost' IDENTIFIED BY 'newpass'")
     assert cli.sandbox_mode is False
     assert any('reconnection failed' in msg for msg in cli.echo_calls)
 
