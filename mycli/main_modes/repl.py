@@ -754,7 +754,6 @@ def _one_iteration(
             new_password = _extract_new_password(text)
             if new_password is not None:
                 sqlexecute.password = new_password
-            sqlexecute.connect_expired_password = False
             try:
                 sqlexecute.connect()
                 mycli.sandbox_mode = False

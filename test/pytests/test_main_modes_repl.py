@@ -873,7 +873,6 @@ def test_one_iteration_allows_alter_user_in_sandbox_mode(monkeypatch: pytest.Mon
             self.dbname = 'db'
             self.connection_id = 0
             self.password = 'old'
-            self.connect_expired_password = True
             self.connect_calls: list[bool] = []
 
         def connect(self) -> None:
@@ -890,7 +889,6 @@ def test_one_iteration_allows_alter_user_in_sandbox_mode(monkeypatch: pytest.Mon
     repl_mode._one_iteration(cli, repl_mode.ReplState(), "ALTER USER 'root'@'localhost' IDENTIFIED BY 'newpass'")
     assert cli.sandbox_mode is False
     assert sqlexecute.password == 'newpass'
-    assert sqlexecute.connect_expired_password is False
     assert sqlexecute.connect_calls == [True]
     assert any('Reconnected' in msg for msg in cli.echo_calls)
 
@@ -903,7 +901,6 @@ def test_one_iteration_sandbox_reconnect_failure(monkeypatch: pytest.MonkeyPatch
             self.dbname = 'db'
             self.connection_id = 0
             self.password = 'old'
-            self.connect_expired_password = True
 
         def connect(self) -> None:
             raise RuntimeError('connection refused')

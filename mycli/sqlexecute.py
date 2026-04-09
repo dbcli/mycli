@@ -14,6 +14,7 @@ from pymysql.constants import FIELD_TYPE
 from pymysql.converters import conversions, convert_date, convert_datetime, convert_time, decoders
 from pymysql.cursors import Cursor
 
+from mycli.constants import ER_MUST_CHANGE_PASSWORD
 from mycli.packages.special import iocommands
 from mycli.packages.special.main import CommandNotFound, execute
 from mycli.packages.sqlresult import SQLResult
@@ -175,7 +176,6 @@ class SQLExecute:
         ssh_key_filename: str | None,
         init_command: str | None = None,
         unbuffered: bool | None = None,
-        connect_expired_password: bool = False,
     ) -> None:
         self.dbname = database
         self.user = user
@@ -195,7 +195,6 @@ class SQLExecute:
         self.ssh_key_filename = ssh_key_filename
         self.init_command = init_command
         self.unbuffered = unbuffered
-        self.connect_expired_password = connect_expired_password
         self.conn: Connection | None = None
         self.connect()
 
@@ -282,8 +281,7 @@ class SQLExecute:
         client_flag = pymysql.constants.CLIENT.INTERACTIVE
         if init_command and len(list(iocommands.split_queries(init_command))) > 1:
             client_flag |= pymysql.constants.CLIENT.MULTI_STATEMENTS
-        if self.connect_expired_password:
-            client_flag |= pymysql.constants.CLIENT.HANDLE_EXPIRED_PASSWORDS
+        client_flag |= pymysql.constants.CLIENT.HANDLE_EXPIRED_PASSWORDS
 
         ssl_context = None
         if ssl:
@@ -313,7 +311,7 @@ class SQLExecute:
         try:
             conn = pymysql.connect(**connect_kwargs)  # type: ignore[misc]
         except pymysql.OperationalError as e:
-            if e.args[0] == 1820 and self.connect_expired_password:
+            if e.args[0] == ER_MUST_CHANGE_PASSWORD:
                 # Post-handshake queries (SET NAMES, SET AUTOCOMMIT, init_command)
                 # fail with ER_MUST_CHANGE_PASSWORD in sandbox mode.
                 # Reconnect with only the raw handshake.

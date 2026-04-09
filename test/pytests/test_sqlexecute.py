@@ -673,7 +673,6 @@ def make_executor_for_connect_tests() -> SQLExecute:
     executor.ssh_key_filename = '/stored/key.pem'
     executor.init_command = 'select 1'
     executor.unbuffered = False
-    executor.connect_expired_password = False
     executor.sandbox_mode = False
     executor.conn = None
     return executor
@@ -766,7 +765,6 @@ def test_connect_updates_connection_state_and_merges_overrides(monkeypatch) -> N
 
 def test_connect_sets_expired_password_flag(monkeypatch) -> None:
     executor = make_executor_for_connect_tests()
-    executor.connect_expired_password = True
     executor.ssl = None
 
     new_conn = DummyConnection(server_version='8.0.36-0ubuntu0.22.04.1')
@@ -787,7 +785,6 @@ def test_connect_sets_expired_password_flag(monkeypatch) -> None:
 
 def test_connect_falls_back_to_sandbox_on_1820(monkeypatch) -> None:
     executor = make_executor_for_connect_tests()
-    executor.connect_expired_password = True
     executor.ssl = None
 
     new_conn = DummyConnection(server_version='8.0.36-0ubuntu0.22.04.1')
@@ -814,20 +811,6 @@ def test_connect_falls_back_to_sandbox_on_1820(monkeypatch) -> None:
     assert executor.sandbox_mode is True
     assert executor.server_info is None
     assert executor.connection_id is None
-
-
-def test_connect_1820_without_expired_flag_reraises(monkeypatch) -> None:
-    executor = make_executor_for_connect_tests()
-    executor.connect_expired_password = False
-    executor.ssl = None
-
-    def fake_connect(**kwargs):
-        raise pymysql.OperationalError(1820, 'must change password')
-
-    monkeypatch.setattr(sqlexecute.pymysql, 'connect', fake_connect)
-
-    with pytest.raises(pymysql.OperationalError, match='must change password'):
-        executor.connect()
 
 
 def test_connect_uses_ssh_tunnel_when_ssh_host_is_set(monkeypatch) -> None:

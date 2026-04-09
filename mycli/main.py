@@ -558,7 +558,6 @@ class MyCli:
         reset_keyring: bool | None = None,
         keepalive_ticks: int | None = None,
         show_warnings: bool | None = None,
-        connect_expired_password: bool = False,
     ) -> None:
         cnf = {
             "database": None,
@@ -687,13 +686,6 @@ class MyCli:
         # should not fail, but will help the typechecker
         assert not isinstance(passwd, int)
 
-        # CLI flag takes precedence; fall back to config file setting
-        if not connect_expired_password:
-            try:
-                connect_expired_password = str_to_bool(user_connection_config.get('connect_expired_password', ''))
-            except (TypeError, ValueError):
-                connect_expired_password = False
-
         connection_info: dict[Any, Any] = {
             "database": database,
             "user": user,
@@ -711,7 +703,6 @@ class MyCli:
             "ssh_key_filename": ssh_key_filename,
             "init_command": init_command,
             "unbuffered": unbuffered,
-            "connect_expired_password": connect_expired_password,
         }
 
         def _update_keyring(password: str | None, keyring_retrieved_cleanly: bool):
@@ -763,10 +754,7 @@ class MyCli:
                     )
                 elif e1.args[0] == ER_MUST_CHANGE_PASSWORD_LOGIN:
                     self.echo(
-                        (
-                            "Your password has expired. Use the --connect-expired-password flag or "
-                            "connect_expired_password config option to enter sandbox mode."
-                        ),
+                        "Your password has expired and the server rejected the connection.",
                         err=True,
                         fg='red',
                     )
@@ -1436,10 +1424,6 @@ class CliArgs:
         default=None,
         help='Enable/disable LOAD DATA LOCAL INFILE.',
     )
-    connect_expired_password: bool = clickdc.option(
-        is_flag=True,
-        help='Notify the server that this client is prepared to handle expired password sandbox mode.',
-    )
     login_path: str | None = clickdc.option(
         '-g',
         type=str,
@@ -1933,7 +1917,6 @@ def click_entrypoint(
         reset_keyring=reset_keyring,
         keepalive_ticks=keepalive_ticks,
         show_warnings=cli_args.show_warnings,
-        connect_expired_password=cli_args.connect_expired_password,
     )
 
     if combined_init_cmd:
