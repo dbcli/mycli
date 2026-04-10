@@ -70,7 +70,7 @@ jobs:
 
     steps:
       - name: Post Codex review as PR comment
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           CODEX_FINAL_MESSAGE: |
             ${{ format('## Codex Review
