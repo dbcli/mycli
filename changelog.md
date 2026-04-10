@@ -49,6 +49,7 @@ Internal
 * Move keybinding utilities to a new `key_binding_utils.py`.
 * Move interactive utilities to `interactive_utils.py`.
 * Modernize orthography of prompt_toolkit filters.
+* Pin all GitHub Actions to hashes.
 
 
 1.67.1 (2026/03/28)
