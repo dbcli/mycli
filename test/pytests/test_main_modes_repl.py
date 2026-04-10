@@ -816,7 +816,9 @@ def test_one_iteration_covers_llm_paths(monkeypatch: pytest.MonkeyPatch) -> None
     ],
 )
 def test_is_sandbox_allowed(text: str, expected: bool) -> None:
-    assert repl_mode._is_sandbox_allowed(text) is expected
+    from mycli.packages.sql_utils import is_sandbox_allowed
+
+    assert is_sandbox_allowed(text) is expected
 
 
 @pytest.mark.parametrize(
@@ -829,7 +831,9 @@ def test_is_sandbox_allowed(text: str, expected: bool) -> None:
     ],
 )
 def test_is_password_change(text: str, expected: bool) -> None:
-    assert repl_mode._is_password_change(text) is expected
+    from mycli.packages.sql_utils import is_password_change
+
+    assert is_password_change(text) is expected
 
 
 @pytest.mark.parametrize(
@@ -843,7 +847,9 @@ def test_is_password_change(text: str, expected: bool) -> None:
     ],
 )
 def test_extract_new_password(text: str, expected: str | None) -> None:
-    assert repl_mode._extract_new_password(text) == expected
+    from mycli.packages.sql_utils import extract_new_password
+
+    assert extract_new_password(text) == expected
 
 
 def test_one_iteration_blocks_disallowed_in_sandbox_mode(monkeypatch: pytest.MonkeyPatch) -> None:

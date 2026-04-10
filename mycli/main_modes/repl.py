@@ -56,8 +56,11 @@ from mycli.packages.key_binding_utils import (
 from mycli.packages.ptoolkit.history import FileHistoryWithTimestamp
 from mycli.packages.special.utils import format_uptime, get_ssl_version, get_uptime, get_warning_count
 from mycli.packages.sql_utils import (
+    extract_new_password,
     is_dropping_database,
     is_mutating,
+    is_password_change,
+    is_sandbox_allowed,
     is_select,
     need_completion_refresh,
     need_completion_reset,
@@ -519,52 +522,6 @@ def _build_prompt_session(
             mycli.prompt_session.app.ttimeoutlen = mycli.emacs_ttimeoutlen
 
 
-_SANDBOX_ALLOWED_RE = re.compile(
-    r'^\s*(ALTER\s+USER|SET\s+PASSWORD|QUIT|EXIT|\\q)\b',
-    re.IGNORECASE,
-)
-
-_PASSWORD_CHANGE_RE = re.compile(
-    r'^\s*(ALTER\s+USER|SET\s+PASSWORD)\b',
-    re.IGNORECASE,
-)
-
-
-def _is_sandbox_allowed(text: str) -> bool:
-    """Return True if the command is allowed in expired-password sandbox mode."""
-    stripped = text.strip()
-    if not stripped:
-        return True
-    return bool(_SANDBOX_ALLOWED_RE.match(stripped))
-
-
-def _is_password_change(text: str) -> bool:
-    """Return True if the command is a password change statement."""
-    return bool(_PASSWORD_CHANGE_RE.match(text.strip()))
-
-
-_IDENTIFIED_BY_RE = re.compile(
-    r"IDENTIFIED\s+BY\s+'([^']*)'",
-    re.IGNORECASE,
-)
-
-_SET_PASSWORD_RE = re.compile(
-    r"SET\s+PASSWORD\s*=\s*'([^']*)'",
-    re.IGNORECASE,
-)
-
-
-def _extract_new_password(text: str) -> str | None:
-    """Extract the new password from an ALTER USER or SET PASSWORD statement."""
-    m = _IDENTIFIED_BY_RE.search(text)
-    if m:
-        return m.group(1)
-    m = _SET_PASSWORD_RE.search(text)
-    if m:
-        return m.group(1)
-    return None
-
-
 def _one_iteration(
     mycli: 'MyCli',
     state: ReplState,
@@ -662,7 +619,7 @@ def _one_iteration(
             mycli.echo(str(e), err=True, fg='red')
             return
 
-    if mycli.sandbox_mode and not _is_sandbox_allowed(text):
+    if mycli.sandbox_mode and not is_sandbox_allowed(text):
         mycli.echo(
             "ERROR 1820: You must reset your password using ALTER USER or SET PASSWORD before executing this statement.",
             err=True,
@@ -750,8 +707,8 @@ def _one_iteration(
         mycli.logger.error('traceback: %r', traceback.format_exc())
         mycli.echo(str(e), err=True, fg='red')
     else:
-        if mycli.sandbox_mode and _is_password_change(text):
-            new_password = _extract_new_password(text)
+        if mycli.sandbox_mode and is_password_change(text):
+            new_password = extract_new_password(text)
             if new_password is not None:
                 sqlexecute.password = new_password
             try:

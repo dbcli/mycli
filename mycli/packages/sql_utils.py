@@ -4,6 +4,7 @@ import re
 from typing import Any, Generator, Literal
 
 import sqlglot
+import sqlglot.tokens
 import sqlparse
 from sqlparse.sql import Function, Identifier, IdentifierList, Token, TokenList
 from sqlparse.tokens import DML, Keyword, Punctuation
@@ -469,3 +470,85 @@ def is_select(status_plain: str | None) -> bool:
     if not status_plain:
         return False
     return status_plain.split(None, 1)[0].lower() == "select"
+
+
+def classify_sandbox_statement(text: str) -> tuple[str | None, str | None]:
+    """Classify a SQL statement for sandbox mode and extract the new password.
+
+    Returns (statement_type, new_password) where statement_type is one of:
+    - 'alter_user'    — ALTER USER ... IDENTIFIED BY ...
+    - 'set_password'  — SET PASSWORD [FOR ...] = ...
+    - 'quit'          — quit, exit, \\q
+    - None            — not allowed in sandbox mode
+    """
+    stripped = text.strip()
+    if not stripped:
+        return ('quit', None)
+
+    tokens = list(sqlglot.tokenize(stripped, dialect='mysql'))
+    if not tokens:
+        return ('quit', None)
+
+    types = [t.token_type for t in tokens]
+    texts = [t.text.upper() for t in tokens]
+    tt = sqlglot.tokens.TokenType
+
+    # quit, exit
+    if len(tokens) == 1 and types[0] == tt.VAR and texts[0] in ('QUIT', 'EXIT'):
+        return ('quit', None)
+
+    # \q
+    if len(tokens) == 2 and types[0] == tt.BACKSLASH and texts[1] == 'Q':
+        return ('quit', None)
+
+    # ALTER USER ...
+    if len(tokens) >= 2 and types[0] == tt.ALTER and texts[1] == 'USER':
+        pw = _find_password_after_by(tokens)
+        return ('alter_user', pw)
+
+    # SET PASSWORD ...
+    if len(tokens) >= 2 and types[0] == tt.SET and texts[1] == 'PASSWORD':
+        pw = _find_password_after_eq(tokens)
+        return ('set_password', pw)
+
+    return (None, None)
+
+
+def _find_password_after_by(tokens: list[sqlglot.tokens.Token]) -> str | None:
+    """Find a password literal following a BY token (for ALTER USER ... IDENTIFIED BY 'pw')."""
+    tt = sqlglot.tokens.TokenType
+    for i, tok in enumerate(tokens):
+        if tok.token_type == tt.VAR and tok.text.upper() == 'BY' and i + 1 < len(tokens):
+            next_tok = tokens[i + 1]
+            if next_tok.token_type == tt.STRING:
+                return next_tok.text
+    return None
+
+
+def _find_password_after_eq(tokens: list[sqlglot.tokens.Token]) -> str | None:
+    """Find a password literal following an = token (for SET PASSWORD = 'pw')."""
+    tt = sqlglot.tokens.TokenType
+    for i, tok in enumerate(tokens):
+        if tok.token_type == tt.EQ and i + 1 < len(tokens):
+            next_tok = tokens[i + 1]
+            if next_tok.token_type == tt.STRING:
+                return next_tok.text
+    return None
+
+
+def is_sandbox_allowed(text: str) -> bool:
+    """Return True if the command is allowed in expired-password sandbox mode."""
+    stmt_type, _ = classify_sandbox_statement(text)
+    return stmt_type is not None
+
+
+def is_password_change(text: str) -> bool:
+    """Return True if the command is a password change statement."""
+    stmt_type, _ = classify_sandbox_statement(text)
+    return stmt_type in ('alter_user', 'set_password')
+
+
+def extract_new_password(text: str) -> str | None:
+    """Extract the new password from an ALTER USER or SET PASSWORD statement."""
+    _, password = classify_sandbox_statement(text)
+    return password

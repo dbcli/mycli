@@ -817,7 +817,7 @@ class MyCli:
             if self.sqlexecute and self.sqlexecute.sandbox_mode:
                 self.sandbox_mode = True
                 self.echo(
-                    "Your password has expired. Use ALTER USER to set a new password, or quit.",
+                    "Your password has expired. Use ALTER USER or SET PASSWSORD to set a new password, or quit.",
                     err=True,
                     fg='yellow',
                 )
