@@ -7,7 +7,8 @@ Features
 * Make `--progress` and `--checkpoint` strictly by statement.
 * Allow more characters in passwords read from a file.
 * Show sponsors and contributors separately in startup messages.
-* Add support for expired password (sandbox) mode (#440)
+* Add support for expired password (sandbox) mode (#440).
+* Make balanced-bracket highlight colors configurable.
 
 
 Bug Fixes

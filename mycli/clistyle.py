@@ -23,6 +23,8 @@ TOKEN_TO_PROMPT_STYLE: dict[Token, str] = {
     Token.SelectedText: "selected",
     Token.SearchMatch: "search",
     Token.SearchMatch.Current: "search.current",
+    Token.MatchingBracket.Cursor: "matching-bracket.cursor",
+    Token.MatchingBracket.Other: "matching-bracket.other",
     Token.Toolbar: "bottom-toolbar",
     Token.Toolbar.Off: "bottom-toolbar.off",
     Token.Toolbar.On: "bottom-toolbar.on",
