@@ -38,6 +38,7 @@ from test.utils import (  # type: ignore[attr-defined]
     DummyFormatter,
     DummyLogger,
     FakeCursorBase,
+    RecordingSQLExecute,
     call_click_entrypoint_direct,
     make_bare_mycli,
     make_dummy_mycli_class,
@@ -58,25 +59,6 @@ class FakeConnection:
 class BoolSection(dict[str, Any]):
     def as_bool(self, key: str) -> bool:
         return str(self[key]).lower() == 'true'
-
-
-class RecordingSQLExecute:
-    calls: list[dict[str, Any]] = []
-    side_effects: list[Any] = []
-
-    def __init__(self, **kwargs: Any) -> None:
-        type(self).calls.append(dict(kwargs))
-        if type(self).side_effects:
-            effect = type(self).side_effects.pop(0)
-            if isinstance(effect, BaseException):
-                raise effect
-            if callable(effect):
-                effect(kwargs)
-        self.kwargs = kwargs
-        self.dbname = kwargs.get('database')
-        self.user = kwargs.get('user')
-        self.conn = kwargs.get('conn')
-        self.sandbox_mode = False
 
 
 class ToggleBool:

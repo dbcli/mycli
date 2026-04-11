@@ -13,6 +13,7 @@ from typing import Any, cast
 
 import click
 from click.testing import CliRunner
+import pymysql
 from pymysql.err import OperationalError
 import pytest
 
@@ -38,7 +39,9 @@ from test.utils import (
     TEMPFILE_PREFIX,
     USER,
     DummyFormatter,
+    DummyLogger,
     FakeCursorBase,
+    RecordingSQLExecute,
     ReusableLock,
     call_click_entrypoint_direct,
     dbtest,
@@ -2365,3 +2368,53 @@ def test_get_last_query_returns_latest_query() -> None:
     cli.query_history = [main.Query('select 1', True, False)]
 
     assert main.MyCli.get_last_query(cli) == 'select 1'
+
+
+def test_connect_reports_expired_password_login_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli = make_bare_mycli()
+    cli.my_cnf = {'client': {}, 'mysqld': {}}
+    cli.config_without_package_defaults = {'connection': {}}
+    cli.config = {'connection': {}, 'main': {}}
+    cli.logger = cast(Any, DummyLogger())
+    echo_calls: list[str] = []
+    cli.echo = lambda message, **kwargs: echo_calls.append(str(message))  # type: ignore[assignment]
+    monkeypatch.setattr(main, 'WIN', False)
+    monkeypatch.setattr(main, 'str_to_bool', lambda value: False)
+
+    class ExpiredPasswordSQLExecute(RecordingSQLExecute):
+        calls: list[dict[str, Any]] = []
+        side_effects: list[Any] = [pymysql.OperationalError(main.ER_MUST_CHANGE_PASSWORD_LOGIN, 'must change password')]
+
+    monkeypatch.setattr(main, 'SQLExecute', ExpiredPasswordSQLExecute)
+
+    with pytest.raises(SystemExit):
+        main.MyCli.connect(cli, host='db', port=3307)
+
+    assert any('password has expired' in message for message in echo_calls)
+
+
+def test_connect_sets_cli_sandbox_mode_when_sqlexecute_enters_sandbox(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli = make_bare_mycli()
+    cli.my_cnf = {'client': {}, 'mysqld': {}}
+    cli.config_without_package_defaults = {'connection': {}}
+    cli.config = {'connection': {}, 'main': {}}
+    cli.logger = cast(Any, DummyLogger())
+    echo_calls: list[str] = []
+    cli.echo = lambda message, **kwargs: echo_calls.append(str(message))  # type: ignore[assignment]
+    monkeypatch.setattr(main, 'WIN', False)
+    monkeypatch.setattr(main, 'str_to_bool', lambda value: False)
+
+    class SandboxSQLExecute(RecordingSQLExecute):
+        calls: list[dict[str, Any]] = []
+        side_effects: list[Any] = []
+
+        def __init__(self, **kwargs: Any) -> None:
+            super().__init__(**kwargs)
+            self.sandbox_mode = True
+
+    monkeypatch.setattr(main, 'SQLExecute', SandboxSQLExecute)
+
+    main.MyCli.connect(cli, host='db', port=3307)
+
+    assert cli.sandbox_mode is True
+    assert any('password has expired' in message for message in echo_calls)
