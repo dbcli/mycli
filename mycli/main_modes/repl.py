@@ -39,6 +39,7 @@ from mycli.clitoolbar import create_toolbar_tokens_func
 from mycli.constants import (
     DEFAULT_HOST,
     DEFAULT_WIDTH,
+    ER_MUST_CHANGE_PASSWORD,
     HOME_URL,
     ISSUES_URL,
 )
@@ -55,8 +56,11 @@ from mycli.packages.key_binding_utils import (
 from mycli.packages.ptoolkit.history import FileHistoryWithTimestamp
 from mycli.packages.special.utils import format_uptime, get_ssl_version, get_uptime, get_warning_count
 from mycli.packages.sql_utils import (
+    extract_new_password,
     is_dropping_database,
     is_mutating,
+    is_password_change,
+    is_sandbox_allowed,
     is_select,
     need_completion_refresh,
     need_completion_reset,
@@ -132,7 +136,8 @@ def _show_startup_banner(
     if mycli.less_chatty:
         return
 
-    print(sqlexecute.server_info)
+    if sqlexecute.server_info is not None:
+        print(sqlexecute.server_info)
     print('mycli', mycli_package.__version__)
     print(SUPPORT_INFO)
     if random.random() <= 0.25:
@@ -232,8 +237,6 @@ def get_prompt(
 ) -> str:
     sqlexecute = mycli.sqlexecute
     assert sqlexecute is not None
-    assert sqlexecute.server_info is not None
-    assert sqlexecute.server_info.species is not None
     if mycli.login_path and mycli.login_path_as_host:
         prompt_host = mycli.login_path
     elif sqlexecute.host is not None:
@@ -250,7 +253,8 @@ def get_prompt(
     string = string.replace('\\h', prompt_host or '(none)')
     string = string.replace('\\H', short_prompt_host or '(none)')
     string = string.replace('\\d', sqlexecute.dbname or '(none)')
-    string = string.replace('\\t', sqlexecute.server_info.species.name)
+    species_name = sqlexecute.server_info.species.name if sqlexecute.server_info and sqlexecute.server_info.species else 'MySQL'
+    string = string.replace('\\t', species_name)
     string = string.replace('\\n', '\n')
     string = string.replace('\\D', now.strftime('%a %b %d %H:%M:%S %Y'))
     string = string.replace('\\m', now.strftime('%M'))
@@ -615,6 +619,14 @@ def _one_iteration(
             mycli.echo(str(e), err=True, fg='red')
             return
 
+    if mycli.sandbox_mode and not is_sandbox_allowed(text):
+        mycli.echo(
+            "ERROR 1820: You must reset your password using ALTER USER or SET PASSWORD before executing this statement.",
+            err=True,
+            fg='red',
+        )
+        return
+
     if mycli.destructive_warning:
         destroy = confirm_destructive_query(mycli.destructive_keywords, text)
         if destroy is None:
@@ -674,20 +686,44 @@ def _one_iteration(
         mycli.echo('Not Yet Implemented.', fg='yellow')
     except pymysql.OperationalError as e1:
         mycli.logger.debug('Exception: %r', e1)
-        if e1.args[0] in (2003, 2006, 2013):
+        if e1.args[0] == ER_MUST_CHANGE_PASSWORD:
+            mycli.sandbox_mode = True
+            mycli.echo(
+                "ERROR 1820: You must reset your password using ALTER USER or SET PASSWORD before executing this statement.",
+                err=True,
+                fg='red',
+            )
+        elif e1.args[0] in (2003, 2006, 2013):
             if not mycli.reconnect():
                 return
             _one_iteration(mycli, state, text)
             return
-
-        mycli.logger.error('sql: %r, error: %r', text, e1)
-        mycli.logger.error('traceback: %r', traceback.format_exc())
-        mycli.echo(str(e1), err=True, fg='red')
+        else:
+            mycli.logger.error('sql: %r, error: %r', text, e1)
+            mycli.logger.error('traceback: %r', traceback.format_exc())
+            mycli.echo(str(e1), err=True, fg='red')
     except Exception as e:
         mycli.logger.error('sql: %r, error: %r', text, e)
         mycli.logger.error('traceback: %r', traceback.format_exc())
         mycli.echo(str(e), err=True, fg='red')
     else:
+        if mycli.sandbox_mode and is_password_change(text):
+            new_password = extract_new_password(text)
+            if new_password is not None:
+                sqlexecute.password = new_password
+            try:
+                sqlexecute.connect()
+                mycli.sandbox_mode = False
+                mycli.echo("Password changed successfully. Reconnected.", err=True, fg='green')
+                mycli.refresh_completions()
+            except Exception as e:
+                mycli.sandbox_mode = False
+                mycli.echo(
+                    f"Password changed but reconnection failed: {e}\nPlease restart mycli with your new password.",
+                    err=True,
+                    fg='yellow',
+                )
+
         if is_dropping_database(text, sqlexecute.dbname):
             sqlexecute.dbname = None
             sqlexecute.connect()
@@ -756,7 +792,7 @@ def main_repl(mycli: 'MyCli') -> None:
     state = ReplState()
 
     mycli.configure_pager()
-    if mycli.smart_completion:
+    if mycli.smart_completion and not mycli.sandbox_mode:
         mycli.refresh_completions()
 
     history = _create_history(mycli)

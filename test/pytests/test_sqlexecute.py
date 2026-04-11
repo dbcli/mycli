@@ -673,6 +673,7 @@ def make_executor_for_connect_tests() -> SQLExecute:
     executor.ssh_key_filename = '/stored/key.pem'
     executor.init_command = 'select 1'
     executor.unbuffered = False
+    executor.sandbox_mode = False
     executor.conn = None
     return executor
 
@@ -760,6 +761,56 @@ def test_connect_updates_connection_state_and_merges_overrides(monkeypatch) -> N
     assert executor.server_info is not None
     assert executor.server_info.version_str == '8.0.36'
     assert executor.server_info.version == 80036
+
+
+def test_connect_sets_expired_password_flag(monkeypatch) -> None:
+    executor = make_executor_for_connect_tests()
+    executor.ssl = None
+
+    new_conn = DummyConnection(server_version='8.0.36-0ubuntu0.22.04.1')
+    connect_kwargs = {}
+
+    def fake_connect(**kwargs):
+        connect_kwargs.update(kwargs)
+        return new_conn
+
+    monkeypatch.setattr(sqlexecute.pymysql, 'connect', fake_connect)
+    monkeypatch.setattr(SQLExecute, 'reset_connection_id', lambda self: None)
+
+    executor.connect()
+
+    assert connect_kwargs['client_flag'] & sqlexecute.pymysql.constants.CLIENT.HANDLE_EXPIRED_PASSWORDS
+    assert executor.sandbox_mode is False
+
+
+def test_connect_falls_back_to_sandbox_on_1820(monkeypatch) -> None:
+    executor = make_executor_for_connect_tests()
+    executor.ssl = None
+
+    new_conn = DummyConnection(server_version='8.0.36-0ubuntu0.22.04.1')
+    call_count = 0
+    sandbox_calls = []
+
+    def fake_connect(**kwargs):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            raise pymysql.OperationalError(1820, 'must change password')
+        return new_conn
+
+    def fake_connect_sandbox(self, conn):
+        sandbox_calls.append(conn)
+
+    monkeypatch.setattr(sqlexecute.pymysql, 'connect', fake_connect)
+    monkeypatch.setattr(SQLExecute, '_connect_sandbox', fake_connect_sandbox)
+
+    executor.connect()
+
+    assert call_count == 2
+    assert len(sandbox_calls) == 1
+    assert executor.sandbox_mode is True
+    assert executor.server_info is None
+    assert executor.connection_id is None
 
 
 def test_connect_uses_ssh_tunnel_when_ssh_host_is_set(monkeypatch) -> None:

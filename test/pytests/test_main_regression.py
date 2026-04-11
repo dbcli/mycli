@@ -92,6 +92,7 @@ class RecordingSQLExecute:
         self.dbname = kwargs.get('database')
         self.user = kwargs.get('user')
         self.conn = kwargs.get('conn')
+        self.sandbox_mode = False
 
 
 class ToggleBool:

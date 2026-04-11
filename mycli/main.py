@@ -58,6 +58,7 @@ from mycli.constants import (
     DEFAULT_HOST,
     DEFAULT_PORT,
     DEFAULT_WIDTH,
+    ER_MUST_CHANGE_PASSWORD_LOGIN,
     ISSUES_URL,
     REPO_URL,
 )
@@ -152,6 +153,7 @@ class MyCli:
         self.prompt_session: PromptSession | None = None
         self._keepalive_counter = 0
         self.keepalive_ticks: int | None = 0
+        self.sandbox_mode: bool = False
 
         # self.cnf_files is a class variable that stores the list of mysql
         # config files to read in at launch.
@@ -750,6 +752,13 @@ class MyCli:
                         keyring_retrieved_cleanly=keyring_retrieved_cleanly,
                         keyring_save_eligible=keyring_save_eligible,
                     )
+                elif e1.args[0] == ER_MUST_CHANGE_PASSWORD_LOGIN:
+                    self.echo(
+                        "Your password has expired and the server rejected the connection.",
+                        err=True,
+                        fg='red',
+                    )
+                    raise e1
                 elif e1.args[0] == CR_SERVER_LOST:
                     self.echo(
                         (
@@ -803,6 +812,15 @@ class MyCli:
                     sys.exit(1)
 
                 _connect(keyring_retrieved_cleanly=keyring_retrieved_cleanly)
+
+            # Check if SQLExecute detected sandbox mode during connection
+            if self.sqlexecute and self.sqlexecute.sandbox_mode:
+                self.sandbox_mode = True
+                self.echo(
+                    "Your password has expired. Use ALTER USER or SET PASSWSORD to set a new password, or quit.",
+                    err=True,
+                    fg='yellow',
+                )
         except Exception as e:  # Connecting to a database could fail.
             self.logger.debug("Database connection failed: %r.", e)
             self.logger.error("traceback: %r", traceback.format_exc())
