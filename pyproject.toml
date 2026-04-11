@@ -154,3 +154,7 @@ addopts = ['--ignore=mycli/packages/paramiko_stub/__init__.py', '--random-order'
 
 [tool.coverage.run]
 source = ['mycli']
+omit = [
+    # deprecated
+    'mycli/packages/paramiko_stub/__init__.py',
+]
