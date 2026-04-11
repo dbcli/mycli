@@ -359,6 +359,19 @@ def test_repl_show_startup_banner_and_prompt_helpers(monkeypatch: pytest.MonkeyP
     assert repl_mode._get_continuation(cli, 4, 0, 0) == [('class:continuation', ' ')]
 
 
+def test_repl_show_startup_banner_thanks_sponsor(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli = make_repl_cli(SimpleNamespace(server_info='Server'))
+    cli.less_chatty = False
+    printed: list[str] = []
+    monkeypatch.setattr(builtins, 'print', lambda *args, **kwargs: printed.append(' '.join(str(x) for x in args)))
+    monkeypatch.setattr(repl_mode.random, 'random', lambda: 0.25)
+    monkeypatch.setattr(repl_mode, '_sponsors_picker', lambda: 'Carol')
+
+    repl_mode._show_startup_banner(cli, cli.sqlexecute)
+
+    assert any('Thanks to the sponsor' in line and 'Carol' in line for line in printed)
+
+
 def test_prompt_toolbar_and_title_helpers(monkeypatch: pytest.MonkeyPatch) -> None:
     class PromptCursor:
         def __enter__(self) -> 'PromptCursor':
