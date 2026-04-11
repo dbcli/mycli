@@ -15,7 +15,7 @@ Therefore authors should be free about
 from __future__ import annotations
 
 import builtins
-from collections.abc import Generator, Iterator
+from collections.abc import Generator
 import importlib.util
 from io import StringIO
 import itertools
@@ -37,27 +37,11 @@ from mycli.packages.sqlresult import SQLResult
 from test.utils import (  # type: ignore[attr-defined]
     DummyFormatter,
     DummyLogger,
+    FakeCursorBase,
     call_click_entrypoint_direct,
     make_bare_mycli,
     make_dummy_mycli_class,
 )
-
-
-class FakeCursorBase:
-    def __init__(
-        self,
-        rows: list[tuple[Any, ...]] | None = None,
-        rowcount: int = 0,
-        description: list[tuple[Any, ...]] | None = None,
-        warning_count: int = 0,
-    ) -> None:
-        self._rows = list(rows or [])
-        self.rowcount = rowcount
-        self.description = description or []
-        self.warning_count = warning_count
-
-    def __iter__(self) -> Iterator[tuple[Any, ...]]:
-        return iter(self._rows)
 
 
 class FakeConnection:
@@ -152,8 +136,6 @@ def test_register_special_commands_registers_expected_handlers(monkeypatch: pyte
         'rehash',
         'tableformat',
         'redirectformat',
-        'nowarnings',
-        'warnings',
         'source',
         'prompt',
     ]
@@ -192,7 +174,6 @@ def test_mycli_init_covers_config_warning_audit_log_and_login_path_errors(monkey
                     'binary_display': '',
                     'ssl_mode': 'bogus',
                     'auto_vertical_output': 'false',
-                    'show_warnings': 'false',
                     'audit_log': '/tmp/audit.log',
                     'smart_completion': 'false',
                     'min_completion_trigger': '2',
@@ -203,6 +184,7 @@ def test_mycli_init_covers_config_warning_audit_log_and_login_path_errors(monkey
                     'terminal_window_title': '',
                     'multiplex_window_title': '',
                     'multiplex_pane_title': '',
+                    'show_warnings': 'false',
                 }),
                 'connection': TypedSection({'default_keepalive_ticks': '5', 'default_ssl_mode': None}),
                 'keys': TypedSection({'emacs_ttimeoutlen': '1.0', 'vi_ttimeoutlen': '1.0'}),
@@ -292,7 +274,6 @@ def test_mycli_init_defaults_file_valid_ssl_and_mylogin_append(monkeypatch: pyte
                     'binary_display': '',
                     'ssl_mode': 'auto',
                     'auto_vertical_output': 'false',
-                    'show_warnings': 'false',
                     'smart_completion': 'false',
                     'min_completion_trigger': '1',
                     'prompt': '',
@@ -302,6 +283,7 @@ def test_mycli_init_defaults_file_valid_ssl_and_mylogin_append(monkeypatch: pyte
                     'terminal_window_title': '',
                     'multiplex_window_title': '',
                     'multiplex_pane_title': '',
+                    'show_warnings': 'false',
                 }),
                 'connection': TypedSection({'default_keepalive_ticks': '1', 'default_ssl_mode': None}),
                 'keys': TypedSection({'emacs_ttimeoutlen': '1.0', 'vi_ttimeoutlen': '1.0'}),
@@ -382,7 +364,7 @@ def test_change_format_methods_cover_success_and_value_error() -> None:
     assert result.status == 'Changed redirect format to csv'
 
 
-def test_manual_reconnect_and_show_warnings_toggles() -> None:
+def test_manual_reconnect() -> None:
     cli = make_bare_mycli()
     cli.reconnect = lambda database='': False  # type: ignore[assignment]
     assert next(main.MyCli.manual_reconnect(cli)).status == 'Not connected'
@@ -397,11 +379,6 @@ def test_manual_reconnect_and_show_warnings_toggles() -> None:
     cli.change_db = fake_change_db  # type: ignore[assignment]
     changed = next(main.MyCli.manual_reconnect(cli, 'prod'))
     assert changed.status == 'db:prod'
-
-    assert next(main.MyCli.enable_show_warnings(cli)).status == 'Show warnings enabled.'
-    assert cli.show_warnings is True
-    assert next(main.MyCli.disable_show_warnings(cli)).status == 'Show warnings disabled.'
-    assert cli.show_warnings is False
 
 
 def test_change_db_handles_empty_same_new_and_backticks(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -662,7 +639,7 @@ def test_connect_additional_error_and_config_branches(monkeypatch: pytest.Monkey
         main.MyCli.connect(cli, host='', port='', socket='/tmp/mysql.sock')
 
 
-def test_connect_show_warnings_ssl_overrides_and_retry_password_exhausted(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_connect_ssl_overrides_and_retry_password_exhausted(monkeypatch: pytest.MonkeyPatch) -> None:
     cli = make_bare_mycli()
     cli.config = {'connection': {'default_character_set': 'utf8mb4'}, 'main': {}}
     cli.config_without_package_defaults = {
@@ -711,8 +688,7 @@ def test_connect_show_warnings_ssl_overrides_and_retry_password_exhausted(monkey
     monkeypatch.setattr(main, 'SQLExecute', RecordingSQLExecute)
     RecordingSQLExecute.calls = []
     RecordingSQLExecute.side_effects = []
-    main.MyCli.connect(cli, host='db', port=3307, local_infile=cast(Any, IntRaises()), show_warnings=True, ssl={'mode': 'on'})
-    assert cli.show_warnings is True
+    main.MyCli.connect(cli, host='db', port=3307, local_infile=cast(Any, IntRaises()), ssl={'mode': 'on'})
     ssl = RecordingSQLExecute.calls[-1]['ssl']
     assert ssl['ca'] == '/tmp/ca.pem'
     assert ssl['cert'] == '/tmp/cert.pem'
@@ -822,42 +798,6 @@ def test_connect_covers_default_ssl_ca_path_and_late_invalid_port(monkeypatch: p
     with pytest.raises(SystemExit):
         main.MyCli.connect(cli, host='db.example', port='', socket='')
     assert any('Invalid port number' in msg for msg in echo_calls)
-
-
-def test_format_sqlresult_run_query_reserved_space_and_last_query(monkeypatch: pytest.MonkeyPatch) -> None:
-    cli = make_bare_mycli()
-    cli.main_formatter = DummyFormatter()
-    cli.redirect_formatter = DummyFormatter()
-    cli.sqlexecute = cast(Any, SimpleNamespace())
-    monkeypatch.setattr(main, 'Cursor', FakeCursorBase)
-    description = [('id', 3), ('name', 253)]
-    rows = FakeCursorBase(rows=[(1, 'a')], rowcount=1, description=description)
-    result = SQLResult(preamble='pre', header=['id', 'name'], rows=cast(Any, rows), postamble='post', status='SELECT 1')
-    output = list(main.MyCli.format_sqlresult(cli, result, max_width=3))
-    assert output[0] == 'pre'
-    assert output[-1] == 'post'
-    assert 'vertical output' in output
-
-    redirected = list(main.MyCli.format_sqlresult(cli, SQLResult(header=['id'], rows=[(1,)]), is_redirected=True))
-    assert redirected == ['plain output']
-
-    cli.show_warnings = True
-    warning_rows = FakeCursorBase(rows=[('Warning', 1, 'msg')], rowcount=1, description=description, warning_count=1)
-    main_result = SQLResult(header=['id'], rows=cast(Any, warning_rows), status='select 1')
-    warning_result = SQLResult(header=['level'], rows=[('Warning',)])
-    cli.sqlexecute.run = cast(Any, lambda query: [main_result] if query == 'select 1' else [warning_result])
-    cli.format_sqlresult = lambda *args, **kwargs: iter(['line'])  # type: ignore[assignment]
-    outputs: list[str] = []
-    monkeypatch.setattr(click, 'echo', lambda line, nl=True: outputs.append(line))
-    checkpoint = StringIO()
-    main.MyCli.run_query(cli, 'select 1', checkpoint=cast(Any, checkpoint), new_line=False)
-    assert outputs == ['line', 'line']
-    assert checkpoint.getvalue() == 'select 1\n'
-
-    assert main.MyCli.get_reserved_space(cli) == 8
-    assert main.MyCli.get_last_query(cli) is None
-    cli.query_history = [main.Query('select 1', True, False)]
-    assert main.MyCli.get_last_query(cli) == 'select 1'
 
 
 def test_reconnect_logging_and_output(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

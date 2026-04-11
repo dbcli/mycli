@@ -475,6 +475,20 @@ def test_simple_setters_and_toggle_timing() -> None:
     assert iocommands.toggle_timing()[0].status == 'Timing is off.'
 
 
+def test_enable_show_warnings_updates_special_state() -> None:
+    result = next(iocommands.enable_show_warnings())
+
+    assert result.status == 'Show warnings enabled.'
+    assert iocommands.is_show_warnings_enabled() is True
+
+
+def test_disable_show_warnings_updates_special_state() -> None:
+    result = next(iocommands.disable_show_warnings())
+
+    assert result.status == 'Show warnings disabled.'
+    assert iocommands.is_show_warnings_enabled() is False
+
+
 def test_editor_helpers_strip_commands() -> None:
     assert iocommands.get_filename(r'\edit  ') is None
     assert iocommands.get_filename('select 1') is None

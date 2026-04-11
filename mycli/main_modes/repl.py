@@ -415,7 +415,7 @@ def _output_results(
         result_count += 1
         state.mutating = state.mutating or is_mutating(result.status_plain)
 
-        if mycli.show_warnings and isinstance(result.rows, Cursor) and result.rows.warning_count > 0:
+        if special.is_show_warnings_enabled() and isinstance(result.rows, Cursor) and result.rows.warning_count > 0:
             warnings = sqlexecute.run('SHOW WARNINGS')
             warnings_duration = time.time() - start
             saw_warning = False

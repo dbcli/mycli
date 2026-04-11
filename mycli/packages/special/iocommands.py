@@ -46,6 +46,7 @@ PIPE_ONCE: dict[str, Any] = {
 delimiter_command = DelimiterCommand()
 favoritequeries = FavoriteQueries(ConfigObj())
 DESTRUCTIVE_KEYWORDS: list[str] = []
+SHOW_WARNINGS_ENABLED: bool = False
 
 
 def set_favorite_queries(config):
@@ -79,6 +80,45 @@ def is_show_favorite_query() -> bool:
 def set_destructive_keywords(val: list[str]) -> None:
     global DESTRUCTIVE_KEYWORDS
     DESTRUCTIVE_KEYWORDS = val
+
+
+def set_show_warnings_enabled(val: bool) -> None:
+    global SHOW_WARNINGS_ENABLED
+    SHOW_WARNINGS_ENABLED = val
+
+
+def is_show_warnings_enabled() -> bool:
+    return SHOW_WARNINGS_ENABLED
+
+
+@special_command(
+    'warnings',
+    'warnings',
+    'Enable automatic warnings display.',
+    arg_type=ArgType.NO_QUERY,
+    aliases=['\\W'],
+    case_sensitive=True,
+)
+def enable_show_warnings() -> Generator[SQLResult, None, None]:
+    global SHOW_WARNINGS_ENABLED
+    SHOW_WARNINGS_ENABLED = True
+    msg = "Show warnings enabled."
+    yield SQLResult(status=msg)
+
+
+@special_command(
+    'nowarnings',
+    'nowarnings',
+    'Disable automatic warnings display.',
+    arg_type=ArgType.NO_QUERY,
+    aliases=['\\w'],
+    case_sensitive=True,
+)
+def disable_show_warnings() -> Generator[SQLResult, None, None]:
+    global SHOW_WARNINGS_ENABLED
+    SHOW_WARNINGS_ENABLED = False
+    msg = 'Show warnings disabled.'
+    yield SQLResult(status=msg)
 
 
 @special_command(

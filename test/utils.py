@@ -1,5 +1,6 @@
 # type: ignore
 
+from collections.abc import Iterator
 import multiprocessing
 import os
 import platform
@@ -81,6 +82,23 @@ class ReusableLock:
 
     def __exit__(self, exc_type: Any, exc: Any, tb: Any) -> Literal[False]:
         return False
+
+
+class FakeCursorBase:
+    def __init__(
+        self,
+        rows: list[tuple[Any, ...]] | None = None,
+        rowcount: int = 0,
+        description: list[tuple[Any, ...]] | None = None,
+        warning_count: int = 0,
+    ) -> None:
+        self._rows = list(rows or [])
+        self.rowcount = rowcount
+        self.description = description or []
+        self.warning_count = warning_count
+
+    def __iter__(self) -> Iterator[tuple[Any, ...]]:
+        return iter(self._rows)
 
 
 def make_bare_mycli() -> Any:

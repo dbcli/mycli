@@ -527,7 +527,6 @@ def test_output_results_covers_watch_warning_timing_beep_and_interrupts(monkeypa
     cli.auto_vertical_output = True
     cli.prompt_session = FakePromptSession(columns=91)
     cli.beep_after_seconds = 0.1
-    cli.show_warnings = True
     state = repl_mode.ReplState()
     format_widths: list[int | None] = []
 
@@ -540,6 +539,7 @@ def test_output_results_covers_watch_warning_timing_beep_and_interrupts(monkeypa
     monkeypatch.setattr(repl_mode.time, 'time', lambda: next(time_values))
     monkeypatch.setattr(repl_mode.special, 'is_expanded_output', lambda: False)
     monkeypatch.setattr(repl_mode.special, 'is_redirected', lambda: False)
+    monkeypatch.setattr(repl_mode.special, 'is_show_warnings_enabled', lambda: True)
     monkeypatch.setattr(repl_mode.special, 'is_timing_enabled', lambda: True)
     monkeypatch.setattr(repl_mode, 'Cursor', FakeCursorBase)
     monkeypatch.setattr(repl_mode, 'is_select', lambda status: False)
