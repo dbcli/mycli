@@ -30,8 +30,6 @@ import clickdc
 from configobj import ConfigObj
 import keyring
 from prompt_toolkit import print_formatted_text
-from prompt_toolkit.completion import Completion
-from prompt_toolkit.document import Document
 from prompt_toolkit.formatted_text import (
     ANSI,
     HTML,
@@ -1032,10 +1030,6 @@ class MyCli:
             # After refreshing, redraw the CLI to clear the statusbar
             # "Refreshing completions..." indicator
             self.prompt_session.app.invalidate()
-
-    def get_completions(self, text: str, cursor_position: int) -> Iterable[Completion]:
-        with self._completer_lock:
-            return self.completer.get_completions(Document(text=text, cursor_position=cursor_position), None)
 
     def run_query(
         self,

@@ -2236,15 +2236,6 @@ def test_on_completions_refreshed_updates_completer_and_invalidates_prompt() -> 
     assert entered_lock['count'] == 1
 
 
-def test_get_completions_uses_current_completer() -> None:
-    cli = make_bare_mycli()
-    entered_lock = {'count': 0}
-    cli._completer_lock = cast(Any, ReusableLock(lambda: entered_lock.__setitem__('count', entered_lock['count'] + 1)))
-    cli.completer = cast(Any, SimpleNamespace(get_completions=lambda document, event: ['done']))
-    assert list(main.MyCli.get_completions(cli, 'select', 6)) == ['done']
-    assert entered_lock['count'] == 1
-
-
 def test_click_entrypoint_callback_covers_dsn_list_init_commands(monkeypatch: pytest.MonkeyPatch) -> None:
     dummy_class = make_dummy_mycli_class(
         config={
