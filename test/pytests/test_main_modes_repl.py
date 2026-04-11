@@ -937,6 +937,26 @@ def test_one_iteration_sandbox_reconnect_failure(monkeypatch: pytest.MonkeyPatch
     assert any('reconnection failed' in msg for msg in cli.echo_calls)
 
 
+def test_one_iteration_enters_sandbox_mode_on_must_change_password_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    patch_repl_runtime_defaults(monkeypatch)
+
+    class FakeSQLExecute:
+        dbname = 'db'
+        connection_id = 0
+
+        def run(self, text: str) -> Iterator[SQLResult]:
+            raise pymysql.OperationalError(repl_mode.ER_MUST_CHANGE_PASSWORD, 'must change password')
+
+    cli = make_repl_cli(FakeSQLExecute())
+
+    repl_mode._one_iteration(cli, repl_mode.ReplState(), 'SELECT 1')
+
+    assert cli.sandbox_mode is True
+    assert any('ERROR 1820' in msg for msg in cli.echo_calls)
+    assert cli.query_history[-1].query == 'SELECT 1'
+    assert cli.query_history[-1].successful is False
+
+
 def test_one_iteration_covers_redirect_destructive_success_refresh_and_logfile(monkeypatch: pytest.MonkeyPatch) -> None:
     patch_repl_runtime_defaults(monkeypatch)
 
