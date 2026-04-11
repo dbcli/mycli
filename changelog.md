@@ -52,6 +52,7 @@ Internal
 * Move special commands out of `main.py`.
 * Modernize orthography of prompt_toolkit filters.
 * Pin all GitHub Actions to hashes.
+* Remove unused method `get_completions()`.
 
 
 1.67.1 (2026/03/28)
