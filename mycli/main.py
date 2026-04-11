@@ -144,6 +144,7 @@ class MyCli:
         auto_vertical_output: bool = False,
         warn: bool | None = None,
         myclirc: str = "~/.myclirc",
+        show_warnings: bool | None = None,
     ) -> None:
         self.sqlexecute = sqlexecute
         self.logfile = logfile
@@ -178,6 +179,10 @@ class MyCli:
         self.vi_ttimeoutlen = c['keys'].as_float('vi_ttimeoutlen')
         special.set_timing_enabled(c["main"].as_bool("timing"))
         special.set_show_favorite_query(c["main"].as_bool("show_favorite_query"))
+        if show_warnings is not None:
+            special.set_show_warnings_enabled(show_warnings)
+        else:
+            special.set_show_warnings_enabled(c['main'].as_bool('show_warnings'))
         self.beep_after_seconds = float(c["main"]["beep_after_seconds"] or 0)
         self.default_keepalive_ticks = c['connection'].as_int('default_keepalive_ticks')
 
@@ -223,7 +228,6 @@ class MyCli:
 
         # read from cli argument or user config file
         self.auto_vertical_output = auto_vertical_output or c["main"].as_bool("auto_vertical_output")
-        self.show_warnings = c["main"].as_bool("show_warnings")
 
         # Write user config if system config wasn't the last config loaded.
         if c.filename not in self.system_config_files and not os.path.exists(myclirc):
@@ -329,22 +333,6 @@ class MyCli:
             case_sensitive=True,
         )
         special.register_special_command(
-            self.disable_show_warnings,
-            "nowarnings",
-            "nowarnings",
-            "Disable automatic warnings display.",
-            aliases=["\\w"],
-            case_sensitive=True,
-        )
-        special.register_special_command(
-            self.enable_show_warnings,
-            "warnings",
-            "warnings",
-            "Enable automatic warnings display.",
-            aliases=["\\W"],
-            case_sensitive=True,
-        )
-        special.register_special_command(
             self.execute_from_file, "source", "source <filename>", "Execute queries from a file.", aliases=["\\."]
         )
         special.register_special_command(
@@ -362,16 +350,6 @@ class MyCli:
             yield SQLResult()
         else:
             yield self.change_db(arg).send(None)
-
-    def enable_show_warnings(self, **_) -> Generator[SQLResult, None, None]:
-        self.show_warnings = True
-        msg = "Show warnings enabled."
-        yield SQLResult(status=msg)
-
-    def disable_show_warnings(self, **_) -> Generator[SQLResult, None, None]:
-        self.show_warnings = False
-        msg = "Show warnings disabled."
-        yield SQLResult(status=msg)
 
     def change_table_format(self, arg: str, **_) -> Generator[SQLResult, None, None]:
         try:
@@ -557,7 +535,6 @@ class MyCli:
         use_keyring: bool | None = None,
         reset_keyring: bool | None = None,
         keepalive_ticks: int | None = None,
-        show_warnings: bool | None = None,
     ) -> None:
         cnf = {
             "database": None,
@@ -587,8 +564,6 @@ class MyCli:
         ssl_config: dict[str, Any] = ssl or {}
         user_connection_config = self.config_without_package_defaults.get('connection', {})
         self.keepalive_ticks = keepalive_ticks
-        if show_warnings is not None:
-            self.show_warnings = show_warnings
 
         int_port = port and int(port)
         if not int_port:
@@ -1088,7 +1063,7 @@ class MyCli:
                 click.echo(line, nl=new_line)
 
             # get and display warnings if enabled
-            if self.show_warnings and isinstance(result.rows, Cursor) and result.rows.warning_count > 0:
+            if special.is_show_warnings_enabled() and isinstance(result.rows, Cursor) and result.rows.warning_count > 0:
                 warnings = self.sqlexecute.run("SHOW WARNINGS")
                 for warning in warnings:
                     output = self.format_sqlresult(
@@ -1555,6 +1530,7 @@ def click_entrypoint(
         auto_vertical_output=cli_args.auto_vertical_output,
         warn=cli_args.warn,
         myclirc=cli_args.myclirc,
+        show_warnings=cli_args.show_warnings,
     )
 
     if cli_args.checkup:
@@ -1916,7 +1892,6 @@ def click_entrypoint(
         use_keyring=use_keyring,
         reset_keyring=reset_keyring,
         keepalive_ticks=keepalive_ticks,
-        show_warnings=cli_args.show_warnings,
     )
 
     if combined_init_cmd:

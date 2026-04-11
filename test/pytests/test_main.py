@@ -37,6 +37,8 @@ from test.utils import (
     PORT,
     TEMPFILE_PREFIX,
     USER,
+    DummyFormatter,
+    FakeCursorBase,
     ReusableLock,
     call_click_entrypoint_direct,
     dbtest,
@@ -2324,3 +2326,42 @@ def test_click_entrypoint_callback_covers_mycnf_underscore_fallback(monkeypatch:
 
     call_click_entrypoint_direct(main.CliArgs())
     assert any('ssl-ca = /tmp/ca.pem' in line for line in click_lines)
+
+
+def test_format_sqlresult_uses_redirect_formatter_when_redirected() -> None:
+    cli = make_bare_mycli()
+    cli.main_formatter = DummyFormatter()
+    cli.redirect_formatter = DummyFormatter()
+
+    result = SQLResult(header=['id'], rows=[(1,)], status='ok')
+    assert list(main.MyCli.format_sqlresult(cli, result, is_redirected=True)) == ['plain output']
+
+    assert cli.main_formatter.calls == []
+    assert len(cli.redirect_formatter.calls) == 1
+
+
+def test_format_sqlresult_materializes_cursor_rows_when_width_is_limited(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli = make_bare_mycli()
+    cli.main_formatter = DummyFormatter()
+    rows = FakeCursorBase(rows=[(1,)], rowcount=1, description=[('id', 3)])
+    monkeypatch.setattr(main, 'Cursor', FakeCursorBase)
+
+    result = SQLResult(header=['id'], rows=cast(Any, rows), status='ok')
+    list(main.MyCli.format_sqlresult(cli, result, max_width=100))
+
+    formatted_rows = cli.main_formatter.calls[-1][0][0]
+    assert formatted_rows == [(1,)]
+
+
+def test_format_sqlresult_appends_postamble() -> None:
+    cli = make_bare_mycli()
+    result = SQLResult(header=['id'], rows=[(1,)], status='ok', postamble='done')
+
+    assert list(main.MyCli.format_sqlresult(cli, result))[-1] == 'done'
+
+
+def test_get_last_query_returns_latest_query() -> None:
+    cli = make_bare_mycli()
+    cli.query_history = [main.Query('select 1', True, False)]
+
+    assert main.MyCli.get_last_query(cli) == 'select 1'
