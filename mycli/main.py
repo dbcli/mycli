@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from io import TextIOWrapper
 import os
 import sys
+from textwrap import dedent
 from typing import Callable
 
 import click
@@ -78,9 +79,11 @@ class CliArgs:
         '--password',
         'password',
         type=INT_OR_STRING_CLICK_TYPE,
-        is_flag=False,
-        flag_value=EMPTY_PASSWORD_FLAG_SENTINEL,
-        help='Prompt for (or pass in cleartext) the password to connect to the database.',
+        help=dedent(
+            """Password to connect to the database.
+            Use with a value to set the password at the CLI, or alone in the last position to request a prompt.
+            """
+        ),
     )
     password_file: str | None = clickdc.option(
         type=click.Path(),
@@ -376,7 +379,7 @@ def click_entrypoint(
 def main() -> int | None:
     try:
         result = click_entrypoint.main(
-            filtered_sys_argv(),
+            filtered_sys_argv(),  # type: ignore[arg-type]
             standalone_mode=False,  # disable builtin exception handling
             prog_name='mycli',
         )

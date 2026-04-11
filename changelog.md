@@ -13,6 +13,7 @@ Breaking Changes
 * Make `--batch` and `--execute` non-interactive by default.
 * Migrate `default_character_set` out of the `[main]` section of `~/.myclirc`.
 * Migrate `ssl_mode` out of the `[main]` section of `~/.myclirc`.
+* Limit `--password` without an argument to the final position.
 
 
 Features
@@ -23,6 +24,7 @@ Features
 Bug Fixes
 ---------
 * Ensure that `--batch` and `--logfile` files are distinct.
+* Allow passwords defined at the CLI to start with dash.
 
 
 Documentation
