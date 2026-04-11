@@ -22,6 +22,7 @@ Bug Fixes
 * Run empty `--execute` arguments instead of ignoring the flag.
 * Exit with error when the `--batch` argument is an empty string.
 * Avoid logging SSH passwords.
+* Accept password values that start with a dash, e.g. `--password=-rocks` (#1752).
 
 
 Internal
