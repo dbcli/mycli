@@ -1,5 +1,7 @@
 # type: ignore
 
+from types import SimpleNamespace
+
 import pytest
 import sqlparse
 from sqlparse.sql import Identifier, IdentifierList, Token, TokenList
@@ -561,6 +563,98 @@ def test_need_completion_reset_ignores_queries_that_fail_to_split(monkeypatch):
     monkeypatch.setattr(sql_utils.sqlparse, 'split', lambda _queries: [BrokenQuery(), 'select 1;'])
 
     assert need_completion_reset('ignored') is False
+
+
+def test_classify_sandbox_statement_treats_token_error_as_quit(monkeypatch):
+    def raise_token_error(*_args, **_kwargs):
+        raise sql_utils.sqlglot.errors.TokenError('bad token')
+
+    monkeypatch.setattr(sql_utils.sqlglot, 'tokenize', raise_token_error)
+
+    assert sql_utils.classify_sandbox_statement('`') == ('quit', None)
+
+
+def test_classify_sandbox_statement_treats_empty_tokens_as_quit(monkeypatch):
+    monkeypatch.setattr(sql_utils.sqlglot, 'tokenize', lambda *_args, **_kwargs: [])
+
+    assert sql_utils.classify_sandbox_statement('ignored') == ('quit', None)
+
+
+def test_find_password_after_eq_returns_none_for_non_string_token() -> None:
+    token_type = sql_utils.sqlglot.tokens.TokenType
+    tokens = [
+        SimpleNamespace(token_type=token_type.EQ, text='='),
+        SimpleNamespace(token_type=token_type.VAR, text='CURRENT_USER'),
+    ]
+
+    assert sql_utils._find_password_after_eq(tokens) is None
+
+
+@pytest.mark.parametrize(
+    ('text', 'expected'),
+    [
+        ('', ('quit', None)),
+        ('  ', ('quit', None)),
+        ('quit', ('quit', None)),
+        ('exit', ('quit', None)),
+        ('\\q', ('quit', None)),
+        ("ALTER USER 'root'@'localhost' IDENTIFIED BY 'new'", ('alter_user', 'new')),
+        ('ALTER USER root IDENTIFIED WITH mysql_native_password', ('alter_user', None)),
+        ("SET PASSWORD = 'newpass'", ('set_password', 'newpass')),
+        ('SELECT 1', (None, None)),
+    ],
+)
+def test_classify_sandbox_statement(text: str, expected: tuple[str | None, str | None]) -> None:
+    assert sql_utils.classify_sandbox_statement(text) == expected
+
+
+@pytest.mark.parametrize(
+    ('text', 'expected'),
+    [
+        ('', True),
+        ('  ', True),
+        ("ALTER USER 'root'@'localhost' IDENTIFIED BY 'new'", True),
+        ('alter user root identified by "pw"', True),
+        ("SET PASSWORD = 'newpass'", True),
+        ("set password = 'newpass'", True),
+        ('quit', True),
+        ('exit', True),
+        ('\\q', True),
+        ('SELECT 1', False),
+        ('DROP TABLE t', False),
+        ('USE mydb', False),
+        ('SHOW DATABASES', False),
+    ],
+)
+def test_is_sandbox_allowed(text: str, expected: bool) -> None:
+    assert sql_utils.is_sandbox_allowed(text) is expected
+
+
+@pytest.mark.parametrize(
+    ('text', 'expected'),
+    [
+        ("ALTER USER 'root'@'localhost' IDENTIFIED BY 'new'", True),
+        ("SET PASSWORD = 'newpass'", True),
+        ('SELECT 1', False),
+        ('quit', False),
+    ],
+)
+def test_is_password_change(text: str, expected: bool) -> None:
+    assert sql_utils.is_password_change(text) is expected
+
+
+@pytest.mark.parametrize(
+    ('text', 'expected'),
+    [
+        ("ALTER USER 'root'@'localhost' IDENTIFIED BY 'newpass'", 'newpass'),
+        ("SET PASSWORD = 'secret123'", 'secret123'),
+        ("ALTER USER root IDENTIFIED BY 'p@ss w0rd!'", 'p@ss w0rd!'),
+        ('ALTER USER root IDENTIFIED WITH mysql_native_password', None),
+        ('SELECT 1', None),
+    ],
+)
+def test_extract_new_password(text: str, expected: str | None) -> None:
+    assert sql_utils.extract_new_password(text) == expected
 
 
 @pytest.mark.parametrize(

@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from mycli.packages.ptoolkit import history as history_module
 from mycli.packages.ptoolkit.history import FileHistoryWithTimestamp
 
 
@@ -11,6 +12,29 @@ def test_file_history_with_timestamp_sets_filename(tmp_path: Path) -> None:
     history = FileHistoryWithTimestamp(history_path)
 
     assert history.filename == history_path
+
+
+def test_append_string_caches_and_stores_non_password_statement(tmp_path: Path, monkeypatch) -> None:
+    history = FileHistoryWithTimestamp(tmp_path / 'history.txt')
+    stored: list[str] = []
+    monkeypatch.setattr(history, 'store_string', stored.append)
+
+    history.append_string('SELECT 1')
+
+    assert history.get_strings()[0] == 'SELECT 1'
+    assert stored == ['SELECT 1']
+
+
+def test_append_string_does_not_store_password_change(tmp_path: Path, monkeypatch) -> None:
+    history = FileHistoryWithTimestamp(tmp_path / 'history.txt')
+    stored: list[str] = []
+    monkeypatch.setattr(history, 'store_string', stored.append)
+    monkeypatch.setattr(history_module, 'is_password_change', lambda string: True)
+
+    history.append_string("SET PASSWORD = 'secret'")
+
+    assert history.get_strings()[0] == "SET PASSWORD = 'secret'"
+    assert stored == []
 
 
 def test_load_history_with_timestamp_returns_empty_when_file_is_missing(tmp_path: Path) -> None:
