@@ -101,6 +101,25 @@ class FakeCursorBase:
         return iter(self._rows)
 
 
+class RecordingSQLExecute:
+    calls: list[dict[str, Any]] = []
+    side_effects: list[Any] = []
+
+    def __init__(self, **kwargs: Any) -> None:
+        type(self).calls.append(dict(kwargs))
+        if type(self).side_effects:
+            effect = type(self).side_effects.pop(0)
+            if isinstance(effect, BaseException):
+                raise effect
+            if callable(effect):
+                effect(kwargs)
+        self.kwargs = kwargs
+        self.dbname = kwargs.get('database')
+        self.user = kwargs.get('user')
+        self.conn = kwargs.get('conn')
+        self.sandbox_mode = False
+
+
 def make_bare_mycli() -> Any:
     cli = object.__new__(main.MyCli)
     cli.logger = cast(Any, DummyLogger())
