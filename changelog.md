@@ -7,7 +7,8 @@ Features
 * Make `--progress` and `--checkpoint` strictly by statement.
 * Allow more characters in passwords read from a file.
 * Show sponsors and contributors separately in startup messages.
-* Add support for expired password (sandbox) mode (#440)
+* Add support for expired password (sandbox) mode (#440).
+* Limit `--password` without an argument to the final position.
 
 
 Bug Fixes
@@ -22,6 +23,7 @@ Bug Fixes
 * Run empty `--execute` arguments instead of ignoring the flag.
 * Exit with error when the `--batch` argument is an empty string.
 * Avoid logging SSH passwords.
+* Allow passwords defined at the CLI to start with dash.
 
 
 Internal

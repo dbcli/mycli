@@ -2,6 +2,7 @@
 
 import pytest
 
+from mycli.constants import EMPTY_PASSWORD_FLAG_SENTINEL
 from mycli.packages import cli_utils
 from mycli.packages.cli_utils import (
     filtered_sys_argv,
@@ -20,6 +21,13 @@ def test_filtered_sys_argv(monkeypatch, argv, expected):
     monkeypatch.setattr(cli_utils.sys, 'argv', argv)
 
     assert filtered_sys_argv() == expected
+
+
+@pytest.mark.parametrize('password_flag', ['-p', '--pass', '--password'])
+def test_filtered_sys_argv_appends_empty_password_sentinel(monkeypatch, password_flag):
+    monkeypatch.setattr(cli_utils.sys, 'argv', ['mycli', 'database', password_flag])
+
+    assert filtered_sys_argv() == ['database', password_flag, EMPTY_PASSWORD_FLAG_SENTINEL]
 
 
 @pytest.mark.parametrize(

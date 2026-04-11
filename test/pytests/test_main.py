@@ -25,7 +25,7 @@ from mycli.constants import (
     DEFAULT_USER,
     TEST_DATABASE,
 )
-from mycli.main import EMPTY_PASSWORD_FLAG_SENTINEL, MyCli, click_entrypoint
+from mycli.main import MyCli, click_entrypoint
 import mycli.main_modes.repl as repl_mode
 import mycli.packages.special
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
@@ -1216,64 +1216,6 @@ def test_legacy_dsn_envvar_warns_and_falls_back(monkeypatch):
         and MockMyCli.connect_args['port'] == 8
         and MockMyCli.connect_args['database'] == 'dsn_database'
     )
-
-
-def test_password_flag_uses_sentinel(monkeypatch):
-    class Formatter:
-        format_name = None
-
-    class Logger:
-        def debug(self, *args, **args_dict):
-            pass
-
-        def warning(self, *args, **args_dict):
-            pass
-
-    class MockMyCli:
-        config = {
-            'main': {},
-            'alias_dsn': {},
-            'connection': {
-                'default_keepalive_ticks': 0,
-            },
-        }
-
-        def __init__(self, **_args):
-            self.logger = Logger()
-            self.destructive_warning = False
-            self.main_formatter = Formatter()
-            self.redirect_formatter = Formatter()
-            self.ssl_mode = 'auto'
-            self.my_cnf = {'client': {}, 'mysqld': {}}
-            self.default_keepalive_ticks = 0
-
-        def connect(self, **args):
-            MockMyCli.connect_args = args
-
-        def run_query(self, query, new_line=True):
-            pass
-
-    import mycli.main
-
-    monkeypatch.setattr(mycli.main, 'MyCli', MockMyCli)
-    runner = CliRunner()
-
-    result = runner.invoke(
-        mycli.main.click_entrypoint,
-        args=[
-            '--user',
-            'user',
-            '--host',
-            DEFAULT_HOST,
-            '--port',
-            f'{DEFAULT_PORT}',
-            '--database',
-            'database',
-            '--password',
-        ],
-    )
-    assert result.exit_code == 0, result.output + ' ' + str(result.exception)
-    assert MockMyCli.connect_args['passwd'] == EMPTY_PASSWORD_FLAG_SENTINEL
 
 
 def test_password_option_uses_cleartext_value(monkeypatch):
