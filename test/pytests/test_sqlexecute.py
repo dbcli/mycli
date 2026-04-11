@@ -813,6 +813,21 @@ def test_connect_falls_back_to_sandbox_on_1820(monkeypatch) -> None:
     assert executor.connection_id is None
 
 
+def test_connect_reraises_non_sandbox_operational_error(monkeypatch) -> None:
+    executor = make_executor_for_connect_tests()
+    executor.ssl = None
+
+    def fake_connect(**_kwargs):
+        raise pymysql.OperationalError(1045, 'access denied')
+
+    monkeypatch.setattr(sqlexecute.pymysql, 'connect', fake_connect)
+
+    with pytest.raises(pymysql.OperationalError) as exc_info:
+        executor.connect()
+
+    assert exc_info.value.args == (1045, 'access denied')
+
+
 def test_connect_uses_ssh_tunnel_when_ssh_host_is_set(monkeypatch) -> None:
     executor = make_executor_for_connect_tests()
     executor.ssl = None
@@ -909,6 +924,29 @@ def test_connect_reraises_ssh_tunnel_errors(monkeypatch) -> None:
 
     with pytest.raises(RuntimeError, match='tunnel failed'):
         executor.connect(ssh_host='bastion.internal')
+
+
+def test_connect_sandbox_temporarily_disables_set_character_set() -> None:
+    original_calls = []
+    connect_observed_stub = []
+
+    class FakeSandboxConnection:
+        def set_character_set(self, *args, **kwargs) -> None:
+            original_calls.append((args, kwargs))
+
+        def connect(self) -> None:
+            self.set_character_set('utf8mb4')
+            connect_observed_stub.append(original_calls == [])
+
+    conn = FakeSandboxConnection()
+    original_set_character_set = conn.set_character_set
+
+    SQLExecute._connect_sandbox(conn)
+
+    assert connect_observed_stub == [True]
+    assert conn.set_character_set == original_set_character_set
+    conn.set_character_set('latin1')
+    assert original_calls == [(('latin1',), {})]
 
 
 def test_run_returns_empty_result_for_blank_statement(monkeypatch) -> None:
