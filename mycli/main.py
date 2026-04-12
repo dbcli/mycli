@@ -71,7 +71,7 @@ from mycli.main_modes.execute import main_execute_from_cli
 from mycli.main_modes.list_dsn import main_list_dsn
 from mycli.main_modes.list_ssh_config import main_list_ssh_config
 from mycli.main_modes.repl import get_prompt, main_repl, set_all_external_titles
-from mycli.packages import special
+from mycli.packages import cli_utils, special
 from mycli.packages.cli_utils import filtered_sys_argv, is_valid_connection_scheme
 from mycli.packages.filepaths import dir_path_exists, guess_socket_location
 from mycli.packages.interactive_utils import confirm_destructive_query
@@ -1489,6 +1489,11 @@ def click_entrypoint(
         except Exception as e:
             click.secho(f"Error reading password file '{password_file}': {str(e)}", err=True, fg="red")
             sys.exit(1)
+
+    # pick up a password that was extracted from argv before Click parsing
+    # (passwords starting with '-' can't survive Click's option parsing)
+    if cli_args.password is None and cli_utils._extracted_password is not None:
+        cli_args.password = cli_utils._extracted_password
 
     # if the password value looks like a DSN, treat it as such and
     # prompt for password

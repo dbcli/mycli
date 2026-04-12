@@ -4,6 +4,7 @@ import pytest
 
 from mycli.packages import cli_utils
 from mycli.packages.cli_utils import (
+    _normalize_password_args,
     filtered_sys_argv,
     is_valid_connection_scheme,
 )
@@ -37,3 +38,28 @@ def test_filtered_sys_argv(monkeypatch, argv, expected):
 )
 def test_is_valid_connection_scheme(text, is_valid, invalid_scheme):
     assert is_valid_connection_scheme(text) == (is_valid, invalid_scheme)
+
+
+@pytest.mark.parametrize(
+    ('args', 'expected_args', 'expected_password'),
+    [
+        # --password / --pass with a dash-prefixed value: extracted from args
+        (['--password', '-mypass'], [], '-mypass'),
+        (['--pass', '-mypass'], [], '-mypass'),
+        # --password=-mypass / --pass=-mypass: extracted from args
+        (['--password=-mypass'], [], '-mypass'),
+        (['--pass=-mypass'], [], '-mypass'),
+        # --password with a normal value is left for Click
+        (['--password', 'mypass'], ['--password', 'mypass'], None),
+        (['--password=mypass'], ['--password=mypass'], None),
+        # --password with -- (end of options) is left alone
+        (['--password', '--'], ['--password', '--'], None),
+        # --password at end of args (used as flag) is left alone
+        (['--password'], ['--password'], None),
+        # other args are preserved, only the password pair is extracted
+        (['-u', 'root', '--password', '-mypass', '-h', 'localhost'], ['-u', 'root', '-h', 'localhost'], '-mypass'),
+    ],
+)
+def test_normalize_password_args(args, expected_args, expected_password):
+    assert _normalize_password_args(args) == expected_args
+    assert cli_utils._extracted_password == expected_password
