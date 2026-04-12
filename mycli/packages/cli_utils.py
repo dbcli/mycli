@@ -17,14 +17,18 @@ def filtered_sys_argv() -> list[str]:
 
 
 def _normalize_password_args(args: list[str]) -> list[str]:
-    """Extract --password/--pass values that start with a dash before Click
+    """Extract --password/--pass/-p values that start with a dash before Click
     sees them.
 
     Click treats tokens starting with "-" as option flags, so
-    "--password -mypass" fails. This function removes the password from the
-    arg list and stashes it in "_extracted_password" for later retrieval.
+    "--password -mypass" and "-p-mypass" fail. This function removes the
+    password from the arg list and stashes it in "_extracted_password" for
+    later retrieval.
 
-    Also handles the "--password=-mypass" / "--pass=-mypass" form.
+    Handled forms:
+    - "--password -mypass" / "--pass -mypass" / "-p -mypass"
+    - "--password=-mypass" / "--pass=-mypass"
+    - "-p-mypass"
     """
     global _extracted_password
     _extracted_password = None
@@ -34,6 +38,7 @@ def _normalize_password_args(args: list[str]) -> list[str]:
     while i < len(args):
         arg = args[i]
 
+        # --password=-mypass / --pass=-mypass
         for prefix in ('--password=', '--pass='):
             if arg.startswith(prefix):
                 value = arg[len(prefix) :]
@@ -41,12 +46,20 @@ def _normalize_password_args(args: list[str]) -> list[str]:
                     _extracted_password = value
                     break
         else:
+            # -p-mypass (short option with dash-prefixed value glued on)
+            if arg.startswith('-p-'):
+                _extracted_password = arg[2:]
+                i += 1
+                continue
+
+            # "--password -mypass" / "--pass -mypass" (two separate tokens)
             if arg in ('--password', '--pass') and i + 1 < len(args):
                 next_arg = args[i + 1]
                 if next_arg.startswith('-') and next_arg != '--':
                     _extracted_password = next_arg
                     i += 2
                     continue
+
             result.append(arg)
             i += 1
             continue

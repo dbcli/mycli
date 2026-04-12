@@ -49,6 +49,8 @@ def test_is_valid_connection_scheme(text, is_valid, invalid_scheme):
         # --password=-mypass / --pass=-mypass: extracted from args
         (['--password=-mypass'], [], '-mypass'),
         (['--pass=-mypass'], [], '-mypass'),
+        # -p-mypass: extracted from args
+        (['-p-mypass'], [], '-mypass'),
         # --password with a normal value is left for Click
         (['--password', 'mypass'], ['--password', 'mypass'], None),
         (['--password=mypass'], ['--password=mypass'], None),
@@ -56,8 +58,13 @@ def test_is_valid_connection_scheme(text, is_valid, invalid_scheme):
         (['--password', '--'], ['--password', '--'], None),
         # --password at end of args (used as flag) is left alone
         (['--password'], ['--password'], None),
+        # -p at end of args (used as flag) is left alone
+        (['-p'], ['-p'], None),
         # other args are preserved, only the password pair is extracted
         (['-u', 'root', '--password', '-mypass', '-h', 'localhost'], ['-u', 'root', '-h', 'localhost'], '-mypass'),
+        (['-u', 'root', '-p-mypass', '-h', 'localhost'], ['-u', 'root', '-h', 'localhost'], '-mypass'),
+        # -p as a flag does not absorb the next option
+        (['-p', '-u', 'root'], ['-p', '-u', 'root'], None),
     ],
 )
 def test_normalize_password_args(args, expected_args, expected_password):
