@@ -3,6 +3,8 @@ from typing import Union
 
 from prompt_toolkit.history import FileHistory
 
+from mycli.packages.sql_utils import is_password_change
+
 _StrOrBytesPath = Union[str, bytes, os.PathLike]
 
 
@@ -14,6 +16,13 @@ class FileHistoryWithTimestamp(FileHistory):
     def __init__(self, filename: _StrOrBytesPath) -> None:
         self.filename = filename
         super().__init__(filename)
+
+    def append_string(self, string: str) -> None:
+        "Add string to the history."
+        self._loaded_strings.insert(0, string)
+        if is_password_change(string):
+            return
+        self.store_string(string)
 
     def load_history_with_timestamp(self) -> list[tuple[str, str]]:
         """

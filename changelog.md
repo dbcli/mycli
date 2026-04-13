@@ -9,6 +9,7 @@ Features
 * Show sponsors and contributors separately in startup messages.
 * Add support for expired password (sandbox) mode (#440).
 * Make balanced-bracket highlight colors configurable.
+* Don't persist password-change statements to history file.
 
 
 Bug Fixes

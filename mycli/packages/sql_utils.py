@@ -485,7 +485,11 @@ def classify_sandbox_statement(text: str) -> tuple[str | None, str | None]:
     if not stripped:
         return ('quit', None)
 
-    tokens = list(sqlglot.tokenize(stripped, dialect='mysql'))
+    try:
+        tokens = list(sqlglot.tokenize(stripped, dialect='mysql'))
+    except sqlglot.errors.TokenError:
+        tokens = []
+
     if not tokens:
         return ('quit', None)
 
