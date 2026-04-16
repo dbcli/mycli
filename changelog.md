@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Bug Fixes
+---------
+* Upgrade `sqlglot` to v30.4.3, which may fix a build problem.
+
+
 1.68.0 (2026/04/13)
 ==============
 
