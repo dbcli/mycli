@@ -585,7 +585,7 @@ def _one_iteration(
                     click.echo(context)
                     click.echo('---')
                 if special.is_timing_enabled():
-                    mycli.output_timing(f'Time: {duration:.2f} seconds')
+                    mycli.output_timing(f'Time: {duration:0.03f}s')
                 assert mycli.prompt_session is not None
                 text = mycli.prompt_session.prompt(
                     default=sql or '',
