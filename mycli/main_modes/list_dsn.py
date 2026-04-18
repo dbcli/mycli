@@ -5,10 +5,10 @@ from typing import TYPE_CHECKING
 import click
 
 if TYPE_CHECKING:
-    from mycli.main import CliArgs, MyCli
+    from mycli.main import MyCli
 
 
-def main_list_dsn(mycli: 'MyCli', cli_args: 'CliArgs') -> int:
+def main_list_dsn(mycli: 'MyCli') -> int:
     try:
         alias_dsn = mycli.config['alias_dsn']
     except KeyError:
@@ -18,7 +18,7 @@ def main_list_dsn(mycli: 'MyCli', cli_args: 'CliArgs') -> int:
         click.secho(str(e), err=True, fg='red')
         return 1
     for alias, value in alias_dsn.items():
-        if cli_args.verbose:
+        if mycli.verbosity >= 1:
             click.secho(f'{alias} : {value}')
         else:
             click.secho(alias)

@@ -4,6 +4,7 @@ Upcoming (TBD)
 Features
 ---------
 * Remove undocumented `%mycli` Jupyter magic.
+* Add `--quiet` option, and let `--verbose` be given multiple times.
 
 
 Bug Fixes

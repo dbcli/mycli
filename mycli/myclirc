@@ -163,7 +163,8 @@ multiplex_window_title = ''
 # as frequently as the database is changed.
 multiplex_pane_title = ''
 
-# Skip intro info on startup and outro info on exit
+# Skip intro info on startup and outro info on exit, and generally reduce
+# feedback.  This is equivalent to giving --quiet at the command line.
 less_chatty = False
 
 # Use alias from --login-path instead of host name in prompt

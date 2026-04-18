@@ -147,7 +147,7 @@ def make_bare_mycli() -> Any:
     cli.destructive_keywords = ['drop']
     cli.keepalive_ticks = None
     cli._keepalive_counter = 0
-    cli.less_chatty = True
+    cli.verbosity = -1
     cli.smart_completion = False
     cli.key_bindings = 'emacs'
     cli.auto_vertical_output = False
@@ -203,6 +203,7 @@ def make_dummy_mycli_class(
             self.run_query_calls: list[tuple[str, Any, bool]] = []
             self.run_cli_called = False
             self.close_called = False
+            self.verbosity = 0
 
         def connect(self, **kwargs: Any) -> None:
             self.connect_calls.append(dict(kwargs))

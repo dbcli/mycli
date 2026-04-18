@@ -55,13 +55,13 @@ def load_isolated_special_main(module_name: str) -> ModuleType:
 @pytest.mark.parametrize(
     ('sql', 'expected'),
     [
-        ('help select', ('help', special_main.Verbosity.NORMAL, 'select')),
-        (r'\llm+ prompt', (r'\llm', special_main.Verbosity.VERBOSE, 'prompt')),
-        (r'\llm- prompt', (r'\llm', special_main.Verbosity.SUCCINCT, 'prompt')),
-        ('help   spaced   ', ('help', special_main.Verbosity.NORMAL, 'spaced')),
+        ('help select', ('help', special_main.CommandVerbosity.NORMAL, 'select')),
+        (r'\llm+ prompt', (r'\llm', special_main.CommandVerbosity.VERBOSE, 'prompt')),
+        (r'\llm- prompt', (r'\llm', special_main.CommandVerbosity.SUCCINCT, 'prompt')),
+        ('help   spaced   ', ('help', special_main.CommandVerbosity.NORMAL, 'spaced')),
     ],
 )
-def test_parse_special_command(sql: str, expected: tuple[str, special_main.Verbosity, str]) -> None:
+def test_parse_special_command(sql: str, expected: tuple[str, special_main.CommandVerbosity, str]) -> None:
     assert special_main.parse_special_command(sql) == expected
 
 
@@ -182,8 +182,8 @@ def test_execute_uses_lowercase_lookup_for_case_insensitive_command(restore_comm
 def test_execute_dispatches_parsed_query_command(restore_commands: None) -> None:
     calls: list[tuple[object, str, bool]] = []
 
-    def handler(*, cur: object, arg: str, verbose: bool) -> list[SQLResult]:
-        calls.append((cur, arg, verbose))
+    def handler(*, cur: object, arg: str, command_verbosity: bool) -> list[SQLResult]:
+        calls.append((cur, arg, command_verbosity))
         return [SQLResult(status='parsed')]
 
     special_main.COMMANDS.clear()

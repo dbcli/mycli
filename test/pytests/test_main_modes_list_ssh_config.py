@@ -9,7 +9,13 @@ import mycli.main_modes.list_ssh_config as list_ssh_config_mode
 @dataclass
 class DummyCliArgs:
     ssh_config_path: str = 'ssh_config'
-    verbose: bool = False
+    verbose: int = 0
+
+
+class DummyMyCli:
+    def __init__(self, config: Any) -> None:
+        self.config = config
+        self.verbosity = 0
 
 
 class DummySSHConfig:
@@ -27,7 +33,9 @@ class DummySSHConfig:
 
 
 def main_list_ssh_config(cli_args: DummyCliArgs) -> int:
-    return list_ssh_config_mode.main_list_ssh_config(cast(Any, object()), cast(Any, cli_args))
+    mycli = DummyMyCli(config={})
+    mycli.verbosity = cli_args.verbose
+    return list_ssh_config_mode.main_list_ssh_config(cast(Any, mycli), cast(Any, cli_args))
 
 
 def test_main_list_ssh_config_lists_hostnames(monkeypatch) -> None:
@@ -41,7 +49,7 @@ def test_main_list_ssh_config_lists_hostnames(monkeypatch) -> None:
         lambda message, err=None, fg=None: secho_calls.append((message, err, fg)),
     )
 
-    result = main_list_ssh_config(DummyCliArgs(verbose=False))
+    result = main_list_ssh_config(DummyCliArgs(verbose=0))
 
     assert result == 0
     assert secho_calls == [
@@ -64,7 +72,7 @@ def test_main_list_ssh_config_lists_verbose_host_details(monkeypatch) -> None:
         lambda message, err=None, fg=None: secho_calls.append((message, err, fg)),
     )
 
-    result = main_list_ssh_config(DummyCliArgs(verbose=True))
+    result = main_list_ssh_config(DummyCliArgs(verbose=1))
 
     assert result == 0
     assert secho_calls == [('prod : db.example.com', None, None)]

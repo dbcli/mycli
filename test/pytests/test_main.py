@@ -2126,6 +2126,36 @@ def test_execute_arg_warns_about_ignoring_stdin(monkeypatch):
     assert 'Ignoring STDIN' in result.output
 
 
+def test_verbose_and_quiet_are_incompatible() -> None:
+    runner = CliRunner()
+
+    result = runner.invoke(click_entrypoint, args=['--verbose', '--quiet'])
+
+    assert result.exit_code == 1
+    assert 'incompatible.' in result.output
+
+
+def test_quiet_sets_negative_cli_verbosity(monkeypatch: pytest.MonkeyPatch) -> None:
+    dummy_class = make_dummy_mycli_class(
+        config={
+            'main': {'use_keyring': 'false', 'my_cnf_transition_done': 'true'},
+            'connection': {'default_keepalive_ticks': 0},
+            'alias_dsn': {},
+        }
+    )
+    monkeypatch.setattr(main, 'MyCli', dummy_class)
+    monkeypatch.setattr(main.sys, 'stdin', SimpleNamespace(isatty=lambda: True))
+
+    cli_args = main.CliArgs()
+    cli_args.quiet = True
+
+    call_click_entrypoint_direct(cli_args)
+
+    dummy = dummy_class.last_instance
+    assert dummy is not None
+    assert dummy.init_kwargs['cli_verbosity'] == -1
+
+
 def test_execute_arg_supersedes_batch_file(monkeypatch):
     mycli_main, mycli_main_batch, MockMyCli = noninteractive_mock_mycli(monkeypatch)
     runner = CliRunner()

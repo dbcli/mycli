@@ -18,7 +18,7 @@ def main_list_ssh_config(mycli: 'MyCli', cli_args: 'CliArgs') -> int:
         click.secho('Error reading ssh config', err=True, fg="red")
         return 1
     for host_entry in host_entries:
-        if cli_args.verbose:
+        if mycli.verbosity >= 1:
             host_config = ssh_config.lookup(host_entry)
             click.secho(f"{host_entry} : {host_config.get('hostname')}")
         else:

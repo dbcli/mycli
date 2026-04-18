@@ -19,7 +19,7 @@ def list_tables(
     cur: Cursor,
     arg: str | None = None,
     _arg_type: ArgType = ArgType.PARSED_QUERY,
-    verbose: bool = False,
+    command_verbosity: bool = False,
 ) -> list[SQLResult]:
     if arg:
         query = f'SHOW FIELDS FROM {arg}'
@@ -33,10 +33,10 @@ def list_tables(
         return [SQLResult()]
 
     # Fetch results before potentially executing another query
-    results = list(cur.fetchall()) if verbose and arg else cur
+    results = list(cur.fetchall()) if command_verbosity and arg else cur
 
     postamble = ''
-    if verbose and arg:
+    if command_verbosity and arg:
         query = f'SHOW CREATE TABLE {arg}'
         logger.debug(query)
         cur.execute(query)

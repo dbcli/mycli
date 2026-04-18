@@ -145,7 +145,7 @@ def make_repl_cli(sqlexecute: Any | None = None) -> Any:
     cli.prompt_format = cli.default_prompt
     cli.multiline_continuation_char = '>'
     cli.toolbar_format = 'default'
-    cli.less_chatty = True
+    cli.verbosity = -1
     cli.keepalive_ticks = None
     cli._keepalive_counter = 0
     cli.auto_vertical_output = False
@@ -324,11 +324,11 @@ def test_repl_show_startup_banner_and_prompt_helpers(monkeypatch: pytest.MonkeyP
     monkeypatch.setattr(repl_mode, '_sponsors_picker', lambda: 'Carol')
     monkeypatch.setattr(repl_mode, '_tips_picker', lambda: 'Tip')
 
-    cli.less_chatty = False
+    cli.verbosity = 0
     repl_mode._show_startup_banner(cli, cli.sqlexecute)
     monkeypatch.setattr(repl_mode.random, 'random', lambda: 0.6)
     repl_mode._show_startup_banner(cli, cli.sqlexecute)
-    cli.less_chatty = True
+    cli.verbosity = -1
     repl_mode._show_startup_banner(cli, cli.sqlexecute)
     assert any('Thanks to the contributor' in line for line in printed)
     assert any('Tip — Tip' in line for line in printed)
@@ -361,7 +361,7 @@ def test_repl_show_startup_banner_and_prompt_helpers(monkeypatch: pytest.MonkeyP
 
 def test_repl_show_startup_banner_thanks_sponsor(monkeypatch: pytest.MonkeyPatch) -> None:
     cli = make_repl_cli(SimpleNamespace(server_info='Server'))
-    cli.less_chatty = False
+    cli.verbosity = 0
     printed: list[str] = []
     monkeypatch.setattr(builtins, 'print', lambda *args, **kwargs: printed.append(' '.join(str(x) for x in args)))
     monkeypatch.setattr(repl_mode.random, 'random', lambda: 0.25)
@@ -1170,7 +1170,7 @@ def test_one_iteration_covers_cancel_paths_and_redirect_error(monkeypatch: pytes
 
 def test_main_repl_covers_setup_loop_and_goodbye(monkeypatch: pytest.MonkeyPatch) -> None:
     cli = make_repl_cli(SimpleNamespace())
-    cli.less_chatty = False
+    cli.verbosity = 0
     cli.smart_completion = True
     loop_iterations: list[int] = []
     monkeypatch.setattr(repl_mode, '_create_history', lambda mycli: 'history')
@@ -1204,7 +1204,7 @@ def test_main_repl_covers_setup_loop_and_goodbye(monkeypatch: pytest.MonkeyPatch
 
 def test_main_repl_covers_no_refresh_and_quiet_exit(monkeypatch: pytest.MonkeyPatch) -> None:
     cli = make_repl_cli(SimpleNamespace())
-    cli.less_chatty = True
+    cli.verbosity = -1
     cli.smart_completion = False
     monkeypatch.setattr(repl_mode, '_create_history', lambda mycli: 'history')
     monkeypatch.setattr(repl_mode, 'mycli_bindings', lambda mycli: 'bindings')
