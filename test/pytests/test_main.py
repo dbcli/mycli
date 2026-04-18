@@ -2156,6 +2156,15 @@ def test_quiet_sets_negative_cli_verbosity(monkeypatch: pytest.MonkeyPatch) -> N
     assert dummy.init_kwargs['cli_verbosity'] == -1
 
 
+def test_resume_requires_checkpoint() -> None:
+    runner = CliRunner()
+
+    result = runner.invoke(click_entrypoint, args=['--batch', os.devnull, '--resume'])
+
+    assert result.exit_code == 1
+    assert 'Error:' in result.output
+
+
 def test_execute_arg_supersedes_batch_file(monkeypatch):
     mycli_main, mycli_main_batch, MockMyCli = noninteractive_mock_mycli(monkeypatch)
     runner = CliRunner()

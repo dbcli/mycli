@@ -1354,7 +1354,12 @@ class CliArgs:
     )
     checkpoint: TextIOWrapper | None = clickdc.option(
         type=click.File(mode='a', encoding='utf-8'),
-        help='In batch or --execute mode, log successful queries to a file.',
+        help='In batch or --execute mode, log successful queries to a file, and skipped with --resume.',
+    )
+    resume: bool = clickdc.option(
+        '--resume',
+        is_flag=True,
+        help='In batch mode, resume after replaying statements in the --checkpoint file.',
     )
     defaults_group_suffix: str | None = clickdc.option(
         type=str,
@@ -1521,6 +1526,14 @@ def click_entrypoint(
     # option cannot be an empty string, but a password can be
     if cli_args.password is None and os.environ.get("MYSQL_PWD") is not None:
         cli_args.password = os.environ.get("MYSQL_PWD")
+
+    if cli_args.resume and not cli_args.checkpoint:
+        click.secho('Error: --resume requires a --checkpoint file.', err=True, fg='red')
+        sys.exit(1)
+
+    if cli_args.resume and not cli_args.batch:
+        click.secho('Error: --resume requires a --batch file.', err=True, fg='red')
+        sys.exit(1)
 
     cli_verbosity = 0
     if cli_args.verbose and cli_args.quiet:
