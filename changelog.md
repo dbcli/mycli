@@ -6,6 +6,11 @@ Bug Fixes
 * Make LLM timings use the same format as other timings.
 
 
+Internal
+---------
+* Commentary and organization in default/package myclirc file.
+
+
 1.68.1 (2026/04/16)
 ==============
 

@@ -286,6 +286,7 @@ emacs_ttimeoutlen = 0.5
 # Colors: #ffffff, bg:#ffffff, border:#ffffff.
 # Attributes: (no)blink, bold, dim, hidden, inherit, italic, reverse, strike, underline.
 [colors]
+# Completion menus
 completion-menu.completion.current = 'bg:#ffffff #000000'
 completion-menu.completion = 'bg:#008888 #ffffff'
 completion-menu.meta.completion.current = 'bg:#44aaaa #000000'
@@ -293,25 +294,12 @@ completion-menu.meta.completion = 'bg:#448888 #ffffff'
 completion-menu.multi-column-meta = 'bg:#aaffff #000000'
 scrollbar.arrow = 'bg:#003333'
 scrollbar = 'bg:#00aaaa'
-matching-bracket.cursor = '#ff8888 bg:#880000'
-matching-bracket.other = '#000000 bg:#aacccc'
-selected = '#ffffff bg:#6666aa'
-search = '#ffffff bg:#4444aa'
-search.current = '#ffffff bg:#44aa44'
-bottom-toolbar = 'bg:#222222 #aaaaaa'
-bottom-toolbar.off = 'bg:#222222 #888888'
-bottom-toolbar.on = 'bg:#222222 #ffffff'
-search-toolbar = 'noinherit bold'
-search-toolbar.text = 'nobold'
-system-toolbar = 'noinherit bold'
-arg-toolbar = 'noinherit bold'
-arg-toolbar.text = 'nobold'
-bottom-toolbar.transaction.valid = 'bg:#222222 #00ff5f bold'
-bottom-toolbar.transaction.failed = 'bg:#222222 #ff005f bold'
+
+# The prompt
 prompt = ''
 continuation = ''
 
-# style classes for colored table output
+# Colored table output (query results)
 output.table-separator = ""
 output.header = "#00ff5f bold"
 output.odd-row = ""
@@ -321,7 +309,32 @@ output.status = ""
 output.status.warning-count = ""
 output.timing = ""
 
-# SQL syntax highlighting overrides
+# Selected text (native selection; currently unused)
+selected = '#ffffff bg:#6666aa'
+
+# Search matches (for reverse i-search, not fuzzy search)
+search = '#ffffff bg:#4444aa'
+search.current = '#ffffff bg:#44aa44'
+
+# UI elements: bottom toolbar
+bottom-toolbar = 'bg:#222222 #aaaaaa'
+bottom-toolbar.off = 'bg:#222222 #888888'
+bottom-toolbar.on = 'bg:#222222 #ffffff'
+bottom-toolbar.transaction.valid = 'bg:#222222 #00ff5f bold'
+bottom-toolbar.transaction.failed = 'bg:#222222 #ff005f bold'
+
+# UI elements: other toolbars (currently unused)
+search-toolbar = 'noinherit bold'
+search-toolbar.text = 'nobold'
+system-toolbar = 'noinherit bold'
+arg-toolbar = 'noinherit bold'
+arg-toolbar.text = 'nobold'
+
+# SQL enhacements: matching brackets
+matching-bracket.cursor = '#ff8888 bg:#880000'
+matching-bracket.other = '#000000 bg:#aacccc'
+
+# SQL syntax highlighting overrides: normally defined by main.syntax_style
 # sql.comment = 'italic #408080'
 # sql.comment.multi-line = ''
 # sql.comment.single-line = ''
