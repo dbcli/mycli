@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Features
+---------
+* Remove undocumented `%mycli` Jupyter magic.
+
+
 Bug Fixes
 ---------
 * Make LLM timings use the same format as other timings.
