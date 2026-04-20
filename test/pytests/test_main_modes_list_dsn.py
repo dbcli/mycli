@@ -8,7 +8,7 @@ import mycli.main_modes.list_dsn as list_dsn_mode
 
 @dataclass
 class DummyCliArgs:
-    verbose: bool = False
+    verbose: int = 0
 
 
 class DummyConfig:
@@ -25,10 +25,11 @@ class DummyConfig:
 class DummyMyCli:
     def __init__(self, config: Any) -> None:
         self.config = config
+        self.verbosity = 0
 
 
-def main_list_dsn(mycli: DummyMyCli, cli_args: DummyCliArgs) -> int:
-    return list_dsn_mode.main_list_dsn(cast(Any, mycli), cast(Any, cli_args))
+def main_list_dsn(mycli: DummyMyCli) -> int:
+    return list_dsn_mode.main_list_dsn(cast(Any, mycli))
 
 
 def test_main_list_dsn_lists_aliases_without_values(monkeypatch) -> None:
@@ -41,7 +42,7 @@ def test_main_list_dsn_lists_aliases_without_values(monkeypatch) -> None:
         lambda message, err=None, fg=None: secho_calls.append((message, err, fg)),
     )
 
-    result = main_list_dsn(mycli, DummyCliArgs(verbose=False))
+    result = main_list_dsn(mycli)
 
     assert result == 0
     assert secho_calls == [
@@ -53,6 +54,7 @@ def test_main_list_dsn_lists_aliases_without_values(monkeypatch) -> None:
 def test_main_list_dsn_lists_aliases_with_values_in_verbose_mode(monkeypatch) -> None:
     secho_calls: list[tuple[str, bool | None, str | None]] = []
     mycli = DummyMyCli(DummyConfig({'prod': 'mysql://u:p@h/db'}))
+    mycli.verbosity = 1
 
     monkeypatch.setattr(
         list_dsn_mode.click,
@@ -60,7 +62,7 @@ def test_main_list_dsn_lists_aliases_with_values_in_verbose_mode(monkeypatch) ->
         lambda message, err=None, fg=None: secho_calls.append((message, err, fg)),
     )
 
-    result = main_list_dsn(mycli, DummyCliArgs(verbose=True))
+    result = main_list_dsn(mycli)
 
     assert result == 0
     assert secho_calls == [('prod : mysql://u:p@h/db', None, None)]
@@ -76,7 +78,7 @@ def test_main_list_dsn_reports_invalid_alias_section(monkeypatch) -> None:
         lambda message, err=None, fg=None: secho_calls.append((message, err, fg)),
     )
 
-    result = main_list_dsn(mycli, DummyCliArgs())
+    result = main_list_dsn(mycli)
 
     assert result == 1
     assert secho_calls == [
@@ -98,7 +100,7 @@ def test_main_list_dsn_reports_other_config_errors(monkeypatch) -> None:
         lambda message, err=None, fg=None: secho_calls.append((message, err, fg)),
     )
 
-    result = main_list_dsn(mycli, DummyCliArgs())
+    result = main_list_dsn(mycli)
 
     assert result == 1
     assert secho_calls == [('boom', True, 'red')]

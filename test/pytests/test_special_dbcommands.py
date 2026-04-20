@@ -102,8 +102,8 @@ def test_list_tables_verbose_preserves_field_results():
     cur.fetchall.side_effect = fetchall_side_effect
     cur.fetchone.side_effect = fetchone_side_effect
 
-    # Call list_tables with verbose=True (simulating \dt+ table_name)
-    results = list_tables(cur, arg='test_table', verbose=True)
+    # Call list_tables with command_verbosity=True (simulating \dt+ table_name)
+    results = list_tables(cur, arg='test_table', command_verbosity=True)
 
     assert len(results) == 1
     result = results[0]

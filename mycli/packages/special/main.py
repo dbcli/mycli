@@ -48,21 +48,21 @@ class CommandNotFound(Exception):
     pass
 
 
-class Verbosity(Enum):
+class CommandVerbosity(Enum):
     SUCCINCT = "succinct"
     NORMAL = "normal"
     VERBOSE = "verbose"
 
 
-def parse_special_command(sql: str) -> tuple[str, Verbosity, str]:
+def parse_special_command(sql: str) -> tuple[str, CommandVerbosity, str]:
     command, _, arg = sql.partition(" ")
-    verbosity = Verbosity.NORMAL
+    command_verbosity = CommandVerbosity.NORMAL
     if "+" in command:
-        verbosity = Verbosity.VERBOSE
+        command_verbosity = CommandVerbosity.VERBOSE
     elif "-" in command:
-        verbosity = Verbosity.SUCCINCT
+        command_verbosity = CommandVerbosity.SUCCINCT
     command = command.strip().strip("+-")
-    return (command, verbosity, arg.strip())
+    return (command, command_verbosity, arg.strip())
 
 
 def special_command(
@@ -130,7 +130,7 @@ def execute(cur: Cursor, sql: str) -> list[SQLResult]:
     """Execute a special command and return the results. If the special command
     is not supported a CommandNotFound will be raised.
     """
-    command, verbosity, arg = parse_special_command(sql)
+    command, command_verbosity, arg = parse_special_command(sql)
 
     if (command not in COMMANDS) and (command.lower() not in COMMANDS):
         raise CommandNotFound(f'Command not found: {command}')
@@ -150,7 +150,7 @@ def execute(cur: Cursor, sql: str) -> list[SQLResult]:
     if special_cmd.arg_type == ArgType.NO_QUERY:
         return special_cmd.handler()
     elif special_cmd.arg_type == ArgType.PARSED_QUERY:
-        return special_cmd.handler(cur=cur, arg=arg, verbose=(verbosity == Verbosity.VERBOSE))
+        return special_cmd.handler(cur=cur, arg=arg, command_verbosity=(command_verbosity == CommandVerbosity.VERBOSE))
     elif special_cmd.arg_type == ArgType.RAW_QUERY:
         return special_cmd.handler(cur=cur, query=sql)
 

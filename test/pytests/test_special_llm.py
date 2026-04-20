@@ -275,7 +275,7 @@ def test_llm_command_with_c_flag_and_fenced_sql(mock_run_cmd, mock_llm, executor
     mock_run_cmd.return_value = (0, fenced)
     test_text = r"\llm -c 'Rewrite SQL'"
     result, sql, duration = handle_llm(test_text, executor, 'mysql', 0, 0)
-    # Without verbose, result is empty, sql extracted
+    # Without verbosity, result is empty, sql extracted
     assert sql == sql_text
     assert result == ""
     assert isinstance(duration, float)

@@ -143,6 +143,7 @@ class MyCli:
         warn: bool | None = None,
         myclirc: str = "~/.myclirc",
         show_warnings: bool | None = None,
+        cli_verbosity: int = 0,
     ) -> None:
         self.sqlexecute = sqlexecute
         self.logfile = logfile
@@ -194,7 +195,9 @@ class MyCli:
         self.main_formatter.mycli = self
         self.redirect_formatter.mycli = self
         self.syntax_style = c["main"]["syntax_style"]
-        self.less_chatty = c["main"].as_bool("less_chatty")
+        self.verbosity = -1 if c["main"].as_bool("less_chatty") else 0
+        if cli_verbosity:
+            self.verbosity = cli_verbosity
         self.cli_style = c["colors"]
         self.ptoolkit_style = style_factory_ptoolkit(self.syntax_style, self.cli_style)
         self.helpers_style = style_factory_helpers(self.syntax_style, self.cli_style)
@@ -1306,10 +1309,15 @@ class CliArgs:
         is_flag=True,
         help=("""Verify server's "Common Name" in its cert against hostname used when connecting. This option is disabled by default."""),
     )
-    verbose: bool = clickdc.option(
+    verbose: int = clickdc.option(
         '-v',
+        count=True,
+        help='More verbose output and feedback.  Can be given multiple times.',
+    )
+    quiet: bool = clickdc.option(
+        '-q',
         is_flag=True,
-        help='Verbose output.',
+        help='Less verbose output and feedback.',
     )
     dbname: str | None = clickdc.option(
         '-D',
@@ -1514,6 +1522,15 @@ def click_entrypoint(
     if cli_args.password is None and os.environ.get("MYSQL_PWD") is not None:
         cli_args.password = os.environ.get("MYSQL_PWD")
 
+    cli_verbosity = 0
+    if cli_args.verbose and cli_args.quiet:
+        click.secho('Error: --verbose and --quiet are incompatible.', err=True, fg='red')
+        sys.exit(1)
+    elif cli_args.verbose:
+        cli_verbosity = int(cli_args.verbose)
+    elif cli_args.quiet:
+        cli_verbosity = -1
+
     mycli = MyCli(
         prompt=cli_args.prompt,
         toolbar_format=cli_args.toolbar,
@@ -1525,6 +1542,7 @@ def click_entrypoint(
         warn=cli_args.warn,
         myclirc=cli_args.myclirc,
         show_warnings=cli_args.show_warnings,
+        cli_verbosity=cli_verbosity,
     )
 
     if cli_args.checkup:
@@ -1576,7 +1594,7 @@ def click_entrypoint(
         )
 
     if cli_args.list_dsn:
-        sys.exit(main_list_dsn(mycli, cli_args))
+        sys.exit(main_list_dsn(mycli))
 
     if cli_args.list_ssh_config:
         sys.exit(main_list_ssh_config(mycli, cli_args))

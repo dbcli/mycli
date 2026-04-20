@@ -1325,24 +1325,6 @@ def test_click_entrypoint_callback_covers_database_dsn_and_verbose_lists(monkeyp
         config={
             'main': {'use_keyring': 'false', 'my_cnf_transition_done': 'true'},
             'connection': {'default_keepalive_ticks': 0},
-            'alias_dsn': {'prod': 'mysql://u:p@h/db'},
-        }
-    )
-    monkeypatch.setattr(main, 'MyCli', dummy_class)
-
-    cli_args = main.CliArgs()
-    cli_args.list_dsn = True
-    cli_args.verbose = True
-    with pytest.raises(SystemExit):
-        call_click_entrypoint_direct(cli_args)
-    assert 'prod : mysql://u:p@h/db' in click_lines
-
-    click_lines.clear()
-
-    dummy_class = make_dummy_mycli_class(
-        config={
-            'main': {'use_keyring': 'false', 'my_cnf_transition_done': 'true'},
-            'connection': {'default_keepalive_ticks': 0},
             'alias_dsn': {},
         }
     )
