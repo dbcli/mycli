@@ -5,6 +5,7 @@ Features
 ---------
 * Remove undocumented `%mycli` Jupyter magic.
 * Add `--quiet` option, and let `--verbose` be given multiple times.
+* Add `--resume` to replay `--checkpoint` files with `--batch`.
 
 
 Bug Fixes

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from io import TextIOWrapper
 import os
+from pathlib import Path
 import sys
 from tempfile import NamedTemporaryFile
 from types import SimpleNamespace
@@ -23,8 +25,9 @@ class DummyCliArgs:
     format: str = 'tsv'
     noninteractive: bool = True
     throttle: float = 0.0
-    checkpoint: str | None = None
+    checkpoint: str | TextIOWrapper | None = None
     batch: str | None = None
+    resume: bool = False
 
 
 @dataclass
@@ -47,9 +50,9 @@ class DummyMyCli:
         self.destructive_keywords = ('drop',)
         self.logger = DummyLogger()
         self.run_query_error = run_query_error
-        self.ran_queries: list[tuple[str, str | None, bool]] = []
+        self.ran_queries: list[tuple[str, str | TextIOWrapper | None, bool]] = []
 
-    def run_query(self, query: str, checkpoint: str | None = None, new_line: bool = True) -> None:
+    def run_query(self, query: str, checkpoint: str | TextIOWrapper | None = None, new_line: bool = True) -> None:
         if self.run_query_error is not None:
             raise self.run_query_error
         self.ran_queries.append((query, checkpoint, new_line))
@@ -140,6 +143,98 @@ def invoke_click_batch(
     finally:
         if os.path.exists(batch_file.name):
             os.remove(batch_file.name)
+
+
+def write_batch_file(tmp_path: Path, contents: str) -> str:
+    batch_path = tmp_path / 'batch.sql'
+    batch_path.write_text(contents, encoding='utf-8')
+    return str(batch_path)
+
+
+def open_checkpoint_file(tmp_path: Path, contents: str) -> TextIOWrapper:
+    checkpoint_path = tmp_path / 'checkpoint.sql'
+    checkpoint_path.write_text(contents, encoding='utf-8')
+    return checkpoint_path.open('a', encoding='utf-8')
+
+
+def test_replay_checkpoint_file_returns_zero_without_replayable_batch(tmp_path: Path) -> None:
+    batch_path = write_batch_file(tmp_path, 'select 1;\n')
+
+    assert batch_mode.replay_checkpoint_file(batch_path, None, resume=True) == 0
+
+    with open_checkpoint_file(tmp_path, 'select 1;\n') as checkpoint:
+        with pytest.raises(batch_mode.CheckpointReplayError, match='incompatible with reading from the standard input'):
+            batch_mode.replay_checkpoint_file('-', checkpoint, resume=True)
+
+
+def test_replay_checkpoint_file_rejects_checkpoint_longer_than_batch(tmp_path: Path) -> None:
+    batch_path = write_batch_file(tmp_path, 'select 1;\n')
+
+    with open_checkpoint_file(tmp_path, 'select 1;\nselect 2;\n') as checkpoint:
+        with pytest.raises(batch_mode.CheckpointReplayError, match='Checkpoint script longer than batch script.'):
+            batch_mode.replay_checkpoint_file(batch_path, checkpoint, resume=True)
+
+
+def test_replay_checkpoint_file_rejects_batch_read_error(monkeypatch, tmp_path: Path) -> None:
+    batch_path = write_batch_file(tmp_path, 'select 1;\n')
+
+    monkeypatch.setattr(batch_mode, 'statements_from_filehandle', lambda _handle: (_ for _ in ()).throw(ValueError('bad batch')))
+
+    with open_checkpoint_file(tmp_path, 'select 1;\n') as checkpoint:
+        with pytest.raises(batch_mode.CheckpointReplayError, match=f'Error reading --batch file: {batch_path}: bad batch'):
+            batch_mode.replay_checkpoint_file(batch_path, checkpoint, resume=True)
+
+
+def test_replay_checkpoint_file_rejects_batch_iteration_error(monkeypatch, tmp_path: Path) -> None:
+    batch_path = write_batch_file(tmp_path, 'select 1;\n')
+
+    def raise_on_next():
+        raise ValueError('bad batch iterator')
+        yield
+
+    def fake_statements_from_filehandle(handle):
+        if handle.name == batch_path:
+            return raise_on_next()
+        return iter([('select 1;', 0)])
+
+    monkeypatch.setattr(batch_mode, 'statements_from_filehandle', fake_statements_from_filehandle)
+
+    with open_checkpoint_file(tmp_path, 'select 1;\n') as checkpoint:
+        with pytest.raises(batch_mode.CheckpointReplayError, match=f'Error reading --batch file: {batch_path}: bad batch iterator'):
+            batch_mode.replay_checkpoint_file(batch_path, checkpoint, resume=True)
+
+
+def test_replay_checkpoint_file_rejects_checkpoint_read_error(monkeypatch, tmp_path: Path) -> None:
+    batch_path = write_batch_file(tmp_path, 'select 1;\n')
+
+    def fake_statements_from_filehandle(handle):
+        if handle.name == batch_path:
+            return iter([('select 1;', 0)])
+        return (_ for _ in ()).throw(ValueError('bad checkpoint'))
+
+    monkeypatch.setattr(batch_mode, 'statements_from_filehandle', fake_statements_from_filehandle)
+
+    with open_checkpoint_file(tmp_path, 'select 1;\n') as checkpoint:
+        with pytest.raises(batch_mode.CheckpointReplayError, match=f'Error reading --checkpoint file: {checkpoint.name}: bad checkpoint'):
+            batch_mode.replay_checkpoint_file(batch_path, checkpoint, resume=True)
+
+
+def test_replay_checkpoint_file_rejects_missing_files(tmp_path: Path) -> None:
+    batch_path = str(tmp_path / 'missing.sql')
+
+    with open_checkpoint_file(tmp_path, 'select 1;\n') as checkpoint:
+        with pytest.raises(batch_mode.CheckpointReplayError, match='FileNotFoundError'):
+            batch_mode.replay_checkpoint_file(batch_path, checkpoint, resume=True)
+
+
+def test_replay_checkpoint_file_rejects_open_errors(monkeypatch, tmp_path: Path) -> None:
+    batch_path = write_batch_file(tmp_path, 'select 1;\n')
+
+    monkeypatch.setattr(batch_mode.click, 'open_file', lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError('open failed')))
+
+    with open_checkpoint_file(tmp_path, 'select 1;\n') as checkpoint:
+        with pytest.raises(batch_mode.CheckpointReplayError, match='OSError'):
+            batch_mode.replay_checkpoint_file(batch_path, checkpoint, resume=True)
 
 
 @pytest.mark.parametrize(
@@ -401,6 +496,126 @@ def test_main_batch_without_progress_bar_processes_statements(monkeypatch) -> No
     assert batch_handle.closed is True
 
 
+def test_main_batch_without_progress_bar_skips_checkpoint_prefix(monkeypatch, tmp_path: Path) -> None:
+    batch_path = write_batch_file(tmp_path, 'select 1;\nselect 2;\nselect 3;\n')
+    dispatch_calls: list[tuple[str, int]] = []
+
+    monkeypatch.setattr(
+        batch_mode,
+        'dispatch_batch_statements',
+        lambda _mycli, _cli_args, statement, counter: dispatch_calls.append((statement, counter)),
+    )
+    monkeypatch.setattr(batch_mode, 'sys', make_fake_sys(stdin_tty=True))
+
+    with open_checkpoint_file(tmp_path, 'select 1;\nselect 2;\n') as checkpoint:
+        cli_args = DummyCliArgs(batch=batch_path, checkpoint=checkpoint, resume=True)
+
+        result = main_batch_without_progress_bar(DummyMyCli(), cli_args)
+
+    assert result == 0
+    assert dispatch_calls == [('select 3;', 2)]
+
+
+def test_main_batch_without_progress_bar_skips_only_matching_duplicate_prefix(monkeypatch, tmp_path: Path) -> None:
+    batch_path = write_batch_file(tmp_path, 'select 1;\nselect 1;\nselect 2;\n')
+    dispatch_calls: list[tuple[str, int]] = []
+
+    monkeypatch.setattr(
+        batch_mode,
+        'dispatch_batch_statements',
+        lambda _mycli, _cli_args, statement, counter: dispatch_calls.append((statement, counter)),
+    )
+    monkeypatch.setattr(batch_mode, 'sys', make_fake_sys(stdin_tty=True))
+
+    with open_checkpoint_file(tmp_path, 'select 1;\n') as checkpoint:
+        cli_args = DummyCliArgs(batch=batch_path, checkpoint=checkpoint, resume=True)
+
+        result = main_batch_without_progress_bar(DummyMyCli(), cli_args)
+
+    assert result == 0
+    assert dispatch_calls == [('select 1;', 1), ('select 2;', 2)]
+
+
+def test_main_batch_without_progress_bar_fails_on_mismatched_checkpoint(monkeypatch, tmp_path: Path) -> None:
+    batch_path = write_batch_file(tmp_path, 'select 1;\nselect 2;\n')
+    dispatch_calls: list[tuple[str, int]] = []
+
+    monkeypatch.setattr(
+        batch_mode,
+        'dispatch_batch_statements',
+        lambda _mycli, _cli_args, statement, counter: dispatch_calls.append((statement, counter)),
+    )
+    monkeypatch.setattr(batch_mode, 'sys', make_fake_sys(stdin_tty=True))
+
+    with open_checkpoint_file(tmp_path, 'select 9;\n') as checkpoint:
+        cli_args = DummyCliArgs(batch=batch_path, checkpoint=checkpoint, resume=True)
+
+        result = main_batch_without_progress_bar(DummyMyCli(), cli_args)
+
+    assert result == 1
+    assert dispatch_calls == []
+
+
+def test_main_batch_without_progress_bar_succeeds_when_checkpoint_skips_all(monkeypatch, tmp_path: Path) -> None:
+    batch_path = write_batch_file(tmp_path, 'select 1;\nselect 2;\n')
+    dispatch_calls: list[tuple[str, int]] = []
+
+    monkeypatch.setattr(
+        batch_mode,
+        'dispatch_batch_statements',
+        lambda _mycli, _cli_args, statement, counter: dispatch_calls.append((statement, counter)),
+    )
+    monkeypatch.setattr(batch_mode, 'sys', make_fake_sys(stdin_tty=True))
+
+    with open_checkpoint_file(tmp_path, 'select 1;\nselect 2;\n') as checkpoint:
+        cli_args = DummyCliArgs(batch=batch_path, checkpoint=checkpoint, resume=True)
+
+        result = main_batch_without_progress_bar(DummyMyCli(), cli_args)
+
+    assert result == 0
+    assert dispatch_calls == []
+
+
+def test_main_batch_with_progress_bar_skips_checkpoint_prefix_and_counts_all_statements(monkeypatch, tmp_path: Path) -> None:
+    batch_path = write_batch_file(tmp_path, 'select 1;\nselect 2;\nselect 3;\n')
+    dispatch_calls: list[tuple[str, int]] = []
+
+    DummyProgressBar.calls.clear()
+    monkeypatch.setattr(batch_mode, 'ProgressBar', DummyProgressBar)
+    monkeypatch.setattr(batch_mode.prompt_toolkit.output, 'create_output', lambda **_kwargs: object())
+    monkeypatch.setattr(
+        batch_mode,
+        'dispatch_batch_statements',
+        lambda _mycli, _cli_args, statement, counter: dispatch_calls.append((statement, counter)),
+    )
+    monkeypatch.setattr(batch_mode, 'sys', make_fake_sys(stdin_tty=True))
+
+    with open_checkpoint_file(tmp_path, 'select 1;\n') as checkpoint:
+        cli_args = DummyCliArgs(batch=batch_path, checkpoint=checkpoint, resume=True)
+
+        result = main_batch_with_progress_bar(DummyMyCli(), cli_args)
+
+    assert result == 0
+    assert dispatch_calls == [('select 2;', 1), ('select 3;', 2)]
+    assert DummyProgressBar.calls == [[0, 1, 2]]
+
+
+def test_main_batch_with_progress_bar_returns_error_when_checkpoint_replay_fails(monkeypatch, tmp_path: Path) -> None:
+    batch_path = write_batch_file(tmp_path, 'select 1;\n')
+    messages: list[tuple[str, bool, str]] = []
+
+    monkeypatch.setattr(batch_mode.click, 'secho', lambda message, err, fg: messages.append((message, err, fg)))
+    monkeypatch.setattr(batch_mode, 'sys', make_fake_sys(stdin_tty=True))
+
+    with open_checkpoint_file(tmp_path, 'select 9;\n') as checkpoint:
+        cli_args = DummyCliArgs(batch=batch_path, checkpoint=checkpoint, resume=True)
+
+        result = main_batch_with_progress_bar(DummyMyCli(), cli_args)
+
+    assert result == 1
+    assert messages == [(f'Error replaying --checkpoint file: {checkpoint.name}: Statement mismatch: select 9;.', True, 'red')]
+
+
 def test_main_batch_without_progress_bar_returns_error_when_iteration_fails(monkeypatch) -> None:
     messages: list[tuple[str, bool, str]] = []
     batch_handle = DummyFile('run')
@@ -471,6 +686,24 @@ def test_click_batch_file_modes(monkeypatch, contents: str, extra_args: list[str
     assert MockMyCli.ran_queries == expected_queries
     if expected_progress is not None:
         assert DummyProgressBar.calls == expected_progress
+
+
+def test_click_batch_file_skips_checkpoint_prefix(monkeypatch, tmp_path: Path) -> None:
+    mycli_main, _mycli_main_batch, MockMyCli = noninteractive_mock_mycli(monkeypatch)
+    runner = CliRunner()
+    MockMyCli.ran_queries = []
+    checkpoint_path = tmp_path / 'checkpoint.sql'
+    checkpoint_path.write_text('select 2;\n', encoding='utf-8')
+
+    result, _batch_file_name = invoke_click_batch(
+        runner,
+        mycli_main,
+        'select 2;\nselect 3;\n',
+        [f'--checkpoint={checkpoint_path}', '--resume'],
+    )
+
+    assert result.exit_code == 0
+    assert MockMyCli.ran_queries == ['select 3;']
 
 
 def test_batch_file_with_progress_requires_plain_file(monkeypatch, tmp_path) -> None:
