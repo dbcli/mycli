@@ -1467,19 +1467,25 @@ def test_configure_pager_and_refresh_completions(monkeypatch: pytest.MonkeyPatch
     with pytest.raises(DisablePagerCalled):
         main.MyCli.configure_pager(cli)
 
-    reset_calls: list[bool] = []
+    set_dbname_calls: list[str | None] = []
     refresh_calls: list[tuple[Any, Any, dict[str, Any]]] = []
-    cli.completer = cast(Any, SimpleNamespace(keyword_casing='upper', reset_completions=lambda: reset_calls.append(True)))
+    cli.completer = cast(
+        Any,
+        SimpleNamespace(
+            keyword_casing='upper',
+            set_dbname=lambda name: set_dbname_calls.append(name),
+        ),
+    )
     cli.main_formatter = SimpleNamespace(supported_formats=['ascii', 'csv'])
     cli.completion_refresher = SimpleNamespace(refresh=lambda sql, callback, options: refresh_calls.append((sql, callback, options)))
-    cli.sqlexecute = 'sqlexecute'
+    cli.sqlexecute = SimpleNamespace(dbname='current_db')
     cli._on_completions_refreshed = lambda new_completer: None  # type: ignore[assignment]
 
     def fake_refresh(reset: bool = False) -> list[SQLResult]:
         return main.MyCli.refresh_completions(cli, reset=reset)
 
     result = fake_refresh(reset=True)
-    assert reset_calls == [True]
+    assert set_dbname_calls == ['current_db']
     assert refresh_calls[0][2] == {
         'smart_completion': cli.smart_completion,
         'supported_formats': ['ascii', 'csv'],

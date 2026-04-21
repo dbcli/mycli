@@ -158,3 +158,40 @@ def test_stop_interrupts_running_prefetch(monkeypatch):
     # stop() must be idempotent and leave the prefetcher ready to run again.
     prefetcher.stop()
     assert prefetcher._thread is None
+
+
+def test_start_skips_schemas_already_in_completer(monkeypatch):
+    """Previously-loaded schemas must not be re-fetched on refresh."""
+    mycli = make_mycli(prefetch_setting='keep, fresh')
+    # Simulate a schema that was already loaded (e.g., preserved via
+    # copy_other_schemas_from after a completion refresh).
+    mycli.completer.dbmetadata['tables']['keep'] = {'cached_table': ['*', 'c1']}
+
+    executor_calls: list[str] = []
+
+    def make(*_args, **_kwargs):
+        executor = MagicMock()
+
+        def _track(schema=None):
+            executor_calls.append(schema)
+            return iter([])
+
+        executor.table_columns.side_effect = _track
+        executor.foreign_keys.side_effect = lambda schema=None: iter([])
+        executor.enum_values.side_effect = lambda schema=None: iter([])
+        executor.functions.side_effect = lambda schema=None: iter([])
+        executor.procedures.side_effect = lambda schema=None: iter([])
+        executor.close = MagicMock()
+        return executor
+
+    monkeypatch.setattr(schema_prefetcher_module, 'SQLExecute', make)
+
+    prefetcher = SchemaPrefetcher(mycli)
+    prefetcher.start_configured()
+    if prefetcher._thread is not None:
+        prefetcher._thread.join(timeout=5)
+
+    # Only 'fresh' is queried; 'keep' and 'current' are skipped.
+    assert executor_calls == ['fresh']
+    # Cached data for 'keep' is untouched.
+    assert mycli.completer.dbmetadata['tables']['keep'] == {'cached_table': ['*', 'c1']}

@@ -567,3 +567,61 @@ def test_strip_backticks(name: str | None, expected: str) -> None:
 )
 def test_matches_parent(parent: str, schema: str | None, relname: str, alias: str | None, expected: bool) -> None:
     assert SQLCompleter._matches_parent(parent, schema, relname, alias) is expected
+
+
+def test_copy_other_schemas_from_preserves_non_current_metadata() -> None:
+    source = SQLCompleter()
+    source.load_schema_metadata(
+        schema='other',
+        table_columns={'users': ['*', 'id', 'email']},
+        foreign_keys={'tables': {}, 'relations': []},
+        enum_values={},
+        functions={'fn_foo': None},
+        procedures={},
+    )
+    # Also populate the source's "current" schema; it should NOT be copied.
+    source.load_schema_metadata(
+        schema='current',
+        table_columns={'stale_current': ['*']},
+        foreign_keys={'tables': {}, 'relations': []},
+        enum_values={},
+        functions={},
+        procedures={},
+    )
+
+    dest = SQLCompleter()
+    dest.set_dbname('current')
+    dest.extend_schemata('current')
+
+    dest.copy_other_schemas_from(source, exclude='current')
+
+    assert 'other' in dest.dbmetadata['tables']
+    assert dest.dbmetadata['tables']['other'] == {'users': ['*', 'id', 'email']}
+    assert dest.dbmetadata['functions']['other'] == {'fn_foo': None}
+    # The excluded schema is not overwritten with stale source data.
+    assert dest.dbmetadata['tables']['current'] == {}
+    # Completion lookups pick up the copied names.
+    assert 'users' in dest.all_completions
+    assert 'email' in dest.all_completions
+    assert 'fn_foo' in dest.all_completions
+
+
+def test_copy_other_schemas_from_does_not_overwrite_existing_dest() -> None:
+    source = SQLCompleter()
+    source.load_schema_metadata(
+        schema='shared',
+        table_columns={'from_source': ['*']},
+        foreign_keys={'tables': {}, 'relations': []},
+        enum_values={},
+        functions={},
+        procedures={},
+    )
+
+    dest = SQLCompleter()
+    dest.set_dbname('current')
+    dest.dbmetadata['tables']['shared'] = {'from_dest': ['*']}
+
+    dest.copy_other_schemas_from(source, exclude='current')
+
+    # Destination's existing data wins over source when a conflict exists.
+    assert dest.dbmetadata['tables']['shared'] == {'from_dest': ['*']}

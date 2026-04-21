@@ -89,7 +89,8 @@ class SchemaPrefetcher:
     def _start(self, schemas: Iterable[str]) -> None:
         self.stop()
         current = self._current_schema()
-        queue = [s for s in schemas if s and s != current and s not in self._loaded]
+        existing = set(self.mycli.completer.dbmetadata.get('tables', {}).keys())
+        queue = [s for s in schemas if s and s != current and s not in self._loaded and s not in existing]
         if not queue:
             self._invalidate_app()
             return
