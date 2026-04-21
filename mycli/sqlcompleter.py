@@ -1157,6 +1157,39 @@ class SQLCompleter(Completer):
     def set_dbname(self, dbname: str | None) -> None:
         self.dbname = dbname or ''
 
+    def load_schema_metadata(
+        self,
+        schema: str,
+        table_columns: dict[str, list[str]],
+        foreign_keys: dict[str, Any],
+        enum_values: dict[str, dict[str, list[str]]],
+        functions: dict[str, None],
+        procedures: dict[str, None],
+    ) -> None:
+        """Atomically replace the completion metadata for *schema*.
+
+        Each argument is pre-built by the caller in the same shape that
+        ``dbmetadata[kind][schema]`` uses internally.  Replacing the
+        per-schema dicts by assignment (rather than appending to the live
+        structures) keeps concurrent readers of ``get_completions`` safe.
+        """
+        if not schema:
+            return
+        self.dbmetadata["tables"][schema] = table_columns
+        self.dbmetadata["views"].setdefault(schema, {})
+        self.dbmetadata["functions"][schema] = functions
+        self.dbmetadata["procedures"][schema] = procedures
+        self.dbmetadata["enum_values"][schema] = enum_values
+        self.dbmetadata["foreign_keys"][schema] = foreign_keys
+        self.all_completions.add(schema)
+        for table, cols in table_columns.items():
+            self.all_completions.add(table)
+            for col in cols:
+                if col != "*":
+                    self.all_completions.add(col)
+        for func_name in functions:
+            self.all_completions.add(func_name)
+
     def reset_completions(self) -> None:
         self.databases: list[str] = []
         self.users: list[str] = []

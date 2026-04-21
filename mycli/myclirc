@@ -13,6 +13,13 @@ smart_completion = True
 # Suggestion: 3.
 min_completion_trigger = 1
 
+# Comma-separated list of schemas to prefetch for auto-completion, or
+# "all" to prefetch every schema the connected user can access.  Prefetching
+# runs in the background after launch so that qualified completions (e.g.
+# ``OtherSchema.table``) work without first switching databases.  When
+# empty (the default), only the currently-selected schema is loaded.
+prefetch_schemas =
+
 # Multi-line mode allows breaking up the sql statements into multiple lines. If
 # this is set to True, then the end of the statements must have a semi-colon.
 # If this is set to False then sql statements can't be split into multiple

@@ -444,32 +444,35 @@ class SQLExecute:
             cur.execute(self.tables_query)
             yield from cur
 
-    def table_columns(self) -> Generator[tuple[str, str], None, None]:
-        """Yields (table name, column name) pairs"""
+    def table_columns(self, schema: str | None = None) -> Generator[tuple[str, str], None, None]:
+        """Yields (table name, column name) pairs for *schema* (default: current database)."""
+        target = schema if schema is not None else self.dbname
         assert isinstance(self.conn, Connection)
         with self.conn.cursor() as cur:
-            _logger.debug("Columns Query. sql: %r", self.table_columns_query)
-            cur.execute(self.table_columns_query, (self.dbname,))
+            _logger.debug("Columns Query. sql: %r schema: %r", self.table_columns_query, target)
+            cur.execute(self.table_columns_query, (target,))
             yield from cur
 
-    def enum_values(self) -> Generator[tuple[str, str, list[str]], None, None]:
-        """Yields (table name, column name, enum values) tuples"""
+    def enum_values(self, schema: str | None = None) -> Generator[tuple[str, str, list[str]], None, None]:
+        """Yields (table name, column name, enum values) tuples for *schema*."""
+        target = schema if schema is not None else self.dbname
         assert isinstance(self.conn, Connection)
         with self.conn.cursor() as cur:
-            _logger.debug("Enum Values Query. sql: %r", self.enum_values_query)
-            cur.execute(self.enum_values_query, (self.dbname,))
+            _logger.debug("Enum Values Query. sql: %r schema: %r", self.enum_values_query, target)
+            cur.execute(self.enum_values_query, (target,))
             for table_name, column_name, column_type in cur:
                 values = self._parse_enum_values(column_type)
                 if values:
                     yield (table_name, column_name, values)
 
-    def foreign_keys(self) -> Generator[tuple[str, str, str, str], None, None]:
-        """Yields (table_name, column_name, referenced_table_name, referenced_column_name) tuples"""
+    def foreign_keys(self, schema: str | None = None) -> Generator[tuple[str, str, str, str], None, None]:
+        """Yields (table_name, column_name, referenced_table_name, referenced_column_name) tuples for *schema*."""
+        target = schema if schema is not None else self.dbname
         assert isinstance(self.conn, Connection)
         with self.conn.cursor() as cur:
-            _logger.debug("Foreign Keys Query. sql: %r", self.foreign_keys_query)
+            _logger.debug("Foreign Keys Query. sql: %r schema: %r", self.foreign_keys_query, target)
             try:
-                cur.execute(self.foreign_keys_query, (self.dbname,))
+                cur.execute(self.foreign_keys_query, (target,))
                 yield from cur
             except Exception as e:
                 _logger.error('No foreign key completions due to %r', e)
@@ -481,23 +484,25 @@ class SQLExecute:
             cur.execute(self.databases_query)
             return [x[0] for x in cur.fetchall()]
 
-    def functions(self) -> Generator[tuple[str, str], None, None]:
-        """Yields tuples of (schema_name, function_name)"""
+    def functions(self, schema: str | None = None) -> Generator[tuple[str, str], None, None]:
+        """Yields tuples of (schema_name, function_name) for *schema*."""
 
+        target = schema if schema is not None else self.dbname
         assert isinstance(self.conn, Connection)
         with self.conn.cursor() as cur:
-            _logger.debug("Functions Query. sql: %r", self.functions_query)
-            cur.execute(self.functions_query, (self.dbname,))
+            _logger.debug("Functions Query. sql: %r schema: %r", self.functions_query, target)
+            cur.execute(self.functions_query, (target,))
             yield from cur
 
-    def procedures(self) -> Generator[tuple, None, None]:
-        """Yields tuples of (procedure_name, )"""
+    def procedures(self, schema: str | None = None) -> Generator[tuple, None, None]:
+        """Yields tuples of (procedure_name, ) for *schema*."""
 
+        target = schema if schema is not None else self.dbname
         assert isinstance(self.conn, Connection)
         with self.conn.cursor() as cur:
-            _logger.debug("Procedures Query. sql: %r", self.procedures_query)
+            _logger.debug("Procedures Query. sql: %r schema: %r", self.procedures_query, target)
             try:
-                cur.execute(self.procedures_query, (self.dbname,))
+                cur.execute(self.procedures_query, (target,))
             except pymysql.DatabaseError as e:
                 _logger.error('No procedure completions due to %r', e)
                 yield ()

@@ -80,6 +80,7 @@ from mycli.packages.special.main import ArgType
 from mycli.packages.sqlresult import SQLResult
 from mycli.packages.ssh_utils import read_ssh_config
 from mycli.packages.tabular_output import sql_format
+from mycli.schema_prefetcher import SchemaPrefetcher
 from mycli.sqlcompleter import SQLCompleter
 from mycli.sqlexecute import FIELD_TYPES, SQLExecute
 from mycli.types import Query
@@ -243,6 +244,8 @@ class MyCli:
                 self.logfile = False
 
         self.completion_refresher = CompletionRefresher()
+        self.prefetch_schemas_setting = c["main"].get("prefetch_schemas", "") or ""
+        self.schema_prefetcher = SchemaPrefetcher(self)
 
         self.logger = logging.getLogger(__name__)
         self.initialize_logging()
@@ -301,6 +304,8 @@ class MyCli:
         special.set_destructive_keywords(self.destructive_keywords)
 
     def close(self) -> None:
+        if hasattr(self, 'schema_prefetcher'):
+            self.schema_prefetcher.stop()
         if self.sqlexecute is not None:
             self.sqlexecute.close()
 
@@ -1008,6 +1013,12 @@ class MyCli:
             special.disable_pager()
 
     def refresh_completions(self, reset: bool = False) -> list[SQLResult]:
+        # Cancel any in-flight schema prefetch before the completer is
+        # replaced: the fresh completer will not contain the prefetched
+        # schemas, so we restart the prefetch pass after the swap.
+        self.schema_prefetcher.stop()
+        self.schema_prefetcher.clear_loaded()
+
         if reset:
             with self._completer_lock:
                 self.completer.reset_completions()
@@ -1033,6 +1044,10 @@ class MyCli:
             # After refreshing, redraw the CLI to clear the statusbar
             # "Refreshing completions..." indicator
             self.prompt_session.app.invalidate()
+
+        # Kick off background prefetch for any extra schemas configured
+        # via ``prefetch_schemas`` so users get cross-schema completions.
+        self.schema_prefetcher.start_configured()
 
     def run_query(
         self,

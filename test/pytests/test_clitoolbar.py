@@ -17,6 +17,7 @@ def make_mycli(
     editing_mode: EditingMode = EditingMode.EMACS,
     toolbar_error_message: str | None = None,
     refreshing: bool = False,
+    prefetching: bool = False,
 ):
     return SimpleNamespace(
         completer=SimpleNamespace(smart_completion=smart_completion),
@@ -24,6 +25,7 @@ def make_mycli(
         prompt_session=SimpleNamespace(editing_mode=editing_mode),
         toolbar_error_message=toolbar_error_message,
         completion_refresher=SimpleNamespace(is_refreshing=MagicMock(return_value=refreshing)),
+        schema_prefetcher=SimpleNamespace(is_prefetching=MagicMock(return_value=prefetching)),
         get_custom_toolbar=MagicMock(return_value="custom toolbar"),
     )
 
@@ -52,6 +54,15 @@ def test_create_toolbar_tokens_func_clears_toolbar_error_message() -> None:
     assert ("class:bottom-toolbar.transaction.failed", "boom") not in second
     assert mycli.toolbar_error_message is None
     assert ("class:bottom-toolbar", "right-arrow accepts full-line suggestion") not in first
+
+
+def test_create_toolbar_tokens_func_shows_prefetching() -> None:
+    mycli = make_mycli(prefetching=True)
+
+    toolbar = clitoolbar.create_toolbar_tokens_func(mycli, lambda: False, None, mycli.get_custom_toolbar)
+    result = toolbar()
+
+    assert ("class:bottom-toolbar", "Prefetching schemas…") in result
 
 
 def test_create_toolbar_tokens_func_shows_multiline_vi_and_refreshing(monkeypatch) -> None:
