@@ -1157,6 +1157,72 @@ class SQLCompleter(Completer):
     def set_dbname(self, dbname: str | None) -> None:
         self.dbname = dbname or ''
 
+    def load_schema_metadata(
+        self,
+        schema: str,
+        table_columns: dict[str, list[str]],
+        foreign_keys: dict[str, Any],
+        enum_values: dict[str, dict[str, list[str]]],
+        functions: dict[str, None],
+        procedures: dict[str, None],
+    ) -> None:
+        """Atomically replace the completion metadata for *schema*.
+
+        Each argument is pre-built by the caller in the same shape that
+        ``dbmetadata[kind][schema]`` uses internally.  Replacing the
+        per-schema dicts by assignment (rather than appending to the live
+        structures) keeps concurrent readers of ``get_completions`` safe.
+        """
+        if not schema:
+            return
+        self.dbmetadata["tables"][schema] = table_columns
+        self.dbmetadata["views"].setdefault(schema, {})
+        self.dbmetadata["functions"][schema] = functions
+        self.dbmetadata["procedures"][schema] = procedures
+        self.dbmetadata["enum_values"][schema] = enum_values
+        self.dbmetadata["foreign_keys"][schema] = foreign_keys
+        self._register_schema_completions(schema, table_columns, functions)
+
+    def copy_other_schemas_from(self, source: "SQLCompleter", exclude: str | None) -> None:
+        """Copy per-schema metadata from *source*, skipping *exclude*.
+
+        After a completion refresh swaps in a fresh completer that was
+        populated only with the current schema's data, this restores any
+        previously-loaded metadata for other schemas so the user can keep
+        using qualified completions (``OtherSchema.table``) without a
+        re-fetch.
+        """
+        kinds = ("tables", "views", "functions", "procedures", "enum_values", "foreign_keys")
+        for kind in kinds:
+            src_map = source.dbmetadata.get(kind, {})
+            dest_map = self.dbmetadata.setdefault(kind, {})
+            for schema_name, data in src_map.items():
+                if not schema_name or schema_name == exclude:
+                    continue
+                if schema_name in dest_map:
+                    continue
+                dest_map[schema_name] = data
+        for schema_name, table_columns in self.dbmetadata["tables"].items():
+            if schema_name == exclude:
+                continue
+            functions = self.dbmetadata.get("functions", {}).get(schema_name, {})
+            self._register_schema_completions(schema_name, table_columns, functions)
+
+    def _register_schema_completions(
+        self,
+        schema: str,
+        table_columns: dict[str, list[str]],
+        functions: dict[str, None] | dict[str, Any],
+    ) -> None:
+        self.all_completions.add(schema)
+        for table, cols in table_columns.items():
+            self.all_completions.add(table)
+            for col in cols:
+                if col != "*":
+                    self.all_completions.add(col)
+        for func_name in functions:
+            self.all_completions.add(func_name)
+
     def reset_completions(self) -> None:
         self.databases: list[str] = []
         self.users: list[str] = []

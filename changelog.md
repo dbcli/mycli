@@ -1,3 +1,12 @@
+Upcoming (TBD)
+==============
+
+Features
+---------
+* Add option to prefetch completion metadata for some or all schemas
+* Save fetched completion metadata when switching schemas
+
+
 1.69.0 (2026/04/20)
 ==============
 

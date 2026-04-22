@@ -67,7 +67,7 @@ def step_send_source_command(context):
 @when("we run query to check application_name")
 def step_check_application_name(context):
     context.cli.sendline(
-        "SELECT 'found' FROM performance_schema.session_connect_attrs WHERE attr_name = 'program_name' AND attr_value = 'mycli'"
+        "SELECT 'found' FROM performance_schema.session_connect_attrs WHERE attr_name = 'program_name' AND attr_value = 'mycli' LIMIT 1"
     )
 
 

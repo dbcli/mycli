@@ -2268,11 +2268,21 @@ def test_on_completions_refreshed_updates_completer_and_invalidates_prompt() -> 
     invalidated: list[bool] = []
     cli._completer_lock = cast(Any, ReusableLock(lambda: entered_lock.__setitem__('count', entered_lock['count'] + 1)))
     cli.prompt_session = cast(Any, SimpleNamespace(app=SimpleNamespace(invalidate=lambda: invalidated.append(True))))
-    new_completer = cast(Any, SimpleNamespace(get_completions=lambda document, event: ['done']))
+    cli.completer = cast(Any, SimpleNamespace(dbmetadata={}))
+    copy_calls: list[tuple[Any, str | None]] = []
+    new_completer = cast(
+        Any,
+        SimpleNamespace(
+            dbname='current',
+            get_completions=lambda document, event: ['done'],
+            copy_other_schemas_from=lambda source, exclude: copy_calls.append((source, exclude)),
+        ),
+    )
     main.MyCli._on_completions_refreshed(cli, new_completer)
     assert cli.completer is new_completer
     assert invalidated == [True]
     assert entered_lock['count'] == 1
+    assert copy_calls == [(copy_calls[0][0], 'current')]
 
 
 def test_click_entrypoint_callback_covers_dsn_list_init_commands(monkeypatch: pytest.MonkeyPatch) -> None:

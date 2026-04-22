@@ -154,6 +154,18 @@ def make_bare_mycli() -> Any:
     cli.wider_completion_menu = False
     cli.explicit_pager = False
     cli._completer_lock = cast(Any, ReusableLock())
+    cli.prefetch_schemas_mode = 'never'
+    cli.prefetch_schemas_list = []
+    cli.schema_prefetcher = cast(
+        Any,
+        SimpleNamespace(
+            stop=lambda: None,
+            clear_loaded=lambda: None,
+            start_configured=lambda: None,
+            is_prefetching=lambda: False,
+            prefetch_schema_now=lambda schema: None,
+        ),
+    )
     cli.terminal_tab_title_format = ''
     cli.terminal_window_title_format = ''
     cli.multiplex_window_title_format = ''

@@ -69,6 +69,11 @@ def create_toolbar_tokens_func(
             dynamic.append(divider)
             dynamic.append(("class:bottom-toolbar", "Refreshing completions…"))
 
+        schema_prefetcher = getattr(mycli, 'schema_prefetcher', None)
+        if schema_prefetcher is not None and schema_prefetcher.is_prefetching():
+            dynamic.append(divider)
+            dynamic.append(("class:bottom-toolbar", "Prefetching schemas…"))
+
         if format_string and format_string != r'\B':
             if format_string.startswith(r'\B'):
                 amended_format = format_string[2:]

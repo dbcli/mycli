@@ -80,6 +80,7 @@ from mycli.packages.special.main import ArgType
 from mycli.packages.sqlresult import SQLResult
 from mycli.packages.ssh_utils import read_ssh_config
 from mycli.packages.tabular_output import sql_format
+from mycli.schema_prefetcher import SchemaPrefetcher
 from mycli.sqlcompleter import SQLCompleter
 from mycli.sqlexecute import FIELD_TYPES, SQLExecute
 from mycli.types import Query
@@ -243,6 +244,10 @@ class MyCli:
                 self.logfile = False
 
         self.completion_refresher = CompletionRefresher()
+        self.prefetch_schemas_mode = c["main"].get("prefetch_schemas_mode", "always") or "always"
+        raw_prefetch_list = c["main"].as_list("prefetch_schemas_list") if "prefetch_schemas_list" in c["main"] else []
+        self.prefetch_schemas_list = [s.strip() for s in raw_prefetch_list if s and s.strip()]
+        self.schema_prefetcher = SchemaPrefetcher(self)
 
         self.logger = logging.getLogger(__name__)
         self.initialize_logging()
@@ -301,6 +306,8 @@ class MyCli:
         special.set_destructive_keywords(self.destructive_keywords)
 
     def close(self) -> None:
+        if hasattr(self, 'schema_prefetcher'):
+            self.schema_prefetcher.stop()
         if self.sqlexecute is not None:
             self.sqlexecute.close()
 
@@ -1008,10 +1015,18 @@ class MyCli:
             special.disable_pager()
 
     def refresh_completions(self, reset: bool = False) -> list[SQLResult]:
-        if reset:
-            with self._completer_lock:
-                self.completer.reset_completions()
+        # Cancel any in-flight schema prefetch before the completer is
+        # replaced.  Loaded-schema bookkeeping is intentionally preserved
+        # so switching between already-loaded schemas does not re-fetch.
+        self.schema_prefetcher.stop()
+
         assert self.sqlexecute is not None
+        if reset:
+            # Update the active completer's current-schema pointer right
+            # away so unqualified completions reflect a schema switch
+            # even before the background refresh finishes.
+            with self._completer_lock:
+                self.completer.set_dbname(self.sqlexecute.dbname)
         self.completion_refresher.refresh(
             self.sqlexecute,
             self._on_completions_refreshed,
@@ -1027,12 +1042,17 @@ class MyCli:
     def _on_completions_refreshed(self, new_completer: SQLCompleter) -> None:
         """Swap the completer object in cli with the newly created completer."""
         with self._completer_lock:
+            new_completer.copy_other_schemas_from(self.completer, exclude=new_completer.dbname)
             self.completer = new_completer
 
         if self.prompt_session:
             # After refreshing, redraw the CLI to clear the statusbar
             # "Refreshing completions..." indicator
             self.prompt_session.app.invalidate()
+
+        # Kick off background prefetch for any extra schemas configured
+        # via ``prefetch_schemas_mode`` so users get cross-schema completions.
+        self.schema_prefetcher.start_configured()
 
     def run_query(
         self,
