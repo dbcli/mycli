@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import logging
 import threading
+from enum import Enum
 from typing import TYPE_CHECKING, Any, Iterable
 
 from mycli.sqlexecute import SQLExecute
@@ -21,30 +22,29 @@ if TYPE_CHECKING:  # pragma: no cover - typing only
 
 _logger = logging.getLogger(__name__)
 
-PREFETCH_MODE_ALWAYS = 'always'
-PREFETCH_MODE_NEVER = 'never'
-PREFETCH_MODE_LISTED = 'listed'
+
+class PrefetchMode(str, Enum):
+    ALWAYS = 'always'
+    NEVER = 'never'
+    LISTED = 'listed'
 
 
-def parse_prefetch_config(mode: str, schema_list: str | list[str] | None) -> list[str] | None:
+def parse_prefetch_config(mode: str, schema_list: list[str]) -> list[str] | None:
     """Parse the ``prefetch_schemas_mode`` / ``prefetch_schemas_list`` options.
 
     Returns ``None`` when every accessible schema should be prefetched
     (``always``), an empty list when prefetching is disabled
-    (``never``), or the explicit list parsed from ``schema_list`` when
-    the mode is ``listed``.  Unknown modes fall back to ``always``.
-
-    ``schema_list`` may be a CSV string (single-value configobj case) or
-    an already-split list (multi-value configobj case).
+    (``never``), or ``schema_list`` when the mode is ``listed``.
+    Unknown modes fall back to ``always``.
     """
-    normalized = mode.strip().lower()
-    if normalized == PREFETCH_MODE_NEVER:
+    try:
+        parsed = PrefetchMode(mode.strip().lower())
+    except ValueError:
+        return None
+    if parsed is PrefetchMode.NEVER:
         return []
-    if normalized == PREFETCH_MODE_LISTED:
-        if not schema_list:
-            return []
-        parts = schema_list.split(',') if isinstance(schema_list, str) else schema_list
-        return [part.strip() for part in parts if part and part.strip()]
+    if parsed is PrefetchMode.LISTED:
+        return schema_list
     return None
 
 
@@ -74,8 +74,8 @@ class SchemaPrefetcher:
 
     def start_configured(self) -> None:
         """Start prefetching based on the user's prefetch settings."""
-        mode = getattr(self.mycli, 'prefetch_schemas_mode', PREFETCH_MODE_ALWAYS)
-        schema_list = getattr(self.mycli, 'prefetch_schemas_list', '')
+        mode = getattr(self.mycli, 'prefetch_schemas_mode', PrefetchMode.ALWAYS.value)
+        schema_list = getattr(self.mycli, 'prefetch_schemas_list', [])
         parsed = parse_prefetch_config(mode, schema_list)
         if parsed is not None and not parsed:
             # ``never`` or ``listed`` with an empty list — nothing to do.

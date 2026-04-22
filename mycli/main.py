@@ -245,7 +245,8 @@ class MyCli:
 
         self.completion_refresher = CompletionRefresher()
         self.prefetch_schemas_mode = c["main"].get("prefetch_schemas_mode", "always") or "always"
-        self.prefetch_schemas_list = c["main"].get("prefetch_schemas_list", "") or ""
+        raw_prefetch_list = c["main"].as_list("prefetch_schemas_list") if "prefetch_schemas_list" in c["main"] else []
+        self.prefetch_schemas_list = [s.strip() for s in raw_prefetch_list if s and s.strip()]
         self.schema_prefetcher = SchemaPrefetcher(self)
 
         self.logger = logging.getLogger(__name__)
