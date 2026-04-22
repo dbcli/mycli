@@ -244,7 +244,8 @@ class MyCli:
                 self.logfile = False
 
         self.completion_refresher = CompletionRefresher()
-        self.prefetch_schemas_setting = c["main"].get("prefetch_schemas", "") or ""
+        self.prefetch_schemas_mode = c["main"].get("prefetch_schemas_mode", "always") or "always"
+        self.prefetch_schemas_list = c["main"].get("prefetch_schemas_list", "") or ""
         self.schema_prefetcher = SchemaPrefetcher(self)
 
         self.logger = logging.getLogger(__name__)
@@ -1049,7 +1050,7 @@ class MyCli:
             self.prompt_session.app.invalidate()
 
         # Kick off background prefetch for any extra schemas configured
-        # via ``prefetch_schemas`` so users get cross-schema completions.
+        # via ``prefetch_schemas_mode`` so users get cross-schema completions.
         self.schema_prefetcher.start_configured()
 
     def run_query(

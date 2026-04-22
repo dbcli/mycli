@@ -5,28 +5,38 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 from mycli import schema_prefetcher as schema_prefetcher_module
-from mycli.schema_prefetcher import SchemaPrefetcher, parse_prefetch_setting
+from mycli.schema_prefetcher import SchemaPrefetcher, parse_prefetch_config
 from mycli.sqlcompleter import SQLCompleter
 
 
-def test_parse_prefetch_setting_empty() -> None:
-    assert parse_prefetch_setting('') == []
-    assert parse_prefetch_setting(None) == []
-    assert parse_prefetch_setting('   ') == []
+def test_parse_prefetch_config_never() -> None:
+    assert parse_prefetch_config('never', '') == []
+    assert parse_prefetch_config('NEVER', 'ignored,values') == []
+    assert parse_prefetch_config('  never  ', None) == []
 
 
-def test_parse_prefetch_setting_all() -> None:
-    assert parse_prefetch_setting('all') is None
-    assert parse_prefetch_setting('ALL') is None
-    assert parse_prefetch_setting('  all  ') is None
+def test_parse_prefetch_config_always() -> None:
+    assert parse_prefetch_config('always', '') is None
+    assert parse_prefetch_config('ALWAYS', None) is None
+    assert parse_prefetch_config('  always  ', 'ignored') is None
 
 
-def test_parse_prefetch_setting_explicit_list() -> None:
-    assert parse_prefetch_setting('foo, bar , baz') == ['foo', 'bar', 'baz']
-    assert parse_prefetch_setting('solo') == ['solo']
+def test_parse_prefetch_config_listed() -> None:
+    assert parse_prefetch_config('listed', 'foo, bar , baz') == ['foo', 'bar', 'baz']
+    assert parse_prefetch_config('LISTED', 'solo') == ['solo']
+    assert parse_prefetch_config('listed', '') == []
+    assert parse_prefetch_config('listed', None) == []
+    # configobj pre-splits multi-value entries into a list of strings.
+    assert parse_prefetch_config('listed', ['foo', ' bar ', 'baz']) == ['foo', 'bar', 'baz']
+    assert parse_prefetch_config('listed', []) == []
 
 
-def make_mycli(prefetch_setting: str = '', dbname: str = 'current', databases=None):
+def make_mycli(
+    prefetch_mode: str = 'listed',
+    prefetch_list: str = '',
+    dbname: str = 'current',
+    databases=None,
+):
     if databases is None:
         databases = ['current', 'other1', 'other2']
     completer = SQLCompleter(smart_completion=True)
@@ -51,17 +61,19 @@ def make_mycli(prefetch_setting: str = '', dbname: str = 'current', databases=No
     return SimpleNamespace(
         completer=completer,
         sqlexecute=sqlexecute,
-        prefetch_schemas_setting=prefetch_setting,
+        prefetch_schemas_mode=prefetch_mode,
+        prefetch_schemas_list=prefetch_list,
         _completer_lock=threading.Lock(),
         prompt_session=None,
     )
 
 
-def _fake_executor_factory(per_schema_tables):
+def _fake_executor_factory(per_schema_tables, databases=None):
     """Build an executor stub whose schema-aware methods yield prebuilt rows."""
 
     def make(*_args, **_kwargs):
         executor = MagicMock()
+        executor.databases.return_value = list(databases) if databases is not None else []
         executor.table_columns.side_effect = lambda schema=None: iter(per_schema_tables.get(schema, []))
         executor.foreign_keys.side_effect = lambda schema=None: iter([])
         executor.enum_values.side_effect = lambda schema=None: iter([])
@@ -74,7 +86,7 @@ def _fake_executor_factory(per_schema_tables):
 
 
 def test_start_configured_skips_current_and_prefetches_others(monkeypatch):
-    mycli = make_mycli(prefetch_setting='other1, current, other2')
+    mycli = make_mycli(prefetch_mode='listed', prefetch_list='other1, current, other2')
     tables = {
         'other1': [('users', 'id'), ('users', 'email')],
         'other2': [('orders', 'id')],
@@ -98,12 +110,16 @@ def test_start_configured_skips_current_and_prefetches_others(monkeypatch):
 
 
 def test_start_configured_all_resolves_from_databases(monkeypatch):
-    mycli = make_mycli(prefetch_setting='all', databases=['current', 'alpha', 'beta'])
+    mycli = make_mycli(prefetch_mode='always', databases=['current', 'alpha', 'beta'])
     tables = {
         'alpha': [('t_a', 'c')],
         'beta': [('t_b', 'c')],
     }
-    monkeypatch.setattr(schema_prefetcher_module, 'SQLExecute', _fake_executor_factory(tables))
+    monkeypatch.setattr(
+        schema_prefetcher_module,
+        'SQLExecute',
+        _fake_executor_factory(tables, databases=['current', 'alpha', 'beta']),
+    )
 
     prefetcher = SchemaPrefetcher(mycli)
     prefetcher.start_configured()
@@ -117,7 +133,7 @@ def test_start_configured_all_resolves_from_databases(monkeypatch):
 
 
 def test_start_configured_noop_when_disabled(monkeypatch):
-    mycli = make_mycli(prefetch_setting='')
+    mycli = make_mycli(prefetch_mode='never')
     make_executor = MagicMock()
     monkeypatch.setattr(schema_prefetcher_module, 'SQLExecute', make_executor)
 
@@ -129,7 +145,7 @@ def test_start_configured_noop_when_disabled(monkeypatch):
 
 
 def test_prefetch_schema_now_loads_single_schema(monkeypatch):
-    mycli = make_mycli(prefetch_setting='')
+    mycli = make_mycli(prefetch_mode='never')
     tables = {'target': [('t1', 'c1')]}
     monkeypatch.setattr(schema_prefetcher_module, 'SQLExecute', _fake_executor_factory(tables))
 
@@ -142,7 +158,7 @@ def test_prefetch_schema_now_loads_single_schema(monkeypatch):
 
 
 def test_stop_interrupts_running_prefetch(monkeypatch):
-    mycli = make_mycli(prefetch_setting='a, b')
+    mycli = make_mycli(prefetch_mode='listed', prefetch_list='a, b')
     monkeypatch.setattr(
         schema_prefetcher_module,
         'SQLExecute',
@@ -162,7 +178,7 @@ def test_stop_interrupts_running_prefetch(monkeypatch):
 
 def test_start_skips_schemas_already_in_completer(monkeypatch):
     """Previously-loaded schemas must not be re-fetched on refresh."""
-    mycli = make_mycli(prefetch_setting='keep, fresh')
+    mycli = make_mycli(prefetch_mode='listed', prefetch_list='keep, fresh')
     # Simulate a schema that was already loaded (e.g., preserved via
     # copy_other_schemas_from after a completion refresh).
     mycli.completer.dbmetadata['tables']['keep'] = {'cached_table': ['*', 'c1']}

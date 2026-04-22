@@ -21,24 +21,31 @@ if TYPE_CHECKING:  # pragma: no cover - typing only
 
 _logger = logging.getLogger(__name__)
 
-ALL_SCHEMAS_SENTINEL = 'all'
+PREFETCH_MODE_ALWAYS = 'always'
+PREFETCH_MODE_NEVER = 'never'
+PREFETCH_MODE_LISTED = 'listed'
 
 
-def parse_prefetch_setting(raw: str | None) -> list[str] | None:
-    """Parse the ``prefetch_schemas`` option value.
+def parse_prefetch_config(mode: str, schema_list: str | list[str] | None) -> list[str] | None:
+    """Parse the ``prefetch_schemas_mode`` / ``prefetch_schemas_list`` options.
 
-    Returns ``None`` when the user wants every accessible schema
-    (``all``), a list of explicit schema names otherwise, or an empty
-    list when prefetching is disabled.
+    Returns ``None`` when every accessible schema should be prefetched
+    (``always``), an empty list when prefetching is disabled
+    (``never``), or the explicit list parsed from ``schema_list`` when
+    the mode is ``listed``.  Unknown modes fall back to ``always``.
+
+    ``schema_list`` may be a CSV string (single-value configobj case) or
+    an already-split list (multi-value configobj case).
     """
-    if not raw:
+    normalized = mode.strip().lower()
+    if normalized == PREFETCH_MODE_NEVER:
         return []
-    value = raw.strip()
-    if not value:
-        return []
-    if value.lower() == ALL_SCHEMAS_SENTINEL:
-        return None
-    return [part.strip() for part in value.split(',') if part.strip()]
+    if normalized == PREFETCH_MODE_LISTED:
+        if not schema_list:
+            return []
+        parts = schema_list.split(',') if isinstance(schema_list, str) else schema_list
+        return [part.strip() for part in parts if part and part.strip()]
+    return None
 
 
 class SchemaPrefetcher:
@@ -66,13 +73,14 @@ class SchemaPrefetcher:
         self._thread = None
 
     def start_configured(self) -> None:
-        """Start prefetching based on the user's ``prefetch_schemas`` setting."""
-        setting = getattr(self.mycli, 'prefetch_schemas_setting', '')
-        parsed = parse_prefetch_setting(setting)
-        if parsed is None:
-            self._start(self._resolve_all_schemas())
-        else:
-            self._start(parsed)
+        """Start prefetching based on the user's prefetch settings."""
+        mode = getattr(self.mycli, 'prefetch_schemas_mode', PREFETCH_MODE_ALWAYS)
+        schema_list = getattr(self.mycli, 'prefetch_schemas_list', '')
+        parsed = parse_prefetch_config(mode, schema_list)
+        if parsed is not None and not parsed:
+            # ``never`` or ``listed`` with an empty list — nothing to do.
+            return
+        self._start(parsed)
 
     def prefetch_schema_now(self, schema: str) -> None:
         """Fetch *schema* immediately on a background thread.
@@ -86,14 +94,16 @@ class SchemaPrefetcher:
         self.stop()
         self._start([schema])
 
-    def _start(self, schemas: Iterable[str]) -> None:
+    def _start(self, schemas: Iterable[str] | None) -> None:
+        """Spawn the background worker.
+
+        ``schemas=None`` defers resolution to the worker, which lists
+        every database via its own dedicated connection — the main
+        thread's ``sqlexecute`` must not be used here since the worker
+        would race with the REPL.
+        """
         self.stop()
-        current = self._current_schema()
-        existing = set(self.mycli.completer.dbmetadata.get('tables', {}).keys())
-        queue = [s for s in schemas if s and s != current and s not in self._loaded and s not in existing]
-        if not queue:
-            self._invalidate_app()
-            return
+        queue: list[str] | None = None if schemas is None else list(schemas)
         self._cancel = threading.Event()
         self._thread = threading.Thread(
             target=self._run,
@@ -104,7 +114,7 @@ class SchemaPrefetcher:
         self._thread.start()
         self._invalidate_app()
 
-    def _run(self, schemas: list[str]) -> None:
+    def _run(self, schemas: list[str] | None) -> None:
         executor: SQLExecute | None = None
         try:
             executor = self._make_executor()
@@ -113,7 +123,16 @@ class SchemaPrefetcher:
             self._invalidate_app()
             return
         try:
-            for schema in schemas:
+            if schemas is None:
+                try:
+                    schemas = list(executor.databases())
+                except Exception as e:
+                    _logger.error('failed to list databases for prefetch: %r', e)
+                    return
+            current = self._current_schema()
+            existing = set(self.mycli.completer.dbmetadata.get('tables', {}).keys())
+            queue = [s for s in schemas if s and s != current and s not in self._loaded and s not in existing]
+            for schema in queue:
                 if self._cancel.is_set():
                     return
                 try:
@@ -187,16 +206,6 @@ class SchemaPrefetcher:
                 procedures=procedures,
             )
         self._invalidate_app()
-
-    def _resolve_all_schemas(self) -> list[str]:
-        sqlexecute = self.mycli.sqlexecute
-        if sqlexecute is None:
-            return []
-        try:
-            return list(sqlexecute.databases())
-        except Exception as e:
-            _logger.error('failed to list databases for prefetch: %r', e)
-            return []
 
     def _current_schema(self) -> str | None:
         sqlexecute = self.mycli.sqlexecute

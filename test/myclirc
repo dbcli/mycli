@@ -13,13 +13,16 @@ smart_completion = True
 # Suggestion: 3.
 min_completion_trigger = 1
 
-# Comma-separated list of schemas to prefetch for auto-completion.
-# Prefetching starts in the background after launch.
-# Examples:
-# (empty) = default, disables prefetching
-# schema1,schema2 = enables prefetch for given schemas
-# all = enables prefetch for all schemas
-prefetch_schemas =
+# Prefetch completion metadata for schemas in the background after launch.
+# Possible values:
+# always = prefetch all schemas (default)
+# never  = do not prefetch any schemas
+# listed = prefetch only the schemas named in prefetch_schemas_list
+prefetch_schemas_mode = always
+
+# Comma-separated list of schemas to prefetch when
+# prefetch_schemas_mode = listed.  Ignored in other modes.
+prefetch_schemas_list =
 
 # Multi-line mode allows breaking up the sql statements into multiple lines. If
 # this is set to True, then the end of the statements must have a semi-colon.
