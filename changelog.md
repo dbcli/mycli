@@ -10,6 +10,7 @@ Internal
 ---------
 * Remove unused fixture data.
 * More test coverage for completion prefetch.
+* More test coverage for `--resume`.
 * Upgrade `cli_helpers` dependency to v2.14.0.
 
 
