@@ -625,3 +625,25 @@ def test_copy_other_schemas_from_does_not_overwrite_existing_dest() -> None:
 
     # Destination's existing data wins over source when a conflict exists.
     assert dest.dbmetadata['tables']['shared'] == {'from_dest': ['*']}
+
+
+def test_load_schema_metadata_ignores_empty_schema() -> None:
+    completer = SQLCompleter()
+
+    completer.load_schema_metadata(
+        schema='',
+        table_columns={'users': ['*', 'id']},
+        foreign_keys={'tables': {'users': []}, 'relations': [('users', 'id')]},
+        enum_values={'users': {'status': ['pending']}},
+        functions={'fn_users': None},
+        procedures={'proc_users': None},
+    )
+
+    assert completer.dbmetadata['tables'] == {}
+    assert completer.dbmetadata['views'] == {}
+    assert completer.dbmetadata['functions'] == {}
+    assert completer.dbmetadata['procedures'] == {}
+    assert completer.dbmetadata['enum_values'] == {}
+    assert completer.dbmetadata['foreign_keys'] == {}
+    assert 'users' not in completer.all_completions
+    assert 'fn_users' not in completer.all_completions
