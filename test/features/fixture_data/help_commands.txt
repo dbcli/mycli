@@ -17,7 +17,7 @@
 | connect        | \r       | connect [database]              | Reconnect to the server, optionally switching databases.    |
 | delimiter      | <null>   | delimiter <string>              | Change end-of-statement delimiter.                          |
 | exit           | \q       | exit                            | Exit.                                                       |
-| help           | \?       | help [term]                     | Show this help, or search for a term on the server.         |
+| help           | \?       | help [term]                     | Show this table, or search for help on a term.              |
 | nopager        | \n       | nopager                         | Disable pager; print to stdout.                             |
 | notee          | <null>   | notee                           | Stop writing results to an output file.                     |
 | nowarnings     | \w       | nowarnings                      | Disable automatic warnings display.                         |

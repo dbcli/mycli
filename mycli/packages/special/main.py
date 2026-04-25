@@ -22,6 +22,8 @@ from pymysql.cursors import Cursor
 logger = logging.getLogger(__name__)
 
 COMMANDS = {}
+CASE_SENSITIVE_COMMANDS = set()
+CASE_INSENSITIVE_COMMANDS = set()
 
 SpecialCommand = namedtuple(
     "SpecialCommand",
@@ -111,9 +113,17 @@ def register_special_command(
         case_sensitive=case_sensitive,
         shortcut=aliases[0] if aliases else None,
     )
+    if case_sensitive:
+        CASE_SENSITIVE_COMMANDS.add(command)
+    else:
+        CASE_INSENSITIVE_COMMANDS.add(command.lower())
     aliases = [] if aliases is None else aliases
     for alias in aliases:
         cmd = alias.lower() if not case_sensitive else alias
+        if case_sensitive:
+            CASE_SENSITIVE_COMMANDS.add(alias)
+        else:
+            CASE_INSENSITIVE_COMMANDS.add(alias.lower())
         COMMANDS[cmd] = SpecialCommand(
             handler,
             command,
@@ -132,7 +142,7 @@ def execute(cur: Cursor, sql: str) -> list[SQLResult]:
     """
     command, command_verbosity, arg = parse_special_command(sql)
 
-    if (command not in COMMANDS) and (command.lower() not in COMMANDS):
+    if (command not in CASE_SENSITIVE_COMMANDS) and (command.lower() not in CASE_INSENSITIVE_COMMANDS):
         raise CommandNotFound(f'Command not found: {command}')
 
     try:
@@ -144,7 +154,7 @@ def execute(cur: Cursor, sql: str) -> list[SQLResult]:
 
     # "help <SQL KEYWORD> is a special case. We want built-in help, not
     # mycli help here.
-    if command == "help" and arg:
+    if command.lower() == "help" and arg:
         return show_keyword_help(cur=cur, arg=arg)
 
     if special_cmd.arg_type == ArgType.NO_QUERY:
@@ -157,9 +167,7 @@ def execute(cur: Cursor, sql: str) -> list[SQLResult]:
     raise CommandNotFound(f"Command type not found: {command}")
 
 
-@special_command(
-    "help", "help [term]", "Show this help, or search for a term on the server.", arg_type=ArgType.NO_QUERY, aliases=["\\?", "?"]
-)
+@special_command("help", "help [term]", "Show this table, or search for help on a term.", arg_type=ArgType.NO_QUERY, aliases=["\\?", "?"])
 def show_help(*_args) -> list[SQLResult]:
     header = ["Command", "Shortcut", "Usage", "Description"]
     result = []
@@ -170,14 +178,20 @@ def show_help(*_args) -> list[SQLResult]:
     return [SQLResult(header=header, rows=result, postamble=f'Docs index — {DOCS_URL}')]
 
 
-def show_keyword_help(cur: Cursor, arg: str) -> list[SQLResult]:
+def _show_special_help(keyword: str) -> list[SQLResult]:
+    header = ['name', 'description', 'example']
+    description = '\n'.join(COMMANDS[keyword][2:4])
+    rows = [(keyword, description, '')]
+    return [SQLResult(header=header, rows=rows)]
+
+
+def _show_mysql_help(cur: Cursor, keyword: str) -> list[SQLResult]:
     """
     Call the built-in "show <keyword>", to display help for an SQL keyword.
     :param cur: cursor
     :param arg: string
     :return: list
     """
-    keyword = arg.strip().strip('"\'')
     query = 'help %s'
     logger.debug(query)
     cur.execute(query, keyword)
@@ -191,6 +205,17 @@ def show_keyword_help(cur: Cursor, arg: str) -> list[SQLResult]:
         return [SQLResult(preamble='Similar terms:', header=header, rows=cur)]
     else:
         return [SQLResult(status=f'No help found for "{keyword}".')]
+
+
+def show_keyword_help(cur: Cursor, arg: str) -> list[SQLResult]:
+    keyword = arg.strip().strip('"').strip("'").rstrip('+-')
+
+    if keyword in CASE_SENSITIVE_COMMANDS:
+        return _show_special_help(keyword)
+    elif keyword.lower() in CASE_INSENSITIVE_COMMANDS:
+        return _show_special_help(keyword.lower())
+
+    return _show_mysql_help(cur, keyword)
 
 
 @special_command('\\bug', '\\bug', 'File a bug on GitHub.', arg_type=ArgType.NO_QUERY)

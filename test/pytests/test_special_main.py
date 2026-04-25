@@ -16,11 +16,17 @@ from mycli.packages.sqlresult import SQLResult
 @pytest.fixture
 def restore_commands() -> Iterator[None]:
     original_commands = special_main.COMMANDS.copy()
+    original_case_sensitive_commands = special_main.CASE_SENSITIVE_COMMANDS.copy()
+    original_case_insensitive_commands = special_main.CASE_INSENSITIVE_COMMANDS.copy()
     try:
         yield
     finally:
         special_main.COMMANDS.clear()
         special_main.COMMANDS.update(original_commands)
+        special_main.CASE_SENSITIVE_COMMANDS.clear()
+        special_main.CASE_SENSITIVE_COMMANDS.update(original_case_sensitive_commands)
+        special_main.CASE_INSENSITIVE_COMMANDS.clear()
+        special_main.CASE_INSENSITIVE_COMMANDS.update(original_case_insensitive_commands)
 
 
 class FakeHelpCursor:
@@ -100,14 +106,35 @@ def test_register_special_command_adds_primary_and_alias_entries(restore_command
     )
 
 
+def test_register_special_command_tracks_case_insensitive_commands(restore_commands: None) -> None:
+    special_main.COMMANDS.clear()
+    special_main.CASE_SENSITIVE_COMMANDS.clear()
+    special_main.CASE_INSENSITIVE_COMMANDS.clear()
+
+    special_main.register_special_command(
+        lambda: None,
+        'Demo',
+        'demo',
+        'Description',
+        aliases=['\\d'],
+    )
+
+    assert special_main.CASE_SENSITIVE_COMMANDS == set()
+    assert special_main.CASE_INSENSITIVE_COMMANDS == {'demo', '\\d'}
+
+
 def test_special_command_decorator_registers_case_sensitive_command(restore_commands: None) -> None:
     special_main.COMMANDS.clear()
+    special_main.CASE_SENSITIVE_COMMANDS.clear()
+    special_main.CASE_INSENSITIVE_COMMANDS.clear()
 
     @special_main.special_command('Camel', 'Camel', 'Description', case_sensitive=True)
     def handler() -> None:
         return None
 
     assert special_main.COMMANDS['Camel'].handler is handler
+    assert 'Camel' in special_main.CASE_SENSITIVE_COMMANDS
+    assert special_main.CASE_INSENSITIVE_COMMANDS == set()
     assert 'camel' not in special_main.COMMANDS
 
 
@@ -137,6 +164,26 @@ def test_execute_raises_for_case_sensitive_alias_lookup(restore_commands: None) 
 
     with pytest.raises(special_main.CommandNotFound, match='Command not found: DEMO'):
         special_main.execute(cast(Any, None), 'DEMO')
+
+
+def test_execute_raises_when_case_sensitive_exact_lookup_falls_back_to_lowercase(restore_commands: None) -> None:
+    special_main.COMMANDS.clear()
+    special_main.CASE_SENSITIVE_COMMANDS.clear()
+    special_main.CASE_INSENSITIVE_COMMANDS.clear()
+    special_main.COMMANDS['camel'] = special_main.SpecialCommand(
+        lambda: None,
+        'Camel',
+        'Camel',
+        'Description',
+        arg_type=special_main.ArgType.NO_QUERY,
+        hidden=False,
+        case_sensitive=True,
+        shortcut=None,
+    )
+    special_main.CASE_SENSITIVE_COMMANDS.add('Camel')
+
+    with pytest.raises(special_main.CommandNotFound, match='Command not found: Camel'):
+        special_main.execute(cast(Any, None), 'Camel')
 
 
 def test_execute_dispatches_no_query_command(restore_commands: None) -> None:
@@ -236,8 +283,24 @@ def test_execute_routes_help_with_argument_to_keyword_help(monkeypatch) -> None:
     assert calls == [(cur, 'select')]
 
 
+def test_execute_routes_uppercase_help_with_argument_to_keyword_help(monkeypatch) -> None:
+    calls: list[tuple[object, str]] = []
+
+    def fake_show_keyword_help(cur: object, arg: str) -> list[SQLResult]:
+        calls.append((cur, arg))
+        return [SQLResult(status='keyword')]
+
+    monkeypatch.setattr(special_main, 'show_keyword_help', fake_show_keyword_help)
+
+    cur = object()
+    assert special_main.execute(cast(Any, cur), 'HELP select') == [SQLResult(status='keyword')]
+    assert calls == [(cur, 'select')]
+
+
 def test_execute_raises_for_unknown_arg_type(restore_commands: None) -> None:
     special_main.COMMANDS.clear()
+    special_main.CASE_SENSITIVE_COMMANDS.clear()
+    special_main.CASE_INSENSITIVE_COMMANDS.clear()
     special_main.COMMANDS['demo'] = special_main.SpecialCommand(
         lambda: None,
         'demo',
@@ -248,6 +311,7 @@ def test_execute_raises_for_unknown_arg_type(restore_commands: None) -> None:
         case_sensitive=False,
         shortcut=None,
     )
+    special_main.CASE_INSENSITIVE_COMMANDS.add('demo')
 
     with pytest.raises(special_main.CommandNotFound, match='Command type not found: demo'):
         special_main.execute(cast(Any, None), 'demo')
@@ -263,6 +327,31 @@ def test_show_help_lists_only_visible_commands(restore_commands: None) -> None:
     assert result.header == ['Command', 'Shortcut', 'Usage', 'Description']
     assert result.rows == [('visible', '\\v', 'visible', 'Visible command')]
     assert result.postamble == f'Docs index — {DOCS_URL}'
+
+
+def test_show_keyword_help_for_special_command(restore_commands: None) -> None:
+    special_main.COMMANDS.clear()
+    special_main.CASE_SENSITIVE_COMMANDS.clear()
+    special_main.CASE_INSENSITIVE_COMMANDS.clear()
+    special_main.register_special_command(lambda: None, 'demo', 'demo <arg>', 'Demo command')
+
+    result = special_main.show_keyword_help(cast(Any, None), 'demo+')[0]
+
+    assert result.header == ['name', 'description', 'example']
+    assert result.rows == [('demo', 'demo <arg>\nDemo command', '')]
+
+
+def test_show_keyword_help_for_case_sensitive_special_alias() -> None:
+    result = special_main.show_keyword_help(cast(Any, None), r'\e')[0]
+
+    assert result.header == ['name', 'description', 'example']
+    assert result.rows == [
+        (
+            r'\e',
+            '<query>\\edit | \\edit <filename>\nEdit query with editor (uses $VISUAL or $EDITOR).',
+            '',
+        )
+    ]
 
 
 def test_show_keyword_help_exact_match() -> None:
