@@ -13,6 +13,11 @@ from typing import Any, cast
 
 import click
 from click.testing import CliRunner
+from prompt_toolkit.formatted_text import (
+    FormattedText,
+    to_formatted_text,
+    to_plain_text,
+)
 import pymysql
 from pymysql.err import OperationalError
 import pytest
@@ -391,8 +396,9 @@ def test_prompt_no_host_only_socket(executor):
     mycli.sqlexecute.user = DEFAULT_USER
     mycli.sqlexecute.dbname = DEFAULT_DATABASE
     mycli.sqlexecute.port = DEFAULT_PORT
-    prompt = repl_mode.get_prompt(mycli, mycli.prompt_format, 0)
-    assert prompt == f"MySQL {DEFAULT_USER}@{DEFAULT_HOST}:{DEFAULT_DATABASE}> "
+    prompt = repl_mode.render_prompt_string(mycli, mycli.prompt_format, 0)
+    prompt_plain = to_plain_text(prompt)
+    assert prompt_plain == f"MySQL {DEFAULT_USER}@{DEFAULT_HOST}:{DEFAULT_DATABASE}> "
 
 
 @dbtest
@@ -406,8 +412,9 @@ def test_prompt_socket_overrides_port(executor):
     mycli.sqlexecute.user = DEFAULT_USER
     mycli.sqlexecute.dbname = DEFAULT_DATABASE
     mycli.sqlexecute.port = DEFAULT_PORT
-    prompt = repl_mode.get_prompt(mycli, mycli.prompt_format, 0)
-    assert prompt == f"MySQL {DEFAULT_USER}@{DEFAULT_HOST}:mysqld.sock {DEFAULT_DATABASE}> "
+    prompt = repl_mode.render_prompt_string(mycli, mycli.prompt_format, 0)
+    prompt_plain = to_plain_text(prompt)
+    assert prompt_plain == f"MySQL {DEFAULT_USER}@{DEFAULT_HOST}:mysqld.sock {DEFAULT_DATABASE}> "
 
 
 @dbtest
@@ -421,8 +428,9 @@ def test_prompt_socket_short_host(executor):
     mycli.sqlexecute.user = DEFAULT_USER
     mycli.sqlexecute.dbname = DEFAULT_DATABASE
     mycli.sqlexecute.port = DEFAULT_PORT
-    prompt = repl_mode.get_prompt(mycli, mycli.prompt_format, 0)
-    assert prompt == f"MySQL {DEFAULT_USER}@{DEFAULT_HOST}:{DEFAULT_PORT} {DEFAULT_DATABASE}> "
+    prompt = repl_mode.render_prompt_string(mycli, mycli.prompt_format, 0)
+    prompt_plain = to_plain_text(prompt)
+    assert prompt_plain == f"MySQL {DEFAULT_USER}@{DEFAULT_HOST}:{DEFAULT_PORT} {DEFAULT_DATABASE}> "
 
 
 @dbtest
@@ -2261,11 +2269,11 @@ def test_get_output_margin_uses_prompt_session_render_counter(monkeypatch: pytes
         SimpleNamespace(app=SimpleNamespace(render_counter=7)),
     )
 
-    def fake_get_prompt(mycli: Any, string: str, render_counter: int) -> str:
+    def fake_render_prompt_string(mycli: Any, string: str, render_counter: int) -> FormattedText:
         render_counters.append(render_counter)
-        return 'line1\nline2'
+        return to_formatted_text('line1\nline2')
 
-    monkeypatch.setattr(main, 'get_prompt', fake_get_prompt)
+    monkeypatch.setattr(main, 'render_prompt_string', fake_render_prompt_string)
     monkeypatch.setattr(main.special, 'is_timing_enabled', lambda: False)
     assert main.MyCli.get_output_margin(cli, 'ok') == 5
     assert render_counters == [7]

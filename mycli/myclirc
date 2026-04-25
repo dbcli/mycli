@@ -138,6 +138,12 @@ wider_completion_menu = False
 # * \\ - a literal backslash
 # * \x1b[...m - an ANSI escape sequence (can style with color or attributes)
 #   ANSI color example: prompt = '\x1b[31mroot\x1b[0m@localhost:\d> '
+# * \<html> - a leading sequence indicating that the rest of the prompt be styled like HTML.
+#   See https://python-prompt-toolkit.readthedocs.io/en/stable/pages/printing_text.html#html .
+#   Characters such as "&" or literal "<" and ">" must be HTML-escaped in this mode.
+#   HTML styles cannot be combined with ANSI sequences.  HTML mode takes precedence.
+#   HTML color example: prompt = '\<html><red><u>root</u></red>@localhost:\d&gt; '
+#
 prompt = '\t \u@\h:\d> '
 prompt_continuation = '->'
 

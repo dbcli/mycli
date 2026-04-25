@@ -8,7 +8,7 @@ import os
 from types import SimpleNamespace
 from typing import Any, Literal, cast
 
-from prompt_toolkit.formatted_text import to_plain_text
+from prompt_toolkit.formatted_text import to_formatted_text, to_plain_text
 import pymysql
 import pytest
 
@@ -335,8 +335,8 @@ def test_repl_show_startup_banner_and_prompt_helpers(monkeypatch: pytest.MonkeyP
 
     monkeypatch.setattr(
         repl_mode,
-        'get_prompt',
-        lambda mycli, string, render_counter: '0123456' if string == cli.default_prompt else 'a\nb',
+        'render_prompt_string',
+        lambda mycli, string, render_counter: to_formatted_text('0123456') if string == cli.default_prompt else 'a\nb',
     )
     cli.max_len_prompt = 5
     prompt_text = to_plain_text(repl_mode._get_prompt_message(cli, cast(Any, FakeApp(text='', render_counter=2))))
@@ -348,7 +348,7 @@ def test_repl_show_startup_banner_and_prompt_helpers(monkeypatch: pytest.MonkeyP
 
     cli.prompt_format = 'custom'
     cli.prompt_lines = 0
-    monkeypatch.setattr(repl_mode, 'get_prompt', lambda mycli, string, render_counter: 'single')
+    monkeypatch.setattr(repl_mode, 'render_prompt_string', lambda mycli, string, render_counter: to_formatted_text('single'))
     assert to_plain_text(repl_mode._get_prompt_message(cli, cast(Any, FakeApp(text='', render_counter=4)))) == 'single'
     assert cli.prompt_lines == 1
 
@@ -397,8 +397,9 @@ def test_prompt_toolbar_and_title_helpers(monkeypatch: pytest.MonkeyPatch) -> No
     cli.login_path = 'prod'
     cli.login_path_as_host = True
     cli.dsn_alias = 'dsn'
-    prompt = repl_mode.get_prompt(cli, r'\h|\H|\A|\y|\Y|\T|\w|\W', 0)
-    assert prompt == 'prod|prod|dsn|(none)|(none)|(none)|(none)|'
+    prompt = repl_mode.render_prompt_string(cli, r'\h|\H|\A|\y|\Y|\T|\w|\W', 0)
+    prompt_plain = to_plain_text(prompt)
+    assert prompt_plain == 'prod|prod|dsn|(none)|(none)|(none)|(none)|'
 
     sqlexecute.conn = PromptConnection()
     cli.login_path_as_host = False
@@ -406,8 +407,9 @@ def test_prompt_toolbar_and_title_helpers(monkeypatch: pytest.MonkeyPatch) -> No
     monkeypatch.setattr(repl_mode, 'format_uptime', lambda uptime: f'uptime:{uptime}')
     monkeypatch.setattr(repl_mode, 'get_ssl_version', lambda cur: 'TLSv1.3')
     monkeypatch.setattr(repl_mode, 'get_warning_count', lambda cur: 7)
-    prompt = repl_mode.get_prompt(cli, r'\H|\y|\Y|\T|\w|\W', 1)
-    assert prompt == '127.0.0.1|123|uptime:123|TLSv1.3|7|7'
+    prompt = repl_mode.render_prompt_string(cli, r'\H|\y|\Y|\T|\w|\W', 1)
+    prompt_plain = to_plain_text(prompt)
+    assert prompt_plain == '127.0.0.1|123|uptime:123|TLSv1.3|7|7'
 
     cli.prompt_session = None
     assert to_plain_text(repl_mode.get_custom_toolbar(cli, 'fmt')) == ''
@@ -420,7 +422,7 @@ def test_prompt_toolbar_and_title_helpers(monkeypatch: pytest.MonkeyPatch) -> No
     assert repl_mode.get_custom_toolbar(cli, 'fmt') == cli.last_custom_toolbar_message
 
     cli.prompt_session.app.current_buffer.text = ''
-    monkeypatch.setattr(repl_mode, 'get_prompt', lambda mycli, string, render_counter: f'title:{string}')
+    monkeypatch.setattr(repl_mode, 'render_prompt_string', lambda mycli, string, render_counter: f'title:{string}')
     assert 'title:fmt' in str(repl_mode.get_custom_toolbar(cli, 'fmt'))
 
     cli.terminal_tab_title_format = 'tab'
@@ -481,14 +483,17 @@ def test_prompt_and_title_helper_early_returns_and_remaining_prompt_branches(mon
     monkeypatch.setattr(repl_mode, 'get_ssl_version', lambda cur: 'TLSv1.3')
     monkeypatch.setattr(repl_mode, 'get_warning_count', lambda cur: 7)
 
-    prompt = repl_mode.get_prompt(cli, r'\h|\H|\y|\Y', 0)
-    assert prompt == f'{repl_mode.DEFAULT_HOST}|{repl_mode.DEFAULT_HOST}|123|uptime:123'
+    prompt = repl_mode.render_prompt_string(cli, r'\h|\H|\y|\Y', 0)
+    prompt_plain = to_plain_text(prompt)
+    assert prompt_plain == f'{repl_mode.DEFAULT_HOST}|{repl_mode.DEFAULT_HOST}|123|uptime:123'
 
-    prompt = repl_mode.get_prompt(cli, r'\h|\H|\w|\W', 1)
-    assert prompt == f'{repl_mode.DEFAULT_HOST}|{repl_mode.DEFAULT_HOST}|7|7'
+    prompt = repl_mode.render_prompt_string(cli, r'\h|\H|\w|\W', 1)
+    prompt_plain = to_plain_text(prompt)
+    assert prompt_plain == f'{repl_mode.DEFAULT_HOST}|{repl_mode.DEFAULT_HOST}|7|7'
 
-    prompt = repl_mode.get_prompt(cli, r'\h|\H|\T', 2)
-    assert prompt == f'{repl_mode.DEFAULT_HOST}|{repl_mode.DEFAULT_HOST}|TLSv1.3'
+    prompt = repl_mode.render_prompt_string(cli, r'\h|\H|\T', 2)
+    prompt_plain = to_plain_text(prompt)
+    assert prompt_plain == f'{repl_mode.DEFAULT_HOST}|{repl_mode.DEFAULT_HOST}|TLSv1.3'
 
     monkeypatch.setattr(repl_mode.sys.stderr, 'isatty', lambda: True)
     monkeypatch.setattr(builtins, 'print', lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError('unexpected print')))
@@ -528,6 +533,57 @@ def test_prompt_and_title_helper_early_returns_and_remaining_prompt_branches(mon
     monkeypatch.setenv('TMUX', '1')
     cli.prompt_session = None
     repl_mode.set_external_multiplex_pane_title(cli)
+
+
+def test_maybe_html_escape() -> None:
+    assert repl_mode.maybe_html_escape('plain', False) == 'plain'
+    assert repl_mode.maybe_html_escape('a&b<1>', True) == 'a&amp;b&lt;1&gt;'
+
+
+def test_render_prompt_string_html() -> None:
+    repl_mode.render_prompt_string.cache_clear()
+
+    cli = make_repl_cli(
+        SimpleNamespace(
+            user='ab',
+            host='db.example.com',
+            dbname='nameprod',
+            port=3306,
+            socket=None,
+            server_info=SimpleNamespace(species=SimpleNamespace(name='MySQL')),
+            conn=None,
+        )
+    )
+    cli.dsn_alias = 'aliasone'
+
+    html_prompt = repl_mode.render_prompt_string(cli, r'\<html><b>\u@\d|\A</b>\</html>', 0)
+    assert to_plain_text(html_prompt) == 'ab@nameprod|aliasone'
+
+    bad_html_prompt = repl_mode.render_prompt_string(cli, r'\<html><b>\u', 1)
+    assert to_plain_text(bad_html_prompt) == '(cannot parse HTML prompt string)'
+
+    ansi_prompt = repl_mode.render_prompt_string(cli, r'\x1b[31mred\x1b[0m', 2)
+    assert to_plain_text(ansi_prompt) == 'red'
+
+
+def test_render_prompt_string_ansi() -> None:
+    repl_mode.render_prompt_string.cache_clear()
+
+    cli = make_repl_cli(
+        SimpleNamespace(
+            user='ab',
+            host='db.example.com',
+            dbname='nameprod',
+            port=3306,
+            socket=None,
+            server_info=SimpleNamespace(species=SimpleNamespace(name='MySQL')),
+            conn=None,
+        )
+    )
+    cli.dsn_alias = 'aliasone'
+
+    ansi_prompt = repl_mode.render_prompt_string(cli, r'\x1b[31mred\x1b[0m', 2)
+    assert to_plain_text(ansi_prompt) == 'red'
 
 
 def test_output_results_covers_watch_warning_timing_beep_and_interrupts(monkeypatch: pytest.MonkeyPatch) -> None:

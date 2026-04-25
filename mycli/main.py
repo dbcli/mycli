@@ -70,7 +70,7 @@ from mycli.main_modes.checkup import main_checkup
 from mycli.main_modes.execute import main_execute_from_cli
 from mycli.main_modes.list_dsn import main_list_dsn
 from mycli.main_modes.list_ssh_config import main_list_ssh_config
-from mycli.main_modes.repl import get_prompt, main_repl, set_all_external_titles
+from mycli.main_modes.repl import main_repl, render_prompt_string, set_all_external_titles
 from mycli.packages import special
 from mycli.packages.cli_utils import filtered_sys_argv, is_valid_connection_scheme
 from mycli.packages.filepaths import dir_path_exists, guess_socket_location
@@ -268,8 +268,8 @@ class MyCli:
         self.min_completion_trigger = c["main"].as_int("min_completion_trigger")
         # a hack, pending a better way to handle settings and state
         repl_package.MIN_COMPLETION_TRIGGER = self.min_completion_trigger
-        self.last_prompt_message = ANSI('')
-        self.last_custom_toolbar_message = ANSI('')
+        self.last_prompt_message = to_formatted_text('')
+        self.last_custom_toolbar_message = to_formatted_text('')
 
         # Register custom special commands.
         self.register_special_commands()
@@ -907,8 +907,9 @@ class MyCli:
                 render_counter = self.prompt_session.app.render_counter
             else:
                 render_counter = 0
-            # todo: this jump back to get_prompt() in repl.py is a sign that separation is incomplete
-            self.prompt_lines = get_prompt(self, self.prompt_format, render_counter).count('\n') + 1
+            # todo: this jump back to render_prompt_string() in repl.py is a sign that separation is incomplete
+            prompt_string = render_prompt_string(self, self.prompt_format, render_counter)
+            self.prompt_lines = to_plain_text(prompt_string).count('\n') + 1
         margin = self.get_reserved_space() + self.prompt_lines
         if special.is_timing_enabled():
             margin += 1

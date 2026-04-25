@@ -5,6 +5,7 @@ Features
 ---------
 * Add more output to the `status` command.
 * Respond to `help <term>` on builtin special commands.
+* Allow styling prompts with HTML-like tags.
 
 
 Documentation
