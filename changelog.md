@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Features
+---------
+* Allow styling prompts with HTML-like tags.
+
+
 Documentation
 ---------
 * Document the `\g` special command to send a query.
@@ -8,7 +13,7 @@ Documentation
 
 Internal
 ---------
-* Independent case-sensitivity for special command aliases.
+* Independent case-sensitivity for special-command aliases.
 
 
 1.71.0 (2026/05/01)
