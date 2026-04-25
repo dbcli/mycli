@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Internal
+---------
+* Remove unused fixture data.
+
+
 1.70.0 (2026/04/24)
 ==============
 
