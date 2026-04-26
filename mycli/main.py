@@ -88,7 +88,7 @@ from mycli.types import Query
 sqlparse.engine.grouping.MAX_GROUPING_DEPTH = None  # type: ignore[assignment]
 sqlparse.engine.grouping.MAX_GROUPING_TOKENS = None  # type: ignore[assignment]
 
-EMPTY_PASSWORD_FLAG_SENTINEL = -1
+EMPTY_PASSWORD_FLAG_SENTINEL = '\x00__mycli_empty_password_flag__\x00'
 
 
 class IntOrStringClickParamType(click.ParamType):
@@ -1487,7 +1487,52 @@ class CliArgs:
     )
 
 
-@click.command()
+class _PasswordFriendlyCommand(click.Command):
+    """Command subclass that lets --password accept a value starting with '-'.
+
+    Because the password option combines ``is_flag=False`` with ``flag_value``
+    (so that a bare ``-p`` / ``--password`` means "prompt for the password"),
+    click 8.3+ marks the option with ``_flag_needs_value=True``. That flag
+    triggers a parser heuristic which refuses values beginning with a dash,
+    turning ``mycli --password=-rocks`` into ``Error: No such option: -r``
+    (see dbcli/mycli#1752).
+
+    This subclass disables that heuristic on the password option and instead
+    injects the flag-value sentinel itself when the option is used bare,
+    preserving the prompt-for-password behavior.
+    """
+
+    _PASSWORD_OPTS = frozenset({'-p', '--pass', '--password'})
+
+    def parse_args(self, ctx: click.Context, args: list[str]) -> list[str]:
+        args = self._inject_bare_password_sentinel(args)
+        for param in self.params:
+            if isinstance(param, click.Option) and param.name == 'password':
+                param._flag_needs_value = False
+                break
+        return super().parse_args(ctx, args)
+
+    @classmethod
+    def _inject_bare_password_sentinel(cls, args: list[str]) -> list[str]:
+        result: list[str] = []
+        i = 0
+        n = len(args)
+        while i < n:
+            token = args[i]
+            if token in cls._PASSWORD_OPTS:
+                nxt = args[i + 1] if i + 1 < n else None
+                bare = nxt is None or (isinstance(nxt, str) and nxt.startswith('-') and len(nxt) > 1)
+                if bare:
+                    result.append(token)
+                    result.append(EMPTY_PASSWORD_FLAG_SENTINEL)
+                    i += 1
+                    continue
+            result.append(token)
+            i += 1
+        return result
+
+
+@click.command(cls=_PasswordFriendlyCommand)
 @clickdc.adddc('cli_args', CliArgs)
 @click.version_option(mycli_package.__version__, '--version', '-V', help="Output mycli's version.")
 def click_entrypoint(

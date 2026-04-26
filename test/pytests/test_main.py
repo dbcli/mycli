@@ -1335,6 +1335,82 @@ def test_password_option_uses_cleartext_value(monkeypatch):
     assert MockMyCli.connect_args['passwd'] == 'cleartext_password'
 
 
+@pytest.mark.parametrize(
+    ('password_args', 'expected'),
+    [
+        # Regression tests for https://github.com/dbcli/mycli/issues/1752:
+        # a password value starting with '-' used to be reinterpreted as short
+        # options ("Error: No such option: -r") because click marks the option
+        # with `_flag_needs_value=True` whenever `flag_value` is set.
+        (['--password=-rocks'], '-rocks'),
+        (['--password=-starts-with-dash'], '-starts-with-dash'),
+        (['--pass=-rocks'], '-rocks'),
+        (['-p-rocks'], '-rocks'),
+        # Existing behavior that must not regress.
+        (['--password=foo'], 'foo'),
+        (['--password', 'cleartext_password'], 'cleartext_password'),
+        (['-procks'], 'rocks'),
+    ],
+)
+def test_password_option_accepts_dash_prefixed_value(monkeypatch, password_args, expected):
+    class Formatter:
+        format_name = None
+
+    class Logger:
+        def debug(self, *args, **args_dict):
+            pass
+
+        def warning(self, *args, **args_dict):
+            pass
+
+    class MockMyCli:
+        config = {
+            'main': {},
+            'alias_dsn': {},
+            'connection': {
+                'default_keepalive_ticks': 0,
+            },
+        }
+
+        def __init__(self, **_args):
+            self.logger = Logger()
+            self.destructive_warning = False
+            self.main_formatter = Formatter()
+            self.redirect_formatter = Formatter()
+            self.ssl_mode = 'auto'
+            self.my_cnf = {'client': {}, 'mysqld': {}}
+            self.default_keepalive_ticks = 0
+
+        def connect(self, **args):
+            MockMyCli.connect_args = args
+
+        def run_query(self, query, new_line=True):
+            pass
+
+    import mycli.main
+
+    monkeypatch.setattr(mycli.main, 'MyCli', MockMyCli)
+    runner = CliRunner()
+
+    result = runner.invoke(
+        mycli.main.click_entrypoint,
+        args=[
+            '--user',
+            'user',
+            '--host',
+            DEFAULT_HOST,
+            '--port',
+            f'{DEFAULT_PORT}',
+            '--database',
+            'database',
+            *password_args,
+        ],
+    )
+    assert result.exit_code == 0, result.output + ' ' + str(result.exception)
+    assert 'No such option' not in result.output
+    assert MockMyCli.connect_args['passwd'] == expected
+
+
 def test_password_option_overrides_password_file_and_mysql_pwd(monkeypatch):
     class Formatter:
         format_name = None
