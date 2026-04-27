@@ -4,6 +4,7 @@ Upcoming (TBD)
 Internal
 ---------
 * Remove unused fixture data.
+* More test coverage for completion prefetch.
 
 
 1.70.0 (2026/04/24)

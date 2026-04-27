@@ -27,6 +27,10 @@ def test_parse_prefetch_config_listed() -> None:
     assert parse_prefetch_config('listed', []) == []
 
 
+def test_parse_prefetch_config_unknown_mode_falls_back_to_always() -> None:
+    assert parse_prefetch_config('unknown', ['ignored']) is None
+
+
 def make_mycli(
     prefetch_mode: str = 'listed',
     prefetch_list: list[str] | None = None,
@@ -209,3 +213,164 @@ def test_start_skips_schemas_already_in_completer(monkeypatch):
     assert executor_calls == ['fresh']
     # Cached data for 'keep' is untouched.
     assert mycli.completer.dbmetadata['tables']['keep'] == {'cached_table': ['*', 'c1']}
+
+
+def test_is_prefetching_and_clear_loaded() -> None:
+    mycli = make_mycli()
+    prefetcher = SchemaPrefetcher(mycli)
+
+    assert prefetcher.is_prefetching() is False
+
+    prefetcher._loaded.update({'alpha', 'beta'})
+    prefetcher.clear_loaded()
+
+    class FakeThread:
+        def is_alive(self) -> bool:
+            return True
+
+    prefetcher._thread = FakeThread()
+    assert prefetcher.is_prefetching() is True
+    assert prefetcher._loaded == set()
+
+
+def test_stop_joins_alive_thread_and_resets_state() -> None:
+    mycli = make_mycli()
+    prefetcher = SchemaPrefetcher(mycli)
+    old_cancel = prefetcher._cancel
+
+    class FakeThread:
+        def __init__(self) -> None:
+            self.join_timeout: float | None = None
+
+        def is_alive(self) -> bool:
+            return True
+
+        def join(self, timeout: float) -> None:
+            self.join_timeout = timeout
+
+    fake_thread = FakeThread()
+    prefetcher._thread = fake_thread
+
+    prefetcher.stop(timeout=1.5)
+
+    assert old_cancel.is_set()
+    assert fake_thread.join_timeout == 1.5
+    assert prefetcher._thread is None
+    assert prefetcher._cancel is not old_cancel
+
+
+def test_prefetch_schema_now_ignores_empty_schema(monkeypatch) -> None:
+    mycli = make_mycli()
+    prefetcher = SchemaPrefetcher(mycli)
+    stop = MagicMock()
+    start = MagicMock()
+    monkeypatch.setattr(prefetcher, 'stop', stop)
+    monkeypatch.setattr(prefetcher, '_start', start)
+
+    prefetcher.prefetch_schema_now('')
+
+    stop.assert_not_called()
+    start.assert_not_called()
+
+
+def test_run_returns_when_database_listing_fails(monkeypatch) -> None:
+    mycli = make_mycli()
+    prefetcher = SchemaPrefetcher(mycli)
+    executor = MagicMock()
+    executor.databases.side_effect = RuntimeError('boom')
+    executor.close = MagicMock()
+    invalidate = MagicMock()
+    monkeypatch.setattr(prefetcher, '_make_executor', lambda: executor)
+    monkeypatch.setattr(prefetcher, '_invalidate_app', invalidate)
+
+    prefetcher._run(None)
+
+    executor.databases.assert_called_once_with()
+    executor.close.assert_called_once_with()
+    invalidate.assert_called_once_with()
+
+
+def test_run_returns_when_cancelled_before_prefetch(monkeypatch) -> None:
+    mycli = make_mycli()
+    prefetcher = SchemaPrefetcher(mycli)
+    executor = MagicMock()
+    executor.close = MagicMock()
+    prefetch = MagicMock()
+    invalidate = MagicMock()
+    prefetcher._cancel.set()
+    monkeypatch.setattr(prefetcher, '_make_executor', lambda: executor)
+    monkeypatch.setattr(prefetcher, '_prefetch_one', prefetch)
+    monkeypatch.setattr(prefetcher, '_invalidate_app', invalidate)
+
+    prefetcher._run(['schema1'])
+
+    prefetch.assert_not_called()
+    assert prefetcher._loaded == set()
+    executor.close.assert_called_once_with()
+    invalidate.assert_called_once_with()
+
+
+def test_run_logs_prefetch_error_and_continues(monkeypatch) -> None:
+    mycli = make_mycli()
+    prefetcher = SchemaPrefetcher(mycli)
+    executor = MagicMock()
+    executor.close = MagicMock()
+    invalidate = MagicMock()
+    calls: list[str] = []
+
+    def fake_prefetch(_executor, schema: str) -> None:
+        calls.append(schema)
+        if schema == 'bad':
+            raise RuntimeError('boom')
+
+    monkeypatch.setattr(prefetcher, '_make_executor', lambda: executor)
+    monkeypatch.setattr(prefetcher, '_prefetch_one', fake_prefetch)
+    monkeypatch.setattr(prefetcher, '_invalidate_app', invalidate)
+
+    prefetcher._run(['bad', 'good'])
+
+    assert calls == ['bad', 'good']
+    assert prefetcher._loaded == {'good'}
+    executor.close.assert_called_once_with()
+    invalidate.assert_called_once_with()
+
+
+def test_prefetch_one_loads_foreign_keys_enums_functions_and_procedures(monkeypatch) -> None:
+    mycli = make_mycli()
+    load_schema_metadata = MagicMock()
+    mycli.completer.load_schema_metadata = load_schema_metadata
+    prefetcher = SchemaPrefetcher(mycli)
+    invalidate = MagicMock()
+    monkeypatch.setattr(prefetcher, '_invalidate_app', invalidate)
+
+    executor = MagicMock()
+    executor.table_columns.return_value = iter([('orders', 'id')])
+    executor.foreign_keys.return_value = iter([('orders', 'user_id', 'users', 'id')])
+    executor.enum_values.return_value = iter([('orders', 'status', ['pending', 'shipped'])])
+    executor.functions.return_value = iter([(), ('calc_tax',), (None,)])
+    executor.procedures.return_value = iter([None, ('rebuild_cache',), ('',)])
+
+    prefetcher._prefetch_one(executor, 'analytics')
+
+    load_schema_metadata.assert_called_once_with(
+        schema='analytics',
+        table_columns={'orders': ['*', 'id']},
+        foreign_keys={
+            'tables': {'orders': {'users'}, 'users': {'orders'}},
+            'relations': [('orders', 'user_id', 'users', 'id')],
+        },
+        enum_values={'orders': {'status': ['pending', 'shipped']}},
+        functions={'calc_tax': None},
+        procedures={'rebuild_cache': None},
+    )
+    invalidate.assert_called_once_with()
+
+
+def test_invalidate_app_calls_prompt_session_app() -> None:
+    mycli = make_mycli()
+    mycli.prompt_session = SimpleNamespace(app=SimpleNamespace(invalidate=MagicMock()))
+    prefetcher = SchemaPrefetcher(mycli)
+
+    prefetcher._invalidate_app()
+
+    mycli.prompt_session.app.invalidate.assert_called_once_with()
