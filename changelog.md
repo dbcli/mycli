@@ -18,6 +18,7 @@ Internal
 * More test coverage for completion prefetch.
 * More test coverage for `--resume`.
 * Upgrade `cli_helpers` dependency to v2.14.0.
+* Require `prompt_toolkit>=3.0.41`.
 
 
 1.70.0 (2026/04/24)
