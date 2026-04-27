@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Features
+---------
+* Add more output to the `status` command.
+
+
 Documentation
 ---------
 * Give example for ANSI prompt colors in `~/.myclirc`.

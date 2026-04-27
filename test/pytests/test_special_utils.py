@@ -12,6 +12,9 @@ import mycli.packages.special.utils
 from mycli.packages.special.utils import (
     CACHED_SSL_VERSION,
     format_uptime,
+    get_local_timezone,
+    get_server_timezone,
+    get_ssl_cipher,
     get_ssl_version,
     get_uptime,
     get_warning_count,
@@ -185,3 +188,92 @@ def test_get_ssl_version_ignores_operational_error() -> None:
     cur.execute.side_effect = pymysql.err.OperationalError()
 
     assert get_ssl_version(cur) is None
+
+
+def test_get_ssl_cipher_returns_value() -> None:
+    cur = MagicMock()
+    cur.fetchone.return_value = ('Ssl_cipher', 'TLS_AES_256_GCM_SHA384')
+
+    ssl_cipher = get_ssl_cipher(cur)
+
+    cur.execute.assert_called_once_with('SHOW STATUS LIKE "Ssl_cipher"')
+    assert ssl_cipher == 'TLS_AES_256_GCM_SHA384'
+
+
+def test_get_ssl_cipher_returns_none_for_missing_row() -> None:
+    cur = MagicMock()
+    cur.fetchone.return_value = None
+
+    assert get_ssl_cipher(cur) is None
+
+
+def test_get_ssl_cipher_returns_none_for_empty_value() -> None:
+    cur = MagicMock()
+    cur.fetchone.return_value = ('Ssl_cipher', '')
+
+    assert get_ssl_cipher(cur) is None
+
+
+def test_get_ssl_cipher_ignores_operational_error() -> None:
+    cur = MagicMock()
+    cur.execute.side_effect = pymysql.err.OperationalError()
+
+    assert get_ssl_cipher(cur) is None
+
+
+def test_get_server_timezone_prefers_system_timezone_when_requested() -> None:
+    variables = {
+        'time_zone': 'SYSTEM',
+        'system_time_zone': 'UTC',
+    }
+
+    assert get_server_timezone(variables) == 'UTC'
+
+
+def test_get_server_timezone_returns_explicit_timezone() -> None:
+    variables = {
+        'time_zone': '+02:00',
+        'system_time_zone': 'UTC',
+    }
+
+    assert get_server_timezone(variables) == '+02:00'
+
+
+def test_get_server_timezone_returns_empty_string_when_keys_are_missing() -> None:
+    assert get_server_timezone({}) == ''
+
+
+def test_get_local_timezone_returns_tzname(monkeypatch) -> None:
+    class FakeAwareDatetime:
+        def tzname(self) -> str:
+            return 'EDT'
+
+    class FakeDatetime:
+        @staticmethod
+        def now() -> 'FakeDatetime':
+            return FakeDatetime()
+
+        def astimezone(self) -> FakeAwareDatetime:
+            return FakeAwareDatetime()
+
+    monkeypatch.setattr(mycli.packages.special.utils.datetime, 'datetime', FakeDatetime)
+
+    assert get_local_timezone() == 'EDT'
+
+
+def test_get_local_timezone_returns_empty_string_when_tzname_is_none(monkeypatch) -> None:
+    class FakeAwareDatetime:
+        def tzname(self) -> None:
+            return None
+
+    class FakeDatetime:
+        @staticmethod
+        def now() -> 'FakeDatetime':
+            return FakeDatetime()
+
+        def astimezone(self) -> FakeAwareDatetime:
+            return FakeAwareDatetime()
+
+    monkeypatch.setattr(mycli.packages.special.utils.datetime, 'datetime', FakeDatetime)
+
+    assert get_local_timezone() == ''
