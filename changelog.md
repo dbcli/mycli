@@ -10,6 +10,7 @@ Internal
 ---------
 * Remove unused fixture data.
 * More test coverage for completion prefetch.
+* Upgrade `cli_helpers` dependency to v2.14.0.
 
 
 1.70.0 (2026/04/24)
