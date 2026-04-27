@@ -4,6 +4,7 @@ Upcoming (TBD)
 Features
 ---------
 * Add more output to the `status` command.
+* Respond to `help <term>` on builtin special commands.
 
 
 Documentation

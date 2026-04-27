@@ -174,6 +174,8 @@ def test_editor_command(monkeypatch):
     assert mycli.packages.special.editor_command(r"\e hello")
     assert mycli.packages.special.editor_command(r"\edit hello")
 
+    assert not mycli.packages.special.editor_command(r"HELP \e")
+    assert not mycli.packages.special.editor_command(r"help \edit\g")
     assert not mycli.packages.special.editor_command(r"hello")
     assert not mycli.packages.special.editor_command(r"\ehello")
     assert not mycli.packages.special.editor_command(r"\edithello")
@@ -463,6 +465,11 @@ def test_simple_setters_and_toggle_timing() -> None:
 
     iocommands.set_show_favorite_query(False)
     assert iocommands.is_show_favorite_query() is False
+
+    iocommands.set_show_warnings_enabled(True)
+    assert iocommands.is_show_warnings_enabled() is True
+    iocommands.set_show_warnings_enabled(False)
+    assert iocommands.is_show_warnings_enabled() is False
 
     iocommands.set_destructive_keywords(['drop'])
     assert iocommands.DESTRUCTIVE_KEYWORDS == ['drop']

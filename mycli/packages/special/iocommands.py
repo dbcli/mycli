@@ -190,6 +190,9 @@ def editor_command(command: str) -> bool:
     Is this an external editor command?
     :param command: string
     """
+    # special case: allow help on the \edit command
+    if re.match(r'^([Hh][Ee][Ll][Pp])\s+(\\e|\\edit)\s*(;|\\G|\\g)?\s*$', command):
+        return False
     # It is possible to have `\e filename` or `SELECT * FROM \e`. So we check
     # for both conditions.
     return (
