@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Documentation
+---------
+* Give example for ANSI prompt colors in `~/.myclirc`.
+
+
 Internal
 ---------
 * Remove unused fixture data.

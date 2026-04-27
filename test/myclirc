@@ -134,7 +134,8 @@ wider_completion_menu = False
 # * \n - a newline
 # * \_ - a space
 # * \\ - a literal backslash
-# * \x1b[...m - an ANSI escape sequence (can style with color)
+# * \x1b[...m - an ANSI escape sequence (can style with color or attributes)
+#   ANSI color example: prompt = '\x1b[31mroot\x1b[0m@localhost:\d> '
 prompt = "\t \u@\h:\d> "
 prompt_continuation = ->
 
