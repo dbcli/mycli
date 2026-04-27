@@ -8,7 +8,13 @@ from pymysql.cursors import Cursor
 from mycli import __version__
 from mycli.packages.special import iocommands
 from mycli.packages.special.main import ArgType, special_command
-from mycli.packages.special.utils import format_uptime, get_ssl_version
+from mycli.packages.special.utils import (
+    format_uptime,
+    get_local_timezone,
+    get_server_timezone,
+    get_ssl_cipher,
+    get_ssl_version,
+)
 from mycli.packages.sqlresult import SQLResult
 
 logger = logging.getLogger(__name__)
@@ -69,7 +75,7 @@ def status(cur: Cursor, **_) -> list[SQLResult]:
     try:
         cur.execute(query)
     except ProgrammingError:
-        # Fallback in case query fail, as it does with Mysql 4
+        # Fallback in case query fails, as it does with Mysql 4
         query = "SHOW STATUS;"
         logger.debug(query)
         cur.execute(query)
@@ -78,15 +84,24 @@ def status(cur: Cursor, **_) -> list[SQLResult]:
     query = "SHOW GLOBAL VARIABLES;"
     logger.debug(query)
     cur.execute(query)
-    variables = dict(cur.fetchall())
+    global_variables = dict(cur.fetchall())
 
-    # prepare in case keys are bytes, as with Python 3 and Mysql 4
-    if isinstance(list(variables)[0], bytes) and isinstance(list(status)[0], bytes):
-        variables = {k.decode("utf-8"): v.decode("utf-8") for k, v in variables.items()}
+    query = "SHOW SESSION VARIABLES;"
+    logger.debug(query)
+    cur.execute(query)
+    session_variables = dict(cur.fetchall())
+
+    # decode in case keys are bytes, as with Mysql 4
+    if global_variables and isinstance(list(global_variables)[0], bytes):
+        global_variables = {k.decode("utf-8"): v.decode("utf-8") for k, v in global_variables.items()}
+    if session_variables and isinstance(list(session_variables)[0], bytes):
+        session_variables = {k.decode("utf-8"): v.decode("utf-8") for k, v in session_variables.items()}
+    if status and isinstance(list(status)[0], bytes):
         status = {k.decode("utf-8"): v.decode("utf-8") for k, v in status.items()}
 
     # Create output buffers.
     preamble = []
+    header = ['Setting', 'Value']
     output = []
     footer = []
 
@@ -111,7 +126,6 @@ def status(cur: Cursor, **_) -> list[SQLResult]:
     else:
         db = ""
         user = ""
-
     output.append(("Current database:", db))
     output.append(("Current user:", user))
 
@@ -124,9 +138,16 @@ def status(cur: Cursor, **_) -> list[SQLResult]:
         pager = "stdout"
     output.append(("Current pager:", pager))
 
-    output.append(("Server version:", f'{variables["version"]} {variables["version_comment"]}'))
-    output.append(("Protocol version:", variables["protocol_version"]))
-    output.append(('SSL/TLS version:', get_ssl_version(cur)))
+    output.append(("Using delimiter:", iocommands.get_current_delimiter()))
+    output.append(("Using outfile:", iocommands.tee_file.name if iocommands.tee_file else ''))
+
+    output.append(("Server version:", f'{global_variables["version"]} {global_variables["version_comment"]}'))
+    output.append(("Protocol version:", global_variables["protocol_version"]))
+    if cipher := get_ssl_cipher(cur):
+        output.append(('SSL:', f'Cipher in use is {cipher}'))
+    else:
+        output.append(('SSL:', ''))
+    output.append(('SSL/TLS version:', get_ssl_version(cur) or ''))
 
     if getattr(cur.connection, 'unix_socket', None):
         host_info = cur.connection.host_info
@@ -135,22 +156,27 @@ def status(cur: Cursor, **_) -> list[SQLResult]:
 
     output.append(("Connection:", host_info))
 
-    query = "SELECT @@character_set_server, @@character_set_database, @@character_set_client, @@character_set_connection LIMIT 1;"
-    logger.debug(query)
-    cur.execute(query)
-    if one := cur.fetchone():
-        charset = one
-    else:
-        charset = ("", "", "", "")
-    output.append(("Server characterset:", charset[0]))
-    output.append(("Db characterset:", charset[1]))
-    output.append(("Client characterset:", charset[2]))
-    output.append(("Conn. characterset:", charset[3]))
+    charset_spec = [
+        {'name': 'Server characterset:', 'variable': 'character_set_server'},
+        {'name': 'Db     characterset:', 'variable': 'character_set_database'},
+        {'name': 'Client characterset:', 'variable': 'character_set_client'},
+        {'name': 'Conn.  characterset:', 'variable': 'character_set_connection'},
+        {'name': 'Result characterset:', 'variable': 'character_set_results'},
+    ]
+    for elt in charset_spec:
+        if elt['variable'] in session_variables:
+            value = session_variables[elt['variable']]
+        else:
+            value = ''
+        output.append((elt['name'], value))
 
     if getattr(cur.connection, 'unix_socket', None):
-        output.append(('UNIX socket:', variables['socket']))
+        output.append(('UNIX socket:', global_variables['socket']))
     else:
         output.append(('TCP port:', cur.connection.port))
+
+    output.append(('Server timezone:', get_server_timezone(global_variables)))
+    output.append(('Local  timezone:', get_local_timezone()))
 
     if "Uptime" in status:
         output.append(("Uptime:", format_uptime(status["Uptime"])))
@@ -174,4 +200,4 @@ def status(cur: Cursor, **_) -> list[SQLResult]:
 
     footer.append("--------------")
 
-    return [SQLResult(preamble="\n".join(preamble), rows=output, postamble="\n".join(footer))]
+    return [SQLResult(preamble="\n".join(preamble), header=header, rows=output, postamble="\n".join(footer))]

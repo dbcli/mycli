@@ -182,6 +182,7 @@ def test_status_uses_global_queries_decodes_bytes_and_formats_stats(monkeypatch)
     monkeypatch.setattr(dbcommands.platform, 'python_implementation', lambda: 'CPython')
     monkeypatch.setattr(dbcommands.platform, 'python_version', lambda: '3.14.0')
     monkeypatch.setattr(dbcommands.iocommands, 'is_pager_enabled', lambda: True)
+    monkeypatch.setattr(dbcommands, 'get_ssl_cipher', lambda cur: 'TLS_AES_256_GCM_SHA384')
     monkeypatch.setattr(dbcommands, 'get_ssl_version', lambda cur: 'TLSv1.3')
     monkeypatch.setattr(dbcommands, 'format_uptime', lambda uptime: f'{uptime} seconds')
     monkeypatch.setenv('PAGER', 'less -SR')
@@ -210,8 +211,14 @@ def test_status_uses_global_queries_decodes_bytes_and_formats_stats(monkeypatch)
             'SELECT DATABASE(), USER();': {
                 'rows': [('test_db', 'test_user')],
             },
-            'SELECT @@character_set_server, @@character_set_database, @@character_set_client, @@character_set_connection LIMIT 1;': {
-                'rows': [('utf8mb4', 'utf8mb4', 'utf8mb4', 'utf8mb4')],
+            'SHOW SESSION VARIABLES;': {
+                'rows': [
+                    (b'character_set_server', b'utf8mb4'),
+                    (b'character_set_database', b'utf8mb4'),
+                    (b'character_set_client', b'utf8mb4'),
+                    (b'character_set_connection', b'utf8mb4'),
+                    (b'character_set_results', b'utf8mb4'),
+                ],
             },
         },
     )
@@ -225,6 +232,7 @@ def test_status_uses_global_queries_decodes_bytes_and_formats_stats(monkeypatch)
     assert ('Current pager:', 'less -SR') in result.rows
     assert ('Server version:', '8.0.0 Community') in result.rows
     assert ('Protocol version:', '10') in result.rows
+    assert ('SSL:', 'Cipher in use is TLS_AES_256_GCM_SHA384') in result.rows
     assert ('SSL/TLS version:', 'TLSv1.3') in result.rows
     assert ('Connection:', 'tcp-host via TCP/IP') in result.rows
     assert ('TCP port:', 3307) in result.rows
@@ -264,10 +272,10 @@ def test_status_falls_back_to_show_status_and_handles_empty_selects(monkeypatch)
                     ('socket', '/tmp/mysql.sock'),
                 ],
             },
-            'SELECT DATABASE(), USER();': {
+            'SHOW SESSION VARIABLES;': {
                 'rows': [],
             },
-            'SELECT @@character_set_server, @@character_set_database, @@character_set_client, @@character_set_connection LIMIT 1;': {
+            'SELECT DATABASE(), USER();': {
                 'rows': [],
             },
         },
@@ -282,9 +290,9 @@ def test_status_falls_back_to_show_status_and_handles_empty_selects(monkeypatch)
     assert ('Connection:', 'Localhost via UNIX socket') in result.rows
     assert ('UNIX socket:', '/tmp/mysql.sock') in result.rows
     assert ('Server characterset:', '') in result.rows
-    assert ('Db characterset:', '') in result.rows
+    assert ('Db     characterset:', '') in result.rows
     assert ('Client characterset:', '') in result.rows
-    assert ('Conn. characterset:', '') in result.rows
+    assert ('Conn.  characterset:', '') in result.rows
     assert 'Connections:' not in result.postamble
     assert '--------------' in result.postamble
 
@@ -307,8 +315,14 @@ def test_status_uses_system_default_pager_when_enabled_without_env(monkeypatch) 
             'SELECT DATABASE(), USER();': {
                 'rows': [('db', 'user')],
             },
-            'SELECT @@character_set_server, @@character_set_database, @@character_set_client, @@character_set_connection LIMIT 1;': {
-                'rows': [('utf8', 'utf8', 'utf8', 'utf8')],
+            'SHOW SESSION VARIABLES;': {
+                'rows': [
+                    ('character_set_server', 'utf8'),
+                    ('character_set_database', 'utf8'),
+                    ('character_set_client', 'utf8'),
+                    ('character_set_connection', 'utf8'),
+                    ('character_set_results', 'utf8'),
+                ],
             },
         },
     )

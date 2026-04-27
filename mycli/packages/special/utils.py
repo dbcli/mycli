@@ -1,5 +1,7 @@
+import datetime
 import logging
 import os
+from typing import Any
 
 import click
 import pymysql
@@ -110,3 +112,34 @@ def get_ssl_version(cur: Cursor) -> str | None:
         pass
 
     return ssl_version
+
+
+def get_ssl_cipher(cur: Cursor) -> str | None:
+    query = 'SHOW STATUS LIKE "Ssl_cipher"'
+    logger.debug(query)
+
+    ssl_cipher = None
+
+    try:
+        cur.execute(query)
+        if one := cur.fetchone():
+            ssl_cipher = one[1] or None
+    except pymysql.err.OperationalError:
+        pass
+
+    return ssl_cipher
+
+
+def get_server_timezone(variables: dict[str, Any]) -> str:
+    try:
+        if variables['time_zone'] == 'SYSTEM':
+            server_tz = variables['system_time_zone']
+        else:
+            server_tz = variables['time_zone']
+        return server_tz
+    except KeyError:
+        return ''
+
+
+def get_local_timezone() -> str:
+    return datetime.datetime.now().astimezone().tzname() or ''
