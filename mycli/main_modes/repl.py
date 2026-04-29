@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 import functools
 from functools import partial
+import html
 from importlib import resources
 import os
 import random
@@ -13,6 +14,7 @@ import sys
 import time
 import traceback
 from typing import TYPE_CHECKING, Any, Generator
+from xml.parsers.expat import ExpatError
 
 import click
 import prompt_toolkit
@@ -23,6 +25,10 @@ from prompt_toolkit.enums import DEFAULT_BUFFER, EditingMode
 from prompt_toolkit.filters import Condition, has_focus, is_done
 from prompt_toolkit.formatted_text import (
     ANSI,
+    HTML,
+    FormattedText,
+    to_formatted_text,
+    to_plain_text,
 )
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.layout.processors import ConditionalProcessor, HighlightMatchingBracketProcessor
@@ -162,7 +168,13 @@ def set_external_terminal_tab_title(mycli: 'MyCli') -> None:
         return
     if not sys.stderr.isatty():
         return
-    title = sanitize_terminal_title(get_prompt(mycli, mycli.terminal_tab_title_format, mycli.prompt_session.app.render_counter))
+    title = sanitize_terminal_title(
+        render_prompt_string(
+            mycli,
+            mycli.terminal_tab_title_format,
+            mycli.prompt_session.app.render_counter,
+        )
+    )
     print(f'\x1b]1;{title}\a', file=sys.stderr, end='')
     sys.stderr.flush()
 
@@ -174,7 +186,13 @@ def set_external_terminal_window_title(mycli: 'MyCli') -> None:
         return
     if not sys.stderr.isatty():
         return
-    title = sanitize_terminal_title(get_prompt(mycli, mycli.terminal_window_title_format, mycli.prompt_session.app.render_counter))
+    title = sanitize_terminal_title(
+        render_prompt_string(
+            mycli,
+            mycli.terminal_window_title_format,
+            mycli.prompt_session.app.render_counter,
+        )
+    )
     print(f'\x1b]2;{title}\a', file=sys.stderr, end='')
     sys.stderr.flush()
 
@@ -186,7 +204,13 @@ def set_external_multiplex_window_title(mycli: 'MyCli') -> None:
         return
     if not mycli.prompt_session:
         return
-    title = sanitize_terminal_title(get_prompt(mycli, mycli.multiplex_window_title_format, mycli.prompt_session.app.render_counter))
+    title = sanitize_terminal_title(
+        render_prompt_string(
+            mycli,
+            mycli.multiplex_window_title_format,
+            mycli.prompt_session.app.render_counter,
+        )
+    )
     try:
         subprocess.run(
             ['tmux', 'rename-window', title],
@@ -208,7 +232,13 @@ def set_external_multiplex_pane_title(mycli: 'MyCli') -> None:
         return
     if not sys.stderr.isatty():
         return
-    title = sanitize_terminal_title(get_prompt(mycli, mycli.multiplex_pane_title_format, mycli.prompt_session.app.render_counter))
+    title = sanitize_terminal_title(
+        render_prompt_string(
+            mycli,
+            mycli.multiplex_pane_title_format,
+            mycli.prompt_session.app.render_counter,
+        )
+    )
     print(f'\x1b]2;{title}\x1b\\', file=sys.stderr, end='')
     sys.stderr.flush()
 
@@ -216,25 +246,33 @@ def set_external_multiplex_pane_title(mycli: 'MyCli') -> None:
 def get_custom_toolbar(
     mycli: 'MyCli',
     toolbar_format: str,
-) -> ANSI:
+) -> FormattedText:
     if not mycli.prompt_session:
-        return ANSI('')
+        return to_formatted_text('')
     if not mycli.prompt_session.app:
-        return ANSI('')
+        return to_formatted_text('')
     if mycli.prompt_session.app.current_buffer.text:
         return mycli.last_custom_toolbar_message
-    toolbar = get_prompt(mycli, toolbar_format, mycli.prompt_session.app.render_counter)
-    toolbar = toolbar.replace('\\x1b', '\x1b')
-    mycli.last_custom_toolbar_message = ANSI(toolbar)
+    mycli.last_custom_toolbar_message = render_prompt_string(
+        mycli,
+        toolbar_format,
+        mycli.prompt_session.app.render_counter,
+    )
     return mycli.last_custom_toolbar_message
 
 
+def maybe_html_escape(string: str, is_html: bool) -> str:
+    if is_html:
+        return html.escape(string, quote=False)
+    return string
+
+
 @functools.lru_cache(maxsize=256)
-def get_prompt(
+def render_prompt_string(
     mycli: 'MyCli',
     string: str,
     _render_counter: int,
-) -> str:
+) -> FormattedText:
     sqlexecute = mycli.sqlexecute
     assert sqlexecute is not None
     if mycli.login_path and mycli.login_path_as_host:
@@ -247,79 +285,106 @@ def get_prompt(
     if re.match(r'^[\d\.]+$', short_prompt_host):
         short_prompt_host = prompt_host
     now = datetime.now()
-    backslash_placeholder = '\ufffc_backslash'
-    string = string.replace('\\\\', backslash_placeholder)
-    string = string.replace('\\u', sqlexecute.user or '(none)')
-    string = string.replace('\\h', prompt_host or '(none)')
-    string = string.replace('\\H', short_prompt_host or '(none)')
-    string = string.replace('\\d', sqlexecute.dbname or '(none)')
     species_name = sqlexecute.server_info.species.name if sqlexecute.server_info and sqlexecute.server_info.species else 'MySQL'
-    string = string.replace('\\t', species_name)
-    string = string.replace('\\n', '\n')
-    string = string.replace('\\D', now.strftime('%a %b %d %H:%M:%S %Y'))
-    string = string.replace('\\m', now.strftime('%M'))
-    string = string.replace('\\P', now.strftime('%p'))
-    string = string.replace('\\R', now.strftime('%H'))
-    string = string.replace('\\r', now.strftime('%I'))
-    string = string.replace('\\s', now.strftime('%S'))
-    string = string.replace('\\p', str(sqlexecute.port))
-    string = string.replace('\\j', os.path.basename(sqlexecute.socket or '(none)'))
-    string = string.replace('\\J', sqlexecute.socket or '(none)')
-    string = string.replace('\\k', os.path.basename(sqlexecute.socket or str(sqlexecute.port)))
-    string = string.replace('\\K', sqlexecute.socket or str(sqlexecute.port))
-    string = string.replace('\\A', mycli.dsn_alias or '(none)')
-    string = string.replace('\\_', ' ')
-    string = string.replace(backslash_placeholder, '\\')
+    strings = string.split('\\\\')
+    is_html = strings[0].startswith('\\<html>')
+    strings = [x.replace('\\u', maybe_html_escape(sqlexecute.user or '(none)', is_html)) for x in strings]
+    strings = [x.replace('\\h', maybe_html_escape(prompt_host or '(none)', is_html)) for x in strings]
+    strings = [x.replace('\\H', maybe_html_escape(short_prompt_host or '(none)', is_html)) for x in strings]
+    strings = [x.replace('\\d', maybe_html_escape(sqlexecute.dbname or '(none)', is_html)) for x in strings]
+    strings = [x.replace('\\t', maybe_html_escape(species_name, is_html)) for x in strings]
+    strings = [x.replace('\\n', '\n') for x in strings]
+    strings = [x.replace('\\D', maybe_html_escape(now.strftime('%a %b %d %H:%M:%S %Y'), is_html)) for x in strings]
+    strings = [x.replace('\\m', maybe_html_escape(now.strftime('%M'), is_html)) for x in strings]
+    strings = [x.replace('\\P', maybe_html_escape(now.strftime('%p'), is_html)) for x in strings]
+    strings = [x.replace('\\R', maybe_html_escape(now.strftime('%H'), is_html)) for x in strings]
+    strings = [x.replace('\\r', maybe_html_escape(now.strftime('%I'), is_html)) for x in strings]
+    strings = [x.replace('\\s', maybe_html_escape(now.strftime('%S'), is_html)) for x in strings]
+    strings = [x.replace('\\p', maybe_html_escape(str(sqlexecute.port), is_html)) for x in strings]
+    strings = [
+        x.replace('\\j', maybe_html_escape(os.path.basename(sqlexecute.socket or '(none)').replace('\\', '/'), is_html)) for x in strings
+    ]
+    strings = [x.replace('\\J', maybe_html_escape((sqlexecute.socket or '(none)').replace('\\', '/'), is_html)) for x in strings]
+    strings = [
+        x.replace('\\k', maybe_html_escape(os.path.basename(sqlexecute.socket or str(sqlexecute.port)).replace('\\', '/'), is_html))
+        for x in strings
+    ]
+    strings = [
+        x.replace('\\K', maybe_html_escape((sqlexecute.socket or str(sqlexecute.port)).replace('\\', '/'), is_html)) for x in strings
+    ]
+    strings = [x.replace('\\A', maybe_html_escape(mycli.dsn_alias or '(none)', is_html)) for x in strings]
+    strings = [x.replace('\\_', ' ') for x in strings]
+
+    checker_string = ' '.join(strings)
+    if hasattr(sqlexecute, 'conn') and sqlexecute.conn is not None:
+        if '\\y' in checker_string:
+            with sqlexecute.conn.cursor() as cur:
+                strings = [x.replace('\\y', maybe_html_escape(str(get_uptime(cur)) or '(none)', is_html)) for x in strings]
+        if '\\Y' in checker_string:
+            with sqlexecute.conn.cursor() as cur:
+                strings = [x.replace('\\Y', maybe_html_escape(format_uptime(str(get_uptime(cur))) or '(none)', is_html)) for x in strings]
+    else:
+        strings = [x.replace('\\y', '(none)') for x in strings]
+        strings = [x.replace('\\Y', '(none)') for x in strings]
 
     if hasattr(sqlexecute, 'conn') and sqlexecute.conn is not None:
-        if '\\y' in string:
+        if '\\T' in checker_string:
             with sqlexecute.conn.cursor() as cur:
-                string = string.replace('\\y', str(get_uptime(cur)) or '(none)')
-        if '\\Y' in string:
-            with sqlexecute.conn.cursor() as cur:
-                string = string.replace('\\Y', format_uptime(str(get_uptime(cur))) or '(none)')
+                strings = [x.replace('\\T', maybe_html_escape(get_ssl_version(cur) or '(none)', is_html)) for x in strings]
     else:
-        string = string.replace('\\y', '(none)')
-        string = string.replace('\\Y', '(none)')
+        strings = [x.replace('\\T', '(none)') for x in strings]
 
     if hasattr(sqlexecute, 'conn') and sqlexecute.conn is not None:
-        if '\\T' in string:
+        if '\\w' in checker_string:
             with sqlexecute.conn.cursor() as cur:
-                string = string.replace('\\T', get_ssl_version(cur) or '(none)')
+                strings = [x.replace('\\w', maybe_html_escape(str(get_warning_count(cur) or '(none)'), is_html)) for x in strings]
     else:
-        string = string.replace('\\T', '(none)')
-
+        strings = [x.replace('\\w', '(none)') for x in strings]
     if hasattr(sqlexecute, 'conn') and sqlexecute.conn is not None:
-        if '\\w' in string:
+        if '\\W' in checker_string:
             with sqlexecute.conn.cursor() as cur:
-                string = string.replace('\\w', str(get_warning_count(cur) or '(none)'))
+                strings = [x.replace('\\W', maybe_html_escape(str(get_warning_count(cur) or ''), is_html)) for x in strings]
     else:
-        string = string.replace('\\w', '(none)')
-    if hasattr(sqlexecute, 'conn') and sqlexecute.conn is not None:
-        if '\\W' in string:
-            with sqlexecute.conn.cursor() as cur:
-                string = string.replace('\\W', str(get_warning_count(cur) or ''))
-    else:
-        string = string.replace('\\W', '')
+        strings = [x.replace('\\W', '') for x in strings]
 
-    return string
+    if is_html:
+        strings[0] = strings[0].removeprefix('\\<html>')
+        strings[-1] = strings[-1].removesuffix('\\</html>')
+    elif '\\x1b' in checker_string:
+        strings = [x.replace('\\x1b', '\x1b') for x in strings]
+
+    strings = [re.sub(r'\\(.)', r'(unknown prompt format string: \\\1)', x) for x in strings]
+
+    string = '\\'.join(strings)
+
+    if is_html:
+        try:
+            formatted_string = to_formatted_text(HTML(string))
+        except (ExpatError, ValueError):
+            formatted_string = to_formatted_text(HTML('(cannot parse HTML prompt string)'))
+    else:
+        formatted_string = to_formatted_text(ANSI(string))
+
+    return formatted_string
 
 
 def _get_prompt_message(
     mycli: 'MyCli',
     app: prompt_toolkit.application.application.Application,
-) -> ANSI:
+) -> FormattedText:
     if app.current_buffer.text:
         return mycli.last_prompt_message
 
-    prompt = get_prompt(mycli, mycli.prompt_format, app.render_counter)
-    if mycli.prompt_format == mycli.default_prompt and len(prompt) > mycli.max_len_prompt:
-        prompt = get_prompt(mycli, mycli.default_prompt_splitln, app.render_counter)
-        mycli.prompt_lines = prompt.count('\n') + 1
-    prompt = prompt.replace('\\x1b', '\x1b')
+    prompt = render_prompt_string(mycli, mycli.prompt_format, app.render_counter)
+    prompt_plain = to_plain_text(prompt)
+    if mycli.prompt_format == mycli.default_prompt and len(prompt_plain) > mycli.max_len_prompt:
+        prompt = render_prompt_string(mycli, mycli.default_prompt_splitln, app.render_counter)
+        prompt_plain = to_plain_text(prompt)
+        mycli.prompt_lines = prompt_plain.count('\n') + 1
     if not mycli.prompt_lines:
-        mycli.prompt_lines = prompt.count('\n') + 1
-    mycli.last_prompt_message = ANSI(prompt)
+        mycli.prompt_lines = prompt_plain.count('\n') + 1
+
+    mycli.last_prompt_message = prompt
     return mycli.last_prompt_message
 
 
