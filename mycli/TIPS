@@ -32,7 +32,7 @@ the --auto-vertical-output flag lets you automatically switch to vertical output
 
 the --show-warnings flag turns on warnings from the MySQL server!
 
-the --no-warn flag turns off warnings befor running a destructive query!
+the --no-warn flag turns off warnings before running a destructive query!
 
 the --init-command option lets you execute initialization SQL before a session!
 
@@ -116,7 +116,7 @@ run "export VISUAL='code --wait'" in your shell to \edit queries using VS Code!
 
 set environment variable MYCLI_LLM_OFF to skip loading LLM libraries!
 
-set environment variable MYCLI_HISTFILE to relocate the hitory file!
+set environment variable MYCLI_HISTFILE to relocate the history file!
 
 set environment variable MYSQL_PWD to set a default password!
 
@@ -186,9 +186,9 @@ collapse multiple spaces using keystroke alt-\!
 
 undo using keystroke control-_ or control-x + control-u!
 
-ditto the last argument of the previious command with keystroke alt-.!
+ditto the last argument of the previous command with keystroke alt-.!
 
-ditto the last argument of the previious command with keystroke alt-_!
+ditto the last argument of the previous command with keystroke alt-_!
 
 turn the current query into a comment with keystroke alt-#!
 
