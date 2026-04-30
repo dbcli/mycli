@@ -35,7 +35,7 @@ jobs:
 
       - name: Run Codex review
         id: run_codex
-        uses: openai/codex-action@5c3f4ccdb2b8790f73d6b21751ac00e602aa0c02 # v1.7
+        uses: openai/codex-action@e0fdf01220eb9a88167c4898839d273e3f2609d1 # v1.8
         env:
           # Use env variables to handle untrusted metadata safely
           PR_TITLE: ${{ github.event.pull_request.title }}
