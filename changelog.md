@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Documentation
+---------
+* Document the `\g` special command to send a query.
+
+
 Internal
 ---------
 * Independent case-sensitivity for special command aliases.
