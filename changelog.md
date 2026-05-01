@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Features
+---------
+* Append dot to database name when completing on a table name.
+
+
 1.71.0 (2026/05/01)
 ==============
 

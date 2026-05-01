@@ -302,7 +302,7 @@ def _emit_relation_name(ctx: SuggestContext) -> list[Suggestion]:
     schema = _parent_name(ctx)
     if schema:
         return [{'type': rel_type, 'schema': schema}]
-    return [{'type': 'schema'}, {'type': rel_type, 'schema': []}]
+    return [{'type': 'database'}, {'type': rel_type, 'schema': []}]
 
 
 def _emit_on(ctx: SuggestContext) -> list[Suggestion]:

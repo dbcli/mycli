@@ -595,7 +595,7 @@ def test_emit_relation_name_with_schema_parent():
 
 def test_emit_relation_name_without_schema_parent():
     context = _build_suggest_context('view', '', None, '', empty_identifier())
-    assert _emit_relation_name(context) == [{'type': 'schema'}, {'type': 'view', 'schema': []}]
+    assert _emit_relation_name(context) == [{'type': 'database'}, {'type': 'view', 'schema': []}]
 
 
 @pytest.mark.xfail
@@ -925,9 +925,9 @@ def test_suggest_based_on_last_token_lparen_in_function_call_suggests_columns():
         ('database', 'drop database ', 'drop database ', [{'type': 'database'}]),
         ('template', 'create database foo with template ', 'create database foo with template ', [{'type': 'database'}]),
         ('collate', 'collate ', 'collate ', [{'type': 'collation'}]),
-        ('table', 'drop table ', 'drop table ', [{'type': 'schema'}, {'type': 'table', 'schema': []}]),
-        ('view', 'drop view ', 'drop view ', [{'type': 'schema'}, {'type': 'view', 'schema': []}]),
-        ('function', 'drop function ', 'drop function ', [{'type': 'schema'}, {'type': 'function', 'schema': []}]),
+        ('table', 'drop table ', 'drop table ', [{'type': 'database'}, {'type': 'table', 'schema': []}]),
+        ('view', 'drop view ', 'drop view ', [{'type': 'database'}, {'type': 'view', 'schema': []}]),
+        ('function', 'drop function ', 'drop function ', [{'type': 'database'}, {'type': 'function', 'schema': []}]),
     ],
 )
 def test_suggest_based_on_last_token_direct_keyword_branches(token, text_before_cursor, full_text, expected):
