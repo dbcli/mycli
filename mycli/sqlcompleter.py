@@ -10,6 +10,7 @@ from prompt_toolkit.completion import CompleteEvent, Completer, Completion
 from prompt_toolkit.completion.base import Document
 from pygments.lexers._mysql_builtins import MYSQL_DATATYPES, MYSQL_FUNCTIONS, MYSQL_KEYWORDS
 import rapidfuzz
+import sqlparse
 
 from mycli.packages.completion_engine import is_inside_quotes, suggest_type
 from mycli.packages.filepaths import complete_path, parse_path, suggest_path
@@ -1419,6 +1420,18 @@ class SQLCompleter(Completer):
         last_for_len = last_word(word_before_cursor, include="most_punctuations")
         text_for_len = last_for_len.lower()
         last_for_len_paths = last_word(word_before_cursor, include='alphanum_underscore')
+        if statements := sqlparse.split(document.text):
+            total_len = 0
+            relevant_statement = ''
+            for statement in statements:
+                total_len = total_len + len(statement)
+                if document.cursor_position <= total_len:
+                    relevant_statement = statement
+                    break
+            if not relevant_statement:
+                relevant_statement = statements[-1]
+        else:
+            relevant_statement = document.text
 
         if smart_completion is None:
             smart_completion = self.smart_completion
@@ -1436,7 +1449,9 @@ class SQLCompleter(Completer):
             return (Completion(x[0], -len(text_for_len)) for x in matches)
 
         completions: list[tuple[str, int, int]] = []
-        suggestions = suggest_type(document.text, document.text_before_cursor)
+        suggestions = suggest_type(relevant_statement, document.text_before_cursor)
+        database_is_qualifier = any(suggestion['type'] in ('table', 'view') for suggestion in suggestions)
+        database_is_qualifier = database_is_qualifier and not relevant_statement.lstrip().lower().startswith('show ')
         rigid_sort = False
         length_based_on_path = False
 
@@ -1530,7 +1545,7 @@ class SQLCompleter(Completer):
                 # then only return tables that have one or more of the given columns.
                 # If no columns are given (or able to be parsed), return all tables
                 # as usual.
-                columns = extract_columns_from_select(document.text)
+                columns = extract_columns_from_select(relevant_statement)
                 if columns:
                     tables = self.populate_schema_objects(suggestion["schema"], "tables", columns)
                 else:
@@ -1538,7 +1553,7 @@ class SQLCompleter(Completer):
 
                 if suggestion.get("join"):
                     # For JOINs, suggest FK-related tables first (lower rank = higher priority)
-                    current_tables = extract_tables(document.text)
+                    current_tables = extract_tables(relevant_statement)
                     fk_map = self.dbmetadata["foreign_keys"].get(self.dbname, {}).get("tables", {})
                     fk_related: set[str] = set()
                     for tbl_schema, tbl, _alias in current_tables:
@@ -1602,6 +1617,8 @@ class SQLCompleter(Completer):
                     self.databases,
                     text_before_cursor=document.text_before_cursor,
                 )
+                if database_is_qualifier:
+                    dbs_m = ((f'{db}.', fuzziness) for db, fuzziness in dbs_m)
                 completions.extend([(*x, rank) for x in dbs_m])
 
             elif suggestion["type"] == "keyword":

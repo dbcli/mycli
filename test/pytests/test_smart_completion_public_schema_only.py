@@ -219,8 +219,8 @@ def test_table_completion(completer, complete_event):
         Completion(text="time_zone_name", start_position=0),
         Completion(text="time_zone_transition", start_position=0),
         Completion(text="time_zone_transition_type", start_position=0),
-        Completion(text="test", start_position=0),
-        Completion(text="`test 2`", start_position=0),
+        Completion(text="test.", start_position=0),
+        Completion(text="`test 2`.", start_position=0),
     ]
 
 
@@ -238,8 +238,8 @@ def test_select_filtered_table_completion(completer, complete_event):
         Completion(text="time_zone_name", start_position=0),
         Completion(text="time_zone_transition", start_position=0),
         Completion(text="time_zone_transition_type", start_position=0),
-        Completion(text="test", start_position=0),
-        Completion(text="`test 2`", start_position=0),
+        Completion(text="test.", start_position=0),
+        Completion(text="`test 2`.", start_position=0),
     ]
 
 
@@ -257,8 +257,8 @@ def test_sub_select_filtered_table_completion(completer, complete_event):
         Completion(text="time_zone_name", start_position=0),
         Completion(text="time_zone_transition", start_position=0),
         Completion(text="time_zone_transition_type", start_position=0),
-        Completion(text="test", start_position=0),
-        Completion(text="`test 2`", start_position=0),
+        Completion(text="test.", start_position=0),
+        Completion(text="`test 2`.", start_position=0),
     ]
 
 
@@ -512,8 +512,8 @@ def test_table_names_after_from(completer, complete_event):
         Completion(text="time_zone_name", start_position=0),
         Completion(text="time_zone_transition", start_position=0),
         Completion(text="time_zone_transition_type", start_position=0),
-        Completion(text="test", start_position=0),
-        Completion(text="`test 2`", start_position=0),
+        Completion(text="test.", start_position=0),
+        Completion(text="`test 2`.", start_position=0),
     ]
 
 
@@ -528,6 +528,51 @@ def test_table_names_leading_partial(completer, complete_event):
         Completion(text="time_zone_leap_second", start_position=-9),
         Completion(text="time_zone_transition_type", start_position=-9),
     ]
+
+
+def test_database_completion_for_table_appends_dot(completer, complete_event):
+    text = 'SELECT * FROM te'
+    position = len(text)
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    assert Completion(text='test.', start_position=-2) in result
+
+
+@pytest.mark.parametrize(
+    'text',
+    [
+        'SHOW TABLES FROM te',
+        'SHOW FULL TABLES FROM te',
+        'SHOW COLUMNS FROM users FROM te',
+    ],
+)
+def test_show_database_completion_does_not_append_dot(completer, complete_event, text):
+    position = len(text)
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    assert Completion(text='test', start_position=-2) in result
+    assert Completion(text='test.', start_position=-2) not in result
+
+
+@pytest.mark.parametrize(
+    'text',
+    [
+        'SHOW TABLES FROM test; SELECT * FROM te',
+    ],
+)
+def test_database_completion_for_table_ignores_previous_statement(completer, complete_event, text):
+    position = len(text)
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    assert Completion(text='test.', start_position=-2) in result
+    assert Completion(text='test', start_position=-2) not in result
+
+
+# todo: USE works interactively but not in the test suite
+# this is also covered by test_show_database_completion_does_not_append_dot()
+@pytest.mark.xfail
+def test_database_completion_after_use_does_not_append_dot(completer, complete_event):
+    text = 'USE tes'
+    position = len(text)
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+    assert Completion(text='test', start_position=-2) in result
 
 
 def test_table_names_inter_partial(completer, complete_event):
@@ -586,8 +631,8 @@ def test_grant_on_suggets_tables_and_schemata(completer, complete_event):
     position = len(text)
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
     assert result == [
-        Completion(text="test", start_position=0),
-        Completion(text="`test 2`", start_position=0),
+        Completion(text="test.", start_position=0),
+        Completion(text="`test 2`.", start_position=0),
         Completion(text='users', start_position=0),
         Completion(text='orders', start_position=0),
         Completion(text='`select`', start_position=0),
@@ -947,8 +992,8 @@ def test_backticked_table_completion_not_required(completer, complete_event):
     position = len(text)
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
     assert result == [
-        Completion(text='`test`', start_position=-2),
-        Completion(text='`test 2`', start_position=-2),
+        Completion(text='`test`.', start_position=-2),
+        Completion(text='`test 2`.', start_position=-2),
         Completion(text='`time_zone`', start_position=-2),
         Completion(text='`time_zone_name`', start_position=-2),
         Completion(text='`time_zone_transition`', start_position=-2),
