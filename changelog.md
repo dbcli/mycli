@@ -1,4 +1,4 @@
-Upcoming (TBD)
+1.71.0 (2026/05/01)
 ==============
 
 Features
@@ -10,6 +10,8 @@ Features
 Documentation
 ---------
 * Give example for ANSI prompt colors in `~/.myclirc`.
+* Fix typos in `TIPS` file.
+* Lightly reorganize `AUTHORS` file.
 
 
 Internal
