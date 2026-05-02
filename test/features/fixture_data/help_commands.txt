@@ -1,7 +1,6 @@
 +----------------+----------+---------------------------------+-------------------------------------------------------------+
 | Command        | Shortcut | Usage                           | Description                                                 |
 +----------------+----------+---------------------------------+-------------------------------------------------------------+
-| \G             | <null>   | <query>\G                       | Display query results vertically.                           |
 | \bug           | <null>   | \bug                            | File a bug on GitHub.                                       |
 | \clip          | <null>   | <query>\clip                    | Copy query to the system clipboard.                         |
 | \dt            | <null>   | \dt[+] [table]                  | List or describe tables.                                    |
@@ -9,6 +8,8 @@
 | \f             | <null>   | \f [name [args..]]              | List or execute favorite queries.                           |
 | \fd            | <null>   | \fd <name>                      | Delete a favorite query.                                    |
 | \fs            | <null>   | \fs <name> <query>              | Save a favorite query.                                      |
+| \g             | <null>   | <query>\g                       | Display query results (mnemonic: go).                       |
+| \G             | <null>   | <query>\G                       | Display query results vertically.                           |
 | \l             | <null>   | \l                              | List databases.                                             |
 | \llm           | \ai      | \llm [arguments]                | Interrogate an LLM.  See "\llm help".                       |
 | \once          | \o       | \once [-o] <filename>           | Append next result to an output file (overwrite using -o).  |

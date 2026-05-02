@@ -182,7 +182,7 @@ def show_help(*_args) -> list[SQLResult]:
     header = ["Command", "Shortcut", "Usage", "Description"]
     result = []
 
-    for _, value in sorted(COMMANDS.items()):
+    for _, value in sorted(COMMANDS.items(), key=lambda x: str.casefold(x[0])):
         if value.hidden:
             continue
         if value.aliases:
@@ -277,6 +277,13 @@ def quit_(*_args):
     "\\G",
     "<query>\\G",
     "Display query results vertically.",
+    arg_type=ArgType.NO_QUERY,
+    case_sensitive=True,
+)
+@special_command(
+    "\\g",
+    "<query>\\g",
+    "Display query results (mnemonic: go).",
     arg_type=ArgType.NO_QUERY,
     case_sensitive=True,
 )
