@@ -7,7 +7,7 @@ from pymysql.cursors import Cursor
 
 from mycli import __version__
 from mycli.packages.special import iocommands
-from mycli.packages.special.main import ArgType, special_command
+from mycli.packages.special.main import ArgType, SpecialCommandAlias, special_command
 from mycli.packages.special.utils import (
     format_uptime,
     get_local_timezone,
@@ -20,7 +20,13 @@ from mycli.packages.sqlresult import SQLResult
 logger = logging.getLogger(__name__)
 
 
-@special_command("\\dt", "\\dt[+] [table]", "List or describe tables.", arg_type=ArgType.PARSED_QUERY, case_sensitive=True)
+@special_command(
+    "\\dt",
+    "\\dt[+] [table]",
+    "List or describe tables.",
+    arg_type=ArgType.PARSED_QUERY,
+    case_sensitive=True,
+)
 def list_tables(
     cur: Cursor,
     arg: str | None = None,
@@ -53,7 +59,13 @@ def list_tables(
     return [SQLResult(header=header, rows=results, postamble=postamble)]
 
 
-@special_command("\\l", "\\l", "List databases.", arg_type=ArgType.RAW_QUERY, case_sensitive=True)
+@special_command(
+    "\\l",
+    "\\l",
+    "List databases.",
+    arg_type=ArgType.RAW_QUERY,
+    case_sensitive=True,
+)
 def list_databases(cur: Cursor, **_) -> list[SQLResult]:
     query = "SHOW DATABASES"
     logger.debug(query)
@@ -67,7 +79,12 @@ def list_databases(cur: Cursor, **_) -> list[SQLResult]:
 
 
 @special_command(
-    "status", "status", "Get status information from the server.", arg_type=ArgType.RAW_QUERY, aliases=["\\s"], case_sensitive=True
+    "status",
+    "status",
+    "Get status information from the server.",
+    arg_type=ArgType.RAW_QUERY,
+    case_sensitive=True,
+    aliases=[SpecialCommandAlias("\\s", case_sensitive=True)],
 )
 def status(cur: Cursor, **_) -> list[SQLResult]:
     query = "SHOW GLOBAL STATUS;"

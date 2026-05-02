@@ -717,7 +717,7 @@ def test_command_descriptions_end_with_periods():
     """Make sure that mycli commands' descriptions end with a period."""
     MyCli()
     for _, command in SPECIAL_COMMANDS.items():
-        assert command[3].endswith(".")
+        assert command.description.endswith(".")
 
 
 def output(monkeypatch, terminal_size, testdata, explicit_pager, expect_pager):
