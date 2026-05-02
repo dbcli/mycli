@@ -49,6 +49,7 @@ from mycli.packages.special.llm import (
 )
 from mycli.packages.special.main import (
     CommandNotFound,
+    SpecialCommandAlias,
     execute,
     parse_special_command,
     register_special_command,
@@ -58,6 +59,7 @@ from mycli.packages.special.main import (
 __all__: list[str] = [
     'CommandNotFound',
     'FinishIteration',
+    'SpecialCommandAlias',
     'clip_command',
     'close_tee',
     'copy_query_to_clipboard',

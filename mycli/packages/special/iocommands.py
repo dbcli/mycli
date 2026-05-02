@@ -21,7 +21,7 @@ from mycli.packages.interactive_utils import confirm_destructive_query
 from mycli.packages.special.delimitercommand import DelimiterCommand
 from mycli.packages.special.favoritequeries import FavoriteQueries
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
-from mycli.packages.special.main import ArgType, special_command
+from mycli.packages.special.main import ArgType, SpecialCommandAlias, special_command
 from mycli.packages.special.main import execute as special_execute
 from mycli.packages.special.utils import handle_cd_command
 from mycli.packages.sqlresult import SQLResult
@@ -96,8 +96,8 @@ def is_show_warnings_enabled() -> bool:
     'warnings',
     'Enable automatic warnings display.',
     arg_type=ArgType.NO_QUERY,
-    aliases=['\\W'],
     case_sensitive=True,
+    aliases=[SpecialCommandAlias('\\W', case_sensitive=True)],
 )
 def enable_show_warnings() -> Generator[SQLResult, None, None]:
     global SHOW_WARNINGS_ENABLED
@@ -111,8 +111,8 @@ def enable_show_warnings() -> Generator[SQLResult, None, None]:
     'nowarnings',
     'Disable automatic warnings display.',
     arg_type=ArgType.NO_QUERY,
-    aliases=['\\w'],
     case_sensitive=True,
+    aliases=[SpecialCommandAlias('\\w', case_sensitive=True)],
 )
 def disable_show_warnings() -> Generator[SQLResult, None, None]:
     global SHOW_WARNINGS_ENABLED
@@ -126,8 +126,8 @@ def disable_show_warnings() -> Generator[SQLResult, None, None]:
     "pager [command]",
     "Set pager to [command]. Print query results via pager.",
     arg_type=ArgType.PARSED_QUERY,
-    aliases=["\\P"],
     case_sensitive=True,
+    aliases=[SpecialCommandAlias("\\P", case_sensitive=True)],
 )
 def set_pager(arg: str, **_) -> list[SQLResult]:
     if arg:
@@ -145,13 +145,27 @@ def set_pager(arg: str, **_) -> list[SQLResult]:
     return [SQLResult(status=msg)]
 
 
-@special_command("nopager", "nopager", "Disable pager; print to stdout.", arg_type=ArgType.NO_QUERY, aliases=["\\n"], case_sensitive=True)
+@special_command(
+    "nopager",
+    "nopager",
+    "Disable pager; print to stdout.",
+    arg_type=ArgType.NO_QUERY,
+    case_sensitive=True,
+    aliases=[SpecialCommandAlias("\\n", case_sensitive=True)],
+)
 def disable_pager() -> list[SQLResult]:
     set_pager_enabled(False)
     return [SQLResult(status="Pager disabled.")]
 
 
-@special_command("\\timing", "\\timing", "Toggle timing of queries.", arg_type=ArgType.NO_QUERY, aliases=["\\t"], case_sensitive=True)
+@special_command(
+    "\\timing",
+    "\\timing",
+    "Toggle timing of queries.",
+    arg_type=ArgType.NO_QUERY,
+    case_sensitive=True,
+    aliases=[SpecialCommandAlias("\\t", case_sensitive=True)],
+)
 def toggle_timing() -> list[SQLResult]:
     global TIMING_ENABLED
     TIMING_ENABLED = not TIMING_ENABLED
@@ -309,7 +323,13 @@ def set_redirect(command_part: str | None, file_operator_part: str | None, file_
         return set_once(file_part)
 
 
-@special_command("\\f", "\\f [name [args..]]", "List or execute favorite queries.", arg_type=ArgType.PARSED_QUERY, case_sensitive=True)
+@special_command(
+    "\\f",
+    "\\f [name [args..]]",
+    "List or execute favorite queries.",
+    arg_type=ArgType.PARSED_QUERY,
+    case_sensitive=True,
+)
 def execute_favorite_query(cur: Cursor, arg: str, **_) -> Generator[SQLResult, None, None]:
     if arg == "":
         yield from list_favorite_queries()
@@ -379,7 +399,11 @@ def subst_favorite_query_args(query: str, args: list[str]) -> list[str | None]:
     return [query, None]
 
 
-@special_command("\\fs", "\\fs <name> <query>", "Save a favorite query.")
+@special_command(
+    "\\fs",
+    "\\fs <name> <query>",
+    "Save a favorite query.",
+)
 def save_favorite_query(arg: str, **_) -> list[SQLResult]:
     """Save a new favorite query."""
 
@@ -397,7 +421,11 @@ def save_favorite_query(arg: str, **_) -> list[SQLResult]:
     return [SQLResult(status="Saved.")]
 
 
-@special_command("\\fd", "\\fd <name>", "Delete a favorite query.")
+@special_command(
+    "\\fd",
+    "\\fd <name>",
+    "Delete a favorite query.",
+)
 def delete_favorite_query(arg: str, **_) -> list[SQLResult]:
     """Delete an existing favorite query."""
     usage = "Syntax: \\fd name.\n\n" + FavoriteQueries.instance.usage
@@ -409,7 +437,11 @@ def delete_favorite_query(arg: str, **_) -> list[SQLResult]:
     return [SQLResult(status=status)]
 
 
-@special_command("system", "system [-r] <command>", "Execute a system shell command (raw mode with -r).")
+@special_command(
+    "system",
+    "system [-r] <command>",
+    "Execute a system shell command (raw mode with -r).",
+)
 def execute_system_command(arg: str, **_) -> list[SQLResult]:
     """Execute a system shell command."""
     usage = "Syntax: system [-r] [command].\n-r denotes \"raw\" mode, in which output is passed through without formatting."
@@ -486,7 +518,11 @@ def parseargfile(arg: str) -> tuple[str, str]:
     return (os.path.expanduser(filename), mode)
 
 
-@special_command("tee", "tee [-o] <filename>", "Append all results to an output file (overwrite using -o).")
+@special_command(
+    "tee",
+    "tee [-o] <filename>",
+    "Append all results to an output file (overwrite using -o).",
+)
 def set_tee(arg: str, **_) -> list[SQLResult]:
     global tee_file
 
@@ -505,7 +541,11 @@ def close_tee() -> None:
         tee_file = None
 
 
-@special_command("notee", "notee", "Stop writing results to an output file.")
+@special_command(
+    "notee",
+    "notee",
+    "Stop writing results to an output file.",
+)
 def no_tee(arg: str, **_) -> list[SQLResult]:
     close_tee()
     return [SQLResult(status="")]
@@ -521,7 +561,12 @@ def write_tee(output: str | ANSI | FormattedText, nl: bool = True) -> None:
     tee_file.flush()
 
 
-@special_command("\\once", "\\once [-o] <filename>", "Append next result to an output file (overwrite using -o).", aliases=["\\o"])
+@special_command(
+    "\\once",
+    "\\once [-o] <filename>",
+    "Append next result to an output file (overwrite using -o).",
+    aliases=[SpecialCommandAlias("\\o", case_sensitive=False)],
+)
 def set_once(arg: str, **_) -> list[SQLResult]:
     global once_file, written_to_once_file
 
@@ -574,7 +619,12 @@ def _run_post_redirect_hook(post_redirect_command: str, filename: str) -> None:
         raise OSError(f"Redirect post hook failed: {e}") from e
 
 
-@special_command("\\pipe_once", "\\pipe_once <command>", "Send next result to a subprocess.", aliases=["\\|"])
+@special_command(
+    "\\pipe_once",
+    "\\pipe_once <command>",
+    "Send next result to a subprocess.",
+    aliases=[SpecialCommandAlias("\\|", case_sensitive=False)],
+)
 def set_pipe_once(arg: str, **_) -> list[SQLResult]:
     if not arg:
         raise OSError("pipe_once requires a command")
@@ -633,7 +683,11 @@ def flush_pipe_once_if_written(post_redirect_command: str) -> None:
     PIPE_ONCE['stdout_mode'] = None
 
 
-@special_command("watch", "watch [seconds] [-c] <query>", "Execute query every [seconds] seconds (5 by default).")
+@special_command(
+    "watch",
+    "watch [seconds] [-c] <query>",
+    "Execute query every [seconds] seconds (5 by default).",
+)
 def watch_query(arg: str, **kwargs) -> Generator[SQLResult, None, None]:
     usage = """Syntax: watch [seconds] [-c] query.
     * seconds: The interval at the query will be repeated, in seconds.
@@ -700,7 +754,11 @@ def watch_query(arg: str, **kwargs) -> Generator[SQLResult, None, None]:
             set_pager_enabled(old_pager_enabled)
 
 
-@special_command("delimiter", "delimiter <string>", "Change end-of-statement delimiter.")
+@special_command(
+    "delimiter",
+    "delimiter <string>",
+    "Change end-of-statement delimiter.",
+)
 def set_delimiter(arg: str, **_) -> list[SQLResult]:
     return delimiter_command.set(arg)
 

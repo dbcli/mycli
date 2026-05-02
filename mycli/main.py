@@ -76,7 +76,7 @@ from mycli.packages.cli_utils import filtered_sys_argv, is_valid_connection_sche
 from mycli.packages.filepaths import dir_path_exists, guess_socket_location
 from mycli.packages.interactive_utils import confirm_destructive_query
 from mycli.packages.special.favoritequeries import FavoriteQueries
-from mycli.packages.special.main import ArgType
+from mycli.packages.special.main import ArgType, SpecialCommandAlias
 from mycli.packages.sqlresult import SQLResult
 from mycli.packages.ssh_utils import read_ssh_config
 from mycli.packages.tabular_output import sql_format
@@ -312,39 +312,59 @@ class MyCli:
             self.sqlexecute.close()
 
     def register_special_commands(self) -> None:
-        special.register_special_command(self.change_db, "use", "use <database>", "Change to a new database.", aliases=["\\u"])
+        special.register_special_command(
+            self.change_db,
+            "use",
+            "use <database>",
+            "Change to a new database.",
+            aliases=[SpecialCommandAlias("\\u", case_sensitive=False)],
+        )
         special.register_special_command(
             self.manual_reconnect,
             "connect",
             "connect [database]",
             "Reconnect to the server, optionally switching databases.",
-            aliases=["\\r"],
             case_sensitive=True,
+            aliases=[SpecialCommandAlias("\\r", case_sensitive=True)],
         )
         special.register_special_command(
-            self.refresh_completions, "rehash", "rehash", "Refresh auto-completions.", arg_type=ArgType.NO_QUERY, aliases=["\\#"]
+            self.refresh_completions,
+            "rehash",
+            "rehash",
+            "Refresh auto-completions.",
+            arg_type=ArgType.NO_QUERY,
+            aliases=[SpecialCommandAlias("\\#", case_sensitive=False)],
         )
         special.register_special_command(
             self.change_table_format,
             "tableformat",
             "tableformat <format>",
             "Change the table format used to output interactive results.",
-            aliases=["\\T"],
             case_sensitive=True,
+            aliases=[SpecialCommandAlias("\\T", case_sensitive=True)],
         )
         special.register_special_command(
             self.change_redirect_format,
             "redirectformat",
             "redirectformat <format>",
             "Change the table format used to output redirected results.",
-            aliases=["\\Tr"],
             case_sensitive=True,
+            aliases=[SpecialCommandAlias("\\Tr", case_sensitive=True)],
         )
         special.register_special_command(
-            self.execute_from_file, "source", "source <filename>", "Execute queries from a file.", aliases=["\\."]
+            self.execute_from_file,
+            "source",
+            "source <filename>",
+            "Execute queries from a file.",
+            aliases=[SpecialCommandAlias("\\.", case_sensitive=False)],
         )
         special.register_special_command(
-            self.change_prompt_format, "prompt", "prompt <string>", "Change prompt format.", aliases=["\\R"], case_sensitive=True
+            self.change_prompt_format,
+            "prompt",
+            "prompt <string>",
+            "Change prompt format.",
+            case_sensitive=True,
+            aliases=[SpecialCommandAlias("\\R", case_sensitive=True)],
         )
 
     def manual_reconnect(self, arg: str = "", **_) -> Generator[SQLResult, None, None]:

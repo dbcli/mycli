@@ -81,7 +81,7 @@ def test_register_special_command_adds_primary_and_alias_entries(restore_command
         'Demo',
         'demo',
         'Description',
-        aliases=['\\d'],
+        aliases=[special_main.SpecialCommandAlias('\\d', case_sensitive=False)],
     )
 
     assert special_main.COMMANDS['demo'] == special_main.SpecialCommand(
@@ -92,7 +92,7 @@ def test_register_special_command_adds_primary_and_alias_entries(restore_command
         arg_type=special_main.ArgType.PARSED_QUERY,
         hidden=False,
         case_sensitive=False,
-        shortcut='\\d',
+        aliases=[special_main.SpecialCommandAlias('\\d', case_sensitive=False)],
     )
     assert special_main.COMMANDS['\\d'] == special_main.SpecialCommand(
         handler,
@@ -102,7 +102,7 @@ def test_register_special_command_adds_primary_and_alias_entries(restore_command
         arg_type=special_main.ArgType.PARSED_QUERY,
         hidden=True,
         case_sensitive=False,
-        shortcut=None,
+        aliases=None,
     )
 
 
@@ -116,7 +116,7 @@ def test_register_special_command_tracks_case_insensitive_commands(restore_comma
         'Demo',
         'demo',
         'Description',
-        aliases=['\\d'],
+        aliases=[special_main.SpecialCommandAlias('\\d', case_sensitive=False)],
     )
 
     assert special_main.CASE_SENSITIVE_COMMANDS == set()
@@ -159,7 +159,7 @@ def test_execute_raises_for_case_sensitive_alias_lookup(restore_commands: None) 
         'Demo',
         'Description',
         case_sensitive=True,
-        aliases=['demo'],
+        aliases=[special_main.SpecialCommandAlias('demo', case_sensitive=True)],
     )
 
     with pytest.raises(special_main.CommandNotFound, match='Command not found: DEMO'):
@@ -178,7 +178,7 @@ def test_execute_raises_when_case_sensitive_exact_lookup_falls_back_to_lowercase
         arg_type=special_main.ArgType.NO_QUERY,
         hidden=False,
         case_sensitive=True,
-        shortcut=None,
+        aliases=None,
     )
     special_main.CASE_SENSITIVE_COMMANDS.add('Camel')
 
@@ -309,7 +309,7 @@ def test_execute_raises_for_unknown_arg_type(restore_commands: None) -> None:
         arg_type=cast(Any, object()),
         hidden=False,
         case_sensitive=False,
-        shortcut=None,
+        aliases=None,
     )
     special_main.CASE_INSENSITIVE_COMMANDS.add('demo')
 
@@ -319,7 +319,13 @@ def test_execute_raises_for_unknown_arg_type(restore_commands: None) -> None:
 
 def test_show_help_lists_only_visible_commands(restore_commands: None) -> None:
     special_main.COMMANDS.clear()
-    special_main.register_special_command(lambda: None, 'visible', 'visible', 'Visible command', aliases=['\\v'])
+    special_main.register_special_command(
+        lambda: None,
+        'visible',
+        'visible',
+        'Visible command',
+        aliases=[special_main.SpecialCommandAlias('\\v', case_sensitive=False)],
+    )
     special_main.register_special_command(lambda: None, 'hidden', 'hidden', 'Hidden command', hidden=True)
 
     result = special_main.show_help()[0]

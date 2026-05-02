@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Internal
+---------
+* Independent case-sensitivity for special command aliases.
+
+
 1.71.0 (2026/05/01)
 ==============
 
