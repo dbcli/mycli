@@ -1319,18 +1319,9 @@ class SQLCompleter(Completer):
                 limit=20,
                 score_cutoff=75,
             )
+            existing = {c[0] for c in completions}
             for item, _score, _type in rapidfuzz_matches:
-                if len(item) < len(text) / 1.5:
-                    continue
-                if (item, Fuzziness.PERFECT) in completions:
-                    continue
-                if (item, Fuzziness.REGEX) in completions:
-                    continue
-                if (item, Fuzziness.UNDER_WORDS) in completions:
-                    continue
-                if (item, Fuzziness.CAMEL_CASE) in completions:
-                    continue
-                if (item, Fuzziness.RAPIDFUZZ) in completions:
+                if len(item) < len(text) / 1.5 or item in existing:
                     continue
                 completions.append((item, Fuzziness.RAPIDFUZZ))
 
