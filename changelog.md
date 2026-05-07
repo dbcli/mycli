@@ -6,6 +6,11 @@ Features
 * Allow styling prompts with HTML-like tags.
 
 
+Bug Fixes
+---------
+* Gracefully fail on background completion-refresh connection issues.
+
+
 Documentation
 ---------
 * Document the `\g` special command to send a query.
