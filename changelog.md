@@ -1,3 +1,11 @@
+1.72.1 (2026/05/11)
+==============
+
+Bug Fixes
+---------
+* Update `sqlglot` to v30.7.0 to fix has_bit_strings error.
+
+
 1.72.0 (2026/05/08)
 ==============
 
