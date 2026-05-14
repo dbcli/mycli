@@ -8,6 +8,7 @@ from prompt_toolkit.document import Document
 import pytest
 
 import mycli.packages.special.main as special
+from test.utils import pygments_at_least
 
 metadata = {
     "users": ["id", "email", "first_name", "last_name"],
@@ -848,7 +849,7 @@ def test_backticked_column_completion_two_character(completer, complete_event):
     text = 'select `f'
     position = len(text)
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
-    assert result == [
+    expected = [
         # todo it would be nicer if the column name "first_name" sorted to the top
         Completion(text='`for`', start_position=-2),
         Completion(text='`from`', start_position=-2),
@@ -912,12 +913,24 @@ def test_backticked_column_completion_two_character(completer, complete_event):
         Completion(text='`references`', start_position=-2),
     ]
 
+    if pygments_at_least("2.20"):
+        expected.extend([
+            Completion(text='`file_format`', start_position=-2),
+            Completion(text='`file_name`', start_position=-2),
+            Completion(text='`file_pattern`', start_position=-2),
+            Completion(text='`file_prefix`', start_position=-2),
+            Completion(text='`files`', start_position=-2),
+            Completion(text='`from_vector`', start_position=-2),
+        ])
+
+    assert sorted((x.text, x.start_position) for x in result) == sorted((x.text, x.start_position) for x in expected)
+
 
 def test_backticked_column_completion_three_character(completer, complete_event):
     text = 'select `fi'
     position = len(text)
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
-    assert result == [
+    expected = [
         # todo it would be nicer if the column name "first_name" sorted to the top
         Completion(text='`file`', start_position=-3),
         Completion(text='`field`', start_position=-3),
@@ -941,6 +954,17 @@ def test_backticked_column_completion_three_character(completer, complete_event)
         Completion(text='`profiles`', start_position=-3),
         Completion(text='`foreign key`', start_position=-3),
     ]
+
+    if pygments_at_least("2.20"):
+        expected.extend([
+            Completion(text='`file_format`', start_position=-3),
+            Completion(text='`file_name`', start_position=-3),
+            Completion(text='`file_pattern`', start_position=-3),
+            Completion(text='`file_prefix`', start_position=-3),
+            Completion(text='`files`', start_position=-3),
+        ])
+
+    assert sorted((x.text, x.start_position) for x in result) == sorted((x.text, x.start_position) for x in expected)
 
 
 def test_backticked_column_completion_four_character(completer, complete_event):

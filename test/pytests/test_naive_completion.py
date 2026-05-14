@@ -4,6 +4,8 @@ from prompt_toolkit.completion import Completion
 from prompt_toolkit.document import Document
 import pytest
 
+from test.utils import pygments_at_least
+
 
 @pytest.fixture
 def completer():
@@ -37,7 +39,7 @@ def test_function_name_completion(completer, complete_event):
     text = "SELECT MA"
     position = len("SELECT MA")
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
-    assert sorted(x.text for x in result) == [
+    expected = [
         'MAKEDATE',
         'MAKETIME',
         'MAKE_SET',
@@ -79,6 +81,12 @@ def test_function_name_completion(completer, complete_event):
         'MAX_UPDATES_PER_HOUR',
         'MAX_USER_CONNECTIONS',
     ]
+
+    if pygments_at_least("2.20"):
+        expected.extend([
+            'MANUAL',
+        ])
+    assert sorted(x.text for x in result) == sorted(expected)
 
 
 def test_column_name_completion(completer, complete_event):
