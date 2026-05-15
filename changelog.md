@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Bug Fixes
+---------
+* Respect `history_file` setting in the `[main]` section of `~/.myclirc`.
+
+
 1.72.1 (2026/05/11)
 ==============
 

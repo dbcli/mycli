@@ -123,7 +123,7 @@ def complete_while_typing_filter() -> bool:
 
 
 def _create_history(mycli: 'MyCli') -> FileHistoryWithTimestamp | None:
-    history_file = os.path.expanduser(os.environ.get('MYCLI_HISTFILE', mycli.config.get('history_file', '~/.mycli-history')))
+    history_file = os.path.expanduser(os.environ.get('MYCLI_HISTFILE', mycli.config['main'].get('history_file', '~/.mycli-history')))
     if dir_path_exists(history_file):
         return FileHistoryWithTimestamp(history_file)
 

@@ -178,7 +178,7 @@ def make_bare_mycli() -> Any:
     cli.emacs_ttimeoutlen = 1.0
     cli.vi_ttimeoutlen = 1.0
     cli.beep_after_seconds = 0.0
-    cli.config = {'history_file': '~/.mycli-history-testing'}
+    cli.config = {'main': {'history_file': '~/.mycli-history-testing'}}
     cli.output = lambda *args, **kwargs: None  # type: ignore[assignment]
     cli.echo = lambda *args, **kwargs: None  # type: ignore[assignment]
     cli.log_query = lambda *args, **kwargs: None  # type: ignore[assignment]
