@@ -4,7 +4,7 @@ from prompt_toolkit.completion import Completion
 from prompt_toolkit.document import Document
 import pytest
 
-from test.utils import pygments_at_least
+from test.utils import pygments_below
 
 
 @pytest.fixture
@@ -43,6 +43,7 @@ def test_function_name_completion(completer, complete_event):
         'MAKEDATE',
         'MAKETIME',
         'MAKE_SET',
+        'MANUAL',
         'MASTER',
         'MASTER_AUTO_POSITION',
         'MASTER_BIND',
@@ -82,10 +83,9 @@ def test_function_name_completion(completer, complete_event):
         'MAX_USER_CONNECTIONS',
     ]
 
-    if pygments_at_least("2.20"):
-        expected.extend([
-            'MANUAL',
-        ])
+    if pygments_below("2.20"):
+        expected.remove('MANUAL')
+
     assert sorted(x.text for x in result) == sorted(expected)
 
 

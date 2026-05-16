@@ -39,8 +39,8 @@ TEMPFILE_PREFIX = 'mycli_test_suite_'
 PYGMENTS_VERSION = Version(pygments.__version__)
 
 
-def pygments_at_least(version: str) -> bool:
-    return PYGMENTS_VERSION >= Version(version)
+def pygments_below(version: str) -> bool:
+    return PYGMENTS_VERSION < Version(version)
 
 
 class DummyLogger:
