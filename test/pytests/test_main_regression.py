@@ -21,6 +21,7 @@ from io import StringIO
 import itertools
 import os
 from pathlib import Path
+import shutil
 import sys
 from types import ModuleType, SimpleNamespace
 from typing import Any, cast
@@ -28,11 +29,18 @@ from typing import Any, cast
 import click
 from click.testing import CliRunner
 from configobj import ConfigObj
+import prompt_toolkit
+from prompt_toolkit.formatted_text import (
+    ANSI,
+    FormattedText,
+)
 import pymysql
 import pytest
 
 from mycli import main
+from mycli.cli_args import IntOrStringClickParamType
 import mycli.key_bindings
+import mycli.output as output_module
 from mycli.packages.sqlresult import SQLResult
 from test.utils import (  # type: ignore[attr-defined]
     DummyFormatter,
@@ -302,7 +310,7 @@ def test_mycli_init_defaults_file_valid_ssl_and_mylogin_append(monkeypatch: pyte
 
 
 def test_int_or_string_click_param_type_accepts_and_rejects_values() -> None:
-    param_type = main.IntOrStringClickParamType()
+    param_type = IntOrStringClickParamType()
 
     assert param_type.convert(1, None, None) == 1
     assert param_type.convert('pw', None, None) == 'pw'
@@ -827,7 +835,7 @@ def test_reconnect_logging_and_output(monkeypatch: pytest.MonkeyPatch, tmp_path:
     with logfile.open('w+', encoding='utf-8') as handle:
         cli.logfile = handle
         main.MyCli.log_query(cli, 'select 1')
-        main.MyCli.log_output(cli, main.ANSI('\x1b[31mhello\x1b[0m'))
+        main.MyCli.log_output(cli, ANSI('\x1b[31mhello\x1b[0m'))
         handle.seek(0)
         contents = handle.read()
     assert 'select 1' in contents
@@ -842,7 +850,7 @@ def test_reconnect_logging_and_output(monkeypatch: pytest.MonkeyPatch, tmp_path:
     monkeypatch.setattr(main.special, 'is_pager_enabled', lambda: False)
     monkeypatch.setattr(main.MyCli, 'get_output_margin', lambda self, status=None: 1)
     monkeypatch.setattr(click, 'secho', lambda line, **kwargs: echoed_lines.append(str(line)))
-    monkeypatch.setattr(main, 'print_formatted_text', lambda text, style=None: printed_status.append((text, style)))
+    monkeypatch.setattr(prompt_toolkit, 'print_formatted_text', lambda text, style=None: printed_status.append((text, style)))
     main.MyCli.output(cli, itertools.chain(['row 1']), SQLResult(status='status'))
     assert echoed_lines == []
     assert printed_status
@@ -930,7 +938,7 @@ def test_output_uses_stdout_and_pager_paths(monkeypatch: pytest.MonkeyPatch) -> 
     paged_lines: list[str] = []
     monkeypatch.setattr(click, 'secho', lambda line, **kwargs: printed_lines.append(str(line)))
     monkeypatch.setattr(click, 'echo_via_pager', lambda gen: paged_lines.extend(list(gen)))
-    monkeypatch.setattr(main, 'print_formatted_text', lambda text, style=None: None)
+    monkeypatch.setattr(prompt_toolkit, 'print_formatted_text', lambda text, style=None: None)
 
     main.MyCli.output(cli, itertools.chain(['a' * 81, 'tail']), SQLResult(status='ok'))
     assert printed_lines[:2] == ['a' * 81, 'tail']
@@ -947,13 +955,13 @@ def test_format_sqlresult_output_covers_extra_branches(monkeypatch: pytest.Monke
     cli.main_formatter = DummyFormatter()
     cli.redirect_formatter = DummyFormatter()
     cli.get_reserved_space = lambda: 1  # type: ignore[assignment]
-    monkeypatch.setattr(main, 'Cursor', FakeCursorBase)
+    monkeypatch.setattr(output_module, 'Cursor', FakeCursorBase)
     rows = FakeCursorBase(rows=[], rowcount=0, description=[('id', 3, None, None, None, None, None)])
     result = SQLResult(
         header=['id'],
         rows=cast(Any, rows),
         preamble='preamble',
-        status=main.FormattedText([('', 'formatted-status')]),
+        status=FormattedText([('', 'formatted-status')]),
     )
     formatted = list(main.MyCli.format_sqlresult(cli, result, null_string='NULL'))
     assert 'preamble' in formatted
@@ -973,7 +981,7 @@ def test_format_sqlresult_output_covers_extra_branches(monkeypatch: pytest.Monke
     monkeypatch.setattr(main.MyCli, 'get_output_margin', lambda self, status=None: 1)
     monkeypatch.setattr(click, 'echo_via_pager', lambda gen: paged_lines.extend(list(gen)))
     monkeypatch.setattr(click, 'secho', lambda line, **kwargs: printed_lines.append(str(line)))
-    monkeypatch.setattr(main, 'print_formatted_text', lambda text, style=None: status_prints.append(text))
+    monkeypatch.setattr(prompt_toolkit, 'print_formatted_text', lambda text, style=None: status_prints.append(text))
     cli.log_output = lambda text: None  # type: ignore[assignment]
     cli.explicit_pager = False
     main.MyCli.output(cli, itertools.chain(['x' * 81]), result)
@@ -1447,8 +1455,8 @@ def test_configure_pager_and_refresh_completions(monkeypatch: pytest.MonkeyPatch
     monkeypatch.delenv('LESS', raising=False)
     monkeypatch.setattr(main.special, 'set_pager', lambda pager: set_pager_calls.append(pager))
     monkeypatch.setattr(main.special, 'disable_pager', lambda: disable_calls.append(True))
-    monkeypatch.setattr(main, 'WIN', True)
-    monkeypatch.setattr(main.shutil, 'which', lambda name: None)
+    monkeypatch.setattr(output_module, 'WIN', True)
+    monkeypatch.setattr(shutil, 'which', lambda name: None)
     main.MyCli.configure_pager(cli)
     assert os.environ['LESS'] == '-RXF'
     assert set_pager_calls == ['more']
