@@ -21,9 +21,9 @@ from pymysql.cursors import Cursor
 
 logger = logging.getLogger(__name__)
 
-COMMANDS = {}
-CASE_SENSITIVE_COMMANDS = set()
-CASE_INSENSITIVE_COMMANDS = set()
+COMMANDS: dict[str, 'SpecialCommand'] = {}
+CASE_SENSITIVE_COMMANDS: set[str] = set()
+CASE_INSENSITIVE_COMMANDS: set[str] = set()
 
 
 class ArgType(Enum):

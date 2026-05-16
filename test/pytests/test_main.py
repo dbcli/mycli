@@ -13,6 +13,7 @@ from typing import Any, cast
 
 import click
 from click.testing import CliRunner
+import prompt_toolkit
 from prompt_toolkit.formatted_text import (
     FormattedText,
     to_formatted_text,
@@ -32,6 +33,7 @@ from mycli.constants import (
 )
 from mycli.main import EMPTY_PASSWORD_FLAG_SENTINEL, MyCli, click_entrypoint
 import mycli.main_modes.repl as repl_mode
+import mycli.output as output_module
 import mycli.packages.special
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
 from mycli.packages.sqlresult import SQLResult
@@ -2245,7 +2247,7 @@ def test_output_timing_logs_and_prints_with_warning_style(monkeypatch: pytest.Mo
     timings_logged: list[str] = []
     cli.log_output = lambda text: timings_logged.append(text)  # type: ignore[assignment]
     printed: list[tuple[Any, Any]] = []
-    monkeypatch.setattr(main, 'print_formatted_text', lambda text, style=None: printed.append((text, style)))
+    monkeypatch.setattr(prompt_toolkit, 'print_formatted_text', lambda text, style=None: printed.append((text, style)))
     main.MyCli.output_timing(cli, 'Time: 1.000s', is_warnings_style=True)
     assert timings_logged == ['Time: 1.000s']
     assert printed[-1][1] == cli.ptoolkit_style
@@ -2273,7 +2275,7 @@ def test_get_output_margin_uses_prompt_session_render_counter(monkeypatch: pytes
         render_counters.append(render_counter)
         return to_formatted_text('line1\nline2')
 
-    monkeypatch.setattr(main, 'render_prompt_string', fake_render_prompt_string)
+    monkeypatch.setattr(repl_mode, 'render_prompt_string', fake_render_prompt_string)
     monkeypatch.setattr(main.special, 'is_timing_enabled', lambda: False)
     assert main.MyCli.get_output_margin(cli, 'ok') == 5
     assert render_counters == [7]
@@ -2404,7 +2406,7 @@ def test_format_sqlresult_materializes_cursor_rows_when_width_is_limited(monkeyp
     cli = make_bare_mycli()
     cli.main_formatter = DummyFormatter()
     rows = FakeCursorBase(rows=[(1,)], rowcount=1, description=[('id', 3)])
-    monkeypatch.setattr(main, 'Cursor', FakeCursorBase)
+    monkeypatch.setattr(output_module, 'Cursor', FakeCursorBase)
 
     result = SQLResult(header=['id'], rows=cast(Any, rows), status='ok')
     list(main.MyCli.format_sqlresult(cli, result, max_width=100))

@@ -10,6 +10,9 @@ from types import SimpleNamespace
 from typing import Any, Callable, Literal, cast
 
 from packaging.version import Version
+from prompt_toolkit.formatted_text import (
+    ANSI,
+)
 import pygments
 import pymysql
 import pytest
@@ -145,8 +148,8 @@ def make_bare_mycli() -> Any:
     cli.query_history = []
     cli.toolbar_error_message = None
     cli.prompt_session = None
-    cli.last_prompt_message = main.ANSI('')
-    cli.last_custom_toolbar_message = main.ANSI('')
+    cli.last_prompt_message = ANSI('')
+    cli.last_custom_toolbar_message = ANSI('')
     cli.prompt_lines = 0
     cli.prompt_format = main.MyCli.default_prompt
     cli.multiline_continuation_char = '>'

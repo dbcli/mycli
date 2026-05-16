@@ -11,6 +11,10 @@ Bug Fixes
 * Respect `history_file` setting in the `[main]` section of `~/.myclirc`.
 * Adapt test suite to pygments v2.20.0.
 
+Internal
+---------
+* Factor `app_state.py`, `cli_args.py`, and `output.py` out of `main.py`.
+
 
 1.72.1 (2026/05/11)
 ==============
