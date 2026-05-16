@@ -8,7 +8,7 @@ from prompt_toolkit.document import Document
 import pytest
 
 import mycli.packages.special.main as special
-from test.utils import pygments_at_least
+from test.utils import pygments_below
 
 metadata = {
     "users": ["id", "email", "first_name", "last_name"],
@@ -862,6 +862,7 @@ def test_backticked_column_completion_two_character(completer, complete_event):
         Completion(text='`fixed`', start_position=-2),
         Completion(text='`float`', start_position=-2),
         Completion(text='`fetch`', start_position=-2),
+        Completion(text='`files`', start_position=-2),
         Completion(text='`first`', start_position=-2),
         Completion(text='`flush`', start_position=-2),
         Completion(text='`force`', start_position=-2),
@@ -879,14 +880,19 @@ def test_backticked_column_completion_two_character(completer, complete_event):
         Completion(text='`fulltext`', start_position=-2),
         Completion(text='`function`', start_position=-2),
         Completion(text='`from_days`', start_position=-2),
+        Completion(text='`file_name`', start_position=-2),
         Completion(text='`following`', start_position=-2),
         Completion(text='`first_name`', start_position=-2),
         Completion(text='`found_rows`', start_position=-2),
         Completion(text='`find_in_set`', start_position=-2),
         Completion(text='`first_value`', start_position=-2),
         Completion(text='`from_base64`', start_position=-2),
+        Completion(text='`from_vector`', start_position=-2),
+        Completion(text='`file_format`', start_position=-2),
+        Completion(text='`file_prefix`', start_position=-2),
         Completion(text='`foreign key`', start_position=-2),
         Completion(text='`format_bytes`', start_position=-2),
+        Completion(text='`file_pattern`', start_position=-2),
         Completion(text='`from_unixtime`', start_position=-2),
         Completion(text='`file_block_size`', start_position=-2),
         Completion(text='`format_pico_time`', start_position=-2),
@@ -913,17 +919,18 @@ def test_backticked_column_completion_two_character(completer, complete_event):
         Completion(text='`references`', start_position=-2),
     ]
 
-    if pygments_at_least("2.20"):
-        expected.extend([
+    if pygments_below("2.20"):
+        for newer in [
             Completion(text='`file_format`', start_position=-2),
             Completion(text='`file_name`', start_position=-2),
             Completion(text='`file_pattern`', start_position=-2),
             Completion(text='`file_prefix`', start_position=-2),
             Completion(text='`files`', start_position=-2),
             Completion(text='`from_vector`', start_position=-2),
-        ])
+        ]:
+            expected.remove(newer)
 
-    assert sorted((x.text, x.start_position) for x in result) == sorted((x.text, x.start_position) for x in expected)
+    assert result == expected
 
 
 def test_backticked_column_completion_three_character(completer, complete_event):
@@ -935,13 +942,18 @@ def test_backticked_column_completion_three_character(completer, complete_event)
         Completion(text='`file`', start_position=-3),
         Completion(text='`field`', start_position=-3),
         Completion(text='`fixed`', start_position=-3),
+        Completion(text='`files`', start_position=-3),
         Completion(text='`first`', start_position=-3),
         Completion(text='`fields`', start_position=-3),
         Completion(text='`filter`', start_position=-3),
         Completion(text='`finish`', start_position=-3),
+        Completion(text='`file_name`', start_position=-3),
         Completion(text='`first_name`', start_position=-3),
         Completion(text='`find_in_set`', start_position=-3),
         Completion(text='`first_value`', start_position=-3),
+        Completion(text='`file_format`', start_position=-3),
+        Completion(text='`file_prefix`', start_position=-3),
+        Completion(text='`file_pattern`', start_position=-3),
         Completion(text='`file_block_size`', start_position=-3),
         Completion(text='`definer`', start_position=-3),
         Completion(text='`definition`', start_position=-3),
@@ -955,16 +967,17 @@ def test_backticked_column_completion_three_character(completer, complete_event)
         Completion(text='`foreign key`', start_position=-3),
     ]
 
-    if pygments_at_least("2.20"):
-        expected.extend([
-            Completion(text='`file_format`', start_position=-3),
+    if pygments_below("2.20"):
+        for newer in [
+            Completion(text='`files`', start_position=-3),
             Completion(text='`file_name`', start_position=-3),
+            Completion(text='`file_format`', start_position=-3),
             Completion(text='`file_pattern`', start_position=-3),
             Completion(text='`file_prefix`', start_position=-3),
-            Completion(text='`files`', start_position=-3),
-        ])
+        ]:
+            expected.remove(newer)
 
-    assert sorted((x.text, x.start_position) for x in result) == sorted((x.text, x.start_position) for x in expected)
+    assert result == expected
 
 
 def test_backticked_column_completion_four_character(completer, complete_event):
