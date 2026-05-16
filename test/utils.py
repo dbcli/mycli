@@ -9,6 +9,8 @@ import time
 from types import SimpleNamespace
 from typing import Any, Callable, Literal, cast
 
+from packaging.version import Version
+import pygments
 import pymysql
 import pytest
 
@@ -33,6 +35,12 @@ SSH_USER = os.getenv("PYTEST_SSH_USER", None)
 SSH_HOST = os.getenv("PYTEST_SSH_HOST", None)
 SSH_PORT = int(os.getenv("PYTEST_SSH_PORT", "22"))
 TEMPFILE_PREFIX = 'mycli_test_suite_'
+
+PYGMENTS_VERSION = Version(pygments.__version__)
+
+
+def pygments_at_least(version: str) -> bool:
+    return PYGMENTS_VERSION >= Version(version)
 
 
 class DummyLogger:

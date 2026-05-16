@@ -12,6 +12,7 @@ Bug Fixes
 Bug Fixes
 ---------
 * Update `sqlglot` to v30.7.0 to fix has_bit_strings error.
+* Adapt test suite to pygments 2.20.0
 
 
 1.72.0 (2026/05/08)
