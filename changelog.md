@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Features
+---------
+* Update `cli_helpers` to v2.15.0 for `mysql_heavy` table format.
+
+
 Bug Fixes
 ---------
 * Respect `history_file` setting in the `[main]` section of `~/.myclirc`.
