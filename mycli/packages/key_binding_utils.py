@@ -9,7 +9,7 @@ from mycli.packages import special
 from mycli.sqlexecute import SQLExecute
 
 if TYPE_CHECKING:
-    from mycli.main import MyCli
+    from mycli.client import MyCli
 
 
 def server_date(sqlexecute: SQLExecute, quoted: bool = False) -> str:

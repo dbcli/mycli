@@ -39,6 +39,7 @@ import pytest
 
 from mycli import main
 from mycli.cli_args import IntOrStringClickParamType
+import mycli.client_connection
 import mycli.key_bindings
 import mycli.output as output_module
 from mycli.packages.sqlresult import SQLResult
@@ -476,7 +477,7 @@ def test_connect_covers_defaults_keyring_prompt_retries_and_errors(monkeypatch: 
     cli.echo = lambda *args, **kwargs: echo_calls.append((args, kwargs))  # type: ignore[assignment]
     logger = DummyLogger()
     cli.logger = cast(Any, logger)
-    monkeypatch.setattr(main, 'WIN', True)
+    monkeypatch.setattr(mycli.client_connection, 'WIN', True)
     monkeypatch.setattr(main, 'SQLExecute', RecordingSQLExecute)
     RecordingSQLExecute.calls = []
     RecordingSQLExecute.side_effects = []
@@ -540,8 +541,8 @@ def test_connect_socket_owner_and_tcp_fallback(monkeypatch: pytest.MonkeyPatch) 
     echo_calls: list[str] = []
     cli.echo = lambda message, **kwargs: echo_calls.append(str(message))  # type: ignore[assignment]
     cli.logger = cast(Any, DummyLogger())
-    monkeypatch.setattr(main, 'WIN', False)
-    monkeypatch.setattr(main, 'getpwuid', lambda uid: SimpleNamespace(pw_name='socket-owner'))
+    monkeypatch.setattr(mycli.client_connection, 'WIN', False)
+    monkeypatch.setattr(mycli.client_connection, 'getpwuid', lambda uid: SimpleNamespace(pw_name='socket-owner'))
     original_stat = os.stat
 
     def fake_stat(path: Any, *args: Any, **kwargs: Any) -> os.stat_result:
@@ -572,7 +573,7 @@ def test_connect_additional_error_and_config_branches(monkeypatch: pytest.Monkey
     cli.logger = cast(Any, DummyLogger())
     echo_calls: list[str] = []
     cli.echo = lambda message, **kwargs: echo_calls.append(str(message))  # type: ignore[assignment]
-    monkeypatch.setattr(main, 'WIN', False)
+    monkeypatch.setattr(mycli.client_connection, 'WIN', False)
     monkeypatch.setattr(main, 'str_to_bool', lambda value: False)
 
     def fake_read_my_cnf(cnf: Any, keys: list[str]) -> dict[str, Any]:
@@ -603,7 +604,7 @@ def test_connect_additional_error_and_config_branches(monkeypatch: pytest.Monkey
         side_effects: list[Any] = []
 
     monkeypatch.setattr(main, 'SQLExecute', SuccessfulSQLExecute)
-    monkeypatch.setattr(main, 'getpwuid', lambda uid: (_ for _ in ()).throw(KeyError()))
+    monkeypatch.setattr(mycli.client_connection, 'getpwuid', lambda uid: (_ for _ in ()).throw(KeyError()))
     original_stat = os.stat
 
     def fake_stat(path: Any, *args: Any, **kwargs: Any) -> os.stat_result:
@@ -711,7 +712,7 @@ def test_connect_retries_ssl_password_and_handles_keyring_save_failure(monkeypat
         return values
 
     cli.read_my_cnf = read_my_cnf_all_none  # type: ignore[assignment]
-    monkeypatch.setattr(main, 'WIN', False)
+    monkeypatch.setattr(mycli.client_connection, 'WIN', False)
     monkeypatch.setattr(main, 'str_to_bool', lambda value: False)
 
     class HandshakeRetrySQLExecute(RecordingSQLExecute):
@@ -762,7 +763,7 @@ def test_connect_covers_default_ssl_ca_path_and_late_invalid_port(monkeypatch: p
     echo_calls: list[str] = []
     cli.echo = lambda message, **kwargs: echo_calls.append(str(message))  # type: ignore[assignment]
     cli.read_my_cnf = lambda cnf, keys: dict.fromkeys(keys) | {'local_infile': None, 'loose_local_infile': None}
-    monkeypatch.setattr(main, 'WIN', False)
+    monkeypatch.setattr(mycli.client_connection, 'WIN', False)
     monkeypatch.setattr(main, 'guess_socket_location', lambda: '')
     monkeypatch.setattr(main, 'str_to_bool', lambda value: False)
     monkeypatch.setattr(main.MyCli, 'merge_ssl_with_cnf', lambda self, ssl, cnf: None)

@@ -6,7 +6,8 @@ from typing import TYPE_CHECKING
 import click
 
 if TYPE_CHECKING:
-    from mycli.main import CliArgs, MyCli
+    from mycli.cli_args import CliArgs
+    from mycli.client import MyCli
 
 
 def main_execute_from_cli(mycli: 'MyCli', cli_args: 'CliArgs') -> int:

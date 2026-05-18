@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING, Any, Iterable
 from mycli.sqlexecute import SQLExecute
 
 if TYPE_CHECKING:  # pragma: no cover - typing only
-    from mycli.main import MyCli
+    from mycli.client import MyCli
     from mycli.sqlcompleter import SQLCompleter
 
 _logger = logging.getLogger(__name__)
