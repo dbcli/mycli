@@ -10,6 +10,8 @@ Documentation: [https://mycli.net/docs](https://mycli.net/docs)
 ![Completion](doc/screenshots/tables.png)
 ![CompletionGif](doc/screenshots/main.gif)
 
+Mycli is compatible with MySQL, MariaDB, Percona, and TiDB.
+
 Postgres Equivalent: [https://pgcli.com](https://pgcli.com)
 
 Quick Start
