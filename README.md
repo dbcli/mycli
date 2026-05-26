@@ -2,13 +2,15 @@
 
 [![Build Status](https://github.com/dbcli/mycli/workflows/mycli/badge.svg)](https://github.com/dbcli/mycli/actions?query=workflow%3Amycli)
 
-A command line client for MySQL and MariaDB that can do auto-completion and syntax highlighting.
+A command line client for MySQL that can do auto-completion and syntax highlighting.
 
 Homepage: [https://mycli.net](https://mycli.net)
 Documentation: [https://mycli.net/docs](https://mycli.net/docs)
 
 ![Completion](doc/screenshots/tables.png)
 ![CompletionGif](doc/screenshots/main.gif)
+
+Mycli is compatible with MySQL, MariaDB, Percona, and TiDB.
 
 Postgres Equivalent: [https://pgcli.com](https://pgcli.com)
 
