@@ -1,10 +1,11 @@
-Upcoming (TBD)
+1.73.0 (2026/05/27)
 ==============
 
 Features
 ---------
 * Update `cli_helpers` to v2.15.0 for `mysql_heavy` table format.
 * Add `sqlglot` and `pygments` to `--checkup` output.
+
 
 Bug Fixes
 ---------
