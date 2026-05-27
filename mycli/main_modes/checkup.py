@@ -28,7 +28,10 @@ def _dependencies_checkup() -> None:
         'cli_helpers',
         'click',
         'prompt_toolkit',
+        'pygments',
         'pymysql',
+        'sqlglot',
+        'sqlglotc',
         'tabulate',
     ]:
         try:

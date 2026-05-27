@@ -47,6 +47,9 @@ def test_dependencies_checkup(monkeypatch, capsys) -> None:
         'click': '2.0.0',
         'prompt_toolkit': '3.0.0',
         'pymysql': '4.0.0',
+        'pygments': '2.19.2',
+        'sqlglot': '30.7.0',
+        'sqlglotc': '30.7.0',
     }
 
     def fake_version(name: str) -> str:
