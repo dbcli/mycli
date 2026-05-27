@@ -4,12 +4,18 @@ Upcoming (TBD)
 Features
 ---------
 * Update `cli_helpers` to v2.15.0 for `mysql_heavy` table format.
-
+* Add `sqlglot` and `pygments` to `--checkup` output.
 
 Bug Fixes
 ---------
 * Respect `history_file` setting in the `[main]` section of `~/.myclirc`.
 * Adapt test suite to pygments v2.20.0.
+
+
+Documentation
+---------
+* Add support for other MySQL wire-compatible databases to `README.md`.
+
 
 Internal
 ---------
