@@ -20,15 +20,40 @@ def step_run_cli_without_args(context, excluded_args, exact_args=""):
     wrappers.run_cli(context, run_args=parse_cli_args_to_dict(exact_args), exclude_args=parse_cli_args_to_dict(excluded_args).keys())
 
 
-@then('status contains "{expression}"')
-def status_contains(context, expression):
-    wrappers.expect_exact(context, f"{expression}", timeout=5)
+@then('status consistent with socket')
+def status_consistent_with_socket(context):
+    # The connection can actually fall back to TCP/IP, so the test is
+    # inherently flaky.  We just dodge that with a conditional.
+    if getattr(context.cn, 'unix_socket', None):
+        wrappers.expect_exact(context, 'via UNIX socket', timeout=5)
 
-    # Normally, the shutdown after scenario waits for the prompt.
-    # But we may have changed the prompt, depending on parameters,
-    # so let's wait for its last character
-    context.cli.expect_exact(">")
-    context.atprompt = True
+        # Normally, the shutdown after scenario waits for the prompt.
+        # But we may have changed the prompt, depending on parameters,
+        # so let's wait for its last character
+        context.cli.expect_exact(">")
+        context.atprompt = True
+    else:
+        wrappers.expect_exact(context, 'via TCP/IP', timeout=5)
+        context.cli.expect_exact(">")
+        context.atprompt = True
+
+
+@then('status consistent with tcp_ip')
+def status_consistent_with_tcp_ip(context):
+    # the connection can actually fall back to socket, so the test is
+    # inherently flaky.  We just dodge that with a conditional.
+    if not getattr(context.cn, 'unix_socket', None):
+        wrappers.expect_exact(context, 'via TCP/IP', timeout=5)
+
+        # Normally, the shutdown after scenario waits for the prompt.
+        # But we may have changed the prompt, depending on parameters,
+        # so let's wait for its last character
+        context.cli.expect_exact(">")
+        context.atprompt = True
+    else:
+        wrappers.expect_exact(context, 'via UNIX socket', timeout=5)
+        context.cli.expect_exact(">")
+        context.atprompt = True
 
 
 @when("we create my.cnf file")
