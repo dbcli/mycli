@@ -68,7 +68,8 @@ class ServerInfo:
             (r"(?P<version>[0-9\.]+)-MariaDB", ServerSpecies.MariaDB),
             (r"[0-9\.]*-TiDB-v(?P<version>[0-9\.]+)-?(?P<comment>[a-z0-9\-]*)", ServerSpecies.TiDB),
             (r"(?P<version>[0-9\.]+)[a-z0-9]*-(?P<comment>[0-9]+$)", ServerSpecies.Percona),
-            (r"(?P<version>[0-9\.]+)[a-z0-9]*-(?P<comment>[A-Za-z0-9_]+)", ServerSpecies.MySQL),
+            # Also matches plain "X.Y.Z" with no suffix (e.g. Homebrew MySQL).
+            (r"(?P<version>[0-9]+\.[0-9]+\.[0-9]+)[a-z0-9]*(-(?P<comment>[A-Za-z0-9_]+))?", ServerSpecies.MySQL),
         )
         for regexp, species in re_species:
             match = re.search(regexp, version_string)
