@@ -1,3 +1,11 @@
+1.73.1 (2026/05/29)
+==============
+
+Bug Fixes
+---------
+* Update `sqlglot` to v30.8.0 to fix `build_formatted_string` error.
+
+
 1.73.0 (2026/05/27)
 ==============
 
