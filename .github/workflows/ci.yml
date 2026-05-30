@@ -68,14 +68,14 @@ jobs:
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
-          python-version: '3.13'
+          python-version: '3.14'
 
       - name: Start MySQL
         run: |
           sudo /etc/init.d/mysql start
 
       - name: Install dependencies
-        run: uv sync --extra dev -p python3.13
+        run: uv sync --extra dev -p python3.14
 
       - name: Wait for MySQL connection
         run: |
@@ -89,4 +89,4 @@ jobs:
           PYTEST_HOST: 127.0.0.1
           TERM: xterm
         run: |
-          uv run tox -e py3.13
+          uv run tox -e py3.14
