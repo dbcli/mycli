@@ -104,6 +104,45 @@ jobs:
         run: |
           uv run tox -e py${{ matrix.python-version }}
 
+  tests-windows:
+    name: Tests Windows
+    runs-on: windows-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.14']
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: 'latest'
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        shell: cmd
+        run: uv sync --all-extras -p ${{ matrix.python-version }}
+
+      - name: Set up MySQL
+        uses: shogo82148/actions-setup-mysql@c80f44ab210a360ef966c5b9f48a2ae21123b533 # v1.51.0
+        with:
+          mysql-version: '9.7'
+          root-password: root
+
+      - name: Pytest / behave
+        env:
+          PYTEST_PASSWORD: root
+          PYTEST_HOST: 127.0.0.1
+        run: |
+          uv run -- coverage run -m pytest
+          uv run -- coverage report -m --sort=Miss --skip-covered --skip-empty
+
   test-no-extras:
     name: Tests Without Extras
     runs-on: ubuntu-latest

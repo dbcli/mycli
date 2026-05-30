@@ -364,9 +364,9 @@ def test_watch_query_full():
     expected_value = "1"
     query = f"SELECT {expected_value}"
     expected_preamble = f"> {query}"
-    # Python 3.14 is skipping ahead to 6 or 7
+    # Python 3.14 is skipping ahead to 6, 7, or even 8 on Mac and Windows
     # Python 3.11 is as slow as 3
-    expected_results = [3, 4, 5, 6, 7]
+    expected_results = [3, 4, 5, 6, 7, 8]
     ctrl_c_process = send_ctrl_c(wait_interval)
     with db_connection().cursor() as cur:
         results = list(mycli.packages.special.iocommands.watch_query(arg=f"{watch_seconds} {query}", cur=cur))

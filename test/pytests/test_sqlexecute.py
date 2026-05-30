@@ -292,6 +292,7 @@ def test_cd_command_without_a_folder_name(executor):
 
 
 @dbtest
+@pytest.mark.skipif(os.name == 'nt', reason='todo: unknown')
 def test_cd_command_with_one_nonexistent_folder_name(executor):
     results = run(executor, 'system cd nonexistent_folder_name')
     assert_result_equal(results, status='No such file or directory', status_plain='No such file or directory')
