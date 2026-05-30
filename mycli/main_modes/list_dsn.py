@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import click
 
 if TYPE_CHECKING:
-    from mycli.main import MyCli
+    from mycli.client import MyCli
 
 
 def main_list_dsn(mycli: 'MyCli') -> int:

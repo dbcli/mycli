@@ -24,6 +24,7 @@ from pymysql.err import OperationalError
 import pytest
 
 from mycli import main
+import mycli.client_connection
 from mycli.constants import (
     DEFAULT_DATABASE,
     DEFAULT_HOST,
@@ -2437,7 +2438,7 @@ def test_connect_reports_expired_password_login_error(monkeypatch: pytest.Monkey
     cli.logger = cast(Any, DummyLogger())
     echo_calls: list[str] = []
     cli.echo = lambda message, **kwargs: echo_calls.append(str(message))  # type: ignore[assignment]
-    monkeypatch.setattr(main, 'WIN', False)
+    monkeypatch.setattr(mycli.client_connection, 'WIN', False)
     monkeypatch.setattr(main, 'str_to_bool', lambda value: False)
 
     class ExpiredPasswordSQLExecute(RecordingSQLExecute):
@@ -2460,7 +2461,7 @@ def test_connect_sets_cli_sandbox_mode_when_sqlexecute_enters_sandbox(monkeypatc
     cli.logger = cast(Any, DummyLogger())
     echo_calls: list[str] = []
     cli.echo = lambda message, **kwargs: echo_calls.append(str(message))  # type: ignore[assignment]
-    monkeypatch.setattr(main, 'WIN', False)
+    monkeypatch.setattr(mycli.client_connection, 'WIN', False)
     monkeypatch.setattr(main, 'str_to_bool', lambda value: False)
 
     class SandboxSQLExecute(RecordingSQLExecute):

@@ -79,7 +79,7 @@ from mycli.types import Query
 if TYPE_CHECKING:
     from prompt_toolkit.formatted_text import AnyFormattedText
 
-    from mycli.main import MyCli
+    from mycli.client import MyCli
 
 
 SUPPORT_INFO = f"Home: {HOME_URL}\nBug tracker: {ISSUES_URL}"

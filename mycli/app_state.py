@@ -9,7 +9,7 @@ from configobj import ConfigObj
 from mycli.config import str_to_bool, strip_matching_quotes
 
 if TYPE_CHECKING:
-    from mycli.main import MyCli
+    from mycli.client import MyCli
 
 
 def normalize_ssl_mode(config: ConfigObj) -> tuple[str | None, str | None]:
