@@ -6,6 +6,7 @@ Internal
 * Factor `main.py` into several files using mixins.
 * Update Python versions used in CI.
 * Add CI on macOS.
+* Add limited CI on Windows.
 
 
 1.73.1 (2026/05/29)

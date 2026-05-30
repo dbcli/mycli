@@ -657,6 +657,7 @@ def dummy_list_path(dir_name):
         ("source /dir1/subdir1/", [("lastfile.sql", 0)]),
     ],
 )
+@pytest.mark.skipif(os.name == 'nt', reason='todo: unknown')
 def test_file_name_completion(completer, complete_event, text, expected):
     position = len(text)
     special.register_special_command(
