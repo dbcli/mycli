@@ -7,8 +7,8 @@ import click
 from mycli.packages.ssh_utils import read_ssh_config
 
 if TYPE_CHECKING:
-    from mycli.cli_args import CliArgs
     from mycli.client import MyCli
+    from mycli.main import CliArgs
 
 
 def main_list_ssh_config(mycli: 'MyCli', cli_args: 'CliArgs') -> int:

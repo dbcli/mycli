@@ -18,10 +18,10 @@ from mycli.app_state import (
     llm_prompt_truncation,
     normalize_ssl_mode,
 )
-from mycli.cli_args import DEFAULT_PROMPT
 from mycli.client_commands import ClientCommandsMixin
 from mycli.client_connection import ClientConnectionMixin
 from mycli.client_query import ClientQueryMixin
+from mycli.constants import DEFAULT_PROMPT
 from mycli.main_modes import repl as repl_package
 from mycli.output import OutputMixin
 from mycli.packages import special

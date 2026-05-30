@@ -17,3 +17,6 @@ DEFAULT_HEIGHT = 25
 # MySQL error codes not available in pymysql.constants.ER
 ER_MUST_CHANGE_PASSWORD_LOGIN = 1862
 ER_MUST_CHANGE_PASSWORD = 1820
+
+EMPTY_PASSWORD_FLAG_SENTINEL = -1
+DEFAULT_PROMPT = "\\t \\u@\\h:\\d> "

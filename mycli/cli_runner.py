@@ -3,23 +3,25 @@ from __future__ import annotations
 import os
 import sys
 from textwrap import dedent
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any, Callable
 from urllib.parse import parse_qs, unquote, urlparse
 
 import click
 
-from mycli.cli_args import EMPTY_PASSWORD_FLAG_SENTINEL, CliArgs, preprocess_cli_args
 from mycli.config import str_to_bool
-from mycli.constants import ISSUES_URL, REPO_URL
+from mycli.constants import EMPTY_PASSWORD_FLAG_SENTINEL, ISSUES_URL, REPO_URL
 from mycli.packages.ssh_utils import read_ssh_config
+
+if TYPE_CHECKING:
+    from mycli.main import CliArgs
 
 ClientFactory = Callable[..., Any]
 
 
-def run_from_cli_args(cli_args: CliArgs, client_factory: ClientFactory) -> None:
+def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> None:
     from mycli import main as main_module
 
-    cli_verbosity = preprocess_cli_args(cli_args, main_module.is_valid_connection_scheme)
+    cli_verbosity = main_module.preprocess_cli_args(cli_args, main_module.is_valid_connection_scheme)
 
     mycli = client_factory(
         prompt=cli_args.prompt,

@@ -10,9 +10,14 @@ import pymysql
 from pymysql.constants.CR import CR_SERVER_LOST
 from pymysql.constants.ER import ACCESS_DENIED_ERROR, HANDSHAKE_ERROR
 
-from mycli.cli_args import EMPTY_PASSWORD_FLAG_SENTINEL
 from mycli.compat import WIN
-from mycli.constants import DEFAULT_CHARSET, DEFAULT_HOST, DEFAULT_PORT, ER_MUST_CHANGE_PASSWORD_LOGIN
+from mycli.constants import (
+    DEFAULT_CHARSET,
+    DEFAULT_HOST,
+    DEFAULT_PORT,
+    EMPTY_PASSWORD_FLAG_SENTINEL,
+    ER_MUST_CHANGE_PASSWORD_LOGIN,
+)
 
 try:
     from pwd import getpwuid

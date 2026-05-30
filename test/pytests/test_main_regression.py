@@ -38,9 +38,9 @@ import pymysql
 import pytest
 
 from mycli import main
-from mycli.cli_args import IntOrStringClickParamType
 import mycli.client_connection
 import mycli.key_bindings
+from mycli.main import IntOrStringClickParamType
 import mycli.output as output_module
 from mycli.packages.sqlresult import SQLResult
 from test.utils import (  # type: ignore[attr-defined]
