@@ -4,6 +4,7 @@ Upcoming (TBD)
 Internal
 ---------
 * Factor `main.py` into several files using mixins.
+* Move CLI argument handling back to `main.py`.
 * Update Python versions used in CI.
 * Add CI on macOS.
 * Add limited CI on Windows.
