@@ -135,13 +135,82 @@ jobs:
           mysql-version: '9.7'
           root-password: root
 
-      - name: Pytest / behave
+      - name: Run pytest
         env:
           PYTEST_PASSWORD: root
           PYTEST_HOST: 127.0.0.1
         run: |
           uv run -- coverage run -m pytest
           uv run -- coverage report -m --sort=Miss --skip-covered --skip-empty
+
+  tests-wsl:
+    name: Tests WSL
+    runs-on: windows-latest
+
+    steps:
+      - uses: vampire/setup-wsl@d1da7f2c0322a5ee4f24975344f67fc0f5baf364 # v7.0.0
+        with:
+          distribution: Ubuntu-24.04
+          update: 'true'
+          additional-packages: |
+            curl
+            git
+            mysql-server
+            pkg-config
+            build-essential
+            python3-pip
+
+      - name: Create working directory
+        shell: wsl-bash {0}
+        run: |
+          mkdir -p /root/mycli
+
+      - uses: ubuntu/wsl/.github/actions/wsl-checkout@86f464de45987910a3d1aa9d1237ac244a32f811
+        with:
+          distro: Ubuntu-24.04
+          working-dir: /root/mycli
+
+      - name: Install uv
+        shell: wsl-bash {0}
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          env PYTHONPATH=/usr/local/lib/python3.14/site-packages pip install --upgrade --break-system-packages --prefix=/usr uv
+
+      - name: Install dependencies
+        shell: wsl-bash {0}
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          cd /root/mycli
+          uv sync --all-extras --python 3.14
+
+      - name: Start MySQL in WSL
+        shell: wsl-bash {0}
+        run: |
+          sudo service mysql start
+
+      - name: Wait for MySQL connection
+        shell: wsl-bash {0}
+        run: |
+          while ! mysqladmin ping --host=localhost --port=3306 --user=root --silent; do
+            sleep 5
+          done
+
+      - name: Set up MySQL
+        shell: wsl-bash {0}
+        run: |
+          mysqladmin -u root password root
+
+      - name: Run pytest
+        shell: wsl-bash {0}
+        env:
+          PYTEST_HOST: 127.0.0.1
+          PYTEST_USER: root
+          PYTEST_PASSWORD: root
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          cd /root/mycli
+          uv run --python 3.14 -- coverage run -m pytest
+          uv run --python 3.14 -- coverage report -m --sort=Miss --skip-covered --skip-empty
 
   test-no-extras:
     name: Tests Without Extras
