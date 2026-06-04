@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Bug Fixes
+---------
+* Keep completion-menu Escape cancellation eager only in Vi mode so Emacs Alt-key bindings keep working while completions are open.
+
+
 Internal
 ---------
 * Factor `main.py` into several files using mixins.

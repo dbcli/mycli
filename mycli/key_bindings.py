@@ -10,6 +10,7 @@ from prompt_toolkit.filters import (
     completion_is_selected,
     control_is_searchable,
     emacs_mode,
+    vi_mode,
 )
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.key_binding.bindings.named_commands import register as ptoolkit_register
@@ -161,7 +162,7 @@ def mycli_bindings(mycli) -> KeyBindings:
         elif 'summon' in behaviors:
             b.start_completion(select_first=False)
 
-    @kb.add("escape", eager=True, filter=in_completion)
+    @kb.add("escape", eager=vi_mode, filter=in_completion)
     def _(event: KeyPressEvent) -> None:
         """Cancel completion menu.
 
