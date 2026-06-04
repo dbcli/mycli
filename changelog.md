@@ -14,6 +14,7 @@ Internal
 * Add CI on macOS.
 * Add limited CI on Windows.
 * Add limited CI on Windows WSL.
+* Keep identifiers that start with `set` highlighted as names.
 
 
 1.73.1 (2026/05/29)
