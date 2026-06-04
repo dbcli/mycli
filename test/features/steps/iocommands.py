@@ -38,6 +38,7 @@ def step_edit_done_sql(context, query):
         wrappers.expect_exact(context, match, timeout=5)
     # Cleanup the command line.
     context.cli.sendcontrol("c")
+    wrappers.wait_prompt(context)
     # Cleanup the edited file.
     if context.editor_file_name and os.path.exists(context.editor_file_name):
         os.remove(context.editor_file_name)
