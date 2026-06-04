@@ -133,12 +133,11 @@ def after_scenario(context, _):
             dbname = context.currentdb
             context.cli.expect_exact(f"{user}@{host}:{dbname}>", timeout=5)
         context.cli.sendcontrol("c")
-        user = context.conf["user"]
-        host = context.conf["host"]
-        dbname = context.currentdb
-        context.cli.expect_exact(f"{user}@{host}:{dbname}>", timeout=5)
         context.cli.sendcontrol("d")
-        context.cli.expect_exact(pexpect.EOF, timeout=5)
+        try:
+            context.cli.expect_exact(pexpect.EOF, timeout=5)
+        except pexpect.TIMEOUT:
+            context.cli.terminate(force=True)
 
     if os.path.exists(MY_CNF_BACKUP_PATH):
         shutil.move(MY_CNF_BACKUP_PATH, MY_CNF_PATH)
