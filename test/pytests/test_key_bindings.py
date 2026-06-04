@@ -158,6 +158,7 @@ def binding(kb: prompt_toolkit.key_binding.KeyBindings, *keys: str | Keys) -> An
 
 def patch_filter_app(monkeypatch, app: DummyApp) -> None:
     monkeypatch.setitem(key_bindings.emacs_mode.func.__globals__, 'get_app', lambda: app)
+    monkeypatch.setitem(key_bindings.vi_mode.func.__globals__, 'get_app', lambda: app)
     monkeypatch.setitem(key_bindings.completion_is_selected.func.__globals__, 'get_app', lambda: app)
     monkeypatch.setitem(key_bindings.control_is_searchable.func.__globals__, 'get_app', lambda: app)
 
@@ -330,13 +331,26 @@ def test_tab_binding_supports_configured_behaviors(
     assert event.app.current_buffer.cancel_completion_calls == expected_cancel
 
 
-def test_escape_binding_cancels_completion_menu(monkeypatch) -> None:
+@pytest.mark.parametrize(
+    ('editing_mode', 'expected_eager'),
+    (
+        (EditingMode.VI, True),
+        (EditingMode.EMACS, False),
+    ),
+)
+def test_escape_binding_cancels_completion_menu(
+    monkeypatch,
+    editing_mode: EditingMode,
+    expected_eager: bool,
+) -> None:
     mycli = DummyMyCli(DummyKeysConfig())
     kb = key_bindings.mycli_bindings(mycli)
     event = make_event(DummyBuffer(complete_state=object()))
+    event.app.editing_mode = editing_mode
     monkeypatch.setattr(key_bindings, 'get_app', lambda: event.app)
+    patch_filter_app(monkeypatch, event.app)
 
-    assert binding(kb, Keys.Escape).eager() is True
+    assert binding(kb, Keys.Escape).eager() is expected_eager
     assert binding_filter(kb, Keys.Escape)() is True
 
     inactive_event = make_event(DummyBuffer(complete_state=None))
