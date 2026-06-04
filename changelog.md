@@ -4,6 +4,7 @@ Upcoming (TBD)
 Bug Fixes
 ---------
 * Keep completion-menu Escape cancellation eager only in Vi mode so Emacs Alt-key bindings keep working while completions are open.
+* Keep identifiers that start with `set` highlighted as names.
 
 
 Internal
@@ -14,7 +15,6 @@ Internal
 * Add CI on macOS.
 * Add limited CI on Windows.
 * Add limited CI on Windows WSL.
-* Keep identifiers that start with `set` highlighted as names.
 
 
 1.73.1 (2026/05/29)

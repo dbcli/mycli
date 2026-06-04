@@ -8,6 +8,7 @@ class MyCliLexer(MySqlLexer):
 
     tokens = {
         "root": [
+            # TODO: Remove once Pygments is upgraded above v2.20.0.
             (r"\bset[\w$]+\b", Name),
             (r"\brepair\b", Keyword),
             (r"\boffset\b", Keyword),

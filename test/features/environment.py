@@ -133,6 +133,10 @@ def after_scenario(context, _):
             dbname = context.currentdb
             context.cli.expect_exact(f"{user}@{host}:{dbname}>", timeout=5)
         context.cli.sendcontrol("c")
+        user = context.conf["user"]
+        host = context.conf["host"]
+        dbname = context.currentdb
+        context.cli.expect_exact(f"{user}@{host}:{dbname}>", timeout=5)
         context.cli.sendcontrol("d")
         context.cli.expect_exact(pexpect.EOF, timeout=5)
 
