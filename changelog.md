@@ -3,6 +3,7 @@ Upcoming (TBD)
 
 Bug Fixes
 ---------
+* Expand environment variables in configured DSN aliases.
 * Keep completion-menu Escape cancellation eager only in Vi mode so Emacs Alt-key bindings keep working while completions are open.
 
 

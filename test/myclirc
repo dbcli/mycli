@@ -398,6 +398,7 @@ global_limit = set sql_select_limit=9999
 
 # Use the -d option to reference a DSN.
 # Special characters in passwords and other strings can be escaped with URL encoding.
+# Environment variables in the form $VAR or ${VAR} are expanded in alias DSNs.
 [alias_dsn]
 # example_dsn = mysql://[user[:password]@][host][:port][/dbname]
 
