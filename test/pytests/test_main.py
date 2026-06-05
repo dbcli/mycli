@@ -982,6 +982,48 @@ def test_dsn(monkeypatch):
         and MockMyCli.connect_args["database"] == "alias_dsn_database"
     )
 
+    monkeypatch.setenv("MYCLI_TEST_DSN_USER", "env_dsn_user")
+    monkeypatch.setenv("MYCLI_TEST_DSN_PASSWORD", "env_dsn_passwd")
+    monkeypatch.setenv("MYCLI_TEST_DSN_HOST", "env_dsn_host")
+    monkeypatch.setenv("MYCLI_TEST_DSN_PORT", "9")
+    monkeypatch.setenv("MYCLI_TEST_DSN_DATABASE", "env_dsn_database")
+    MockMyCli.config = {
+        "main": {},
+        "alias_dsn": {
+            "env_test": "mysql://$MYCLI_TEST_DSN_USER:${MYCLI_TEST_DSN_PASSWORD}@$MYCLI_TEST_DSN_HOST:${MYCLI_TEST_DSN_PORT}/${MYCLI_TEST_DSN_DATABASE}"
+        },
+        "connection": {
+            "default_keepalive_ticks": 0,
+        },
+    }
+    MockMyCli.connect_args = None
+
+    # When a DSN alias uses environment variables, expand those before parsing
+    # the URI.
+    result = runner.invoke(click_entrypoint, args=["--dsn", "env_test"])
+    assert result.exit_code == 0, result.output + " " + str(result.exception)
+    assert (
+        MockMyCli.connect_args["user"] == "env_dsn_user"
+        and MockMyCli.connect_args["passwd"] == "env_dsn_passwd"
+        and MockMyCli.connect_args["host"] == "env_dsn_host"
+        and MockMyCli.connect_args["port"] == 9
+        and MockMyCli.connect_args["database"] == "env_dsn_database"
+    )
+
+    MockMyCli.connect_args = None
+
+    # The same expansion applies when the alias is supplied as the positional
+    # database argument.
+    result = runner.invoke(click_entrypoint, args=["env_test"])
+    assert result.exit_code == 0, result.output + " " + str(result.exception)
+    assert (
+        MockMyCli.connect_args["user"] == "env_dsn_user"
+        and MockMyCli.connect_args["passwd"] == "env_dsn_passwd"
+        and MockMyCli.connect_args["host"] == "env_dsn_host"
+        and MockMyCli.connect_args["port"] == 9
+        and MockMyCli.connect_args["database"] == "env_dsn_database"
+    )
+
     MockMyCli.config = {
         "main": {},
         "alias_dsn": {"test": "mysql://alias_dsn_user:alias_dsn_passwd@alias_dsn_host:4/alias_dsn_database"},

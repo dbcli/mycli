@@ -152,6 +152,7 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
                 )
                 sys.exit(1)
         else:
+            dsn_uri = os.path.expandvars(dsn_uri)
             mycli.dsn_alias = cli_args.dsn
 
     if dsn_uri:
