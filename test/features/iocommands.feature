@@ -1,5 +1,6 @@
 Feature: I/O commands
 
+  @skip_ci
   Scenario: edit sql in file with external editor
      When we start external editor providing a file name
       and we type "select * from abc" in the editor

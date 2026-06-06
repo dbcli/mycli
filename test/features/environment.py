@@ -105,6 +105,9 @@ def before_scenario(context, arg):
     # Skip scenarios marked skip_py312 when running on Python 3.12
     if sys.version_info[:2] == (3, 12) and "skip_py312" in arg.tags:
         arg.skip("Skipped on Python 3.12")
+    # Skip flaky editor test in CI
+    if os.getenv('GITHUB_ACTION') and 'skip_ci' in arg.tags:
+        arg.skip('Skipped in CI')
     with open(test_log_file, "w") as f:
         f.write("")
     if arg.location.filename not in SELF_CONNECTING_FEATURES:

@@ -136,7 +136,8 @@ passenv = ['PYTEST_HOST',
            'PYTEST_USER',
            'PYTEST_PASSWORD',
            'PYTEST_PORT',
-           'PYTEST_CHARSET']
+           'PYTEST_CHARSET',
+           'GITHUB_ACTION']
 commands = [['uv', 'pip', 'install', '-e', '.[dev,ssh,llm]'],
             ['coverage', 'run', '-m', 'pytest', '-v', 'test'],
             ['coverage', 'report', '-m', '--sort=Miss'],
