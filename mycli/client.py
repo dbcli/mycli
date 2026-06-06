@@ -6,6 +6,7 @@ import os
 import threading
 from typing import IO, Literal
 
+from cli_helpers.tabular_output import TabularOutputFormatter
 from prompt_toolkit.formatted_text import to_formatted_text
 from prompt_toolkit.shortcuts import PromptSession
 import sqlparse
@@ -21,12 +22,17 @@ from mycli.app_state import (
 from mycli.client_commands import ClientCommandsMixin
 from mycli.client_connection import ClientConnectionMixin
 from mycli.client_query import ClientQueryMixin
+from mycli.clistyle import style_factory_helpers, style_factory_ptoolkit
+from mycli.completion_refresher import CompletionRefresher
+from mycli.config import get_mylogin_cnf_path, open_mylogin_cnf, read_config_files, write_default_config
 from mycli.constants import DEFAULT_PROMPT
 from mycli.main_modes import repl as repl_package
 from mycli.output import OutputMixin
 from mycli.packages import special
 from mycli.packages.special.favoritequeries import FavoriteQueries
 from mycli.packages.tabular_output import sql_format
+from mycli.schema_prefetcher import SchemaPrefetcher
+from mycli.sqlcompleter import SQLCompleter
 from mycli.sqlexecute import SQLExecute
 from mycli.types import Query
 
@@ -94,16 +100,15 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
 
         # Load config.
         config_files: list[str | IO[str]] = self.system_config_files + [myclirc] + [self.pwd_config_file]
-        from mycli import main as main_module
 
-        c = self.config = main_module.read_config_files(config_files)
+        c = self.config = read_config_files(config_files)
         # this parallel config exists to
         #  * compare with my.cnf
         #  * support the --checkup feature
         # todo: after removing my.cnf, create the parallel configs only when --checkup is set
-        self.config_without_package_defaults = main_module.read_config_files(config_files, ignore_package_defaults=True)
+        self.config_without_package_defaults = read_config_files(config_files, ignore_package_defaults=True)
         # this parallel config exists to compare with my.cnf support the --checkup feature
-        self.config_without_user_options = main_module.read_config_files(config_files, ignore_user_options=True)
+        self.config_without_user_options = read_config_files(config_files, ignore_user_options=True)
         self.multi_line = c["main"].as_bool("multi_line")
         self.key_bindings = c["main"]["key_bindings"]
         self.emacs_ttimeoutlen = c['keys'].as_float('emacs_ttimeoutlen')
@@ -120,8 +125,8 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
         FavoriteQueries.instance = FavoriteQueries.from_config(self.config)
 
         self.dsn_alias: str | None = None
-        self.main_formatter = main_module.TabularOutputFormatter(format_name=c["main"]["table_format"])
-        self.redirect_formatter = main_module.TabularOutputFormatter(format_name=c["main"].get("redirect_format", "csv"))
+        self.main_formatter = TabularOutputFormatter(format_name=c["main"]["table_format"])
+        self.redirect_formatter = TabularOutputFormatter(format_name=c["main"].get("redirect_format", "csv"))
         sql_format.register_new_formatter(self.main_formatter)
         sql_format.register_new_formatter(self.redirect_formatter)
         self.main_formatter.mycli = self
@@ -131,9 +136,9 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
         if cli_verbosity:
             self.verbosity = cli_verbosity
         self.cli_style = c["colors"]
-        self.ptoolkit_style = main_module.style_factory_ptoolkit(self.syntax_style, self.cli_style)
-        self.helpers_style = main_module.style_factory_helpers(self.syntax_style, self.cli_style)
-        self.helpers_warnings_style = main_module.style_factory_helpers(self.syntax_style, self.cli_style, warnings=True)
+        self.ptoolkit_style = style_factory_ptoolkit(self.syntax_style, self.cli_style)
+        self.helpers_style = style_factory_helpers(self.syntax_style, self.cli_style)
+        self.helpers_warnings_style = style_factory_helpers(self.syntax_style, self.cli_style, warnings=True)
         self.wider_completion_menu = c["main"].as_bool("wider_completion_menu")
         c_dest_warning = c["main"].as_bool("destructive_warning")
         self.destructive_warning = c_dest_warning if warn is None else warn
@@ -153,7 +158,7 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
 
         # Write user config if system config wasn't the last config loaded.
         if c.filename not in self.system_config_files and not os.path.exists(myclirc):
-            main_module.write_default_config(myclirc)
+            write_default_config(myclirc)
 
         # audit log
         if self.logfile is None and "audit_log" in c["main"]:
@@ -163,11 +168,11 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
                 self.echo("Error: Unable to open the audit log file. Your queries will not be logged.", err=True, fg="red")
                 self.logfile = False
 
-        self.completion_refresher = main_module.CompletionRefresher()
+        self.completion_refresher = CompletionRefresher()
         self.prefetch_schemas_mode = c["main"].get("prefetch_schemas_mode", "always") or "always"
         raw_prefetch_list = c["main"].as_list("prefetch_schemas_list") if "prefetch_schemas_list" in c["main"] else []
         self.prefetch_schemas_list = [s.strip() for s in raw_prefetch_list if s and s.strip()]
-        self.schema_prefetcher = main_module.SchemaPrefetcher(self)
+        self.schema_prefetcher = SchemaPrefetcher(self)
 
         self.logger = logging.getLogger(__name__)
         self.initialize_logging()
@@ -180,7 +185,7 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
 
         # Initialize completer.
         self.smart_completion = c["main"].as_bool("smart_completion")
-        self.completer = main_module.SQLCompleter(
+        self.completer = SQLCompleter(
             self.smart_completion, supported_formats=self.main_formatter.supported_formats, keyword_casing=keyword_casing
         )
         self._completer_lock = threading.Lock()
@@ -195,9 +200,9 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
         self.register_special_commands()
 
         # Load .mylogin.cnf if it exists.
-        mylogin_cnf_path = main_module.get_mylogin_cnf_path()
+        mylogin_cnf_path = get_mylogin_cnf_path()
         if mylogin_cnf_path:
-            mylogin_cnf = main_module.open_mylogin_cnf(mylogin_cnf_path)
+            mylogin_cnf = open_mylogin_cnf(mylogin_cnf_path)
             if mylogin_cnf_path and mylogin_cnf:
                 # .mylogin.cnf gets read last, even if defaults_file is specified.
                 self.cnf_files.append(mylogin_cnf)
@@ -205,7 +210,7 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
                 # There was an error reading the login path file.
                 print("Error: Unable to read login path file.")
 
-        self.my_cnf = main_module.read_config_files(self.cnf_files, list_values=False)
+        self.my_cnf = read_config_files(self.cnf_files, list_values=False)
         ensure_my_cnf_sections(self.my_cnf)
         prompt_cnf = self.read_my_cnf(self.my_cnf, ["prompt"])["prompt"]
         configure_prompt_state(self, c, prompt, prompt_cnf, toolbar_format)
@@ -220,6 +225,4 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
             self.sqlexecute.close()
 
     def run_cli(self) -> None:
-        from mycli import main as main_module
-
-        main_module.main_repl(self)
+        repl_package.main_repl(self)

@@ -28,12 +28,14 @@ from pymysql.err import OperationalError
 import pytest
 
 from mycli import main
+import mycli.cli_runner
 import mycli.client_connection
 from mycli.constants import (
     DEFAULT_DATABASE,
     DEFAULT_HOST,
     DEFAULT_PORT,
     DEFAULT_USER,
+    ER_MUST_CHANGE_PASSWORD_LOGIN,
     TEST_DATABASE,
 )
 from mycli.main import (
@@ -45,12 +47,15 @@ from mycli.main import (
     get_password_from_file,
     preprocess_cli_args,
 )
+import mycli.main_modes.batch
 import mycli.main_modes.repl as repl_mode
 import mycli.output as output_module
+import mycli.packages.cli_utils
 import mycli.packages.special
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
 from mycli.packages.sqlresult import SQLResult
 from mycli.sqlexecute import ServerInfo, SQLExecute
+from mycli.types import Query
 from test.utils import (
     DATABASE,
     HOST,
@@ -190,17 +195,17 @@ def test_select_from_empty_table(executor):
 def test_filtered_sys_argv_maps_single_dash_h_to_help(monkeypatch):
     import mycli.main
 
-    monkeypatch.setattr(mycli.main.sys, 'argv', ['mycli', '-h'])
+    monkeypatch.setattr(sys, 'argv', ['mycli', '-h'])
 
-    assert mycli.main.filtered_sys_argv() == ['--help']
+    assert mycli.packages.cli_utils.filtered_sys_argv() == ['--help']
 
 
 def test_filtered_sys_argv_preserves_host_option_usage(monkeypatch):
     import mycli.main
 
-    monkeypatch.setattr(mycli.main.sys, 'argv', ['mycli', '-h', 'example.com'])
+    monkeypatch.setattr(sys, 'argv', ['mycli', '-h', 'example.com'])
 
-    assert mycli.main.filtered_sys_argv() == ['-h', 'example.com']
+    assert mycli.packages.cli_utils.filtered_sys_argv() == ['-h', 'example.com']
 
 
 def test_main_dash_h_and_help_have_equivalent_output(monkeypatch):
@@ -209,7 +214,7 @@ def test_main_dash_h_and_help_have_equivalent_output(monkeypatch):
     def run_main(argv):
         stdout = io.StringIO()
         stderr = io.StringIO()
-        monkeypatch.setattr(mycli.main.sys, 'argv', argv)
+        monkeypatch.setattr(sys, 'argv', argv)
         with redirect_stdout(stdout), redirect_stderr(stderr):
             result = mycli.main.main()
         return result, stdout.getvalue(), stderr.getvalue()
@@ -2135,7 +2140,6 @@ def noninteractive_mock_mycli(monkeypatch):
             pass
 
     import mycli.main
-    import mycli.main_modes.batch
 
     monkeypatch.setattr(mycli.main, 'MyCli', MockMyCli)
     return mycli.main, mycli.main_modes.batch, MockMyCli
@@ -2172,7 +2176,7 @@ def test_quiet_sets_negative_cli_verbosity(monkeypatch: pytest.MonkeyPatch) -> N
         }
     )
     monkeypatch.setattr(main, 'MyCli', dummy_class)
-    monkeypatch.setattr(main.sys, 'stdin', SimpleNamespace(isatty=lambda: True))
+    monkeypatch.setattr(sys, 'stdin', SimpleNamespace(isatty=lambda: True))
 
     cli_args = main.CliArgs()
     cli_args.quiet = True
@@ -2271,14 +2275,6 @@ def test_output_timing_logs_and_prints_with_warning_style(monkeypatch: pytest.Mo
     assert printed[-1][1] == cli.ptoolkit_style
 
 
-def test_run_cli_delegates_to_main_repl(monkeypatch: pytest.MonkeyPatch) -> None:
-    cli = make_bare_mycli()
-    run_cli_calls: list[Any] = []
-    monkeypatch.setattr(main, 'main_repl', lambda target: run_cli_calls.append(target))
-    main.MyCli.run_cli(cli)
-    assert run_cli_calls == [cli]
-
-
 def test_get_output_margin_uses_prompt_session_render_counter(monkeypatch: pytest.MonkeyPatch) -> None:
     cli = make_bare_mycli()
     render_counters: list[int] = []
@@ -2294,7 +2290,7 @@ def test_get_output_margin_uses_prompt_session_render_counter(monkeypatch: pytes
         return to_formatted_text('line1\nline2')
 
     monkeypatch.setattr(repl_mode, 'render_prompt_string', fake_render_prompt_string)
-    monkeypatch.setattr(main.special, 'is_timing_enabled', lambda: False)
+    monkeypatch.setattr(mycli.packages.special, 'is_timing_enabled', lambda: False)
     assert main.MyCli.get_output_margin(cli, 'ok') == 5
     assert render_counters == [7]
 
@@ -2332,8 +2328,8 @@ def test_click_entrypoint_callback_covers_dsn_list_init_commands(monkeypatch: py
         }
     )
     monkeypatch.setattr(main, 'MyCli', dummy_class)
-    monkeypatch.setattr(main.sys, 'stdin', SimpleNamespace(isatty=lambda: True))
-    monkeypatch.setattr(main.sys.stderr, 'isatty', lambda: True)
+    monkeypatch.setattr(sys, 'stdin', SimpleNamespace(isatty=lambda: True))
+    monkeypatch.setattr(sys.stderr, 'isatty', lambda: True)
 
     cli_args = main.CliArgs()
     cli_args.dsn = 'prod'
@@ -2354,9 +2350,9 @@ def test_click_entrypoint_callback_uses_batch_with_progress_path(monkeypatch: py
         }
     )
     monkeypatch.setattr(main, 'MyCli', dummy_class)
-    monkeypatch.setattr(main.sys, 'stdin', SimpleNamespace(isatty=lambda: True))
-    monkeypatch.setattr(main.sys.stderr, 'isatty', lambda: True)
-    monkeypatch.setattr(main, 'main_batch_with_progress_bar', lambda mycli, cli_args: 12)
+    monkeypatch.setattr(sys, 'stdin', SimpleNamespace(isatty=lambda: True))
+    monkeypatch.setattr(sys.stderr, 'isatty', lambda: True)
+    monkeypatch.setattr(mycli.cli_runner, 'main_batch_with_progress_bar', lambda mycli, cli_args: 12)
 
     cli_args = main.CliArgs()
     cli_args.batch = 'queries.sql'
@@ -2375,9 +2371,9 @@ def test_click_entrypoint_callback_uses_batch_without_progress_path(monkeypatch:
         }
     )
     monkeypatch.setattr(main, 'MyCli', dummy_class)
-    monkeypatch.setattr(main.sys, 'stdin', SimpleNamespace(isatty=lambda: True))
-    monkeypatch.setattr(main.sys.stderr, 'isatty', lambda: True)
-    monkeypatch.setattr(main, 'main_batch_without_progress_bar', lambda mycli, cli_args: 13)
+    monkeypatch.setattr(sys, 'stdin', SimpleNamespace(isatty=lambda: True))
+    monkeypatch.setattr(sys.stderr, 'isatty', lambda: True)
+    monkeypatch.setattr(mycli.cli_runner, 'main_batch_without_progress_bar', lambda mycli, cli_args: 13)
 
     cli_args = main.CliArgs()
     cli_args.batch = 'queries.sql'
@@ -2390,8 +2386,8 @@ def test_click_entrypoint_callback_uses_batch_without_progress_path(monkeypatch:
 def test_click_entrypoint_callback_covers_mycnf_underscore_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
     click_lines: list[str] = []
     monkeypatch.setattr(click, 'secho', lambda message='', **kwargs: click_lines.append(str(message)))
-    monkeypatch.setattr(main.sys, 'stdin', SimpleNamespace(isatty=lambda: True))
-    monkeypatch.setattr(main.sys.stderr, 'isatty', lambda: False)
+    monkeypatch.setattr(sys, 'stdin', SimpleNamespace(isatty=lambda: True))
+    monkeypatch.setattr(sys.stderr, 'isatty', lambda: False)
 
     dummy_class = make_dummy_mycli_class(
         config={
@@ -2442,7 +2438,7 @@ def test_format_sqlresult_appends_postamble() -> None:
 
 def test_get_last_query_returns_latest_query() -> None:
     cli = make_bare_mycli()
-    cli.query_history = [main.Query('select 1', True, False)]
+    cli.query_history = [Query('select 1', True, False)]
 
     assert main.MyCli.get_last_query(cli) == 'select 1'
 
@@ -2456,13 +2452,13 @@ def test_connect_reports_expired_password_login_error(monkeypatch: pytest.Monkey
     echo_calls: list[str] = []
     cli.echo = lambda message, **kwargs: echo_calls.append(str(message))  # type: ignore[assignment]
     monkeypatch.setattr(mycli.client_connection, 'WIN', False)
-    monkeypatch.setattr(main, 'str_to_bool', lambda value: False)
+    monkeypatch.setattr(mycli.client_connection, 'str_to_bool', lambda value: False)
 
     class ExpiredPasswordSQLExecute(RecordingSQLExecute):
         calls: list[dict[str, Any]] = []
-        side_effects: list[Any] = [pymysql.OperationalError(main.ER_MUST_CHANGE_PASSWORD_LOGIN, 'must change password')]
+        side_effects: list[Any] = [pymysql.OperationalError(ER_MUST_CHANGE_PASSWORD_LOGIN, 'must change password')]
 
-    monkeypatch.setattr(main, 'SQLExecute', ExpiredPasswordSQLExecute)
+    monkeypatch.setattr(mycli.client_connection, 'SQLExecute', ExpiredPasswordSQLExecute)
 
     with pytest.raises(SystemExit):
         main.MyCli.connect(cli, host='db', port=3307)
@@ -2479,7 +2475,7 @@ def test_connect_sets_cli_sandbox_mode_when_sqlexecute_enters_sandbox(monkeypatc
     echo_calls: list[str] = []
     cli.echo = lambda message, **kwargs: echo_calls.append(str(message))  # type: ignore[assignment]
     monkeypatch.setattr(mycli.client_connection, 'WIN', False)
-    monkeypatch.setattr(main, 'str_to_bool', lambda value: False)
+    monkeypatch.setattr(mycli.client_connection, 'str_to_bool', lambda value: False)
 
     class SandboxSQLExecute(RecordingSQLExecute):
         calls: list[dict[str, Any]] = []
@@ -2489,7 +2485,7 @@ def test_connect_sets_cli_sandbox_mode_when_sqlexecute_enters_sandbox(monkeypatc
             super().__init__(**kwargs)
             self.sandbox_mode = True
 
-    monkeypatch.setattr(main, 'SQLExecute', SandboxSQLExecute)
+    monkeypatch.setattr(mycli.client_connection, 'SQLExecute', SandboxSQLExecute)
 
     main.MyCli.connect(cli, host='db', port=3307)
 

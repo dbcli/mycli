@@ -6,11 +6,13 @@ import traceback
 from typing import TYPE_CHECKING, Any
 
 import click
+import keyring
 import pymysql
 from pymysql.constants.CR import CR_SERVER_LOST
 from pymysql.constants.ER import ACCESS_DENIED_ERROR, HANDSHAKE_ERROR
 
 from mycli.compat import WIN
+from mycli.config import str_to_bool
 from mycli.constants import (
     DEFAULT_CHARSET,
     DEFAULT_HOST,
@@ -18,6 +20,8 @@ from mycli.constants import (
     EMPTY_PASSWORD_FLAG_SENTINEL,
     ER_MUST_CHANGE_PASSWORD_LOGIN,
 )
+from mycli.packages.filepaths import guess_socket_location
+from mycli.sqlexecute import SQLExecute
 
 try:
     from pwd import getpwuid
@@ -61,8 +65,6 @@ class ClientConnectionMixin:
         reset_keyring: bool | None = None,
         keepalive_ticks: int | None = None,
     ) -> None:
-        from mycli import main as main_module
-
         cnf = {
             "database": None,
             "user": None,
@@ -101,7 +103,7 @@ class ClientConnectionMixin:
                     or user_connection_config.get("default_socket")
                     or cnf["socket"]
                     or cnf["default_socket"]
-                    or main_module.guess_socket_location()
+                    or guess_socket_location()
                 )
 
         passwd = passwd if isinstance(passwd, (str, int)) else cnf["password"]
@@ -133,7 +135,7 @@ class ClientConnectionMixin:
             False,
         ):
             try:
-                use_local_infile = main_module.str_to_bool(local_infile_option or '')
+                use_local_infile = str_to_bool(local_infile_option or '')
                 break
             except (TypeError, ValueError):
                 pass
@@ -176,7 +178,7 @@ class ClientConnectionMixin:
         keyring_retrieved_cleanly = False
 
         if passwd is None and use_keyring and not reset_keyring:
-            passwd = main_module.keyring.get_password(keyring_domain, keyring_identifier)
+            passwd = keyring.get_password(keyring_domain, keyring_identifier)
             if passwd is not None:
                 keyring_retrieved_cleanly = True
 
@@ -212,9 +214,9 @@ class ClientConnectionMixin:
                 return
             if reset_keyring or (use_keyring and not keyring_retrieved_cleanly):
                 try:
-                    saved_pw = main_module.keyring.get_password(keyring_domain, keyring_identifier)
+                    saved_pw = keyring.get_password(keyring_domain, keyring_identifier)
                     if password != saved_pw or reset_keyring:
-                        main_module.keyring.set_password(keyring_domain, keyring_identifier, password)
+                        keyring.set_password(keyring_domain, keyring_identifier, password)
                         click.secho(f'Password saved to the system keyring at {keyring_domain}/{keyring_identifier}', err=True)
                 except Exception as e:
                     click.secho(f'Password not saved to the system keyring: {e}', err=True, fg='red')
@@ -228,7 +230,7 @@ class ClientConnectionMixin:
             try:
                 if keyring_save_eligible:
                     _update_keyring(connection_info["password"], keyring_retrieved_cleanly=keyring_retrieved_cleanly)
-                self.sqlexecute = main_module.SQLExecute(**connection_info)
+                self.sqlexecute = SQLExecute(**connection_info)
             except pymysql.OperationalError as e1:
                 if e1.args[0] == HANDSHAKE_ERROR and ssl is not None and ssl.get("mode", None) == "auto":
                     # if we already tried and failed to connect without SSL, raise the error

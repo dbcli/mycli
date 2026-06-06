@@ -8,9 +8,13 @@ from typing import TYPE_CHECKING, Any, cast
 
 import click
 
+from mycli.main_modes.repl import set_all_external_titles
 from mycli.packages import special
+from mycli.packages.filepaths import dir_path_exists
+from mycli.packages.interactive_utils import confirm_destructive_query
 from mycli.packages.special.main import ArgType, SpecialCommandAlias
 from mycli.packages.sqlresult import SQLResult
+from mycli.sqlexecute import SQLExecute
 
 
 class ClientCommandsMixin:
@@ -124,11 +128,7 @@ class ClientCommandsMixin:
             click.secho("No database selected", err=True, fg="red")
             return
 
-        # todo: this jump back to repl.py is a sign that separation is incomplete.
-        # also: it should not be needed.  Don't titles update on every new prompt?
-        from mycli import main as main_module
-
-        assert isinstance(self.sqlexecute, main_module.SQLExecute)
+        assert isinstance(self.sqlexecute, SQLExecute)
 
         if self.sqlexecute.dbname == arg:
             msg = f'You are already connected to database "{self.sqlexecute.dbname}" as user "{self.sqlexecute.user}"'
@@ -136,7 +136,9 @@ class ClientCommandsMixin:
             self.sqlexecute.change_db(arg)
             msg = f'You are now connected to database "{self.sqlexecute.dbname}" as user "{self.sqlexecute.user}"'
 
-        main_module.set_all_external_titles(cast(Any, self))
+        # todo: this jump back to repl.py is a sign that separation is incomplete.
+        # also: it should not be needed.  Don't titles update on every new prompt?
+        set_all_external_titles(cast(Any, self))
 
         yield SQLResult(status=msg)
 
@@ -150,13 +152,11 @@ class ClientCommandsMixin:
         except IOError as e:
             return [SQLResult(status=str(e))]
 
-        from mycli import main as main_module
-
-        if self.destructive_warning and main_module.confirm_destructive_query(self.destructive_keywords, query) is False:
+        if self.destructive_warning and confirm_destructive_query(self.destructive_keywords, query) is False:
             message = "Wise choice. Command execution stopped."
             return [SQLResult(status=message)]
 
-        assert isinstance(self.sqlexecute, main_module.SQLExecute)
+        assert isinstance(self.sqlexecute, SQLExecute)
         return self.sqlexecute.run(query)
 
     def change_prompt_format(self, arg: str, **_) -> list[SQLResult]:
@@ -182,14 +182,12 @@ class ClientCommandsMixin:
             "DEBUG": logging.DEBUG,
         }
 
-        from mycli import main as main_module
-
         # Disable logging if value is NONE by switching to a no-op handler
         # Set log level to a high value so it doesn't even waste cycles getting called.
         if log_level.upper() == "NONE":
             handler: logging.Handler = logging.NullHandler()
             log_level = "CRITICAL"
-        elif main_module.dir_path_exists(log_file):
+        elif dir_path_exists(log_file):
             handler = logging.FileHandler(log_file)
         else:
             self.echo(f'Error: Unable to open the log file "{log_file}".', err=True, fg="red")
