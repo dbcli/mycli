@@ -5,11 +5,13 @@ Features
 --------
 * Detect Apache Doris and display its real version instead of the MySQL-compat placeholder.
 
+
 Bug Fixes
 ---------
 * Keep completion-menu Escape cancellation eager only in Vi mode so Emacs Alt-key bindings keep working while completions are open.
 * Keep identifiers that start with `set` highlighted as names.
 * Fix version display for MySQL distributions that return a plain `X.Y.Z` version string with no suffix (e.g. Homebrew MySQL).
+* Speed up startup by skipping LLM imports when `MYCLI_LLM_OFF` is set.
 
 
 Internal
@@ -20,7 +22,7 @@ Internal
 * Add CI on macOS.
 * Add limited CI on Windows.
 * Add limited CI on Windows WSL.
-* Speed up startup by skipping LLM imports when `MYCLI_LLM_OFF` is set.
+* Skip flaky external-editor test in CI.
 
 
 1.73.1 (2026/05/29)
