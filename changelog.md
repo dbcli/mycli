@@ -1,6 +1,10 @@
 Upcoming (TBD)
 ==============
 
+Features
+--------
+* Detect Apache Doris and display its real version instead of the MySQL-compat placeholder.
+
 Bug Fixes
 ---------
 * Keep completion-menu Escape cancellation eager only in Vi mode so Emacs Alt-key bindings keep working while completions are open.

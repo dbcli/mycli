@@ -39,6 +39,7 @@ class ServerSpecies(enum.Enum):
     MariaDB = "MariaDB"
     Percona = "Percona"
     TiDB = "TiDB"
+    Doris = "Doris"
     Unknown = "Unknown"
 
 
@@ -365,7 +366,38 @@ class SQLExecute:
         # retrieve connection id (skip in sandbox mode as queries will fail)
         if not self.sandbox_mode:
             self.reset_connection_id()
-            self.server_info = ServerInfo.from_version_string(conn.server_version)  # type: ignore[attr-defined]
+            server_info = ServerInfo.from_version_string(conn.server_version)  # type: ignore[attr-defined]
+            if server_info.species == ServerSpecies.MySQL:
+                if (doris_version := self._probe_doris_version()) is not None:
+                    server_info = ServerInfo(ServerSpecies.Doris, doris_version)
+            self.server_info = server_info
+
+    def _probe_doris_version(self) -> str | None:
+        """Query the server to check if it is Doris. Returns the Doris version string
+        (e.g. '2.1.7') if confirmed, or None if the server is not Doris."""
+        if self.sandbox_mode or self.conn is None:
+            return None
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute("SELECT @@version_comment, @@version")
+                row = cur.fetchone()
+            if not row:
+                return None
+            version_comment = str(row[0] or "")
+            version = str(row[1] or "")
+            if "doris" not in version_comment.lower() and "doris" not in version.lower():
+                return None
+            # Prefer @@version_comment which usually carries the real Doris version string
+            # (e.g. "doris-2.1.7-rc01"), then fall back to @@version.
+            for candidate in (version_comment, version):
+                ver_match = re.search(r"([0-9]+\.[0-9]+\.[0-9]+)", candidate)
+                if ver_match:
+                    return ver_match.group(1)
+            # Doris confirmed but couldn't parse a version number
+            return ""
+        except Exception as e:
+            _logger.debug("Doris detection failed: %s", e)
+        return None
 
     def run(self, statement: str) -> Generator[SQLResult, None, None]:
         """Execute the sql in the database and return the results."""
