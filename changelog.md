@@ -18,6 +18,7 @@ Internal
 ---------
 * Factor `main.py` into several files using mixins.
 * Move CLI argument handling back to `main.py`.
+* Clean up needless imports in `main.py`.
 * Update Python versions used in CI.
 * Add CI on macOS.
 * Add limited CI on Windows.

@@ -10,6 +10,12 @@ import click
 
 from mycli.config import str_to_bool
 from mycli.constants import EMPTY_PASSWORD_FLAG_SENTINEL, ISSUES_URL, REPO_URL
+from mycli.main_modes.batch import main_batch_from_stdin, main_batch_with_progress_bar, main_batch_without_progress_bar
+from mycli.main_modes.checkup import main_checkup
+from mycli.main_modes.execute import main_execute_from_cli
+from mycli.main_modes.list_dsn import main_list_dsn
+from mycli.main_modes.list_ssh_config import main_list_ssh_config
+from mycli.packages.cli_utils import is_valid_connection_scheme
 from mycli.packages.ssh_utils import read_ssh_config
 
 if TYPE_CHECKING:
@@ -21,7 +27,7 @@ ClientFactory = Callable[..., Any]
 def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> None:
     from mycli import main as main_module
 
-    cli_verbosity = main_module.preprocess_cli_args(cli_args, main_module.is_valid_connection_scheme)
+    cli_verbosity = main_module.preprocess_cli_args(cli_args, is_valid_connection_scheme)
 
     mycli = client_factory(
         prompt=cli_args.prompt,
@@ -38,7 +44,7 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
     )
 
     if cli_args.checkup:
-        main_module.main_checkup(mycli)
+        main_checkup(mycli)
         sys.exit(0)
 
     if cli_args.csv and cli_args.format not in [None, 'csv']:
@@ -86,10 +92,10 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
         )
 
     if cli_args.list_dsn:
-        sys.exit(main_module.main_list_dsn(mycli))
+        sys.exit(main_list_dsn(mycli))
 
     if cli_args.list_ssh_config:
-        sys.exit(main_module.main_list_ssh_config(mycli, cli_args))
+        sys.exit(main_list_ssh_config(mycli, cli_args))
 
     if 'MYSQL_UNIX_PORT' in os.environ:
         # deprecated 2026-03
@@ -141,7 +147,7 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
         try:
             dsn_uri = mycli.config["alias_dsn"][cli_args.dsn]
         except KeyError:
-            is_valid_scheme, scheme = main_module.is_valid_connection_scheme(cli_args.dsn)
+            is_valid_scheme, scheme = is_valid_connection_scheme(cli_args.dsn)
             if is_valid_scheme:
                 dsn_uri = cli_args.dsn
             else:
@@ -410,16 +416,16 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
     )
 
     if cli_args.execute is not None:
-        sys.exit(main_module.main_execute_from_cli(mycli, cli_args))
+        sys.exit(main_execute_from_cli(mycli, cli_args))
 
     if cli_args.batch is not None and cli_args.batch != '-' and cli_args.progress and sys.stderr.isatty():
-        sys.exit(main_module.main_batch_with_progress_bar(mycli, cli_args))
+        sys.exit(main_batch_with_progress_bar(mycli, cli_args))
 
     if cli_args.batch is not None:
-        sys.exit(main_module.main_batch_without_progress_bar(mycli, cli_args))
+        sys.exit(main_batch_without_progress_bar(mycli, cli_args))
 
     if not sys.stdin.isatty():
-        sys.exit(main_module.main_batch_from_stdin(mycli, cli_args))
+        sys.exit(main_batch_from_stdin(mycli, cli_args))
 
     mycli.run_cli()
     mycli.close()

@@ -25,7 +25,8 @@ from mycli.constants import (
     DEFAULT_USER,
     TEST_DATABASE,
 )
-from mycli.main import special
+import mycli.output
+from mycli.packages import special
 from mycli.packages.sqlresult import SQLResult
 
 DATABASE = TEST_DATABASE
@@ -68,10 +69,10 @@ class DummyFormatter:
         self.query = ''
         self.supported_formats = ['ascii', 'csv', 'tsv', 'vertical']
         self._output_formats = {
-            'ascii': SimpleNamespace(formatter_args={'missing_value': main.DEFAULT_MISSING_VALUE}),
-            'csv': SimpleNamespace(formatter_args={'missing_value': main.DEFAULT_MISSING_VALUE}),
-            'tsv': SimpleNamespace(formatter_args={'missing_value': main.DEFAULT_MISSING_VALUE}),
-            'vertical': SimpleNamespace(formatter_args={'missing_value': main.DEFAULT_MISSING_VALUE}),
+            'ascii': SimpleNamespace(formatter_args={'missing_value': mycli.output.DEFAULT_MISSING_VALUE}),
+            'csv': SimpleNamespace(formatter_args={'missing_value': mycli.output.DEFAULT_MISSING_VALUE}),
+            'tsv': SimpleNamespace(formatter_args={'missing_value': mycli.output.DEFAULT_MISSING_VALUE}),
+            'vertical': SimpleNamespace(formatter_args={'missing_value': mycli.output.DEFAULT_MISSING_VALUE}),
         }
         self.calls: list[tuple[tuple[Any, ...], dict[str, Any]]] = []
 
