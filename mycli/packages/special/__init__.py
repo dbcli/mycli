@@ -1,3 +1,5 @@
+import os
+
 from mycli.packages.special.dbcommands import (
     list_databases,
     list_tables,
@@ -41,12 +43,30 @@ from mycli.packages.special.iocommands import (
     write_pipe_once,
     write_tee,
 )
-from mycli.packages.special.llm import (
-    FinishIteration,
-    handle_llm,
-    is_llm_command,
-    sql_using_llm,
-)
+
+if not os.environ.get('MYCLI_LLM_OFF'):
+    from mycli.packages.special.llm import (
+        FinishIteration,
+        handle_llm,
+        is_llm_command,
+        sql_using_llm,
+    )
+else:
+
+    class FinishIteration(Exception):  # type: ignore[no-redef]
+        def __init__(self, results=None):
+            self.results = results
+
+    def is_llm_command(command: str) -> bool:  # type: ignore[no-redef]
+        return False
+
+    def handle_llm(*args, **kwargs):  # type: ignore[no-redef, misc]
+        raise FinishIteration(results=None)
+
+    def sql_using_llm(*args, **kwargs):  # type: ignore[no-redef, misc]
+        raise FinishIteration(results=None)
+
+
 from mycli.packages.special.main import (
     CommandNotFound,
     SpecialCommandAlias,
