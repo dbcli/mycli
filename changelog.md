@@ -9,6 +9,7 @@ Bug Fixes
 ---------
 * Keep completion-menu Escape cancellation eager only in Vi mode so Emacs Alt-key bindings keep working while completions are open.
 * Keep identifiers that start with `set` highlighted as names.
+* Fix version display for MySQL distributions that return a plain `X.Y.Z` version string with no suffix (e.g. Homebrew MySQL).
 
 
 Internal
