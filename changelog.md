@@ -15,6 +15,7 @@ Internal
 * Add CI on macOS.
 * Add limited CI on Windows.
 * Add limited CI on Windows WSL.
+* Speed up startup by skipping LLM imports when `MYCLI_LLM_OFF` is set.
 
 
 1.73.1 (2026/05/29)
