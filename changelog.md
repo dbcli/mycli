@@ -8,6 +8,7 @@ Internal
 * Improve test coverage for `output.py`.
 * Add test coverage for `special/__init__.py`.
 * Add Apache Doris tests to `sqlexecute.py`.
+* Improve test coverage for `main.py`.
 
 
 1.74.0 (2026/06/06)
