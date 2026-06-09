@@ -8,6 +8,7 @@ import csv
 import io
 import os
 from pathlib import Path
+import runpy
 import shutil
 import sys
 from tempfile import NamedTemporaryFile
@@ -226,6 +227,93 @@ def test_main_dash_h_and_help_have_equivalent_output(monkeypatch):
     assert dash_help_result == 0
     assert dash_h_stdout == dash_help_stdout
     assert dash_h_stderr == dash_help_stderr
+
+
+def test_main_returns_zero_when_click_entrypoint_returns_none(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(main, 'filtered_sys_argv', lambda: ['--help'])
+    monkeypatch.setattr(main.click_entrypoint, 'main', lambda *args, **kwargs: None)
+
+    assert main.main() == 0
+
+
+def test_main_returns_click_entrypoint_integer_result(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(main, 'filtered_sys_argv', lambda: ['--version'])
+    monkeypatch.setattr(main.click_entrypoint, 'main', lambda *args, **kwargs: 7)
+
+    assert main.main() == 7
+
+
+def test_main_returns_one_for_unexpected_click_entrypoint_result(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(main, 'filtered_sys_argv', list)
+    monkeypatch.setattr(main.click_entrypoint, 'main', lambda *args, **kwargs: object())
+
+    assert main.main() == 1
+
+
+def test_main_exits_one_on_click_abort(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+    monkeypatch.setattr(main, 'filtered_sys_argv', list)
+    monkeypatch.setattr(main.click_entrypoint, 'main', lambda *args, **kwargs: (_ for _ in ()).throw(click.Abort()))
+
+    with pytest.raises(SystemExit) as excinfo:
+        main.main()
+
+    assert excinfo.value.code == 1
+    assert 'Aborted!' in capsys.readouterr().err
+
+
+def test_main_exits_one_on_broken_pipe(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(main, 'filtered_sys_argv', list)
+    monkeypatch.setattr(main.click_entrypoint, 'main', lambda *args, **kwargs: (_ for _ in ()).throw(BrokenPipeError()))
+
+    with pytest.raises(SystemExit) as excinfo:
+        main.main()
+
+    assert excinfo.value.code == 1
+
+
+def test_main_exits_with_click_exception_exit_code(monkeypatch: pytest.MonkeyPatch) -> None:
+    exception = click.ClickException('bad option')
+    exception.exit_code = 9
+    show_calls: list[bool] = []
+    monkeypatch.setattr(main, 'filtered_sys_argv', list)
+    monkeypatch.setattr(exception, 'show', lambda *args, **kwargs: show_calls.append(True))
+    monkeypatch.setattr(main.click_entrypoint, 'main', lambda *args, **kwargs: (_ for _ in ()).throw(exception))
+
+    with pytest.raises(SystemExit) as excinfo:
+        main.main()
+
+    assert excinfo.value.code == 9
+    assert show_calls == [True]
+
+
+def test_main_exits_two_for_click_exception_without_exit_code(monkeypatch: pytest.MonkeyPatch) -> None:
+    class NoExitCodeClickException(click.ClickException):
+        def __getattribute__(self, name: str) -> Any:
+            if name == 'exit_code':
+                raise AttributeError(name)
+            return super().__getattribute__(name)
+
+    exception = NoExitCodeClickException('bad option')
+    show_calls: list[bool] = []
+    monkeypatch.setattr(main, 'filtered_sys_argv', list)
+    monkeypatch.setattr(exception, 'show', lambda *args, **kwargs: show_calls.append(True))
+    monkeypatch.setattr(main.click_entrypoint, 'main', lambda *args, **kwargs: (_ for _ in ()).throw(exception))
+
+    with pytest.raises(SystemExit) as excinfo:
+        main.main()
+
+    assert excinfo.value.code == 2
+    assert show_calls == [True]
+
+
+def test_module_main_guard_calls_sys_exit(monkeypatch: pytest.MonkeyPatch) -> None:
+    exit_codes: list[int | None] = []
+    monkeypatch.setattr(click.core.Command, 'main', lambda self, *args, **kwargs: 11)
+    monkeypatch.setattr(sys, 'exit', lambda code=0: exit_codes.append(code))
+
+    runpy.run_path(main.__file__, run_name='__main__')
+
+    assert exit_codes == [11]
 
 
 @dbtest
