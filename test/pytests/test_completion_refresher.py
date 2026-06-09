@@ -327,6 +327,30 @@ def test_bg_refresh_wraps_single_callback_callable(monkeypatch, refresher) -> No
     callback.assert_called_once_with(completers[0])
 
 
+def test_bg_refresh_returns_when_executor_connection_fails(monkeypatch, refresher) -> None:
+    completers: list[object] = []
+    callback = Mock()
+    refresh = Mock()
+
+    class FakeCompleter:
+        def __init__(self, **options) -> None:
+            completers.append(self)
+
+    class FailingExecutor:
+        def __init__(self, *args) -> None:
+            raise completion_refresher.pymysql.err.OperationalError(2003, 'cannot connect')
+
+    monkeypatch.setattr(completion_refresher, 'SQLCompleter', FakeCompleter)
+    monkeypatch.setattr(completion_refresher, 'SQLExecute', FailingExecutor)
+    refresher.refreshers = {'refresh': refresh}
+
+    refresher._bg_refresh(make_sqlexecute(), callback, {})
+
+    assert len(completers) == 1
+    refresh.assert_not_called()
+    callback.assert_not_called()
+
+
 def test_refresher_decorator_registers_function() -> None:
     refreshers: dict[str, object] = {}
 
