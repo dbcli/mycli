@@ -786,6 +786,22 @@ def test_connect_sets_expired_password_flag(monkeypatch) -> None:
     assert executor.sandbox_mode is False
 
 
+def test_connect_replaces_mysql_server_info_when_doris_probe_succeeds(monkeypatch) -> None:
+    executor = make_executor_for_connect_tests()
+    executor.ssl = None
+    new_conn = DummyConnection(server_version='8.0.36')
+
+    monkeypatch.setattr(sqlexecute.pymysql, 'connect', lambda **_kwargs: new_conn)
+    monkeypatch.setattr(SQLExecute, 'reset_connection_id', lambda self: None)
+    monkeypatch.setattr(SQLExecute, '_probe_doris_version', lambda self: '2.1.7')
+
+    executor.connect()
+
+    assert executor.server_info is not None
+    assert executor.server_info.species == ServerSpecies.Doris
+    assert executor.server_info.version_str == '2.1.7'
+
+
 def test_connect_falls_back_to_sandbox_on_1820(monkeypatch) -> None:
     executor = make_executor_for_connect_tests()
     executor.ssl = None
@@ -950,6 +966,60 @@ def test_connect_sandbox_temporarily_disables_set_character_set() -> None:
     assert conn.set_character_set == original_set_character_set
     conn.set_character_set('latin1')
     assert original_calls == [(('latin1',), {})]
+
+
+def test_probe_doris_version_returns_none_without_connection() -> None:
+    executor = make_executor_for_run_tests()
+    executor.sandbox_mode = False
+    executor.conn = None
+
+    assert executor._probe_doris_version() is None
+
+
+def test_probe_doris_version_returns_none_in_sandbox_mode() -> None:
+    executor = make_executor_for_run_tests(FakeMetadataConnection(FakeMetadataCursor([])))
+    executor.sandbox_mode = True
+
+    assert executor._probe_doris_version() is None
+
+
+def test_probe_doris_version_returns_none_when_query_has_no_rows() -> None:
+    executor = make_executor_for_run_tests(FakeMetadataConnection(FakeMetadataCursor([])))
+    executor.sandbox_mode = False
+
+    assert executor._probe_doris_version() is None
+
+
+def test_probe_doris_version_returns_none_when_server_is_not_doris() -> None:
+    cursor = FakeMetadataCursor([('MySQL Community Server - GPL', '8.0.36')])
+    executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
+    executor.sandbox_mode = False
+
+    assert executor._probe_doris_version() is None
+
+
+def test_probe_doris_version_extracts_version_from_comment() -> None:
+    cursor = FakeMetadataCursor([('doris-2.1.7-rc01', '8.0.0')])
+    executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
+    executor.sandbox_mode = False
+
+    assert executor._probe_doris_version() == '2.1.7'
+
+
+def test_probe_doris_version_falls_back_to_server_version() -> None:
+    cursor = FakeMetadataCursor([('Apache Doris', 'doris-3.0.1')])
+    executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
+    executor.sandbox_mode = False
+
+    assert executor._probe_doris_version() == '3.0.1'
+
+
+def test_probe_doris_version_returns_empty_string_when_doris_version_cannot_be_parsed() -> None:
+    cursor = FakeMetadataCursor([('Apache Doris', 'not parseable')])
+    executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
+    executor.sandbox_mode = False
+
+    assert executor._probe_doris_version() == ''
 
 
 def test_run_returns_empty_result_for_blank_statement(monkeypatch) -> None:
