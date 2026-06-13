@@ -90,6 +90,7 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
         self._keepalive_counter = 0
         self.keepalive_ticks: int | None = 0
         self.sandbox_mode: bool = False
+        self.checkpoint: IO | None = None
 
         # self.cnf_files is a class variable that stores the list of mysql
         # config files to read in at launch.

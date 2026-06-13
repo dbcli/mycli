@@ -198,6 +198,7 @@ def make_bare_mycli() -> Any:
     cli.configure_pager = lambda: None  # type: ignore[assignment]
     cli.refresh_completions = lambda reset=False: [SQLResult(status='refresh')]  # type: ignore[assignment]
     cli.reconnect = lambda database='': False  # type: ignore[assignment]
+    cli.checkpoint = None
     return cli
 
 

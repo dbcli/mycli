@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Bug Fixes
+---------
+* Ensure that `--batch` and `--checkpoint` files are distinct.
+
+
 Internal
 --------
 * Improve test coverage for `completion_refresher.py`.
