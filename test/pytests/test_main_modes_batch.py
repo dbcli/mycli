@@ -153,10 +153,10 @@ def write_batch_file(tmp_path: Path, contents: str) -> str:
     return str(batch_path)
 
 
-def open_checkpoint_file(tmp_path: Path, contents: str) -> TextIOWrapper:
+def write_checkpoint_file(tmp_path: Path, contents: str) -> str:
     checkpoint_path = tmp_path / 'checkpoint.sql'
     checkpoint_path.write_text(contents, encoding='utf-8')
-    return checkpoint_path.open('a', encoding='utf-8')
+    return str(checkpoint_path)
 
 
 def test_replay_checkpoint_file_returns_zero_without_replayable_batch(tmp_path: Path) -> None:
@@ -164,17 +164,26 @@ def test_replay_checkpoint_file_returns_zero_without_replayable_batch(tmp_path: 
 
     assert batch_mode.replay_checkpoint_file(batch_path, None, resume=True) == 0
 
-    with open_checkpoint_file(tmp_path, 'select 1;\n') as checkpoint:
-        with pytest.raises(batch_mode.CheckpointReplayError, match='incompatible with reading from the standard input'):
-            batch_mode.replay_checkpoint_file('-', checkpoint, resume=True)
+    checkpoint = write_checkpoint_file(tmp_path, 'select 1;\n')
+
+    with pytest.raises(batch_mode.CheckpointReplayError, match='incompatible with reading from the standard input'):
+        batch_mode.replay_checkpoint_file('-', checkpoint, resume=True)
+
+
+def test_replay_checkpoint_file_returns_zero_when_checkpoint_is_missing(tmp_path: Path) -> None:
+    batch_path = write_batch_file(tmp_path, 'select 1;\n')
+    checkpoint_path = str(tmp_path / 'missing-checkpoint.sql')
+
+    assert batch_mode.replay_checkpoint_file(batch_path, checkpoint_path, resume=True) == 0
 
 
 def test_replay_checkpoint_file_rejects_checkpoint_longer_than_batch(tmp_path: Path) -> None:
     batch_path = write_batch_file(tmp_path, 'select 1;\n')
 
-    with open_checkpoint_file(tmp_path, 'select 1;\nselect 2;\n') as checkpoint:
-        with pytest.raises(batch_mode.CheckpointReplayError, match='Checkpoint script longer than batch script.'):
-            batch_mode.replay_checkpoint_file(batch_path, checkpoint, resume=True)
+    checkpoint = write_checkpoint_file(tmp_path, 'select 1;\nselect 2;\n')
+
+    with pytest.raises(batch_mode.CheckpointReplayError, match='Checkpoint script longer than batch script.'):
+        batch_mode.replay_checkpoint_file(batch_path, checkpoint, resume=True)
 
 
 @pytest.mark.skipif(os.name == 'nt', reason='todo: unknown')
@@ -183,9 +192,10 @@ def test_replay_checkpoint_file_rejects_batch_read_error(monkeypatch, tmp_path: 
 
     monkeypatch.setattr(batch_mode, 'statements_from_filehandle', lambda _handle: (_ for _ in ()).throw(ValueError('bad batch')))
 
-    with open_checkpoint_file(tmp_path, 'select 1;\n') as checkpoint:
-        with pytest.raises(batch_mode.CheckpointReplayError, match=f'Error reading --batch file: {batch_path}: bad batch'):
-            batch_mode.replay_checkpoint_file(batch_path, checkpoint, resume=True)
+    checkpoint = write_checkpoint_file(tmp_path, 'select 1;\n')
+
+    with pytest.raises(batch_mode.CheckpointReplayError, match=f'Error reading --batch file: {batch_path}: bad batch'):
+        batch_mode.replay_checkpoint_file(batch_path, checkpoint, resume=True)
 
 
 @pytest.mark.skipif(os.name == 'nt', reason='todo: unknown')
@@ -203,9 +213,10 @@ def test_replay_checkpoint_file_rejects_batch_iteration_error(monkeypatch, tmp_p
 
     monkeypatch.setattr(batch_mode, 'statements_from_filehandle', fake_statements_from_filehandle)
 
-    with open_checkpoint_file(tmp_path, 'select 1;\n') as checkpoint:
-        with pytest.raises(batch_mode.CheckpointReplayError, match=f'Error reading --batch file: {batch_path}: bad batch iterator'):
-            batch_mode.replay_checkpoint_file(batch_path, checkpoint, resume=True)
+    checkpoint = write_checkpoint_file(tmp_path, 'select 1;\n')
+
+    with pytest.raises(batch_mode.CheckpointReplayError, match=f'Error reading --batch file: {batch_path}: bad batch iterator'):
+        batch_mode.replay_checkpoint_file(batch_path, checkpoint, resume=True)
 
 
 @pytest.mark.skipif(os.name == 'nt', reason='todo: unknown')
@@ -219,17 +230,19 @@ def test_replay_checkpoint_file_rejects_checkpoint_read_error(monkeypatch, tmp_p
 
     monkeypatch.setattr(batch_mode, 'statements_from_filehandle', fake_statements_from_filehandle)
 
-    with open_checkpoint_file(tmp_path, 'select 1;\n') as checkpoint:
-        with pytest.raises(batch_mode.CheckpointReplayError, match=f'Error reading --checkpoint file: {checkpoint.name}: bad checkpoint'):
-            batch_mode.replay_checkpoint_file(batch_path, checkpoint, resume=True)
+    checkpoint = write_checkpoint_file(tmp_path, 'select 1;\n')
+
+    with pytest.raises(batch_mode.CheckpointReplayError, match=f'Error reading --checkpoint file: {checkpoint}: bad checkpoint'):
+        batch_mode.replay_checkpoint_file(batch_path, checkpoint, resume=True)
 
 
 def test_replay_checkpoint_file_rejects_missing_files(tmp_path: Path) -> None:
     batch_path = str(tmp_path / 'missing.sql')
 
-    with open_checkpoint_file(tmp_path, 'select 1;\n') as checkpoint:
-        with pytest.raises(batch_mode.CheckpointReplayError, match='FileNotFoundError'):
-            batch_mode.replay_checkpoint_file(batch_path, checkpoint, resume=True)
+    checkpoint = write_checkpoint_file(tmp_path, 'select 1;\n')
+
+    with pytest.raises(batch_mode.CheckpointReplayError, match='FileNotFoundError'):
+        batch_mode.replay_checkpoint_file(batch_path, checkpoint, resume=True)
 
 
 def test_replay_checkpoint_file_rejects_open_errors(monkeypatch, tmp_path: Path) -> None:
@@ -237,9 +250,10 @@ def test_replay_checkpoint_file_rejects_open_errors(monkeypatch, tmp_path: Path)
 
     monkeypatch.setattr(batch_mode.click, 'open_file', lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError('open failed')))
 
-    with open_checkpoint_file(tmp_path, 'select 1;\n') as checkpoint:
-        with pytest.raises(batch_mode.CheckpointReplayError, match='OSError'):
-            batch_mode.replay_checkpoint_file(batch_path, checkpoint, resume=True)
+    checkpoint = write_checkpoint_file(tmp_path, 'select 1;\n')
+
+    with pytest.raises(batch_mode.CheckpointReplayError, match='OSError'):
+        batch_mode.replay_checkpoint_file(batch_path, checkpoint, resume=True)
 
 
 @pytest.mark.parametrize(
@@ -514,10 +528,10 @@ def test_main_batch_without_progress_bar_skips_checkpoint_prefix(monkeypatch, tm
     )
     monkeypatch.setattr(batch_mode, 'sys', make_fake_sys(stdin_tty=True))
 
-    with open_checkpoint_file(tmp_path, 'select 1;\nselect 2;\n') as checkpoint:
-        cli_args = DummyCliArgs(batch=batch_path, checkpoint=checkpoint, resume=True)
+    checkpoint = write_checkpoint_file(tmp_path, 'select 1;\nselect 2;\n')
 
-        result = main_batch_without_progress_bar(DummyMyCli(), cli_args)
+    cli_args = DummyCliArgs(batch=batch_path, checkpoint=checkpoint, resume=True)
+    result = main_batch_without_progress_bar(DummyMyCli(), cli_args)
 
     assert result == 0
     assert dispatch_calls == [('select 3;', 2)]
@@ -534,10 +548,10 @@ def test_main_batch_without_progress_bar_skips_only_matching_duplicate_prefix(mo
     )
     monkeypatch.setattr(batch_mode, 'sys', make_fake_sys(stdin_tty=True))
 
-    with open_checkpoint_file(tmp_path, 'select 1;\n') as checkpoint:
-        cli_args = DummyCliArgs(batch=batch_path, checkpoint=checkpoint, resume=True)
+    checkpoint = write_checkpoint_file(tmp_path, 'select 1;\n')
 
-        result = main_batch_without_progress_bar(DummyMyCli(), cli_args)
+    cli_args = DummyCliArgs(batch=batch_path, checkpoint=checkpoint, resume=True)
+    result = main_batch_without_progress_bar(DummyMyCli(), cli_args)
 
     assert result == 0
     assert dispatch_calls == [('select 1;', 1), ('select 2;', 2)]
@@ -554,10 +568,10 @@ def test_main_batch_without_progress_bar_fails_on_mismatched_checkpoint(monkeypa
     )
     monkeypatch.setattr(batch_mode, 'sys', make_fake_sys(stdin_tty=True))
 
-    with open_checkpoint_file(tmp_path, 'select 9;\n') as checkpoint:
-        cli_args = DummyCliArgs(batch=batch_path, checkpoint=checkpoint, resume=True)
+    checkpoint = write_checkpoint_file(tmp_path, 'select 9;\n')
 
-        result = main_batch_without_progress_bar(DummyMyCli(), cli_args)
+    cli_args = DummyCliArgs(batch=batch_path, checkpoint=checkpoint, resume=True)
+    result = main_batch_without_progress_bar(DummyMyCli(), cli_args)
 
     assert result == 1
     assert dispatch_calls == []
@@ -574,10 +588,10 @@ def test_main_batch_without_progress_bar_succeeds_when_checkpoint_skips_all(monk
     )
     monkeypatch.setattr(batch_mode, 'sys', make_fake_sys(stdin_tty=True))
 
-    with open_checkpoint_file(tmp_path, 'select 1;\nselect 2;\n') as checkpoint:
-        cli_args = DummyCliArgs(batch=batch_path, checkpoint=checkpoint, resume=True)
+    checkpoint = write_checkpoint_file(tmp_path, 'select 1;\nselect 2;\n')
 
-        result = main_batch_without_progress_bar(DummyMyCli(), cli_args)
+    cli_args = DummyCliArgs(batch=batch_path, checkpoint=checkpoint, resume=True)
+    result = main_batch_without_progress_bar(DummyMyCli(), cli_args)
 
     assert result == 0
     assert dispatch_calls == []
@@ -597,10 +611,10 @@ def test_main_batch_with_progress_bar_skips_checkpoint_prefix_and_counts_all_sta
     )
     monkeypatch.setattr(batch_mode, 'sys', make_fake_sys(stdin_tty=True))
 
-    with open_checkpoint_file(tmp_path, 'select 1;\n') as checkpoint:
-        cli_args = DummyCliArgs(batch=batch_path, checkpoint=checkpoint, resume=True)
+    checkpoint = write_checkpoint_file(tmp_path, 'select 1;\n')
 
-        result = main_batch_with_progress_bar(DummyMyCli(), cli_args)
+    cli_args = DummyCliArgs(batch=batch_path, checkpoint=checkpoint, resume=True)
+    result = main_batch_with_progress_bar(DummyMyCli(), cli_args)
 
     assert result == 0
     assert dispatch_calls == [('select 2;', 1), ('select 3;', 2)]
@@ -614,13 +628,13 @@ def test_main_batch_with_progress_bar_returns_error_when_checkpoint_replay_fails
     monkeypatch.setattr(batch_mode.click, 'secho', lambda message, err, fg: messages.append((message, err, fg)))
     monkeypatch.setattr(batch_mode, 'sys', make_fake_sys(stdin_tty=True))
 
-    with open_checkpoint_file(tmp_path, 'select 9;\n') as checkpoint:
-        cli_args = DummyCliArgs(batch=batch_path, checkpoint=checkpoint, resume=True)
+    checkpoint = write_checkpoint_file(tmp_path, 'select 9;\n')
 
-        result = main_batch_with_progress_bar(DummyMyCli(), cli_args)
+    cli_args = DummyCliArgs(batch=batch_path, checkpoint=checkpoint, resume=True)
+    result = main_batch_with_progress_bar(DummyMyCli(), cli_args)
 
     assert result == 1
-    assert messages == [(f'Error replaying --checkpoint file: {checkpoint.name}: Statement mismatch: select 9;.', True, 'red')]
+    assert messages == [(f'Error replaying --checkpoint file: {checkpoint}: Statement mismatch: select 9;.', True, 'red')]
 
 
 def test_main_batch_without_progress_bar_returns_error_when_iteration_fails(monkeypatch) -> None:

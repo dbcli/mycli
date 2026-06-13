@@ -206,9 +206,9 @@ class CliArgs:
         type=click.File(mode='a', encoding='utf-8'),
         help='Log every query and its results to a file.',
     )
-    checkpoint: TextIOWrapper | None = clickdc.option(
-        type=click.File(mode='a', encoding='utf-8'),
-        help='In batch or --execute mode, log successful queries to a file, and skipped with --resume.',
+    checkpoint: str | None = clickdc.option(
+        type=str,
+        help='In batch or --execute mode, log successful queries to a file, and skip them with --resume.',
     )
     resume: bool = clickdc.option(
         '--resume',
@@ -368,6 +368,17 @@ def preprocess_cli_args(
     if cli_args.resume and not cli_args.batch:
         click.secho('Error: --resume requires a --batch file.', err=True, fg='red')
         sys.exit(1)
+
+    if (
+        cli_args.checkpoint
+        and os.path.exists(cli_args.checkpoint)
+        and cli_args.batch
+        and cli_args.batch != '-'
+        and os.path.exists(cli_args.batch)
+    ):
+        if os.stat(cli_args.batch) == os.stat(cli_args.checkpoint):
+            click.secho('Error: --batch and --checkpoint must be different files.', err=True, fg='red')
+            sys.exit(1)
 
     if cli_args.verbose and cli_args.quiet:
         click.secho('Error: --verbose and --quiet are incompatible.', err=True, fg='red')

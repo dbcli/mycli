@@ -2711,6 +2711,23 @@ def test_preprocess_cli_args_validates_resume_requirements(
     assert expected in capsys.readouterr().err
 
 
+def test_preprocess_cli_args_rejects_same_batch_and_checkpoint_file(
+    capsys: pytest.CaptureFixture[str],
+    tmp_path: Path,
+) -> None:
+    batch_path = tmp_path / 'batch.sql'
+    batch_path.write_text('select 1;\n', encoding='utf-8')
+    cli_args = CliArgs()
+    cli_args.batch = str(batch_path)
+    cli_args.checkpoint = str(batch_path)
+
+    with pytest.raises(SystemExit) as excinfo:
+        preprocess_cli_args(cli_args, valid_connection_scheme)
+
+    assert excinfo.value.code == 1
+    assert 'Error: --batch and --checkpoint must be different files.' in capsys.readouterr().err
+
+
 def test_preprocess_cli_args_rejects_verbose_and_quiet(capsys: pytest.CaptureFixture[str]) -> None:
     cli_args = CliArgs()
     cli_args.verbose = 1

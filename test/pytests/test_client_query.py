@@ -202,11 +202,7 @@ def run_query_with_state(monkeypatch, tmp_path, *, warnings_enabled: bool = True
     cli.log_query = lambda query: state['logged_queries'].append(query)
     cli.log_output = lambda line: state['logged_output'].append(line)
     cli.format_sqlresult = format_sqlresult
-    checkpoint = state['checkpoint_path'].open('w+', encoding='utf-8')
-    try:
-        main.MyCli.run_query(cli, 'select 1;\n', checkpoint=checkpoint, new_line=False)
-    finally:
-        checkpoint.close()
+    main.MyCli.run_query(cli, 'select 1;\n', checkpoint=str(state['checkpoint_path']), new_line=False)
     state['cli'] = cli
     return state
 

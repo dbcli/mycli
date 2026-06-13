@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from io import TextIOWrapper
-from typing import TYPE_CHECKING, Any
+from typing import IO, TYPE_CHECKING, Any
 
 import click
 from pymysql.cursors import Cursor
@@ -26,6 +25,7 @@ class ClientQueryMixin:
         numeric_alignment: str | None
         binary_display: str | None
         query_history: list[Any]
+        checkpoint: IO | None
 
         def log_query(self, query: str) -> None: ...
         def log_output(self, output: str) -> None: ...
@@ -74,12 +74,14 @@ class ClientQueryMixin:
     def run_query(
         self,
         query: str,
-        checkpoint: TextIOWrapper | None = None,
+        checkpoint: str | None = None,
         new_line: bool = True,
     ) -> None:
         """Runs *query*."""
         assert self.sqlexecute is not None
         self.log_query(query)
+        if checkpoint and not self.checkpoint:
+            self.checkpoint = click.open_file(checkpoint, mode='a')
         results = self.sqlexecute.run(query)
         for result in results:
             self.main_formatter.query = query
@@ -111,9 +113,9 @@ class ClientQueryMixin:
                     )
                     for line in output:
                         click.echo(line, nl=new_line)
-        if checkpoint:
-            checkpoint.write(query.rstrip('\n') + '\n')
-            checkpoint.flush()
+        if self.checkpoint:
+            self.checkpoint.write(query.rstrip('\n') + '\n')
+            self.checkpoint.flush()
 
     def get_last_query(self) -> str | None:
         """Get the last query executed or None."""

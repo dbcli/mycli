@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from io import TextIOWrapper
 import os
 import sys
 import time
@@ -27,23 +26,24 @@ class CheckpointReplayError(Exception):
 
 def replay_checkpoint_file(
     batch_path: str,
-    checkpoint: TextIOWrapper | None,
+    checkpoint_path: str | None,
     resume: bool,
 ) -> int:
     if not resume:
         return 0
 
-    if checkpoint is None:
+    if checkpoint_path is None:
+        return 0
+
+    if not os.path.exists(checkpoint_path):
         return 0
 
     if batch_path == '-':
         raise CheckpointReplayError('--resume is incompatible with reading from the standard input.')
 
-    checkpoint_name = checkpoint.name
-    checkpoint.flush()
     completed_count = 0
     try:
-        with click.open_file(batch_path) as batch_h, click.open_file(checkpoint_name, mode='r', encoding='utf-8') as checkpoint_h:
+        with click.open_file(batch_path) as batch_h, click.open_file(checkpoint_path, mode='r', encoding='utf-8') as checkpoint_h:
             try:
                 batch_gen = statements_from_filehandle(batch_h)
             except ValueError as e:
@@ -59,7 +59,7 @@ def replay_checkpoint_file(
                     raise CheckpointReplayError(f'Statement mismatch: {checkpoint_statement}.')
                 completed_count += 1
     except ValueError as e:
-        raise CheckpointReplayError(f'Error reading --checkpoint file: {checkpoint.name}: {e}') from None
+        raise CheckpointReplayError(f'Error reading --checkpoint file: {checkpoint_path}: {e}') from None
     except FileNotFoundError as e:
         raise CheckpointReplayError(f'FileNotFoundError: {e}') from None
     except OSError as e:
@@ -133,7 +133,7 @@ def main_batch_with_progress_bar(mycli: 'MyCli', cli_args: 'CliArgs') -> int:
         click.secho(f'Error reading --batch file: {cli_args.batch}: {e}', err=True, fg='red')
         return 1
     except CheckpointReplayError as e:
-        name = cli_args.checkpoint.name if cli_args.checkpoint else 'None'
+        name = cli_args.checkpoint if cli_args.checkpoint else 'None'
         click.secho(f'Error replaying --checkpoint file: {name}: {e}', err=True, fg='red')
         return 1
     try:
@@ -175,7 +175,7 @@ def main_batch_without_progress_bar(mycli: 'MyCli', cli_args: 'CliArgs') -> int:
         click.secho(f'Failed to open --batch file: {cli_args.batch}', err=True, fg='red')
         return 1
     except CheckpointReplayError as e:
-        name = cli_args.checkpoint.name if cli_args.checkpoint else 'None'
+        name = cli_args.checkpoint if cli_args.checkpoint else 'None'
         click.secho(f'Error replaying --checkpoint file: {name}: {e}', err=True, fg='red')
         return 1
     try:
