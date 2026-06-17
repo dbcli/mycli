@@ -4,6 +4,7 @@ Upcoming (TBD)
 Bug Fixes
 ---------
 * Ensure that `--batch` and `--checkpoint` files are distinct.
+* Fix crash from completions after `USE` starts a background refresh (#1933)
 
 
 Internal
