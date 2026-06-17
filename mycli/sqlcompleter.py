@@ -1754,8 +1754,16 @@ class SQLCompleter(Completer):
         # if scoped tables is empty, this is just after a SELECT so we
         # show all columns for all tables in the schema.
         if len(scoped_tbls) == 0 and self.dbname:
-            for table in meta["tables"][self.dbname]:
-                columns.extend(meta["tables"][self.dbname][table])
+            # ``dbname`` can point at a schema whose metadata has not been
+            # loaded yet: a ``USE`` switch updates the live completer's
+            # ``dbname`` immediately while the matching tables are still being
+            # fetched on a background thread. Default to an empty mapping in
+            # that window instead of raising ``KeyError``. Grab the per-schema
+            # dict once so a concurrent refresh swapping it out cannot break
+            # the iteration mid-loop.
+            schema_tables = meta["tables"].get(self.dbname, {})
+            for table in schema_tables:
+                columns.extend(schema_tables[table])
             return columns or ['*']
 
         # query includes tables, so use those to populate columns
