@@ -1,10 +1,10 @@
-Upcoming (TBD)
+1.74.1 (2026/06/18)
 ==============
 
 Bug Fixes
 ---------
 * Ensure that `--batch` and `--checkpoint` files are distinct.
-* Fix crash from completions after `USE` starts a background refresh (#1933)
+* Fix crash from completions after `USE` starts a background refresh (#1933).
 
 
 Internal
