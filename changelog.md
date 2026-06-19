@@ -5,6 +5,7 @@ Internal
 --------
 * Add test coverage for `client_commands.py`.
 * Add test coverage for `cli_runner.py`.
+* Remove Codex PR Review action, which stopped working.
 
 
 1.74.1 (2026/06/18)
