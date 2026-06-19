@@ -4,6 +4,7 @@ Upcoming (TBD)
 Internal
 --------
 * Add test coverage for `client_commands.py`.
+* Add test coverage for `client_connection.py`.
 * Add test coverage for `cli_runner.py`.
 * Remove Codex PR Review action, which stopped working.
 
