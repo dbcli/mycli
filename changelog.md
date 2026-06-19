@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Internal
+--------
+* Add test coverage for `client_commands.py`.
+
+
 1.74.1 (2026/06/18)
 ==============
 
