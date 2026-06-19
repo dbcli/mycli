@@ -10,6 +10,7 @@ import prompt_toolkit
 from prompt_toolkit.shortcuts import ProgressBar
 from prompt_toolkit.shortcuts.progress_bar import formatters as progress_bar_formatters
 import pymysql
+from yaspin import yaspin
 
 from mycli.packages.batch_utils import statements_from_filehandle
 from mycli.packages.interactive_utils import confirm_destructive_query
@@ -28,6 +29,7 @@ def replay_checkpoint_file(
     batch_path: str,
     checkpoint_path: str | None,
     resume: bool,
+    progress: bool = False,
 ) -> int:
     if not resume:
         return 0
@@ -42,27 +44,46 @@ def replay_checkpoint_file(
         raise CheckpointReplayError('--resume is incompatible with reading from the standard input.')
 
     completed_count = 0
+    if progress:
+        spinner = yaspin(text='replaying checkpoint', side='right', stream=sys.stderr)
+        spinner.start()
     try:
         with click.open_file(batch_path) as batch_h, click.open_file(checkpoint_path, mode='r', encoding='utf-8') as checkpoint_h:
             try:
                 batch_gen = statements_from_filehandle(batch_h)
             except ValueError as e:
+                if progress:
+                    spinner.fail('✘')
                 raise CheckpointReplayError(f'Error reading --batch file: {batch_path}: {e}') from None
             for checkpoint_statement, _checkpoint_counter in statements_from_filehandle(checkpoint_h):
                 try:
                     batch_statement, _batch_counter = next(batch_gen)
                 except StopIteration:
+                    if progress:
+                        spinner.fail('✘')
                     raise CheckpointReplayError('Checkpoint script longer than batch script.') from None
                 except ValueError as e:
+                    if progress:
+                        spinner.fail('✘')
                     raise CheckpointReplayError(f'Error reading --batch file: {batch_path}: {e}') from None
                 if checkpoint_statement != batch_statement:
+                    if progress:
+                        spinner.fail('✘')
                     raise CheckpointReplayError(f'Statement mismatch: {checkpoint_statement}.')
                 completed_count += 1
+            if progress:
+                spinner.ok('✔')
     except ValueError as e:
+        if progress:
+            spinner.fail('✘')
         raise CheckpointReplayError(f'Error reading --checkpoint file: {checkpoint_path}: {e}') from None
     except FileNotFoundError as e:
+        if progress:
+            spinner.fail('✘')
         raise CheckpointReplayError(f'FileNotFoundError: {e}') from None
     except OSError as e:
+        if progress:
+            spinner.fail('✘')
         raise CheckpointReplayError(f'OSError: {e}') from None
 
     return completed_count
@@ -119,10 +140,12 @@ def main_batch_with_progress_bar(mycli: 'MyCli', cli_args: 'CliArgs') -> int:
         click.secho('--progress is only compatible with a plain file.', err=True, fg='red')
         return 1
     try:
-        completed_statement_count = replay_checkpoint_file(cli_args.batch, cli_args.checkpoint, cli_args.resume)
+        completed_statement_count = replay_checkpoint_file(cli_args.batch, cli_args.checkpoint, cli_args.resume, progress=True)
         batch_count_h = click.open_file(cli_args.batch)
-        for _statement, _counter in statements_from_filehandle(batch_count_h):
-            goal_statements += 1
+        with yaspin(text='validating batch    ', side='right', stream=sys.stderr) as spinner:
+            for _statement, _counter in statements_from_filehandle(batch_count_h):
+                goal_statements += 1
+            spinner.ok('✔')
         batch_count_h.close()
         batch_h = click.open_file(cli_args.batch)
         batch_gen = statements_from_filehandle(batch_h)
@@ -140,7 +163,7 @@ def main_batch_with_progress_bar(mycli: 'MyCli', cli_args: 'CliArgs') -> int:
         if goal_statements:
             pb_style = prompt_toolkit.styles.Style.from_dict({'bar-a': 'reverse'})
             custom_formatters = [
-                progress_bar_formatters.Bar(start='[', end=']', sym_a=' ', sym_b=' ', sym_c=' '),
+                progress_bar_formatters.Bar(start='running queries      [', end=']', sym_a=' ', sym_b=' ', sym_c=' '),
                 progress_bar_formatters.Text(' '),
                 progress_bar_formatters.Progress(),
                 progress_bar_formatters.Text(' '),

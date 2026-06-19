@@ -2,8 +2,9 @@ Upcoming (TBD)
 ==============
 
 Features
----------
+--------
 * Silently accept forward slash to introduce special commands.
+* `--progress` spinners for setup steps in `--batch` mode.
 
 
 Internal
