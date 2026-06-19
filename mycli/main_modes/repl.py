@@ -108,7 +108,8 @@ def complete_while_typing_filter() -> bool:
     last_word = text[-MIN_COMPLETION_TRIGGER:]
     if len(last_word) == text_len:
         return text_len >= MIN_COMPLETION_TRIGGER
-    if text[:6].lower() in ['source', r'\.']:
+    # does \. make sense with text[:6] ?
+    if text[:6].lower() in ['source', r'\.', '/.']:
         # Different word characters for paths; see comment below.
         # In fact, it might be nice if paths had a different threshold.
         return not bool(re.search(r'[\s!-,:-@\[-^\{\}-]', last_word))

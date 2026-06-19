@@ -174,6 +174,7 @@ def test_editor_command(monkeypatch):
     assert mycli.packages.special.editor_command(r"hello\edit")
     assert mycli.packages.special.editor_command(r"\e hello")
     assert mycli.packages.special.editor_command(r"\edit hello")
+    assert mycli.packages.special.editor_command('/edit')
 
     assert not mycli.packages.special.editor_command(r"HELP \e")
     assert not mycli.packages.special.editor_command(r"help \edit\g")
@@ -182,6 +183,7 @@ def test_editor_command(monkeypatch):
     assert not mycli.packages.special.editor_command(r"\edithello")
 
     assert mycli.packages.special.get_filename(r"\e filename") == "filename"
+    assert mycli.packages.special.get_editor_query('/edit') == ''
 
     if os.name != "nt":
         assert mycli.packages.special.open_external_editor(sql=r"select 1") == ('select 1', None)

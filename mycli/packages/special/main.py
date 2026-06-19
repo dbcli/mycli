@@ -106,7 +106,12 @@ def register_special_command(
     case_sensitive: bool = False,
     aliases: list[SpecialCommandAlias] | None = None,
 ) -> None:
+    if command.startswith('\\'):
+        forwardslash_command = '/' + command.removeprefix('\\')
+    else:
+        forwardslash_command = '/' + command
     cmd = command.lower() if not case_sensitive else command
+    fcmd = forwardslash_command.lower() if not case_sensitive else forwardslash_command
     COMMANDS[cmd] = SpecialCommand(
         handler,
         command,
@@ -117,18 +122,47 @@ def register_special_command(
         case_sensitive=case_sensitive,
         aliases=aliases,
     )
+    COMMANDS[fcmd] = SpecialCommand(
+        handler,
+        command,
+        usage,
+        description,
+        arg_type=arg_type,
+        hidden=True,
+        case_sensitive=case_sensitive,
+        aliases=aliases,
+    )
     if case_sensitive:
         CASE_SENSITIVE_COMMANDS.add(command)
+        CASE_SENSITIVE_COMMANDS.add(forwardslash_command)
     else:
         CASE_INSENSITIVE_COMMANDS.add(command.lower())
+        CASE_INSENSITIVE_COMMANDS.add(forwardslash_command.lower())
     aliases = [] if aliases is None else aliases
     for alias in aliases:
+        if alias.command.startswith('\\'):
+            forwardslash_alias_command = '/' + alias.command.removeprefix('\\')
+        else:
+            forwardslash_alias_command = '/' + alias.command
         cmd = alias.command.lower() if not alias.case_sensitive else alias.command
+        fcmd = forwardslash_alias_command.lower() if not alias.case_sensitive else forwardslash_alias_command
         if alias.case_sensitive:
             CASE_SENSITIVE_COMMANDS.add(alias.command)
+            CASE_SENSITIVE_COMMANDS.add(forwardslash_alias_command)
         else:
             CASE_INSENSITIVE_COMMANDS.add(alias.command.lower())
+            CASE_INSENSITIVE_COMMANDS.add(forwardslash_alias_command.lower())
         COMMANDS[cmd] = SpecialCommand(
+            handler,
+            command,
+            usage,
+            description,
+            arg_type=arg_type,
+            case_sensitive=alias.case_sensitive,
+            hidden=True,
+            aliases=None,
+        )
+        COMMANDS[fcmd] = SpecialCommand(
             handler,
             command,
             usage,
@@ -158,7 +192,7 @@ def execute(cur: Cursor, sql: str) -> list[SQLResult]:
 
     # "help <SQL KEYWORD> is a special case. We want built-in help, not
     # mycli help here.
-    if command.lower() == "help" and arg:
+    if command.lower().startswith(("help", "/help", "\\?", "/?", "?")) and arg:
         return show_keyword_help(cur=cur, arg=arg)
 
     if special_cmd.arg_type == ArgType.NO_QUERY:

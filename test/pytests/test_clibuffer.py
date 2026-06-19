@@ -61,7 +61,8 @@ def test_multiline_exception_detects_commands_terminators_and_plain_sql(
     expected: bool,
 ) -> None:
     monkeypatch.setattr(clibuffer.iocommands, 'get_current_delimiter', lambda: '//')
-    monkeypatch.setattr(clibuffer, 'SPECIAL_COMMANDS', {'help': object(), 'exit': object()})
+    monkeypatch.setattr(clibuffer, 'CASE_SENSITIVE_COMMANDS', {'Camel'})
+    monkeypatch.setattr(clibuffer, 'CASE_INSENSITIVE_COMMANDS', {'help', 'exit'})
 
     assert clibuffer._multiline_exception(text) is expected
 
@@ -85,7 +86,8 @@ def test_multiline_exception_recognizes_non_backslashed_special_commands_with_ge
     text: str,
 ) -> None:
     monkeypatch.setattr(clibuffer.iocommands, 'get_current_delimiter', lambda: ';')
-    monkeypatch.setattr(clibuffer, 'SPECIAL_COMMANDS', {'help': object(), 'exit': object()})
+    monkeypatch.setattr(clibuffer, 'CASE_SENSITIVE_COMMANDS', {'Camel'})
+    monkeypatch.setattr(clibuffer, 'CASE_INSENSITIVE_COMMANDS', {'help', 'exit'})
 
     assert clibuffer._multiline_exception(text) is True
 
@@ -107,7 +109,8 @@ def test_cli_is_multiline_uses_buffer_text_when_multiline_mode_is_enabled(
 
     monkeypatch.setattr(clibuffer, 'get_app', lambda: app)
     monkeypatch.setattr(clibuffer.iocommands, 'get_current_delimiter', lambda: ';')
-    monkeypatch.setattr(clibuffer, 'SPECIAL_COMMANDS', {'help': object()})
+    monkeypatch.setattr(clibuffer, 'CASE_SENSITIVE_COMMANDS', {'Camel'})
+    monkeypatch.setattr(clibuffer, 'CASE_INSENSITIVE_COMMANDS', {'help'})
 
     multiline_filter = clibuffer.cli_is_multiline(mycli)
 

@@ -120,7 +120,7 @@ def test_register_special_command_tracks_case_insensitive_commands(restore_comma
     )
 
     assert special_main.CASE_SENSITIVE_COMMANDS == set()
-    assert special_main.CASE_INSENSITIVE_COMMANDS == {'demo', '\\d'}
+    assert special_main.CASE_INSENSITIVE_COMMANDS == {'demo', '/demo', '\\d', '/d'}
 
 
 def test_special_command_decorator_registers_case_sensitive_command(restore_commands: None) -> None:
@@ -134,8 +134,10 @@ def test_special_command_decorator_registers_case_sensitive_command(restore_comm
 
     assert special_main.COMMANDS['Camel'].handler is handler
     assert 'Camel' in special_main.CASE_SENSITIVE_COMMANDS
+    assert '/Camel' in special_main.CASE_SENSITIVE_COMMANDS
     assert special_main.CASE_INSENSITIVE_COMMANDS == set()
     assert 'camel' not in special_main.COMMANDS
+    assert '/camel' not in special_main.COMMANDS
 
 
 def test_execute_raises_when_command_is_missing() -> None:
