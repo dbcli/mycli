@@ -10,7 +10,13 @@ A command line client for MySQL with auto-completion and syntax highlighting.
 ├── doc/                                  # documentation
 ├── mycli/                                # application source
 ├── mycli/__init__.py                     # provides version number
+├── mycli/app_state.py                    # `AppStateMixin` application state mixin and related functions
+├── mycli/cli_runner.py                   # connects and dispatches main modes based on CLI arguments
 ├── mycli/clibuffer.py                    # prompt_toolkit buffer utilities
+├── mycli/client_commands.py              # special commands which must be registered separately
+├── mycli/client_connection.py            # `ClientConnectionMixin` mixin for establishing the database connection
+├── mycli/client_query.py                 # `ClientQueryMixin` mixin for running queries and refreshing completions
+├── mycli/client.py                       # the `MyCli` "god class"
 ├── mycli/clistyle.py                     # prompt_toolkit style utilities
 ├── mycli/clitoolbar.py                   # prompt_toolkit toolbar utilities
 ├── mycli/compat.py                       # OS compatibility helpers
@@ -19,27 +25,28 @@ A command line client for MySQL with auto-completion and syntax highlighting.
 ├── mycli/constants.py                    # shared constants
 ├── mycli/key_bindings.py                 # prompt_toolkit key binding utilities
 ├── mycli/lexer.py                        # extends `MySqlLexer` from Pygments
-├── mycli/magic.py                        # Jupyter notebook magics
-├── mycli/main.py                         # CLI main, configuration processing, and REPL
+├── mycli/main.py                         # processes CLI arguments
 ├── mycli/main_modes/                     # main execution paths
 ├── mycli/main_modes/batch.py             # batch mode execution path
+├── mycli/main_modes/checkup.py           # implementation of `--checkup` mode
 ├── mycli/myclirc                         # project-level configuration file
+├── mycli/output.py                       # `OutputMixin` mixin for feedback and output of query results
 ├── mycli/packages/                       # application packages
 ├── mycli/packages/batch_utils.py         # utilities for `--batch` mode
-├── mycli/packages/checkup.py             # implementation of `--checkup` mode
 ├── mycli/packages/cli_utils.py           # utilities for parsing CLI arguments
 ├── mycli/packages/completion_engine.py   # implementation of completion suggestions
 ├── mycli/packages/filepaths.py           # utilities for files, including completion suggestions
 ├── mycli/packages/hybrid_redirection.py  # implementation of shell-style redirects
 ├── mycli/packages/interactive_utils.py   # utilities for confirming on destructive statements
+├── mycli/packages/key_binding_utils.py   # handlers for key bindings and related special commands
 ├── mycli/packages/paramiko_stub/         # stub in case the Paramiko library is not installed
 ├── mycli/packages/sql_utils.py           # utilities for parsing SQL statements
 ├── mycli/packages/ptoolkit/              # extends prompt_toolkit
-├── mycli/packages/shortcuts.py           # utilities for keyboard shortcuts
 ├── mycli/packages/special/               # implementation of mycli special commands
 ├── mycli/packages/sqlresult.py           # the `SQLResult` dataclass for holding responses
 ├── mycli/packages/string_utils.py        # generic string utilities
 ├── mycli/packages/tabular_output/        # extends cli_helper with additional output formats
+├── mycli/schema_prefetcher.py            # background prefetcher for multi-schema auto-completion
 ├── mycli/sqlcompleter.py                 # offers SQL completions
 ├── mycli/sqlexecute.py                   # runs SQL queries
 ├── test/conftest.py                      # pytest configuration
@@ -47,7 +54,8 @@ A command line client for MySQL with auto-completion and syntax highlighting.
 ├── test/myclirc                          # mycli configuration used for tests
 ├── test/mylogin.cnf                      # `mylogin.cnf` example used for tests
 ├── test/pytests/                         # pytest tests
-└── test/utils.py                         # shared utilities for tests
+├── test/utils.py                         # shared utilities for tests
+└── types.py                              # shared types
 
 ## Development
 
