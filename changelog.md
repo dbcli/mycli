@@ -3,6 +3,7 @@ Upcoming (TBD)
 
 Features
 ---------
+* Optionally expand whole `${VAR}` values in DSN aliases.
 * Silently accept forward slash to introduce special commands.
 
 
