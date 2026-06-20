@@ -68,6 +68,23 @@ class DummyFile:
         self.closed = True
 
 
+class DummyStream:
+    def __init__(self, tty: bool = False) -> None:
+        self.closed = False
+        self.tty = tty
+        self.writes: list[str] = []
+
+    def isatty(self) -> bool:
+        return self.tty
+
+    def write(self, value: str) -> int:
+        self.writes.append(value)
+        return len(value)
+
+    def flush(self) -> None:
+        return None
+
+
 class DummyProgressBar:
     calls: list[list[int]] = []
 
@@ -84,6 +101,32 @@ class DummyProgressBar:
         values = list(iterable)
         DummyProgressBar.calls.append(values)
         return values
+
+
+class DummySpinner:
+    instances: list['DummySpinner'] = []
+
+    def __init__(self, *args, **kwargs) -> None:
+        self.fail_calls: list[str] = []
+        self.ok_calls: list[str] = []
+        self.started = False
+        DummySpinner.instances.append(self)
+
+    def __enter__(self) -> 'DummySpinner':
+        self.start()
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> Literal[False]:
+        return False
+
+    def start(self) -> None:
+        self.started = True
+
+    def fail(self, text: str) -> None:
+        self.fail_calls.append(text)
+
+    def ok(self, text: str) -> None:
+        self.ok_calls.append(text)
 
 
 def dispatch_batch_statements(
@@ -108,7 +151,7 @@ def main_batch_from_stdin(mycli: DummyMyCli, cli_args: DummyCliArgs) -> int:
 
 
 def make_fake_sys(stdin_tty: bool, stderr_tty: bool | None = None) -> SimpleNamespace:
-    stderr = SimpleNamespace(isatty=lambda: stderr_tty) if stderr_tty is not None else object()
+    stderr = DummyStream(bool(stderr_tty))
     return SimpleNamespace(
         stdin=SimpleNamespace(isatty=lambda: stdin_tty),
         stderr=stderr,
@@ -186,6 +229,21 @@ def test_replay_checkpoint_file_rejects_checkpoint_longer_than_batch(tmp_path: P
         batch_mode.replay_checkpoint_file(batch_path, checkpoint, resume=True)
 
 
+def test_replay_checkpoint_file_marks_progress_failed_when_checkpoint_is_longer(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    batch_path = write_batch_file(tmp_path, 'select 1;\n')
+    checkpoint = write_checkpoint_file(tmp_path, 'select 1;\nselect 2;\n')
+    DummySpinner.instances.clear()
+    monkeypatch.setattr(batch_mode, 'yaspin', DummySpinner)
+
+    with pytest.raises(batch_mode.CheckpointReplayError, match='Checkpoint script longer than batch script.'):
+        batch_mode.replay_checkpoint_file(batch_path, checkpoint, resume=True, progress=True)
+
+    assert DummySpinner.instances[0].fail_calls == ['✘']
+
+
 @pytest.mark.skipif(os.name == 'nt', reason='todo: unknown')
 def test_replay_checkpoint_file_rejects_batch_read_error(monkeypatch, tmp_path: Path) -> None:
     batch_path = write_batch_file(tmp_path, 'select 1;\n')
@@ -196,6 +254,20 @@ def test_replay_checkpoint_file_rejects_batch_read_error(monkeypatch, tmp_path: 
 
     with pytest.raises(batch_mode.CheckpointReplayError, match=f'Error reading --batch file: {batch_path}: bad batch'):
         batch_mode.replay_checkpoint_file(batch_path, checkpoint, resume=True)
+
+
+@pytest.mark.skipif(os.name == 'nt', reason='todo: unknown')
+def test_replay_checkpoint_file_marks_progress_failed_for_batch_read_error(monkeypatch, tmp_path: Path) -> None:
+    batch_path = write_batch_file(tmp_path, 'select 1;\n')
+    checkpoint = write_checkpoint_file(tmp_path, 'select 1;\n')
+    DummySpinner.instances.clear()
+    monkeypatch.setattr(batch_mode, 'statements_from_filehandle', lambda _handle: (_ for _ in ()).throw(ValueError('bad batch')))
+    monkeypatch.setattr(batch_mode, 'yaspin', DummySpinner)
+
+    with pytest.raises(batch_mode.CheckpointReplayError, match=f'Error reading --batch file: {batch_path}: bad batch'):
+        batch_mode.replay_checkpoint_file(batch_path, checkpoint, resume=True, progress=True)
+
+    assert DummySpinner.instances[0].fail_calls == ['✘']
 
 
 @pytest.mark.skipif(os.name == 'nt', reason='todo: unknown')
@@ -220,6 +292,31 @@ def test_replay_checkpoint_file_rejects_batch_iteration_error(monkeypatch, tmp_p
 
 
 @pytest.mark.skipif(os.name == 'nt', reason='todo: unknown')
+def test_replay_checkpoint_file_marks_progress_failed_for_batch_iteration_error(monkeypatch, tmp_path: Path) -> None:
+    batch_path = write_batch_file(tmp_path, 'select 1;\n')
+
+    def raise_on_next():
+        raise ValueError('bad batch iterator')
+        yield
+
+    def fake_statements_from_filehandle(handle):
+        if handle.name == batch_path:
+            return raise_on_next()
+        return iter([('select 1;', 0)])
+
+    DummySpinner.instances.clear()
+    monkeypatch.setattr(batch_mode, 'statements_from_filehandle', fake_statements_from_filehandle)
+    monkeypatch.setattr(batch_mode, 'yaspin', DummySpinner)
+
+    checkpoint = write_checkpoint_file(tmp_path, 'select 1;\n')
+
+    with pytest.raises(batch_mode.CheckpointReplayError, match=f'Error reading --batch file: {batch_path}: bad batch iterator'):
+        batch_mode.replay_checkpoint_file(batch_path, checkpoint, resume=True, progress=True)
+
+    assert DummySpinner.instances[0].fail_calls == ['✘']
+
+
+@pytest.mark.skipif(os.name == 'nt', reason='todo: unknown')
 def test_replay_checkpoint_file_rejects_checkpoint_read_error(monkeypatch, tmp_path: Path) -> None:
     batch_path = write_batch_file(tmp_path, 'select 1;\n')
 
@@ -236,6 +333,27 @@ def test_replay_checkpoint_file_rejects_checkpoint_read_error(monkeypatch, tmp_p
         batch_mode.replay_checkpoint_file(batch_path, checkpoint, resume=True)
 
 
+@pytest.mark.skipif(os.name == 'nt', reason='todo: unknown')
+def test_replay_checkpoint_file_marks_progress_failed_for_checkpoint_read_error(monkeypatch, tmp_path: Path) -> None:
+    batch_path = write_batch_file(tmp_path, 'select 1;\n')
+
+    def fake_statements_from_filehandle(handle):
+        if handle.name == batch_path:
+            return iter([('select 1;', 0)])
+        return (_ for _ in ()).throw(ValueError('bad checkpoint'))
+
+    DummySpinner.instances.clear()
+    monkeypatch.setattr(batch_mode, 'statements_from_filehandle', fake_statements_from_filehandle)
+    monkeypatch.setattr(batch_mode, 'yaspin', DummySpinner)
+
+    checkpoint = write_checkpoint_file(tmp_path, 'select 1;\n')
+
+    with pytest.raises(batch_mode.CheckpointReplayError, match=f'Error reading --checkpoint file: {checkpoint}: bad checkpoint'):
+        batch_mode.replay_checkpoint_file(batch_path, checkpoint, resume=True, progress=True)
+
+    assert DummySpinner.instances[0].fail_calls == ['✘']
+
+
 def test_replay_checkpoint_file_rejects_missing_files(tmp_path: Path) -> None:
     batch_path = str(tmp_path / 'missing.sql')
 
@@ -243,6 +361,18 @@ def test_replay_checkpoint_file_rejects_missing_files(tmp_path: Path) -> None:
 
     with pytest.raises(batch_mode.CheckpointReplayError, match='FileNotFoundError'):
         batch_mode.replay_checkpoint_file(batch_path, checkpoint, resume=True)
+
+
+def test_replay_checkpoint_file_marks_progress_failed_for_missing_files(monkeypatch, tmp_path: Path) -> None:
+    batch_path = str(tmp_path / 'missing.sql')
+    checkpoint = write_checkpoint_file(tmp_path, 'select 1;\n')
+    DummySpinner.instances.clear()
+    monkeypatch.setattr(batch_mode, 'yaspin', DummySpinner)
+
+    with pytest.raises(batch_mode.CheckpointReplayError, match='FileNotFoundError'):
+        batch_mode.replay_checkpoint_file(batch_path, checkpoint, resume=True, progress=True)
+
+    assert DummySpinner.instances[0].fail_calls == ['✘']
 
 
 def test_replay_checkpoint_file_rejects_open_errors(monkeypatch, tmp_path: Path) -> None:
@@ -254,6 +384,19 @@ def test_replay_checkpoint_file_rejects_open_errors(monkeypatch, tmp_path: Path)
 
     with pytest.raises(batch_mode.CheckpointReplayError, match='OSError'):
         batch_mode.replay_checkpoint_file(batch_path, checkpoint, resume=True)
+
+
+def test_replay_checkpoint_file_marks_progress_failed_for_open_errors(monkeypatch, tmp_path: Path) -> None:
+    batch_path = write_batch_file(tmp_path, 'select 1;\n')
+    checkpoint = write_checkpoint_file(tmp_path, 'select 1;\n')
+    DummySpinner.instances.clear()
+    monkeypatch.setattr(batch_mode.click, 'open_file', lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError('open failed')))
+    monkeypatch.setattr(batch_mode, 'yaspin', DummySpinner)
+
+    with pytest.raises(batch_mode.CheckpointReplayError, match='OSError'):
+        batch_mode.replay_checkpoint_file(batch_path, checkpoint, resume=True, progress=True)
+
+    assert DummySpinner.instances[0].fail_calls == ['✘']
 
 
 @pytest.mark.parametrize(
