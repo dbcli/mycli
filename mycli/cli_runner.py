@@ -178,16 +178,6 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
         if not cli_args.socket:
             cli_args.socket = os.environ['MYSQL_UNIX_PORT']
 
-    if 'DSN' in os.environ:
-        # deprecated 2026-03
-        click.secho(
-            "The DSN environment variable is deprecated in favor of MYSQL_DSN.  Support for DSN will be removed in a future release.",
-            err=True,
-            fg="red",
-        )
-        if not cli_args.dsn:
-            cli_args.dsn = os.environ['DSN']
-
     # Choose which ever one has a valid value.
     database = cli_args.dbname or cli_args.database
 
