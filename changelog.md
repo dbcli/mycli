@@ -7,6 +7,7 @@ Breaking Changes
 * Remove support for deprecated environment variable `$DSN`.
 * Remove support for deprecated environment variable `$MYSQL_UNIX_PORT`.
 * Remove support for `--ssl/--no-ssl` CLI arguments in favor of `--ssl-mode`.
+* Remove support for deprecated SSH jump functionality.
 
 
 Internal

@@ -35,9 +35,6 @@ USER = os.getenv("PYTEST_USER", DEFAULT_USER)
 HOST = os.getenv("PYTEST_HOST", DEFAULT_HOST)
 PORT = int(os.getenv("PYTEST_PORT", DEFAULT_PORT))
 CHARACTER_SET = os.getenv("PYTEST_CHARSET", DEFAULT_CHARSET)
-SSH_USER = os.getenv("PYTEST_SSH_USER", None)
-SSH_HOST = os.getenv("PYTEST_SSH_HOST", None)
-SSH_PORT = int(os.getenv("PYTEST_SSH_PORT", "22"))
 TEMPFILE_PREFIX = 'mycli_test_suite_'
 
 PYGMENTS_VERSION = Version(pygments.__version__)

@@ -224,11 +224,6 @@ class SchemaPrefetcher:
             sqlexecute.character_set,
             sqlexecute.local_infile,
             sqlexecute.ssl,
-            sqlexecute.ssh_user,
-            sqlexecute.ssh_host,
-            sqlexecute.ssh_port,
-            sqlexecute.ssh_password,
-            sqlexecute.ssh_key_filename,
         )
 
     def _invalidate_app(self) -> None:

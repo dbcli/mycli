@@ -19,12 +19,6 @@ from mycli.packages.special import iocommands
 from mycli.packages.special.main import CommandNotFound, execute
 from mycli.packages.sqlresult import SQLResult
 
-try:
-    import paramiko  # noqa: F401
-    import sshtunnel
-except ImportError:
-    pass
-
 _logger = logging.getLogger(__name__)
 
 FIELD_TYPES = decoders.copy()
@@ -171,11 +165,6 @@ class SQLExecute:
         character_set: str | None,
         local_infile: bool | None,
         ssl: dict[str, Any] | None,
-        ssh_user: str | None,
-        ssh_host: str | None,
-        ssh_port: int | None,
-        ssh_password: str | None,
-        ssh_key_filename: str | None,
         init_command: str | None = None,
         unbuffered: bool | None = None,
     ) -> None:
@@ -190,11 +179,6 @@ class SQLExecute:
         self.ssl = ssl
         self.server_info: ServerInfo | None = None
         self.connection_id: int | None = None
-        self.ssh_user = ssh_user
-        self.ssh_host = ssh_host
-        self.ssh_port = ssh_port
-        self.ssh_password = ssh_password
-        self.ssh_key_filename = ssh_key_filename
         self.init_command = init_command
         self.unbuffered = unbuffered
         self.conn: Connection | None = None
@@ -211,11 +195,6 @@ class SQLExecute:
         character_set: str | None = None,
         local_infile: bool | None = None,
         ssl: dict[str, Any] | None = None,
-        ssh_host: str | None = None,
-        ssh_port: int | None = None,
-        ssh_user: str | None = None,
-        ssh_password: str | None = None,
-        ssh_key_filename: str | None = None,
         init_command: str | None = None,
         unbuffered: bool | None = None,
     ):
@@ -228,11 +207,6 @@ class SQLExecute:
         character_set = character_set if character_set is not None else self.character_set
         local_infile = local_infile if local_infile is not None else self.local_infile
         ssl = ssl if ssl is not None else self.ssl
-        ssh_user = ssh_user if ssh_user is not None else self.ssh_user
-        ssh_host = ssh_host if ssh_host is not None else self.ssh_host
-        ssh_port = ssh_port if ssh_port is not None else self.ssh_port
-        ssh_password = ssh_password if ssh_password is not None else self.ssh_password
-        ssh_key_filename = ssh_key_filename if ssh_key_filename is not None else self.ssh_key_filename
         init_command = init_command if init_command is not None else self.init_command
         unbuffered = unbuffered if unbuffered is not None else self.unbuffered
         _logger.debug(
@@ -245,11 +219,6 @@ class SQLExecute:
             "\tcharacter_set: %r"
             "\tlocal_infile: %r"
             "\tssl: %r"
-            "\tssh_user: %r"
-            "\tssh_host: %r"
-            "\tssh_port: %r"
-            "\tssh_password: ***"
-            "\tssh_key_filename: %r"
             "\tinit_command: %r"
             "\tunbuffered: %r",
             db,
@@ -260,10 +229,6 @@ class SQLExecute:
             character_set,
             local_infile,
             ssl,
-            ssh_user,
-            ssh_host,
-            ssh_port,
-            ssh_key_filename,
             init_command,
             unbuffered,
         )
@@ -275,10 +240,8 @@ class SQLExecute:
             FIELD_TYPE.DATE: lambda obj: convert_date(obj) or obj,
         })
 
+        # todo: still needed? was conditional on SSH tunnels
         defer_connect = False
-
-        if ssh_host:
-            defer_connect = True
 
         client_flag = pymysql.constants.CLIENT.INTERACTIVE
         if init_command and len(list(iocommands.split_queries(init_command))) > 1:
@@ -325,26 +288,6 @@ class SQLExecute:
                 self.sandbox_mode = True
             else:
                 raise
-
-        if ssh_host and not self.sandbox_mode:
-            ##### paramiko.Channel is a bad socket implementation overall if you want SSL through an SSH tunnel
-            #####
-            # instead let's open a tunnel and rewrite host:port to local bind
-            try:
-                chan = sshtunnel.SSHTunnelForwarder(
-                    (ssh_host, ssh_port),
-                    ssh_username=ssh_user,
-                    ssh_pkey=ssh_key_filename,
-                    ssh_password=ssh_password,
-                    remote_bind_address=(host, port),
-                )
-                chan.start()
-
-                conn.host = chan.local_bind_host
-                conn.port = chan.local_bind_port
-                conn.connect()
-            except Exception as e:
-                raise e
 
         if self.conn is not None:
             try:
