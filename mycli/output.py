@@ -6,7 +6,7 @@ from io import TextIOWrapper
 import itertools
 import os
 import shutil
-from typing import Any, Generator, Literal, Protocol
+from typing import Generator, Literal, Protocol
 
 from cli_helpers.tabular_output import TabularOutputFormatter, preprocessors
 from cli_helpers.tabular_output.output_formatter import MISSING_VALUE as DEFAULT_MISSING_VALUE
@@ -37,9 +37,6 @@ from mycli.sqlexecute import FIELD_TYPES
 
 
 class MyCliState(Protocol):
-    # Provided by AppStateMixin.
-    def read_my_cnf(self, cnf: ConfigObj, keys: list[str]) -> dict[str, Any]: ...
-
     # Provided by OutputMixin itself; declared so cross-method calls type-check.
     def log_output(self, output: str | AnyFormattedText) -> None: ...
     def get_output_margin(self, status: str | None = None) -> int: ...
@@ -56,7 +53,6 @@ class OutputMixin(MyCliState):
     toolbar_format: str
     redirect_formatter: TabularOutputFormatter
     config: ConfigObj
-    my_cnf: ConfigObj
     logfile: TextIOWrapper | Literal[False] | None
     prompt_session: PromptSession | None
     prompt_format: str
@@ -177,19 +173,18 @@ class OutputMixin(MyCliState):
         if not os.environ.get("LESS"):
             os.environ["LESS"] = "-RXF"
 
-        cnf = self.read_my_cnf(self.my_cnf, ["pager", "skip-pager"])
-        cnf_pager = cnf["pager"] or self.config["main"]["pager"]
+        config_pager = self.config["main"]["pager"]
 
-        if WIN and cnf_pager == 'less' and not shutil.which(cnf_pager):
-            cnf_pager = 'more'
+        if WIN and config_pager == 'less' and not shutil.which(config_pager):
+            config_pager = 'more'
 
-        if cnf_pager:
-            special.set_pager(cnf_pager)
+        if config_pager:
+            special.set_pager(config_pager)
             self.explicit_pager = True
         else:
             self.explicit_pager = False
 
-        if cnf["skip-pager"] or not self.config["main"].as_bool("enable_pager"):
+        if not self.config["main"].as_bool("enable_pager"):
             special.disable_pager()
 
     def format_sqlresult(

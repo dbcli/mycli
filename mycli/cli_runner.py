@@ -3,14 +3,13 @@ from __future__ import annotations
 import os
 import re
 import sys
-from textwrap import dedent
 from typing import TYPE_CHECKING, Any, Callable
 from urllib.parse import parse_qs, unquote, urlparse
 
 import click
 
 from mycli.config import str_to_bool
-from mycli.constants import EMPTY_PASSWORD_FLAG_SENTINEL, ISSUES_URL, REPO_URL
+from mycli.constants import EMPTY_PASSWORD_FLAG_SENTINEL, ISSUES_URL
 from mycli.main_modes.batch import main_batch_from_stdin, main_batch_with_progress_bar, main_batch_without_progress_bar
 from mycli.main_modes.checkup import main_checkup
 from mycli.main_modes.execute import main_execute_from_cli
@@ -101,8 +100,6 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
         prompt=cli_args.prompt,
         toolbar_format=cli_args.toolbar,
         logfile=cli_args.logfile,
-        defaults_suffix=cli_args.defaults_group_suffix,
-        defaults_file=cli_args.defaults_file,
         login_path=cli_args.login_path,
         auto_vertical_output=cli_args.auto_vertical_output,
         warn=cli_args.warn,
@@ -313,82 +310,6 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
     else:
         use_keyring = str_to_bool(cli_args.use_keyring)
         reset_keyring = False
-
-    # todo: removeme after a period of transition
-    for tup in [
-        ('client', 'prompt', 'prompt', 'main', 'prompt'),
-        ('client', 'pager', 'pager', 'main', 'pager'),
-        ('client', 'skip-pager', 'skip-pager', 'main', 'enable_pager'),
-        # this is a white lie, because default_character_set can actually be read from the package config
-        ('client', 'default-character-set', 'default-character-set', 'connection', 'default_character_set'),
-        # local-infile can be read from both sections
-        ('mysqld', 'local-infile', 'local-infile', 'connection', 'default_local_infile'),
-        ('client', 'local-infile', 'local-infile', 'connection', 'default_local_infile'),
-        ('mysqld', 'loose-local-infile', 'loose-local-infile', 'connection', 'default_local_infile'),
-        ('client', 'loose-local-infile', 'loose-local-infile', 'connection', 'default_local_infile'),
-        # todo: in the future we should add default_port, etc, but only in .myclirc
-        # they are currently ignored in my.cnf
-        ('mysqld', 'default_socket', 'socket', 'connection', 'default_socket'),
-        ('client', 'ssl-ca', 'ssl-ca', 'connection', 'default_ssl_ca'),
-        ('client', 'ssl-cert', 'ssl-cert', 'connection', 'default_ssl_cert'),
-        ('client', 'ssl-key', 'ssl-key', 'connection', 'default_ssl_key'),
-        ('client', 'ssl-cipher', 'ssl-cipher', 'connection', 'default_ssl_cipher'),
-        ('client', 'ssl-verify-server-cert', 'ssl-verify-server-cert', 'connection', 'default_ssl_verify_server_cert'),
-    ]:
-        (
-            mycnf_section_name,
-            mycnf_item_name,
-            printable_mycnf_item_name,
-            myclirc_section_name,
-            myclirc_item_name,
-        ) = tup
-        if str_to_bool(mycli.config['main'].get('my_cnf_transition_done', 'False')):
-            break
-        if (
-            mycli.my_cnf[mycnf_section_name].get(mycnf_item_name) is None
-            and mycli.my_cnf[mycnf_section_name].get(mycnf_item_name.replace('-', '_')) is None
-        ):
-            continue
-        user_section = mycli.config_without_package_defaults.get(myclirc_section_name, {})
-        if user_section.get(myclirc_item_name) is None:
-            cnf_value = mycli.my_cnf[mycnf_section_name].get(mycnf_item_name)
-            if cnf_value is None:
-                cnf_value = mycli.my_cnf[mycnf_section_name].get(mycnf_item_name.replace('-', '_'))
-            click.secho(
-                dedent(
-                    f"""
-                    Reading configuration from my.cnf files is deprecated.
-                    See {ISSUES_URL}/1490 .
-                    The cause of this message is the following in a my.cnf file without a corresponding
-                    ~/.myclirc entry:
-
-                        [{mycnf_section_name}]
-                        {printable_mycnf_item_name} = {cnf_value}
-
-                    To suppress this message, remove the my.cnf item add or the following to ~/.myclirc:
-
-                        [{myclirc_section_name}]
-                        {myclirc_item_name} = <value>
-
-                    The ~/.myclirc setting will take precedence.  In the future, the my.cnf will be ignored.
-
-                    Values are documented at {REPO_URL}/blob/main/mycli/myclirc .  An
-                    empty <value> is generally accepted.
-
-                    To ignore all of this, set
-
-                        [main]
-                        my_cnf_transition_done = True
-
-                    in ~/.myclirc.
-
-                    --------
-
-                    """
-                ),
-                err=True,
-                fg='yellow',
-            )
 
     mycli.connect(
         database=database,

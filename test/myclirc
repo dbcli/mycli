@@ -202,10 +202,7 @@ keyword_casing = auto
 enable_pager = True
 
 # Choose a specific pager
-pager = less
-
-# whether to show verbose warnings about the transition away from reading my.cnf
-my_cnf_transition_done = False
+pager = python test/features/wrappager.py ---boundary---
 
 # Whether to store and retrieve passwords from the system keyring.
 # See the documentation for https://pypi.org/project/keyring/ for your OS.

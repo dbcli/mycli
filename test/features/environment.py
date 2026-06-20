@@ -3,7 +3,6 @@
 import os
 import shutil
 import sys
-from tempfile import NamedTemporaryFile
 
 import db_utils as dbutils
 import fixture_utils as fixutils
@@ -11,7 +10,6 @@ import pexpect
 
 from mycli.constants import DEFAULT_HOST, DEFAULT_PORT, DEFAULT_USER
 from steps.wrappers import run_cli, wait_prompt
-from test.utils import TEMPFILE_PREFIX
 
 test_log_file = os.path.join(os.environ["HOME"], ".mycli.test.log")
 
@@ -19,8 +17,6 @@ test_log_file = os.path.join(os.environ["HOME"], ".mycli.test.log")
 SELF_CONNECTING_FEATURES = ("test/features/connection.feature",)
 
 
-MY_CNF_PATH = os.path.expanduser("~/.my.cnf")
-MY_CNF_BACKUP_PATH = f"{MY_CNF_PATH}.backup"
 MYLOGIN_CNF_PATH = os.path.expanduser("~/.mylogin.cnf")
 MYLOGIN_CNF_BACKUP_PATH = f"{MYLOGIN_CNF_PATH}.backup"
 
@@ -64,12 +60,10 @@ def before_all(context):
         "pager_boundary": "---boundary---",
     }
 
-    with NamedTemporaryFile(prefix=TEMPFILE_PREFIX, mode='w', delete=False) as my_cnf:
-        my_cnf.write(
-            f'[client]\npager={sys.executable} '
-            f'{os.path.join(context.package_root, "test/features/wrappager.py")} {context.conf["pager_boundary"]}\n'
-        )
-    context.conf["defaults-file"] = my_cnf.name
+    # todo: this line has no effect, and the pager is controlled from test/myclirc
+    os.environ['PAGER'] = (
+        f'{sys.executable} {os.path.join(context.package_root, "test/features/wrappager.py")} {context.conf["pager_boundary"]}'
+    )
     context.conf["myclirc"] = os.path.join(context.package_root, "test", "myclirc")
 
     context.cn = dbutils.create_db(
@@ -114,9 +108,6 @@ def before_scenario(context, arg):
         run_cli(context)
         wait_prompt(context)
 
-    if os.path.exists(MY_CNF_PATH):
-        shutil.move(MY_CNF_PATH, MY_CNF_BACKUP_PATH)
-
     if os.path.exists(MYLOGIN_CNF_PATH):
         shutil.move(MYLOGIN_CNF_PATH, MYLOGIN_CNF_BACKUP_PATH)
 
@@ -138,9 +129,6 @@ def after_scenario(context, _):
         context.cli.sendcontrol("c")
         context.cli.sendcontrol("d")
         context.cli.expect_exact(pexpect.EOF, timeout=5)
-
-    if os.path.exists(MY_CNF_BACKUP_PATH):
-        shutil.move(MY_CNF_BACKUP_PATH, MY_CNF_PATH)
 
     if os.path.exists(MYLOGIN_CNF_BACKUP_PATH):
         shutil.move(MYLOGIN_CNF_BACKUP_PATH, MYLOGIN_CNF_PATH)

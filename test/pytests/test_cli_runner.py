@@ -47,7 +47,7 @@ class DummyMyCli:
 
 def default_config() -> dict[str, Any]:
     return {
-        'main': {'use_keyring': 'false', 'my_cnf_transition_done': 'true'},
+        'main': {'use_keyring': 'false'},
         'connection': {'default_keepalive_ticks': 0},
         'alias_dsn': {},
         'init-commands': {},

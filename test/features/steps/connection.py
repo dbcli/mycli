@@ -7,7 +7,7 @@ from behave import then, when
 import wrappers
 
 from mycli.config import encrypt_mylogin_cnf
-from test.features.environment import MY_CNF_PATH, MYLOGIN_CNF_PATH, get_db_name_from_context
+from test.features.environment import MYLOGIN_CNF_PATH, get_db_name_from_context
 from test.features.steps.utils import parse_cli_args_to_dict
 from test.utils import HOST, PASSWORD, PORT, USER
 
@@ -29,13 +29,6 @@ def status_contains(context, expression):
     # so let's wait for its last character
     context.cli.expect_exact(">")
     context.atprompt = True
-
-
-@when("we create my.cnf file")
-def step_create_my_cnf_file(context):
-    my_cnf = f"[client]\nhost = {HOST}\nport = {PORT}\nuser = {USER}\npassword = {PASSWORD}\n"
-    with open(MY_CNF_PATH, "w") as f:
-        f.write(my_cnf)
 
 
 @when("we create mylogin.cnf file")

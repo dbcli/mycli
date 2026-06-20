@@ -7,6 +7,7 @@ import threading
 from typing import IO, Literal
 
 from cli_helpers.tabular_output import TabularOutputFormatter
+from configobj import ConfigObj
 from prompt_toolkit.formatted_text import to_formatted_text
 from prompt_toolkit.shortcuts import PromptSession
 import sqlparse
@@ -15,7 +16,6 @@ from mycli.app_state import (
     AppStateMixin,
     configure_prompt_state,
     destructive_keywords_from_config,
-    ensure_my_cnf_sections,
     llm_prompt_truncation,
     normalize_ssl_mode,
 )
@@ -24,7 +24,13 @@ from mycli.client_connection import ClientConnectionMixin
 from mycli.client_query import ClientQueryMixin
 from mycli.clistyle import style_factory_helpers, style_factory_ptoolkit
 from mycli.completion_refresher import CompletionRefresher
-from mycli.config import get_mylogin_cnf_path, open_mylogin_cnf, read_config_files, write_default_config
+from mycli.config import (
+    get_mylogin_cnf_path,
+    open_mylogin_cnf,
+    read_config_file,
+    read_config_files,
+    write_default_config,
+)
 from mycli.constants import DEFAULT_PROMPT
 from mycli.main_modes import repl as repl_package
 from mycli.output import OutputMixin
@@ -44,18 +50,9 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
     default_prompt = DEFAULT_PROMPT
     default_prompt_splitln = "\\u@\\h\\n(\\t):\\d>"
     max_len_prompt = 45
-    defaults_suffix = None
     prompt_lines: int
     sqlexecute: SQLExecute | None
     numeric_alignment: str
-
-    # In order of being loaded. Files lower in list override earlier ones.
-    cnf_files: list[str | IO[str]] = [
-        "/etc/my.cnf",
-        "/etc/mysql/my.cnf",
-        "/usr/local/etc/my.cnf",
-        os.path.expanduser("~/.my.cnf"),
-    ]
 
     # check XDG_CONFIG_HOME exists and not an empty string
     xdg_config_home = os.environ.get("XDG_CONFIG_HOME", "~/.config")
@@ -72,8 +69,6 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
         prompt: str | None = None,
         toolbar_format: str | None = None,
         logfile: TextIOWrapper | Literal[False] | None = None,
-        defaults_suffix: str | None = None,
-        defaults_file: str | None = None,
         login_path: str | None = None,
         auto_vertical_output: bool = False,
         warn: bool | None = None,
@@ -83,7 +78,6 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
     ) -> None:
         self.sqlexecute = sqlexecute
         self.logfile = logfile
-        self.defaults_suffix = defaults_suffix
         self.login_path = login_path
         self.toolbar_error_message: str | None = None
         self.prompt_session: PromptSession | None = None
@@ -92,23 +86,13 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
         self.sandbox_mode: bool = False
         self.checkpoint: IO | None = None
 
-        # self.cnf_files is a class variable that stores the list of mysql
-        # config files to read in at launch.
-        # If defaults_file is specified then override the class variable with
-        # defaults_file.
-        if defaults_file:
-            self.cnf_files = [defaults_file]
-
         # Load config.
         config_files: list[str | IO[str]] = self.system_config_files + [myclirc] + [self.pwd_config_file]
 
         c = self.config = read_config_files(config_files)
-        # this parallel config exists to
-        #  * compare with my.cnf
-        #  * support the --checkup feature
-        # todo: after removing my.cnf, create the parallel configs only when --checkup is set
+        # only needed in --checkup mode. todo: only load when needed
         self.config_without_package_defaults = read_config_files(config_files, ignore_package_defaults=True)
-        # this parallel config exists to compare with my.cnf support the --checkup feature
+        # only needed in --checkup mode. todo: only load when needed
         self.config_without_user_options = read_config_files(config_files, ignore_user_options=True)
         self.multi_line = c["main"].as_bool("multi_line")
         self.key_bindings = c["main"]["key_bindings"]
@@ -201,20 +185,16 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
         self.register_special_commands()
 
         # Load .mylogin.cnf if it exists.
-        mylogin_cnf_path = get_mylogin_cnf_path()
-        if mylogin_cnf_path:
-            mylogin_cnf = open_mylogin_cnf(mylogin_cnf_path)
-            if mylogin_cnf_path and mylogin_cnf:
-                # .mylogin.cnf gets read last, even if defaults_file is specified.
-                self.cnf_files.append(mylogin_cnf)
-            elif mylogin_cnf_path and not mylogin_cnf:
-                # There was an error reading the login path file.
+        self.mylogin_cnf = ConfigObj()
+        mylogin_cnf_h = None
+        if mylogin_cnf_path := get_mylogin_cnf_path():
+            mylogin_cnf_h = open_mylogin_cnf(mylogin_cnf_path)
+            if mylogin_cnf_h:
+                self.mylogin_cnf = read_config_file(mylogin_cnf_h, list_values=False) or ConfigObj()
+            else:
                 print("Error: Unable to read login path file.")
 
-        self.my_cnf = read_config_files(self.cnf_files, list_values=False)
-        ensure_my_cnf_sections(self.my_cnf)
-        prompt_cnf = self.read_my_cnf(self.my_cnf, ["prompt"])["prompt"]
-        configure_prompt_state(self, c, prompt, prompt_cnf, toolbar_format)
+        configure_prompt_state(self, c, prompt, toolbar_format)
         self.prompt_session = None
         self.destructive_keywords = destructive_keywords_from_config(c)
         special.set_destructive_keywords(self.destructive_keywords)

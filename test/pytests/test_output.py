@@ -268,9 +268,7 @@ def test_output_sends_buffer_to_pager_when_pager_is_explicit(monkeypatch: pytest
 
 def test_configure_pager_uses_more_for_missing_less_on_windows(monkeypatch: pytest.MonkeyPatch) -> None:
     cli = make_bare_mycli()
-    cli.my_cnf = ConfigObj({'client': {'pager': 'less'}})
-    cli.config = ConfigObj({'main': {'pager': '', 'enable_pager': 'True'}})
-    cli.read_my_cnf = lambda cnf, keys: {'pager': 'less', 'skip-pager': None}  # type: ignore[assignment]
+    cli.config = ConfigObj({'main': {'pager': 'less', 'enable_pager': 'True'}})
     pager_calls: list[str] = []
     monkeypatch.setattr(output_module, 'WIN', True)
     monkeypatch.setattr(output_module.shutil, 'which', lambda value: None)
@@ -282,11 +280,9 @@ def test_configure_pager_uses_more_for_missing_less_on_windows(monkeypatch: pyte
     assert pager_calls == ['more']
 
 
-def test_configure_pager_prefers_my_cnf_pager_and_sets_less(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_configure_pager_uses_myclirc_pager_and_sets_less(monkeypatch: pytest.MonkeyPatch) -> None:
     cli = make_bare_mycli()
-    cli.my_cnf = ConfigObj({'client': {'pager': 'my-pager'}})
     cli.config = ConfigObj({'main': {'pager': 'config-pager', 'enable_pager': 'True'}})
-    cli.read_my_cnf = lambda cnf, keys: {'pager': 'my-pager', 'skip-pager': None}  # type: ignore[assignment]
     pager_calls: list[str] = []
     disabled: list[bool] = []
     monkeypatch.delenv('LESS', raising=False)
@@ -295,25 +291,25 @@ def test_configure_pager_prefers_my_cnf_pager_and_sets_less(monkeypatch: pytest.
 
     OutputMixin.configure_pager(cli)
 
-    assert pager_calls == ['my-pager']
+    assert pager_calls == ['config-pager']
     assert disabled == []
     assert cli.explicit_pager is True
     assert output_module.os.environ['LESS'] == '-RXF'
 
 
-def test_configure_pager_disables_when_skip_pager_is_set(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_configure_pager_disables_pager_when_configured(monkeypatch: pytest.MonkeyPatch) -> None:
     cli = make_bare_mycli()
-    cli.my_cnf = ConfigObj({'client': {}})
-    cli.config = ConfigObj({'main': {'pager': '', 'enable_pager': 'True'}})
-    cli.read_my_cnf = lambda cnf, keys: {'pager': None, 'skip-pager': '1'}  # type: ignore[assignment]
+    cli.config = ConfigObj({'main': {'pager': '', 'enable_pager': 'False'}})
+    pager_calls: list[str] = []
     disabled: list[bool] = []
-    monkeypatch.setattr(output_module.special, 'set_pager', lambda value: None)
+    monkeypatch.setattr(output_module.special, 'set_pager', lambda value: pager_calls.append(value))
     monkeypatch.setattr(output_module.special, 'disable_pager', lambda: disabled.append(True))
 
     OutputMixin.configure_pager(cli)
 
-    assert cli.explicit_pager is False
+    assert pager_calls == []
     assert disabled == [True]
+    assert cli.explicit_pager is False
 
 
 def test_format_sqlresult_uses_redirect_formatter_and_appends_preamble_postamble() -> None:
