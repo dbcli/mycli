@@ -751,7 +751,7 @@ def suggest_type(full_text: str, text_before_cursor: str) -> list[dict[str, Any]
         # but the statement won't have a first token
         tok1 = statement.token_first()
         # lenient because \. will parse as two tokens
-        if tok1 and tok1.value.startswith('\\'):
+        if tok1 and tok1.value.startswith(('\\', '/')) and not tok1.value.startswith('/*'):
             return suggest_special(text_before_cursor)
         elif tok1:
             if tok1.value.lower() in SPECIAL_COMMANDS:
@@ -771,22 +771,22 @@ def suggest_special(text: str) -> list[dict[str, Any]]:
         # Trying to complete the special command itself
         return [{"type": "special"}]
 
-    if cmd in ("\\u", "\\r"):
+    if cmd in ("\\u", "/u", "\\r", "/r"):
         return [{"type": "database"}]
 
-    if cmd.lower() in ('use', 'connect'):
+    if cmd.lower() in ('use', '/use', 'connect', '/connect'):
         return [{'type': 'database'}]
 
-    if cmd in (r'\T', r'\Tr'):
+    if cmd in (r'\T', '/T', r'\Tr', '/Tr'):
         return [{"type": "table_format"}]
 
-    if cmd.lower() in ('tableformat', 'redirectformat'):
+    if cmd.lower() in ('tableformat', '/tableformat', 'redirectformat', '/redirectformat'):
         return [{"type": "table_format"}]
 
-    if cmd in ["\\f", "\\fs", "\\fd"]:
+    if cmd in ["\\f", "/f", "\\fs", "/fs", "\\fd", "/fd"]:
         return [{"type": "favoritequery"}]
 
-    if cmd in ["\\dt", "\\dt+"]:
+    if cmd in ["\\dt", "/dt", "\\dt+", "/dt+"]:
         return [
             {"type": "table", "schema": []},
             {"type": "view", "schema": []},
@@ -794,19 +794,26 @@ def suggest_special(text: str) -> list[dict[str, Any]]:
         ]
     elif cmd.lower() in [
         r'\.',
+        r'/.',
         'source',
+        '/source',
         r'\o',
+        '/o',
         r'\once',
-        r'tee',
+        '/once',
+        'tee',
+        '/tee',
     ]:
         return [{"type": "file_name"}]
     # todo: why is \edit case-sensitive?
     elif cmd in [
         r'\e',
+        '/e',
         r'\edit',
+        '/edit',
     ]:
         return [{"type": "file_name"}]
-    if cmd in ["\\llm", "\\ai"]:
+    if cmd in ["\\llm", "/llm", "\\ai", "/ai"]:
         return [{"type": "llm"}]
 
     return [{"type": "keyword"}, {"type": "special"}]

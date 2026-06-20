@@ -431,7 +431,20 @@ def need_completion_refresh(queries: str) -> bool:
     for query in sqlparse.split(queries):
         try:
             first_token = query.split()[0]
-            if first_token.lower() in ("alter", "create", "use", "\\r", "\\u", "connect", "drop", "rename"):
+            if first_token.lower() in (
+                "alter",
+                "create",
+                "use",
+                "/use",
+                "\\r",
+                "\\u",
+                "/r",
+                "/u",
+                "connect",
+                "/connect",
+                "drop",
+                "rename",
+            ):
                 return True
         except Exception:
             continue
@@ -447,9 +460,9 @@ def need_completion_reset(queries: str) -> bool:
         try:
             tokens = query.split()
             first_token = tokens[0]
-            if first_token.lower() in ("use", "\\u"):
+            if first_token.lower() in ("use", "/use", "\\u", "/u"):
                 return True
-            if first_token.lower() in ("\\r", "connect") and len(tokens) > 1:
+            if first_token.lower() in ("\\r", "/r", "connect", "/connect") and len(tokens) > 1:
                 return True
         except Exception:
             continue
@@ -502,7 +515,7 @@ def classify_sandbox_statement(text: str) -> tuple[str | None, str | None]:
         return ('quit', None)
 
     # \q
-    if len(tokens) == 2 and types[0] == tt.BACKSLASH and texts[1] == 'Q':
+    if len(tokens) == 2 and types[0] in (tt.BACKSLASH, tt.SLASH) and texts[1] in ('Q', 'QUIT', 'EXIT'):
         return ('quit', None)
 
     # ALTER USER ...

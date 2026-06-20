@@ -227,7 +227,7 @@ def handle_llm(
     _, command_verbosity, arg = parse_special_command(text)
     if not LLM_IMPORTED:
         raise FinishIteration(results=[SQLResult(preamble=NEED_DEPENDENCIES)])
-    if arg.strip().lower() in ['', 'help', '?', r'\?']:
+    if arg.strip().lower() in ['', 'help', '/help', '?', r'\?', '/?']:
         raise FinishIteration(results=[SQLResult(preamble=USAGE)])
     parts = shlex.split(arg)
     restart = False
@@ -286,7 +286,7 @@ def handle_llm(
 
 def is_llm_command(command: str) -> bool:
     cmd, _, _ = parse_special_command(command)
-    return cmd in ("\\llm", "\\ai")
+    return cmd in ("\\llm", "/llm", "\\ai", "/ai")
 
 
 def truncate_list_elements(row: list, prompt_field_truncate: int, prompt_section_truncate: int) -> list:

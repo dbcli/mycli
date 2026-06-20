@@ -205,20 +205,19 @@ def editor_command(command: str) -> bool:
     :param command: string
     """
     # special case: allow help on the \edit command
-    if re.match(r'^([Hh][Ee][Ll][Pp])\s+(\\e|\\edit)\s*(;|\\G|\\g)?\s*$', command):
+    if re.match(r'^/?([Hh][Ee][Ll][Pp])\s+(\\e|\\edit|/e|/edit)\s*(;|\\G|\\g)?\s*$', command):
         return False
     # It is possible to have `\e filename` or `SELECT * FROM \e`. So we check
     # for both conditions.
     return (
-        command.strip().endswith("\\e")
-        or command.strip().startswith("\\e ")
-        or command.strip().endswith("\\edit")
-        or command.strip().startswith("\\edit ")
+        command.strip().endswith(("\\e", "\\edit"))
+        or command.strip().startswith(("\\e ", "/e ", "\\edit ", "/edit "))
+        or command.strip() in (("\\e", "/e", "\\edit", "/edit"))
     )
 
 
 def get_filename(sql: str) -> str | None:
-    if sql.strip().startswith("\\e ") or sql.strip().startswith("\\edit "):
+    if sql.strip().startswith(("\\e ", "/e ")) or sql.strip().startswith(("\\edit ", "/edit ")):
         command, _, filename = sql.partition(" ")
         return filename.strip() or None
     else:
@@ -228,6 +227,9 @@ def get_filename(sql: str) -> str | None:
 def get_editor_query(sql: str) -> str:
     """Get the query part of an editor command."""
     sql = sql.strip()
+
+    if sql in ('\\e', '/e', '\\edit', '/edit'):
+        return ''
 
     # The reason we can't simply do .strip('\e') is that it strips characters,
     # not a substring. So it'll strip "e" in the end of the sql also!
@@ -281,7 +283,7 @@ def clip_command(command: str) -> bool:
     """
     # It is possible to have `\clip` or `SELECT * FROM \clip`. So we check
     # for both conditions.
-    return command.strip().endswith("\\clip") or command.strip().startswith("\\clip")
+    return command.strip().endswith("\\clip") or command.strip().startswith(("\\clip", "/clip"))
 
 
 def get_clip_query(sql: str) -> str:
@@ -290,7 +292,7 @@ def get_clip_query(sql: str) -> str:
 
     # The reason we can't simply do .strip('\clip') is that it strips characters,
     # not a substring. So it'll strip "c" in the end of the sql also!
-    pattern = re.compile(r"(^\\clip|\\clip$)")
+    pattern = re.compile(r"(^\\clip|^/clip|\\clip$)")
     while pattern.search(sql):
         sql = pattern.sub("", sql)
 

@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Features
+---------
+* Silently accept forward slash to introduce special commands.
+
+
 Internal
 --------
 * Add test coverage for `client_commands.py`.

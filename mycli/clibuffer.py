@@ -3,7 +3,10 @@ from prompt_toolkit.enums import DEFAULT_BUFFER
 from prompt_toolkit.filters import Condition, Filter
 
 from mycli.packages.special import iocommands
-from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
+from mycli.packages.special.main import (
+    CASE_INSENSITIVE_COMMANDS,
+    CASE_SENSITIVE_COMMANDS,
+)
 
 
 def cli_is_multiline(mycli) -> Filter:
@@ -26,12 +29,13 @@ def _multiline_exception(text: str) -> bool:
     # Multi-statement favorite query is a special case. Because there will
     # be a semicolon separating statements, we can't consider semicolon an
     # EOL. Let's consider an empty line an EOL instead.
-    if first_word.startswith("\\fs"):
+    if first_word.startswith(("\\fs", "/fs")):
         return orig.endswith("\n")
 
     return (
         # Special Command
         first_word.startswith("\\")
+        or (first_word.startswith('/') and not first_word.startswith('/*'))
         or text.endswith((
             # Ended with the current delimiter (usually a semi-column)
             iocommands.get_current_delimiter(),
@@ -44,10 +48,10 @@ def _multiline_exception(text: str) -> bool:
         ))
         or
         # non-backslashed special commands such as "exit" or "help" don't need semicolon
-        first_word in SPECIAL_COMMANDS
+        first_word in CASE_SENSITIVE_COMMANDS
         or
         # uppercase variants accepted
-        first_word.lower() in SPECIAL_COMMANDS
+        first_word.lower() in CASE_INSENSITIVE_COMMANDS
         or
         # just a plain enter without any text
         (first_word == "")
