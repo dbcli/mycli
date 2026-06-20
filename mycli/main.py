@@ -128,13 +128,6 @@ class CliArgs:
         type=click.Choice(['auto', 'on', 'off']),
         help='Set desired SSL behavior. auto=preferred if TCP/IP, on=required, off=off.',
     )
-    deprecated_ssl: bool | None = clickdc.option(
-        '--ssl/--no-ssl',
-        'deprecated_ssl',
-        default=None,
-        clickdc=None,
-        help='Enable SSL for connection (automatically enabled with other flags).',
-    )
     ssl_ca: str | None = clickdc.option(
         type=click.Path(exists=True),
         help='CA file in PEM format.',
