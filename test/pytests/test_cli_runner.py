@@ -74,6 +74,31 @@ def run_with_client(
     return client
 
 
+def test_expand_dsn_alias_env_var_returns_none() -> None:
+    assert cli_runner.expand_dsn_alias_env_var(None, 'prod') is None
+
+
+def test_split_dsn_netloc_handles_user_without_password() -> None:
+    assert cli_runner.split_dsn_netloc('user@host:3306') == ('user', None, 'host', '3306')
+
+
+def test_split_dsn_netloc_handles_empty_host() -> None:
+    assert cli_runner.split_dsn_netloc('user:pass@') == ('user', 'pass', None, None)
+
+
+def test_split_dsn_netloc_handles_bracketed_ipv6_host() -> None:
+    assert cli_runner.split_dsn_netloc('user:pass@[::1]:3306') == ('user', 'pass', '::1', '3306')
+
+
+def test_expand_dsn_alias_env_vars_rejects_non_integer_port(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv('MYCLI_TEST_DSN_PORT', 'not-an-int')
+
+    with pytest.raises(cli_runner.DsnAliasEnvVarError) as excinfo:
+        cli_runner.expand_dsn_alias_env_vars('mysql://user:pass@host:${MYCLI_TEST_DSN_PORT}/db', 'prod')
+
+    assert str(excinfo.value) == 'Port in DSN alias prod must be an integer.'
+
+
 def test_run_from_cli_args_checkup_exits_zero(monkeypatch: pytest.MonkeyPatch) -> None:
     cli_args = make_cli_args()
     cli_args.checkup = True

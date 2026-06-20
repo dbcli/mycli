@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Internal
+---------
+* Improve test coverage for DSN variable expansion.
+
+
 1.76.0 (2026/06/20)
 ==============
 
