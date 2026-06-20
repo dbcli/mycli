@@ -10,6 +10,12 @@ Breaking Changes
 * Remove support for deprecated SSH jump functionality.
 * Remove support for `my.cnf` vendor MySQL option files.
 * Remove support for `.myclirc` files in the current working directory.
+* Make `--batch` and `--execute` non-interactive by default.
+
+
+Features
+---------
+* Add `--warn-batch` flag, which is off by default.
 
 
 Documentation

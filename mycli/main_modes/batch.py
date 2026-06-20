@@ -114,17 +114,16 @@ def dispatch_batch_statements(
         else:
             mycli.main_formatter.format_name = 'tsv'
 
-    warn_confirmed: bool | None = True
-    if not cli_args.noninteractive and mycli.destructive_warning and is_destructive(mycli.destructive_keywords, statements):
+    execution_confirmed: bool | None = True
+    if cli_args.warn_batch and is_destructive(mycli.destructive_keywords, statements):
         try:
             # this seems to work, even though we are reading from stdin above
             sys.stdin = open('/dev/tty')
-            # bug: the prompt will not be visible if stdout is redirected
-            warn_confirmed = confirm_destructive_query(mycli.destructive_keywords, statements)
+            execution_confirmed = confirm_destructive_query(mycli.destructive_keywords, statements)
         except (IOError, OSError) as e:
             mycli.logger.warning('Unable to open TTY as stdin.')
             raise e
-    if warn_confirmed:
+    if execution_confirmed:
         if cli_args.throttle > 0 and batch_counter >= 1:
             time.sleep(cli_args.throttle)
         mycli.run_query(statements, checkpoint=cli_args.checkpoint, new_line=True)

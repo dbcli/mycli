@@ -5,6 +5,9 @@ from typing import TYPE_CHECKING
 
 import click
 
+from mycli.packages.interactive_utils import confirm_destructive_query
+from mycli.packages.sql_utils import is_destructive
+
 if TYPE_CHECKING:
     from mycli.client import MyCli
     from mycli.main import CliArgs
@@ -34,8 +37,19 @@ def main_execute_from_cli(mycli: 'MyCli', cli_args: 'CliArgs') -> int:
         else:
             mycli.main_formatter.format_name = 'tsv'
 
-        mycli.run_query(execute_sql, checkpoint=cli_args.checkpoint)
-        return 0
+        execution_confirmed: bool | None = True
+        if cli_args.warn_batch and is_destructive(mycli.destructive_keywords, execute_sql):
+            try:
+                sys.stdin = open('/dev/tty')
+                execution_confirmed = confirm_destructive_query(mycli.destructive_keywords, execute_sql)
+            except (IOError, OSError) as e:
+                mycli.logger.warning('Unable to open TTY as stdin.')
+                raise e
+        if execution_confirmed:
+            mycli.run_query(execute_sql, checkpoint=cli_args.checkpoint)
+            return 0
+        else:
+            return 1
     except Exception as e:
         click.secho(str(e), err=True, fg="red")
         return 1

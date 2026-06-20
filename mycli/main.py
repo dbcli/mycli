@@ -201,6 +201,10 @@ class CliArgs:
         clickdc=None,
         help='Warn before running a destructive query.',
     )
+    warn_batch: bool = clickdc.option(
+        is_flag=True,
+        help='Warn before running a destructive query when executing a script.',
+    )
     local_infile: bool | None = clickdc.option(
         type=bool,
         is_flag=False,
@@ -236,9 +240,11 @@ class CliArgs:
         type=str,
         help='SQL script to execute in batch mode.',
     )
+    # deprecated 2026-06-20
     noninteractive: bool = clickdc.option(
         is_flag=True,
-        help="Don't prompt during batch input.  Recommended.",
+        hidden=True,
+        deprecated='See --warn-batch.',
     )
     format: str | None = clickdc.option(
         type=click.Choice(['default', 'csv', 'tsv', 'table']),

@@ -772,6 +772,8 @@ def test_help_strings_end_with_periods():
     """Make sure click options have help text that end with a period."""
     for param in click_entrypoint.params:
         if isinstance(param, click.core.Option):
+            if param.hidden:
+                continue
             assert hasattr(param, "help")
             assert param.help.endswith(".")
 

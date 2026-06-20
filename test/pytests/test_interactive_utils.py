@@ -92,7 +92,7 @@ def test_confirm_destructive_query_prompts_and_returns_user_choice(monkeypatch: 
     assert prompt_calls == [
         (
             ("You're about to run a destructive command.\nDo you want to proceed? (y/n)",),
-            {'type': interactive_utils.BOOLEAN_TYPE},
+            {'type': interactive_utils.BOOLEAN_TYPE, 'err': True},
         )
     ]
 
@@ -120,7 +120,7 @@ def test_confirm_destructive_query_returns_false_when_user_rejects(monkeypatch: 
     assert prompt_calls == [
         (
             ("You're about to run a destructive command.\nDo you want to proceed? (y/n)",),
-            {'type': interactive_utils.BOOLEAN_TYPE},
+            {'type': interactive_utils.BOOLEAN_TYPE, 'err': True},
         )
     ]
 

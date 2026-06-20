@@ -36,7 +36,7 @@ def confirm_destructive_query(keywords: list[str], queries: str) -> bool | None:
     """
     prompt_text = "You're about to run a destructive command.\nDo you want to proceed? (y/n)"
     if is_destructive(keywords, queries) and sys.stdin.isatty():
-        return prompt(prompt_text, type=BOOLEAN_TYPE)
+        return prompt(prompt_text, type=BOOLEAN_TYPE, err=True)
     else:
         return None
 
