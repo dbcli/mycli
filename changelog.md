@@ -1,8 +1,16 @@
+1.76.0 (2026/06/20)
+==============
+
+Features
+---------
+* Optionally expand whole `${VAR}` values in DSN aliases.
+
+
 1.75.0 (2026/06/20)
 ==============
 
 Features
---------
+---------
 * Silently accept forward slash to introduce special commands.
 * `--progress` spinners for setup steps in `--batch` mode.
 

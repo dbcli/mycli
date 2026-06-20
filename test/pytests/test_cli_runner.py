@@ -145,6 +145,119 @@ def test_run_from_cli_args_uses_deprecated_mysql_unix_port_and_database_alias(
     assert any('MYSQL_UNIX_PORT environment variable is deprecated' in call for call in secho_calls)
 
 
+def test_run_from_cli_args_leaves_dsn_alias_env_vars_disabled_by_default(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cli_args = make_cli_args()
+    cli_args.dsn = 'prod'
+    monkeypatch.setenv('MYCLI_TEST_DSN_USER', 'env_user')
+    client = DummyMyCli(
+        config={
+            **default_config(),
+            'alias_dsn': {'prod': 'mysql://${MYCLI_TEST_DSN_USER}:pass@host:3306/db'},
+        }
+    )
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    assert client.connect_calls[-1]['user'] == '${MYCLI_TEST_DSN_USER}'
+
+
+def test_run_from_cli_args_expands_whole_dsn_alias_env_vars_when_enabled(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cli_args = make_cli_args()
+    cli_args.dsn = 'prod'
+    monkeypatch.setenv('MYCLI_TEST_DSN_USER', 'env_user')
+    monkeypatch.setenv('MYCLI_TEST_DSN_PASSWORD', 'env_pass')
+    monkeypatch.setenv('MYCLI_TEST_DSN_HOST', 'env-host')
+    monkeypatch.setenv('MYCLI_TEST_DSN_PORT', '3308')
+    monkeypatch.setenv('MYCLI_TEST_DSN_DATABASE', 'env_db')
+    monkeypatch.setenv('MYCLI_TEST_DSN_CHARSET', 'utf8mb4')
+    monkeypatch.setenv('MYCLI_TEST_DSN_KEEPALIVE', '9')
+    config = default_config()
+    config['main'] = {**config['main'], 'expand_dsn_alias_env_vars': 'true'}
+    config['alias_dsn'] = {
+        'prod': (
+            'mysql://${MYCLI_TEST_DSN_USER}:${MYCLI_TEST_DSN_PASSWORD}'
+            '@${MYCLI_TEST_DSN_HOST}:${MYCLI_TEST_DSN_PORT}/${MYCLI_TEST_DSN_DATABASE}'
+            '?character_set=${MYCLI_TEST_DSN_CHARSET}&keepalive_ticks=${MYCLI_TEST_DSN_KEEPALIVE}'
+        )
+    }
+    client = DummyMyCli(config=config)
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    assert client.connect_calls[-1]['user'] == 'env_user'
+    assert client.connect_calls[-1]['passwd'] == 'env_pass'
+    assert client.connect_calls[-1]['host'] == 'env-host'
+    assert client.connect_calls[-1]['port'] == 3308
+    assert client.connect_calls[-1]['database'] == 'env_db'
+    assert client.connect_calls[-1]['character_set'] == 'utf8mb4'
+    assert client.connect_calls[-1]['keepalive_ticks'] == 9
+
+
+def test_run_from_cli_args_does_not_expand_partial_values_or_query_keys(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cli_args = make_cli_args()
+    cli_args.dsn = 'prod'
+    monkeypatch.setenv('MYCLI_TEST_DSN_USER', 'env_user')
+    monkeypatch.setenv('MYCLI_TEST_DSN_QUERY_KEY', 'character_set')
+    config = default_config()
+    config['main'] = {**config['main'], 'expand_dsn_alias_env_vars': 'true'}
+    config['alias_dsn'] = {
+        'prod': ('mysql://user-${MYCLI_TEST_DSN_USER}:pass@host:3306/db?${MYCLI_TEST_DSN_QUERY_KEY}=utf8mb4&character_set=utf8')
+    }
+    client = DummyMyCli(config=config)
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    assert client.connect_calls[-1]['user'] == 'user-${MYCLI_TEST_DSN_USER}'
+    assert client.connect_calls[-1]['character_set'] == 'utf8'
+
+
+def test_run_from_cli_args_does_not_expand_unbraced_dsn_alias_env_vars(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cli_args = make_cli_args()
+    cli_args.dsn = 'prod'
+    monkeypatch.setenv('MYCLI_TEST_DSN_USER', 'env_user')
+    config = default_config()
+    config['main'] = {**config['main'], 'expand_dsn_alias_env_vars': 'true'}
+    config['alias_dsn'] = {'prod': 'mysql://$MYCLI_TEST_DSN_USER:pass@host:3306/db'}
+    client = DummyMyCli(config=config)
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    assert client.connect_calls[-1]['user'] == '$MYCLI_TEST_DSN_USER'
+
+
+def test_run_from_cli_args_reports_missing_dsn_alias_env_var(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cli_args = make_cli_args()
+    cli_args.dsn = 'prod'
+    config = default_config()
+    config['main'] = {**config['main'], 'expand_dsn_alias_env_vars': 'true'}
+    config['alias_dsn'] = {'prod': 'mysql://${MYCLI_TEST_MISSING_DSN_USER}:pass@host:3306/db'}
+    client = DummyMyCli(config=config)
+    secho_calls: list[tuple[str, dict[str, Any]]] = []
+    monkeypatch.setattr(cli_runner.click, 'secho', lambda text, **kwargs: secho_calls.append((text, kwargs)))
+
+    with pytest.raises(SystemExit) as excinfo:
+        run_with_client(monkeypatch, cli_args, client)
+
+    assert excinfo.value.code == 1
+    assert secho_calls == [
+        (
+            'Environment variable MYCLI_TEST_MISSING_DSN_USER referenced by DSN alias prod is not set.',
+            {'err': True, 'fg': 'red'},
+        )
+    ]
+    assert client.connect_calls == []
+
+
 def test_run_from_cli_args_reports_missing_dsn(monkeypatch: pytest.MonkeyPatch) -> None:
     cli_args = make_cli_args()
     cli_args.dsn = 'missing'

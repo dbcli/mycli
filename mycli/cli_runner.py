@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import sys
 from textwrap import dedent
 from typing import TYPE_CHECKING, Any, Callable
@@ -22,6 +23,75 @@ if TYPE_CHECKING:
     from mycli.main import CliArgs
 
 ClientFactory = Callable[..., Any]
+ENV_VAR_PATTERN = re.compile(r'^\$\{([A-Za-z_][A-Za-z0-9_]*)\}$')
+
+
+class DsnAliasEnvVarError(ValueError):
+    pass
+
+
+def expand_dsn_alias_env_var(value: str | None, alias_name: str) -> str | None:
+    if value is None:
+        return None
+
+    match = ENV_VAR_PATTERN.fullmatch(value)
+    if not match:
+        return value
+
+    var_name = match.group(1)
+    try:
+        return os.environ[var_name]
+    except KeyError as exc:
+        raise DsnAliasEnvVarError(f'Environment variable {var_name} referenced by DSN alias {alias_name} is not set.') from exc
+
+
+def split_dsn_netloc(netloc: str) -> tuple[str | None, str | None, str | None, str | None]:
+    username = None
+    password = None
+    host_port = netloc
+
+    if '@' in host_port:
+        user_info, host_port = host_port.rsplit('@', 1)
+        username, separator, password = user_info.partition(':')
+        if not separator:
+            password = None
+
+    if not host_port:
+        return username, password, None, None
+
+    if host_port.startswith('['):
+        end = host_port.find(']')
+        if end >= 0:
+            host = host_port[1:end]
+            port = host_port[end + 2 :] if host_port[end + 1 : end + 2] == ':' else None
+            return username, password, host, port
+
+    host, separator, port = host_port.partition(':')
+    return username, password, host or None, port if separator else None
+
+
+def expand_dsn_alias_env_vars(
+    dsn_uri: str, alias_name: str
+) -> tuple[str | None, str | None, str | None, int | None, str, dict[str, list[str]]]:
+    uri = urlparse(dsn_uri)
+    username, password, host, port = split_dsn_netloc(uri.netloc)
+
+    expanded_port = expand_dsn_alias_env_var(port, alias_name)
+    try:
+        port_number = int(expanded_port) if expanded_port else None
+    except ValueError as exc:
+        raise DsnAliasEnvVarError(f'Port in DSN alias {alias_name} must be an integer.') from exc
+
+    params = {key: [expand_dsn_alias_env_var(value, alias_name) or '' for value in values] for key, values in parse_qs(uri.query).items()}
+
+    return (
+        expand_dsn_alias_env_var(unquote(username) if username is not None else None, alias_name),
+        expand_dsn_alias_env_var(unquote(password) if password is not None else None, alias_name),
+        expand_dsn_alias_env_var(host, alias_name),
+        port_number,
+        expand_dsn_alias_env_var(uri.path[1:], alias_name) or '',
+        params,
+    )
 
 
 def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> None:
@@ -162,22 +232,38 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
 
     if dsn_uri:
         uri = urlparse(dsn_uri)
-        if not database:
-            database = uri.path[1:]  # ignore the leading fwd slash
-        if not cli_args.user and uri.username is not None:
-            cli_args.user = unquote(uri.username)
-        # todo: rationalize the behavior of empty-string passwords here
-        if not cli_args.password and uri.password is not None:
-            cli_args.password = unquote(uri.password)
-        if not cli_args.host:
-            cli_args.host = uri.hostname
-        if not cli_args.port:
-            cli_args.port = uri.port
+        env_var_alias_name = None
+        dsn_alias = getattr(mycli, 'dsn_alias', None)
+        if dsn_alias and str_to_bool(mycli.config['main'].get('expand_dsn_alias_env_vars', 'False')):
+            env_var_alias_name = dsn_alias
 
-        if uri.query:
-            dsn_params = parse_qs(uri.query)
+        if env_var_alias_name:
+            try:
+                dsn_user, dsn_password, dsn_host, dsn_port, dsn_database, dsn_params = expand_dsn_alias_env_vars(
+                    dsn_uri, env_var_alias_name
+                )
+            except DsnAliasEnvVarError as exc:
+                click.secho(str(exc), err=True, fg='red')
+                sys.exit(1)
         else:
-            dsn_params = {}
+            dsn_user = unquote(uri.username) if uri.username is not None else None
+            dsn_password = unquote(uri.password) if uri.password is not None else None
+            dsn_host = uri.hostname
+            dsn_port = uri.port
+            dsn_database = uri.path[1:]
+            dsn_params = parse_qs(uri.query) if uri.query else {}
+
+        if not database:
+            database = dsn_database
+        if not cli_args.user and dsn_user is not None:
+            cli_args.user = dsn_user
+        # todo: rationalize the behavior of empty-string passwords here
+        if not cli_args.password and dsn_password is not None:
+            cli_args.password = dsn_password
+        if not cli_args.host:
+            cli_args.host = dsn_host
+        if not cli_args.port:
+            cli_args.port = dsn_port
 
         if params := dsn_params.get('ssl'):
             click.secho(
