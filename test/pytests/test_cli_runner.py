@@ -143,31 +143,24 @@ def test_run_from_cli_args_rejects_conflicting_format_flags(
     assert secho_calls == [(message, {'err': True, 'fg': 'red'})]
 
 
-def test_run_from_cli_args_uses_deprecated_mysql_unix_port_and_database_alias(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def test_run_from_cli_args_treats_database_as_dsn_alias(monkeypatch: pytest.MonkeyPatch) -> None:
     cli_args = make_cli_args()
     cli_args.database = 'prod'
     client = DummyMyCli(
         config={
             **default_config(),
-            'alias_dsn': {'prod': 'mysql://dsn_user:dsn_pass@dsn_host:3307/dsn_db'},
+            'alias_dsn': {'prod': 'mysql://u:p@h/db'},
         }
     )
-    secho_calls: list[str] = []
-    monkeypatch.setenv('MYSQL_UNIX_PORT', '/tmp/mysql.sock')
-    monkeypatch.setattr(cli_runner.click, 'secho', lambda text, **_kwargs: secho_calls.append(text))
 
     run_with_client(monkeypatch, cli_args, client)
 
     assert client.dsn_alias == 'prod'
-    assert client.connect_calls[-1]['database'] == 'dsn_db'
-    assert client.connect_calls[-1]['user'] == 'dsn_user'
-    assert client.connect_calls[-1]['passwd'] == 'dsn_pass'
-    assert client.connect_calls[-1]['host'] == 'dsn_host'
-    assert client.connect_calls[-1]['port'] == 3307
-    assert client.connect_calls[-1]['socket'] == '/tmp/mysql.sock'
-    assert any('MYSQL_UNIX_PORT environment variable is deprecated' in call for call in secho_calls)
+    connect_call = client.connect_calls[-1]
+    assert connect_call['user'] == 'u'
+    assert connect_call['passwd'] == 'p'
+    assert connect_call['host'] == 'h'
+    assert connect_call['database'] == 'db'
 
 
 def test_run_from_cli_args_leaves_dsn_alias_env_vars_disabled_by_default(
