@@ -2,8 +2,8 @@ Upcoming (TBD)
 ==============
 
 Breaking Changes
----------
 * Change default table format to `mysql_unicode`.
+* Remove support for deprecated environment variable `$DSN`.
 
 
 Internal
