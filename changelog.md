@@ -10,6 +10,11 @@ Breaking Changes
 * Remove support for deprecated SSH jump functionality.
 
 
+Documentation
+---------
+* Show section when recommending `default_character_set` setting.
+
+
 Internal
 ---------
 * Improve test coverage for DSN variable expansion.
