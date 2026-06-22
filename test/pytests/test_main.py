@@ -861,7 +861,6 @@ def test_reserved_space_is_integer(monkeypatch):
 
 def test_list_dsn(monkeypatch):
     monkeypatch.setattr(MyCli, "system_config_files", [])
-    monkeypatch.setattr(MyCli, "pwd_config_file", os.devnull)
     runner = CliRunner()
     # keep Windows from locking the file with delete=False
     with NamedTemporaryFile(prefix=TEMPFILE_PREFIX, mode="w", delete=False) as myclirc:
@@ -2064,7 +2063,6 @@ def test_execute_arg_supersedes_batch_file(monkeypatch):
 @dbtest
 def test_null_string_config(monkeypatch):
     monkeypatch.setattr(MyCli, 'system_config_files', [])
-    monkeypatch.setattr(MyCli, 'pwd_config_file', os.devnull)
     runner = CliRunner()
     # keep Windows from locking the file with delete=False
     with NamedTemporaryFile(mode='w', delete=False) as myclirc:
