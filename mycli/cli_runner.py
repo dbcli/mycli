@@ -134,15 +134,6 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
     if cli_args.table:
         cli_args.format = 'table'
 
-    if cli_args.deprecated_ssl is not None:
-        click.secho(
-            "Warning: The --ssl/--no-ssl CLI options are deprecated and will be removed in a future release. "
-            "Please use the \"default_ssl_mode\" config option or --ssl-mode CLI flag instead. "
-            f"See issue {ISSUES_URL}/1507",
-            err=True,
-            fg="yellow",
-        )
-
     # ssh_port and ssh_config_path have truthy defaults and are not included
     if (
         any([
@@ -288,25 +279,12 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
     keepalive_ticks = cli_args.keepalive_ticks if cli_args.keepalive_ticks is not None else mycli.default_keepalive_ticks
     ssl_mode = cli_args.ssl_mode or mycli.ssl_mode
 
-    # if there is a mismatch between the ssl_mode value and other sources of ssl config, show a warning
-    # specifically using "is False" to not pickup the case where cli_args.deprecated_ssl is None (not set by the user)
-    if cli_args.deprecated_ssl and ssl_mode == "off" or cli_args.deprecated_ssl is False and ssl_mode in ("auto", "on"):
-        click.secho(
-            f"Warning: The current ssl_mode value of '{ssl_mode}' is overriding the value provided by "
-            f"either the --ssl/--no-ssl CLI options or a DSN URI parameter (ssl={cli_args.deprecated_ssl}).",
-            err=True,
-            fg="yellow",
-        )
-
-    # configure SSL if ssl_mode is auto/on or if
-    # cli_args.deprecated_ssl = True (from --ssl or a DSN URI) and ssl_mode is None
-    if ssl_mode in ("auto", "on") or (cli_args.deprecated_ssl and ssl_mode is None):
+    if ssl_mode in ("auto", "on"):
         if cli_args.socket and ssl_mode == 'auto':
             ssl = None
         else:
             ssl = {
                 "mode": ssl_mode,
-                "enable": cli_args.deprecated_ssl,  # todo: why is this set at all?
                 "ca": cli_args.ssl_ca and os.path.expanduser(cli_args.ssl_ca),
                 "cert": cli_args.ssl_cert and os.path.expanduser(cli_args.ssl_cert),
                 "key": cli_args.ssl_key and os.path.expanduser(cli_args.ssl_key),
