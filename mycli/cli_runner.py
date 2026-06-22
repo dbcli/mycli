@@ -167,17 +167,6 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
     if cli_args.list_ssh_config:
         sys.exit(main_list_ssh_config(mycli, cli_args))
 
-    if 'MYSQL_UNIX_PORT' in os.environ:
-        # deprecated 2026-03
-        click.secho(
-            "The MYSQL_UNIX_PORT environment variable is deprecated in favor of MYSQL_UNIX_SOCKET.  "
-            "MYSQL_UNIX_PORT will be removed in a future release.",
-            err=True,
-            fg="red",
-        )
-        if not cli_args.socket:
-            cli_args.socket = os.environ['MYSQL_UNIX_PORT']
-
     # Choose which ever one has a valid value.
     database = cli_args.dbname or cli_args.database
 
