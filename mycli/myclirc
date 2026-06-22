@@ -73,7 +73,7 @@ beep_after_seconds = 0
 # rst, simple, sql-insert, sql-update, sql-update-1, sql-update-2, textile,
 # tsv, tsv_noheader, vertical.
 # Recommended: mysql_unicode.
-table_format = ascii
+table_format = mysql_unicode
 
 # Redirected otuput format
 # Recommended: csv.

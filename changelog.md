@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Breaking Changes
+---------
+* Change default table format to `mysql_unicode`.
+
+
 Internal
 ---------
 * Improve test coverage for DSN variable expansion.
