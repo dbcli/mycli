@@ -48,11 +48,6 @@ def make_sqlexecute() -> SimpleNamespace:
         character_set='utf8mb4',
         local_infile=False,
         ssl={'ca': 'ca.pem'},
-        ssh_user='ssh-user',
-        ssh_host='ssh-host',
-        ssh_port=22,
-        ssh_password='ssh-pw',
-        ssh_key_filename='id_rsa',
     )
 
 
@@ -277,11 +272,6 @@ def test_bg_refresh_restarts_wraps_callbacks_and_closes(monkeypatch, refresher) 
             'utf8mb4',
             False,
             {'ca': 'ca.pem'},
-            'ssh-user',
-            'ssh-host',
-            22,
-            'ssh-pw',
-            'id_rsa',
         )
     ]
     assert len(executors) == 1

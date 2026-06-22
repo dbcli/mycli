@@ -53,11 +53,6 @@ def make_mycli(
         character_set='utf8mb4',
         local_infile=False,
         ssl=None,
-        ssh_user=None,
-        ssh_host=None,
-        ssh_port=22,
-        ssh_password=None,
-        ssh_key_filename=None,
         databases=MagicMock(return_value=list(databases)),
     )
     return SimpleNamespace(

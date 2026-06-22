@@ -39,7 +39,6 @@ A command line client for MySQL with auto-completion and syntax highlighting.
 ├── mycli/packages/hybrid_redirection.py  # implementation of shell-style redirects
 ├── mycli/packages/interactive_utils.py   # utilities for confirming on destructive statements
 ├── mycli/packages/key_binding_utils.py   # handlers for key bindings and related special commands
-├── mycli/packages/paramiko_stub/         # stub in case the Paramiko library is not installed
 ├── mycli/packages/sql_utils.py           # utilities for parsing SQL statements
 ├── mycli/packages/ptoolkit/              # extends prompt_toolkit
 ├── mycli/packages/special/               # implementation of mycli special commands

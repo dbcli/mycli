@@ -114,11 +114,6 @@ def test_binary_display_hex(executor):
         None,
         None,
         None,
-        None,
-        None,
-        None,
-        None,
-        None,
     )
     m.explicit_pager = False
     sqlresult = next(m.sqlexecute.run("select b'01101010' AS binary_test"))
@@ -149,11 +144,6 @@ def test_binary_display_utf8(executor):
         PASSWORD,
         HOST,
         PORT,
-        None,
-        None,
-        None,
-        None,
-        None,
         None,
         None,
         None,
@@ -364,11 +354,6 @@ def test_reconnect_database_is_selected(executor, capsys):
         None,
         None,
         None,
-        None,
-        None,
-        None,
-        None,
-        None,
     )
     try:
         next(m.sqlexecute.run(f"use {DATABASE}"))
@@ -399,11 +384,6 @@ def test_reconnect_no_database(executor, capsys):
         None,
         None,
         None,
-        None,
-        None,
-        None,
-        None,
-        None,
     )
     sql = "\\r"
     result = next(mycli.packages.special.execute(executor, sql))
@@ -422,11 +402,6 @@ def test_reconnect_with_different_database(executor):
         PASSWORD,
         HOST,
         PORT,
-        None,
-        None,
-        None,
-        None,
-        None,
         None,
         None,
         None,
@@ -453,11 +428,6 @@ def test_reconnect_with_same_database(executor):
         PASSWORD,
         HOST,
         PORT,
-        None,
-        None,
-        None,
-        None,
-        None,
         None,
         None,
         None,
@@ -916,35 +886,6 @@ def test_list_dsn(monkeypatch):
     try:
         if os.path.exists(myclirc.name):
             os.remove(myclirc.name)
-    except Exception as e:
-        print(f"An error occurred while attempting to delete the file: {e}")
-
-
-@pytest.mark.skipif(os.name == 'nt', reason='todo: unknown')
-def test_list_ssh_config():
-    runner = CliRunner()
-    # keep Windows from locking the file with delete=False
-    with NamedTemporaryFile(prefix=TEMPFILE_PREFIX, mode="w", delete=False) as ssh_config:
-        ssh_config.write(
-            dedent("""\
-            Host test
-                Hostname test.example.com
-                User joe
-                Port 22222
-                IdentityFile ~/.ssh/gateway
-        """)
-        )
-        ssh_config.flush()
-        args = ["--list-ssh-config", "--ssh-config-path", ssh_config.name]
-        result = runner.invoke(click_entrypoint, args=args)
-        assert "test\n" in result.output
-        result = runner.invoke(click_entrypoint, args=args + ["--verbose"])
-        assert "test : test.example.com\n" in result.output
-
-    # delete=False means we should try to clean up
-    try:
-        if os.path.exists(ssh_config.name):
-            os.remove(ssh_config.name)
     except Exception as e:
         print(f"An error occurred while attempting to delete the file: {e}")
 
@@ -1923,108 +1864,6 @@ def test_mysql_user_envvar_overrides_dsn_resolution(monkeypatch):
         and MockMyCli.connect_args['port'] == 6
         and MockMyCli.connect_args['database'] == 'dsn_database'
     )
-
-
-@pytest.mark.skipif(os.name == 'nt', reason='todo: unknown')
-def test_ssh_config(monkeypatch):
-    # Setup classes to mock mycli.main.MyCli
-    class Formatter:
-        format_name = None
-
-    class Logger:
-        def debug(self, *args, **args_dict):
-            pass
-
-        def warning(self, *args, **args_dict):
-            pass
-
-    class MockMyCli:
-        config = {
-            "main": {},
-            "alias_dsn": {},
-            "connection": {
-                "default_keepalive_ticks": 0,
-            },
-        }
-
-        def __init__(self, **args):
-            self.logger = Logger()
-            self.destructive_warning = False
-            self.main_formatter = Formatter()
-            self.redirect_formatter = Formatter()
-            self.ssl_mode = "auto"
-            self.my_cnf = {"client": {}, "mysqld": {}}
-            self.default_keepalive_ticks = 0
-
-        def connect(self, **args):
-            MockMyCli.connect_args = args
-
-        def run_query(self, query, new_line=True):
-            pass
-
-    import mycli.main
-
-    monkeypatch.setattr(mycli.main, "MyCli", MockMyCli)
-    runner = CliRunner()
-
-    # Setup temporary configuration
-    # keep Windows from locking the file with delete=False
-    with NamedTemporaryFile(prefix=TEMPFILE_PREFIX, mode="w", delete=False) as ssh_config:
-        ssh_config.write(
-            dedent("""\
-            Host test
-                Hostname test.example.com
-                User joe
-                Port 22222
-                IdentityFile ~/.ssh/gateway
-        """)
-        )
-        ssh_config.flush()
-
-        # When a user supplies a ssh config.
-        result = runner.invoke(mycli.main.click_entrypoint, args=["--ssh-config-path", ssh_config.name, "--ssh-config-host", "test"])
-        assert result.exit_code == 0, result.output + " " + str(result.exception)
-        assert (
-            MockMyCli.connect_args["ssh_user"] == "joe"
-            and MockMyCli.connect_args["ssh_host"] == "test.example.com"
-            and MockMyCli.connect_args["ssh_port"] == 22222
-            and MockMyCli.connect_args["ssh_key_filename"] == os.path.expanduser("~") + "/.ssh/gateway"
-        )
-
-        # When a user supplies a ssh config host as argument to mycli,
-        # and used command line arguments, use the command line
-        # arguments.
-        result = runner.invoke(
-            mycli.main.click_entrypoint,
-            args=[
-                "--ssh-config-path",
-                ssh_config.name,
-                "--ssh-config-host",
-                "test",
-                "--ssh-user",
-                "arg_user",
-                "--ssh-host",
-                "arg_host",
-                "--ssh-port",
-                "3",
-                "--ssh-key-filename",
-                "/path/to/key",
-            ],
-        )
-        assert result.exit_code == 0, result.output + " " + str(result.exception)
-        assert (
-            MockMyCli.connect_args["ssh_user"] == "arg_user"
-            and MockMyCli.connect_args["ssh_host"] == "arg_host"
-            and MockMyCli.connect_args["ssh_port"] == 3
-            and MockMyCli.connect_args["ssh_key_filename"] == "/path/to/key"
-        )
-
-    # delete=False means we should try to clean up
-    try:
-        if os.path.exists(ssh_config.name):
-            os.remove(ssh_config.name)
-    except Exception as e:
-        print(f"An error occurred while attempting to delete the file: {e}")
 
 
 @dbtest

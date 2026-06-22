@@ -15,9 +15,7 @@ from mycli.main_modes.batch import main_batch_from_stdin, main_batch_with_progre
 from mycli.main_modes.checkup import main_checkup
 from mycli.main_modes.execute import main_execute_from_cli
 from mycli.main_modes.list_dsn import main_list_dsn
-from mycli.main_modes.list_ssh_config import main_list_ssh_config
 from mycli.packages.cli_utils import is_valid_connection_scheme
-from mycli.packages.ssh_utils import read_ssh_config
 
 if TYPE_CHECKING:
     from mycli.main import CliArgs
@@ -134,29 +132,8 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
     if cli_args.table:
         cli_args.format = 'table'
 
-    # ssh_port and ssh_config_path have truthy defaults and are not included
-    if (
-        any([
-            cli_args.ssh_user,
-            cli_args.ssh_host,
-            cli_args.ssh_password,
-            cli_args.ssh_key_filename,
-            cli_args.list_ssh_config,
-            cli_args.ssh_config_host,
-        ])
-        and not cli_args.ssh_warning_off
-    ):
-        click.secho(
-            f"Warning: The built-in SSH functionality is deprecated and will be removed in a future release. See issue {ISSUES_URL}/1464",
-            err=True,
-            fg="red",
-        )
-
     if cli_args.list_dsn:
         sys.exit(main_list_dsn(mycli))
-
-    if cli_args.list_ssh_config:
-        sys.exit(main_list_ssh_config(mycli, cli_args))
 
     # Choose which ever one has a valid value.
     database = cli_args.dbname or cli_args.database
@@ -201,6 +178,11 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
             mycli.dsn_alias = cli_args.dsn
 
     if dsn_uri:
+        is_valid_scheme, scheme = is_valid_connection_scheme(dsn_uri)
+        if not is_valid_scheme:
+            click.secho(f'Error: Unknown connection scheme provided for DSN URI ({scheme}://)', err=True, fg='red')
+            sys.exit(1)
+
         uri = urlparse(dsn_uri)
         env_var_alias_name = None
         dsn_alias = getattr(mycli, 'dsn_alias', None)
@@ -298,23 +280,6 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
     else:
         ssl = None
 
-    if cli_args.ssh_config_host:
-        ssh_config = read_ssh_config(cli_args.ssh_config_path).lookup(cli_args.ssh_config_host)
-        ssh_host = cli_args.ssh_host if cli_args.ssh_host else ssh_config.get("hostname")
-        ssh_user = cli_args.ssh_user if cli_args.ssh_user else ssh_config.get("user")
-        if ssh_config.get("port") and cli_args.ssh_port == 22:
-            # port has a default value, overwrite it if it's in the config
-            ssh_port = int(ssh_config.get("port"))
-        else:
-            ssh_port = cli_args.ssh_port
-        ssh_key_filename = cli_args.ssh_key_filename if cli_args.ssh_key_filename else ssh_config.get("identityfile", [None])[0]
-    else:
-        ssh_host = cli_args.ssh_host
-        ssh_user = cli_args.ssh_user
-        ssh_port = cli_args.ssh_port
-        ssh_key_filename = cli_args.ssh_key_filename
-
-    ssh_key_filename = ssh_key_filename and os.path.expanduser(ssh_key_filename)
     # Merge init-commands: global, DSN-specific, then CLI
     init_cmds: list[str] = []
     # 1) Global init-commands
@@ -434,11 +399,6 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
         socket=cli_args.socket,
         local_infile=cli_args.local_infile,
         ssl=ssl,
-        ssh_user=ssh_user,
-        ssh_host=ssh_host,
-        ssh_port=ssh_port,
-        ssh_password=cli_args.ssh_password,
-        ssh_key_filename=ssh_key_filename,
         init_command=combined_init_cmd,
         unbuffered=cli_args.unbuffered,
         character_set=cli_args.character_set,

@@ -71,11 +71,6 @@ class CompletionRefresher:
                 e.character_set,
                 e.local_infile,
                 e.ssl,
-                e.ssh_user,
-                e.ssh_host,
-                e.ssh_port,
-                e.ssh_password,
-                e.ssh_key_filename,
             )
         except pymysql.err.OperationalError:
             return

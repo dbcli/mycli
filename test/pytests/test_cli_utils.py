@@ -30,7 +30,7 @@ def test_filtered_sys_argv(monkeypatch, argv, expected):
         ('mysqlx://user@localhost/db', True, None),
         ('tcp://localhost:3306', True, None),
         ('socket:///tmp/mysql.sock', True, None),
-        ('ssh://user@example.com', True, None),
+        ('ssh://user@example.com', False, 'ssh'),
         ('postgres://user@localhost/db', False, 'postgres'),
         ('http://example.com', False, 'http'),
     ],

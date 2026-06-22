@@ -58,7 +58,6 @@ def default_config() -> dict[str, Any]:
 def make_cli_args() -> main.CliArgs:
     cli_args = main.CliArgs()
     cli_args.format = None
-    cli_args.ssh_config_path = '/dev/null'
     return cli_args
 
 
@@ -291,6 +290,48 @@ def test_run_from_cli_args_reports_missing_dsn(monkeypatch: pytest.MonkeyPatch) 
     assert secho_calls == [
         (
             'Could not find the specified DSN in the config file. Please check the "[alias_dsn]" section in your myclirc.',
+            {'err': True, 'fg': 'red'},
+        )
+    ]
+
+
+def test_run_from_cli_args_rejects_unknown_positional_dsn_scheme(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli_args = make_cli_args()
+    cli_args.database = 'ssh://user@example.com/db'
+    secho_calls: list[tuple[str, dict[str, Any]]] = []
+    monkeypatch.setattr(cli_runner.click, 'secho', lambda text, **kwargs: secho_calls.append((text, kwargs)))
+
+    with pytest.raises(SystemExit) as excinfo:
+        run_with_client(monkeypatch, cli_args, DummyMyCli())
+
+    assert excinfo.value.code == 1
+    assert secho_calls == [
+        (
+            'Error: Unknown connection scheme provided for DSN URI (ssh://)',
+            {'err': True, 'fg': 'red'},
+        )
+    ]
+
+
+def test_run_from_cli_args_rejects_unknown_alias_dsn_scheme(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli_args = make_cli_args()
+    cli_args.dsn = 'legacy_ssh'
+    client = DummyMyCli(
+        config={
+            **default_config(),
+            'alias_dsn': {'legacy_ssh': 'ssh://user@example.com/db'},
+        }
+    )
+    secho_calls: list[tuple[str, dict[str, Any]]] = []
+    monkeypatch.setattr(cli_runner.click, 'secho', lambda text, **kwargs: secho_calls.append((text, kwargs)))
+
+    with pytest.raises(SystemExit) as excinfo:
+        run_with_client(monkeypatch, cli_args, client)
+
+    assert excinfo.value.code == 1
+    assert secho_calls == [
+        (
+            'Error: Unknown connection scheme provided for DSN URI (ssh://)',
             {'err': True, 'fg': 'red'},
         )
     ]

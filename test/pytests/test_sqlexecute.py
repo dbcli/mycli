@@ -1,21 +1,17 @@
 # type: ignore
 
-import builtins
 from datetime import time
-import importlib.util
 import os
-from pathlib import Path
-import sys
 from types import SimpleNamespace
 
 from prompt_toolkit.formatted_text import FormattedText
 import pymysql
 import pytest
 
+from mycli import sqlexecute
 from mycli.constants import TEST_DATABASE
 from mycli.packages.special import iocommands
 from mycli.packages.sqlresult import SQLResult
-import mycli.sqlexecute as sqlexecute
 from mycli.sqlexecute import ServerInfo, ServerSpecies, SQLExecute
 from test.utils import dbtest, is_expanded_output, run, set_expanded_output
 
@@ -476,28 +472,6 @@ def test_calc_mysql_version_value_raises_for_non_numeric_parts(version_string: s
         ServerInfo.calc_mysql_version_value(version_string)
 
 
-def test_sqlexecute_import_swallows_optional_dependency_import_errors(monkeypatch) -> None:
-    assert sqlexecute.__file__ is not None
-    original_import = builtins.__import__
-
-    def fake_import(name, globals=None, locals=None, fromlist=(), level=0):  # noqa: A002
-        if name == 'paramiko':
-            raise ImportError('missing optional dependency')
-        return original_import(name, globals, locals, fromlist, level)
-
-    module_name = 'sqlexecute_importerror_test'
-    spec = importlib.util.spec_from_file_location(module_name, Path(sqlexecute.__file__))
-    assert spec is not None
-    assert spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    monkeypatch.setattr(builtins, '__import__', fake_import)
-    sys.modules[module_name] = module
-    try:
-        spec.loader.exec_module(module)
-    finally:
-        sys.modules.pop(module_name, None)
-
-
 @pytest.mark.parametrize(
     ('server_info', 'expected'),
     (
@@ -669,11 +643,6 @@ def make_executor_for_connect_tests() -> SQLExecute:
     executor.ssl = {'ca': '/stored/ca.pem'}
     executor.server_info = None
     executor.connection_id = None
-    executor.ssh_user = 'stored_ssh_user'
-    executor.ssh_host = None
-    executor.ssh_port = 22
-    executor.ssh_password = 'stored_ssh_password'
-    executor.ssh_key_filename = '/stored/key.pem'
     executor.init_command = 'select 1'
     executor.unbuffered = False
     executor.sandbox_mode = False
@@ -845,104 +814,6 @@ def test_connect_reraises_non_sandbox_operational_error(monkeypatch) -> None:
         executor.connect()
 
     assert exc_info.value.args == (1045, 'access denied')
-
-
-def test_connect_uses_ssh_tunnel_when_ssh_host_is_set(monkeypatch) -> None:
-    executor = make_executor_for_connect_tests()
-    executor.ssl = None
-    new_conn = DummyConnection(server_version='8.0.36-0ubuntu0.22.04.1')
-    connect_kwargs = {}
-    tunnel_args = {}
-    tunnel_started = []
-
-    class FakeTunnel:
-        def __init__(
-            self,
-            ssh_address_or_host,
-            ssh_username=None,
-            ssh_pkey=None,
-            ssh_password=None,
-            remote_bind_address=None,
-        ) -> None:
-            tunnel_args['ssh_address_or_host'] = ssh_address_or_host
-            tunnel_args['ssh_username'] = ssh_username
-            tunnel_args['ssh_pkey'] = ssh_pkey
-            tunnel_args['ssh_password'] = ssh_password
-            tunnel_args['remote_bind_address'] = remote_bind_address
-            self.local_bind_host = '127.0.0.1'
-            self.local_bind_port = 4406
-
-        def start(self) -> None:
-            tunnel_started.append(True)
-
-    def fake_connect(**kwargs):
-        connect_kwargs.update(kwargs)
-        return new_conn
-
-    def fake_reset_connection_id(self) -> None:
-        self.connection_id = 7
-
-    monkeypatch.setattr(sqlexecute.pymysql, 'connect', fake_connect)
-    monkeypatch.setattr(SQLExecute, 'reset_connection_id', fake_reset_connection_id)
-    monkeypatch.setattr(
-        sqlexecute,
-        'sshtunnel',
-        SimpleNamespace(SSHTunnelForwarder=FakeTunnel),
-        raising=False,
-    )
-
-    executor.connect(
-        host='db.internal',
-        port=3308,
-        ssh_host='bastion.internal',
-        ssh_port=2222,
-        ssh_user='alice',
-        ssh_password='secret',
-        ssh_key_filename='/tmp/id_rsa',
-    )
-
-    assert connect_kwargs['host'] == 'db.internal'
-    assert connect_kwargs['port'] == 3308
-    assert connect_kwargs['defer_connect'] is True
-    assert connect_kwargs['init_command'] == 'select 1'
-    assert tunnel_args['ssh_address_or_host'] == ('bastion.internal', 2222)
-    assert tunnel_args['ssh_username'] == 'alice'
-    assert tunnel_args['ssh_pkey'] == '/tmp/id_rsa'
-    assert tunnel_args['ssh_password'] == 'secret'
-    assert tunnel_args['remote_bind_address'] == ('db.internal', 3308)
-    assert tunnel_started == [True]
-    assert new_conn.host == '127.0.0.1'
-    assert new_conn.port == 4406
-    assert new_conn.connect_calls == 1
-    assert executor.conn is new_conn
-    assert executor.host == 'db.internal'
-    assert executor.port == 3308
-    assert executor.connection_id == 7
-
-
-def test_connect_reraises_ssh_tunnel_errors(monkeypatch) -> None:
-    executor = make_executor_for_connect_tests()
-    executor.ssl = None
-    new_conn = DummyConnection(server_version='8.0.36-0ubuntu0.22.04.1')
-
-    class FakeTunnel:
-        def __init__(self, *args, **kwargs) -> None:
-            self.local_bind_host = '127.0.0.1'
-            self.local_bind_port = 4406
-
-        def start(self) -> None:
-            raise RuntimeError('tunnel failed')
-
-    monkeypatch.setattr(sqlexecute.pymysql, 'connect', lambda **_kwargs: new_conn)
-    monkeypatch.setattr(
-        sqlexecute,
-        'sshtunnel',
-        SimpleNamespace(SSHTunnelForwarder=FakeTunnel),
-        raising=False,
-    )
-
-    with pytest.raises(RuntimeError, match='tunnel failed'):
-        executor.connect(ssh_host='bastion.internal')
 
 
 def test_connect_sandbox_temporarily_disables_set_character_set() -> None:

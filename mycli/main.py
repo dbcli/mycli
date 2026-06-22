@@ -86,44 +86,6 @@ class CliArgs:
         type=click.Path(),
         help='File or FIFO path containing the password to connect to the db if not specified otherwise.',
     )
-    ssh_user: str | None = clickdc.option(
-        type=str,
-        help='User name to connect to ssh server.',
-    )
-    ssh_host: str | None = clickdc.option(
-        type=str,
-        help='Host name to connect to ssh server.',
-    )
-    ssh_port: int = clickdc.option(
-        type=int,
-        default=22,
-        help='Port to connect to ssh server.',
-    )
-    ssh_password: str | None = clickdc.option(
-        type=str,
-        help='Password to connect to ssh server.',
-    )
-    ssh_key_filename: str | None = clickdc.option(
-        type=str,
-        help='Private key filename (identify file) for the ssh connection.',
-    )
-    ssh_config_path: str = clickdc.option(
-        type=str,
-        help='Path to ssh configuration.',
-        default=os.path.expanduser('~') + '/.ssh/config',
-    )
-    ssh_config_host: str | None = clickdc.option(
-        type=str,
-        help='Host to connect to ssh server reading from ssh configuration.',
-    )
-    list_ssh_config: bool = clickdc.option(
-        is_flag=True,
-        help='list ssh configurations in the ssh config (requires paramiko).',
-    )
-    ssh_warning_off: bool = clickdc.option(
-        is_flag=True,
-        help='Suppress the SSH deprecation notice.',
-    )
     ssl_mode: str = clickdc.option(
         type=click.Choice(['auto', 'on', 'off']),
         help='Set desired SSL behavior. auto=preferred if TCP/IP, on=required, off=off.',
