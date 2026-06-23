@@ -18,6 +18,11 @@ Features
 * Add `--warn-batch` flag, which is off by default.
 
 
+Bug Fixes
+---------
+* Ensure that `--batch` and `--logfile` files are distinct.
+
+
 Documentation
 ---------
 * Show section when recommending `default_character_set` setting.

@@ -333,6 +333,17 @@ def preprocess_cli_args(
             click.secho('Error: --batch and --checkpoint must be different files.', err=True, fg='red')
             sys.exit(1)
 
+    if (
+        cli_args.logfile
+        and os.path.exists(cli_args.logfile.name)
+        and cli_args.batch
+        and cli_args.batch != '-'
+        and os.path.exists(cli_args.batch)
+    ):
+        if os.path.samefile(cli_args.batch, cli_args.logfile.name):
+            click.secho('Error: --batch and --logfile must be different files.', err=True, fg='red')
+            sys.exit(1)
+
     if cli_args.verbose and cli_args.quiet:
         click.secho('Error: --verbose and --quiet are incompatible.', err=True, fg='red')
         sys.exit(1)
