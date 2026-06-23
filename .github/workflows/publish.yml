@@ -18,7 +18,7 @@ jobs:
       run: |
         if grep -q TBD changelog.md; then false; fi
 
-  test:
+  tests:
     runs-on: ubuntu-latest
     needs: [docs]
     continue-on-error: true
@@ -62,9 +62,167 @@ jobs:
     - name: Run Style Checks
       run: uv run tox -e style
 
+  tests-macos:
+    name: Tests macOS
+    runs-on: macos-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.14"]
+
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+    - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+      with:
+        version: "latest"
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Set up MySQL
+      run: |
+        brew install mysql
+
+    - name: Start MySQL
+      run: |
+        brew services start mysql
+
+    - name: Install dependencies
+      run: uv sync --all-extras -p ${{ matrix.python-version }}
+
+    - name: Wait for MySQL connection
+      run: |
+        while ! mysqladmin ping --host=localhost --port=3306 --user=root --silent; do
+          sleep 5
+        done
+
+    - name: Set MySQL test credentials
+      run: |
+        $(brew --prefix mysql)/bin/mysqladmin --host=localhost --port=3306 --user=root password root
+
+    - name: Pytest / behave
+      env:
+        PYTEST_PASSWORD: root
+        PYTEST_HOST: 127.0.0.1
+        TERM: xterm
+      run: |
+        uv run tox -e py${{ matrix.python-version }}
+
+  tests-windows:
+    name: Tests Windows
+    runs-on: windows-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.14']
+
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+    - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+      with:
+        version: 'latest'
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      shell: cmd
+      run: uv sync --all-extras -p ${{ matrix.python-version }}
+
+    - name: Set up MySQL
+      uses: shogo82148/actions-setup-mysql@076e636c45996ec8cb1a455c65f9f5364aeebd8a # v1.52.1
+      with:
+        mysql-version: '9.7'
+        root-password: root
+
+    - name: Run pytest
+      env:
+        PYTEST_PASSWORD: root
+        PYTEST_HOST: 127.0.0.1
+      run: |
+        uv run -- coverage run -m pytest
+        uv run -- coverage report -m --sort=Miss --skip-covered --skip-empty
+
+  tests-wsl:
+    name: Tests WSL
+    runs-on: windows-latest
+
+    steps:
+    - uses: vampire/setup-wsl@d1da7f2c0322a5ee4f24975344f67fc0f5baf364 # v7.0.0
+      with:
+        distribution: Ubuntu-24.04
+        update: 'true'
+        additional-packages: |
+          curl
+          git
+          mysql-server
+          pkg-config
+          build-essential
+          python3-pip
+
+    - name: Create working directory
+      shell: wsl-bash {0}
+      run: |
+        mkdir -p /root/mycli
+
+    - uses: ubuntu/wsl/.github/actions/wsl-checkout@42e1abc303b6d2eaf61b8a2050ccc8a9e23ac20b
+      with:
+        distro: Ubuntu-24.04
+        working-dir: /root/mycli
+
+    - name: Install uv
+      shell: wsl-bash {0}
+      run: |
+        export PATH="$HOME/.local/bin:$PATH"
+        env PYTHONPATH=/usr/local/lib/python3.14/site-packages pip install --upgrade --break-system-packages --prefix=/usr uv
+
+    - name: Install dependencies
+      shell: wsl-bash {0}
+      run: |
+        export PATH="$HOME/.local/bin:$PATH"
+        cd /root/mycli
+        uv sync --all-extras --python 3.14
+
+    - name: Start MySQL in WSL
+      shell: wsl-bash {0}
+      run: |
+        sudo service mysql start
+
+    - name: Wait for MySQL connection
+      shell: wsl-bash {0}
+      run: |
+        while ! mysqladmin ping --host=localhost --port=3306 --user=root --silent; do
+          sleep 5
+        done
+
+    - name: Set up MySQL
+      shell: wsl-bash {0}
+      run: |
+        mysqladmin -u root password root
+
+    - name: Run pytest
+      shell: wsl-bash {0}
+      env:
+        PYTEST_HOST: 127.0.0.1
+        PYTEST_USER: root
+        PYTEST_PASSWORD: root
+      run: |
+        export PATH="$HOME/.local/bin:$PATH"
+        cd /root/mycli
+        uv run --python 3.14 -- coverage run -m pytest
+        uv run --python 3.14 -- coverage report -m --sort=Miss --skip-covered --skip-empty
+
   build:
     runs-on: ubuntu-latest
-    needs: [test]
+    needs: [tests, tests-macos, tests-windows, tests-wsl]
 
     steps:
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -75,10 +233,10 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
       with:
-        python-version: '3.13'
+        python-version: '3.14'
 
     - name: Install dependencies
-      run: uv sync --all-extras -p 3.13
+      run: uv sync --all-extras -p 3.14
 
     - name: Build
       run: uv build
