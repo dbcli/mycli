@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from io import TextIOWrapper
-import os
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -20,7 +19,6 @@ def write_myclirc(tmp_path: Path, content: str) -> str:
 
 def patch_constructor_side_effects(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(MyCli, 'system_config_files', [])
-    monkeypatch.setattr(MyCli, 'pwd_config_file', os.devnull)
     monkeypatch.setattr(MyCli, 'initialize_logging', lambda self: None)
     monkeypatch.setattr(MyCli, 'register_special_commands', lambda self: None)
     monkeypatch.setattr(client_module, 'get_mylogin_cnf_path', lambda: None)

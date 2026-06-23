@@ -9,6 +9,7 @@ Breaking Changes
 * Remove support for `--ssl/--no-ssl` CLI arguments in favor of `--ssl-mode`.
 * Remove support for deprecated SSH jump functionality.
 * Remove support for `my.cnf` vendor MySQL option files.
+* Remove support for `.myclirc` files in the current working directory.
 
 
 Documentation

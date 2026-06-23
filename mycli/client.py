@@ -61,8 +61,6 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
         os.path.join(os.path.expanduser(xdg_config_home), "mycli", "myclirc"),
     ]
 
-    pwd_config_file = os.path.join(os.getcwd(), ".myclirc")
-
     def __init__(
         self,
         sqlexecute: SQLExecute | None = None,
@@ -87,7 +85,7 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
         self.checkpoint: IO | None = None
 
         # Load config.
-        config_files: list[str | IO[str]] = self.system_config_files + [myclirc] + [self.pwd_config_file]
+        config_files: list[str | IO[str]] = self.system_config_files + [myclirc]
 
         c = self.config = read_config_files(config_files)
         # only needed in --checkup mode. todo: only load when needed
