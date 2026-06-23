@@ -71,24 +71,11 @@ class FakeSQLExecute:
 
 def default_cnf() -> dict[str, Any]:
     return {
-        'database': None,
         'user': None,
         'password': None,
         'host': None,
         'port': None,
         'socket': None,
-        'default_socket': None,
-        'default_character_set': None,
-        'default-character-set': None,
-        'local_infile': None,
-        'local-infile': None,
-        'loose_local_infile': None,
-        'loose-local-infile': None,
-        'ssl-ca': None,
-        'ssl-cert': None,
-        'ssl-key': None,
-        'ssl-cipher': None,
-        'ssl-verify-server-cert': None,
     }
 
 
