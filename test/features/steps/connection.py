@@ -1,15 +1,10 @@
 # type: ignore
 
-import io
-import os
-
 from behave import then, when
 import wrappers
 
-from mycli.config import encrypt_mylogin_cnf
-from test.features.environment import MYLOGIN_CNF_PATH, get_db_name_from_context
+from test.features.environment import get_db_name_from_context
 from test.features.steps.utils import parse_cli_args_to_dict
-from test.utils import HOST, PASSWORD, PORT, USER
 
 TEST_LOGIN_PATH = "test_login_path"
 
@@ -29,15 +24,6 @@ def status_contains(context, expression):
     # so let's wait for its last character
     context.cli.expect_exact(">")
     context.atprompt = True
-
-
-@when("we create mylogin.cnf file")
-def step_create_mylogin_cnf_file(context):
-    os.environ.pop("MYSQL_TEST_LOGIN_FILE", None)
-    mylogin_cnf = f"[{TEST_LOGIN_PATH}]\nhost = {HOST}\nport = {PORT}\nuser = {USER}\npassword = {PASSWORD}\n"
-    with open(MYLOGIN_CNF_PATH, "wb") as f:
-        input_file = io.StringIO(mylogin_cnf)
-        f.write(encrypt_mylogin_cnf(input_file).read())
 
 
 @then("we are logged in")

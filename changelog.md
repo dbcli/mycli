@@ -21,6 +21,7 @@ Internal
 ---------
 * Improve test coverage for DSN variable expansion.
 * Test on all platforms in the Publish GitHub Action.
+* Remove unused support for writing `.mylogin.cnf` files.
 
 
 1.76.0 (2026/06/20)
