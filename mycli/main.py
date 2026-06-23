@@ -170,14 +170,6 @@ class CliArgs:
         is_flag=True,
         help='In batch mode, resume after replaying statements in the --checkpoint file.',
     )
-    defaults_group_suffix: str | None = clickdc.option(
-        type=str,
-        help='Read MySQL config groups with the specified suffix.',
-    )
-    defaults_file: str | None = clickdc.option(
-        type=click.Path(),
-        help='Only read MySQL options from the given file.',
-    )
     myclirc: str = clickdc.option(
         type=click.Path(),
         default='~/.myclirc',

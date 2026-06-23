@@ -9,6 +9,7 @@ import time
 from types import SimpleNamespace
 from typing import Any, Callable, Literal, cast
 
+from configobj import ConfigObj
 from packaging.version import Version
 from prompt_toolkit.formatted_text import (
     ANSI,
@@ -196,13 +197,13 @@ def make_bare_mycli() -> Any:
     cli.refresh_completions = lambda reset=False: [SQLResult(status='refresh')]  # type: ignore[assignment]
     cli.reconnect = lambda database='': False  # type: ignore[assignment]
     cli.checkpoint = None
+    cli.mylogin_cnf = ConfigObj()
     return cli
 
 
 def make_dummy_mycli_class(
     *,
     config: dict[str, Any] | None = None,
-    my_cnf: dict[str, Any] | None = None,
     config_without_package_defaults: dict[str, Any] | None = None,
 ) -> Any:
     class DummyMyCli:
@@ -212,7 +213,6 @@ def make_dummy_mycli_class(
             type(self).last_instance = self
             self.init_kwargs = dict(kwargs)
             self.config = config or {'main': {}, 'alias_dsn': {}}
-            self.my_cnf = my_cnf or {'client': {}, 'mysqld': {}}
             self.config_without_package_defaults = config_without_package_defaults or {}
             self.default_keepalive_ticks = 5
             self.ssl_mode = None

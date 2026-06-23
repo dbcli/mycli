@@ -35,7 +35,7 @@ class DummyClient(ClientConnectionMixin):
         config_without_package_defaults: dict[str, Any] | None = None,
     ) -> None:
         self.cnf = cnf or default_cnf()
-        self.my_cnf = object()
+        self.mylogin_cnf = object()
         self.config = config or {'main': {}, 'connection': {}}
         self.config_without_package_defaults = config_without_package_defaults or {}
         self.keepalive_ticks: int | None = None
@@ -43,15 +43,10 @@ class DummyClient(ClientConnectionMixin):
         self.sqlexecute: Any = None
         self.logger = DummyLogger()
         self.echo_calls: list[tuple[tuple[Any, ...], dict[str, Any]]] = []
-        self.ssl_merge_calls: list[tuple[dict[str, Any], dict[str, Any]]] = []
 
-    def read_my_cnf(self, files: Any, keys: list[str]) -> dict[str, Any]:
-        assert files is self.my_cnf
+    def read_mylogin_cnf(self, cnf: Any) -> dict[str, Any]:
+        assert cnf is self.mylogin_cnf
         return dict(self.cnf)
-
-    def merge_ssl_with_cnf(self, ssl_config: dict[str, Any], cnf: dict[str, Any]) -> dict[str, Any] | None:
-        self.ssl_merge_calls.append((dict(ssl_config), dict(cnf)))
-        return dict(ssl_config) if ssl_config else None
 
     def echo(self, *args: Any, **kwargs: Any) -> None:
         self.echo_calls.append((args, kwargs))
@@ -143,7 +138,7 @@ def test_import_swallows_missing_pwd_module(monkeypatch: pytest.MonkeyPatch) -> 
 def test_connect_defaults_to_port_socket_and_config_character_set(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    client = DummyClient(config={'main': {'default_character_set': 'latin1'}, 'connection': {}})
+    client = DummyClient(config={'connection': {'default_character_set': 'latin1'}, 'main': {}})
     monkeypatch.setenv('USER', 'env_user')
     monkeypatch.setattr(client_connection, 'guess_socket_location', lambda: '/tmp/mysql.sock')
     monkeypatch.setattr(client_connection, 'WIN', True)
@@ -155,17 +150,7 @@ def test_connect_defaults_to_port_socket_and_config_character_set(
     assert call['port'] == 3306
     assert call['socket'] == '/tmp/mysql.sock'
     assert call['character_set'] == 'latin1'
-    assert call['ssl'] is None
-
-
-def test_connect_uses_character_set_from_cnf_default_character_set() -> None:
-    cnf = default_cnf()
-    cnf['default_character_set'] = 'utf8mb4'
-    client = DummyClient(cnf=cnf)
-
-    client.connect(host='db', port=3307)
-
-    assert FakeSQLExecute.calls[-1]['character_set'] == 'utf8mb4'
+    assert call['ssl'] == {}
 
 
 def test_connect_uses_character_set_from_connection_config() -> None:
@@ -176,15 +161,12 @@ def test_connect_uses_character_set_from_connection_config() -> None:
     assert FakeSQLExecute.calls[-1]['character_set'] == 'utf16'
 
 
-def test_connect_uses_character_set_from_cnf_hyphenated_key() -> None:
-    cnf = default_cnf()
-    del cnf['default_character_set']
-    cnf['default-character-set'] = 'latin1'
-    client = DummyClient(cnf=cnf)
+def test_connect_uses_character_set_from_main_config() -> None:
+    client = DummyClient(config={'main': {'default_character_set': 'utf32'}, 'connection': {}})
 
     client.connect(host='db', port=3307)
 
-    assert FakeSQLExecute.calls[-1]['character_set'] == 'latin1'
+    assert FakeSQLExecute.calls[-1]['character_set'] == 'utf32'
 
 
 def test_connect_uses_default_character_set_when_none_configured() -> None:
@@ -201,38 +183,6 @@ def test_connect_accepts_local_infile_true() -> None:
     client.connect(host='db', port=3307, local_infile=True)
 
     assert FakeSQLExecute.calls[-1]['local_infile'] is True
-
-
-def test_connect_applies_ssl_overrides_from_user_connection_config() -> None:
-    client = DummyClient(
-        config_without_package_defaults={
-            'connection': {
-                'default_ssl_ca': '/ca.pem',
-                'default_ssl_cert': '/cert.pem',
-                'default_ssl_key': '/key.pem',
-                'default_ssl_cipher': 'AES256',
-                'default_ssl_verify_server_cert': 'true',
-            }
-        }
-    )
-
-    client.connect(host='db', port=3307, ssl={'mode': 'on'})
-
-    merged_cnf = client.ssl_merge_calls[-1][1]
-    assert merged_cnf['ssl-ca'] == '/ca.pem'
-    assert merged_cnf['ssl-cert'] == '/cert.pem'
-    assert merged_cnf['ssl-key'] == '/key.pem'
-    assert merged_cnf['ssl-cipher'] == 'AES256'
-    assert merged_cnf['ssl-verify-server-cert'] == 'true'
-
-
-def test_connect_adds_default_ssl_ca_path_when_merge_returns_none() -> None:
-    client = DummyClient(config={'main': {}, 'connection': {'default_ssl_ca_path': '/ca/path'}})
-    client.merge_ssl_with_cnf = lambda ssl_config, cnf: None  # type: ignore[method-assign]
-
-    client.connect(host='db', port=3307, ssl={'mode': 'on'})
-
-    assert FakeSQLExecute.calls[-1]['ssl'] == {'capath': '/ca/path'}
 
 
 def test_connect_retrieves_password_from_keyring(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -310,6 +260,14 @@ def test_connect_retries_without_ssl_for_auto_handshake_error() -> None:
     assert len(FakeSQLExecute.calls) == 2
     assert FakeSQLExecute.calls[0]['ssl'] == {'mode': 'auto', 'ca': '/ca.pem'}
     assert FakeSQLExecute.calls[1]['ssl'] is None
+
+
+def test_connect_adds_default_ssl_ca_path() -> None:
+    client = DummyClient(config={'main': {}, 'connection': {'default_ssl_ca_path': '/ca/path'}})
+
+    client.connect(host='db', port=3307, ssl={'mode': 'on'})
+
+    assert FakeSQLExecute.calls[-1]['ssl'] == {'mode': 'on', 'capath': '/ca/path'}
 
 
 def test_connect_exits_when_ssl_retry_also_fails() -> None:

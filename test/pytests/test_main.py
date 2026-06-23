@@ -93,8 +93,6 @@ CLI_ARGS_WITHOUT_DB = [
     PASSWORD,
     "--myclirc",
     default_config_file,
-    "--defaults-file",
-    default_config_file,
 ]
 CLI_ARGS = CLI_ARGS_WITHOUT_DB + [TEST_DATABASE]
 
@@ -565,8 +563,6 @@ def test_no_show_warnings_overrides_myclirc_setting(executor, tmp_path, monkeypa
             PASSWORD,
             '--myclirc',
             myclirc.name,
-            '--defaults-file',
-            default_config_file,
             TEST_DATABASE,
         ]
 
@@ -917,7 +913,6 @@ def test_dsn(monkeypatch):
             self.main_formatter = Formatter()
             self.redirect_formatter = Formatter()
             self.ssl_mode = "auto"
-            self.my_cnf = {"client": {}, "mysqld": {}}
             self.default_keepalive_ticks = 0
 
         def connect(self, **args):
@@ -1177,7 +1172,6 @@ def test_mysql_dsn_envvar(monkeypatch):
             self.main_formatter = Formatter()
             self.redirect_formatter = Formatter()
             self.ssl_mode = 'auto'
-            self.my_cnf = {'client': {}, 'mysqld': {}}
             self.default_keepalive_ticks = 0
 
         def connect(self, **args):
@@ -1230,7 +1224,6 @@ def test_password_flag_uses_sentinel(monkeypatch):
             self.main_formatter = Formatter()
             self.redirect_formatter = Formatter()
             self.ssl_mode = 'auto'
-            self.my_cnf = {'client': {}, 'mysqld': {}}
             self.default_keepalive_ticks = 0
 
         def connect(self, **args):
@@ -1288,7 +1281,6 @@ def test_password_option_uses_cleartext_value(monkeypatch):
             self.main_formatter = Formatter()
             self.redirect_formatter = Formatter()
             self.ssl_mode = 'auto'
-            self.my_cnf = {'client': {}, 'mysqld': {}}
             self.default_keepalive_ticks = 0
 
         def connect(self, **args):
@@ -1347,7 +1339,6 @@ def test_password_option_overrides_password_file_and_mysql_pwd(monkeypatch):
             self.main_formatter = Formatter()
             self.redirect_formatter = Formatter()
             self.ssl_mode = 'auto'
-            self.my_cnf = {'client': {}, 'mysqld': {}}
             self.default_keepalive_ticks = 0
 
         def connect(self, **args):
@@ -1416,7 +1407,6 @@ def test_password_file_option_reads_password(monkeypatch):
             self.main_formatter = Formatter()
             self.redirect_formatter = Formatter()
             self.ssl_mode = 'auto'
-            self.my_cnf = {'client': {}, 'mysqld': {}}
             self.default_keepalive_ticks = 0
 
         def connect(self, **args):
@@ -1498,7 +1488,6 @@ def test_username_option_and_mysql_user_envvar(monkeypatch):
             self.main_formatter = Formatter()
             self.redirect_formatter = Formatter()
             self.ssl_mode = 'auto'
-            self.my_cnf = {'client': {}, 'mysqld': {}}
             self.default_keepalive_ticks = 0
 
         def connect(self, **args):
@@ -1571,7 +1560,6 @@ def test_host_option_and_mysql_host_envvar(monkeypatch):
             self.main_formatter = Formatter()
             self.redirect_formatter = Formatter()
             self.ssl_mode = 'auto'
-            self.my_cnf = {'client': {}, 'mysqld': {}}
             self.default_keepalive_ticks = 0
 
         def connect(self, **args):
@@ -1640,7 +1628,6 @@ def test_hostname_option_alias(monkeypatch):
             self.main_formatter = Formatter()
             self.redirect_formatter = Formatter()
             self.ssl_mode = 'auto'
-            self.my_cnf = {'client': {}, 'mysqld': {}}
             self.default_keepalive_ticks = 0
 
         def connect(self, **args):
@@ -1695,7 +1682,6 @@ def test_port_option_and_mysql_tcp_port_envvar(monkeypatch):
             self.main_formatter = Formatter()
             self.redirect_formatter = Formatter()
             self.ssl_mode = 'auto'
-            self.my_cnf = {'client': {}, 'mysqld': {}}
             self.default_keepalive_ticks = 0
 
         def connect(self, **args):
@@ -1764,7 +1750,6 @@ def test_socket_option_and_mysql_unix_socket_envvar(monkeypatch):
             self.main_formatter = Formatter()
             self.redirect_formatter = Formatter()
             self.ssl_mode = 'auto'
-            self.my_cnf = {'client': {}, 'mysqld': {}}
             self.default_keepalive_ticks = 0
 
         def connect(self, **args):
@@ -1831,7 +1816,6 @@ def test_mysql_user_envvar_overrides_dsn_resolution(monkeypatch):
             self.main_formatter = Formatter()
             self.redirect_formatter = Formatter()
             self.ssl_mode = 'auto'
-            self.my_cnf = {'client': {}, 'mysqld': {}}
             self.default_keepalive_ticks = 0
 
         def connect(self, **args):
@@ -1964,7 +1948,6 @@ def noninteractive_mock_mycli(monkeypatch):
         config = {
             'main': {
                 'use_keyring': 'False',
-                'my_cnf_transition_done': 'True',
             },
             'connection': {},
         }
@@ -1975,7 +1958,6 @@ def noninteractive_mock_mycli(monkeypatch):
             self.main_formatter = Formatter()
             self.redirect_formatter = Formatter()
             self.ssl_mode = 'auto'
-            self.my_cnf = {'client': {}, 'mysqld': {}}
             self.default_keepalive_ticks = 0
             self.config_without_package_defaults = {'connection': {}}
 
@@ -2022,7 +2004,7 @@ def test_verbose_and_quiet_are_incompatible() -> None:
 def test_quiet_sets_negative_cli_verbosity(monkeypatch: pytest.MonkeyPatch) -> None:
     dummy_class = make_dummy_mycli_class(
         config={
-            'main': {'use_keyring': 'false', 'my_cnf_transition_done': 'true'},
+            'main': {'use_keyring': 'false'},
             'connection': {'default_keepalive_ticks': 0},
             'alias_dsn': {},
         }
@@ -2173,7 +2155,7 @@ def test_on_completions_refreshed_updates_completer_and_invalidates_prompt() -> 
 def test_click_entrypoint_callback_covers_dsn_list_init_commands(monkeypatch: pytest.MonkeyPatch) -> None:
     dummy_class = make_dummy_mycli_class(
         config={
-            'main': {'use_keyring': 'false', 'my_cnf_transition_done': 'true'},
+            'main': {'use_keyring': 'false'},
             'connection': {'default_keepalive_ticks': 0},
             'alias_dsn': {'prod': 'mysql://u:p@h/db'},
             'alias_dsn.init-commands': {'prod': ['set a=1', 'set b=2']},
@@ -2196,7 +2178,7 @@ def test_click_entrypoint_callback_covers_dsn_list_init_commands(monkeypatch: py
 def test_click_entrypoint_callback_uses_batch_with_progress_path(monkeypatch: pytest.MonkeyPatch) -> None:
     dummy_class = make_dummy_mycli_class(
         config={
-            'main': {'use_keyring': 'false', 'my_cnf_transition_done': 'true'},
+            'main': {'use_keyring': 'false'},
             'connection': {'default_keepalive_ticks': 0},
             'alias_dsn': {},
         }
@@ -2217,7 +2199,7 @@ def test_click_entrypoint_callback_uses_batch_with_progress_path(monkeypatch: py
 def test_click_entrypoint_callback_uses_batch_without_progress_path(monkeypatch: pytest.MonkeyPatch) -> None:
     dummy_class = make_dummy_mycli_class(
         config={
-            'main': {'use_keyring': 'false', 'my_cnf_transition_done': 'true'},
+            'main': {'use_keyring': 'false'},
             'connection': {'default_keepalive_ticks': 0},
             'alias_dsn': {},
         }
@@ -2233,27 +2215,6 @@ def test_click_entrypoint_callback_uses_batch_without_progress_path(monkeypatch:
     with pytest.raises(SystemExit) as excinfo:
         call_click_entrypoint_direct(cli_args)
     assert excinfo.value.code == 13
-
-
-def test_click_entrypoint_callback_covers_mycnf_underscore_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
-    click_lines: list[str] = []
-    monkeypatch.setattr(click, 'secho', lambda message='', **kwargs: click_lines.append(str(message)))
-    monkeypatch.setattr(sys, 'stdin', SimpleNamespace(isatty=lambda: True))
-    monkeypatch.setattr(sys.stderr, 'isatty', lambda: False)
-
-    dummy_class = make_dummy_mycli_class(
-        config={
-            'main': {'use_keyring': 'false', 'my_cnf_transition_done': 'false'},
-            'connection': {'default_keepalive_ticks': 0},
-            'alias_dsn': {},
-        },
-        my_cnf={'client': {'ssl_ca': '/tmp/ca.pem'}, 'mysqld': {}},
-        config_without_package_defaults={'main': {}},
-    )
-    monkeypatch.setattr(main, 'MyCli', dummy_class)
-
-    call_click_entrypoint_direct(main.CliArgs())
-    assert any('ssl-ca = /tmp/ca.pem' in line for line in click_lines)
 
 
 def test_format_sqlresult_uses_redirect_formatter_when_redirected() -> None:
@@ -2297,7 +2258,6 @@ def test_get_last_query_returns_latest_query() -> None:
 
 def test_connect_reports_expired_password_login_error(monkeypatch: pytest.MonkeyPatch) -> None:
     cli = make_bare_mycli()
-    cli.my_cnf = {'client': {}, 'mysqld': {}}
     cli.config_without_package_defaults = {'connection': {}}
     cli.config = {'connection': {}, 'main': {}}
     cli.logger = cast(Any, DummyLogger())
@@ -2320,7 +2280,6 @@ def test_connect_reports_expired_password_login_error(monkeypatch: pytest.Monkey
 
 def test_connect_sets_cli_sandbox_mode_when_sqlexecute_enters_sandbox(monkeypatch: pytest.MonkeyPatch) -> None:
     cli = make_bare_mycli()
-    cli.my_cnf = {'client': {}, 'mysqld': {}}
     cli.config_without_package_defaults = {'connection': {}}
     cli.config = {'connection': {}, 'main': {}}
     cli.logger = cast(Any, DummyLogger())

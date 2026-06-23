@@ -204,9 +204,6 @@ enable_pager = True
 # Choose a specific pager
 pager = 'less'
 
-# whether to show verbose warnings about the transition away from reading my.cnf
-my_cnf_transition_done = False
-
 # Whether to store and retrieve passwords from the system keyring.
 # See the documentation for https://pypi.org/project/keyring/ for your OS.
 # Note that the hostname is considered to be different if short or qualified.

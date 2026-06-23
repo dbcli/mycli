@@ -2,7 +2,6 @@
 
 """Unit tests for the mycli.config module."""
 
-import builtins
 from io import BytesIO, StringIO, TextIOWrapper
 import logging
 import os
@@ -11,7 +10,6 @@ import sys
 from tempfile import NamedTemporaryFile
 from types import SimpleNamespace
 
-from configobj import ConfigObj
 import pytest
 
 from mycli import config as config_module
@@ -19,13 +17,11 @@ from mycli.config import (
     _remove_pad,
     create_default_config,
     encrypt_mylogin_cnf,
-    get_included_configs,
     get_mylogin_cnf_path,
     log,
     open_mylogin_cnf,
     read_and_decrypt_mylogin_cnf,
     read_config_file,
-    read_config_files,
     str_to_bool,
     strip_matching_quotes,
     write_default_config,
@@ -208,57 +204,6 @@ def test_read_config_file_permission_error(monkeypatch, caplog) -> None:
     with caplog.at_level(logging.WARNING, logger='mycli.config'):
         assert read_config_file('/tmp/test.cnf') is None
         assert "You don't have permission to read config file '/tmp/test.cnf'." in caplog.text
-
-
-def test_get_included_configs_handles_paths_and_errors(tmp_path, monkeypatch) -> None:
-    include_dir = tmp_path / 'includes'
-    include_dir.mkdir()
-    expected = include_dir / 'included.cnf'
-    expected.write_text('[main]\nfoo = bar\n', encoding='utf8')
-    (include_dir / 'ignore.txt').write_text('skip', encoding='utf8')
-
-    config_path = tmp_path / 'root.cnf'
-    config_path.write_text(f'!includedir {include_dir}\n', encoding='utf8')
-
-    assert get_included_configs(BytesIO()) == []
-    assert get_included_configs(str(tmp_path / 'missing.cnf')) == []
-    assert get_included_configs(str(config_path)) == [str(expected)]
-
-    monkeypatch.setattr(builtins, 'open', lambda *_args, **_kwargs: (_ for _ in ()).throw(PermissionError()))
-    assert get_included_configs(str(config_path)) == []
-
-
-def test_read_config_files_merges_includes_and_honors_flags(monkeypatch) -> None:
-    first_config = ConfigObj({'main': {'color': 'blue'}})
-    first_config.filename = 'first.cnf'
-    included_config = ConfigObj({'main': {'pager': 'less'}})
-    included_config.filename = 'included.cnf'
-
-    monkeypatch.setattr(config_module, 'create_default_config', lambda list_values=True: ConfigObj({'default': {'a': '1'}}))
-
-    def fake_read_config_file(filename, list_values=True):
-        if filename == 'first.cnf':
-            return first_config
-        if filename == 'included.cnf':
-            return included_config
-        return None
-
-    monkeypatch.setattr(config_module, 'read_config_file', fake_read_config_file)
-    monkeypatch.setattr(config_module, 'get_included_configs', lambda filename: ['included.cnf'] if filename == 'first.cnf' else [])
-
-    merged = read_config_files(['first.cnf'])
-    assert merged['default']['a'] == '1'
-    assert merged['main']['color'] == 'blue'
-    assert merged['main']['pager'] == 'less'
-    assert merged.filename == 'included.cnf'
-
-    ignored_defaults = read_config_files(['first.cnf'], ignore_package_defaults=True)
-    assert 'default' not in ignored_defaults
-    assert ignored_defaults['main']['color'] == 'blue'
-
-    untouched = read_config_files(['first.cnf'], ignore_user_options=True)
-    assert untouched == ConfigObj({'default': {'a': '1'}})
-    assert 'main' not in untouched
 
 
 def test_create_and_write_default_config(tmp_path) -> None:
