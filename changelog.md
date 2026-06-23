@@ -11,6 +11,11 @@ Breaking Changes
 * Remove support for `my.cnf` vendor MySQL option files.
 
 
+Documentation
+---------
+* Show section when recommending `default_character_set` setting.
+
+
 Internal
 ---------
 * Improve test coverage for DSN variable expansion.
