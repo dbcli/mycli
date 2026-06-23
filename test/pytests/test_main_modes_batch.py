@@ -24,7 +24,7 @@ TEMPFILE_PREFIX = cast(str, cast(Any, test_utils).TEMPFILE_PREFIX)
 @dataclass
 class DummyCliArgs:
     format: str = 'tsv'
-    noninteractive: bool = True
+    warn_batch: bool = False
     throttle: float = 0.0
     checkpoint: str | TextIOWrapper | None = None
     batch: str | None = None
@@ -428,7 +428,7 @@ def test_dispatch_batch_statements_sets_expected_output_format(
 
 def test_dispatch_batch_statements_confirms_destructive_queries_before_running(monkeypatch) -> None:
     mycli = DummyMyCli(destructive_warning=True)
-    cli_args = DummyCliArgs(noninteractive=False)
+    cli_args = DummyCliArgs(warn_batch=True)
     opened_tty = object()
 
     monkeypatch.setattr(batch_mode, 'is_destructive', lambda _keywords, _statement: True)
@@ -444,7 +444,7 @@ def test_dispatch_batch_statements_confirms_destructive_queries_before_running(m
 
 def test_dispatch_batch_statements_skips_query_when_destructive_confirmation_is_rejected(monkeypatch) -> None:
     mycli = DummyMyCli(destructive_warning=True)
-    cli_args = DummyCliArgs(noninteractive=False)
+    cli_args = DummyCliArgs(warn_batch=True)
 
     monkeypatch.setattr(batch_mode, 'is_destructive', lambda _keywords, _statement: True)
     monkeypatch.setattr(batch_mode, 'confirm_destructive_query', lambda _keywords, _statement: False)
@@ -458,7 +458,7 @@ def test_dispatch_batch_statements_skips_query_when_destructive_confirmation_is_
 
 def test_dispatch_batch_statements_raises_when_tty_cannot_be_opened(monkeypatch) -> None:
     mycli = DummyMyCli(destructive_warning=True)
-    cli_args = DummyCliArgs(noninteractive=False)
+    cli_args = DummyCliArgs(warn_batch=True)
 
     monkeypatch.setattr(batch_mode, 'is_destructive', lambda _keywords, _statement: True)
     monkeypatch.setattr(batch_mode, 'open', lambda _path: (_ for _ in ()).throw(OSError('tty unavailable')), raising=False)

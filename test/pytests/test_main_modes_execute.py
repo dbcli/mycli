@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import builtins
 from dataclasses import dataclass
 from types import SimpleNamespace
 from typing import Any, cast
@@ -14,6 +15,7 @@ class DummyCliArgs:
     execute: str | None
     format: str = 'tsv'
     batch: str | None = None
+    warn_batch: bool = False
     checkpoint: str | None = None
 
 
@@ -22,11 +24,21 @@ class DummyFormatter:
     format_name: str | None = None
 
 
+class DummyLogger:
+    def __init__(self) -> None:
+        self.warning_calls: list[str] = []
+
+    def warning(self, message: str) -> None:
+        self.warning_calls.append(message)
+
+
 class DummyMyCli:
     def __init__(self, run_query_error: Exception | None = None) -> None:
         self.main_formatter = DummyFormatter()
         self.run_query_error = run_query_error
         self.ran_queries: list[tuple[str, str | None]] = []
+        self.destructive_keywords = ['drop']
+        self.logger = DummyLogger()
 
     def run_query(self, query: str, checkpoint: str | None = None) -> None:
         if self.run_query_error is not None:
@@ -125,3 +137,61 @@ def test_main_execute_from_cli_reports_query_errors(monkeypatch) -> None:
     assert mycli.main_formatter.format_name == 'ascii'
     assert mycli.ran_queries == []
     assert secho_calls == [('boom', True, 'red')]
+
+
+def test_main_execute_from_cli_confirms_destructive_query(monkeypatch) -> None:
+    mycli = DummyMyCli()
+    tty = object()
+    confirm_calls: list[tuple[list[str], str]] = []
+
+    monkeypatch.setattr(execute_mode, 'sys', fake_sys(stdin_tty=True))
+    monkeypatch.setattr(execute_mode, 'is_destructive', lambda keywords, query: True)
+    monkeypatch.setattr(builtins, 'open', lambda path: tty)
+
+    def confirm_destructive_query(keywords: list[str], query: str) -> bool:
+        confirm_calls.append((keywords, query))
+        return True
+
+    monkeypatch.setattr(execute_mode, 'confirm_destructive_query', confirm_destructive_query)
+
+    result = main_execute_from_cli(mycli, DummyCliArgs(execute='drop table t', warn_batch=True))
+
+    assert result == 0
+    assert execute_mode.sys.stdin is tty
+    assert confirm_calls == [(['drop'], 'drop table t')]
+    assert mycli.ran_queries == [('drop table t', None)]
+
+
+def test_main_execute_from_cli_returns_error_when_destructive_query_is_rejected(monkeypatch) -> None:
+    mycli = DummyMyCli()
+
+    monkeypatch.setattr(execute_mode, 'sys', fake_sys(stdin_tty=True))
+    monkeypatch.setattr(execute_mode, 'is_destructive', lambda keywords, query: True)
+    monkeypatch.setattr(builtins, 'open', lambda path: object())
+    monkeypatch.setattr(execute_mode, 'confirm_destructive_query', lambda keywords, query: False)
+
+    result = main_execute_from_cli(mycli, DummyCliArgs(execute='drop table t', warn_batch=True))
+
+    assert result == 1
+    assert mycli.ran_queries == []
+
+
+def test_main_execute_from_cli_reports_tty_open_error_for_destructive_query(monkeypatch) -> None:
+    secho_calls: list[tuple[str, bool, str]] = []
+    mycli = DummyMyCli()
+
+    monkeypatch.setattr(execute_mode, 'sys', fake_sys(stdin_tty=True))
+    monkeypatch.setattr(execute_mode, 'is_destructive', lambda keywords, query: True)
+    monkeypatch.setattr(builtins, 'open', lambda path: (_ for _ in ()).throw(OSError('no tty')))
+    monkeypatch.setattr(
+        execute_mode.click,
+        'secho',
+        lambda message, err, fg: secho_calls.append((message, err, fg)),
+    )
+
+    result = main_execute_from_cli(mycli, DummyCliArgs(execute='drop table t', warn_batch=True))
+
+    assert result == 1
+    assert mycli.logger.warning_calls == ['Unable to open TTY as stdin.']
+    assert mycli.ran_queries == []
+    assert secho_calls == [('no tty', True, 'red')]
