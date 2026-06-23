@@ -31,8 +31,8 @@ def test_init_reports_invalid_ssl_mode(monkeypatch: pytest.MonkeyPatch, tmp_path
     myclirc = write_myclirc(
         tmp_path,
         """
-        [main]
-        ssl_mode = invalid
+        [connection]
+        default_ssl_mode = invalid
         """,
     )
 

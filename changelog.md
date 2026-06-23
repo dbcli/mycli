@@ -11,6 +11,8 @@ Breaking Changes
 * Remove support for `my.cnf` vendor MySQL option files.
 * Remove support for `.myclirc` files in the current working directory.
 * Make `--batch` and `--execute` non-interactive by default.
+* Migrate `default_character_set` out of the `[main]` section of `~/.myclirc`.
+* Migrate `ssl_mode` out of the `[main]` section of `~/.myclirc`.
 
 
 Features

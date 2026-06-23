@@ -133,7 +133,6 @@ def test_configuration_checkup_reports_missing_unsupported_and_deprecated(capsys
             'main': {
                 'present': '',
                 'unsupported_item': '',
-                'default_character_set': '',
             },
             'unsupported_section': {
                 'anything': '',
@@ -162,9 +161,6 @@ def test_configuration_checkup_reports_missing_unsupported_and_deprecated(capsys
     assert '### Unsupported in user ~/.myclirc:' in output
     assert 'The entire section:\n\n    [unsupported_section]\n' in output
     assert 'The item:\n\n    [main]\n    unsupported_item =' in output
-    assert '### Deprecated in user ~/.myclirc:' in output
-    assert '    [main]\n    default_character_set' in output
-    assert '    [connection]\n    default_character_set' in output
     assert f'{checkup.REPO_URL}/blob/main/mycli/myclirc' in output
 
 
@@ -200,8 +196,31 @@ def test_configuration_checkup_skips_transitioned_and_free_entry_items(capsys) -
     assert 'The entire section:\n\n    [extra_section]\n' in output
     assert 'Unsupported in user ~/.myclirc:' in output
     assert 'The entire section:\n\n    [unsupported_section]\n' in output
-    assert '[connection]\n    default_character_set =' not in output
     assert '[favorite_queries]' not in output
+
+
+def test_configuration_checkup_reports_deprecated_transition(capsys) -> None:
+    mycli = SimpleNamespace(
+        config={
+            'main': {},
+        },
+        config_without_package_defaults={
+            'main': {
+                'ssl_mode': '',
+            },
+        },
+        config_without_user_options={
+            'main': {},
+        },
+    )
+
+    checkup._configuration_checkup(mycli)
+    output = capsys.readouterr().out
+
+    assert '### Deprecated in user ~/.myclirc:' in output
+    assert 'It is recommended to transition:\n\n    [main]\n    ssl_mode\n\nto\n\n    [connection]\n    default_ssl_mode' in output
+    assert '### Unsupported in user ~/.myclirc:' not in output
+    assert f'{checkup.REPO_URL}/blob/main/mycli/myclirc' in output
 
 
 def test_configuration_checkup_up_to_date(capsys) -> None:

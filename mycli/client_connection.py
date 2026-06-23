@@ -76,14 +76,34 @@ class ClientConnectionMixin:
 
         passwd = passwd if isinstance(passwd, (str, int)) else mylogin_cnf["password"]
 
-        # default_character_set doesn't check in self.config_without_package_defaults, because the
-        # option already existed before the my.cnf deprecation.  For the same reason,
-        # default_character_set can be in [connection] or [main].
         if not character_set:
-            if 'default_character_set' in self.config['connection']:
+            if 'main' in self.config_without_package_defaults and 'default_character_set' in self.config_without_package_defaults['main']:
+                # migration with notice added with mycli 2.0.0 in 2026-07
+                # todo: entirely remove support for default_character_set in [main]
+                click.secho(
+                    'Mycli 2.0 migration: automatically moving default_character_set from [main] to [connection] in ~/.myclirc .',
+                    err=True,
+                    fg='red',
+                )
+                character_set = self.config_without_package_defaults['main']['default_character_set']
+
+                self.config_without_package_defaults.encoding = 'utf-8'
+                if 'connection' not in self.config_without_package_defaults:
+                    self.config_without_package_defaults['connection'] = {}
+                if self.config_without_package_defaults['connection'].get('default_character_set', None) in (None, ''):
+                    self.config_without_package_defaults['connection']['default_character_set'] = character_set
+                else:
+                    character_set = self.config_without_package_defaults["connection"].get("default_character_set")
+                    click.secho(
+                        f'But connection.default_character_set already existed, with the value: "{character_set}".',
+                        err=True,
+                        fg='red',
+                    )
+                del self.config_without_package_defaults['main']['default_character_set']
+                self.config_without_package_defaults.write()
+
+            if not character_set and 'default_character_set' in self.config['connection']:
                 character_set = self.config['connection']['default_character_set']
-            elif 'default_character_set' in self.config['main']:
-                character_set = self.config['main']['default_character_set']
         if not character_set:
             character_set = DEFAULT_CHARSET
 
