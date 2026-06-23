@@ -266,6 +266,60 @@ class CliArgs:
         is_flag=True,
         help='Run a checkup on your configuration.',
     )
+    # hidden options which have no effect as of mycli 2.0.0, 2026-07.
+    # todo: remove the hidden options, since they are still advertised
+    # in spelling corrections.
+    ssl: bool | None = clickdc.option(
+        '--ssl/--no-ssl',
+        clickdc=None,
+        hidden=True,
+        deprecated='No effect. See --ssl-mode.',
+    )
+    ssh_user: str | None = clickdc.option(
+        type=str,
+        hidden=True,
+        deprecated='No effect. See https://github.com/dbcli/mycli/issues/1960 .',
+    )
+    ssh_host: str | None = clickdc.option(
+        type=str,
+        hidden=True,
+        deprecated='No effect. See https://github.com/dbcli/mycli/issues/1960 .',
+    )
+    ssh_port: int = clickdc.option(
+        type=int,
+        hidden=True,
+        deprecated='No effect. See https://github.com/dbcli/mycli/issues/1960 .',
+    )
+    ssh_password: str | None = clickdc.option(
+        type=str,
+        hidden=True,
+        deprecated='No effect. See https://github.com/dbcli/mycli/issues/1960 .',
+    )
+    ssh_key_filename: str | None = clickdc.option(
+        type=str,
+        hidden=True,
+        deprecated='No effect. See https://github.com/dbcli/mycli/issues/1960 .',
+    )
+    ssh_config_path: str = clickdc.option(
+        type=str,
+        hidden=True,
+        deprecated='No effect. See https://github.com/dbcli/mycli/issues/1960 .',
+    )
+    ssh_config_host: str | None = clickdc.option(
+        type=str,
+        hidden=True,
+        deprecated='No effect. See https://github.com/dbcli/mycli/issues/1960 .',
+    )
+    list_ssh_config: bool = clickdc.option(
+        is_flag=True,
+        hidden=True,
+        deprecated='No effect. See https://github.com/dbcli/mycli/issues/1960 .',
+    )
+    ssh_warning_off: bool = clickdc.option(
+        is_flag=True,
+        hidden=True,
+        deprecated='No effect. See https://github.com/dbcli/mycli/issues/1960 .',
+    )
 
 
 def get_password_from_file(password_file: str | None) -> str | None:
