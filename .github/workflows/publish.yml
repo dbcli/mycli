@@ -173,7 +173,7 @@ jobs:
       run: |
         mkdir -p /root/mycli
 
-    - uses: ubuntu/wsl/.github/actions/wsl-checkout@42e1abc303b6d2eaf61b8a2050ccc8a9e23ac20b
+    - uses: ubuntu/wsl/.github/actions/wsl-checkout@f861f1083e518354e4c3637b08c0edfcf8bc3d51
       with:
         distro: Ubuntu-24.04
         working-dir: /root/mycli
