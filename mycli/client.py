@@ -132,7 +132,7 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
         self.binary_display = c['main'].get('binary_display')
         self.llm_prompt_field_truncate, self.llm_prompt_section_truncate = llm_prompt_truncation(c)
 
-        self.ssl_mode, ssl_mode_error = normalize_ssl_mode(c)
+        self.ssl_mode, ssl_mode_error = normalize_ssl_mode(c, self.config_without_package_defaults)
         if ssl_mode_error:
             self.echo(ssl_mode_error, err=True, fg="red")
 

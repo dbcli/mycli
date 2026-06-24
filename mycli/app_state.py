@@ -11,11 +11,39 @@ if TYPE_CHECKING:
     from mycli.client import MyCli
 
 
-def normalize_ssl_mode(config: ConfigObj) -> tuple[str | None, str | None]:
-    ssl_mode = config['main'].get('ssl_mode', None) or config['connection'].get('default_ssl_mode', None)
+def normalize_ssl_mode(
+    config: ConfigObj,
+    config_without_package_defaults: ConfigObj,
+) -> tuple[str | None, str | None]:
+    error_notice: str | None = None
+    ssl_mode: str | None = None
+
+    if 'main' in config_without_package_defaults and 'ssl_mode' in config_without_package_defaults['main']:
+        # migration with notice added with mycli 2.0.0 in 2026-07
+        # todo: entirely remove support for ssl_mode in [main]
+        error_notice = (
+            'Mycli 2.0 migration: automatically moving ssl_mode under [main] to default_ssl_mode under [connection] in ~/.myclirc .'
+        )
+
+        ssl_mode = config_without_package_defaults['main']['ssl_mode']
+
+        config_without_package_defaults.encoding = 'utf-8'
+        if 'connection' not in config_without_package_defaults:
+            config_without_package_defaults['connection'] = {}
+        if config_without_package_defaults['connection'].get('default_ssl_mode', None) in (None, ''):
+            config_without_package_defaults['connection']['default_ssl_mode'] = ssl_mode
+        else:
+            ssl_mode = config_without_package_defaults['connection'].get('default_ssl_mode')
+            error_notice += f'\nBut connection.default_ssl_mode already existed, with the value: "{ssl_mode}".'
+        del config_without_package_defaults['main']['ssl_mode']
+        config_without_package_defaults.write()
+
+    if not ssl_mode and 'default_ssl_mode' in config['connection']:
+        ssl_mode = config['connection']['default_ssl_mode']
     if ssl_mode not in ('auto', 'on', 'off', None):
-        return None, f'Invalid config option provided for ssl_mode ({ssl_mode}); ignoring.'
-    return ssl_mode, None
+        error_notice = f'Invalid config option provided for ssl_mode ({ssl_mode}); ignoring.'
+        return None, error_notice
+    return ssl_mode, error_notice
 
 
 def configure_prompt_state(

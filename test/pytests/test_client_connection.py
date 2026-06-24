@@ -52,6 +52,17 @@ class DummyClient(ClientConnectionMixin):
         self.echo_calls.append((args, kwargs))
 
 
+class WritableConfig(dict[str, Any]):
+    encoding: str | None = None
+
+    def __init__(self, value: dict[str, Any]) -> None:
+        super().__init__(value)
+        self.write_calls = 0
+
+    def write(self) -> None:
+        self.write_calls += 1
+
+
 class FakeSQLExecute:
     calls: list[dict[str, Any]] = []
     effects: list[Any] = []
@@ -148,12 +159,70 @@ def test_connect_uses_character_set_from_connection_config() -> None:
     assert FakeSQLExecute.calls[-1]['character_set'] == 'utf16'
 
 
-def test_connect_uses_character_set_from_main_config() -> None:
-    client = DummyClient(config={'main': {'default_character_set': 'utf32'}, 'connection': {}})
+def test_connect_migrates_deprecated_character_set_from_main_config(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config_wo = WritableConfig({'main': {'default_character_set': 'utf32'}})
+    client = DummyClient(
+        config={'main': {}, 'connection': {'default_character_set': 'utf16'}},
+        config_without_package_defaults=config_wo,
+    )
+    secho_calls: list[tuple[str, dict[str, Any]]] = []
+    monkeypatch.setattr(
+        client_connection.click,
+        'secho',
+        lambda message, **kwargs: secho_calls.append((message, kwargs)),
+    )
 
     client.connect(host='db', port=3307)
 
     assert FakeSQLExecute.calls[-1]['character_set'] == 'utf32'
+    assert config_wo.encoding == 'utf-8'
+    assert config_wo['connection']['default_character_set'] == 'utf32'
+    assert 'default_character_set' not in config_wo['main']
+    assert config_wo.write_calls == 1
+    assert secho_calls == [
+        (
+            'Mycli 2.0 migration: automatically moving default_character_set from [main] to [connection] in ~/.myclirc .',
+            {'err': True, 'fg': 'red'},
+        )
+    ]
+
+
+def test_connect_uses_existing_connection_character_set_when_migrating(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config_wo = WritableConfig({
+        'main': {'default_character_set': 'utf32'},
+        'connection': {'default_character_set': 'utf16'},
+    })
+    client = DummyClient(
+        config={'main': {}, 'connection': {'default_character_set': 'latin1'}},
+        config_without_package_defaults=config_wo,
+    )
+    secho_calls: list[tuple[str, dict[str, Any]]] = []
+    monkeypatch.setattr(
+        client_connection.click,
+        'secho',
+        lambda message, **kwargs: secho_calls.append((message, kwargs)),
+    )
+
+    client.connect(host='db', port=3307)
+
+    assert FakeSQLExecute.calls[-1]['character_set'] == 'utf16'
+    assert config_wo['connection']['default_character_set'] == 'utf16'
+    assert 'default_character_set' not in config_wo['main']
+    assert config_wo.write_calls == 1
+    assert secho_calls == [
+        (
+            'Mycli 2.0 migration: automatically moving default_character_set from [main] to [connection] in ~/.myclirc .',
+            {'err': True, 'fg': 'red'},
+        ),
+        (
+            'But connection.default_character_set already existed, with the value: "utf16".',
+            {'err': True, 'fg': 'red'},
+        ),
+    ]
 
 
 def test_connect_uses_default_character_set_when_none_configured() -> None:
