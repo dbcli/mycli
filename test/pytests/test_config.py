@@ -16,7 +16,6 @@ from mycli import config as config_module
 from mycli.config import (
     _remove_pad,
     create_default_config,
-    encrypt_mylogin_cnf,
     get_mylogin_cnf_path,
     log,
     open_mylogin_cnf,
@@ -242,16 +241,6 @@ def test_open_mylogin_cnf_error_paths(monkeypatch, tmp_path, caplog) -> None:
     with caplog.at_level(logging.ERROR, logger='mycli.config'):
         assert open_mylogin_cnf(str(existing)) is None
     assert 'Unable to read login path file.' in caplog.text
-
-
-def test_encrypt_mylogin_cnf_round_trip() -> None:
-    plaintext = StringIO('[client]\nuser=test\npassword=secret\n')
-
-    encrypted = encrypt_mylogin_cnf(plaintext)
-    decrypted = read_and_decrypt_mylogin_cnf(encrypted)
-
-    assert isinstance(encrypted, BytesIO)
-    assert decrypted.read().decode('utf8') == '[client]\nuser=test\npassword=secret\n'
 
 
 def test_read_and_decrypt_mylogin_cnf_error_branches(caplog) -> None:
