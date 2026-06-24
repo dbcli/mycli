@@ -329,7 +329,7 @@ def preprocess_cli_args(
         and cli_args.batch != '-'
         and os.path.exists(cli_args.batch)
     ):
-        if os.stat(cli_args.batch) == os.stat(cli_args.checkpoint):
+        if os.path.samefile(cli_args.batch, cli_args.checkpoint):
             click.secho('Error: --batch and --checkpoint must be different files.', err=True, fg='red')
             sys.exit(1)
 
