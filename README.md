@@ -59,7 +59,7 @@ Features
     - `SELECT * FROM users WHERE <tab>` will only show column names.
 * Support for multiline queries.
 * Favorite queries with optional positional parameters. Save a query using
-  `\fs <alias> <query>` and execute it with `\f <alias>`.
+  `/fs <alias> <query>` and execute it with `/f <alias>`.
 * Timing of sql statements and table rendering.
 * Log every query and its results to a file (disabled by default).
 * Pretty print tabular data (with colors!).
