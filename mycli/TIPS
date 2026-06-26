@@ -44,75 +44,75 @@ the --login-path option lets you work with login-path files!
 ### commands
 ###
 
-interact with an LLM using the \llm command!
+interact with an LLM using the /llm command!
 
-copy a query to the clipboard using \clip at the end of the query!
+copy the previous query to the clipboard with /clip!
 
-\dt lists tables; \dt <table> describes <table>!
+/dt lists tables; /dt <table> describes <table>!
 
 edit a query in an external editor using <query>\edit!
 
-edit a query in an external editor using \edit <filename>!
+edit a query in an external editor using /edit <filename>!
 
-\f lists favorite queries; \f <name> executes a favorite!
+/f lists favorite queries; /f <name> executes a favorite!
 
-\fs <name> <query> saves a favorite query!
+/fs <name> <query> saves a favorite query!
 
-\fd <name> deletes a saved favorite query!
+/fd <name> deletes a saved favorite query!
 
-\l lists databases!
+/l lists databases!
 
-\once <filename> appends the next result to <filename>!
+/once <filename> appends the next result to <filename>!
 
-\| <command> sends the next result to a subprocess!
+/| <command> sends the next result to a subprocess!
 
-\t toggles timing of commands!
+/t toggles timing of commands!
 
-\r or "connect" reconnects to the server!
+/r or /connect reconnects to the server!
 
-\delimiter changes the SQL delimiter!
+/delimiter changes the SQL delimiter!
 
-\q, "quit", or "exit" exits from the prompt!
+/q, /quit, or /exit exits from the prompt!
 
-\? or "help" for help!
+/? or /help for help!
 
-"help <keyword>" for help on SQL keywords!
+/help <keyword> for help on SQL keywords!
 
-\n or "nopager" to disable the pager!
+/n or /nopager to disable the pager!
 
-use "tee"/"notee" to write/stop-writing results to a output file!
+use /tee or /notee to write/stop-writing results to a output file!
 
-\W or "warnings" enables automatic warnings display!
+/W or /warnings enables automatic warnings display!
 
-\w or "nowarnings" disables automatic warnings display!
+/w or /nowarnings disables automatic warnings display!
 
-\P or "pager" sets the pager.  Try "pager less"!
+/P or /pager sets the pager.  Try "/pager less"!
 
-\R or "prompt" changes the prompt format!
+/R or /prompt changes the prompt format!
 
-\Tr or "redirectformat" changes the table format for redirects!
+/Tr or /redirectformat changes the table format for redirects!
 
-\# or "rehash" refreshes autocompletions!
+/# or /rehash refreshes autocompletions!
 
-\. or "source" executes queries from a file!
+/. or /source executes queries from a file!
 
-\s or "status" requests status information from the server!
+/s or /status requests status information from the server!
 
-use "system <command>" to execute a shell command!
+use "/system <command>" to execute a shell command!
 
-\T or "tableformat" changes the interactive table format!
+/T or /tableformat changes the interactive table format!
 
-\u or "use" changes to a new database!
+/u or /use changes to a new database!
 
-the "watch" command executes a query every N seconds!
+the /watch command executes a query every N seconds!
 
-use \bug to file a bug on GitHub!
+use /bug to file a bug on GitHub!
 
 ###
 ### environment variables
 ###
 
-run "export VISUAL='code --wait'" in your shell to \edit queries using VS Code!
+run "export VISUAL='code --wait'" in your shell to edit queries using VS Code!
 
 set environment variable MYCLI_LLM_OFF to skip loading LLM libraries!
 

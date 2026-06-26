@@ -30,6 +30,7 @@ Bug Fixes
 Documentation
 ---------
 * Show section when recommending `default_character_set` setting.
+* Prefer forward-slash /command forms in TIPS.
 
 
 Internal
