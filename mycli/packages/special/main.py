@@ -48,6 +48,7 @@ class SpecialCommand:
     hidden: bool | None
     case_sensitive: bool | None
     aliases: list[SpecialCommandAlias] | None
+    backslash_only: bool
 
 
 class CommandNotFound(Exception):
@@ -79,6 +80,7 @@ def special_command(
     hidden: bool = False,
     case_sensitive: bool = False,
     aliases: list[SpecialCommandAlias] | None = None,
+    backslash_only: bool = False,
 ) -> Callable:
     def wrapper(wrapped):
         register_special_command(
@@ -90,6 +92,7 @@ def special_command(
             hidden=hidden,
             case_sensitive=case_sensitive,
             aliases=aliases,
+            backslash_only=backslash_only,
         )
         return wrapped
 
@@ -105,6 +108,7 @@ def register_special_command(
     hidden: bool = False,
     case_sensitive: bool = False,
     aliases: list[SpecialCommandAlias] | None = None,
+    backslash_only: bool = False,
 ) -> None:
     if command.startswith('\\'):
         forwardslash_command = '/' + command.removeprefix('\\')
@@ -121,17 +125,20 @@ def register_special_command(
         hidden=hidden,
         case_sensitive=case_sensitive,
         aliases=aliases,
+        backslash_only=backslash_only,
     )
-    COMMANDS[fcmd] = SpecialCommand(
-        handler,
-        command,
-        usage,
-        description,
-        arg_type=arg_type,
-        hidden=True,
-        case_sensitive=case_sensitive,
-        aliases=aliases,
-    )
+    if not backslash_only:
+        COMMANDS[fcmd] = SpecialCommand(
+            handler,
+            command,
+            usage,
+            description,
+            arg_type=arg_type,
+            hidden=True,
+            case_sensitive=case_sensitive,
+            aliases=aliases,
+            backslash_only=backslash_only,
+        )
     if case_sensitive:
         CASE_SENSITIVE_COMMANDS.add(command)
         CASE_SENSITIVE_COMMANDS.add(forwardslash_command)
@@ -161,17 +168,20 @@ def register_special_command(
             case_sensitive=alias.case_sensitive,
             hidden=True,
             aliases=None,
+            backslash_only=backslash_only,
         )
-        COMMANDS[fcmd] = SpecialCommand(
-            handler,
-            command,
-            usage,
-            description,
-            arg_type=arg_type,
-            case_sensitive=alias.case_sensitive,
-            hidden=True,
-            aliases=None,
-        )
+        if not backslash_only:
+            COMMANDS[fcmd] = SpecialCommand(
+                handler,
+                command,
+                usage,
+                description,
+                arg_type=arg_type,
+                case_sensitive=alias.case_sensitive,
+                hidden=True,
+                aliases=None,
+                backslash_only=backslash_only,
+            )
 
 
 def execute(cur: Cursor, sql: str) -> list[SQLResult]:
@@ -207,7 +217,7 @@ def execute(cur: Cursor, sql: str) -> list[SQLResult]:
 
 @special_command(
     "help",
-    "help [term]",
+    "/help [term]",
     "Show this table, or search for help on a term.",
     arg_type=ArgType.NO_QUERY,
     aliases=[SpecialCommandAlias("\\?", case_sensitive=False), SpecialCommandAlias("?", case_sensitive=False)],
@@ -221,10 +231,15 @@ def show_help(*_args) -> list[SQLResult]:
             continue
         if value.aliases:
             shortcut = value.aliases[0].command
+            if not value.backslash_only:
+                shortcut = '/' + shortcut.removeprefix('\\')
         else:
             shortcut = None
-        result.append((value.command, shortcut, value.usage, value.description))
-    return [SQLResult(header=header, rows=result, postamble=f'Docs index — {DOCS_URL}')]
+        command = value.command
+        if not value.backslash_only:
+            command = '/' + command.removeprefix('\\')
+        result.append((command, shortcut, value.usage, value.description))
+    return [SQLResult(header=header, rows=result, postamble=f'Use \\backslash forms when at end-of-line.\nDocs index — {DOCS_URL}')]
 
 
 def _show_special_help(keyword: str) -> list[SQLResult]:
@@ -268,7 +283,7 @@ def show_keyword_help(cur: Cursor, arg: str) -> list[SQLResult]:
     return _show_mysql_help(cur, keyword)
 
 
-@special_command('\\bug', '\\bug', 'File a bug on GitHub.', arg_type=ArgType.NO_QUERY)
+@special_command('\\bug', '/bug', 'File a bug on GitHub.', arg_type=ArgType.NO_QUERY)
 def file_bug(*_args) -> list[SQLResult]:
     webbrowser.open_new_tab(ISSUES_URL)
     return [SQLResult(status=f'{ISSUES_URL} — press "New Issue"')]
@@ -276,14 +291,14 @@ def file_bug(*_args) -> list[SQLResult]:
 
 @special_command(
     "exit",
-    "exit",
+    "/exit",
     "Exit.",
     arg_type=ArgType.NO_QUERY,
     aliases=[SpecialCommandAlias("\\q", case_sensitive=False)],
 )
 @special_command(
     "quit",
-    "quit",
+    "/quit",
     "Quit.",
     arg_type=ArgType.NO_QUERY,
     aliases=[SpecialCommandAlias("\\q", case_sensitive=False)],
@@ -294,7 +309,7 @@ def quit_(*_args):
 
 @special_command(
     "\\edit",
-    "<query>\\edit | \\edit <filename>",
+    "/edit <filename> | <query>\\edit",
     "Edit query with editor (uses $VISUAL or $EDITOR).",
     arg_type=ArgType.NO_QUERY,
     case_sensitive=True,
@@ -302,7 +317,7 @@ def quit_(*_args):
 )
 @special_command(
     "\\clip",
-    "<query>\\clip",
+    "/clip | <query>\\clip",
     "Copy query to the system clipboard.",
     arg_type=ArgType.NO_QUERY,
     case_sensitive=True,
@@ -313,6 +328,7 @@ def quit_(*_args):
     "Display query results vertically.",
     arg_type=ArgType.NO_QUERY,
     case_sensitive=True,
+    backslash_only=True,
 )
 @special_command(
     "\\g",
@@ -320,6 +336,7 @@ def quit_(*_args):
     "Display query results (mnemonic: go).",
     arg_type=ArgType.NO_QUERY,
     case_sensitive=True,
+    backslash_only=True,
 )
 def stub():
     raise NotImplementedError
@@ -329,8 +346,8 @@ if LLM_IMPORTED:
 
     @special_command(
         "\\llm",
-        "\\llm [arguments]",
-        "Interrogate an LLM.  See \"\\llm help\".",
+        "/llm [arguments]",
+        "Interrogate an LLM.  See \"/llm help\".",
         arg_type=ArgType.RAW_QUERY,
         case_sensitive=True,
         aliases=[SpecialCommandAlias("\\ai", case_sensitive=True)],

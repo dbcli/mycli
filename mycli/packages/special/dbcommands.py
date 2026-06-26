@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 @special_command(
     "\\dt",
-    "\\dt[+] [table]",
+    "/dt[+] [table]",
     "List or describe tables.",
     arg_type=ArgType.PARSED_QUERY,
     case_sensitive=True,
@@ -61,7 +61,7 @@ def list_tables(
 
 @special_command(
     "\\l",
-    "\\l",
+    "/l",
     "List databases.",
     arg_type=ArgType.RAW_QUERY,
     case_sensitive=True,
@@ -80,7 +80,7 @@ def list_databases(cur: Cursor, **_) -> list[SQLResult]:
 
 @special_command(
     "status",
-    "status",
+    "/status",
     "Get status information from the server.",
     arg_type=ArgType.RAW_QUERY,
     case_sensitive=True,

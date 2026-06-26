@@ -93,7 +93,7 @@ def is_show_warnings_enabled() -> bool:
 
 @special_command(
     'warnings',
-    'warnings',
+    '/warnings',
     'Enable automatic warnings display.',
     arg_type=ArgType.NO_QUERY,
     case_sensitive=True,
@@ -108,7 +108,7 @@ def enable_show_warnings() -> Generator[SQLResult, None, None]:
 
 @special_command(
     'nowarnings',
-    'nowarnings',
+    '/nowarnings',
     'Disable automatic warnings display.',
     arg_type=ArgType.NO_QUERY,
     case_sensitive=True,
@@ -123,7 +123,7 @@ def disable_show_warnings() -> Generator[SQLResult, None, None]:
 
 @special_command(
     "pager",
-    "pager [command]",
+    "/pager [command]",
     "Set pager to [command]. Print query results via pager.",
     arg_type=ArgType.PARSED_QUERY,
     case_sensitive=True,
@@ -147,7 +147,7 @@ def set_pager(arg: str, **_) -> list[SQLResult]:
 
 @special_command(
     "nopager",
-    "nopager",
+    "/nopager",
     "Disable pager; print to stdout.",
     arg_type=ArgType.NO_QUERY,
     case_sensitive=True,
@@ -160,7 +160,7 @@ def disable_pager() -> list[SQLResult]:
 
 @special_command(
     "\\timing",
-    "\\timing",
+    "/timing",
     "Toggle timing of queries.",
     arg_type=ArgType.NO_QUERY,
     case_sensitive=True,
@@ -327,7 +327,7 @@ def set_redirect(command_part: str | None, file_operator_part: str | None, file_
 
 @special_command(
     "\\f",
-    "\\f [name [args..]]",
+    "/f [name [args..]]",
     "List or execute favorite queries.",
     arg_type=ArgType.PARSED_QUERY,
     case_sensitive=True,
@@ -403,7 +403,7 @@ def subst_favorite_query_args(query: str, args: list[str]) -> list[str | None]:
 
 @special_command(
     "\\fs",
-    "\\fs <name> <query>",
+    "/fs <name> <query>",
     "Save a favorite query.",
 )
 def save_favorite_query(arg: str, **_) -> list[SQLResult]:
@@ -425,7 +425,7 @@ def save_favorite_query(arg: str, **_) -> list[SQLResult]:
 
 @special_command(
     "\\fd",
-    "\\fd <name>",
+    "/fd <name>",
     "Delete a favorite query.",
 )
 def delete_favorite_query(arg: str, **_) -> list[SQLResult]:
@@ -441,7 +441,7 @@ def delete_favorite_query(arg: str, **_) -> list[SQLResult]:
 
 @special_command(
     "system",
-    "system [-r] <command>",
+    "/system [-r] <command>",
     "Execute a system shell command (raw mode with -r).",
 )
 def execute_system_command(arg: str, **_) -> list[SQLResult]:
@@ -522,7 +522,7 @@ def parseargfile(arg: str) -> tuple[str, str]:
 
 @special_command(
     "tee",
-    "tee [-o] <filename>",
+    "/tee [-o] <filename>",
     "Append all results to an output file (overwrite using -o).",
 )
 def set_tee(arg: str, **_) -> list[SQLResult]:
@@ -545,7 +545,7 @@ def close_tee() -> None:
 
 @special_command(
     "notee",
-    "notee",
+    "/notee",
     "Stop writing results to an output file.",
 )
 def no_tee(arg: str, **_) -> list[SQLResult]:
@@ -565,7 +565,7 @@ def write_tee(output: str | ANSI | FormattedText, nl: bool = True) -> None:
 
 @special_command(
     "\\once",
-    "\\once [-o] <filename>",
+    "/once [-o] <filename>",
     "Append next result to an output file (overwrite using -o).",
     aliases=[SpecialCommandAlias("\\o", case_sensitive=False)],
 )
@@ -623,7 +623,7 @@ def _run_post_redirect_hook(post_redirect_command: str, filename: str) -> None:
 
 @special_command(
     "\\pipe_once",
-    "\\pipe_once <command>",
+    "/pipe_once <command>",
     "Send next result to a subprocess.",
     aliases=[SpecialCommandAlias("\\|", case_sensitive=False)],
 )
@@ -687,7 +687,7 @@ def flush_pipe_once_if_written(post_redirect_command: str) -> None:
 
 @special_command(
     "watch",
-    "watch [seconds] [-c] <query>",
+    "/watch [seconds] [-c] <query>",
     "Execute query every [seconds] seconds (5 by default).",
 )
 def watch_query(arg: str, **kwargs) -> Generator[SQLResult, None, None]:
@@ -758,7 +758,7 @@ def watch_query(arg: str, **kwargs) -> Generator[SQLResult, None, None]:
 
 @special_command(
     "delimiter",
-    "delimiter <string>",
+    "/delimiter <string>",
     "Change end-of-statement delimiter.",
 )
 def set_delimiter(arg: str, **_) -> list[SQLResult]:
