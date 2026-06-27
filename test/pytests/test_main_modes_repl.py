@@ -283,6 +283,24 @@ def test_complete_while_typing_filter_covers_threshold_and_word_rules(monkeypatc
     assert repl_mode.complete_while_typing_filter() is True
 
 
+def test_complete_while_typing_filter_always_completes_slash_commands(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(repl_mode, 'MIN_COMPLETION_TRIGGER', 3)
+    monkeypatch.setattr(repl_mode, 'get_app', lambda: SimpleNamespace(current_buffer=SimpleNamespace(text='/')))
+
+    assert repl_mode.complete_while_typing_filter() is True
+
+
+def test_complete_while_typing_filter_does_not_treat_block_comments_as_slash_commands(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(repl_mode, 'MIN_COMPLETION_TRIGGER', 3)
+    monkeypatch.setattr(repl_mode, 'get_app', lambda: SimpleNamespace(current_buffer=SimpleNamespace(text='/*')))
+
+    assert repl_mode.complete_while_typing_filter() is False
+
+
 def test_repl_create_history(monkeypatch: pytest.MonkeyPatch) -> None:
     cli = make_repl_cli()
     monkeypatch.setenv('MYCLI_HISTFILE', '~/override-history')
