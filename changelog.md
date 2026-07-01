@@ -35,6 +35,7 @@ Documentation
 * Show section when recommending `default_character_set` setting.
 * Prefer forward-slash /command forms in TIPS.
 * Prefer forward-slash /command forms in markdown documentation.
+* Update README, especially for installation instructions.
 
 
 Internal
