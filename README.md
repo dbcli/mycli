@@ -2,7 +2,7 @@
 
 [![Build Status](https://github.com/dbcli/mycli/workflows/mycli/badge.svg)](https://github.com/dbcli/mycli/actions?query=workflow%3Amycli)
 
-A command line client for MySQL that can do auto-completion and syntax highlighting.
+A command line client for MySQL with auto-completion and syntax highlighting.
 
 Homepage: [https://mycli.net](https://mycli.net)
 Documentation: [https://mycli.net/docs](https://mycli.net/docs)
@@ -10,31 +10,32 @@ Documentation: [https://mycli.net/docs](https://mycli.net/docs)
 ![Completion](doc/screenshots/tables.png)
 ![CompletionGif](doc/screenshots/main.gif)
 
-Mycli is compatible with MySQL, MariaDB, Percona, TiDB, and Doris.
+Mycli is compatible with MySQL, MariaDB, Percona, TiDB, and Apache Doris.
 
 Postgres Equivalent: [https://pgcli.com](https://pgcli.com)
 
 Quick Start
 -----------
 
-If you already know how to install Python packages, then you can install it via `pip`:
+If you already know how to install Python packages, then you can install mycli
+via `pip`.  This pakage is always up to date.
 
-You might need sudo on Linux.
+You might need `sudo` on Linux.
 
 ```bash
 pip install -U 'mycli[all]'
 ```
 
-or
+or, only on macOS (`fzf` and `pygments` are optional):
 
 ```bash
-brew update && brew install mycli  # Only on macOS
+brew update && brew install mycli fzf pygments
 ```
 
-or
+or, only on Debian or Ubuntu (`fzf` and `pygments` are optional):
 
 ```bash
-sudo apt-get install mycli  # Only on Debian or Ubuntu
+sudo apt-get install mycli fzf python3-pygments
 ```
 
 ### Usage
@@ -48,12 +49,10 @@ mycli --help
 Features
 --------
 
-`mycli` is written using [prompt_toolkit](https://github.com/jonathanslenders/python-prompt-toolkit/).
-
-* Auto-completion as you type for SQL keywords as well as tables, views and
-  columns in the database.
+* Auto-completion as you type for SQL keywords as well as tables, views,
+  columns, enums, and more!
 * Fuzzy history search using [fzf](https://github.com/junegunn/fzf).
-* Syntax highlighting using Pygments.
+* Syntax highlighting using [Pygments](https://pygments.org/).
 * Smart-completion (enabled by default) will suggest context-sensitive completion.
     - `SELECT * FROM <tab>` will only show table names.
     - `SELECT * FROM users WHERE <tab>` will only show column names.
@@ -65,50 +64,67 @@ Features
 * Pretty print tabular data (with colors!).
 * Support for SSL connections
 * Shell-style trailing redirects with `$>`, `$>>` and `$|` operators.
-* Support for querying LLMs with context derived from your schema.
+* Support for querying LLMs with context derived from your schema using `/llm`.
 * Support for storing passwords in the system keyring.
 
-Mycli creates a config file `~/.myclirc` on first run; you can use the
+Mycli creates a config file `~/.myclirc` on the first run; you can use the
 options in that file to configure the above features, and more.
 
 Some features are only exposed as [key bindings](doc/key_bindings.rst).
 
-Contributions:
+
+Implementation
 --------------
 
-If you're interested in contributing to this project, first of all I would like
-to extend my heartfelt gratitude. I've written a small doc to describe how to
-get this running in a development setup.
+`mycli` is written using [prompt_toolkit](https://github.com/jonathanslenders/python-prompt-toolkit/) and other Python libraries.
+
+
+Contributions
+-------------
+
+If you're interested in contributing to this project, first of all we would like
+to extend our heartfelt gratitude. We've written a small doc to describe how to
+get mycli running in a development setup.
 
 https://github.com/dbcli/mycli/blob/main/CONTRIBUTING.md
 
 
 ## Additional Install Instructions:
 
-These are some alternative ways to install mycli that are not managed by our team but provided by OS package maintainers. These packages could be slightly out of date and take time to release the latest version.
+These are some alternative ways to install mycli that are not managed by our
+team but provided by OS package maintainers.  OS packages could be somewhat
+out of date.
+
+If present, the `fzf` package can be used for fuzzy history search, and
+`pygemtize` can be used for syntax highlighting within the fuzzy history
+search.  The `less` package is also expected, but almost always already
+installed.
 
 ### Arch, Manjaro
 
-You can install the mycli package available in the AUR:
+You can install the `mycli` package available in the AUR.  `fzf` and
+`python-pygments` are optional:
 
-```
-yay -S mycli
+```bash
+yay -S mycli fzf python-pygments
 ```
 
 ### Debian, Ubuntu
 
-On Debian, Ubuntu distributions, you can easily install the mycli package using apt:
+On Debian and Ubuntu distributions, you can easily install the mycli package
+using apt.  The `fzf` and `python3-pygments` packages are optional:
 
-```
-sudo apt-get install mycli
+```bash
+sudo apt-get install mycli fzf python3-pygments
 ```
 
 ### Fedora
 
-Fedora has a package available for mycli, install it using dnf:
+Fedora has a package available for mycli; install it using dnf.  The `fzf` and
+`python-pygments` packages are optional:
 
 ```
-sudo dnf install mycli
+sudo dnf install mycli fzf python-pygments
 ```
 
 ### Windows
@@ -119,20 +135,22 @@ Install the `less` pager, for example by `scoop install less`.
 
 Follow the instructions on this blogpost: https://web.archive.org/web/20221006045208/https://www.codewall.co.uk/installing-using-mycli-on-windows/
 
-**Mycli is not tested on Windows**, but the libraries used in the app are Windows-compatible.
-This means it should work without any modifications, but isn't supported.
+The libraries used in mycli are Windows-compatible, but there are known
+limitations according to the test suite.   The basics work without any
+modifications, but isn't supported software at this time.
 
-PRs to add native Windows testing to Mycli CI would be welcome!
+PRs to address shortcomings on Windows would be welcome!
 
 #### Option 2: WSL
 
-Everything should work as expected in WSL.  This is a good option for using
-Mycli on Windows.
+Mycli is more compatible with WSL than with native Windows, though still
+not 100% perfect.  This is a good option for using mycli on Windows.
 
+PRs to complete WSL support would be welcome!
 
-### Thanks:
+### Thanks
 
-This project was funded through kickstarter. My thanks to the [backers](https://mycli.net/sponsors) who supported the project.
+This project was funded through kickstarter. Our thanks to the [backers](https://mycli.net/sponsors) who supported the project.
 
 A special thanks to [Jonathan Slenders](https://twitter.com/jonathan_s) for
 creating [Python Prompt Toolkit](https://github.com/jonathanslenders/python-prompt-toolkit),
@@ -143,14 +161,16 @@ of this app.
 [Click](https://palletsprojects.com/projects/click) is used for command line option parsing
 and printing error messages.
 
-Thanks to [PyMysql](https://github.com/PyMySQL/PyMySQL) for a pure python adapter to MySQL database.
+Thanks to [PyMysql](https://github.com/PyMySQL/PyMySQL) for a pure Python adapter to MySQL databases.
 
 
 ### Compatibility
 
-Mycli is tested on macOS and Linux, and requires Python 3.10 or better.
+Mycli is tested on macOS (full), Linux (full), Windows (partial), and WSL
+(partial), and requires Python 3.10 or better.
 
-To connect to MySQL versions earlier than 5.5, you may need to set the following in `~/.myclirc`:
+To connect to MySQL versions earlier than 5.5, you may need to set the
+following in `~/.myclirc`:
 
 ```
 [connection]
