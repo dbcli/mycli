@@ -64,6 +64,8 @@ def create_toolbar_tokens_func(
         if show_initial_toolbar_help():
             dynamic.append(divider)
             dynamic.append(("class:bottom-toolbar", "right-arrow accepts full-line suggestion"))
+            dynamic.append(divider)
+            dynamic.append(("class:bottom-toolbar", "/help for more"))
 
         if mycli.completion_refresher.is_refreshing():
             dynamic.append(divider)

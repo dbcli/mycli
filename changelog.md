@@ -19,6 +19,7 @@ Breaking Changes
 Features
 ---------
 * Add `--warn-batch` flag, which is off by default.
+* Add `/help` prompt to initial toolbar help.
 
 
 Bug Fixes
