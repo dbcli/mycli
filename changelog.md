@@ -20,6 +20,7 @@ Features
 ---------
 * Add `--warn-batch` flag, which is off by default.
 * Add `/help` prompt to initial toolbar help.
+* Advertise forward-slash `/command` forms in `/help` output.
 
 
 Bug Fixes

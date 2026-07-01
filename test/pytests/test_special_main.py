@@ -93,6 +93,7 @@ def test_register_special_command_adds_primary_and_alias_entries(restore_command
         hidden=False,
         case_sensitive=False,
         aliases=[special_main.SpecialCommandAlias('\\d', case_sensitive=False)],
+        backslash_only=False,
     )
     assert special_main.COMMANDS['\\d'] == special_main.SpecialCommand(
         handler,
@@ -103,6 +104,7 @@ def test_register_special_command_adds_primary_and_alias_entries(restore_command
         hidden=True,
         case_sensitive=False,
         aliases=None,
+        backslash_only=False,
     )
 
 
@@ -181,6 +183,7 @@ def test_execute_raises_when_case_sensitive_exact_lookup_falls_back_to_lowercase
         hidden=False,
         case_sensitive=True,
         aliases=None,
+        backslash_only=False,
     )
     special_main.CASE_SENSITIVE_COMMANDS.add('Camel')
 
@@ -312,6 +315,7 @@ def test_execute_raises_for_unknown_arg_type(restore_commands: None) -> None:
         hidden=False,
         case_sensitive=False,
         aliases=None,
+        backslash_only=False,
     )
     special_main.CASE_INSENSITIVE_COMMANDS.add('demo')
 
@@ -324,7 +328,7 @@ def test_show_help_lists_only_visible_commands(restore_commands: None) -> None:
     special_main.register_special_command(
         lambda: None,
         'visible',
-        'visible',
+        '/visible',
         'Visible command',
         aliases=[special_main.SpecialCommandAlias('\\v', case_sensitive=False)],
     )
@@ -333,8 +337,8 @@ def test_show_help_lists_only_visible_commands(restore_commands: None) -> None:
     result = special_main.show_help()[0]
 
     assert result.header == ['Command', 'Shortcut', 'Usage', 'Description']
-    assert result.rows == [('visible', '\\v', 'visible', 'Visible command')]
-    assert result.postamble == f'Docs index — {DOCS_URL}'
+    assert result.rows == [('/visible', '/v', '/visible', 'Visible command')]
+    assert f'Docs index — {DOCS_URL}' in result.postamble
 
 
 def test_show_keyword_help_for_special_command(restore_commands: None) -> None:
@@ -350,13 +354,13 @@ def test_show_keyword_help_for_special_command(restore_commands: None) -> None:
 
 
 def test_show_keyword_help_for_case_sensitive_special_alias() -> None:
-    result = special_main.show_keyword_help(cast(Any, None), r'\e')[0]
+    result = special_main.show_keyword_help(cast(Any, None), r'/e')[0]
 
     assert result.header == ['name', 'description', 'example']
     assert result.rows == [
         (
-            r'\e',
-            '<query>\\edit | \\edit <filename>\nEdit query with editor (uses $VISUAL or $EDITOR).',
+            r'/e',
+            '/edit <filename> | <query>\\edit\nEdit query with editor (uses $VISUAL or $EDITOR).',
             '',
         )
     ]

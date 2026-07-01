@@ -35,14 +35,14 @@ class ClientCommandsMixin:
         special.register_special_command(
             self.change_db,
             "use",
-            "use <database>",
+            "/use <database>",
             "Change to a new database.",
             aliases=[SpecialCommandAlias("\\u", case_sensitive=False)],
         )
         special.register_special_command(
             self.manual_reconnect,
             "connect",
-            "connect [database]",
+            "/connect [database]",
             "Reconnect to the server, optionally switching databases.",
             case_sensitive=True,
             aliases=[SpecialCommandAlias("\\r", case_sensitive=True)],
@@ -50,7 +50,7 @@ class ClientCommandsMixin:
         special.register_special_command(
             self.refresh_completions,
             "rehash",
-            "rehash",
+            "/rehash",
             "Refresh auto-completions.",
             arg_type=ArgType.NO_QUERY,
             aliases=[SpecialCommandAlias("\\#", case_sensitive=False)],
@@ -58,7 +58,7 @@ class ClientCommandsMixin:
         special.register_special_command(
             self.change_table_format,
             "tableformat",
-            "tableformat <format>",
+            "/tableformat <format>",
             "Change the table format used to output interactive results.",
             case_sensitive=True,
             aliases=[SpecialCommandAlias("\\T", case_sensitive=True)],
@@ -66,7 +66,7 @@ class ClientCommandsMixin:
         special.register_special_command(
             self.change_redirect_format,
             "redirectformat",
-            "redirectformat <format>",
+            "/redirectformat <format>",
             "Change the table format used to output redirected results.",
             case_sensitive=True,
             aliases=[SpecialCommandAlias("\\Tr", case_sensitive=True)],
@@ -74,14 +74,14 @@ class ClientCommandsMixin:
         special.register_special_command(
             self.execute_from_file,
             "source",
-            "source <filename>",
+            "/source <filename>",
             "Execute queries from a file.",
             aliases=[SpecialCommandAlias("\\.", case_sensitive=False)],
         )
         special.register_special_command(
             self.change_prompt_format,
             "prompt",
-            "prompt <string>",
+            "/prompt <string>",
             "Change prompt format.",
             case_sensitive=True,
             aliases=[SpecialCommandAlias("\\R", case_sensitive=True)],

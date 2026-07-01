@@ -276,7 +276,7 @@ def test_collapsed_output_special_command(executor):
 @dbtest
 def test_special_command(executor):
     results = run(executor, "\\?")
-    assert_result_equal(results, rows=("quit", "\\q", "quit", "Quit."), header="Command", assert_contains=True, auto_status=False)
+    assert_result_equal(results, rows=("/quit", "/q", "/quit", "Quit."), header="Command", assert_contains=True, auto_status=False)
 
 
 @dbtest
