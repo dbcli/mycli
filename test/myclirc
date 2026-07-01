@@ -9,7 +9,8 @@ show_warnings = False
 # possible completions will be listed.
 smart_completion = True
 
-# Minimum characters typed before offering completion suggestions.
+# Minimum characters typed before offering completion suggestions.  Forward
+# slash for a command is an exception which always offers completions.
 # Suggestion: 3.
 min_completion_trigger = 1
 
