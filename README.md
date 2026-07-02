@@ -23,7 +23,7 @@ via `pip`.  This pakage is always up to date.
 You might need `sudo` on Linux.
 
 ```bash
-pip install -U 'mycli[all]'
+pip install --upgrade 'mycli[all]'
 ```
 
 or, only on macOS (`fzf` and `pygments` are optional):
