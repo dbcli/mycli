@@ -22,6 +22,7 @@ Features
 * Add `/help` prompt to initial toolbar help.
 * Advertise forward-slash `/command` forms in `/help` output.
 * Override `min_completion_trigger` for the `/command` form.
+* Accept DSN schemes with `+` sign.
 
 
 Bug Fixes

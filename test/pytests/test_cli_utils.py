@@ -35,7 +35,9 @@ def test_filtered_sys_argv_appends_empty_password_sentinel(monkeypatch, password
     [
         ('localhost', False, None),
         ('mysql://user@localhost/db', True, None),
+        ('mysql+pymysql://user@localhost/db', True, None),
         ('mysqlx://user@localhost/db', True, None),
+        ('mysqlx+pymysql://user@localhost/db', True, None),
         ('tcp://localhost:3306', True, None),
         ('socket:///tmp/mysql.sock', True, None),
         ('ssh://user@example.com', False, 'ssh'),
