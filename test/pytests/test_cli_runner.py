@@ -337,6 +337,20 @@ def test_run_from_cli_args_rejects_unknown_alias_dsn_scheme(monkeypatch: pytest.
     ]
 
 
+def test_run_from_cli_args_accepts_mysql_plus_dsn_scheme(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli_args = make_cli_args()
+    cli_args.dsn = 'mysql+pymysql://user:pass@host:3306/db'
+    client = DummyMyCli()
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    assert client.connect_calls[-1]['user'] == 'user'
+    assert client.connect_calls[-1]['passwd'] == 'pass'
+    assert client.connect_calls[-1]['host'] == 'host'
+    assert client.connect_calls[-1]['port'] == 3306
+    assert client.connect_calls[-1]['database'] == 'db'
+
+
 def test_run_from_cli_args_maps_dsn_ssl_parameters(monkeypatch: pytest.MonkeyPatch) -> None:
     cli_args = make_cli_args()
     cli_args.dsn = (

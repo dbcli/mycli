@@ -24,7 +24,10 @@ def is_valid_connection_scheme(text: str) -> tuple[bool, str | None]:
     if "://" not in text:
         return False, None
     scheme = text.split("://")[0]
-    if scheme not in ("mysql", "mysqlx", "tcp", "socket"):
-        return False, scheme
-    else:
+    if scheme.startswith('mysql+'):
         return True, None
+    if scheme.startswith('mysqlx+'):
+        return True, None
+    if scheme in ("mysql", "mysqlx", "tcp", "socket"):
+        return True, None
+    return False, scheme
