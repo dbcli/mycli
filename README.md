@@ -123,7 +123,7 @@ sudo apt-get install mycli fzf python3-pygments
 Fedora has a package available for mycli; install it using dnf.  The `fzf` and
 `python-pygments` packages are optional:
 
-```
+```bash
 sudo dnf install mycli fzf python-pygments
 ```
 
@@ -172,7 +172,7 @@ Mycli is tested on macOS (full), Linux (full), Windows (partial), and WSL
 To connect to MySQL versions earlier than 5.5, you may need to set the
 following in `~/.myclirc`:
 
-```
+```ini
 [connection]
 # character set for connections without --charset being set at the CLI
 default_character_set = utf8
