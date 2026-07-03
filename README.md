@@ -18,7 +18,7 @@ Quick Start
 -----------
 
 If you already know how to install Python packages, then you can install mycli
-via `pip`.  This pakage is always up to date.
+via `pip`.  This package is always up to date.
 
 You might need `sudo` on Linux.
 
