@@ -14,6 +14,12 @@ Mycli is compatible with MySQL, MariaDB, Percona, TiDB, and Apache Doris.
 
 Postgres Equivalent: [https://pgcli.com](https://pgcli.com)
 
+Release 2.x
+-----------
+
+Release 2.0.0 has [breaking changes](https://github.com/dbcli/mycli/blob/v2.0.0/changelog.md#breaking-changes)!
+
+
 Quick Start
 -----------
 
