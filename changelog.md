@@ -36,6 +36,7 @@ Documentation
 * Prefer forward-slash /command forms in TIPS.
 * Prefer forward-slash /command forms in markdown documentation.
 * Update README, especially for installation instructions.
+* Always show Apache Doris in vendor lists.
 
 
 Internal

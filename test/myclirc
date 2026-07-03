@@ -130,7 +130,7 @@ wider_completion_menu = False
 # * \k - connection socket basename OR the port
 # * \K - full connection socket path OR the port
 # * \T - connection SSL/TLS version
-# * \t - database vendor (Percona, MySQL, MariaDB, TiDB)
+# * \t - database vendor (Percona, MySQL, MariaDB, TiDB, Doris)
 # * \u - username
 # * \w - number of warnings, or "(none)" (requires frequent trips to the server)
 # * \W - number of warnings, or the empty string (requires frequent trips to the server)
