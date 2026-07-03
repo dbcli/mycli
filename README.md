@@ -136,8 +136,8 @@ Install the `less` pager, for example by `scoop install less`.
 Follow the instructions on this blogpost: https://web.archive.org/web/20221006045208/https://www.codewall.co.uk/installing-using-mycli-on-windows/
 
 The libraries used in mycli are Windows-compatible, but there are known
-limitations according to the test suite.   The basics work without any
-modifications, but isn't supported software at this time.
+limitations according to the test suite.  The basics work without any
+modifications, but this configuration isn't supported software at this time.
 
 PRs to address shortcomings on Windows would be welcome!
 
