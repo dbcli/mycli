@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Documentation
+---------
+* Fix a typo in myclirc commentary.
+
+
 2.0.0 (2026/07/03)
 ==============
 
