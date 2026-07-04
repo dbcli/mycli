@@ -385,7 +385,7 @@ matching-bracket.other = "#000000 bg:#aacccc"
 
 # Favorite queries.
 # You can add your favorite queries here. They will be available in the
-# REPL when you type `\f` or `\f <query_name>`.
+# REPL when you type `/f` or `/f <query_name>`.
 [favorite_queries]
 check = 'select "✔"'
 foo_args = 'SELECT $1, "$2", "$3"'
