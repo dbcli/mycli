@@ -23,11 +23,7 @@ def is_valid_connection_scheme(text: str) -> tuple[bool, str | None]:
     # exit early if the text does not resemble a DSN URI
     if "://" not in text:
         return False, None
-    scheme = text.split("://")[0]
-    if scheme.startswith('mysql+'):
-        return True, None
-    if scheme.startswith('mysqlx+'):
-        return True, None
-    if scheme in ("mysql", "mysqlx", "tcp", "socket"):
+    scheme = text.split("://")[0].split("+")[0]
+    if scheme in ("mysql", "mysqlx"):
         return True, None
     return False, scheme
