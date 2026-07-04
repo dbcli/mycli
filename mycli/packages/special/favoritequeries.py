@@ -10,10 +10,10 @@ with a short name.
 Examples:
 
     # Save a new favorite query.
-    > \\fs simple select * from abc where a is not Null;
+    > /fs simple select * from abc where a is not Null;
 
     # List all favorite queries.
-    > \\f
+    > /f
     ╒════════╤═══════════════════════════════════════╕
     │ Name   │ Query                                 │
     ╞════════╪═══════════════════════════════════════╡
@@ -21,7 +21,7 @@ Examples:
     ╘════════╧═══════════════════════════════════════╛
 
     # Run a favorite query.
-    > \\f simple
+    > /f simple
     ╒════════╤════════╕
     │ a      │ b      │
     ╞════════╪════════╡
@@ -29,7 +29,7 @@ Examples:
     ╘════════╧════════╛
 
     # Delete a favorite query.
-    > \\fd simple
+    > /fd simple
     simple: Deleted.
 """
 

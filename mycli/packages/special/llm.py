@@ -136,21 +136,21 @@ Use an LLM to create SQL queries to answer questions from your database.
 Examples:
 
 # Ask a question.
-> \\llm 'Most visited urls?'
+> /llm 'Most visited urls?'
 
 # List available models
-> \\llm models
+> /llm models
 > gpt-4o
 > gpt-3.5-turbo
 
 # Change default model
-> \\llm models default llama3
+> /llm models default llama3
 
 # Set api key (not required for local models)
-> \\llm keys set openai
+> /llm keys set openai
 
 # Install a model plugin
-> \\llm install llm-ollama
+> /llm install llm-ollama
 > llm-ollama installed.
 
 # Plugins directory
@@ -170,7 +170,7 @@ or install LLM libraries separately
 
    pip install llm
 
-This is required to use the \\llm command.
+This is required to use the /llm command.
 """
 
 _SQL_CODE_FENCE = r"```sql\n(.*?)\n```"

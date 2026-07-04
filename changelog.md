@@ -4,6 +4,7 @@ Upcoming (TBD)
 Documentation
 ---------
 * Fix a typo in myclirc commentary.
+* Advertise forward-slash command forms in more places.
 
 
 2.0.0 (2026/07/03)
