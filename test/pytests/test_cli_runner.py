@@ -421,3 +421,56 @@ def test_run_from_cli_args_uses_explicit_keyring_flag(monkeypatch: pytest.Monkey
 
     assert client.connect_calls[-1]['use_keyring'] is True
     assert client.connect_calls[-1]['reset_keyring'] is False
+
+
+@pytest.mark.parametrize(
+    ('ssh_connection', 'expected_use_keyring'),
+    (
+        (None, True),
+        ('client-ip client-port server-ip server-port', False),
+    ),
+)
+def test_run_from_cli_args_uses_auto_keyring_flag(
+    monkeypatch: pytest.MonkeyPatch,
+    ssh_connection: str | None,
+    expected_use_keyring: bool,
+) -> None:
+    cli_args = make_cli_args()
+    cli_args.use_keyring = 'auto'
+    client = DummyMyCli()
+    if ssh_connection is None:
+        monkeypatch.delenv('SSH_CONNECTION', raising=False)
+    else:
+        monkeypatch.setenv('SSH_CONNECTION', ssh_connection)
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    assert client.connect_calls[-1]['use_keyring'] is expected_use_keyring
+    assert client.connect_calls[-1]['reset_keyring'] is False
+
+
+@pytest.mark.parametrize(
+    ('ssh_connection', 'expected_use_keyring'),
+    (
+        (None, True),
+        ('client-ip client-port server-ip server-port', False),
+    ),
+)
+def test_run_from_cli_args_uses_auto_keyring_config(
+    monkeypatch: pytest.MonkeyPatch,
+    ssh_connection: str | None,
+    expected_use_keyring: bool,
+) -> None:
+    cli_args = make_cli_args()
+    config = default_config()
+    config['main'] = {**config['main'], 'use_keyring': 'auto'}
+    client = DummyMyCli(config=config)
+    if ssh_connection is None:
+        monkeypatch.delenv('SSH_CONNECTION', raising=False)
+    else:
+        monkeypatch.setenv('SSH_CONNECTION', ssh_connection)
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    assert client.connect_calls[-1]['use_keyring'] is expected_use_keyring
+    assert client.connect_calls[-1]['reset_keyring'] is False
