@@ -5,7 +5,7 @@
 # after executing a SQL statement when applicable.
 show_warnings = False
 
-# Enables context sensitive auto-completion. If this is disabled the all
+# Enables context sensitive auto-completion. If this is disabled then all
 # possible completions will be listed.
 smart_completion = True
 
