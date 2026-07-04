@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Breaking Changes
+---------
+* Remove undocumented support for `tcp://` and `socket://` DSNs.
+
+
 Documentation
 ---------
 * Fix a typo in myclirc commentary.
