@@ -2,6 +2,8 @@ import datetime
 import logging
 import os
 from typing import Any
+from urllib.parse import quote as urlquote
+from urllib.parse import urlencode
 
 import click
 import pymysql
@@ -143,3 +145,23 @@ def get_server_timezone(variables: dict[str, Any]) -> str:
 
 def get_local_timezone() -> str:
     return datetime.datetime.now().astimezone().tzname() or ''
+
+
+def compute_current_dsn(cur: Cursor) -> str:
+    conn = cur.connection
+    user = urlquote(conn.user or '')
+    host = conn.host or 'localhost'
+    port = f':{conn.port}'
+    db = urlquote(conn.db.decode() if isinstance(conn.db, bytes) else (conn.db or ''))
+    if db:
+        db = f'/{db}'
+    query_part = {}
+    if getattr(conn, 'unix_socket', None):
+        query_part['socket'] = conn.unix_socket
+        port = ''
+    if getattr(conn, 'charset', None) and conn.charset != 'utf8mb4':
+        query_part['character_set'] = conn.charset
+    dsn = f'mysql://{user}@{host}{port}{db}'
+    if query_part:
+        dsn += '?' + urlencode(query_part)
+    return dsn

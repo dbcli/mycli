@@ -108,6 +108,8 @@ the /watch command executes a query every N seconds!
 
 use /bug to file a bug on GitHub!
 
+use /dsn to manage saved DSNs!
+
 ###
 ### environment variables
 ###

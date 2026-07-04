@@ -9,6 +9,7 @@ Breaking Changes
 Features
 ---------
 * Add `--ssh-jump` CLI argument, restoring SSH jump functionality.
+* Add a `/dsn` command to manage persisted DSN aliases.
 
 
 Documentation

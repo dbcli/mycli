@@ -44,6 +44,30 @@ class FakeFavoriteQueries:
         return f'{name}: Deleted.'
 
 
+class FakeDsnAliases:
+    usage = '\nFAKE DSN USAGE'
+
+    def __init__(self, aliases: dict[str, str] | None = None) -> None:
+        self.aliases = {} if aliases is None else dict(aliases)
+        self.saved: list[tuple[str, str]] = []
+        self.deleted: list[str] = []
+
+    def list(self) -> list[str]:
+        return list(self.aliases)
+
+    def get(self, alias: str) -> str | None:
+        return self.aliases.get(alias)
+
+    def save(self, alias: str, dsn: str) -> str:
+        self.saved.append((alias, dsn))
+        self.aliases[alias] = dsn
+        return f'Saved: {alias}'
+
+    def delete(self, alias: str) -> str:
+        self.deleted.append(alias)
+        return f'Deleted: {alias}'
+
+
 class FakeCursor:
     def __init__(self, descriptions: dict[str, list[tuple[str]] | None] | None = None) -> None:
         self.descriptions = {} if descriptions is None else descriptions
@@ -108,6 +132,8 @@ def reset_iocommands_state(monkeypatch) -> Generator[None, None, None]:
     original_favoritequeries = iocommands.favoritequeries
     had_instance = hasattr(iocommands.FavoriteQueries, 'instance')
     original_instance = getattr(iocommands.FavoriteQueries, 'instance', None)
+    had_dsn_instance = hasattr(iocommands.DsnAliases, 'instance')
+    original_dsn_instance = getattr(iocommands.DsnAliases, 'instance', None)
 
     yield
 
@@ -129,6 +155,8 @@ def reset_iocommands_state(monkeypatch) -> Generator[None, None, None]:
     iocommands.favoritequeries = original_favoritequeries
     if had_instance:
         iocommands.FavoriteQueries.instance = original_instance
+    if had_dsn_instance:
+        iocommands.DsnAliases.instance = original_dsn_instance
 
 
 @pytest.fixture
@@ -679,6 +707,82 @@ def test_list_substitute_save_delete_and_redirect_state(tmp_path: Path, monkeypa
     iocommands.once_file = None
     iocommands.PIPE_ONCE['process'] = SimpleNamespace()
     assert iocommands.is_redirected() is True
+
+
+def test_dsn_command_shows_current_connection(monkeypatch) -> None:
+    monkeypatch.setattr(iocommands, 'compute_current_dsn', lambda cur: 'mysql://user@host/db')
+    monkeypatch.setattr(iocommands.DsnAliases, 'instance', FakeDsnAliases(), raising=False)
+
+    result = iocommands.dsn(cur=FakeCursor(), arg='show')[0]
+
+    assert result.header == ['Current Connection']
+    assert result.rows == [('mysql://user@host/db',)]
+
+
+def test_dsn_command_lists_aliases(monkeypatch) -> None:
+    aliases = FakeDsnAliases({'prod': 'mysql://prod/db'})
+    monkeypatch.setattr(iocommands.DsnAliases, 'instance', aliases, raising=False)
+
+    result = iocommands.dsn(cur=FakeCursor(), arg='list')[0]
+
+    assert result.status is None
+    assert result.header == ['Alias', 'DSN']
+    assert result.rows == [('prod', 'mysql://prod/db')]
+
+
+def test_dsn_command_reports_empty_alias_list(monkeypatch) -> None:
+    monkeypatch.setattr(iocommands.DsnAliases, 'instance', FakeDsnAliases(), raising=False)
+
+    result = iocommands.dsn(cur=FakeCursor(), arg='list')[0]
+
+    assert result.status == 'No DSN Aliases found.'
+    assert result.header == ['Alias', 'DSN']
+    assert result.rows == []
+
+
+def test_dsn_command_saves_current_connection(monkeypatch) -> None:
+    aliases = FakeDsnAliases()
+    monkeypatch.setattr(iocommands, 'compute_current_dsn', lambda cur: 'mysql://user@host/db')
+    monkeypatch.setattr(iocommands.DsnAliases, 'instance', aliases, raising=False)
+
+    result = iocommands.dsn(cur=FakeCursor(), arg='save prod')[0]
+
+    assert result.status == 'Saved: prod'
+    assert aliases.saved == [('prod', 'mysql://user@host/db')]
+
+
+def test_dsn_command_rejects_save_without_single_alias(monkeypatch) -> None:
+    monkeypatch.setattr(iocommands.DsnAliases, 'instance', FakeDsnAliases(), raising=False)
+
+    assert iocommands.dsn(cur=FakeCursor(), arg='save')[0].status == 'Error: a single alias-name argument is required to save.'
+    assert iocommands.dsn(cur=FakeCursor(), arg='save one two')[0].status == ('Error: a single alias-name argument is required to save.')
+
+
+def test_dsn_command_deletes_alias(monkeypatch) -> None:
+    aliases = FakeDsnAliases({'prod': 'mysql://prod/db'})
+    monkeypatch.setattr(iocommands.DsnAliases, 'instance', aliases, raising=False)
+
+    result = iocommands.dsn(cur=FakeCursor(), arg='delete prod')[0]
+
+    assert result.status == 'Deleted: prod'
+    assert aliases.deleted == ['prod']
+
+
+def test_dsn_command_rejects_delete_without_single_alias(monkeypatch) -> None:
+    monkeypatch.setattr(iocommands.DsnAliases, 'instance', FakeDsnAliases(), raising=False)
+
+    assert iocommands.dsn(cur=FakeCursor(), arg='delete')[0].status == ('Error: a single alias-name argument is required to delete.')
+    assert iocommands.dsn(cur=FakeCursor(), arg='delete one two')[0].status == (
+        'Error: a single alias-name argument is required to delete.'
+    )
+
+
+def test_dsn_command_shows_usage_for_help_and_unknown_subcommands(monkeypatch) -> None:
+    aliases = FakeDsnAliases()
+    monkeypatch.setattr(iocommands.DsnAliases, 'instance', aliases, raising=False)
+
+    assert iocommands.dsn(cur=FakeCursor(), arg='help')[0].preamble == aliases.usage
+    assert iocommands.dsn(cur=FakeCursor(), arg='unknown')[0].preamble == aliases.usage
 
 
 def test_execute_system_command_usage_parse_and_cd(monkeypatch) -> None:
