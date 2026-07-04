@@ -922,6 +922,9 @@ def test_dsn(monkeypatch):
         def run_query(self, query, new_line=True):
             pass
 
+        def close(self):
+            pass
+
     import mycli.main
 
     monkeypatch.setattr(mycli.main, "MyCli", MockMyCli)
@@ -1181,6 +1184,9 @@ def test_mysql_dsn_envvar(monkeypatch):
         def run_query(self, query, new_line=True):
             pass
 
+        def close(self):
+            pass
+
     import mycli.main
 
     monkeypatch.setattr(mycli.main, 'MyCli', MockMyCli)
@@ -1231,6 +1237,9 @@ def test_password_option_uses_cleartext_value(monkeypatch):
             MockMyCli.connect_args = args
 
         def run_query(self, query, new_line=True):
+            pass
+
+        def close(self):
             pass
 
     import mycli.main
@@ -1289,6 +1298,9 @@ def test_password_option_overrides_password_file_and_mysql_pwd(monkeypatch):
             MockMyCli.connect_args = args
 
         def run_query(self, query, new_line=True):
+            pass
+
+        def close(self):
             pass
 
     import mycli.main
@@ -1357,6 +1369,9 @@ def test_password_file_option_reads_password(monkeypatch):
             MockMyCli.connect_args = args
 
         def run_query(self, query, new_line=True):
+            pass
+
+        def close(self):
             pass
 
     import mycli.main
@@ -1440,6 +1455,9 @@ def test_username_option_and_mysql_user_envvar(monkeypatch):
         def run_query(self, query, new_line=True):
             pass
 
+        def close(self):
+            pass
+
     import mycli.main
 
     monkeypatch.setattr(mycli.main, 'MyCli', MockMyCli)
@@ -1512,6 +1530,9 @@ def test_host_option_and_mysql_host_envvar(monkeypatch):
         def run_query(self, query, new_line=True):
             pass
 
+        def close(self):
+            pass
+
     import mycli.main
 
     monkeypatch.setattr(mycli.main, 'MyCli', MockMyCli)
@@ -1580,6 +1601,9 @@ def test_hostname_option_alias(monkeypatch):
         def run_query(self, query, new_line=True):
             pass
 
+        def close(self):
+            pass
+
     import mycli.main
 
     monkeypatch.setattr(mycli.main, 'MyCli', MockMyCli)
@@ -1632,6 +1656,9 @@ def test_port_option_and_mysql_tcp_port_envvar(monkeypatch):
             MockMyCli.connect_args = args
 
         def run_query(self, query, new_line=True):
+            pass
+
+        def close(self):
             pass
 
     import mycli.main
@@ -1702,6 +1729,9 @@ def test_socket_option_and_mysql_unix_socket_envvar(monkeypatch):
         def run_query(self, query, new_line=True):
             pass
 
+        def close(self):
+            pass
+
     import mycli.main
 
     monkeypatch.setattr(mycli.main, 'MyCli', MockMyCli)
@@ -1766,6 +1796,9 @@ def test_mysql_user_envvar_overrides_dsn_resolution(monkeypatch):
             MockMyCli.connect_args = args
 
         def run_query(self, query, new_line=True):
+            pass
+
+        def close(self):
             pass
 
     import mycli.main

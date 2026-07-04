@@ -311,45 +311,48 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
         use_keyring = str_to_bool(cli_args.use_keyring)
         reset_keyring = False
 
-    mycli.connect(
-        database=database,
-        user=cli_args.user,
-        passwd=cli_args.password,
-        host=cli_args.host,
-        port=cli_args.port,
-        socket=cli_args.socket,
-        local_infile=cli_args.local_infile,
-        ssl=ssl,
-        init_command=combined_init_cmd,
-        unbuffered=cli_args.unbuffered,
-        character_set=cli_args.character_set,
-        use_keyring=use_keyring,
-        reset_keyring=reset_keyring,
-        keepalive_ticks=keepalive_ticks,
-    )
+    try:
+        mycli.connect(
+            database=database,
+            user=cli_args.user,
+            passwd=cli_args.password,
+            host=cli_args.host,
+            port=cli_args.port,
+            socket=cli_args.socket,
+            local_infile=cli_args.local_infile,
+            ssl=ssl,
+            init_command=combined_init_cmd,
+            unbuffered=cli_args.unbuffered,
+            character_set=cli_args.character_set,
+            use_keyring=use_keyring,
+            reset_keyring=reset_keyring,
+            keepalive_ticks=keepalive_ticks,
+            ssh_jump=cli_args.ssh_jump,
+        )
 
-    if combined_init_cmd:
-        click.echo(f"Executing init-command: {combined_init_cmd}", err=True)
+        if combined_init_cmd:
+            click.echo(f"Executing init-command: {combined_init_cmd}", err=True)
 
-    mycli.logger.debug(
-        "Launch Params: \n\tdatabase: %r\tuser: %r\thost: %r\tport: %r",
-        database,
-        cli_args.user,
-        cli_args.host,
-        cli_args.port,
-    )
+        mycli.logger.debug(
+            "Launch Params: \n\tdatabase: %r\tuser: %r\thost: %r\tport: %r",
+            database,
+            cli_args.user,
+            cli_args.host,
+            cli_args.port,
+        )
 
-    if cli_args.execute is not None:
-        sys.exit(main_execute_from_cli(mycli, cli_args))
+        if cli_args.execute is not None:
+            sys.exit(main_execute_from_cli(mycli, cli_args))
 
-    if cli_args.batch is not None and cli_args.batch != '-' and cli_args.progress and sys.stderr.isatty():
-        sys.exit(main_batch_with_progress_bar(mycli, cli_args))
+        if cli_args.batch is not None and cli_args.batch != '-' and cli_args.progress and sys.stderr.isatty():
+            sys.exit(main_batch_with_progress_bar(mycli, cli_args))
 
-    if cli_args.batch is not None:
-        sys.exit(main_batch_without_progress_bar(mycli, cli_args))
+        if cli_args.batch is not None:
+            sys.exit(main_batch_without_progress_bar(mycli, cli_args))
 
-    if not sys.stdin.isatty():
-        sys.exit(main_batch_from_stdin(mycli, cli_args))
+        if not sys.stdin.isatty():
+            sys.exit(main_batch_from_stdin(mycli, cli_args))
 
-    mycli.run_cli()
-    mycli.close()
+        mycli.run_cli()
+    finally:
+        mycli.close()
