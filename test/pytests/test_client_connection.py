@@ -307,6 +307,142 @@ def test_connect_reports_keyring_save_errors(monkeypatch: pytest.MonkeyPatch) ->
     assert secho_calls == [('Password not saved to the system keyring: locked', {'err': True, 'fg': 'red'})]
 
 
+def test_connect_uses_ssh_jump_with_remote_socket(monkeypatch: pytest.MonkeyPatch) -> None:
+    tunnel_calls: list[dict[str, Any]] = []
+
+    class FakeTunnel:
+        local_host = '127.0.0.1'
+        local_port = 4406
+        remote_socket = '/var/run/mysqld/mysqld.sock'
+
+        @classmethod
+        def from_target(
+            cls,
+            ssh_jump: str,
+            *,
+            remote_host: str,
+            remote_port: int,
+            remote_socket: str | None = None,
+            ssh_executable: str = 'ssh',
+            ssh_options: str | None = None,
+        ) -> 'FakeTunnel':
+            tunnel_calls.append({
+                'ssh_jump': ssh_jump,
+                'remote_host': remote_host,
+                'remote_port': remote_port,
+                'remote_socket': remote_socket,
+                'ssh_executable': ssh_executable,
+                'ssh_options': None,
+            })
+            return cls()
+
+        def start(self) -> None:
+            pass
+
+        def close(self) -> None:
+            pass
+
+    monkeypatch.setattr(client_connection, 'SshTunnel', FakeTunnel)
+    client = DummyClient(config={'main': {}, 'ssh': {'ssh_executable': '/opt/bin/ssh'}, 'connection': {}})
+
+    client.connect(
+        user='alice',
+        host='db.internal',
+        port=None,
+        socket='/var/run/mysqld/mysqld.sock',
+        ssh_jump='bastion',
+    )
+
+    assert tunnel_calls == [
+        {
+            'ssh_jump': 'bastion',
+            'remote_host': 'db.internal',
+            'remote_port': 3306,
+            'remote_socket': '/var/run/mysqld/mysqld.sock',
+            'ssh_executable': '/opt/bin/ssh',
+            'ssh_options': None,
+        }
+    ]
+    assert FakeSQLExecute.calls[-1]['host'] == '127.0.0.1'
+    assert FakeSQLExecute.calls[-1]['port'] == 4406
+    assert FakeSQLExecute.calls[-1]['socket'] is None
+
+
+def test_connect_reports_ssh_jump_start_error_and_closes_tunnel(monkeypatch: pytest.MonkeyPatch) -> None:
+    close_calls: list[bool] = []
+    secho_calls: list[tuple[str, dict[str, Any]]] = []
+
+    class FakeTunnel:
+        local_host = '127.0.0.1'
+        local_port = 4406
+        remote_socket = None
+
+        @classmethod
+        def from_target(
+            cls,
+            _ssh_jump: str,
+            *,
+            remote_host: str,
+            remote_port: int,
+            remote_socket: str | None = None,
+            ssh_executable: str = 'ssh',
+            ssh_options: str | None = None,
+        ) -> 'FakeTunnel':
+            return cls()
+
+        def start(self) -> None:
+            raise client_connection.SshTunnelError('no tunnel')
+
+        def close(self) -> None:
+            close_calls.append(True)
+
+    monkeypatch.setattr(client_connection, 'SshTunnel', FakeTunnel)
+    monkeypatch.setattr(client_connection.click, 'secho', lambda message, **kwargs: secho_calls.append((message, kwargs)))
+    client = DummyClient()
+
+    with pytest.raises(SystemExit) as excinfo:
+        client.connect(host='db.internal', ssh_jump='bastion')
+
+    assert excinfo.value.code == 1
+    assert close_calls == [True]
+    assert secho_calls == [('Error: Unable to start SSH tunnel: no tunnel', {'err': True, 'fg': 'red'})]
+    assert FakeSQLExecute.calls == []
+
+
+def test_connect_swallows_ssh_jump_cleanup_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    class FakeTunnel:
+        local_host = '127.0.0.1'
+        local_port = 4406
+        remote_socket = None
+
+        @classmethod
+        def from_target(
+            cls,
+            _ssh_jump: str,
+            *,
+            remote_host: str,
+            remote_port: int,
+            remote_socket: str | None = None,
+            ssh_executable: str = 'ssh',
+            ssh_options: str | None = None,
+        ) -> 'FakeTunnel':
+            return cls()
+
+        def start(self) -> None:
+            raise OSError('no process')
+
+        def close(self) -> None:
+            raise RuntimeError('close failed')
+
+    monkeypatch.setattr(client_connection, 'SshTunnel', FakeTunnel)
+    client = DummyClient()
+
+    with pytest.raises(SystemExit) as excinfo:
+        client.connect(host='db.internal', ssh_jump='bastion')
+
+    assert excinfo.value.code == 1
+
+
 def test_connect_retries_without_ssl_for_auto_handshake_error() -> None:
     client = DummyClient()
     FakeSQLExecute.effects = [op_error(client_connection.HANDSHAKE_ERROR), None]

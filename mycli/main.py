@@ -271,6 +271,10 @@ class CliArgs:
         type=int,
         help='Send regular keepalive pings to the connection, roughly every <int> seconds.',
     )
+    ssh_jump: str | None = clickdc.option(
+        type=str,
+        help='Open an SSH tunnel via [user@]host[:port] and connect to MySQL through it.',
+    )
     checkup: bool = clickdc.option(
         is_flag=True,
         help='Run a checkup on your configuration.',
@@ -287,47 +291,47 @@ class CliArgs:
     ssh_user: str | None = clickdc.option(
         type=str,
         hidden=True,
-        deprecated='No effect. See https://github.com/dbcli/mycli/issues/1960 .',
+        deprecated='No effect. See --ssh-jump.',
     )
     ssh_host: str | None = clickdc.option(
         type=str,
         hidden=True,
-        deprecated='No effect. See https://github.com/dbcli/mycli/issues/1960 .',
+        deprecated='No effect. See --ssh-jump.',
     )
     ssh_port: int = clickdc.option(
         type=int,
         hidden=True,
-        deprecated='No effect. See https://github.com/dbcli/mycli/issues/1960 .',
+        deprecated='No effect. See --ssh-jump.',
     )
     ssh_password: str | None = clickdc.option(
         type=str,
         hidden=True,
-        deprecated='No effect. See https://github.com/dbcli/mycli/issues/1960 .',
+        deprecated='No effect. See --ssh-jump.',
     )
     ssh_key_filename: str | None = clickdc.option(
         type=str,
         hidden=True,
-        deprecated='No effect. See https://github.com/dbcli/mycli/issues/1960 .',
+        deprecated='No effect. See --ssh-jump.',
     )
     ssh_config_path: str = clickdc.option(
         type=str,
         hidden=True,
-        deprecated='No effect. See https://github.com/dbcli/mycli/issues/1960 .',
+        deprecated='No effect. See --ssh-jump.',
     )
     ssh_config_host: str | None = clickdc.option(
         type=str,
         hidden=True,
-        deprecated='No effect. See https://github.com/dbcli/mycli/issues/1960 .',
+        deprecated='No effect. See --ssh-jump.',
     )
     list_ssh_config: bool = clickdc.option(
         is_flag=True,
         hidden=True,
-        deprecated='No effect. See https://github.com/dbcli/mycli/issues/1960 .',
+        deprecated='No effect. See --ssh-jump.',
     )
     ssh_warning_off: bool = clickdc.option(
         is_flag=True,
         hidden=True,
-        deprecated='No effect. See https://github.com/dbcli/mycli/issues/1960 .',
+        deprecated='No effect. See --ssh-jump.',
     )
 
 

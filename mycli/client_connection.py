@@ -4,6 +4,7 @@ import os
 import sys
 import traceback
 from typing import TYPE_CHECKING, Any
+from urllib.parse import quote as urlquote
 
 import click
 import keyring
@@ -22,6 +23,7 @@ from mycli.constants import (
 )
 from mycli.packages.filepaths import guess_socket_location
 from mycli.sqlexecute import SQLExecute
+from mycli.ssh_tunnel import SshTunnel, SshTunnelError
 
 try:
     from pwd import getpwuid
@@ -58,6 +60,7 @@ class ClientConnectionMixin:
         use_keyring: bool | None = None,
         reset_keyring: bool | None = None,
         keepalive_ticks: int | None = None,
+        ssh_jump: str | None = None,
     ) -> None:
         mylogin_cnf: dict[str, Any] = self.read_mylogin_cnf(self.mylogin_cnf)
         # Fall back to .mylogin.cnf values only if user did not specify a value.
@@ -67,12 +70,38 @@ class ClientConnectionMixin:
         ssl_config: dict[str, Any] = ssl or {}
         user_connection_config = self.config_without_package_defaults.get('connection', {})
         self.keepalive_ticks = keepalive_ticks
+        self.ssh_tunnel = None
 
         int_port = port and int(port)
         if not int_port:
             int_port = DEFAULT_PORT
             if not host or host == DEFAULT_HOST:
                 socket = socket or user_connection_config.get("default_socket") or mylogin_cnf["socket"] or guess_socket_location()
+
+        if ssh_jump:
+            remote_host = host or DEFAULT_HOST
+            remote_port = int_port or DEFAULT_PORT
+            remote_socket = socket or None
+            ssh_executable = self.config.get('ssh', {}).get('ssh_executable', 'ssh') or 'ssh'
+            ssh_options = self.config.get('ssh', {}).get('ssh_options')
+            try:
+                self.ssh_tunnel = SshTunnel.from_target(
+                    ssh_jump,
+                    remote_host=remote_host,
+                    remote_port=int(remote_port),
+                    remote_socket=remote_socket,
+                    ssh_executable=ssh_executable,
+                    ssh_options=ssh_options,
+                )
+                self.ssh_tunnel.start()
+            except (OSError, ValueError, SshTunnelError) as exc:
+                click.secho(f'Error: Unable to start SSH tunnel: {exc}', err=True, fg='red')
+                try:
+                    if self.ssh_tunnel:
+                        self.ssh_tunnel.close()
+                except Exception:
+                    pass
+                sys.exit(1)
 
         passwd = passwd if isinstance(passwd, (str, int)) else mylogin_cnf["password"]
 
@@ -135,7 +164,10 @@ class ClientConnectionMixin:
         # 5. .mylogin.cnf
         # 6. keyring
 
-        keyring_identifier = f'{user}@{host}:{"" if socket else int_port}:{socket or ""}'
+        ssh_tunnel_field = urlquote(ssh_jump or '')
+        if ssh_tunnel_field:
+            ssh_tunnel_field = ':' + ssh_tunnel_field
+        keyring_identifier = f'{user}@{host}:{"" if socket else int_port}:{socket or ""}{ssh_tunnel_field}'
         keyring_domain = 'mycli.net'
         keyring_retrieved_cleanly = False
 
@@ -152,19 +184,24 @@ class ClientConnectionMixin:
         # should not fail, but will help the typechecker
         assert not isinstance(passwd, int)
 
-        connection_info: dict[Any, Any] = {
-            "database": database,
-            "user": user,
-            "password": passwd,
-            "host": host,
-            "port": int_port,
-            "socket": socket,
-            "character_set": character_set,
-            "local_infile": use_local_infile,
-            "ssl": ssl_config,
-            "init_command": init_command,
-            "unbuffered": unbuffered,
+        connection_info: dict[str, Any] = {
+            'database': database,
+            'user': user,
+            'password': passwd,
+            'character_set': character_set,
+            'local_infile': use_local_infile,
+            'ssl': ssl_config,
+            'init_command': init_command,
+            'unbuffered': unbuffered,
         }
+        if self.ssh_tunnel:
+            connection_info['host'] = self.ssh_tunnel.local_host
+            connection_info['port'] = self.ssh_tunnel.local_port
+            connection_info['socket'] = None
+        else:
+            connection_info['host'] = host
+            connection_info['port'] = int_port
+            connection_info['socket'] = socket
 
         def _update_keyring(password: str | None, keyring_retrieved_cleanly: bool):
             if not password:
@@ -238,6 +275,8 @@ class ClientConnectionMixin:
                 try:
                     socket_owner = getpwuid(os.stat(socket).st_uid).pw_name
                 except KeyError:
+                    socket_owner = '<unknown>'
+                except FileNotFoundError:
                     socket_owner = '<unknown>'
                 self.echo(f"Connecting to socket {socket}, owned by user {socket_owner}", err=True)
                 try:

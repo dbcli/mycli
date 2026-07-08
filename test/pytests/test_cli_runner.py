@@ -31,6 +31,7 @@ class DummyMyCli:
         self.ssl_mode: str | None = None
         self.logger = DummyLogger()
         self.dsn_alias: str | None = None
+        self.ssh_tunnel: Any = None
         self.connect_calls: list[dict[str, Any]] = []
         self.run_cli_called = False
         self.close_called = False
@@ -42,6 +43,8 @@ class DummyMyCli:
         self.run_cli_called = True
 
     def close(self) -> None:
+        if getattr(self, 'ssh_tunnel', None) is not None:
+            self.ssh_tunnel.close()
         self.close_called = True
 
 

@@ -6,6 +6,11 @@ Breaking Changes
 * Remove undocumented support for `tcp://` and `socket://` DSNs.
 
 
+Features
+---------
+* Add `--ssh-jump` CLI argument, restoring SSH jump functionality.
+
+
 Documentation
 ---------
 * Fix a typo in myclirc commentary.

@@ -3,7 +3,7 @@ from __future__ import annotations
 from io import TextIOWrapper
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -133,13 +133,29 @@ def test_close_stops_schema_prefetcher_and_closes_sqlexecute() -> None:
     cli = MyCli.__new__(MyCli)
     stopped: list[bool] = []
     closed: list[bool] = []
+    tunnel_closed: list[bool] = []
     cli.schema_prefetcher = SimpleNamespace(stop=lambda: stopped.append(True))
     cli.sqlexecute = SimpleNamespace(close=lambda: closed.append(True))  # type: ignore[assignment]
+    cast(Any, cli).ssh_tunnel = SimpleNamespace(close=lambda: tunnel_closed.append(True))
 
     MyCli.close(cli)
 
     assert stopped == [True]
     assert closed == [True]
+    assert tunnel_closed == [True]
+
+
+def test_close_swallows_cleanup_errors() -> None:
+    cli = MyCli.__new__(MyCli)
+
+    def fail() -> None:
+        raise RuntimeError('cleanup failed')
+
+    cli.schema_prefetcher = SimpleNamespace(stop=fail)
+    cli.sqlexecute = SimpleNamespace(close=fail)  # type: ignore[assignment]
+    cast(Any, cli).ssh_tunnel = SimpleNamespace(close=fail)
+
+    MyCli.close(cli)
 
 
 def test_run_cli_delegates_to_main_repl(monkeypatch: pytest.MonkeyPatch) -> None:
