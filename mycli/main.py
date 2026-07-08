@@ -263,9 +263,9 @@ class CliArgs:
         help='Show progress on the standard error with --batch.',
     )
     use_keyring: str | None = clickdc.option(
-        type=click.Choice(['true', 'false', 'reset']),
+        type=click.Choice(['auto', 'true', 'false', 'reset']),
         default=None,
-        help='Store and retrieve passwords from the system keyring: true/false/reset.',
+        help='Store and retrieve passwords from the system keyring. auto means true, unless within an SSH connection.',
     )
     keepalive_ticks: int | None = clickdc.option(
         type=int,

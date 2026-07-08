@@ -20,7 +20,7 @@ the --character-set option sets the character set for a single session!
 
 the --unbuffered flag can save memory when in batch mode!
 
---use-keyring=true lets you access the system keyring for passwords!
+--use-keyring=auto lets you access the system keyring for passwords!
 
 --use-keyring=reset resets a password saved to the system keyring!
 

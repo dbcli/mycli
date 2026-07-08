@@ -206,10 +206,14 @@ enable_pager = True
 pager = python test/features/wrappager.py ---boundary---
 
 # Whether to store and retrieve passwords from the system keyring.
+# * False - never use keyring
+# * True - always use keyring
+# * auto - use keyring unless currently in an SSH connection
 # See the documentation for https://pypi.org/project/keyring/ for your OS.
 # Note that the hostname is considered to be different if short or qualified.
 # This can be overridden with --use-keyring= at the CLI.
 # A password can be reset with --use-keyring=reset at the CLI.
+# Recommended: auto
 use_keyring = False
 
 [search]

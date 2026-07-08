@@ -10,6 +10,7 @@ Features
 ---------
 * Add `--ssh-jump` CLI argument, restoring SSH jump functionality.
 * Add a `/dsn` command to manage persisted DSN aliases.
+* Add `auto` option to ignore keyring when inside an SSH session.
 
 
 Documentation

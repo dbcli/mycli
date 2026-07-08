@@ -304,9 +304,24 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
     if cli_args.use_keyring is not None and cli_args.use_keyring.lower() == 'reset':
         use_keyring = True
         reset_keyring = True
+    elif cli_args.use_keyring is not None and cli_args.use_keyring.lower() == 'auto':
+        if os.environ.get('SSH_CONNECTION'):
+            use_keyring = False
+            reset_keyring = False
+        else:
+            use_keyring = True
+            reset_keyring = False
     elif cli_args.use_keyring is None:
-        use_keyring = str_to_bool(mycli.config['main'].get('use_keyring', 'False'))
-        reset_keyring = False
+        if mycli.config['main'].get('use_keyring', 'False').lower() == 'auto':
+            if os.environ.get('SSH_CONNECTION'):
+                use_keyring = False
+                reset_keyring = False
+            else:
+                use_keyring = True
+                reset_keyring = False
+        else:
+            use_keyring = str_to_bool(mycli.config['main'].get('use_keyring', 'False'))
+            reset_keyring = False
     else:
         use_keyring = str_to_bool(cli_args.use_keyring)
         reset_keyring = False
