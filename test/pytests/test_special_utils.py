@@ -3,6 +3,7 @@
 import os
 import pathlib
 import tempfile
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pymysql
@@ -11,6 +12,7 @@ import pytest
 import mycli.packages.special.utils
 from mycli.packages.special.utils import (
     CACHED_SSL_VERSION,
+    compute_current_dsn,
     format_uptime,
     get_local_timezone,
     get_server_timezone,
@@ -278,3 +280,45 @@ def test_get_local_timezone_returns_empty_string_when_tzname_is_none(monkeypatch
     monkeypatch.setattr(mycli.packages.special.utils.datetime, 'datetime', FakeDatetime)
 
     assert get_local_timezone() == ''
+
+
+def test_compute_current_dsn_for_tcp_connection() -> None:
+    connection = SimpleNamespace(
+        user='user@example.com',
+        host='db.example.com',
+        port=3307,
+        db='my db',
+        unix_socket=None,
+        charset='utf8mb4',
+    )
+    cursor = SimpleNamespace(connection=connection)
+
+    assert compute_current_dsn(cursor) == 'mysql://user%40example.com@db.example.com:3307/my%20db'
+
+
+def test_compute_current_dsn_for_socket_connection() -> None:
+    connection = SimpleNamespace(
+        user='alice',
+        host='localhost',
+        port=3306,
+        db='',
+        unix_socket='/tmp/mysql.sock',
+        charset='utf8mb4',
+    )
+    cursor = SimpleNamespace(connection=connection)
+
+    assert compute_current_dsn(cursor) == 'mysql://alice@localhost?socket=%2Ftmp%2Fmysql.sock'
+
+
+def test_compute_current_dsn_includes_non_default_character_set() -> None:
+    connection = SimpleNamespace(
+        user='alice',
+        host=None,
+        port=3306,
+        db=b'mysql',
+        unix_socket=None,
+        charset='latin1',
+    )
+    cursor = SimpleNamespace(connection=connection)
+
+    assert compute_current_dsn(cursor) == 'mysql://alice@localhost:3306/mysql?character_set=latin1'

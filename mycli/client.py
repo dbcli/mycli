@@ -35,6 +35,7 @@ from mycli.constants import DEFAULT_PROMPT
 from mycli.main_modes import repl as repl_package
 from mycli.output import OutputMixin
 from mycli.packages import special
+from mycli.packages.special.dsn_aliases import DsnAliases
 from mycli.packages.special.favoritequeries import FavoriteQueries
 from mycli.packages.tabular_output import sql_format
 from mycli.schema_prefetcher import SchemaPrefetcher
@@ -108,6 +109,7 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
         self.default_keepalive_ticks = c['connection'].as_int('default_keepalive_ticks')
 
         FavoriteQueries.instance = FavoriteQueries.from_config(self.config)
+        DsnAliases.instance = DsnAliases.from_config(self.config)
 
         self.dsn_alias: str | None = None
         self.main_formatter = TabularOutputFormatter(format_name=c["main"]["table_format"])

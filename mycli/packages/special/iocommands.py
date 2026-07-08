@@ -19,11 +19,12 @@ import sqlparse
 from mycli.compat import WIN
 from mycli.packages.interactive_utils import confirm_destructive_query
 from mycli.packages.special.delimitercommand import DelimiterCommand
+from mycli.packages.special.dsn_aliases import DsnAliases
 from mycli.packages.special.favoritequeries import FavoriteQueries
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
 from mycli.packages.special.main import ArgType, SpecialCommandAlias, special_command
 from mycli.packages.special.main import execute as special_execute
-from mycli.packages.special.utils import handle_cd_command
+from mycli.packages.special.utils import compute_current_dsn, handle_cd_command
 from mycli.packages.sqlresult import SQLResult
 
 sqlparse.engine.grouping.MAX_GROUPING_DEPTH = None  # type: ignore[assignment]
@@ -45,6 +46,7 @@ PIPE_ONCE: dict[str, Any] = {
 }
 delimiter_command = DelimiterCommand()
 favoritequeries = FavoriteQueries(ConfigObj())
+dsn_aliases = DsnAliases(ConfigObj())
 DESTRUCTIVE_KEYWORDS: list[str] = []
 SHOW_WARNINGS_ENABLED: bool = False
 
@@ -437,6 +439,50 @@ def delete_favorite_query(arg: str, **_) -> list[SQLResult]:
     status = FavoriteQueries.instance.delete(arg)
 
     return [SQLResult(status=status)]
+
+
+@special_command(
+    r'\dsn',
+    '/dsn <help|list|show|save|delete>',
+    'Manage saved DSNs.',
+    arg_type=ArgType.PARSED_QUERY,
+    case_sensitive=False,
+)
+def dsn(
+    cur: Cursor,
+    arg: str | None = None,
+    arg_type: ArgType = ArgType.PARSED_QUERY,
+    command_verbosity: bool = False,
+) -> list[SQLResult]:
+    args = shlex.split(arg or '')
+    if len(args) == 1 and args[0].lower() == 'show':
+        dsn = compute_current_dsn(cur)
+        header = ['Current Connection']
+        show_rows = [(dsn,)]
+        return [SQLResult(header=header, rows=show_rows)]
+    elif args and args[0].lower() == 'save':
+        if len(args) != 2:
+            return [SQLResult(status='Error: a single alias-name argument is required to save.')]
+        dsn = compute_current_dsn(cur)
+        alias = args[1]
+        status = DsnAliases.instance.save(alias, dsn)
+        return [SQLResult(status=status)]
+    elif args and args[0].lower() == 'delete':
+        if len(args) != 2:
+            return [SQLResult(status='Error: a single alias-name argument is required to delete.')]
+        alias = args[1]
+        status = DsnAliases.instance.delete(alias)
+        return [SQLResult(status=status)]
+    elif args and args[0].lower() == 'list':
+        header = ['Alias', 'DSN']
+        list_rows = [(r, DsnAliases.instance.get(r)) for r in DsnAliases.instance.list()]
+        if not list_rows:
+            status = 'No DSN Aliases found.'
+        else:
+            status = None
+        return [SQLResult(status=status, header=header, rows=list_rows)]
+    else:
+        return [SQLResult(preamble=DsnAliases.instance.usage)]
 
 
 @special_command(
