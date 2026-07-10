@@ -1,21 +1,47 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import os
 import shlex
 import socket
 import subprocess
+import tempfile
 import threading
 import time
+from typing import Literal
+
+from mycli.compat import WIN
+
+DEFAULT_LOCALHOST = 'localhost'
+DEFAULT_SSH_EXECUTABLE = 'ssh'
+DEFAULT_TUNNEL_METHOD: Literal['auto', 'socket', 'port'] = 'auto'
+MAX_UNIX_SOCKET_PATH_BYTES = 103
 
 
 class SshTunnelError(RuntimeError):
     pass
 
 
-def _find_free_local_port() -> int:
+def _find_free_local_port(local_host: str | None) -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.bind(('127.0.0.1', 0))
+        sock.bind((local_host or DEFAULT_LOCALHOST, 0))
         return int(sock.getsockname()[1])
+
+
+def _make_local_socket_path() -> str:
+    fd, path = tempfile.mkstemp(prefix='mycli-ssh-', suffix='.sock')
+    os.close(fd)
+    os.unlink(path)
+    _check_local_socket_path_limit(path)
+    return path
+
+
+def _check_local_socket_path_limit(path: str) -> None:
+    path_bytes = len(os.fsencode(path))
+    if path_bytes > MAX_UNIX_SOCKET_PATH_BYTES:
+        raise SshTunnelError(
+            f'Local SSH socket path is too long for sockaddr_un: {path_bytes} bytes > {MAX_UNIX_SOCKET_PATH_BYTES} bytes: {path}'
+        )
 
 
 @dataclass(slots=True)
@@ -39,11 +65,11 @@ class SshTunnel:
         remote_host: str,
         remote_port: int,
         remote_socket: str | None = None,
-        ssh_executable: str = 'ssh',
+        ssh_executable: str = DEFAULT_SSH_EXECUTABLE,
         ssh_options: str | None = None,
         ssh_port: int | None = None,
-        local_port: int | None = None,
         ready_timeout: float = 30.0,
+        tunnel_method: Literal['auto', 'socket', 'port'] = DEFAULT_TUNNEL_METHOD,
     ) -> None:
         self.ssh_executable = ssh_executable
         self.ssh_options = ssh_options
@@ -52,8 +78,14 @@ class SshTunnel:
         self.remote_host = remote_host
         self.remote_port = remote_port
         self.remote_socket = remote_socket
-        self.local_host = '127.0.0.1'
-        self.local_port = local_port or _find_free_local_port()
+        self.tunnel_method = tunnel_method
+        if tunnel_method == 'auto':
+            self.true_tunnel_method: Literal['socket', 'port'] = 'port' if WIN else 'socket'
+        else:
+            self.true_tunnel_method = tunnel_method
+        self.local_socket = _make_local_socket_path() if self.true_tunnel_method == 'socket' else None
+        self.local_host = DEFAULT_LOCALHOST if self.true_tunnel_method == 'port' else None
+        self.local_port = _find_free_local_port(self.local_host) if self.true_tunnel_method == 'port' else None
         self.ready_timeout = ready_timeout
         self.process: subprocess.Popen | None = None
         self._startup_error: OSError | None = None
@@ -69,8 +101,9 @@ class SshTunnel:
         remote_host: str,
         remote_port: int,
         remote_socket: str | None = None,
-        ssh_executable: str = 'ssh',
+        ssh_executable: str = DEFAULT_SSH_EXECUTABLE,
         ssh_options: str | None = None,
+        tunnel_method: Literal['auto', 'socket', 'port'] = DEFAULT_TUNNEL_METHOD,
     ) -> SshTunnel:
         target = SshTunnelTarget.parse(ssh_jump_spec)
         return cls(
@@ -81,12 +114,18 @@ class SshTunnel:
             remote_socket=remote_socket,
             ssh_executable=ssh_executable,
             ssh_options=ssh_options,
+            tunnel_method=tunnel_method,
         )
 
     def _forward_spec(self) -> str:
-        if self.remote_socket:
-            return f'{self.local_host}:{self.local_port}:{self.remote_socket}'
-        return f'{self.local_host}:{self.local_port}:{self.remote_host}:{self.remote_port}'
+        if self.local_socket:
+            if self.remote_socket:
+                return f'{self.local_socket}:{self.remote_socket}'
+            return f'{self.local_socket}:{self.remote_host}:{self.remote_port}'
+        else:
+            if self.remote_socket:
+                return f'{self.local_host}:{self.local_port}:{self.remote_socket}'
+            return f'{self.local_host}:{self.local_port}:{self.remote_host}:{self.remote_port}'
 
     def command(self) -> list[str]:
         opts = shlex.split(self.ssh_options or '')
@@ -130,6 +169,11 @@ class SshTunnel:
                 process.wait()
         if self._thread is not None and self._thread.is_alive():
             self._thread.join(timeout=5)
+        try:
+            if self.local_socket:
+                os.unlink(self.local_socket)
+        except FileNotFoundError:
+            pass
 
     def _run(self) -> None:
         try:
@@ -149,7 +193,15 @@ class SshTunnel:
 
     def _is_listening(self) -> bool:
         try:
-            with socket.create_connection((self.local_host, self.local_port), timeout=0.05):
-                return True
+            if self.local_socket:
+                with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
+                    sock.settimeout(0.05)
+                    sock.connect(self.local_socket)
+                    return True
+            elif self.local_host and self.local_port:
+                with socket.create_connection((self.local_host, self.local_port), timeout=0.05):
+                    return True
+            else:
+                return False
         except OSError:
             return False

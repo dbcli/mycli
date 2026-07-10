@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import sys
 import traceback
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import quote as urlquote
 
 import click
@@ -84,6 +84,7 @@ class ClientConnectionMixin:
             remote_socket = socket or None
             ssh_executable = self.config.get('ssh', {}).get('ssh_executable', 'ssh') or 'ssh'
             ssh_options = self.config.get('ssh', {}).get('ssh_options')
+            tunnel_method: Literal['auto', 'socket', 'port'] = self.config.get('ssh', {}).get('tunnel_method', 'auto').lower() or 'auto'
             try:
                 self.ssh_tunnel = SshTunnel.from_target(
                     ssh_jump,
@@ -92,6 +93,7 @@ class ClientConnectionMixin:
                     remote_socket=remote_socket,
                     ssh_executable=ssh_executable,
                     ssh_options=ssh_options,
+                    tunnel_method=tunnel_method,
                 )
                 self.ssh_tunnel.start()
             except (OSError, ValueError, SshTunnelError) as exc:
@@ -194,7 +196,11 @@ class ClientConnectionMixin:
             'init_command': init_command,
             'unbuffered': unbuffered,
         }
-        if self.ssh_tunnel:
+        if self.ssh_tunnel and self.ssh_tunnel.local_socket:
+            connection_info['host'] = None
+            connection_info['port'] = None
+            connection_info['socket'] = self.ssh_tunnel.local_socket
+        elif self.ssh_tunnel:
             connection_info['host'] = self.ssh_tunnel.local_host
             connection_info['port'] = self.ssh_tunnel.local_port
             connection_info['socket'] = None
