@@ -4,7 +4,7 @@ import builtins
 import importlib.util
 import sys
 from types import ModuleType, SimpleNamespace
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 import pymysql
 import pytest
@@ -307,12 +307,26 @@ def test_connect_reports_keyring_save_errors(monkeypatch: pytest.MonkeyPatch) ->
     assert secho_calls == [('Password not saved to the system keyring: locked', {'err': True, 'fg': 'red'})]
 
 
+def test_connect_does_not_save_empty_password_to_keyring(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = DummyClient()
+    set_password_calls: list[tuple[str, str, str]] = []
+    monkeypatch.setattr(client_connection.keyring, 'get_password', lambda domain, identifier: None)
+    monkeypatch.setattr(
+        client_connection.keyring,
+        'set_password',
+        lambda domain, identifier, password: set_password_calls.append((domain, identifier, password)),
+    )
+
+    client.connect(user='alice', host='db', port=3307, passwd='', use_keyring=True)
+
+    assert set_password_calls == []
+
+
 def test_connect_uses_ssh_jump_with_remote_socket(monkeypatch: pytest.MonkeyPatch) -> None:
     tunnel_calls: list[dict[str, Any]] = []
 
     class FakeTunnel:
-        local_host = '127.0.0.1'
-        local_port = 4406
+        local_socket = '/tmp/mycli-ssh.sock'
         remote_socket = '/var/run/mysqld/mysqld.sock'
 
         @classmethod
@@ -325,6 +339,7 @@ def test_connect_uses_ssh_jump_with_remote_socket(monkeypatch: pytest.MonkeyPatc
             remote_socket: str | None = None,
             ssh_executable: str = 'ssh',
             ssh_options: str | None = None,
+            tunnel_method: Literal['auto', 'socket', 'port'] = 'auto',
         ) -> 'FakeTunnel':
             tunnel_calls.append({
                 'ssh_jump': ssh_jump,
@@ -347,7 +362,7 @@ def test_connect_uses_ssh_jump_with_remote_socket(monkeypatch: pytest.MonkeyPatc
 
     client.connect(
         user='alice',
-        host='db.internal',
+        host=None,
         port=None,
         socket='/var/run/mysqld/mysqld.sock',
         ssh_jump='bastion',
@@ -356,13 +371,49 @@ def test_connect_uses_ssh_jump_with_remote_socket(monkeypatch: pytest.MonkeyPatc
     assert tunnel_calls == [
         {
             'ssh_jump': 'bastion',
-            'remote_host': 'db.internal',
+            'remote_host': 'localhost',
             'remote_port': 3306,
             'remote_socket': '/var/run/mysqld/mysqld.sock',
             'ssh_executable': '/opt/bin/ssh',
             'ssh_options': None,
         }
     ]
+    assert FakeSQLExecute.calls[-1]['host'] is None
+    assert FakeSQLExecute.calls[-1]['port'] is None
+    assert FakeSQLExecute.calls[-1]['socket'] == '/tmp/mycli-ssh.sock'
+
+
+def test_connect_uses_ssh_jump_with_local_port(monkeypatch: pytest.MonkeyPatch) -> None:
+    class FakeTunnel:
+        local_socket = None
+        local_host = '127.0.0.1'
+        local_port = 4406
+
+        @classmethod
+        def from_target(
+            cls,
+            _ssh_jump: str,
+            *,
+            remote_host: str,
+            remote_port: int,
+            remote_socket: str | None = None,
+            ssh_executable: str = 'ssh',
+            ssh_options: str | None = None,
+            tunnel_method: Literal['auto', 'socket', 'port'] = 'auto',
+        ) -> 'FakeTunnel':
+            return cls()
+
+        def start(self) -> None:
+            pass
+
+        def close(self) -> None:
+            pass
+
+    monkeypatch.setattr(client_connection, 'SshTunnel', FakeTunnel)
+    client = DummyClient()
+
+    client.connect(host='db.internal', port=3307, ssh_jump='bastion')
+
     assert FakeSQLExecute.calls[-1]['host'] == '127.0.0.1'
     assert FakeSQLExecute.calls[-1]['port'] == 4406
     assert FakeSQLExecute.calls[-1]['socket'] is None
@@ -373,8 +424,7 @@ def test_connect_reports_ssh_jump_start_error_and_closes_tunnel(monkeypatch: pyt
     secho_calls: list[tuple[str, dict[str, Any]]] = []
 
     class FakeTunnel:
-        local_host = '127.0.0.1'
-        local_port = 4406
+        local_socket = '/tmp/mycli-ssh.sock'
         remote_socket = None
 
         @classmethod
@@ -387,6 +437,7 @@ def test_connect_reports_ssh_jump_start_error_and_closes_tunnel(monkeypatch: pyt
             remote_socket: str | None = None,
             ssh_executable: str = 'ssh',
             ssh_options: str | None = None,
+            tunnel_method: Literal['auto', 'socket', 'port'] = 'auto',
         ) -> 'FakeTunnel':
             return cls()
 
@@ -411,8 +462,7 @@ def test_connect_reports_ssh_jump_start_error_and_closes_tunnel(monkeypatch: pyt
 
 def test_connect_swallows_ssh_jump_cleanup_error(monkeypatch: pytest.MonkeyPatch) -> None:
     class FakeTunnel:
-        local_host = '127.0.0.1'
-        local_port = 4406
+        local_socket = '/tmp/mycli-ssh.sock'
         remote_socket = None
 
         @classmethod
@@ -425,6 +475,7 @@ def test_connect_swallows_ssh_jump_cleanup_error(monkeypatch: pytest.MonkeyPatch
             remote_socket: str | None = None,
             ssh_executable: str = 'ssh',
             ssh_options: str | None = None,
+            tunnel_method: Literal['auto', 'socket', 'port'] = 'auto',
         ) -> 'FakeTunnel':
             return cls()
 

@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Internal
+---------
+* Configurable tunnel method for `--ssh-jump`, making UDS usually default.
+
+
 2.1.1 (2026/07/08)
 ==============
 

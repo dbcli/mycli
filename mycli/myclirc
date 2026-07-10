@@ -305,6 +305,17 @@ vi_ttimeoutlen = 0.1
 # How long to wait for an Escape key sequence in Emacs mode.
 emacs_ttimeoutlen = 0.5
 
+[ssh]
+# Path to the ssh executable used by --ssh-jump.
+ssh_executable = ssh
+
+# Options to pass to the ssh executable when making a tunnel.
+ssh_options = -a -o ServerAliveInterval=60 -o ExitOnForwardFailure=yes -o IPQoS=af13 -o LogLevel=FATAL
+
+# Method for establishing the local side of the SSH tunnel: auto, port, socket.
+# auto means: port if on Windows, socket otherwise.
+tunnel_method = auto
+
 # Custom colors for the completion menu, toolbar, etc, with actual support
 # depending on the terminal, and the property being set.
 # Colors: #ffffff, bg:#ffffff, border:#ffffff.
@@ -407,10 +418,3 @@ matching-bracket.other = '#000000 bg:#aacccc'
 [alias_dsn.init-commands]
 # Define one or more SQL statements per alias (semicolon-separated).
 # example_dsn = "SET sql_select_limit=1000; SET time_zone='+00:00'"
-
-[ssh]
-# Path to the ssh executable used by --ssh-jump.
-ssh_executable = ssh
-
-# options to pass to the ssh executable when making a tunnel
-ssh_options = -a -o ServerAliveInterval=60 -o ExitOnForwardFailure=yes -o IPQoS=af13 -o LogLevel=FATAL
