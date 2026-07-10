@@ -275,6 +275,10 @@ class CliArgs:
         type=str,
         help='Open an SSH tunnel via [user@]host[:port] and connect to MySQL through it.',
     )
+    ssh_options: str | None = clickdc.option(
+        type=str,
+        help='Extra CLI arguments for SSH with --ssh-jump, placed after options from myclirc.',
+    )
     checkup: bool = clickdc.option(
         is_flag=True,
         help='Run a checkup on your configuration.',

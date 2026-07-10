@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Features
+---------
+* Add `--ssh-options` CLI argument to pass extra options with `--ssh-jump`.
+
+
 Internal
 ---------
 * Configurable tunnel method for `--ssh-jump`, making UDS usually default.

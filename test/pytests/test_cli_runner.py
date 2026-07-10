@@ -423,6 +423,16 @@ def test_run_from_cli_args_uses_explicit_keyring_flag(monkeypatch: pytest.Monkey
     assert client.connect_calls[-1]['reset_keyring'] is False
 
 
+def test_run_from_cli_args_passes_ssh_options_to_connect(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli_args = make_cli_args()
+    cli_args.ssh_options = '-o Compression=yes'
+    client = DummyMyCli()
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    assert client.connect_calls[-1]['ssh_cli_options'] == '-o Compression=yes'
+
+
 @pytest.mark.parametrize(
     ('ssh_connection', 'expected_use_keyring'),
     (

@@ -338,7 +338,8 @@ def test_connect_uses_ssh_jump_with_remote_socket(monkeypatch: pytest.MonkeyPatc
             remote_port: int,
             remote_socket: str | None = None,
             ssh_executable: str = 'ssh',
-            ssh_options: str | None = None,
+            ssh_config_options: str | None = None,
+            ssh_cli_options: str | None = None,
             tunnel_method: Literal['auto', 'socket', 'port'] = 'auto',
         ) -> 'FakeTunnel':
             tunnel_calls.append({
@@ -347,7 +348,8 @@ def test_connect_uses_ssh_jump_with_remote_socket(monkeypatch: pytest.MonkeyPatc
                 'remote_port': remote_port,
                 'remote_socket': remote_socket,
                 'ssh_executable': ssh_executable,
-                'ssh_options': None,
+                'ssh_config_options': None,
+                'ssh_cli_options': None,
             })
             return cls()
 
@@ -375,7 +377,8 @@ def test_connect_uses_ssh_jump_with_remote_socket(monkeypatch: pytest.MonkeyPatc
             'remote_port': 3306,
             'remote_socket': '/var/run/mysqld/mysqld.sock',
             'ssh_executable': '/opt/bin/ssh',
-            'ssh_options': None,
+            'ssh_config_options': None,
+            'ssh_cli_options': None,
         }
     ]
     assert FakeSQLExecute.calls[-1]['host'] is None
@@ -398,7 +401,8 @@ def test_connect_uses_ssh_jump_with_local_port(monkeypatch: pytest.MonkeyPatch) 
             remote_port: int,
             remote_socket: str | None = None,
             ssh_executable: str = 'ssh',
-            ssh_options: str | None = None,
+            ssh_config_options: str | None = None,
+            ssh_cli_options: str | None = None,
             tunnel_method: Literal['auto', 'socket', 'port'] = 'auto',
         ) -> 'FakeTunnel':
             return cls()
@@ -419,6 +423,52 @@ def test_connect_uses_ssh_jump_with_local_port(monkeypatch: pytest.MonkeyPatch) 
     assert FakeSQLExecute.calls[-1]['socket'] is None
 
 
+def test_connect_passes_config_and_cli_ssh_options(monkeypatch: pytest.MonkeyPatch) -> None:
+    tunnel_calls: list[dict[str, Any]] = []
+
+    class FakeTunnel:
+        local_socket = '/tmp/mycli-ssh.sock'
+
+        @classmethod
+        def from_target(
+            cls,
+            ssh_jump: str,
+            *,
+            remote_host: str,
+            remote_port: int,
+            remote_socket: str | None = None,
+            ssh_executable: str = 'ssh',
+            ssh_config_options: str | None = None,
+            ssh_cli_options: str | None = None,
+            tunnel_method: Literal['auto', 'socket', 'port'] = 'auto',
+        ) -> 'FakeTunnel':
+            tunnel_calls.append({
+                'ssh_jump': ssh_jump,
+                'ssh_config_options': ssh_config_options,
+                'ssh_cli_options': ssh_cli_options,
+            })
+            return cls()
+
+        def start(self) -> None:
+            pass
+
+        def close(self) -> None:
+            pass
+
+    monkeypatch.setattr(client_connection, 'SshTunnel', FakeTunnel)
+    client = DummyClient(config={'main': {}, 'ssh': {'ssh_options': '-o LogLevel=ERROR'}, 'connection': {}})
+
+    client.connect(host='db.internal', ssh_jump='bastion', ssh_cli_options='-o Compression=yes')
+
+    assert tunnel_calls == [
+        {
+            'ssh_jump': 'bastion',
+            'ssh_config_options': '-o LogLevel=ERROR',
+            'ssh_cli_options': '-o Compression=yes',
+        }
+    ]
+
+
 def test_connect_reports_ssh_jump_start_error_and_closes_tunnel(monkeypatch: pytest.MonkeyPatch) -> None:
     close_calls: list[bool] = []
     secho_calls: list[tuple[str, dict[str, Any]]] = []
@@ -436,7 +486,8 @@ def test_connect_reports_ssh_jump_start_error_and_closes_tunnel(monkeypatch: pyt
             remote_port: int,
             remote_socket: str | None = None,
             ssh_executable: str = 'ssh',
-            ssh_options: str | None = None,
+            ssh_config_options: str | None = None,
+            ssh_cli_options: str | None = None,
             tunnel_method: Literal['auto', 'socket', 'port'] = 'auto',
         ) -> 'FakeTunnel':
             return cls()
@@ -474,7 +525,8 @@ def test_connect_swallows_ssh_jump_cleanup_error(monkeypatch: pytest.MonkeyPatch
             remote_port: int,
             remote_socket: str | None = None,
             ssh_executable: str = 'ssh',
-            ssh_options: str | None = None,
+            ssh_config_options: str | None = None,
+            ssh_cli_options: str | None = None,
             tunnel_method: Literal['auto', 'socket', 'port'] = 'auto',
         ) -> 'FakeTunnel':
             return cls()

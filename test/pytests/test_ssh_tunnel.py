@@ -112,6 +112,29 @@ def test_ssh_tunnel_command_uses_configured_ssh_executable(monkeypatch: pytest.M
     assert tunnel.command()[0] == '/opt/bin/ssh'
 
 
+def test_ssh_tunnel_command_appends_cli_options_after_config_options(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(ssh_tunnel, '_make_local_socket_path', lambda: '/tmp/mycli-ssh.sock')
+    tunnel = SshTunnel(
+        ssh_target='alice@bastion',
+        remote_host='db.internal',
+        remote_port=3307,
+        ssh_config_options='-o LogLevel=ERROR',
+        ssh_cli_options='-o Compression=yes',
+    )
+
+    assert tunnel.command() == [
+        'ssh',
+        '-o',
+        'LogLevel=ERROR',
+        '-o',
+        'Compression=yes',
+        '-N',
+        '-L',
+        '/tmp/mycli-ssh.sock:db.internal:3307',
+        'alice@bastion',
+    ]
+
+
 def test_ssh_tunnel_command_forwards_remote_socket(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(ssh_tunnel, '_make_local_socket_path', lambda: '/tmp/mycli-ssh.sock')
     tunnel = SshTunnel(

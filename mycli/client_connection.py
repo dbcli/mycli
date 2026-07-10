@@ -61,6 +61,7 @@ class ClientConnectionMixin:
         reset_keyring: bool | None = None,
         keepalive_ticks: int | None = None,
         ssh_jump: str | None = None,
+        ssh_cli_options: str | None = None,
     ) -> None:
         mylogin_cnf: dict[str, Any] = self.read_mylogin_cnf(self.mylogin_cnf)
         # Fall back to .mylogin.cnf values only if user did not specify a value.
@@ -83,7 +84,7 @@ class ClientConnectionMixin:
             remote_port = int_port or DEFAULT_PORT
             remote_socket = socket or None
             ssh_executable = self.config.get('ssh', {}).get('ssh_executable', 'ssh') or 'ssh'
-            ssh_options = self.config.get('ssh', {}).get('ssh_options')
+            ssh_config_options = self.config.get('ssh', {}).get('ssh_options')
             tunnel_method: Literal['auto', 'socket', 'port'] = self.config.get('ssh', {}).get('tunnel_method', 'auto').lower() or 'auto'
             try:
                 self.ssh_tunnel = SshTunnel.from_target(
@@ -92,7 +93,8 @@ class ClientConnectionMixin:
                     remote_port=int(remote_port),
                     remote_socket=remote_socket,
                     ssh_executable=ssh_executable,
-                    ssh_options=ssh_options,
+                    ssh_config_options=ssh_config_options,
+                    ssh_cli_options=ssh_cli_options,
                     tunnel_method=tunnel_method,
                 )
                 self.ssh_tunnel.start()
