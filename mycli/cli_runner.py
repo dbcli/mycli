@@ -343,6 +343,7 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
             reset_keyring=reset_keyring,
             keepalive_ticks=keepalive_ticks,
             ssh_jump=cli_args.ssh_jump,
+            ssh_cli_options=cli_args.ssh_options,
         )
 
         if combined_init_cmd:

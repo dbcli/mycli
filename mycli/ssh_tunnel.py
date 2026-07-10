@@ -66,13 +66,15 @@ class SshTunnel:
         remote_port: int,
         remote_socket: str | None = None,
         ssh_executable: str = DEFAULT_SSH_EXECUTABLE,
-        ssh_options: str | None = None,
+        ssh_config_options: str | None = None,
+        ssh_cli_options: str | None = None,
         ssh_port: int | None = None,
         ready_timeout: float = 30.0,
         tunnel_method: Literal['auto', 'socket', 'port'] = DEFAULT_TUNNEL_METHOD,
     ) -> None:
         self.ssh_executable = ssh_executable
-        self.ssh_options = ssh_options
+        self.ssh_config_options = ssh_config_options
+        self.ssh_cli_options = ssh_cli_options
         self.ssh_target = ssh_target
         self.ssh_port = ssh_port
         self.remote_host = remote_host
@@ -102,7 +104,8 @@ class SshTunnel:
         remote_port: int,
         remote_socket: str | None = None,
         ssh_executable: str = DEFAULT_SSH_EXECUTABLE,
-        ssh_options: str | None = None,
+        ssh_config_options: str | None = None,
+        ssh_cli_options: str | None = None,
         tunnel_method: Literal['auto', 'socket', 'port'] = DEFAULT_TUNNEL_METHOD,
     ) -> SshTunnel:
         target = SshTunnelTarget.parse(ssh_jump_spec)
@@ -113,7 +116,8 @@ class SshTunnel:
             remote_port=remote_port,
             remote_socket=remote_socket,
             ssh_executable=ssh_executable,
-            ssh_options=ssh_options,
+            ssh_config_options=ssh_config_options,
+            ssh_cli_options=ssh_cli_options,
             tunnel_method=tunnel_method,
         )
 
@@ -128,7 +132,8 @@ class SshTunnel:
             return f'{self.local_host}:{self.local_port}:{self.remote_host}:{self.remote_port}'
 
     def command(self) -> list[str]:
-        opts = shlex.split(self.ssh_options or '')
+        opts = shlex.split(self.ssh_config_options or '')
+        opts.extend(shlex.split(self.ssh_cli_options or ''))
         command = [
             self.ssh_executable,
             *opts,
