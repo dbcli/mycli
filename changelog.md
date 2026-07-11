@@ -11,15 +11,16 @@ Bug Fixes
 * Allow `/dsn` command to show correct values with `--ssh-jump`.
 
 
-Internal
----------
-* Configurable tunnel method for `--ssh-jump`, making UDS usually default.
-
-
 Documentation
 ---------
 * Add `--ssh-jump` to TIPS.
 * Better document `/dsn show`.
+
+
+Internal
+---------
+* Configurable tunnel method for `--ssh-jump`, making UDS usually default.
+* Make flaky `/watch` test more lenient for CI.
 
 
 2.1.1 (2026/07/08)
