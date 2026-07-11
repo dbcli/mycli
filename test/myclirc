@@ -317,7 +317,7 @@ ssh_options = -a -o ServerAliveInterval=60 -o ExitOnForwardFailure=yes -o IPQoS=
 # auto means: port if on Windows, socket otherwise.
 tunnel_method = auto
 
-[vault]
+[vault_beta]
 # Path to the vault executable used for Vault integration.
 vault_executable = vault
 
@@ -328,7 +328,7 @@ address =
 default_mount =
 
 # Field/property containing the password, if --password-vault-field is not provided.
-default_field = password
+default_password_field = password
 
 # Custom colors for the completion menu, toolbar, etc, with actual support
 # depending on the terminal, and the property being set.

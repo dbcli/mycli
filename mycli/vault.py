@@ -3,7 +3,7 @@ from __future__ import annotations
 import subprocess
 
 DEFAULT_VAULT_EXECUTABLE = 'vault'
-DEFAULT_VAULT_FIELD = 'password'
+DEFAULT_VAULT_PASSWORD_FIELD = 'password'
 
 
 class VaultError(RuntimeError):
@@ -14,7 +14,7 @@ def get_password_from_vault(
     *,
     secret: str,
     executable: str = DEFAULT_VAULT_EXECUTABLE,
-    field: str = DEFAULT_VAULT_FIELD,
+    field: str = DEFAULT_VAULT_PASSWORD_FIELD,
     mount: str | None = None,
     address: str | None = None,
 ) -> str:

@@ -549,11 +549,11 @@ def test_run_from_cli_args_reads_password_from_vault_when_password_is_missing(
     client = DummyMyCli(
         config={
             **default_config(),
-            'vault': {
+            'vault_beta': {
                 'vault_executable': '/opt/bin/vault',
                 'address': 'https://vault.config',
                 'default_mount': 'kv',
-                'default_field': 'mysql_password',
+                'default_password_field': 'mysql_password',
             },
         }
     )
@@ -609,11 +609,11 @@ def test_run_from_cli_args_prefers_vault_cli_values_and_env_address(
     client = DummyMyCli(
         config={
             **default_config(),
-            'vault': {
+            'vault_beta': {
                 'vault_executable': '/opt/bin/vault',
                 'address': 'https://vault.config',
                 'default_mount': 'config-mount',
-                'default_field': 'config-field',
+                'default_password_field': 'config-field',
             },
         }
     )
