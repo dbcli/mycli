@@ -18,8 +18,9 @@ from mycli.packages.cli_utils import is_valid_connection_scheme
 from mycli.vault import (
     DEFAULT_VAULT_EXECUTABLE,
     DEFAULT_VAULT_PASSWORD_FIELD,
+    DEFAULT_VAULT_USERNAME_FIELD,
     VaultError,
-    get_password_from_vault,
+    get_field_from_vault,
 )
 
 if TYPE_CHECKING:
@@ -348,17 +349,17 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
         use_keyring = str_to_bool(cli_args.use_keyring)
         reset_keyring = False
 
-    if cli_args.password is None and cli_args.password_vault_secret:
+    if cli_args.password is None and cli_args.vault_secret:
         vault_config = mycli.config.get('vault_beta', {})
-        vault_address = cli_args.password_vault_address or os.environ.get('VAULT_ADDR') or vault_config.get('address') or None
-        vault_mount = cli_args.password_vault_mount or vault_config.get('default_mount') or None
-        vault_field = cli_args.password_vault_field or vault_config.get('default_password_field') or DEFAULT_VAULT_PASSWORD_FIELD
+        vault_address = cli_args.vault_address or os.environ.get('VAULT_ADDR') or vault_config.get('address') or None
+        vault_mount = cli_args.vault_mount or vault_config.get('default_mount') or None
+        vault_field = cli_args.vault_password_field or vault_config.get('default_password_field') or DEFAULT_VAULT_PASSWORD_FIELD
         vault_executable = vault_config.get('vault_executable') or DEFAULT_VAULT_EXECUTABLE
         try:
-            vault_password: str | None = get_password_from_vault(
-                secret=cli_args.password_vault_secret,
+            vault_password: str | None = get_field_from_vault(
+                vault_field,
+                cli_args.vault_secret,
                 executable=vault_executable,
-                field=vault_field,
                 mount=vault_mount,
                 address=vault_address,
             )
@@ -368,10 +369,30 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
     else:
         vault_password = None
 
+    if cli_args.user is None and cli_args.vault_secret:
+        vault_config = mycli.config.get('vault_beta', {})
+        vault_address = cli_args.vault_address or os.environ.get('VAULT_ADDR') or vault_config.get('address') or None
+        vault_mount = cli_args.vault_mount or vault_config.get('default_mount') or None
+        vault_field = cli_args.vault_username_field or vault_config.get('default_username_field') or DEFAULT_VAULT_USERNAME_FIELD
+        vault_executable = vault_config.get('vault_executable') or DEFAULT_VAULT_EXECUTABLE
+        try:
+            vault_username = get_field_from_vault(
+                vault_field,
+                cli_args.vault_secret,
+                executable=vault_executable,
+                mount=vault_mount,
+                address=vault_address,
+            )
+        except VaultError as exc:
+            click.secho(f'Error reading username from Vault: {exc}', err=True, fg='red')
+            sys.exit(1)
+    else:
+        vault_username = None
+
     try:
         mycli.connect(
             database=database,
-            user=cli_args.user,
+            user=vault_username if cli_args.user is None else cli_args.user,
             passwd=vault_password if cli_args.password is None else cli_args.password,
             host=cli_args.host,
             port=cli_args.port,

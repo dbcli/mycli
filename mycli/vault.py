@@ -4,17 +4,17 @@ import subprocess
 
 DEFAULT_VAULT_EXECUTABLE = 'vault'
 DEFAULT_VAULT_PASSWORD_FIELD = 'password'
+DEFAULT_VAULT_USERNAME_FIELD = 'username'
 
 
 class VaultError(RuntimeError):
     pass
 
 
-def get_password_from_vault(
-    *,
+def get_field_from_vault(
+    field: str,
     secret: str,
     executable: str = DEFAULT_VAULT_EXECUTABLE,
-    field: str = DEFAULT_VAULT_PASSWORD_FIELD,
     mount: str | None = None,
     address: str | None = None,
 ) -> str:
