@@ -166,8 +166,9 @@ class ClientConnectionMixin:
         # 2. --password-file CLI option
         # 3. envvar (MYSQL_PWD)
         # 4. DSN (mysql://user:password)
-        # 5. .mylogin.cnf
-        # 6. keyring
+        # 5. Vault
+        # 6. .mylogin.cnf
+        # 7. keyring
 
         ssh_tunnel_field = urlquote(ssh_jump or '')
         if ssh_tunnel_field:
