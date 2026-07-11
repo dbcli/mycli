@@ -1,4 +1,4 @@
-Upcoming (TBD)
+2.2.0 (2026/07/11)
 ==============
 
 Breaking Changes
@@ -8,6 +8,7 @@ Breaking Changes
 
 Features
 ---------
+* Configurable tunnel method for `--ssh-jump`, making UDS usually default.
 * Add `--ssh-options` CLI argument to pass extra options with `--ssh-jump`.
 * Make `ssh_jump` a DSN query parameter.
 * Warn on unknown DSN query parameters.
@@ -28,7 +29,6 @@ Documentation
 
 Internal
 ---------
-* Configurable tunnel method for `--ssh-jump`, making UDS usually default.
 * Make flaky `/watch` test more lenient for CI.
 * Tweak `AGENTS.md` project structure.
 
