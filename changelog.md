@@ -30,6 +30,7 @@ Internal
 ---------
 * Configurable tunnel method for `--ssh-jump`, making UDS usually default.
 * Make flaky `/watch` test more lenient for CI.
+* Tweak `AGENTS.md` project structure.
 
 
 2.1.1 (2026/07/08)
