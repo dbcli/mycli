@@ -16,6 +16,7 @@ Documentation
 ---------
 * Add `--ssh-jump` to TIPS.
 * Better document `/dsn show`.
+* Improve `ssh_options` commentary.
 
 
 Internal

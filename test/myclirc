@@ -310,6 +310,7 @@ emacs_ttimeoutlen = 0.5
 ssh_executable = ssh
 
 # Options to pass to the ssh executable when making a tunnel.
+# The defaults may need to be changed if not using OpenSSH.
 ssh_options = -a -o ServerAliveInterval=60 -o ExitOnForwardFailure=yes -o IPQoS=af13 -o LogLevel=FATAL
 
 # Method for establishing the local side of the SSH tunnel: auto, port, socket.
