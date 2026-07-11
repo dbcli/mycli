@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Features
+---------
+* Set minimum times for transient toolbar messages.
+
+
 2.2.0 (2026/07/11)
 ==============
 

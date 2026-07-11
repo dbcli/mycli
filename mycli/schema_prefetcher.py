@@ -12,6 +12,7 @@ from __future__ import annotations
 from enum import Enum
 import logging
 import threading
+from time import monotonic
 from typing import TYPE_CHECKING, Any, Iterable
 
 from mycli.sqlexecute import SQLExecute
@@ -21,6 +22,7 @@ if TYPE_CHECKING:  # pragma: no cover - typing only
     from mycli.sqlcompleter import SQLCompleter
 
 _logger = logging.getLogger(__name__)
+MIN_PREFETCH_MESSAGE_SECONDS = 1.0
 
 
 class PrefetchMode(str, Enum):
@@ -56,9 +58,11 @@ class SchemaPrefetcher:
         self._thread: threading.Thread | None = None
         self._cancel = threading.Event()
         self._loaded: set[str] = set()
+        self._prefetch_visible_until = 0.0
+        self._visibility_timer: threading.Timer | None = None
 
     def is_prefetching(self) -> bool:
-        return bool(self._thread and self._thread.is_alive())
+        return bool(self._thread and self._thread.is_alive()) or monotonic() < self._prefetch_visible_until
 
     def clear_loaded(self) -> None:
         """Forget which schemas have been prefetched (used on reset)."""
@@ -69,6 +73,10 @@ class SchemaPrefetcher:
         if self._thread and self._thread.is_alive():
             self._cancel.set()
             self._thread.join(timeout=timeout)
+        self._prefetch_visible_until = 0.0
+        if self._visibility_timer is not None:
+            self._visibility_timer.cancel()
+            self._visibility_timer = None
         self._cancel = threading.Event()
         self._thread = None
 
@@ -105,6 +113,7 @@ class SchemaPrefetcher:
         self.stop()
         queue: list[str] | None = None if schemas is None else list(schemas)
         self._cancel = threading.Event()
+        self._prefetch_visible_until = monotonic() + MIN_PREFETCH_MESSAGE_SECONDS
         self._thread = threading.Thread(
             target=self._run,
             args=(queue,),
@@ -120,7 +129,7 @@ class SchemaPrefetcher:
             executor = self._make_executor()
         except Exception as e:  # pragma: no cover - defensive
             _logger.error('schema prefetch could not open connection: %r', e)
-            self._invalidate_app()
+            self._finish_prefetching()
             return
         try:
             if schemas is None:
@@ -145,7 +154,22 @@ class SchemaPrefetcher:
                 executor.close()
             except Exception:  # pragma: no cover - defensive
                 pass
-            self._invalidate_app()
+            self._finish_prefetching()
+
+    def _finish_prefetching(self) -> None:
+        self._invalidate_app()
+        remaining = self._prefetch_visible_until - monotonic()
+        if remaining <= 0:
+            return
+        if self._visibility_timer is not None:
+            self._visibility_timer.cancel()
+        self._visibility_timer = threading.Timer(remaining, self._invalidate_after_visibility_deadline)
+        self._visibility_timer.daemon = True
+        self._visibility_timer.start()
+
+    def _invalidate_after_visibility_deadline(self) -> None:
+        self._visibility_timer = None
+        self._invalidate_app()
 
     def _prefetch_one(self, executor: SQLExecute, schema: str) -> None:
         _logger.debug('prefetching schema %r', schema)

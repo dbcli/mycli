@@ -155,7 +155,7 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
                 self.echo("Error: Unable to open the audit log file. Your queries will not be logged.", err=True, fg="red")
                 self.logfile = False
 
-        self.completion_refresher = CompletionRefresher()
+        self.completion_refresher = CompletionRefresher(self._invalidate_prompt_session)
         self.prefetch_schemas_mode = c["main"].get("prefetch_schemas_mode", "always") or "always"
         raw_prefetch_list = c["main"].as_list("prefetch_schemas_list") if "prefetch_schemas_list" in c["main"] else []
         self.prefetch_schemas_list = [s.strip() for s in raw_prefetch_list if s and s.strip()]
@@ -200,6 +200,10 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
         self.prompt_session = None
         self.destructive_keywords = destructive_keywords_from_config(c)
         special.set_destructive_keywords(self.destructive_keywords)
+
+    def _invalidate_prompt_session(self) -> None:
+        if self.prompt_session:
+            self.prompt_session.app.invalidate()
 
     def close(self) -> None:
         try:

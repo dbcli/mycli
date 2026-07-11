@@ -164,7 +164,8 @@ def test_refresh_starts_background_thread(monkeypatch, refresher) -> None:
 
     refresher._completer_thread.run_target()
     assert calls == [(sqlexecute, callbacks, {})]
-    assert refresher.is_refreshing() is False
+    assert refresher._thread_is_alive() is False
+    assert refresher.is_refreshing() is True
 
 
 def test_refresh_passes_explicit_completer_options(monkeypatch, refresher) -> None:
@@ -203,6 +204,137 @@ def test_refresh_while_refreshing_restarts(monkeypatch, refresher) -> None:
     assert refresher._restart_refresh.is_set() is True
     assert refresher._completer_thread is existing_thread
     assert thread_calls == []
+
+
+def test_refresh_starts_new_thread_during_visibility_window(monkeypatch, refresher) -> None:
+    thread_calls: list[tuple[object, object, str]] = []
+    monkeypatch.setattr(completion_refresher, 'monotonic', lambda: 10.5)
+
+    def make_thread(*, target, args, name):
+        thread_calls.append((target, args, name))
+        return FakeThread(target, args, name)
+
+    monkeypatch.setattr(completion_refresher.threading, 'Thread', make_thread)
+    refresher._refresh_visible_until = 11.0
+
+    actual = refresher.refresh(Mock(), Mock())
+
+    assert actual[0].status == "Auto-completion refresh started in the background."
+    assert len(thread_calls) == 1
+
+
+def test_refresh_sets_one_second_visibility_deadline(monkeypatch, refresher) -> None:
+    monkeypatch.setattr(completion_refresher, 'monotonic', lambda: 10.0)
+    monkeypatch.setattr(completion_refresher.threading, 'Thread', FakeThread)
+
+    refresher.refresh(Mock(), Mock())
+
+    assert refresher._refresh_visible_until == 11.0
+
+
+def test_is_refreshing_remains_true_until_visibility_deadline(monkeypatch, refresher) -> None:
+    now = 10.0
+    monkeypatch.setattr(completion_refresher, 'monotonic', lambda: now)
+    refresher._refresh_visible_until = 11.0
+
+    assert refresher.is_refreshing() is True
+
+    now = 11.0
+
+    assert refresher.is_refreshing() is False
+
+
+def test_refresh_cancels_pending_visibility_timer(monkeypatch, refresher) -> None:
+    timer = Mock()
+    refresher._visibility_timer = timer
+    monkeypatch.setattr(completion_refresher.threading, 'Thread', FakeThread)
+
+    refresher.refresh(Mock(), Mock())
+
+    timer.cancel.assert_called_once_with()
+    assert refresher._visibility_timer is None
+
+
+def test_finish_refreshing_schedules_delayed_invalidation_before_deadline(monkeypatch, refresher) -> None:
+    now = 10.0
+    monkeypatch.setattr(completion_refresher, 'monotonic', lambda: now)
+    invalidate = Mock()
+    refresher._invalidate_app = invalidate
+    refresher._refresh_visible_until = 11.0
+    timers: list = []
+
+    class FakeTimer:
+        def __init__(self, delay: float, callback) -> None:
+            self.delay = delay
+            self.callback = callback
+            self.daemon = False
+            self.started = False
+            timers.append(self)
+
+        def start(self) -> None:
+            self.started = True
+
+        def cancel(self) -> None:
+            pass
+
+    monkeypatch.setattr(completion_refresher.threading, 'Timer', FakeTimer)
+
+    refresher._finish_refreshing()
+
+    invalidate.assert_called_once_with()
+    assert len(timers) == 1
+    assert timers[0].delay == 1.0
+    assert timers[0].daemon is True
+    assert timers[0].started is True
+
+    timers[0].callback()
+
+    assert refresher._visibility_timer is None
+    assert invalidate.call_count == 2
+
+
+def test_finish_refreshing_cancels_existing_visibility_timer(monkeypatch, refresher) -> None:
+    monkeypatch.setattr(completion_refresher, 'monotonic', lambda: 10.0)
+    old_timer = Mock()
+    new_timers: list = []
+    refresher._visibility_timer = old_timer
+    refresher._refresh_visible_until = 11.0
+
+    class FakeTimer:
+        def __init__(self, delay: float, callback) -> None:
+            self.delay = delay
+            self.callback = callback
+            self.daemon = False
+            self.started = False
+            new_timers.append(self)
+
+        def start(self) -> None:
+            self.started = True
+
+        def cancel(self) -> None:
+            pass
+
+    monkeypatch.setattr(completion_refresher.threading, 'Timer', FakeTimer)
+
+    refresher._finish_refreshing()
+
+    old_timer.cancel.assert_called_once_with()
+    assert len(new_timers) == 1
+    assert refresher._visibility_timer is new_timers[0]
+
+
+def test_finish_refreshing_does_not_schedule_after_deadline(monkeypatch, refresher) -> None:
+    monkeypatch.setattr(completion_refresher, 'monotonic', lambda: 11.0)
+    invalidate = Mock()
+    make_timer = Mock()
+    refresher._invalidate_app = invalidate
+    refresher._refresh_visible_until = 10.0
+    monkeypatch.setattr(completion_refresher.threading, 'Timer', make_timer)
+
+    refresher._finish_refreshing()
+
+    invalidate.assert_called_once_with()
+    make_timer.assert_not_called()
 
 
 def test_bg_refresh_restarts_wraps_callbacks_and_closes(monkeypatch, refresher) -> None:

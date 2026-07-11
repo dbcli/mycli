@@ -228,6 +228,20 @@ def test_is_prefetching_and_clear_loaded() -> None:
     assert prefetcher._loaded == set()
 
 
+def test_is_prefetching_remains_true_until_visibility_deadline(monkeypatch) -> None:
+    now = 10.0
+    monkeypatch.setattr(schema_prefetcher_module, 'monotonic', lambda: now)
+    mycli = make_mycli()
+    prefetcher = SchemaPrefetcher(mycli)
+    prefetcher._prefetch_visible_until = 11.0
+
+    assert prefetcher.is_prefetching() is True
+
+    now = 11.0
+
+    assert prefetcher.is_prefetching() is False
+
+
 def test_stop_joins_alive_thread_and_resets_state() -> None:
     mycli = make_mycli()
     prefetcher = SchemaPrefetcher(mycli)
@@ -254,6 +268,20 @@ def test_stop_joins_alive_thread_and_resets_state() -> None:
     assert prefetcher._cancel is not old_cancel
 
 
+def test_stop_clears_visibility_deadline_and_cancels_timer() -> None:
+    mycli = make_mycli()
+    prefetcher = SchemaPrefetcher(mycli)
+    timer = MagicMock()
+    prefetcher._prefetch_visible_until = 10.0
+    prefetcher._visibility_timer = timer
+
+    prefetcher.stop()
+
+    assert prefetcher._prefetch_visible_until == 0.0
+    assert prefetcher._visibility_timer is None
+    timer.cancel.assert_called_once_with()
+
+
 def test_prefetch_schema_now_ignores_empty_schema(monkeypatch) -> None:
     mycli = make_mycli()
     prefetcher = SchemaPrefetcher(mycli)
@@ -266,6 +294,118 @@ def test_prefetch_schema_now_ignores_empty_schema(monkeypatch) -> None:
 
     stop.assert_not_called()
     start.assert_not_called()
+
+
+def test_start_sets_one_second_visibility_deadline(monkeypatch) -> None:
+    monkeypatch.setattr(schema_prefetcher_module, 'monotonic', lambda: 10.0)
+    mycli = make_mycli()
+    prefetcher = SchemaPrefetcher(mycli)
+
+    class FakeThread:
+        def __init__(self, **_kwargs) -> None:
+            self.daemon = False
+
+        def start(self) -> None:
+            pass
+
+        def is_alive(self) -> bool:
+            return False
+
+    monkeypatch.setattr(schema_prefetcher_module.threading, 'Thread', FakeThread)
+
+    prefetcher._start(['schema1'])
+
+    assert prefetcher._prefetch_visible_until == 11.0
+
+
+def test_finish_prefetching_schedules_delayed_invalidation_before_deadline(monkeypatch) -> None:
+    now = 10.0
+    monkeypatch.setattr(schema_prefetcher_module, 'monotonic', lambda: now)
+    mycli = make_mycli()
+    prefetcher = SchemaPrefetcher(mycli)
+    invalidate = MagicMock()
+    monkeypatch.setattr(prefetcher, '_invalidate_app', invalidate)
+    prefetcher._prefetch_visible_until = 11.0
+    timers: list = []
+
+    class FakeTimer:
+        def __init__(self, delay: float, callback) -> None:
+            self.delay = delay
+            self.callback = callback
+            self.daemon = False
+            self.started = False
+            self.cancelled = False
+            timers.append(self)
+
+        def start(self) -> None:
+            self.started = True
+
+        def cancel(self) -> None:
+            self.cancelled = True
+
+    monkeypatch.setattr(schema_prefetcher_module.threading, 'Timer', FakeTimer)
+
+    prefetcher._finish_prefetching()
+
+    invalidate.assert_called_once_with()
+    assert len(timers) == 1
+    assert timers[0].delay == 1.0
+    assert timers[0].daemon is True
+    assert timers[0].started is True
+
+    timers[0].callback()
+
+    assert prefetcher._visibility_timer is None
+    assert invalidate.call_count == 2
+
+
+def test_finish_prefetching_cancels_existing_visibility_timer(monkeypatch) -> None:
+    monkeypatch.setattr(schema_prefetcher_module, 'monotonic', lambda: 10.0)
+    mycli = make_mycli()
+    prefetcher = SchemaPrefetcher(mycli)
+    old_timer = MagicMock()
+    new_timers: list = []
+    prefetcher._visibility_timer = old_timer
+    prefetcher._prefetch_visible_until = 11.0
+
+    class FakeTimer:
+        def __init__(self, delay: float, callback) -> None:
+            self.delay = delay
+            self.callback = callback
+            self.daemon = False
+            self.started = False
+            new_timers.append(self)
+
+        def start(self) -> None:
+            self.started = True
+
+        def cancel(self) -> None:
+            pass
+
+    monkeypatch.setattr(schema_prefetcher_module.threading, 'Timer', FakeTimer)
+
+    prefetcher._finish_prefetching()
+
+    old_timer.cancel.assert_called_once_with()
+    assert len(new_timers) == 1
+    assert prefetcher._visibility_timer is new_timers[0]
+
+
+def test_finish_prefetching_does_not_schedule_after_deadline(monkeypatch) -> None:
+    now = 11.0
+    monkeypatch.setattr(schema_prefetcher_module, 'monotonic', lambda: now)
+    mycli = make_mycli()
+    prefetcher = SchemaPrefetcher(mycli)
+    invalidate = MagicMock()
+    monkeypatch.setattr(prefetcher, '_invalidate_app', invalidate)
+    make_timer = MagicMock()
+    monkeypatch.setattr(schema_prefetcher_module.threading, 'Timer', make_timer)
+    prefetcher._prefetch_visible_until = 10.0
+
+    prefetcher._finish_prefetching()
+
+    invalidate.assert_called_once_with()
+    make_timer.assert_not_called()
 
 
 def test_run_returns_when_database_listing_fails(monkeypatch) -> None:

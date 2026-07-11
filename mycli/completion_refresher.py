@@ -1,4 +1,5 @@
 import threading
+from time import monotonic
 from typing import Callable
 
 import pymysql
@@ -8,13 +9,18 @@ from mycli.packages.sqlresult import SQLResult
 from mycli.sqlcompleter import SQLCompleter
 from mycli.sqlexecute import ServerSpecies, SQLExecute
 
+MIN_COMPLETION_REFRESH_MESSAGE_SECONDS = 1.0
+
 
 class CompletionRefresher:
     refreshers: dict = {}
 
-    def __init__(self) -> None:
+    def __init__(self, invalidate_app: Callable[[], None] | None = None) -> None:
         self._completer_thread: threading.Thread | None = None
         self._restart_refresh = threading.Event()
+        self._refresh_visible_until = 0.0
+        self._visibility_timer: threading.Timer | None = None
+        self._invalidate_app = invalidate_app
 
     def refresh(
         self,
@@ -36,10 +42,14 @@ class CompletionRefresher:
         if completer_options is None:
             completer_options = {}
 
-        if self.is_refreshing():
+        if self._thread_is_alive():
             self._restart_refresh.set()
             return [SQLResult(status="Auto-completion refresh restarted.")]
         else:
+            if self._visibility_timer is not None:
+                self._visibility_timer.cancel()
+                self._visibility_timer = None
+            self._refresh_visible_until = monotonic() + MIN_COMPLETION_REFRESH_MESSAGE_SECONDS
             self._completer_thread = threading.Thread(
                 target=self._bg_refresh, args=(executor, callbacks, completer_options), name="completion_refresh"
             )
@@ -48,6 +58,9 @@ class CompletionRefresher:
             return [SQLResult(status="Auto-completion refresh started in the background.")]
 
     def is_refreshing(self) -> bool:
+        return self._thread_is_alive() or monotonic() < self._refresh_visible_until
+
+    def _thread_is_alive(self) -> bool:
         return bool(self._completer_thread and self._completer_thread.is_alive())
 
     def _bg_refresh(
@@ -73,31 +86,53 @@ class CompletionRefresher:
                 e.ssl,
             )
         except pymysql.err.OperationalError:
+            self._finish_refreshing()
             return
 
-        # If callbacks is a single function then push it into a list.
-        if callable(callbacks):
-            callbacks = [callbacks]
+        try:
+            # If callbacks is a single function then push it into a list.
+            if callable(callbacks):
+                callbacks = [callbacks]
 
-        while 1:
-            for refresher in self.refreshers.values():
-                refresher(completer, executor)
-                if self._restart_refresh.is_set():
-                    self._restart_refresh.clear()
+            while 1:
+                for refresher in self.refreshers.values():
+                    refresher(completer, executor)
+                    if self._restart_refresh.is_set():
+                        self._restart_refresh.clear()
+                        break
+                else:
+                    # Break out of while loop if the for loop finishes natually
+                    # without hitting the break statement.
                     break
-            else:
-                # Break out of while loop if the for loop finishes natually
-                # without hitting the break statement.
-                break
 
-            # Start over the refresh from the beginning if the for loop hit the
-            # break statement.
-            continue
+                # Start over the refresh from the beginning if the for loop hit the
+                # break statement.
+                continue
 
-        for callback in callbacks:
-            callback(completer)
+            for callback in callbacks:
+                callback(completer)
+        finally:
+            executor.close()
+            self._finish_refreshing()
 
-        executor.close()
+    def _finish_refreshing(self) -> None:
+        self._invalidate()
+        remaining = self._refresh_visible_until - monotonic()
+        if remaining <= 0:
+            return
+        if self._visibility_timer is not None:
+            self._visibility_timer.cancel()
+        self._visibility_timer = threading.Timer(remaining, self._invalidate_after_visibility_deadline)
+        self._visibility_timer.daemon = True
+        self._visibility_timer.start()
+
+    def _invalidate_after_visibility_deadline(self) -> None:
+        self._visibility_timer = None
+        self._invalidate()
+
+    def _invalidate(self) -> None:
+        if self._invalidate_app is not None:
+            self._invalidate_app()
 
 
 def refresher(name: str, refreshers: dict = CompletionRefresher.refreshers) -> Callable:
