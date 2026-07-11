@@ -9,7 +9,7 @@ from urllib.parse import parse_qs, unquote, urlparse
 import click
 
 from mycli.config import str_to_bool
-from mycli.constants import EMPTY_PASSWORD_FLAG_SENTINEL, ISSUES_URL
+from mycli.constants import EMPTY_PASSWORD_FLAG_SENTINEL
 from mycli.main_modes.batch import main_batch_from_stdin, main_batch_with_progress_bar, main_batch_without_progress_bar
 from mycli.main_modes.checkup import main_checkup
 from mycli.main_modes.execute import main_execute_from_cli
@@ -26,7 +26,6 @@ KNOWN_DSN_QUERY_PARAMS = {
     'keepalive_ticks',
     'socket',
     'ssh_jump',
-    'ssl',
     'ssl_ca',
     'ssl_capath',
     'ssl_cert',
@@ -239,16 +238,6 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
                 fg='yellow',
             )
 
-        if params := dsn_params.get('ssl'):
-            click.secho(
-                'Warning: The "ssl" DSN URI parameter is deprecated and will be removed in a future release. '
-                'Please use the "ssl_mode" parameter instead. '
-                f'See issue {ISSUES_URL}/1507',
-                err=True,
-                fg='yellow',
-            )
-            if params[0].lower() == 'true':
-                cli_args.ssl_mode = 'on'
         if params := dsn_params.get('ssl_mode'):
             cli_args.ssl_mode = cli_args.ssl_mode or params[0]
         if params := dsn_params.get('ssl_ca'):
