@@ -11,6 +11,10 @@ directly or by using this command.
 
 Examples:
 
+    # Show a DSN for the current connection
+    mysql> /dsn show
+    mysql://mycli@localhost/mysql
+
     # List all DSN aliases
     mysql> /dsn list
     ┌───────┬───────────────────────────────┐
