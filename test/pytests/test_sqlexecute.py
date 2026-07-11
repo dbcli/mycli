@@ -641,6 +641,7 @@ def make_executor_for_connect_tests() -> SQLExecute:
     executor.character_set = 'utf8mb4'
     executor.local_infile = True
     executor.ssl = {'ca': '/stored/ca.pem'}
+    executor.display_dsn = None
     executor.server_info = None
     executor.connection_id = None
     executor.init_command = 'select 1'
@@ -663,6 +664,7 @@ def test_connect_updates_connection_state_and_merges_overrides(monkeypatch) -> N
         close_error=pymysql.err.Error(),
     )
     executor.conn = previous_conn
+    executor.display_dsn = 'mysql://display@example.com/db'
 
     new_conn = DummyConnection(server_version='8.0.36-0ubuntu0.22.04.1')
     connect_kwargs = {}
@@ -718,6 +720,7 @@ def test_connect_updates_connection_state_and_merges_overrides(monkeypatch) -> N
     assert connect_kwargs['program_name'] == 'mycli'
     assert previous_conn.close_calls == 1
     assert executor.conn is new_conn
+    assert new_conn._mycli_display_dsn == 'mysql://display@example.com/db'
     assert executor.dbname == 'override_db'
     assert executor.user == 'override_user'
     assert executor.password == 'override_password'

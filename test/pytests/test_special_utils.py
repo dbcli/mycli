@@ -296,6 +296,21 @@ def test_compute_current_dsn_for_tcp_connection() -> None:
     assert compute_current_dsn(cursor) == 'mysql://user%40example.com@db.example.com:3307/my%20db'
 
 
+def test_compute_current_dsn_prefers_mycli_display_dsn() -> None:
+    connection = SimpleNamespace(
+        _mycli_display_dsn='mysql://alice@db.example.com:3307/prod',
+        user='alice',
+        host='localhost',
+        port=4406,
+        db='prod',
+        unix_socket=None,
+        charset='utf8mb4',
+    )
+    cursor = SimpleNamespace(connection=connection)
+
+    assert compute_current_dsn(cursor) == 'mysql://alice@db.example.com:3307/prod'
+
+
 def test_compute_current_dsn_for_socket_connection() -> None:
     connection = SimpleNamespace(
         user='alice',

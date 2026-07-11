@@ -147,21 +147,42 @@ def get_local_timezone() -> str:
     return datetime.datetime.now().astimezone().tzname() or ''
 
 
-def compute_current_dsn(cur: Cursor) -> str:
-    conn = cur.connection
-    user = urlquote(conn.user or '')
-    host = conn.host or 'localhost'
-    port = f':{conn.port}'
-    db = urlquote(conn.db.decode() if isinstance(conn.db, bytes) else (conn.db or ''))
+def format_connection_dsn(
+    *,
+    user: str | None,
+    host: str | None,
+    port: int | None,
+    database: str | None,
+    socket: str | None,
+    character_set: str | None,
+) -> str:
+    user = urlquote(user or '')
+    host = host or 'localhost'
+    port_part = f':{port}' if port is not None else ''
+    db = urlquote(database or '')
     if db:
         db = f'/{db}'
     query_part = {}
-    if getattr(conn, 'unix_socket', None):
-        query_part['socket'] = conn.unix_socket
-        port = ''
-    if getattr(conn, 'charset', None) and conn.charset != 'utf8mb4':
-        query_part['character_set'] = conn.charset
-    dsn = f'mysql://{user}@{host}{port}{db}'
+    if socket:
+        query_part['socket'] = socket
+        port_part = ''
+    if character_set and character_set != 'utf8mb4':
+        query_part['character_set'] = character_set
+    dsn = f'mysql://{user}@{host}{port_part}{db}'
     if query_part:
         dsn += '?' + urlencode(query_part)
     return dsn
+
+
+def compute_current_dsn(cur: Cursor) -> str:
+    conn = cur.connection
+    if display_dsn := getattr(conn, '_mycli_display_dsn', None):
+        return display_dsn
+    return format_connection_dsn(
+        user=conn.user.decode() if isinstance(conn.user, bytes) else conn.user,
+        host=conn.host,
+        port=conn.port,
+        database=conn.db.decode() if isinstance(conn.db, bytes) else conn.db,
+        socket=getattr(conn, 'unix_socket', None),
+        character_set=getattr(conn, 'charset', None),
+    )

@@ -22,6 +22,7 @@ from mycli.constants import (
     ER_MUST_CHANGE_PASSWORD_LOGIN,
 )
 from mycli.packages.filepaths import guess_socket_location
+from mycli.packages.special.utils import format_connection_dsn
 from mycli.sqlexecute import SQLExecute
 from mycli.ssh_tunnel import SshTunnel, SshTunnelError
 
@@ -188,6 +189,17 @@ class ClientConnectionMixin:
         # should not fail, but will help the typechecker
         assert not isinstance(passwd, int)
 
+        display_dsn = None
+        if self.ssh_tunnel:
+            display_dsn = format_connection_dsn(
+                user=user,
+                host=remote_host,
+                port=remote_port,
+                socket=remote_socket,
+                database=database,
+                character_set=character_set,
+            )
+
         connection_info: dict[str, Any] = {
             'database': database,
             'user': user,
@@ -197,6 +209,7 @@ class ClientConnectionMixin:
             'ssl': ssl_config,
             'init_command': init_command,
             'unbuffered': unbuffered,
+            'display_dsn': display_dsn,
         }
         if self.ssh_tunnel and self.ssh_tunnel.local_socket:
             connection_info['host'] = None

@@ -167,6 +167,7 @@ class SQLExecute:
         ssl: dict[str, Any] | None,
         init_command: str | None = None,
         unbuffered: bool | None = None,
+        display_dsn: str | None = None,
     ) -> None:
         self.dbname = database
         self.user = user
@@ -177,6 +178,7 @@ class SQLExecute:
         self.character_set = character_set
         self.local_infile = local_infile
         self.ssl = ssl
+        self.display_dsn = display_dsn
         self.server_info: ServerInfo | None = None
         self.connection_id: int | None = None
         self.init_command = init_command
@@ -295,6 +297,8 @@ class SQLExecute:
             except pymysql.err.Error:
                 pass
         self.conn = conn
+        if self.display_dsn is not None:
+            self.conn._mycli_display_dsn = self.display_dsn  # type: ignore[attr-defined]
         # Update them after the connection is made to ensure that it was a
         # successful connection.
         self.dbname = db

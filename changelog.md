@@ -6,6 +6,11 @@ Features
 * Add `--ssh-options` CLI argument to pass extra options with `--ssh-jump`.
 
 
+Bug Fixes
+---------
+* Allow `/dsn` command to show correct values with `--ssh-jump`.
+
+
 Internal
 ---------
 * Configurable tunnel method for `--ssh-jump`, making UDS usually default.
