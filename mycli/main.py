@@ -89,21 +89,25 @@ class CliArgs:
         type=click.Path(),
         help='File or FIFO path containing the password to connect to the db if not specified otherwise.',
     )
-    password_vault_address: str | None = clickdc.option(
+    vault_address: str | None = clickdc.option(
         type=str,
         help='EXPERIMENTAL "vault kv get" integration: value for $VAULT_ADDR if unset in the environment or ~/.myclirc.',
     )
-    password_vault_mount: str | None = clickdc.option(
+    vault_mount: str | None = clickdc.option(
         type=str,
         help='EXPERIMENTAL "vault kv get" integration: value for -mount if unset in ~/.myclirc.',
     )
-    password_vault_field: str | None = clickdc.option(
-        type=str,
-        help='EXPERIMENTAL "vault kv get" integration: value for -field if unset in ~/.myclirc.',
-    )
-    password_vault_secret: str | None = clickdc.option(
+    vault_secret: str | None = clickdc.option(
         type=str,
         help='EXPERIMENTAL "vault kv get" integration: secret name.',
+    )
+    vault_password_field: str | None = clickdc.option(
+        type=str,
+        help='EXPERIMENTAL "vault kv get" integration: field containing the password.',
+    )
+    vault_username_field: str | None = clickdc.option(
+        type=str,
+        help='EXPERIMENTAL "vault kv get" integration: field containing the username.',
     )
     ssl_mode: str = clickdc.option(
         type=click.Choice(['auto', 'on', 'off']),

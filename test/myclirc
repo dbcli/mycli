@@ -321,14 +321,17 @@ tunnel_method = auto
 # Path to the vault executable used for Vault integration.
 vault_executable = vault
 
-# URL for VAULT_ADDR, if the environment variable and CLI argument are unset.
+# URL for VAULT_ADDR, if the environment variable is unset.
 address =
 
-# Default mount, which can be overridden by --password-vault-mount at the CLI.
+# Default mount, which can be overridden by --vault-mount at the CLI.
 default_mount =
 
-# Field/property containing the password, if --password-vault-field is not provided.
+# Field/property containing the password, if --vault-password-field is not provided.
 default_password_field = password
+
+# Field/property containing the username, if --vault-username-field is not provided.
+default_username_field = username
 
 # Custom colors for the completion menu, toolbar, etc, with actual support
 # depending on the terminal, and the property being set.

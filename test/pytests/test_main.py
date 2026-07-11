@@ -2392,22 +2392,25 @@ def test_click_entrypoint_populates_password_vault_options(monkeypatch: pytest.M
     result = CliRunner().invoke(
         click_entrypoint,
         [
-            '--password-vault-address',
+            '--vault-address',
             'https://vault.example.com',
-            '--password-vault-mount',
+            '--vault-mount',
             'kv',
-            '--password-vault-secret',
+            '--vault-secret',
             'database/prod',
-            '--password-vault-field',
+            '--vault-password-field',
             'mysql_password',
+            '--vault-username-field',
+            'mysql_username',
         ],
     )
 
     assert result.exit_code == 0
-    assert cli_args_calls[-1].password_vault_address == 'https://vault.example.com'
-    assert cli_args_calls[-1].password_vault_mount == 'kv'
-    assert cli_args_calls[-1].password_vault_secret == 'database/prod'
-    assert cli_args_calls[-1].password_vault_field == 'mysql_password'
+    assert cli_args_calls[-1].vault_address == 'https://vault.example.com'
+    assert cli_args_calls[-1].vault_mount == 'kv'
+    assert cli_args_calls[-1].vault_secret == 'database/prod'
+    assert cli_args_calls[-1].vault_password_field == 'mysql_password'
+    assert cli_args_calls[-1].vault_username_field == 'mysql_username'
 
 
 @pytest.mark.parametrize(
