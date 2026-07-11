@@ -4,6 +4,7 @@ Upcoming (TBD)
 Features
 ---------
 * Add `--ssh-options` CLI argument to pass extra options with `--ssh-jump`.
+* Make `ssh_jump` a DSN query parameter.
 
 
 Bug Fixes

@@ -384,7 +384,7 @@ def test_connect_uses_ssh_jump_with_remote_socket(monkeypatch: pytest.MonkeyPatc
     assert FakeSQLExecute.calls[-1]['host'] is None
     assert FakeSQLExecute.calls[-1]['port'] is None
     assert FakeSQLExecute.calls[-1]['socket'] == '/tmp/mycli-ssh.sock'
-    assert FakeSQLExecute.calls[-1]['display_dsn'] == 'mysql://alice@localhost?socket=%2Fvar%2Frun%2Fmysqld%2Fmysqld.sock'
+    assert FakeSQLExecute.calls[-1]['display_dsn'] == 'mysql://alice@localhost?socket=%2Fvar%2Frun%2Fmysqld%2Fmysqld.sock&ssh_jump=bastion'
 
 
 def test_connect_uses_ssh_jump_with_local_port(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -422,7 +422,7 @@ def test_connect_uses_ssh_jump_with_local_port(monkeypatch: pytest.MonkeyPatch) 
     assert FakeSQLExecute.calls[-1]['host'] == '127.0.0.1'
     assert FakeSQLExecute.calls[-1]['port'] == 4406
     assert FakeSQLExecute.calls[-1]['socket'] is None
-    assert FakeSQLExecute.calls[-1]['display_dsn'] == 'mysql://alice@db.internal:3307'
+    assert FakeSQLExecute.calls[-1]['display_dsn'] == 'mysql://alice@db.internal:3307?ssh_jump=bastion'
 
 
 def test_connect_passes_config_and_cli_ssh_options(monkeypatch: pytest.MonkeyPatch) -> None:

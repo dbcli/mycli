@@ -217,6 +217,22 @@ def test_run_from_cli_args_expands_whole_dsn_alias_env_vars_when_enabled(
     assert client.connect_calls[-1]['keepalive_ticks'] == 9
 
 
+def test_run_from_cli_args_expands_dsn_alias_ssh_jump_env_var_when_enabled(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cli_args = make_cli_args()
+    cli_args.dsn = 'prod'
+    monkeypatch.setenv('MYCLI_TEST_DSN_SSH_JUMP', 'env-bastion')
+    config = default_config()
+    config['main'] = {**config['main'], 'expand_dsn_alias_env_vars': 'true'}
+    config['alias_dsn'] = {'prod': 'mysql://user@host/db?ssh_jump=${MYCLI_TEST_DSN_SSH_JUMP}'}
+    client = DummyMyCli(config=config)
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    assert client.connect_calls[-1]['ssh_jump'] == 'env-bastion'
+
+
 def test_run_from_cli_args_does_not_expand_partial_values_or_query_keys(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -352,6 +368,29 @@ def test_run_from_cli_args_accepts_mysql_plus_dsn_scheme(monkeypatch: pytest.Mon
     assert client.connect_calls[-1]['host'] == 'host'
     assert client.connect_calls[-1]['port'] == 3306
     assert client.connect_calls[-1]['database'] == 'db'
+
+
+def test_run_from_cli_args_maps_dsn_ssh_jump_parameter(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli_args = make_cli_args()
+    cli_args.dsn = 'mysql://user@host/db?ssh_jump=bastion'
+    client = DummyMyCli()
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    assert client.connect_calls[-1]['ssh_jump'] == 'bastion'
+
+
+def test_run_from_cli_args_prefers_cli_ssh_jump_over_dsn_parameter(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cli_args = make_cli_args()
+    cli_args.dsn = 'mysql://user@host/db?ssh_jump=dsn-bastion'
+    cli_args.ssh_jump = 'cli-bastion'
+    client = DummyMyCli()
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    assert client.connect_calls[-1]['ssh_jump'] == 'cli-bastion'
 
 
 def test_run_from_cli_args_maps_dsn_ssl_parameters(monkeypatch: pytest.MonkeyPatch) -> None:

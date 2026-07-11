@@ -198,6 +198,7 @@ class ClientConnectionMixin:
                 socket=remote_socket,
                 database=database,
                 character_set=character_set,
+                ssh_jump=ssh_jump,
             )
 
         connection_info: dict[str, Any] = {

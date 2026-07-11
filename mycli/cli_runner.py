@@ -254,6 +254,8 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
                 cli_args.keepalive_ticks = int(params[0])
         if params := dsn_params.get('character_set'):
             cli_args.character_set = cli_args.character_set or params[0]
+        if params := dsn_params.get('ssh_jump'):
+            cli_args.ssh_jump = cli_args.ssh_jump or params[0]
 
     keepalive_ticks = cli_args.keepalive_ticks if cli_args.keepalive_ticks is not None else mycli.default_keepalive_ticks
     ssl_mode = cli_args.ssl_mode or mycli.ssl_mode
