@@ -269,6 +269,70 @@ def test_run_from_cli_args_does_not_expand_unbraced_dsn_alias_env_vars(
     assert client.connect_calls[-1]['user'] == '$MYCLI_TEST_DSN_USER'
 
 
+def test_run_from_cli_args_warns_about_unknown_dsn_query_parameter(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cli_args = make_cli_args()
+    cli_args.dsn = 'mysql://user@host/db?unknown=value'
+    client = DummyMyCli()
+    secho_calls: list[tuple[str, dict[str, Any]]] = []
+    monkeypatch.setattr(cli_runner.click, 'secho', lambda text, **kwargs: secho_calls.append((text, kwargs)))
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    assert client.connect_calls[-1]['database'] == 'db'
+    assert secho_calls == [
+        (
+            'Warning: Ignored unknown DSN URI query parameters: unknown.',
+            {'err': True, 'fg': 'yellow'},
+        )
+    ]
+
+
+def test_run_from_cli_args_warns_once_about_sorted_unknown_dsn_query_parameters(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cli_args = make_cli_args()
+    cli_args.dsn = 'mysql://user@host/db?zzz=1&aaa&character_set=utf8&aaa=2'
+    client = DummyMyCli()
+    secho_calls: list[tuple[str, dict[str, Any]]] = []
+    monkeypatch.setattr(cli_runner.click, 'secho', lambda text, **kwargs: secho_calls.append((text, kwargs)))
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    assert client.connect_calls[-1]['character_set'] == 'utf8'
+    assert secho_calls == [
+        (
+            'Warning: Ignored unknown DSN URI query parameters: aaa, zzz.',
+            {'err': True, 'fg': 'yellow'},
+        )
+    ]
+
+
+def test_run_from_cli_args_warns_about_unknown_alias_dsn_query_parameter_with_env_expansion(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cli_args = make_cli_args()
+    cli_args.dsn = 'prod'
+    monkeypatch.setenv('MYCLI_TEST_DSN_CHARSET', 'utf8')
+    config = default_config()
+    config['main'] = {**config['main'], 'expand_dsn_alias_env_vars': 'true'}
+    config['alias_dsn'] = {'prod': 'mysql://user@host/db?unknown=value&character_set=${MYCLI_TEST_DSN_CHARSET}'}
+    client = DummyMyCli(config=config)
+    secho_calls: list[tuple[str, dict[str, Any]]] = []
+    monkeypatch.setattr(cli_runner.click, 'secho', lambda text, **kwargs: secho_calls.append((text, kwargs)))
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    assert client.connect_calls[-1]['character_set'] == 'utf8'
+    assert secho_calls == [
+        (
+            'Warning: Ignored unknown DSN URI query parameters: unknown.',
+            {'err': True, 'fg': 'yellow'},
+        )
+    ]
+
+
 def test_run_from_cli_args_reports_missing_dsn_alias_env_var(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -378,6 +442,21 @@ def test_run_from_cli_args_maps_dsn_ssh_jump_parameter(monkeypatch: pytest.Monke
     run_with_client(monkeypatch, cli_args, client)
 
     assert client.connect_calls[-1]['ssh_jump'] == 'bastion'
+
+
+def test_run_from_cli_args_does_not_warn_about_known_dsn_query_parameter(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cli_args = make_cli_args()
+    cli_args.dsn = 'mysql://user@host/db?ssh_jump=bastion'
+    client = DummyMyCli()
+    secho_calls: list[tuple[str, dict[str, Any]]] = []
+    monkeypatch.setattr(cli_runner.click, 'secho', lambda text, **kwargs: secho_calls.append((text, kwargs)))
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    assert client.connect_calls[-1]['ssh_jump'] == 'bastion'
+    assert secho_calls == []
 
 
 def test_run_from_cli_args_prefers_cli_ssh_jump_over_dsn_parameter(
