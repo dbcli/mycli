@@ -21,6 +21,21 @@ if TYPE_CHECKING:
 
 ClientFactory = Callable[..., Any]
 ENV_VAR_PATTERN = re.compile(r'^\$\{([A-Za-z_][A-Za-z0-9_]*)\}$')
+KNOWN_DSN_QUERY_PARAMS = {
+    'character_set',
+    'keepalive_ticks',
+    'socket',
+    'ssh_jump',
+    'ssl',
+    'ssl_ca',
+    'ssl_capath',
+    'ssl_cert',
+    'ssl_cipher',
+    'ssl_key',
+    'ssl_mode',
+    'ssl_verify_server_cert',
+    'tls_version',
+}
 
 
 class DsnAliasEnvVarError(ValueError):
@@ -79,7 +94,10 @@ def expand_dsn_alias_env_vars(
     except ValueError as exc:
         raise DsnAliasEnvVarError(f'Port in DSN alias {alias_name} must be an integer.') from exc
 
-    params = {key: [expand_dsn_alias_env_var(value, alias_name) or '' for value in values] for key, values in parse_qs(uri.query).items()}
+    params = {
+        key: [expand_dsn_alias_env_var(value, alias_name) or '' for value in values]
+        for key, values in parse_qs(uri.query, keep_blank_values=True).items()
+    }
 
     return (
         expand_dsn_alias_env_var(unquote(username) if username is not None else None, alias_name),
@@ -200,7 +218,7 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
             dsn_host = uri.hostname
             dsn_port = uri.port
             dsn_database = uri.path[1:]
-            dsn_params = parse_qs(uri.query) if uri.query else {}
+            dsn_params = parse_qs(uri.query, keep_blank_values=True) if uri.query else {}
 
         if not database:
             database = dsn_database
@@ -213,6 +231,13 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
             cli_args.host = dsn_host
         if not cli_args.port:
             cli_args.port = dsn_port
+
+        if unknown_dsn_params := sorted(set(dsn_params) - KNOWN_DSN_QUERY_PARAMS):
+            click.secho(
+                f'Warning: Ignored unknown DSN URI query parameters: {", ".join(unknown_dsn_params)}.',
+                err=True,
+                fg='yellow',
+            )
 
         if params := dsn_params.get('ssl'):
             click.secho(
