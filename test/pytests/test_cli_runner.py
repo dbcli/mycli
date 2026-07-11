@@ -475,7 +475,7 @@ def test_run_from_cli_args_prefers_cli_ssh_jump_over_dsn_parameter(
 def test_run_from_cli_args_maps_dsn_ssl_parameters(monkeypatch: pytest.MonkeyPatch) -> None:
     cli_args = make_cli_args()
     cli_args.dsn = (
-        'mysql://user:pass@host:3306/db?ssl=true&ssl_ca=~/ca.pem&ssl_capath=/capath'
+        'mysql://user:pass@host:3306/db?ssl_mode=on&ssl_ca=~/ca.pem&ssl_capath=/capath'
         '&ssl_cert=~/cert.pem&ssl_key=~/key.pem&ssl_cipher=AES256&tls_version=TLSv1.3'
         '&ssl_verify_server_cert=true'
     )
@@ -496,7 +496,6 @@ def test_run_from_cli_args_maps_dsn_ssl_parameters(monkeypatch: pytest.MonkeyPat
         'tls_version': 'TLSv1.3',
         'check_hostname': True,
     }
-    assert any('"ssl" DSN URI parameter is deprecated' in call for call in secho_calls)
 
 
 def test_run_from_cli_args_merges_global_list_and_alias_scalar_init_commands(

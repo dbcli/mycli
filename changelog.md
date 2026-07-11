@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Breaking Changes
+---------
+* `ssl` is no longer supported as a DSN parameter.  Use `ssl_mode` instead.
+
+
 Features
 ---------
 * Add `--ssh-options` CLI argument to pass extra options with `--ssh-jump`.
