@@ -155,6 +155,7 @@ def format_connection_dsn(
     database: str | None,
     socket: str | None,
     character_set: str | None,
+    ssh_jump: str | None = None,
 ) -> str:
     user = urlquote(user or '')
     host = host or 'localhost'
@@ -168,6 +169,8 @@ def format_connection_dsn(
         port_part = ''
     if character_set and character_set != 'utf8mb4':
         query_part['character_set'] = character_set
+    if ssh_jump:
+        query_part['ssh_jump'] = ssh_jump
     dsn = f'mysql://{user}@{host}{port_part}{db}'
     if query_part:
         dsn += '?' + urlencode(query_part)

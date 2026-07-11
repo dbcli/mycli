@@ -13,6 +13,7 @@ import mycli.packages.special.utils
 from mycli.packages.special.utils import (
     CACHED_SSL_VERSION,
     compute_current_dsn,
+    format_connection_dsn,
     format_uptime,
     get_local_timezone,
     get_server_timezone,
@@ -309,6 +310,21 @@ def test_compute_current_dsn_prefers_mycli_display_dsn() -> None:
     cursor = SimpleNamespace(connection=connection)
 
     assert compute_current_dsn(cursor) == 'mysql://alice@db.example.com:3307/prod'
+
+
+def test_format_connection_dsn_includes_ssh_jump() -> None:
+    assert (
+        format_connection_dsn(
+            user='alice',
+            host='db.example.com',
+            port=3307,
+            database='prod',
+            socket=None,
+            character_set='utf8mb4',
+            ssh_jump='bastion',
+        )
+        == 'mysql://alice@db.example.com:3307/prod?ssh_jump=bastion'
+    )
 
 
 def test_compute_current_dsn_for_socket_connection() -> None:
