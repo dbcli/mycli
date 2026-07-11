@@ -15,6 +15,7 @@ from mycli.main_modes.checkup import main_checkup
 from mycli.main_modes.execute import main_execute_from_cli
 from mycli.main_modes.list_dsn import main_list_dsn
 from mycli.packages.cli_utils import is_valid_connection_scheme
+from mycli.vault import DEFAULT_VAULT_EXECUTABLE, DEFAULT_VAULT_FIELD, VaultError, get_password_from_vault
 
 if TYPE_CHECKING:
     from mycli.main import CliArgs
@@ -342,11 +343,31 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
         use_keyring = str_to_bool(cli_args.use_keyring)
         reset_keyring = False
 
+    if cli_args.password is None and cli_args.password_vault_secret:
+        vault_config = mycli.config.get('vault', {})
+        vault_address = cli_args.password_vault_address or os.environ.get('VAULT_ADDR') or vault_config.get('address') or None
+        vault_mount = cli_args.password_vault_mount or vault_config.get('default_mount') or None
+        vault_field = cli_args.password_vault_field or vault_config.get('default_field') or DEFAULT_VAULT_FIELD
+        vault_executable = vault_config.get('vault_executable') or DEFAULT_VAULT_EXECUTABLE
+        try:
+            vault_password: str | None = get_password_from_vault(
+                secret=cli_args.password_vault_secret,
+                executable=vault_executable,
+                field=vault_field,
+                mount=vault_mount,
+                address=vault_address,
+            )
+        except VaultError as exc:
+            click.secho(f'Error reading password from Vault: {exc}', err=True, fg='red')
+            sys.exit(1)
+    else:
+        vault_password = None
+
     try:
         mycli.connect(
             database=database,
             user=cli_args.user,
-            passwd=cli_args.password,
+            passwd=vault_password if cli_args.password is None else cli_args.password,
             host=cli_args.host,
             port=cli_args.port,
             socket=cli_args.socket,

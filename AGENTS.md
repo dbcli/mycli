@@ -48,13 +48,14 @@ A command line client for MySQL with auto-completion and syntax highlighting.
 ├── mycli/schema_prefetcher.py            # background prefetcher for multi-schema auto-completion
 ├── mycli/sqlcompleter.py                 # offers SQL completions
 ├── mycli/sqlexecute.py                   # runs SQL queries
+├── mycli/types.py                        # shared types
+├── mycli/vault.py                        # Vault integration
 ├── test/conftest.py                      # pytest configuration
 ├── test/features/                        # behave tests
 ├── test/myclirc                          # mycli configuration used for tests
 ├── test/mylogin.cnf                      # `mylogin.cnf` example used for tests
 ├── test/pytests/                         # pytest tests
-├── test/utils.py                         # shared utilities for tests
-└── types.py                              # shared types
+└── test/utils.py                         # shared utilities for tests
 
 ## Development
 

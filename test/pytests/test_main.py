@@ -2385,6 +2385,31 @@ def test_preprocess_cli_args_prefers_existing_password_over_mysql_pwd(monkeypatc
     assert cli_args.password == 'cli-secret'
 
 
+def test_click_entrypoint_populates_password_vault_options(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli_args_calls: list[CliArgs] = []
+    monkeypatch.setattr(main, 'run_from_cli_args', lambda cli_args, client_factory: cli_args_calls.append(cli_args))
+
+    result = CliRunner().invoke(
+        click_entrypoint,
+        [
+            '--password-vault-address',
+            'https://vault.example.com',
+            '--password-vault-mount',
+            'kv',
+            '--password-vault-secret',
+            'database/prod',
+            '--password-vault-field',
+            'mysql_password',
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert cli_args_calls[-1].password_vault_address == 'https://vault.example.com'
+    assert cli_args_calls[-1].password_vault_mount == 'kv'
+    assert cli_args_calls[-1].password_vault_secret == 'database/prod'
+    assert cli_args_calls[-1].password_vault_field == 'mysql_password'
+
+
 @pytest.mark.parametrize(
     ('checkpoint', 'batch', 'expected'),
     [

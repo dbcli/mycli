@@ -11,6 +11,7 @@ Features
 * Add `--ssh-options` CLI argument to pass extra options with `--ssh-jump`.
 * Make `ssh_jump` a DSN query parameter.
 * Warn on unknown DSN query parameters.
+* Experimental: ability to read passwords from Vault using `vault kv get` CLI.
 
 
 Bug Fixes
