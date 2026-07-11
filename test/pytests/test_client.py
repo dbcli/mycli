@@ -158,6 +158,16 @@ def test_close_swallows_cleanup_errors() -> None:
     MyCli.close(cli)
 
 
+def test_invalidate_prompt_session_invalidates_prompt_app() -> None:
+    cli = MyCli.__new__(MyCli)
+    invalidate_calls: list[bool] = []
+    cast(Any, cli).prompt_session = SimpleNamespace(app=SimpleNamespace(invalidate=lambda: invalidate_calls.append(True)))
+
+    MyCli._invalidate_prompt_session(cli)
+
+    assert invalidate_calls == [True]
+
+
 def test_run_cli_delegates_to_main_repl(monkeypatch: pytest.MonkeyPatch) -> None:
     cli = MyCli.__new__(MyCli)
     calls: list[MyCli] = []
