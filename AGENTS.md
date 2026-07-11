@@ -31,7 +31,7 @@ A command line client for MySQL with auto-completion and syntax highlighting.
 ├── mycli/main_modes/checkup.py           # `--checkup` mode
 ├── mycli/main_modes/execute.py           # `--execute` mode
 ├── mycli/main_modes/list_dsn.py          # `--list-dsn` mode
-├── mycli/main_modes/repl.py              # interactive REPL made
+├── mycli/main_modes/repl.py              # interactive REPL mode
 ├── mycli/myclirc                         # project-level configuration file
 ├── mycli/output.py                       # `OutputMixin` mixin for feedback and output of query results
 ├── mycli/packages/                       # application packages
@@ -53,11 +53,11 @@ A command line client for MySQL with auto-completion and syntax highlighting.
 ├── mycli/sqlexecute.py                   # runs SQL queries
 ├── mycli/types.py                        # shared types
 ├── mycli/vault.py                        # Vault integration
-├── test/conftest.py                      # pytest configuration
 ├── test/features/                        # behave tests
 ├── test/myclirc                          # mycli configuration used for tests
 ├── test/mylogin.cnf                      # `mylogin.cnf` example used for tests
 ├── test/pytests/                         # pytest tests
+├── test/pytests/conftest.py              # pytest configuration
 └── test/utils.py                         # shared utilities for tests
 
 ## Development
