@@ -158,7 +158,7 @@ def make_repl_cli(sqlexecute: Any | None = None) -> Any:
     cli.post_redirect_command = None
     cli.logfile = None
     cli.smart_completion = False
-    cli.config = {'main': {'history_file': '~/.mycli-history-testing'}}
+    cli.config = {'main': {'history_file': '~/.mycli-history-testing'}, 'editor': {'editor_command': ''}}
     cli.key_bindings = 'emacs'
     cli.wider_completion_menu = False
     cli.login_path = None
@@ -331,6 +331,51 @@ def test_repl_picker_helpers_cover_present_and_missing_resources(monkeypatch: py
     assert repl_mode._contributors_picker() == 'our contributors'
     assert repl_mode._sponsors_picker() == 'our sponsors'
     assert repl_mode._tips_picker() == r'\? or "help" for help!'
+
+
+def test_configure_editor_uses_configured_editor(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli = make_repl_cli()
+    cli.config['editor']['editor_command'] = 'nano'
+    monkeypatch.delenv('VISUAL', raising=False)
+
+    repl_mode._configure_editor(cli)
+
+    assert os.environ['VISUAL'] == 'nano'
+
+
+def test_configure_editor_uses_code_when_no_editor_environment_is_set(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli = make_repl_cli()
+    monkeypatch.delenv('VISUAL', raising=False)
+    monkeypatch.delenv('EDITOR', raising=False)
+    monkeypatch.setattr(repl_mode.shutil, 'which', lambda name: '/usr/bin/code' if name == 'code' else None)
+
+    repl_mode._configure_editor(cli)
+
+    assert os.environ['VISUAL'] == 'code --wait'
+
+
+def test_configure_editor_falls_back_to_vi_when_no_editor_is_available(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli = make_repl_cli()
+    monkeypatch.delenv('VISUAL', raising=False)
+    monkeypatch.delenv('EDITOR', raising=False)
+    monkeypatch.setattr(repl_mode.shutil, 'which', lambda name: None)
+    monkeypatch.setattr(repl_mode, 'WIN', False)
+
+    repl_mode._configure_editor(cli)
+
+    assert os.environ['VISUAL'] == 'vi'
+
+
+def test_configure_editor_falls_back_to_edit_on_windows(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli = make_repl_cli()
+    monkeypatch.delenv('VISUAL', raising=False)
+    monkeypatch.delenv('EDITOR', raising=False)
+    monkeypatch.setattr(repl_mode.shutil, 'which', lambda name: None)
+    monkeypatch.setattr(repl_mode, 'WIN', True)
+
+    repl_mode._configure_editor(cli)
+
+    assert os.environ['VISUAL'] == 'edit'
 
 
 def test_repl_show_startup_banner_and_prompt_helpers(monkeypatch: pytest.MonkeyPatch) -> None:

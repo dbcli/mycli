@@ -282,6 +282,8 @@ use "min_completion_trigger" in ~/.myclirc to defer completions!
 
 colorize search previews with "highlight_preview" in ~/.myclirc!
 
+set editor_command = "code --wait" in ~/.myclirc to edit queries using VS Code!
+
 ###
 ### redirection
 ###
