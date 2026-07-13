@@ -5,6 +5,7 @@ Features
 ---------
 * Set minimum times for transient toolbar messages.
 * `editor_command` entry in `~/.myclirc` which overrides environment.
+* Experimental: let Vault properties be set in DSNs.
 
 
 2.2.0 (2026/07/11)

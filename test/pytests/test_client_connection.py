@@ -425,6 +425,72 @@ def test_connect_uses_ssh_jump_with_local_port(monkeypatch: pytest.MonkeyPatch) 
     assert FakeSQLExecute.calls[-1]['display_dsn'] == 'mysql://alice@db.internal:3307?ssh_jump=bastion'
 
 
+def test_connect_with_vault_password_keeps_explicit_user_in_display_dsn() -> None:
+    client = DummyClient()
+
+    client.connect(user='alice', host='db.internal', port=3307, vault_secret='database/prod')
+
+    assert FakeSQLExecute.calls[-1]['display_dsn'] == 'mysql://alice@db.internal:3307?vault_secret=database%2Fprod'
+
+
+def test_connect_with_vault_username_omits_user_from_display_dsn() -> None:
+    client = DummyClient()
+
+    client.connect(
+        user='vault-user',
+        host='db.internal',
+        port=3307,
+        vault_secret='database/prod',
+        vault_username_from_vault=True,
+    )
+
+    assert FakeSQLExecute.calls[-1]['display_dsn'] == 'mysql://db.internal:3307?vault_secret=database%2Fprod'
+
+
+def test_connect_with_ssh_jump_and_vault_username_omits_user_from_display_dsn(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class FakeTunnel:
+        local_socket = None
+        local_host = '127.0.0.1'
+        local_port = 4406
+
+        @classmethod
+        def from_target(
+            cls,
+            _ssh_jump: str,
+            *,
+            remote_host: str,
+            remote_port: int,
+            remote_socket: str | None = None,
+            ssh_executable: str = 'ssh',
+            ssh_config_options: str | None = None,
+            ssh_cli_options: str | None = None,
+            tunnel_method: Literal['auto', 'socket', 'port'] = 'auto',
+        ) -> 'FakeTunnel':
+            return cls()
+
+        def start(self) -> None:
+            pass
+
+        def close(self) -> None:
+            pass
+
+    monkeypatch.setattr(client_connection, 'SshTunnel', FakeTunnel)
+    client = DummyClient()
+
+    client.connect(
+        user='vault-user',
+        host='db.internal',
+        port=3307,
+        ssh_jump='bastion',
+        vault_secret='database/prod',
+        vault_username_from_vault=True,
+    )
+
+    assert FakeSQLExecute.calls[-1]['display_dsn'] == ('mysql://db.internal:3307?ssh_jump=bastion&vault_secret=database%2Fprod')
+
+
 def test_connect_passes_config_and_cli_ssh_options(monkeypatch: pytest.MonkeyPatch) -> None:
     tunnel_calls: list[dict[str, Any]] = []
 
