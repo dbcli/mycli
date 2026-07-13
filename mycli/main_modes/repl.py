@@ -9,6 +9,7 @@ from importlib import resources
 import os
 import random
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -42,6 +43,7 @@ import mycli as mycli_package
 from mycli.clibuffer import cli_is_multiline
 from mycli.clistyle import style_factory_ptoolkit
 from mycli.clitoolbar import create_toolbar_tokens_func
+from mycli.compat import WIN
 from mycli.constants import (
     DEFAULT_HOST,
     DEFAULT_WIDTH,
@@ -854,12 +856,25 @@ def _tips_picker() -> str:
     return random.choice(tips) if tips else r'\? or "help" for help!'
 
 
+def _configure_editor(mycli: 'MyCli') -> None:
+    if configured_editor := mycli.config['editor'].get('editor_command'):
+        os.environ['VISUAL'] = configured_editor
+    elif not os.environ.get('VISUAL') and not os.environ.get('EDITOR'):
+        if shutil.which('code'):
+            os.environ['VISUAL'] = 'code --wait'
+        elif WIN:
+            os.environ['VISUAL'] = 'edit'
+        else:
+            os.environ['VISUAL'] = 'vi'
+
+
 def main_repl(mycli: 'MyCli') -> None:
     sqlexecute = mycli.sqlexecute
     assert sqlexecute is not None
     state = ReplState()
 
     mycli.configure_pager()
+    _configure_editor(mycli)
     if mycli.smart_completion and not mycli.sandbox_mode:
         mycli.refresh_completions()
 

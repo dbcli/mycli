@@ -216,6 +216,16 @@ pager = python test/features/wrappager.py ---boundary---
 # Recommended: auto
 use_keyring = False
 
+[editor]
+
+# Command line to invoke for /edit, instead of respecting the $VISUAL/$EDITOR
+# environment variables.  Suggestions:
+# * VS Code: code --wait
+# * Vim: vim
+# * Emacs: emacsclient
+# For emacsclient, first start the server with "M-x server-start".
+editor_command =
+
 [search]
 
 # Whether to apply syntax highlighting to the preview window in fuzzy history
