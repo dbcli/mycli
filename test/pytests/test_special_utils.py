@@ -327,6 +327,26 @@ def test_format_connection_dsn_includes_ssh_jump() -> None:
     )
 
 
+def test_format_connection_dsn_includes_vault_parameters() -> None:
+    assert format_connection_dsn(
+        user=None,
+        host='db.example.com',
+        port=3307,
+        database='prod',
+        socket=None,
+        character_set='utf8mb4',
+        vault_address='https://vault.example.com',
+        vault_mount='kv',
+        vault_secret='database/prod',
+        vault_password_field='mysql_password',
+        vault_username_field='mysql_username',
+    ) == (
+        'mysql://db.example.com:3307/prod?vault_address=https%3A%2F%2Fvault.example.com'
+        '&vault_mount=kv&vault_secret=database%2Fprod&vault_password_field=mysql_password'
+        '&vault_username_field=mysql_username'
+    )
+
+
 def test_compute_current_dsn_for_socket_connection() -> None:
     connection = SimpleNamespace(
         user='alice',

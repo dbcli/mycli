@@ -63,6 +63,12 @@ class ClientConnectionMixin:
         keepalive_ticks: int | None = None,
         ssh_jump: str | None = None,
         ssh_cli_options: str | None = None,
+        vault_address: str | None = None,
+        vault_mount: str | None = None,
+        vault_secret: str | None = None,
+        vault_password_field: str | None = None,
+        vault_username_field: str | None = None,
+        vault_username_from_vault: bool = False,
     ) -> None:
         mylogin_cnf: dict[str, Any] = self.read_mylogin_cnf(self.mylogin_cnf)
         # Fall back to .mylogin.cnf values only if user did not specify a value.
@@ -191,15 +197,36 @@ class ClientConnectionMixin:
         assert not isinstance(passwd, int)
 
         display_dsn = None
+        display_dsn_user = None if vault_username_from_vault else user
         if self.ssh_tunnel:
             display_dsn = format_connection_dsn(
-                user=user,
+                user=display_dsn_user,
                 host=remote_host,
                 port=remote_port,
                 socket=remote_socket,
                 database=database,
                 character_set=character_set,
                 ssh_jump=ssh_jump,
+                vault_address=vault_address,
+                vault_mount=vault_mount,
+                vault_secret=vault_secret,
+                vault_password_field=vault_password_field,
+                vault_username_field=vault_username_field,
+            )
+        elif vault_secret:
+            display_dsn = format_connection_dsn(
+                user=display_dsn_user,
+                host=host,
+                port=int_port,
+                socket=socket,
+                database=database,
+                character_set=character_set,
+                ssh_jump=ssh_jump,
+                vault_address=vault_address,
+                vault_mount=vault_mount,
+                vault_secret=vault_secret,
+                vault_password_field=vault_password_field,
+                vault_username_field=vault_username_field,
             )
 
         connection_info: dict[str, Any] = {

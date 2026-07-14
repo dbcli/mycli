@@ -156,13 +156,18 @@ def format_connection_dsn(
     socket: str | None,
     character_set: str | None,
     ssh_jump: str | None = None,
+    vault_address: str | None = None,
+    vault_mount: str | None = None,
+    vault_secret: str | None = None,
+    vault_password_field: str | None = None,
+    vault_username_field: str | None = None,
 ) -> str:
-    user = urlquote(user or '')
-    host = host or 'localhost'
+    if user_part := urlquote(user or ''):
+        user_part = f'{user_part}@'
+    host_part = host or 'localhost'
     port_part = f':{port}' if port is not None else ''
-    db = urlquote(database or '')
-    if db:
-        db = f'/{db}'
+    if db_part := urlquote(database or ''):
+        db_part = f'/{db_part}'
     query_part = {}
     if socket:
         query_part['socket'] = socket
@@ -171,7 +176,17 @@ def format_connection_dsn(
         query_part['character_set'] = character_set
     if ssh_jump:
         query_part['ssh_jump'] = ssh_jump
-    dsn = f'mysql://{user}@{host}{port_part}{db}'
+    if vault_address:
+        query_part['vault_address'] = vault_address
+    if vault_mount:
+        query_part['vault_mount'] = vault_mount
+    if vault_secret:
+        query_part['vault_secret'] = vault_secret
+    if vault_password_field:
+        query_part['vault_password_field'] = vault_password_field
+    if vault_username_field:
+        query_part['vault_username_field'] = vault_username_field
+    dsn = f'mysql://{user_part}{host_part}{port_part}{db_part}'
     if query_part:
         dsn += '?' + urlencode(query_part)
     return dsn

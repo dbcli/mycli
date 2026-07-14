@@ -610,6 +610,7 @@ def test_run_from_cli_args_reads_username_from_vault_when_user_is_missing(
     run_with_client(monkeypatch, cli_args, client)
 
     assert client.connect_calls[-1]['user'] == 'vault-user'
+    assert client.connect_calls[-1]['vault_username_from_vault'] is True
     assert vault_calls == [
         {
             'secret': 'database/prod',
@@ -639,6 +640,7 @@ def test_run_from_cli_args_prefers_dsn_user_over_vault_username(monkeypatch: pyt
     run_with_client(monkeypatch, cli_args, client)
 
     assert client.connect_calls[-1]['user'] == 'dsn-user'
+    assert client.connect_calls[-1]['vault_username_from_vault'] is False
     assert vault_calls == []
 
 
@@ -714,6 +716,7 @@ def test_run_from_cli_args_prefers_vault_cli_values_and_env_address(
     run_with_client(monkeypatch, cli_args, client)
 
     assert client.connect_calls[-1]['passwd'] == 'vault-secret'
+    assert client.connect_calls[-1]['vault_username_from_vault'] is False
     assert vault_calls == [
         {
             'secret': 'database/prod',
@@ -830,3 +833,201 @@ def test_run_from_cli_args_uses_auto_keyring_config(
 
     assert client.connect_calls[-1]['use_keyring'] is expected_use_keyring
     assert client.connect_calls[-1]['reset_keyring'] is False
+
+
+@pytest.mark.parametrize(
+    ('flag_name', 'expected_format'),
+    (
+        ('csv', 'csv'),
+        ('table', 'table'),
+    ),
+)
+def test_run_from_cli_args_sets_legacy_format_flags(
+    monkeypatch: pytest.MonkeyPatch,
+    flag_name: str,
+    expected_format: str,
+) -> None:
+    cli_args = make_cli_args()
+    setattr(cli_args, flag_name, True)
+    client = DummyMyCli()
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    assert cli_args.format == expected_format
+
+
+def test_run_from_cli_args_list_dsn_exits_with_mode_result(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli_args = make_cli_args()
+    cli_args.list_dsn = True
+    client = DummyMyCli()
+    list_dsn_calls: list[DummyMyCli] = []
+    monkeypatch.setattr(main, 'preprocess_cli_args', lambda args, scheme_validator: 0)
+
+    def fake_main_list_dsn(value: DummyMyCli) -> int:
+        list_dsn_calls.append(value)
+        return 7
+
+    monkeypatch.setattr(cli_runner, 'main_list_dsn', fake_main_list_dsn)
+
+    with pytest.raises(SystemExit) as excinfo:
+        cli_runner.run_from_cli_args(cli_args, lambda **_kwargs: client)
+
+    assert excinfo.value.code == 7
+    assert list_dsn_calls == [client]
+
+
+def test_run_from_cli_args_maps_dsn_socket_parameter(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli_args = make_cli_args()
+    cli_args.dsn = 'mysql://user@host/db?socket=/tmp/mysql.sock'
+    client = DummyMyCli()
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    assert client.connect_calls[-1]['socket'] == '/tmp/mysql.sock'
+
+
+def test_run_from_cli_args_maps_dsn_vault_parameters(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli_args = make_cli_args()
+    cli_args.user = 'existing-user'
+    cli_args.password = 'existing-password'
+    cli_args.dsn = (
+        'mysql://host/db?vault_address=https%3A%2F%2Fvault.example.com&vault_mount=kv'
+        '&vault_secret=database%2Fprod&vault_password_field=mysql_password'
+        '&vault_username_field=mysql_username'
+    )
+    client = DummyMyCli()
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    connect_call = client.connect_calls[-1]
+    assert connect_call['vault_address'] == 'https://vault.example.com'
+    assert connect_call['vault_mount'] == 'kv'
+    assert connect_call['vault_secret'] == 'database/prod'
+    assert connect_call['vault_password_field'] == 'mysql_password'
+    assert connect_call['vault_username_field'] == 'mysql_username'
+
+
+def test_run_from_cli_args_uses_no_ssl_for_auto_ssl_over_socket(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli_args = make_cli_args()
+    cli_args.socket = '/tmp/mysql.sock'
+    client = DummyMyCli()
+    client.ssl_mode = 'auto'
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    assert client.connect_calls[-1]['ssl'] is None
+
+
+def test_run_from_cli_args_merges_scalar_global_and_alias_list_init_commands(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cli_args = make_cli_args()
+    cli_args.dsn = 'prod'
+    client = DummyMyCli(
+        config={
+            **default_config(),
+            'alias_dsn': {'prod': 'mysql://u:p@h/db'},
+            'init-commands': {'global': 'set global=1'},
+            'alias_dsn.init-commands': {'prod': ['set alias=1', 'set alias=2']},
+        }
+    )
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    assert client.connect_calls[-1]['init_command'] == 'set global=1; set alias=1; set alias=2'
+
+
+def test_run_from_cli_args_execute_mode_exits_with_mode_result(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli_args = make_cli_args()
+    cli_args.execute = 'select 1'
+    client = DummyMyCli()
+    execute_calls: list[tuple[DummyMyCli, main.CliArgs]] = []
+    monkeypatch.setattr(main, 'preprocess_cli_args', lambda args, scheme_validator: 0)
+    monkeypatch.setattr(cli_runner.sys, 'stdin', SimpleNamespace(isatty=lambda: True))
+    monkeypatch.setattr(cli_runner.sys.stderr, 'isatty', lambda: False)
+
+    def fake_main_execute_from_cli(mycli: DummyMyCli, args: main.CliArgs) -> int:
+        execute_calls.append((mycli, args))
+        return 11
+
+    monkeypatch.setattr(cli_runner, 'main_execute_from_cli', fake_main_execute_from_cli)
+
+    with pytest.raises(SystemExit) as excinfo:
+        cli_runner.run_from_cli_args(cli_args, lambda **_kwargs: client)
+
+    assert excinfo.value.code == 11
+    assert execute_calls == [(client, cli_args)]
+    assert client.close_called is True
+
+
+def test_run_from_cli_args_batch_with_progress_exits_with_mode_result(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cli_args = make_cli_args()
+    cli_args.batch = 'input.sql'
+    cli_args.progress = True
+    client = DummyMyCli()
+    batch_calls: list[tuple[DummyMyCli, main.CliArgs]] = []
+    monkeypatch.setattr(main, 'preprocess_cli_args', lambda args, scheme_validator: 0)
+    monkeypatch.setattr(cli_runner.sys, 'stdin', SimpleNamespace(isatty=lambda: True))
+    monkeypatch.setattr(cli_runner.sys.stderr, 'isatty', lambda: True)
+
+    def fake_main_batch_with_progress_bar(mycli: DummyMyCli, args: main.CliArgs) -> int:
+        batch_calls.append((mycli, args))
+        return 12
+
+    monkeypatch.setattr(cli_runner, 'main_batch_with_progress_bar', fake_main_batch_with_progress_bar)
+
+    with pytest.raises(SystemExit) as excinfo:
+        cli_runner.run_from_cli_args(cli_args, lambda **_kwargs: client)
+
+    assert excinfo.value.code == 12
+    assert batch_calls == [(client, cli_args)]
+    assert client.close_called is True
+
+
+def test_run_from_cli_args_batch_without_progress_exits_with_mode_result(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cli_args = make_cli_args()
+    cli_args.batch = 'input.sql'
+    client = DummyMyCli()
+    batch_calls: list[tuple[DummyMyCli, main.CliArgs]] = []
+    monkeypatch.setattr(main, 'preprocess_cli_args', lambda args, scheme_validator: 0)
+    monkeypatch.setattr(cli_runner.sys, 'stdin', SimpleNamespace(isatty=lambda: True))
+    monkeypatch.setattr(cli_runner.sys.stderr, 'isatty', lambda: False)
+
+    def fake_main_batch_without_progress_bar(mycli: DummyMyCli, args: main.CliArgs) -> int:
+        batch_calls.append((mycli, args))
+        return 13
+
+    monkeypatch.setattr(cli_runner, 'main_batch_without_progress_bar', fake_main_batch_without_progress_bar)
+
+    with pytest.raises(SystemExit) as excinfo:
+        cli_runner.run_from_cli_args(cli_args, lambda **_kwargs: client)
+
+    assert excinfo.value.code == 13
+    assert batch_calls == [(client, cli_args)]
+    assert client.close_called is True
+
+
+def test_run_from_cli_args_stdin_batch_exits_with_mode_result(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli_args = make_cli_args()
+    client = DummyMyCli()
+    batch_calls: list[tuple[DummyMyCli, main.CliArgs]] = []
+    monkeypatch.setattr(main, 'preprocess_cli_args', lambda args, scheme_validator: 0)
+    monkeypatch.setattr(cli_runner.sys, 'stdin', SimpleNamespace(isatty=lambda: False))
+    monkeypatch.setattr(cli_runner.sys.stderr, 'isatty', lambda: False)
+
+    def fake_main_batch_from_stdin(mycli: DummyMyCli, args: main.CliArgs) -> int:
+        batch_calls.append((mycli, args))
+        return 14
+
+    monkeypatch.setattr(cli_runner, 'main_batch_from_stdin', fake_main_batch_from_stdin)
+
+    with pytest.raises(SystemExit) as excinfo:
+        cli_runner.run_from_cli_args(cli_args, lambda **_kwargs: client)
+
+    assert excinfo.value.code == 14
+    assert batch_calls == [(client, cli_args)]
+    assert client.close_called is True

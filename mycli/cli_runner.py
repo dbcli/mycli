@@ -41,6 +41,11 @@ KNOWN_DSN_QUERY_PARAMS = {
     'ssl_mode',
     'ssl_verify_server_cert',
     'tls_version',
+    'vault_address',
+    'vault_mount',
+    'vault_secret',
+    'vault_password_field',
+    'vault_username_field',
 }
 
 
@@ -277,6 +282,16 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
             cli_args.character_set = cli_args.character_set or params[0]
         if params := dsn_params.get('ssh_jump'):
             cli_args.ssh_jump = cli_args.ssh_jump or params[0]
+        if params := dsn_params.get('vault_address'):
+            cli_args.vault_address = cli_args.vault_address or params[0]
+        if params := dsn_params.get('vault_mount'):
+            cli_args.vault_mount = cli_args.vault_mount or params[0]
+        if params := dsn_params.get('vault_secret'):
+            cli_args.vault_secret = cli_args.vault_secret or params[0]
+        if params := dsn_params.get('vault_password_field'):
+            cli_args.vault_password_field = cli_args.vault_password_field or params[0]
+        if params := dsn_params.get('vault_username_field'):
+            cli_args.vault_username_field = cli_args.vault_username_field or params[0]
 
     keepalive_ticks = cli_args.keepalive_ticks if cli_args.keepalive_ticks is not None else mycli.default_keepalive_ticks
     ssl_mode = cli_args.ssl_mode or mycli.ssl_mode
@@ -388,6 +403,7 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
             sys.exit(1)
     else:
         vault_username = None
+    vault_username_from_vault = vault_username is not None
 
     try:
         mycli.connect(
@@ -407,6 +423,12 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
             keepalive_ticks=keepalive_ticks,
             ssh_jump=cli_args.ssh_jump,
             ssh_cli_options=cli_args.ssh_options,
+            vault_address=cli_args.vault_address,
+            vault_mount=cli_args.vault_mount,
+            vault_secret=cli_args.vault_secret,
+            vault_password_field=cli_args.vault_password_field,
+            vault_username_field=cli_args.vault_username_field,
+            vault_username_from_vault=vault_username_from_vault,
         )
 
         if combined_init_cmd:
