@@ -213,7 +213,7 @@ pager = 'less'
 # Note that the hostname is considered to be different if short or qualified.
 # This can be overridden with --use-keyring= at the CLI.
 # A password can be reset with --use-keyring=reset at the CLI.
-# Recommanded: auto
+# Recommended: auto
 use_keyring = False
 
 [editor]
