@@ -42,6 +42,7 @@ def _multiline_exception(text: str) -> bool:
             # or ended with certain commands
             "\\g",
             "\\G",
+            "\\x",
             r"\e",
             r"\edit",
             r"\clip",

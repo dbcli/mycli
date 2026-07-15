@@ -56,6 +56,7 @@ def test_sql_output(mycli):
     assert list(mycli.change_table_format("sql-update")) == [SQLResult(status="Changed table format to sql-update")]
     mycli.main_formatter.query = ""
     mycli.redirect_formatter.query = ""
+    mycli.explorer_formatter.query = ""
     output = mycli.format_sqlresult(SQLResult(header=header, rows=FakeCursor()))
     actual = "\n".join(output)
     assert actual == dedent("""\
@@ -75,6 +76,7 @@ def test_sql_output(mycli):
     assert list(mycli.change_table_format("sql-update-2")) == [SQLResult(status="Changed table format to sql-update-2")]
     mycli.main_formatter.query = ""
     mycli.redirect_formatter.query = ""
+    mycli.explorer_formatter.query = ""
     output = mycli.format_sqlresult(SQLResult(header=header, rows=FakeCursor()))
     assert "\n".join(output) == dedent("""\
             UPDATE `DUAL` SET
@@ -91,6 +93,7 @@ def test_sql_output(mycli):
     assert list(mycli.change_table_format("sql-insert")) == [SQLResult(status="Changed table format to sql-insert")]
     mycli.main_formatter.query = ""
     mycli.redirect_formatter.query = ""
+    mycli.explorer_formatter.query = ""
     output = mycli.format_sqlresult(SQLResult(header=header, rows=FakeCursor()))
     assert "\n".join(output) == dedent("""\
             INSERT INTO `DUAL` (`letters`, `number`, `optional`, `float`, `binary`) VALUES
@@ -101,6 +104,7 @@ def test_sql_output(mycli):
     assert list(mycli.change_table_format("sql-insert")) == [SQLResult(status="Changed table format to sql-insert")]
     mycli.main_formatter.query = "SELECT * FROM `table`"
     mycli.redirect_formatter.query = "SELECT * FROM `table`"
+    mycli.explorer_formatter.query = "SELECT * FROM `table`"
     output = mycli.format_sqlresult(SQLResult(header=header, rows=FakeCursor()))
     assert "\n".join(output) == dedent("""\
             INSERT INTO table (`letters`, `number`, `optional`, `float`, `binary`) VALUES
@@ -111,6 +115,7 @@ def test_sql_output(mycli):
     assert list(mycli.change_table_format("sql-insert")) == [SQLResult(status="Changed table format to sql-insert")]
     mycli.main_formatter.query = "SELECT * FROM `database`.`table`"
     mycli.redirect_formatter.query = "SELECT * FROM `database`.`table`"
+    mycli.explorer_formatter.query = "SELECT * FROM `database`.`table`"
     output = mycli.format_sqlresult(SQLResult(header=header, rows=FakeCursor()))
     assert "\n".join(output) == dedent("""\
             INSERT INTO database.table (`letters`, `number`, `optional`, `float`, `binary`) VALUES

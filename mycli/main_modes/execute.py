@@ -24,15 +24,15 @@ def main_execute_from_cli(mycli: 'MyCli', cli_args: 'CliArgs') -> int:
         execute_sql = cli_args.execute
         if cli_args.format == 'csv':
             mycli.main_formatter.format_name = 'csv'
-            if execute_sql.endswith(r'\G'):
+            if execute_sql.endswith((r'\G', r'\g', r'\x')):
                 execute_sql = execute_sql[:-2]
         elif cli_args.format == 'tsv':
             mycli.main_formatter.format_name = 'tsv'
-            if execute_sql.endswith(r'\G'):
+            if execute_sql.endswith((r'\G', r'\g', r'\x')):
                 execute_sql = execute_sql[:-2]
         elif cli_args.format == 'table':
             mycli.main_formatter.format_name = 'ascii'
-            if execute_sql.endswith(r'\G'):
+            if execute_sql.endswith((r'\G', r'\g', r'\x')):
                 execute_sql = execute_sql[:-2]
         else:
             mycli.main_formatter.format_name = 'tsv'

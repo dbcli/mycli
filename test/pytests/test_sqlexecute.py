@@ -960,8 +960,9 @@ def test_run_uses_special_command_results_without_regular_execution(monkeypatch)
 
 
 def test_run_falls_back_to_regular_sql_and_handles_output_flags(monkeypatch) -> None:
-    cursors = [FakeQueryCursor(), FakeQueryCursor()]
+    cursors = [FakeQueryCursor(), FakeQueryCursor(), FakeQueryCursor()]
     expanded_values: list[bool] = []
+    explorer_values: list[bool] = []
     forced_horizontal_values: list[bool] = []
     get_result_calls: list[list[str]] = []
 
@@ -977,7 +978,7 @@ def test_run_falls_back_to_regular_sql_and_handles_output_flags(monkeypatch) -> 
     monkeypatch.setattr(
         sqlexecute.iocommands,
         'split_queries',
-        lambda _statement: iter(['select 1\\G', 'select 2\\g']),
+        lambda _statement: iter(['select 1\\G', 'select 2\\g', 'select 3\\x']),
     )
     monkeypatch.setattr(
         sqlexecute.iocommands,
@@ -989,17 +990,23 @@ def test_run_falls_back_to_regular_sql_and_handles_output_flags(monkeypatch) -> 
         'set_forced_horizontal_output',
         lambda value: forced_horizontal_values.append(value),
     )
+    monkeypatch.setattr(
+        sqlexecute.iocommands,
+        'set_explorer_output',
+        lambda value: explorer_values.append(value),
+    )
     monkeypatch.setattr(SQLExecute, 'get_result', fake_get_result)
 
     executor = make_executor_for_run_tests(FakeQueryConnection(cursors))
 
     results = list(executor.run('select 1; select 2'))
 
-    assert [result.status for result in results] == ['ran select 1', 'ran select 2']
+    assert [result.status for result in results] == ['ran select 1', 'ran select 2', 'ran select 3']
     assert expanded_values == [True, False]
+    assert explorer_values == [True]
     assert forced_horizontal_values == [True]
-    assert [cursor.executed for cursor in cursors] == [['select 1'], ['select 2']]
-    assert get_result_calls == [['select 1'], ['select 2']]
+    assert [cursor.executed for cursor in cursors] == [['select 1'], ['select 2'], ['select 3']]
+    assert get_result_calls == [['select 1'], ['select 2'], ['select 3']]
 
 
 def test_run_yields_each_non_empty_result_set_until_nextset_is_false(monkeypatch) -> None:

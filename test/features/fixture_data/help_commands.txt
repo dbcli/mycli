@@ -36,4 +36,5 @@
 | /use            | /u       | /use <database>                   | Change to a new database.                                   |
 | /warnings       | /W       | /warnings                         | Enable automatic warnings display.                          |
 | /watch          | <null>   | /watch [seconds] [-c] <query>     | Execute query every [seconds] seconds (5 by default).       |
+| \x              | <null>   | <query>\x                         | Display query results in an explorer rather than a pager.   |
 +-----------------+----------+-----------------------------------+-------------------------------------------------------------+

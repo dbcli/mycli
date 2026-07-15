@@ -266,6 +266,76 @@ def test_output_sends_buffer_to_pager_when_pager_is_explicit(monkeypatch: pytest
     assert paged_lines == ['row 1\n', 'row 2\n']
 
 
+def test_output_sends_buffer_to_explorer_and_clears_temporary_pager(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli = make_bare_mycli()
+    cli.prompt_session = None
+    cli.explicit_pager = False
+    cli.explorer_command = 'explorer-cmd'
+    cli.explorer_exists = lambda: True  # type: ignore[method-assign]
+    cli.log_output = lambda value: None  # type: ignore[assignment]
+    cli.get_output_margin = lambda status=None: 1  # type: ignore[assignment]
+    paged_lines: list[str] = []
+    monkeypatch.delenv('PAGER', raising=False)
+    monkeypatch.setattr(output_module.special, 'write_tee', lambda value: None)
+    monkeypatch.setattr(output_module.special, 'write_once', lambda value: None)
+    monkeypatch.setattr(output_module.special, 'write_pipe_once', lambda value: None)
+    monkeypatch.setattr(output_module.special, 'is_redirected', lambda: False)
+    monkeypatch.setattr(output_module.special, 'is_explorer_output', lambda: True)
+    monkeypatch.setattr(click, 'echo_via_pager', lambda values: paged_lines.extend(list(values)))
+    monkeypatch.setattr(prompt_toolkit, 'print_formatted_text', lambda text, style=None: None)
+
+    OutputMixin.output(cli, itertools.chain(['row 1', 'row 2']), SQLResult())
+
+    assert paged_lines == ['row 1\n', 'row 2\n']
+    assert 'PAGER' not in output_module.os.environ
+
+
+def test_output_sends_buffer_to_explorer_and_restores_existing_pager(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli = make_bare_mycli()
+    cli.prompt_session = None
+    cli.explicit_pager = False
+    cli.explorer_command = 'explorer-cmd'
+    cli.explorer_exists = lambda: True  # type: ignore[method-assign]
+    cli.log_output = lambda value: None  # type: ignore[assignment]
+    cli.get_output_margin = lambda status=None: 1  # type: ignore[assignment]
+    paged_lines: list[str] = []
+    monkeypatch.setenv('PAGER', 'original-pager')
+    monkeypatch.setattr(output_module.special, 'write_tee', lambda value: None)
+    monkeypatch.setattr(output_module.special, 'write_once', lambda value: None)
+    monkeypatch.setattr(output_module.special, 'write_pipe_once', lambda value: None)
+    monkeypatch.setattr(output_module.special, 'is_redirected', lambda: False)
+    monkeypatch.setattr(output_module.special, 'is_explorer_output', lambda: True)
+    monkeypatch.setattr(click, 'echo_via_pager', lambda values: paged_lines.extend(list(values)))
+    monkeypatch.setattr(prompt_toolkit, 'print_formatted_text', lambda text, style=None: None)
+
+    OutputMixin.output(cli, itertools.chain(['row']), SQLResult())
+
+    assert paged_lines == ['row\n']
+    assert output_module.os.environ['PAGER'] == 'original-pager'
+
+
+def test_output_reports_missing_configured_explorer(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli = make_bare_mycli()
+    cli.prompt_session = None
+    cli.explicit_pager = False
+    cli.explorer_command = 'missing-explorer'
+    cli.explorer_exists = lambda: False  # type: ignore[method-assign]
+    cli.log_output = lambda value: None  # type: ignore[assignment]
+    cli.get_output_margin = lambda status=None: 1  # type: ignore[assignment]
+    printed_lines: list[tuple[str, dict[str, Any]]] = []
+    monkeypatch.setattr(output_module.special, 'write_tee', lambda value: None)
+    monkeypatch.setattr(output_module.special, 'write_once', lambda value: None)
+    monkeypatch.setattr(output_module.special, 'write_pipe_once', lambda value: None)
+    monkeypatch.setattr(output_module.special, 'is_redirected', lambda: False)
+    monkeypatch.setattr(output_module.special, 'is_explorer_output', lambda: True)
+    monkeypatch.setattr(click, 'secho', lambda value, **kwargs: printed_lines.append((value, kwargs)))
+    monkeypatch.setattr(prompt_toolkit, 'print_formatted_text', lambda text, style=None: None)
+
+    OutputMixin.output(cli, itertools.chain(['row']), SQLResult())
+
+    assert printed_lines == [('Configured explorer command not found: missing-explorer.', {'err': True, 'fg': 'red'})]
+
+
 def test_configure_pager_uses_more_for_missing_less_on_windows(monkeypatch: pytest.MonkeyPatch) -> None:
     cli = make_bare_mycli()
     cli.config = ConfigObj({'main': {'pager': 'less', 'enable_pager': 'True'}})
@@ -312,6 +382,23 @@ def test_configure_pager_disables_pager_when_configured(monkeypatch: pytest.Monk
     assert cli.explicit_pager is False
 
 
+def test_explorer_exists_checks_command_name(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli = make_bare_mycli()
+    cli.explorer_command = 'explorer-cmd --with-args'
+    checked: list[str] = []
+    monkeypatch.setattr(output_module.shutil, 'which', lambda value: checked.append(value) or '/bin/explorer-cmd')  # type: ignore[func-returns-value]
+
+    assert OutputMixin.explorer_exists(cli) is True
+    assert checked == ['explorer-cmd']
+
+
+def test_explorer_exists_returns_false_without_command() -> None:
+    cli = make_bare_mycli()
+    cli.explorer_command = ''
+
+    assert OutputMixin.explorer_exists(cli) is False
+
+
 def test_format_sqlresult_uses_redirect_formatter_and_appends_preamble_postamble() -> None:
     cli = make_bare_mycli()
     cli.main_formatter = DummyFormatter()
@@ -323,6 +410,21 @@ def test_format_sqlresult_uses_redirect_formatter_and_appends_preamble_postamble
     assert formatted == ['before', 'plain output', 'after']
     assert cli.main_formatter.calls == []
     assert cli.redirect_formatter.calls
+
+
+def test_format_sqlresult_uses_explorer_formatter_and_trims_footer(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli = make_bare_mycli()
+    cli.main_formatter = DummyFormatter()
+    cli.explorer_formatter = DummyFormatter()
+    cli.explorer_trim_footer = True
+    monkeypatch.setattr(output_module.special, 'is_explorer_output', lambda: True)
+    cli.explorer_formatter.format_output = lambda *args, **kwargs: ['header', 'row', 'footer']  # type: ignore[method-assign]
+    result = SQLResult(header=['id'], rows=[(1,)])
+
+    formatted = list(OutputMixin.format_sqlresult(cli, result))
+
+    assert formatted == ['header', 'row']
+    assert cli.main_formatter.calls == []
 
 
 def test_format_sqlresult_uses_null_string_when_default_missing_value_is_configured() -> None:

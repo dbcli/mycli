@@ -138,7 +138,9 @@ set environment variable MYSQL_DSN to set a default DSN!
 ### general
 ###
 
-display query output vertically using \G at the end of a query!
+display output vertically using \G at the end of a query!
+
+display output in an interactive explorer \x at the end of a query!
 
 run SQL scripts in batch mode using the standard input!
 
@@ -283,6 +285,8 @@ use "min_completion_trigger" in ~/.myclirc to defer completions!
 colorize search previews with "highlight_preview" in ~/.myclirc!
 
 set editor_command = "code --wait" in ~/.myclirc to edit queries using VS Code!
+
+set up an interactive output explorer using the "[explorer]" section of ~/.myclirc!
 
 ###
 ### redirection
