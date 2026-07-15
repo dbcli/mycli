@@ -226,7 +226,7 @@ def show_help(*_args) -> list[SQLResult]:
     header = ["Command", "Shortcut", "Usage", "Description"]
     result = []
 
-    for _, value in sorted(COMMANDS.items(), key=lambda x: str.casefold(x[0])):
+    for _, value in sorted(COMMANDS.items(), key=lambda x: str.casefold(x[0].removeprefix('\\').removeprefix('/'))):
         if value.hidden:
             continue
         if value.aliases:
