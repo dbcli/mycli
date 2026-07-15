@@ -8,6 +8,11 @@ Features
 * Experimental: let Vault properties be set in DSNs.
 
 
+Documentation
+---------
+* Spellcheck myclirc commentary.
+
+
 2.2.0 (2026/07/11)
 ==============
 
