@@ -181,6 +181,7 @@ def make_repl_cli(sqlexecute: Any | None = None) -> Any:
     cli.llm_prompt_section_truncate = 0
     cli.main_formatter = DummyFormatterWithQuery()
     cli.redirect_formatter = DummyFormatterWithQuery()
+    cli.explorer_formatter = DummyFormatterWithQuery()
     cli.pager_configured = 0
     refresh_calls: list[bool] = []
     output_calls: list[tuple[list[str], Any, bool]] = []

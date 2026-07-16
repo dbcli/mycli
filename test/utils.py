@@ -135,6 +135,7 @@ def make_bare_mycli() -> Any:
     cli.logger = cast(Any, DummyLogger())
     cli.main_formatter = DummyFormatter()
     cli.redirect_formatter = DummyFormatter()
+    cli.explorer_formatter = DummyFormatter()
     cli.helpers_style = 'helpers-style'
     cli.helpers_warnings_style = 'helpers-warnings-style'
     cli.ptoolkit_style = cast(Any, 'pt-style')

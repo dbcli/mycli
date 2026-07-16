@@ -20,6 +20,7 @@ class ClientQueryMixin:
         smart_completion: bool
         main_formatter: Any
         redirect_formatter: Any
+        explorer_formatter: Any
         prompt_session: Any
         null_string: str | None
         numeric_alignment: str | None
@@ -86,6 +87,7 @@ class ClientQueryMixin:
         for result in results:
             self.main_formatter.query = query
             self.redirect_formatter.query = query
+            self.explorer_formatter.query = query
             output = self.format_sqlresult(
                 result,
                 is_expanded=special.is_expanded_output(),

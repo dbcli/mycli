@@ -5,6 +5,7 @@ from decimal import Decimal
 from io import TextIOWrapper
 import itertools
 import os
+import shlex
 import shutil
 from typing import Generator, Literal, Protocol
 
@@ -51,6 +52,9 @@ class OutputMixin(MyCliState):
     terminal_tab_title_format: str
     terminal_window_title_format: str
     toolbar_format: str
+    explorer_formatter: TabularOutputFormatter
+    explorer_command: str
+    explorer_trim_footer: bool
     redirect_formatter: TabularOutputFormatter
     config: ConfigObj
     logfile: TextIOWrapper | Literal[False] | None
@@ -133,6 +137,8 @@ class OutputMixin(MyCliState):
 
                 if special.is_redirected():
                     pass
+                elif special.is_explorer_output():
+                    buf.append(line)
                 elif fits or output_via_pager:
                     buf.append(line)
                     if len(line) > size_columns or i > (size_rows - margin):
@@ -148,12 +154,23 @@ class OutputMixin(MyCliState):
                     click.secho(line)
 
             if buf:
-                if output_via_pager:
 
-                    def newlinewrapper(text: list[str]) -> Generator[str, None, None]:
-                        for line in text:
-                            yield line + "\n"
+                def newlinewrapper(text: list[str]) -> Generator[str, None, None]:
+                    for line in text:
+                        yield line + "\n"
 
+                if special.is_explorer_output():
+                    if self.explorer_exists() or not self.explorer_command:
+                        old_pager = os.environ.get('PAGER')
+                        os.environ['PAGER'] = self.explorer_command or old_pager or 'less'
+                        click.echo_via_pager(newlinewrapper(buf))
+                        if old_pager:
+                            os.environ['PAGER'] = old_pager
+                        else:
+                            del os.environ['PAGER']
+                    else:
+                        click.secho(f'Configured explorer command not found: {self.explorer_command}.', err=True, fg='red')
+                elif output_via_pager:
                     click.echo_via_pager(newlinewrapper(buf))
                 else:
                     for line in buf:
@@ -187,6 +204,11 @@ class OutputMixin(MyCliState):
         if not self.config["main"].as_bool("enable_pager"):
             special.disable_pager()
 
+    def explorer_exists(self) -> bool:
+        if cmd := shlex.split(self.explorer_command or ''):
+            return bool(shutil.which(cmd[0]))
+        return False
+
     def format_sqlresult(
         self,
         result,
@@ -200,6 +222,8 @@ class OutputMixin(MyCliState):
     ) -> itertools.chain[str]:
         if is_redirected:
             use_formatter = self.redirect_formatter
+        elif special.is_explorer_output():
+            use_formatter = self.explorer_formatter
         else:
             use_formatter = self.main_formatter
 
@@ -254,6 +278,11 @@ class OutputMixin(MyCliState):
 
             if isinstance(formatted, str):
                 formatted = formatted.splitlines()
+
+            if special.is_explorer_output() and self.explorer_trim_footer:
+                formatted = list(formatted)
+                formatted.pop()
+
             formatted = iter(formatted)
 
             if not is_expanded and max_width and result.header and result_rows:

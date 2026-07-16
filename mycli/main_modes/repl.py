@@ -615,6 +615,7 @@ def _one_iteration(
 
         special.set_expanded_output(False)
         special.set_forced_horizontal_output(False)
+        special.set_explorer_output(False)
 
         try:
             text = handle_editor_command(
@@ -718,6 +719,7 @@ def _one_iteration(
         results = sqlexecute.run(text)
         mycli.main_formatter.query = text
         mycli.redirect_formatter.query = text
+        mycli.explorer_formatter.query = text
         successful = True
         _output_results(mycli, state, results, start)
         special.unset_once_if_written(mycli.post_redirect_command)

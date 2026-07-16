@@ -363,7 +363,13 @@ class SQLExecute:
         else:
             components = iocommands.split_queries(statement)
 
+        # todo: split_queries should probably split on \G and friends, and
+        # settings such as expanded output should be reset between queries.
         for sql in components:
+            # \x is treated specially since we have to set the explorer output.
+            if sql.endswith("\\x"):
+                iocommands.set_explorer_output(True)
+                sql = sql[:-2].strip()
             # \G is treated specially since we have to set the expanded output.
             if sql.endswith("\\G"):
                 iocommands.set_expanded_output(True)

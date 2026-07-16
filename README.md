@@ -32,13 +32,13 @@ You might need `sudo` on Linux.
 pip install --upgrade 'mycli[all]'
 ```
 
-or, only on macOS (`fzf` and `pygments` are optional):
+or, only on macOS (`fzf` and `pygments` are optional but recommended):
 
 ```bash
 brew update && brew install mycli fzf pygments
 ```
 
-or, only on Debian or Ubuntu (`fzf` and `pygments` are optional):
+or, only on Debian or Ubuntu (`fzf` and `pygments` are optional but recommended):
 
 ```bash
 sudo apt-get install mycli fzf python3-pygments
@@ -58,6 +58,7 @@ Features
 * Auto-completion as you type for SQL keywords as well as tables, views,
   columns, enums, and more!
 * Fuzzy history search using [fzf](https://github.com/junegunn/fzf).
+* Output explorer using [fzf](https://github.com/junegunn/fzf) or other tools.
 * Syntax highlighting using [Pygments](https://pygments.org/).
 * Smart-completion (enabled by default) will suggest context-sensitive completion.
     - `SELECT * FROM <tab>` will only show table names.
@@ -101,15 +102,15 @@ These are some alternative ways to install mycli that are not managed by our
 team but provided by OS package maintainers.  OS packages could be somewhat
 out of date.
 
-If present, the `fzf` package can be used for fuzzy history search, and
-`pygemtize` can be used for syntax highlighting within the fuzzy history
-search.  The `less` package is also expected, but almost always already
-installed.
+If present, the `fzf` package can be used for fuzzy history search, and as an
+output "explorer" with the `\x` special command. `pygemtize` can be used for
+syntax highlighting within the fuzzy history search.  The `less` package is
+also expected, but almost always already installed.
 
 ### Arch, Manjaro
 
 You can install the `mycli` package available in the AUR.  `fzf` and
-`python-pygments` are optional:
+`python-pygments` are optional but recommended:
 
 ```bash
 yay -S mycli fzf python-pygments
@@ -118,7 +119,8 @@ yay -S mycli fzf python-pygments
 ### Debian, Ubuntu
 
 On Debian and Ubuntu distributions, you can easily install the mycli package
-using apt.  The `fzf` and `python3-pygments` packages are optional:
+using apt.  The `fzf` and `python3-pygments` packages are optional but
+recommended:
 
 ```bash
 sudo apt-get install mycli fzf python3-pygments
@@ -127,7 +129,7 @@ sudo apt-get install mycli fzf python3-pygments
 ### Fedora
 
 Fedora has a package available for mycli; install it using dnf.  The `fzf` and
-`python-pygments` packages are optional:
+`python-pygments` packages are optional but recommended:
 
 ```bash
 sudo dnf install mycli fzf python-pygments
@@ -139,7 +141,9 @@ sudo dnf install mycli fzf python-pygments
 
 Install the `less` pager, for example by `scoop install less`.
 
-Follow the instructions on this blogpost: https://web.archive.org/web/20221006045208/https://www.codewall.co.uk/installing-using-mycli-on-windows/
+Install the `fzf` fuzzy finder, for example by `scoop install fzf`.
+
+Follow the instructions on this blog post: https://web.archive.org/web/20221006045208/https://www.codewall.co.uk/installing-using-mycli-on-windows/
 
 The libraries used in mycli are Windows-compatible, but there are known
 limitations according to the test suite.  The basics work without any
@@ -152,11 +156,24 @@ PRs to address shortcomings on Windows would be welcome!
 Mycli is more compatible with WSL than with native Windows, though still
 not 100% perfect.  This is a good option for using mycli on Windows.
 
+With WSL, you are probably using an Ubuntu distribution, in which case
+recommended dependencies can be installed by
+
+```bash
+sudo apt-get install fzf python3-pygments
+```
+
+and mycli can be installed by `apt-get` or by `pip` (recommended):
+
+```bash
+pip install --upgrade 'mycli[all]'
+```
+
 PRs to complete WSL support would be welcome!
 
 ### Thanks
 
-This project was funded through kickstarter. Our thanks to the [backers](https://mycli.net/sponsors) who supported the project.
+This project was funded through Kickstarter. Our thanks to the [backers](https://mycli.net/sponsors) who supported the project.
 
 A special thanks to [Jonathan Slenders](https://twitter.com/jonathan_s) for
 creating [Python Prompt Toolkit](https://github.com/jonathanslenders/python-prompt-toolkit),
@@ -184,7 +201,7 @@ following in `~/.myclirc`:
 default_character_set = utf8
 ```
 
-or set `--charset=utf8` when invoking MyCLI.
+or set `--charset=utf8` when invoking mycli
 
 ### Configuration and Usage
 

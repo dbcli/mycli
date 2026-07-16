@@ -33,6 +33,7 @@ sqlparse.engine.grouping.MAX_GROUPING_TOKENS = None  # type: ignore[assignment]
 TIMING_ENABLED = False
 use_expanded_output = False
 force_horizontal_output = False
+use_explorer_output = False
 PAGER_ENABLED = True
 SHOW_FAVORITE_QUERY = True
 tee_file = None
@@ -198,6 +199,15 @@ def forced_horizontal() -> bool:
     return force_horizontal_output
 
 
+def set_explorer_output(val: bool) -> None:
+    global use_explorer_output
+    use_explorer_output = val
+
+
+def is_explorer_output() -> bool:
+    return use_explorer_output
+
+
 _logger = logging.getLogger(__name__)
 
 
@@ -207,7 +217,7 @@ def editor_command(command: str) -> bool:
     :param command: string
     """
     # special case: allow help on the \edit command
-    if re.match(r'^/?([Hh][Ee][Ll][Pp])\s+(\\e|\\edit|/e|/edit)\s*(;|\\G|\\g)?\s*$', command):
+    if re.match(r'^/?([Hh][Ee][Ll][Pp])\s+(\\e|\\edit|/e|/edit)\s*(;|\\G|\\g|\\x)?\s*$', command):
         return False
     # It is possible to have `\e filename` or `SELECT * FROM \e`. So we check
     # for both conditions.

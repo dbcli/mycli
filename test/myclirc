@@ -226,6 +226,23 @@ use_keyring = False
 # For emacsclient, first start the server with "M-x server-start".
 editor_command =
 
+[explorer]
+
+# Command to invoke for output of queries ending in \x, instead of the pager.
+# The command should accept query results on the standard input.
+# Suggestions:
+# * fzf --no-height --header-lines=3 --layout=reverse  (good with tabular output formats)
+# * csvlens                                            (good with format csv)
+# * jless                                              (good with format jsonl)
+explorer_command = fzf --no-height --header-lines=3 --layout=reverse
+
+# Format to emit output for queries ending in \x.
+# Suggestions: see explorer_command above.
+format = mysql_unicode
+
+# Whether to remove the last line from the formatted output.
+trim_footer = False
+
 [search]
 
 # Whether to apply syntax highlighting to the preview window in fuzzy history

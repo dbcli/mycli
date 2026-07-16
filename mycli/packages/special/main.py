@@ -338,6 +338,14 @@ def quit_(*_args):
     case_sensitive=True,
     backslash_only=True,
 )
+@special_command(
+    "\\x",
+    "<query>\\x",
+    "Display query results in an explorer rather than a pager.",
+    arg_type=ArgType.NO_QUERY,
+    case_sensitive=True,
+    backslash_only=True,
+)
 def stub():
     raise NotImplementedError
 

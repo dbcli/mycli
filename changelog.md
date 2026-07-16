@@ -6,6 +6,7 @@ Features
 * Set minimum times for transient toolbar messages.
 * `editor_command` entry in `~/.myclirc` which overrides environment.
 * Experimental: let Vault properties be set in DSNs.
+* Add a `\x` special command to send output to an explorer rather than a pager.
 
 
 Documentation
