@@ -48,6 +48,7 @@ A command line client for MySQL with auto-completion and syntax highlighting.
 ├── mycli/packages/sqlresult.py           # the `SQLResult` dataclass for holding responses
 ├── mycli/packages/string_utils.py        # generic string utilities
 ├── mycli/packages/tabular_output/        # extends cli_helper with additional output formats
+├── mycli/password_sources.py             # password sources and precedence
 ├── mycli/schema_prefetcher.py            # background prefetcher for multi-schema auto-completion
 ├── mycli/sqlcompleter.py                 # offers SQL completions
 ├── mycli/sqlexecute.py                   # runs SQL queries

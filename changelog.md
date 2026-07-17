@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Features
+---------
+* Make password sources and precedence configurable.
+
+
 Bug Fixes
 ---------
 * Don't create `~/.myclirc` if the user adopted the XDG layout for myclirc.

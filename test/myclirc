@@ -205,6 +205,18 @@ enable_pager = True
 # Choose a specific pager
 pager = python test/features/wrappager.py ---boundary---
 
+# Comma-separated sources to respect for a password, in order of precendence.
+# Valid choices:
+# * prompt
+# * cli_literal
+# * cli_file
+# * environment
+# * dsn
+# * vault
+# * mylogin_cnf
+# * keyring
+password_sources = prompt, cli_literal, cli_file, environment, dsn, vault, mylogin_cnf, keyring
+
 # Whether to store and retrieve passwords from the system keyring.
 # * False - never use keyring
 # * True - always use keyring

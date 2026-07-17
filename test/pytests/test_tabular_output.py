@@ -11,6 +11,7 @@ import pytest
 
 from mycli.main import MyCli
 from mycli.packages.sqlresult import SQLResult
+from mycli.password_sources import PasswordCandidates
 from test.utils import HOST, PASSWORD, PORT, USER, dbtest
 
 default_config_file = os.path.join(os.path.dirname(__file__), "../myclirc")
@@ -19,7 +20,9 @@ default_config_file = os.path.join(os.path.dirname(__file__), "../myclirc")
 @pytest.fixture
 def mycli():
     cli = MyCli()
-    cli.connect(None, USER, PASSWORD, HOST, PORT, None, init_command=None)
+    pc = PasswordCandidates()
+    pc.add_value('cli_literal', PASSWORD)
+    cli.connect(None, USER, pc, HOST, PORT, None, init_command=None)
     yield cli
     cli.sqlexecute.conn.close()
 

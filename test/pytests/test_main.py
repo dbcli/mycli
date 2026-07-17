@@ -55,6 +55,7 @@ import mycli.packages.cli_utils
 import mycli.packages.special
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
 from mycli.packages.sqlresult import SQLResult
+from mycli.password_sources import KNOWN_PASSWORD_SOURCES
 from mycli.sqlexecute import ServerInfo, SQLExecute
 from mycli.types import Query
 from test.utils import (
@@ -95,6 +96,13 @@ CLI_ARGS_WITHOUT_DB = [
     default_config_file,
 ]
 CLI_ARGS = CLI_ARGS_WITHOUT_DB + [TEST_DATABASE]
+
+
+def resolve_connect_password(connect_args: dict[str, Any]) -> tuple[str, str | int] | None:
+    selected = connect_args['password_candidates'].resolve(KNOWN_PASSWORD_SOURCES)
+    if selected is None:
+        return None
+    return selected.source, selected.value
 
 
 @dbtest
@@ -936,7 +944,7 @@ def test_dsn(monkeypatch):
     assert result.exit_code == 0, result.output + " " + str(result.exception)
     assert (
         MockMyCli.connect_args["user"] == "dsn_user"
-        and MockMyCli.connect_args["passwd"] == "dsn_passwd"
+        and resolve_connect_password(MockMyCli.connect_args) == ('dsn', 'dsn_passwd')
         and MockMyCli.connect_args["host"] == "dsn_host"
         and MockMyCli.connect_args["port"] == 1
         and MockMyCli.connect_args["database"] == "dsn_database"
@@ -966,7 +974,7 @@ def test_dsn(monkeypatch):
     assert result.exit_code == 0, result.output + " " + str(result.exception)
     assert (
         MockMyCli.connect_args["user"] == "arg_user"
-        and MockMyCli.connect_args["passwd"] == "arg_password"
+        and resolve_connect_password(MockMyCli.connect_args) == ('cli_literal', 'arg_password')
         and MockMyCli.connect_args["host"] == "arg_host"
         and MockMyCli.connect_args["port"] == 3
         and MockMyCli.connect_args["database"] == "arg_database"
@@ -987,7 +995,7 @@ def test_dsn(monkeypatch):
     assert result.exit_code == 0, result.output + " " + str(result.exception)
     assert (
         MockMyCli.connect_args["user"] == "alias_dsn_user"
-        and MockMyCli.connect_args["passwd"] == "alias_dsn_passwd"
+        and resolve_connect_password(MockMyCli.connect_args) == ('dsn', 'alias_dsn_passwd')
         and MockMyCli.connect_args["host"] == "alias_dsn_host"
         and MockMyCli.connect_args["port"] == 4
         and MockMyCli.connect_args["database"] == "alias_dsn_database"
@@ -1025,7 +1033,7 @@ def test_dsn(monkeypatch):
     assert result.exit_code == 0, result.output + " " + str(result.exception)
     assert (
         MockMyCli.connect_args["user"] == "arg_user"
-        and MockMyCli.connect_args["passwd"] == "arg_password"
+        and resolve_connect_password(MockMyCli.connect_args) == ('cli_literal', 'arg_password')
         and MockMyCli.connect_args["host"] == "arg_host"
         and MockMyCli.connect_args["port"] == 5
         and MockMyCli.connect_args["database"] == "arg_database"
@@ -1036,7 +1044,7 @@ def test_dsn(monkeypatch):
     assert result.exit_code == 0, result.output + " " + str(result.exception)
     assert (
         MockMyCli.connect_args["user"] == "dsn_user"
-        and MockMyCli.connect_args["passwd"] is None
+        and resolve_connect_password(MockMyCli.connect_args) is None
         and MockMyCli.connect_args["host"] == "dsn_host"
         and MockMyCli.connect_args["port"] == 6
         and MockMyCli.connect_args["database"] == "dsn_database"
@@ -1047,7 +1055,7 @@ def test_dsn(monkeypatch):
     assert result.exit_code == 0, result.output + " " + str(result.exception)
     assert (
         MockMyCli.connect_args["user"] == "dsn_user"
-        and MockMyCli.connect_args["passwd"] == "dsn_passwd"
+        and resolve_connect_password(MockMyCli.connect_args) == ('dsn', 'dsn_passwd')
         and MockMyCli.connect_args["host"] == "dsn_host"
         and MockMyCli.connect_args["port"] == 6
         and MockMyCli.connect_args["database"] == "dsn_database"
@@ -1083,7 +1091,7 @@ def test_dsn(monkeypatch):
     )
     assert result.exit_code == 0, result.output + ' ' + str(result.exception)
     assert MockMyCli.connect_args['user'] == 'dsn_user'
-    assert MockMyCli.connect_args['passwd'] == 'dsn_passwd'
+    assert resolve_connect_password(MockMyCli.connect_args) == ('dsn', 'dsn_passwd')
     assert MockMyCli.connect_args['host'] == 'dsn_host'
     assert MockMyCli.connect_args['port'] == 6
     assert MockMyCli.connect_args['database'] == 'dsn_database'
@@ -1100,7 +1108,7 @@ def test_dsn(monkeypatch):
     assert result.exit_code == 0, result.output + ' ' + str(result.exception)
     assert (
         MockMyCli.connect_args['user'] == 'dsn_user'
-        and MockMyCli.connect_args['passwd'] == 'dsn_passwd'
+        and resolve_connect_password(MockMyCli.connect_args) == ('dsn', 'dsn_passwd')
         and MockMyCli.connect_args['host'] == 'dsn_host'
         and MockMyCli.connect_args['port'] == 6
         and MockMyCli.connect_args['database'] == 'dsn_database'
@@ -1115,7 +1123,7 @@ def test_dsn(monkeypatch):
     )
     assert result.exit_code == 0, result.output + ' ' + str(result.exception)
     assert MockMyCli.connect_args['user'] == 'dsn_user'
-    assert MockMyCli.connect_args['passwd'] == 'dsn_passwd'
+    assert resolve_connect_password(MockMyCli.connect_args) == ('dsn', 'dsn_passwd')
     assert MockMyCli.connect_args['host'] == DEFAULT_HOST
     assert MockMyCli.connect_args['database'] == 'dsn_database'
     assert MockMyCli.connect_args['socket'] == 'mysql.sock'
@@ -1129,7 +1137,7 @@ def test_dsn(monkeypatch):
     )
     assert result.exit_code == 0, result.output + ' ' + str(result.exception)
     assert MockMyCli.connect_args['user'] == 'dsn_user'
-    assert MockMyCli.connect_args['passwd'] == 'dsn_passwd'
+    assert resolve_connect_password(MockMyCli.connect_args) == ('dsn', 'dsn_passwd')
     assert MockMyCli.connect_args['host'] == DEFAULT_HOST
     assert MockMyCli.connect_args['database'] == 'dsn_database'
     assert MockMyCli.connect_args['character_set'] == 'latin1'
@@ -1144,7 +1152,7 @@ def test_dsn(monkeypatch):
     )
     assert result.exit_code == 0, result.output + ' ' + str(result.exception)
     assert MockMyCli.connect_args['user'] == 'dsn_user'
-    assert MockMyCli.connect_args['passwd'] == 'dsn_passwd'
+    assert resolve_connect_password(MockMyCli.connect_args) == ('dsn', 'dsn_passwd')
     assert MockMyCli.connect_args['host'] == DEFAULT_HOST
     assert MockMyCli.connect_args['database'] == 'dsn_database'
     assert MockMyCli.connect_args['character_set'] == 'utf8mb3'
@@ -1198,7 +1206,7 @@ def test_mysql_dsn_envvar(monkeypatch):
     assert 'DSN environment variable is deprecated' not in result.output
     assert (
         MockMyCli.connect_args['user'] == 'dsn_user'
-        and MockMyCli.connect_args['passwd'] == 'dsn_passwd'
+        and resolve_connect_password(MockMyCli.connect_args) == ('dsn', 'dsn_passwd')
         and MockMyCli.connect_args['host'] == 'dsn_host'
         and MockMyCli.connect_args['port'] == 7
         and MockMyCli.connect_args['database'] == 'dsn_database'
@@ -1263,7 +1271,7 @@ def test_password_option_uses_cleartext_value(monkeypatch):
         ],
     )
     assert result.exit_code == 0, result.output + ' ' + str(result.exception)
-    assert MockMyCli.connect_args['passwd'] == 'cleartext_password'
+    assert resolve_connect_password(MockMyCli.connect_args) == ('cli_literal', 'cleartext_password')
 
 
 def test_password_option_overrides_password_file_and_mysql_pwd(monkeypatch):
@@ -1332,7 +1340,7 @@ def test_password_option_overrides_password_file_and_mysql_pwd(monkeypatch):
             ],
         )
         assert result.exit_code == 0, result.output + ' ' + str(result.exception)
-        assert MockMyCli.connect_args['passwd'] == 'option_password'
+        assert resolve_connect_password(MockMyCli.connect_args) == ('cli_literal', 'option_password')
     finally:
         os.remove(password_file.name)
 
@@ -1400,7 +1408,7 @@ def test_password_file_option_reads_password(monkeypatch):
             ],
         )
         assert result.exit_code == 0, result.output + ' ' + str(result.exception)
-        assert MockMyCli.connect_args['passwd'] == 'file_password'
+        assert resolve_connect_password(MockMyCli.connect_args) == ('cli_file', 'file_password')
     finally:
         os.remove(password_file.name)
 
@@ -1810,7 +1818,7 @@ def test_mysql_user_envvar_overrides_dsn_resolution(monkeypatch):
     result = runner.invoke(mycli.main.click_entrypoint, args=['prod'])
     assert result.exit_code == 0, result.output + ' ' + str(result.exception)
     assert MockMyCli.connect_args['user'] == 'env_user'
-    assert MockMyCli.connect_args['passwd'] is None
+    assert resolve_connect_password(MockMyCli.connect_args) is None
     assert MockMyCli.connect_args['host'] is None
     assert MockMyCli.connect_args['port'] is None
     assert MockMyCli.connect_args['database'] == 'prod'
@@ -1820,7 +1828,7 @@ def test_mysql_user_envvar_overrides_dsn_resolution(monkeypatch):
     assert result.exit_code == 0, result.output + ' ' + str(result.exception)
     assert (
         MockMyCli.connect_args['user'] == 'env_user'
-        and MockMyCli.connect_args['passwd'] == 'dsn_passwd'
+        and resolve_connect_password(MockMyCli.connect_args) == ('dsn', 'dsn_passwd')
         and MockMyCli.connect_args['host'] == 'dsn_host'
         and MockMyCli.connect_args['port'] == 6
         and MockMyCli.connect_args['database'] == 'dsn_database'
@@ -2357,23 +2365,26 @@ def test_preprocess_cli_args_rejects_unknown_dsn_scheme(capsys: pytest.CaptureFi
     assert 'Unknown connection scheme provided for DSN URI (postgres://)' in capsys.readouterr().err
 
 
-def test_preprocess_cli_args_reads_password_file_when_password_missing(
+def test_preprocess_cli_args_preserves_password_file_when_password_missing(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     cli_args = CliArgs()
     cli_args.password_file = 'secret.txt'
-    monkeypatch.setattr(main, 'get_password_from_file', lambda password_file: f'from:{password_file}')
+    get_password_calls: list[str] = []
+    monkeypatch.setattr(main, 'get_password_from_file', lambda password_file: get_password_calls.append(password_file))
 
     assert preprocess_cli_args(cli_args, valid_connection_scheme) == 0
-    assert cli_args.password == 'from:secret.txt'
+    assert cli_args.password is None
+    assert cli_args.password_file == 'secret.txt'
+    assert get_password_calls == []
 
 
-def test_preprocess_cli_args_uses_mysql_pwd_when_password_and_file_missing(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_preprocess_cli_args_preserves_mysql_pwd_when_password_missing(monkeypatch: pytest.MonkeyPatch) -> None:
     cli_args = CliArgs()
     monkeypatch.setenv('MYSQL_PWD', 'env-secret')
 
     assert preprocess_cli_args(cli_args, valid_connection_scheme) == 0
-    assert cli_args.password == 'env-secret'
+    assert cli_args.password is None
 
 
 def test_preprocess_cli_args_prefers_existing_password_over_mysql_pwd(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -15,6 +15,7 @@ from mycli.main_modes.checkup import main_checkup
 from mycli.main_modes.execute import main_execute_from_cli
 from mycli.main_modes.list_dsn import main_list_dsn
 from mycli.packages.cli_utils import is_valid_connection_scheme
+from mycli.password_sources import PasswordCandidates
 from mycli.vault import (
     DEFAULT_VAULT_EXECUTABLE,
     DEFAULT_VAULT_PASSWORD_FIELD,
@@ -165,10 +166,15 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
     database = cli_args.dbname or cli_args.database
 
     dsn_uri = None
+    dsn_password: str | None = None
 
     # Treat the database argument as a DSN alias only if it matches a configured alias
     # todo why is port tested but not socket?
-    truthy_password = cli_args.password not in (None, EMPTY_PASSWORD_FLAG_SENTINEL)
+    truthy_password = (
+        cli_args.password not in (None, EMPTY_PASSWORD_FLAG_SENTINEL)
+        or cli_args.password_file is not None
+        or os.environ.get('MYSQL_PWD') is not None
+    )
     if (
         database
         and "://" not in database
@@ -235,9 +241,6 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
             database = dsn_database
         if not cli_args.user and dsn_user is not None:
             cli_args.user = dsn_user
-        # todo: rationalize the behavior of empty-string passwords here
-        if not cli_args.password and dsn_password is not None:
-            cli_args.password = dsn_password
         if not cli_args.host:
             cli_args.host = dsn_host
         if not cli_args.port:
@@ -364,25 +367,40 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
         use_keyring = str_to_bool(cli_args.use_keyring)
         reset_keyring = False
 
-    if cli_args.password is None and cli_args.vault_secret:
+    password_candidates = PasswordCandidates()
+    if cli_args.password == EMPTY_PASSWORD_FLAG_SENTINEL:
+        password_candidates.add_value('prompt', cli_args.password)
+    elif cli_args.password is not None:
+        password_candidates.add_value('cli_literal', cli_args.password)
+    if cli_args.password_file:
+        password_candidates.add_loader('cli_file', lambda: main_module.get_password_from_file(cli_args.password_file))
+    if os.environ.get('MYSQL_PWD') is not None:
+        password_candidates.add_value('environment', os.environ.get('MYSQL_PWD'))
+    if dsn_password is not None:
+        password_candidates.add_value('dsn', dsn_password)
+
+    if cli_args.vault_secret:
+        vault_secret = cli_args.vault_secret
         vault_config = mycli.config.get('vault_beta', {})
         vault_address = cli_args.vault_address or os.environ.get('VAULT_ADDR') or vault_config.get('address') or None
         vault_mount = cli_args.vault_mount or vault_config.get('default_mount') or None
         vault_field = cli_args.vault_password_field or vault_config.get('default_password_field') or DEFAULT_VAULT_PASSWORD_FIELD
         vault_executable = vault_config.get('vault_executable') or DEFAULT_VAULT_EXECUTABLE
-        try:
-            vault_password: str | None = get_field_from_vault(
-                vault_field,
-                cli_args.vault_secret,
-                executable=vault_executable,
-                mount=vault_mount,
-                address=vault_address,
-            )
-        except VaultError as exc:
-            click.secho(f'Error reading password from Vault: {exc}', err=True, fg='red')
-            sys.exit(1)
-    else:
-        vault_password = None
+
+        def load_vault_password() -> str | None:
+            try:
+                return get_field_from_vault(
+                    vault_field,
+                    vault_secret,
+                    executable=vault_executable,
+                    mount=vault_mount,
+                    address=vault_address,
+                )
+            except VaultError as exc:
+                click.secho(f'Error reading password from Vault: {exc}', err=True, fg='red')
+                sys.exit(1)
+
+        password_candidates.add_loader('vault', load_vault_password)
 
     if cli_args.user is None and cli_args.vault_secret:
         vault_config = mycli.config.get('vault_beta', {})
@@ -409,7 +427,7 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
         mycli.connect(
             database=database,
             user=vault_username if cli_args.user is None else cli_args.user,
-            passwd=vault_password if cli_args.password is None else cli_args.password,
+            password_candidates=password_candidates,
             host=cli_args.host,
             port=cli_args.port,
             socket=cli_args.socket,
