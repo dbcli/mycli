@@ -62,6 +62,38 @@ def test_init_uses_cli_verbosity_override(monkeypatch: pytest.MonkeyPatch, tmp_p
     assert cli.verbosity == 2
 
 
+def test_init_uses_existing_xdg_config_when_myclirc_is_not_given(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    patch_constructor_side_effects(monkeypatch)
+    xdg_config = tmp_path / 'xdg' / 'mycli' / 'myclirc'
+    xdg_config.parent.mkdir(parents=True)
+    xdg_config.write_text('', encoding='utf-8')
+    monkeypatch.setattr(MyCli, 'xdg_config_file', str(xdg_config))
+
+    cli = MyCli(myclirc=None)
+
+    assert cli.config.filename == str(xdg_config)
+
+
+def test_init_uses_default_myclirc_when_xdg_config_is_missing(monkeypatch: pytest.MonkeyPatch) -> None:
+    patch_constructor_side_effects(monkeypatch)
+    config_file_args: list[list[str | Any]] = []
+    monkeypatch.setattr(MyCli, 'xdg_config_file', '/missing/xdg/myclirc')
+    monkeypatch.setattr(client_module.os.path, 'exists', lambda path: False)
+    monkeypatch.setattr(client_module, 'write_default_config', lambda destination: None)
+
+    original_read_config_files = client_module.read_config_files
+
+    def read_config_files(files: list[str | Any], *args: Any, **kwargs: Any) -> Any:
+        config_file_args.append(files)
+        return original_read_config_files(files, *args, **kwargs)
+
+    monkeypatch.setattr(client_module, 'read_config_files', read_config_files)
+
+    MyCli(myclirc=None)
+
+    assert config_file_args[0] == ['~/.myclirc']
+
+
 def test_init_writes_default_config_when_user_config_is_missing(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     patch_constructor_side_effects(monkeypatch)
     write_calls: list[str] = []

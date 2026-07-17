@@ -58,9 +58,9 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
 
     # check XDG_CONFIG_HOME exists and not an empty string
     xdg_config_home = os.environ.get("XDG_CONFIG_HOME", "~/.config")
+    xdg_config_file = os.path.join(os.path.expanduser(xdg_config_home), "mycli", "myclirc")
     system_config_files: list[str | IO[str]] = [
         "/etc/myclirc",
-        os.path.join(os.path.expanduser(xdg_config_home), "mycli", "myclirc"),
     ]
 
     def __init__(
@@ -72,7 +72,7 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
         login_path: str | None = None,
         auto_vertical_output: bool = False,
         warn: bool | None = None,
-        myclirc: str = "~/.myclirc",
+        myclirc: str | None = None,
         show_warnings: bool | None = None,
         cli_verbosity: int = 0,
     ) -> None:
@@ -86,6 +86,12 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
         self.keepalive_ticks: int | None = 0
         self.sandbox_mode: bool = False
         self.checkpoint: IO | None = None
+
+        if myclirc is None:
+            if os.path.exists(self.xdg_config_file):
+                myclirc = self.xdg_config_file
+            else:
+                myclirc = '~/.myclirc'
 
         # Load config.
         config_files: list[str | IO[str]] = self.system_config_files + [myclirc]

@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Bug Fixes
+---------
+* Don't create `~/.myclirc` if the user adopted the XDG layout for myclirc.
+
+
 2.3.0 (2026/07/16)
 ==============
 

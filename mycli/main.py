@@ -195,7 +195,6 @@ class CliArgs:
     )
     myclirc: str = clickdc.option(
         type=click.Path(),
-        default='~/.myclirc',
         help='Location of myclirc file.',
     )
     auto_vertical_output: bool = clickdc.option(
