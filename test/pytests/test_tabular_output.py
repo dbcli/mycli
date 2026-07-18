@@ -21,7 +21,7 @@ default_config_file = os.path.join(os.path.dirname(__file__), "../myclirc")
 def mycli():
     cli = MyCli()
     pc = PasswordCandidates()
-    pc.add_value('cli_literal', PASSWORD)
+    pc.add_value('literal', PASSWORD)
     cli.connect(None, USER, pc, HOST, PORT, None, init_command=None)
     yield cli
     cli.sqlexecute.conn.close()

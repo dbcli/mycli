@@ -371,9 +371,9 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
     if cli_args.password == EMPTY_PASSWORD_FLAG_SENTINEL:
         password_candidates.add_value('prompt', cli_args.password)
     elif cli_args.password is not None:
-        password_candidates.add_value('cli_literal', cli_args.password)
+        password_candidates.add_value('literal', cli_args.password)
     if cli_args.password_file:
-        password_candidates.add_loader('cli_file', lambda: main_module.get_password_from_file(cli_args.password_file))
+        password_candidates.add_loader('file', lambda: main_module.get_password_from_file(cli_args.password_file))
     if os.environ.get('MYSQL_PWD') is not None:
         password_candidates.add_value('environment', os.environ.get('MYSQL_PWD'))
     if dsn_password is not None:

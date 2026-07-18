@@ -8,12 +8,12 @@ import click
 
 PasswordSource = Literal[
     'prompt',
-    'cli_literal',
-    'cli_file',
+    'literal',
+    'file',
     'environment',
     'dsn',
     'vault',
-    'mylogin_cnf',
+    'login_path',
     'keyring',
 ]
 PasswordValue = str | int
@@ -21,12 +21,12 @@ PasswordLoader = Callable[[], PasswordValue | None]
 
 KNOWN_PASSWORD_SOURCES: list[PasswordSource] = [
     'prompt',
-    'cli_literal',
-    'cli_file',
+    'literal',
+    'file',
     'environment',
     'dsn',
     'vault',
-    'mylogin_cnf',
+    'login_path',
     'keyring',
 ]
 
