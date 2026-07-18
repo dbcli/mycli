@@ -15,6 +15,7 @@ PasswordSource = Literal[
     'vault',
     'login_path',
     'keyring',
+    'fallback',
 ]
 PasswordValue = str | int
 PasswordLoader = Callable[[], PasswordValue | None]
@@ -28,6 +29,7 @@ KNOWN_PASSWORD_SOURCES: list[PasswordSource] = [
     'vault',
     'login_path',
     'keyring',
+    'fallback',
 ]
 
 

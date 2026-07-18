@@ -207,7 +207,7 @@ pager = python test/features/wrappager.py ---boundary---
 
 # Comma-separated sources to respect for a password, in order of precedence.
 # Valid choices:
-# * prompt         # interactive fallback, or plain trailing --password at the CLI
+# * prompt         # plain trailing --password at the CLI
 # * literal        # --password=<literal> at the CLI
 # * file           # --password-file=<file> at the CLI
 # * environment    # $MYSQL_PWD environment variable
@@ -215,7 +215,9 @@ pager = python test/features/wrappager.py ---boundary---
 # * vault          # value retrieved from "vault kv get"
 # * login_path     # --login-path=<path> at the CLI
 # * keyring        # value retrieved from system keyring
-password_sources = prompt, literal, file, environment, dsn, vault, login_path, keyring
+# * fallback       # interactive prompt after a passwordless connection fails
+# If "fallback" is given, it must come last.
+password_sources = prompt, literal, file, environment, dsn, vault, login_path, keyring, fallback
 
 # Whether to store and retrieve passwords from the system keyring.
 # * False - never use keyring

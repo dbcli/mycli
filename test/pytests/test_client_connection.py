@@ -695,6 +695,31 @@ def test_connect_prompts_and_retries_after_access_denied_without_password(
     assert [call['password'] for call in FakeSQLExecute.calls] == [None, 'new-secret']
 
 
+def test_connect_does_not_prompt_after_access_denied_when_fallback_is_disabled(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = DummyClient(
+        config={
+            'main': {'password_sources': [source for source in KNOWN_PASSWORD_SOURCES if source != 'fallback']},
+            'connection': {},
+        }
+    )
+    FakeSQLExecute.effects = [op_error(client_connection.ACCESS_DENIED_ERROR)]
+    prompts: list[str] = []
+    monkeypatch.setattr(
+        client_connection.click,
+        'prompt',
+        lambda text, **_kwargs: prompts.append(text) or 'new-secret',  # type: ignore[func-returns-value]
+    )
+
+    with pytest.raises(SystemExit) as excinfo:
+        client.connect(user='alice', host='db', port=3307)
+
+    assert excinfo.value.code == 1
+    assert prompts == []
+    assert [call['password'] for call in FakeSQLExecute.calls] == [None]
+
+
 def test_connect_exits_when_password_retry_fails(monkeypatch: pytest.MonkeyPatch) -> None:
     client = DummyClient()
     FakeSQLExecute.effects = [

@@ -63,6 +63,17 @@ def test_resolve_falls_back_when_a_loader_returns_none() -> None:
     assert selected.value == 'mylogin-secret'
 
 
+def test_resolve_fallback_loader() -> None:
+    candidates = PasswordCandidates()
+    candidates.add_loader('fallback', lambda: 'fallback-secret')
+
+    selected = candidates.resolve(['fallback'])
+
+    assert selected is not None
+    assert selected.source == 'fallback'
+    assert selected.value == 'fallback-secret'
+
+
 def test_resolve_skips_unknown_source_and_returns_none(capsys: pytest.CaptureFixture[str]) -> None:
     candidates = PasswordCandidates()
 
