@@ -73,7 +73,7 @@ def test_create_toolbar_tokens_func_shows_multiline_vi_and_refreshing(monkeypatc
         refreshing=True,
     )
     monkeypatch.setattr(clitoolbar.special, 'get_current_delimiter', lambda: '$$')
-    monkeypatch.setattr(clitoolbar, '_get_vi_mode', lambda: 'N')
+    monkeypatch.setattr(clitoolbar, 'get_vi_mode', lambda: 'N')
 
     toolbar = clitoolbar.create_toolbar_tokens_func(mycli, lambda: False, None, mycli.get_custom_toolbar)
     result = toolbar()
@@ -81,7 +81,7 @@ def test_create_toolbar_tokens_func_shows_multiline_vi_and_refreshing(monkeypatc
     assert ("class:bottom-toolbar.off", "OFF") in result
     assert ("class:bottom-toolbar", "[F3] Multiline:") in result
     assert ("class:bottom-toolbar.on", "ON ") in result
-    assert ("class:bottom-toolbar", "Vi:") in result
+    assert ("class:bottom-toolbar", "vi:") in result
     assert ("class:bottom-toolbar.on", "N") in result
     assert ('class:bottom-toolbar.on', '$$') in result
     assert ("class:bottom-toolbar", "Refreshing completions…") in result
@@ -140,4 +140,4 @@ def test_get_vi_mode(monkeypatch, input_mode: InputMode, expected: str) -> None:
     app = SimpleNamespace(vi_state=SimpleNamespace(input_mode=input_mode))
     monkeypatch.setattr(clitoolbar, 'get_app', lambda: app)
 
-    assert clitoolbar._get_vi_mode() == expected
+    assert clitoolbar.get_vi_mode() == expected

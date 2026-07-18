@@ -42,7 +42,7 @@ from pymysql.cursors import Cursor
 import mycli as mycli_package
 from mycli.clibuffer import cli_is_multiline
 from mycli.clistyle import style_factory_ptoolkit
-from mycli.clitoolbar import create_toolbar_tokens_func
+from mycli.clitoolbar import create_toolbar_tokens_func, get_vi_mode
 from mycli.compat import WIN
 from mycli.constants import (
     DEFAULT_HOST,
@@ -321,6 +321,14 @@ def render_prompt_string(
     strings = [x.replace('\\_', ' ') for x in strings]
 
     checker_string = ' '.join(strings)
+    if r'\e' in checker_string:
+        if mycli.prompt_session:
+            edit_mode = mycli.prompt_session.editing_mode.value.lower()
+            if edit_mode == 'vi':
+                edit_mode += ':' + get_vi_mode()
+        else:
+            edit_mode = mycli.key_bindings.lower()
+        strings = [x.replace(r'\e', maybe_html_escape(edit_mode, is_html)) for x in strings]
     if hasattr(sqlexecute, 'conn') and sqlexecute.conn is not None:
         if '\\y' in checker_string:
             with sqlexecute.conn.cursor() as cur:

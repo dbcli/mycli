@@ -604,6 +604,30 @@ def test_maybe_html_escape() -> None:
     assert repl_mode.maybe_html_escape('a&b<1>', True) == 'a&amp;b&lt;1&gt;'
 
 
+def test_render_prompt_string_includes_current_edit_mode() -> None:
+    cli = make_repl_cli(
+        SimpleNamespace(
+            user='alice',
+            host='db.example.com',
+            dbname='nameprod',
+            port=3306,
+            socket=None,
+            server_info=SimpleNamespace(species=SimpleNamespace(name='MySQL')),
+            conn=None,
+        )
+    )
+    cli.prompt_session = SimpleNamespace(editing_mode=repl_mode.EditingMode.VI)
+
+    assert to_plain_text(repl_mode.render_prompt_string(cli, r'\e', 0)) == 'vi:I'
+
+    cli.prompt_session.editing_mode = repl_mode.EditingMode.EMACS
+    assert to_plain_text(repl_mode.render_prompt_string(cli, r'\e', 1)) == 'emacs'
+
+    cli.prompt_session = None
+    cli.key_bindings = 'vi'
+    assert to_plain_text(repl_mode.render_prompt_string(cli, r'\e', 2)) == 'vi'
+
+
 def test_render_prompt_string_html() -> None:
     repl_mode.render_prompt_string.cache_clear()
 

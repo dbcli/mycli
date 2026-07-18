@@ -122,6 +122,7 @@ wider_completion_menu = False
 # * \s - seconds of the current time
 # * \P - AM/PM
 # * \d - selected database/schema
+# * \e - current edit mode (emacs or vi)
 # * \h - hostname of the server
 # * \H - shortened hostname of the server
 # * \p - connection port

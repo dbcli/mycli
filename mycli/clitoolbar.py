@@ -8,6 +8,17 @@ from prompt_toolkit.key_binding.vi_state import InputMode
 from mycli.packages import special
 
 
+def get_vi_mode() -> str:
+    """Get the current vi mode for display."""
+    return {
+        InputMode.INSERT: "I",
+        InputMode.NAVIGATION: "N",
+        InputMode.REPLACE: "R",
+        InputMode.REPLACE_SINGLE: "R",
+        InputMode.INSERT_MULTIPLE: "M",
+    }[get_app().vi_state.input_mode]
+
+
 def create_toolbar_tokens_func(
     mycli,
     show_initial_toolbar_help: Callable[[], bool],
@@ -45,8 +56,8 @@ def create_toolbar_tokens_func(
 
         if mycli.prompt_session.editing_mode == EditingMode.VI:
             result.append(divider)
-            result.append(("class:bottom-toolbar", "Vi:"))
-            result.append(("class:bottom-toolbar.on", _get_vi_mode()))
+            result.append(("class:bottom-toolbar", "vi:"))
+            result.append(("class:bottom-toolbar.on", get_vi_mode()))
 
         if mycli.toolbar_error_message:
             dynamic.append(divider)
@@ -92,14 +103,3 @@ def create_toolbar_tokens_func(
         return result
 
     return get_toolbar_tokens
-
-
-def _get_vi_mode() -> str:
-    """Get the current vi mode for display."""
-    return {
-        InputMode.INSERT: "I",
-        InputMode.NAVIGATION: "N",
-        InputMode.REPLACE: "R",
-        InputMode.REPLACE_SINGLE: "R",
-        InputMode.INSERT_MULTIPLE: "M",
-    }[get_app().vi_state.input_mode]
