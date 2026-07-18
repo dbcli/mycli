@@ -15,6 +15,7 @@ Bug Fixes
 Internal
 ---------
 * Make flaky `/watch` test even more lenient for CI.
+* Add missing file to `AGENTS.md` project layout.
 
 
 2.3.0 (2026/07/16)
