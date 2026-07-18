@@ -5,6 +5,7 @@ Features
 ---------
 * Make password sources and precedence configurable.
 * Ability to deselect fallback interactive password prompt.
+* Add `\e` prompt/toolbar format string for edit mode.
 
 
 Bug Fixes
