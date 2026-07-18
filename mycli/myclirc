@@ -232,6 +232,11 @@ password_sources = prompt, literal, file, environment, dsn, boundary, vault, log
 # Recommended: auto
 use_keyring = False
 
+# Comma-separated password sources eligible to be saved in the keyring.
+# Valid choices: same as password_sources (above).
+# use_keyring must be True or auto.
+keyring_sources = prompt, literal, file, environment, dsn, login_path, fallback
+
 [editor]
 
 # Command line to invoke for /edit, instead of respecting the $VISUAL/$EDITOR

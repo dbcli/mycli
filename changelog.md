@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Features
+---------
+* Configurable sources of credentials to save to the keyring.
+
+
 2.4.0 (2026/07/18)
 ==============
 
