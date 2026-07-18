@@ -11,6 +11,11 @@ Bug Fixes
 * Don't create `~/.myclirc` if the user adopted the XDG layout for myclirc.
 
 
+Internal
+---------
+* Make flaky `/watch` test even more lenient for CI.
+
+
 2.3.0 (2026/07/16)
 ==============
 
