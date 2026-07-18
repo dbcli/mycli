@@ -80,6 +80,7 @@ class ClientConnectionMixin:
         user_connection_config = self.config_without_package_defaults.get('connection', {})
         self.keepalive_ticks = keepalive_ticks
         self.ssh_tunnel = None
+        self.selected_password = None
 
         int_port = port and int(port)
         if not int_port:
@@ -91,6 +92,11 @@ class ClientConnectionMixin:
             password_source_precedence = self.config.get('main').as_list('password_sources')
         else:
             password_source_precedence = ['prompt']
+
+        if self.config.get('main', {}).get('keyring_sources'):
+            keyring_sources = self.config.get('main').as_list('keyring_sources')
+        else:
+            keyring_sources = []
 
         if ssh_jump:
             remote_host = host or DEFAULT_HOST
@@ -185,9 +191,9 @@ class ClientConnectionMixin:
         if use_keyring and not reset_keyring:
             password_candidates.add_loader('keyring', lambda: keyring.get_password(keyring_domain, keyring_identifier))
 
-        selected_password = password_candidates.resolve(password_source_precedence)
-        passwd = selected_password.value if selected_password is not None else None
-        keyring_retrieved_cleanly = selected_password is not None and selected_password.source == 'keyring'
+        self.selected_password = password_candidates.resolve(password_source_precedence)
+        passwd = self.selected_password.value if self.selected_password is not None else None
+        keyring_retrieved_cleanly = self.selected_password is not None and self.selected_password.source == 'keyring'
 
         # prompt for password if requested by user
         if passwd == EMPTY_PASSWORD_FLAG_SENTINEL:
@@ -253,15 +259,25 @@ class ClientConnectionMixin:
             connection_info['port'] = int_port
             connection_info['socket'] = socket
 
-        def _update_keyring(password: str | None, keyring_retrieved_cleanly: bool):
+        def _update_keyring(
+            password: str | None,
+            password_source: str | None,
+            keyring_retrieved_cleanly: bool,
+        ):
             if not password:
+                return
+            if password_source not in keyring_sources:
                 return
             if reset_keyring or (use_keyring and not keyring_retrieved_cleanly):
                 try:
                     saved_pw = keyring.get_password(keyring_domain, keyring_identifier)
                     if password != saved_pw or reset_keyring:
                         keyring.set_password(keyring_domain, keyring_identifier, password)
-                        click.secho(f'Password saved to the system keyring at {keyring_domain}/{keyring_identifier}', err=True)
+                        click.secho(
+                            f'Password from source: "{password_source}" '
+                            f'saved to the system keyring at {keyring_domain}/{keyring_identifier}',
+                            err=True,
+                        )
                 except Exception as e:
                     click.secho(f'Password not saved to the system keyring: {e}', err=True, fg='red')
 
@@ -273,7 +289,11 @@ class ClientConnectionMixin:
         ) -> None:
             try:
                 if keyring_save_eligible:
-                    _update_keyring(connection_info["password"], keyring_retrieved_cleanly=keyring_retrieved_cleanly)
+                    _update_keyring(
+                        connection_info["password"],
+                        self.selected_password.source if self.selected_password else None,
+                        keyring_retrieved_cleanly=keyring_retrieved_cleanly,
+                    )
                 self.sqlexecute = SQLExecute(**connection_info)
             except pymysql.OperationalError as e1:
                 if e1.args[0] == HANDSHAKE_ERROR and ssl is not None and ssl.get("mode", None) == "auto":
@@ -295,8 +315,8 @@ class ClientConnectionMixin:
                             f"Enter password for {user}", hide_input=True, show_default=False, default='', type=str, err=True
                         ),
                     )
-                    fallback_password = password_candidates.resolve(['fallback'])
-                    connection_info["password"] = fallback_password.value if fallback_password is not None else None
+                    self.selected_password = password_candidates.resolve(['fallback'])
+                    connection_info["password"] = self.selected_password.value if self.selected_password else None
                     keyring_retrieved_cleanly = False
                     _connect(
                         retry_password=True,

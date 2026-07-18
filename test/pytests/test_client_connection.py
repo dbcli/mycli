@@ -38,7 +38,13 @@ class DummyClient(ClientConnectionMixin):
     ) -> None:
         self.cnf = cnf or default_cnf()
         self.mylogin_cnf = object()
-        self.config = ConfigObj(config) or ConfigObj({'main': {'password_sources': KNOWN_PASSWORD_SOURCES}, 'connection': {}})
+        self.config = ConfigObj(config) or ConfigObj({
+            'main': {
+                'password_sources': KNOWN_PASSWORD_SOURCES,
+                'keyring_sources': ['prompt', 'literal', 'file', 'environment', 'dsn', 'login_path', 'fallback'],
+            },
+            'connection': {},
+        })
         self.config_without_package_defaults = config_without_package_defaults or {}
         self.keepalive_ticks: int | None = None
         self.sandbox_mode = False
@@ -327,7 +333,7 @@ def test_connect_saves_selected_password_to_keyring(monkeypatch: pytest.MonkeyPa
     client.connect(user='alice', host='db', port=3307, password_candidates=candidates, use_keyring=True)
 
     assert set_password_calls == [('mycli.net', 'alice@db:3307:', 'new-secret')]
-    assert secho_calls == [('Password saved to the system keyring at mycli.net/alice@db:3307:', {'err': True})]
+    assert secho_calls == [('Password from source: "dsn" saved to the system keyring at mycli.net/alice@db:3307:', {'err': True})]
 
 
 def test_connect_reports_keyring_save_error(monkeypatch: pytest.MonkeyPatch) -> None:
