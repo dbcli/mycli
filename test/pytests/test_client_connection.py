@@ -6,12 +6,14 @@ import sys
 from types import ModuleType, SimpleNamespace
 from typing import Any, Literal, cast
 
+from configobj import ConfigObj
 import pymysql
 import pytest
 
 from mycli import client_connection
 from mycli.client_connection import ClientConnectionMixin
 from mycli.constants import DEFAULT_CHARSET, EMPTY_PASSWORD_FLAG_SENTINEL, ER_MUST_CHANGE_PASSWORD_LOGIN
+from mycli.password_sources import KNOWN_PASSWORD_SOURCES, PasswordCandidates
 
 
 class DummyLogger:
@@ -36,7 +38,7 @@ class DummyClient(ClientConnectionMixin):
     ) -> None:
         self.cnf = cnf or default_cnf()
         self.mylogin_cnf = object()
-        self.config = config or {'main': {}, 'connection': {}}
+        self.config = ConfigObj(config) or ConfigObj({'main': {'password_sources': KNOWN_PASSWORD_SOURCES}, 'connection': {}})
         self.config_without_package_defaults = config_without_package_defaults or {}
         self.keepalive_ticks: int | None = None
         self.sandbox_mode = False
@@ -136,7 +138,7 @@ def test_import_swallows_missing_pwd_module(monkeypatch: pytest.MonkeyPatch) -> 
 def test_connect_defaults_to_port_socket_and_config_character_set(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    client = DummyClient(config={'connection': {'default_character_set': 'latin1'}, 'main': {}})
+    client = DummyClient(config={'connection': {'default_character_set': 'latin1'}, 'main': {'password_sources': KNOWN_PASSWORD_SOURCES}})
     monkeypatch.setenv('USER', 'env_user')
     monkeypatch.setattr(client_connection, 'guess_socket_location', lambda: '/tmp/mysql.sock')
     monkeypatch.setattr(client_connection, 'WIN', True)
@@ -152,7 +154,7 @@ def test_connect_defaults_to_port_socket_and_config_character_set(
 
 
 def test_connect_uses_character_set_from_connection_config() -> None:
-    client = DummyClient(config={'main': {}, 'connection': {'default_character_set': 'utf16'}})
+    client = DummyClient(config={'main': {'password_sources': KNOWN_PASSWORD_SOURCES}, 'connection': {'default_character_set': 'utf16'}})
 
     client.connect(host='db', port=3307)
 
@@ -162,9 +164,9 @@ def test_connect_uses_character_set_from_connection_config() -> None:
 def test_connect_migrates_deprecated_character_set_from_main_config(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    config_wo = WritableConfig({'main': {'default_character_set': 'utf32'}})
+    config_wo = WritableConfig({'main': {'password_sources': KNOWN_PASSWORD_SOURCES, 'default_character_set': 'utf32'}})
     client = DummyClient(
-        config={'main': {}, 'connection': {'default_character_set': 'utf16'}},
+        config={'main': {'password_sources': KNOWN_PASSWORD_SOURCES}, 'connection': {'default_character_set': 'utf16'}},
         config_without_package_defaults=config_wo,
     )
     secho_calls: list[tuple[str, dict[str, Any]]] = []
@@ -197,7 +199,7 @@ def test_connect_uses_existing_connection_character_set_when_migrating(
         'connection': {'default_character_set': 'utf16'},
     })
     client = DummyClient(
-        config={'main': {}, 'connection': {'default_character_set': 'latin1'}},
+        config={'main': {'password_sources': KNOWN_PASSWORD_SOURCES}, 'connection': {'default_character_set': 'latin1'}},
         config_without_package_defaults=config_wo,
     )
     secho_calls: list[tuple[str, dict[str, Any]]] = []
@@ -251,33 +253,70 @@ def test_connect_retrieves_password_from_keyring(monkeypatch: pytest.MonkeyPatch
 
     monkeypatch.setattr(client_connection.keyring, 'get_password', fake_get_password)
 
-    client.connect(user='alice', host='db', port=3307, passwd=None, use_keyring=True)
+    client.connect(user='alice', host='db', port=3307, use_keyring=True)
 
     assert FakeSQLExecute.calls[-1]['password'] == 'from-keyring'
     assert get_password_calls == [('mycli.net', 'alice@db:3307:')]
 
 
-def test_connect_prompts_for_password_sentinel(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_connect_uses_mylogin_password_before_keyring(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = DummyClient(cnf={**default_cnf(), 'password': 'from-mylogin'})
+    get_password_calls: list[tuple[str, str]] = []
+    monkeypatch.setattr(
+        client_connection.keyring,
+        'get_password',
+        lambda domain, identifier: get_password_calls.append((domain, identifier)) or 'from-mylogin',  # type: ignore[func-returns-value]
+    )
+    monkeypatch.setattr(client_connection.keyring, 'set_password', lambda *_args: None)
+
+    client.connect(user='alice', host='db', port=3307, use_keyring=True)
+
+    assert FakeSQLExecute.calls[-1]['password'] == 'from-mylogin'
+    assert get_password_calls == [('mycli.net', 'alice@db:3307:')]
+
+
+def test_connect_resolves_supplied_candidates_after_connection_details(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = DummyClient(cnf={**default_cnf(), 'password': 'from-mylogin'})
+    candidates = PasswordCandidates()
+    candidates.add_value('dsn', 'from-dsn')
+    keyring_calls: list[tuple[str, str]] = []
+    monkeypatch.setattr(
+        client_connection.keyring,
+        'get_password',
+        lambda domain, identifier: keyring_calls.append((domain, identifier)) or 'from-dsn',  # type: ignore[func-returns-value]
+    )
+    monkeypatch.setattr(client_connection.keyring, 'set_password', lambda *_args: None)
+
+    client.connect(user='alice', host='db', port=3307, password_candidates=candidates, use_keyring=True)
+
+    assert FakeSQLExecute.calls[-1]['password'] == 'from-dsn'
+    assert keyring_calls == [('mycli.net', 'alice@db:3307:')]
+
+
+def test_connect_prompts_for_cli_password_candidate(monkeypatch: pytest.MonkeyPatch) -> None:
     client = DummyClient()
+    candidates = PasswordCandidates()
+    candidates.add_value('prompt', EMPTY_PASSWORD_FLAG_SENTINEL)
     prompts: list[str] = []
+    monkeypatch.setattr(
+        client_connection.click,
+        'prompt',
+        lambda text, **_kwargs: prompts.append(text) or 'prompted-secret',  # type: ignore[func-returns-value]
+    )
 
-    def fake_prompt(text: str, **_kwargs: Any) -> str:
-        prompts.append(text)
-        return 'prompted'
-
-    monkeypatch.setattr(client_connection.click, 'prompt', fake_prompt)
-
-    client.connect(user='alice', host='db', port=3307, passwd=EMPTY_PASSWORD_FLAG_SENTINEL)
+    client.connect(user='alice', host='db', port=3307, password_candidates=candidates)
 
     assert prompts == ['Enter password for alice']
-    assert FakeSQLExecute.calls[-1]['password'] == 'prompted'
+    assert FakeSQLExecute.calls[-1]['password'] == 'prompted-secret'
 
 
-def test_connect_saves_password_to_keyring(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_connect_saves_selected_password_to_keyring(monkeypatch: pytest.MonkeyPatch) -> None:
     client = DummyClient()
+    candidates = PasswordCandidates()
+    candidates.add_value('dsn', 'new-secret')
     set_password_calls: list[tuple[str, str, str]] = []
     secho_calls: list[tuple[str, dict[str, Any]]] = []
-    monkeypatch.setattr(client_connection.keyring, 'get_password', lambda domain, identifier: 'old')
+    monkeypatch.setattr(client_connection.keyring, 'get_password', lambda *_args: 'old-secret')
     monkeypatch.setattr(
         client_connection.keyring,
         'set_password',
@@ -285,41 +324,28 @@ def test_connect_saves_password_to_keyring(monkeypatch: pytest.MonkeyPatch) -> N
     )
     monkeypatch.setattr(client_connection.click, 'secho', lambda message, **kwargs: secho_calls.append((message, kwargs)))
 
-    client.connect(user='alice', host='db', port=3307, passwd='new', use_keyring=True)
+    client.connect(user='alice', host='db', port=3307, password_candidates=candidates, use_keyring=True)
 
-    assert set_password_calls == [('mycli.net', 'alice@db:3307:', 'new')]
+    assert set_password_calls == [('mycli.net', 'alice@db:3307:', 'new-secret')]
     assert secho_calls == [('Password saved to the system keyring at mycli.net/alice@db:3307:', {'err': True})]
 
 
-def test_connect_reports_keyring_save_errors(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_connect_reports_keyring_save_error(monkeypatch: pytest.MonkeyPatch) -> None:
     client = DummyClient()
+    candidates = PasswordCandidates()
+    candidates.add_value('dsn', 'new-secret')
     secho_calls: list[tuple[str, dict[str, Any]]] = []
-    monkeypatch.setattr(client_connection.keyring, 'get_password', lambda domain, identifier: 'old')
+    monkeypatch.setattr(client_connection.keyring, 'get_password', lambda *_args: 'old-secret')
 
-    def fail_set_password(domain: str, identifier: str, password: str) -> None:
+    def fail_set_password(*_args: Any) -> None:
         raise RuntimeError('locked')
 
     monkeypatch.setattr(client_connection.keyring, 'set_password', fail_set_password)
     monkeypatch.setattr(client_connection.click, 'secho', lambda message, **kwargs: secho_calls.append((message, kwargs)))
 
-    client.connect(user='alice', host='db', port=3307, passwd='new', use_keyring=True)
+    client.connect(user='alice', host='db', port=3307, password_candidates=candidates, use_keyring=True)
 
     assert secho_calls == [('Password not saved to the system keyring: locked', {'err': True, 'fg': 'red'})]
-
-
-def test_connect_does_not_save_empty_password_to_keyring(monkeypatch: pytest.MonkeyPatch) -> None:
-    client = DummyClient()
-    set_password_calls: list[tuple[str, str, str]] = []
-    monkeypatch.setattr(client_connection.keyring, 'get_password', lambda domain, identifier: None)
-    monkeypatch.setattr(
-        client_connection.keyring,
-        'set_password',
-        lambda domain, identifier, password: set_password_calls.append((domain, identifier, password)),
-    )
-
-    client.connect(user='alice', host='db', port=3307, passwd='', use_keyring=True)
-
-    assert set_password_calls == []
 
 
 def test_connect_uses_ssh_jump_with_remote_socket(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -360,7 +386,9 @@ def test_connect_uses_ssh_jump_with_remote_socket(monkeypatch: pytest.MonkeyPatc
             pass
 
     monkeypatch.setattr(client_connection, 'SshTunnel', FakeTunnel)
-    client = DummyClient(config={'main': {}, 'ssh': {'ssh_executable': '/opt/bin/ssh'}, 'connection': {}})
+    client = DummyClient(
+        config={'main': {'password_sources': KNOWN_PASSWORD_SOURCES}, 'ssh': {'ssh_executable': '/opt/bin/ssh'}, 'connection': {}}
+    )
 
     client.connect(
         user='alice',
@@ -524,7 +552,9 @@ def test_connect_passes_config_and_cli_ssh_options(monkeypatch: pytest.MonkeyPat
             pass
 
     monkeypatch.setattr(client_connection, 'SshTunnel', FakeTunnel)
-    client = DummyClient(config={'main': {}, 'ssh': {'ssh_options': '-o LogLevel=ERROR'}, 'connection': {}})
+    client = DummyClient(
+        config={'main': {'password_sources': KNOWN_PASSWORD_SOURCES}, 'ssh': {'ssh_options': '-o LogLevel=ERROR'}, 'connection': {}}
+    )
 
     client.connect(host='db.internal', ssh_jump='bastion', ssh_cli_options='-o Compression=yes')
 
@@ -626,7 +656,7 @@ def test_connect_retries_without_ssl_for_auto_handshake_error() -> None:
 
 
 def test_connect_adds_default_ssl_ca_path() -> None:
-    client = DummyClient(config={'main': {}, 'connection': {'default_ssl_ca_path': '/ca/path'}})
+    client = DummyClient(config={'main': {'password_sources': KNOWN_PASSWORD_SOURCES}, 'connection': {'default_ssl_ca_path': '/ca/path'}})
 
     client.connect(host='db', port=3307, ssl={'mode': 'on'})
 
@@ -652,13 +682,17 @@ def test_connect_prompts_and_retries_after_access_denied_without_password(
 ) -> None:
     client = DummyClient()
     FakeSQLExecute.effects = [op_error(client_connection.ACCESS_DENIED_ERROR), None]
-    monkeypatch.setattr(client_connection.click, 'prompt', lambda *_args, **_kwargs: 'new-secret')
+    prompts: list[str] = []
+    monkeypatch.setattr(
+        client_connection.click,
+        'prompt',
+        lambda text, **_kwargs: prompts.append(text) or 'new-secret',  # type: ignore[func-returns-value]
+    )
 
-    client.connect(user='alice', host='db', port=3307, passwd=None)
+    client.connect(user='alice', host='db', port=3307)
 
-    assert len(FakeSQLExecute.calls) == 2
-    assert FakeSQLExecute.calls[0]['password'] is None
-    assert FakeSQLExecute.calls[1]['password'] == 'new-secret'
+    assert prompts == ['Enter password for alice']
+    assert [call['password'] for call in FakeSQLExecute.calls] == [None, 'new-secret']
 
 
 def test_connect_exits_when_password_retry_fails(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -670,9 +704,10 @@ def test_connect_exits_when_password_retry_fails(monkeypatch: pytest.MonkeyPatch
     monkeypatch.setattr(client_connection.click, 'prompt', lambda *_args, **_kwargs: 'new-secret')
 
     with pytest.raises(SystemExit) as excinfo:
-        client.connect(user='alice', host='db', port=3307, passwd=None)
+        client.connect(user='alice', host='db', port=3307)
 
     assert excinfo.value.code == 1
+    assert [call['password'] for call in FakeSQLExecute.calls] == [None, 'new-secret']
 
 
 def test_connect_exits_when_password_retry_still_has_no_password(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -684,9 +719,10 @@ def test_connect_exits_when_password_retry_still_has_no_password(monkeypatch: py
     monkeypatch.setattr(client_connection.click, 'prompt', lambda *_args, **_kwargs: None)
 
     with pytest.raises(SystemExit) as excinfo:
-        client.connect(user='alice', host='db', port=3307, passwd=None)
+        client.connect(user='alice', host='db', port=3307)
 
     assert excinfo.value.code == 1
+    assert [call['password'] for call in FakeSQLExecute.calls] == [None, None]
 
 
 def test_connect_reports_expired_password_login_error() -> None:

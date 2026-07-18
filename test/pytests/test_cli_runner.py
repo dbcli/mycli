@@ -6,6 +6,9 @@ from typing import Any
 import pytest
 
 from mycli import cli_runner, main
+from mycli.password_sources import (
+    KNOWN_PASSWORD_SOURCES,
+)
 
 
 class DummyLogger:
@@ -75,6 +78,13 @@ def run_with_client(
     monkeypatch.setattr(cli_runner.sys.stderr, 'isatty', lambda: False)
     cli_runner.run_from_cli_args(cli_args, lambda **_kwargs: client)
     return client
+
+
+def resolve_connect_password(connect_call: dict[str, Any]) -> tuple[str, str | int] | None:
+    selected = connect_call['password_candidates'].resolve(KNOWN_PASSWORD_SOURCES)
+    if selected is None:
+        return None
+    return selected.source, selected.value
 
 
 def test_expand_dsn_alias_env_var_returns_none() -> None:
@@ -161,9 +171,83 @@ def test_run_from_cli_args_treats_database_as_dsn_alias(monkeypatch: pytest.Monk
     assert client.dsn_alias == 'prod'
     connect_call = client.connect_calls[-1]
     assert connect_call['user'] == 'u'
-    assert connect_call['passwd'] == 'p'
+    assert resolve_connect_password(connect_call) == ('dsn', 'p')
     assert connect_call['host'] == 'h'
     assert connect_call['database'] == 'db'
+
+
+def test_run_from_cli_args_password_file_prevents_positional_dsn_alias(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cli_args = make_cli_args()
+    cli_args.database = 'prod'
+    cli_args.password_file = 'secret.txt'
+    client = DummyMyCli(
+        config={
+            **default_config(),
+            'alias_dsn': {'prod': 'mysql://u:p@h/db'},
+        }
+    )
+    password_file_calls: list[str | None] = []
+
+    def read_password_file(password_file: str | None) -> str:
+        password_file_calls.append(password_file)
+        return 'file-secret'
+
+    monkeypatch.setattr(main, 'get_password_from_file', read_password_file)
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    connect_call = client.connect_calls[-1]
+    assert client.dsn_alias is None
+    assert connect_call['database'] == 'prod'
+    assert resolve_connect_password(connect_call) == ('cli_file', 'file-secret')
+    assert password_file_calls == ['secret.txt']
+
+
+def test_run_from_cli_args_mysql_pwd_prevents_positional_dsn_alias(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cli_args = make_cli_args()
+    cli_args.database = 'prod'
+    client = DummyMyCli(
+        config={
+            **default_config(),
+            'alias_dsn': {'prod': 'mysql://u:p@h/db'},
+        }
+    )
+    monkeypatch.setenv('MYSQL_PWD', 'environment-secret')
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    connect_call = client.connect_calls[-1]
+    assert client.dsn_alias is None
+    assert connect_call['database'] == 'prod'
+    assert resolve_connect_password(connect_call) == ('environment', 'environment-secret')
+
+
+def test_run_from_cli_args_keeps_empty_cli_password_over_dsn(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli_args = make_cli_args()
+    cli_args.dsn = 'mysql://user:dsn-secret@host/db'
+    cli_args.password = ''
+    client = DummyMyCli()
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    assert resolve_connect_password(client.connect_calls[-1]) == ('cli_literal', '')
+
+
+def test_run_from_cli_args_preserves_cli_password_prompt(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli_args = make_cli_args()
+    cli_args.password = cli_runner.EMPTY_PASSWORD_FLAG_SENTINEL
+    client = DummyMyCli()
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    assert resolve_connect_password(client.connect_calls[-1]) == (
+        'prompt',
+        cli_runner.EMPTY_PASSWORD_FLAG_SENTINEL,
+    )
 
 
 def test_run_from_cli_args_leaves_dsn_alias_env_vars_disabled_by_default(
@@ -210,7 +294,7 @@ def test_run_from_cli_args_expands_whole_dsn_alias_env_vars_when_enabled(
     run_with_client(monkeypatch, cli_args, client)
 
     assert client.connect_calls[-1]['user'] == 'env_user'
-    assert client.connect_calls[-1]['passwd'] == 'env_pass'
+    assert resolve_connect_password(client.connect_calls[-1]) == ('dsn', 'env_pass')
     assert client.connect_calls[-1]['host'] == 'env-host'
     assert client.connect_calls[-1]['port'] == 3308
     assert client.connect_calls[-1]['database'] == 'env_db'
@@ -429,7 +513,7 @@ def test_run_from_cli_args_accepts_mysql_plus_dsn_scheme(monkeypatch: pytest.Mon
     run_with_client(monkeypatch, cli_args, client)
 
     assert client.connect_calls[-1]['user'] == 'user'
-    assert client.connect_calls[-1]['passwd'] == 'pass'
+    assert resolve_connect_password(client.connect_calls[-1]) == ('dsn', 'pass')
     assert client.connect_calls[-1]['host'] == 'host'
     assert client.connect_calls[-1]['port'] == 3306
     assert client.connect_calls[-1]['database'] == 'db'
@@ -569,7 +653,7 @@ def test_run_from_cli_args_reads_password_from_vault_when_password_is_missing(
 
     run_with_client(monkeypatch, cli_args, client)
 
-    assert client.connect_calls[-1]['passwd'] == 'vault-secret'
+    assert resolve_connect_password(client.connect_calls[-1]) == ('vault', 'vault-secret')
     assert vault_calls == [
         {
             'secret': 'database/prod',
@@ -681,7 +765,7 @@ def test_run_from_cli_args_prefers_dsn_password_over_vault(monkeypatch: pytest.M
 
     run_with_client(monkeypatch, cli_args, client)
 
-    assert client.connect_calls[-1]['passwd'] == 'dsn-secret'
+    assert resolve_connect_password(client.connect_calls[-1]) == ('dsn', 'dsn-secret')
     assert vault_calls == []
 
 
@@ -715,7 +799,7 @@ def test_run_from_cli_args_prefers_vault_cli_values_and_env_address(
 
     run_with_client(monkeypatch, cli_args, client)
 
-    assert client.connect_calls[-1]['passwd'] == 'vault-secret'
+    assert resolve_connect_password(client.connect_calls[-1]) == ('vault', 'vault-secret')
     assert client.connect_calls[-1]['vault_username_from_vault'] is False
     assert vault_calls == [
         {
@@ -747,7 +831,7 @@ def test_run_from_cli_args_prefers_vault_cli_address_over_env(
 
     run_with_client(monkeypatch, cli_args, client)
 
-    assert client.connect_calls[-1]['passwd'] == 'vault-secret'
+    assert resolve_connect_password(client.connect_calls[-1]) == ('vault', 'vault-secret')
     assert vault_calls[-1]['address'] == 'https://vault.cli'
 
 
@@ -764,11 +848,12 @@ def test_run_from_cli_args_reports_vault_error(monkeypatch: pytest.MonkeyPatch) 
         lambda *_args, **_kwargs: (_ for _ in ()).throw(cli_runner.VaultError('permission denied')),
     )
 
+    run_with_client(monkeypatch, cli_args, client)
+
     with pytest.raises(SystemExit) as excinfo:
-        run_with_client(monkeypatch, cli_args, client)
+        resolve_connect_password(client.connect_calls[-1])
 
     assert excinfo.value.code == 1
-    assert client.connect_calls == []
     assert secho_calls == [('Error reading password from Vault: permission denied', {'err': True, 'fg': 'red'})]
 
 

@@ -288,6 +288,8 @@ set editor_command = "code --wait" in ~/.myclirc to edit queries using VS Code!
 
 set up an interactive output explorer using the "[explorer]" section of ~/.myclirc!
 
+customize password sources/precedence with "password_sources" in ~/.myclirc!
+
 ###
 ### redirection
 ###
