@@ -201,7 +201,7 @@ def test_run_from_cli_args_password_file_prevents_positional_dsn_alias(
     connect_call = client.connect_calls[-1]
     assert client.dsn_alias is None
     assert connect_call['database'] == 'prod'
-    assert resolve_connect_password(connect_call) == ('cli_file', 'file-secret')
+    assert resolve_connect_password(connect_call) == ('file', 'file-secret')
     assert password_file_calls == ['secret.txt']
 
 
@@ -234,7 +234,7 @@ def test_run_from_cli_args_keeps_empty_cli_password_over_dsn(monkeypatch: pytest
 
     run_with_client(monkeypatch, cli_args, client)
 
-    assert resolve_connect_password(client.connect_calls[-1]) == ('cli_literal', '')
+    assert resolve_connect_password(client.connect_calls[-1]) == ('literal', '')
 
 
 def test_run_from_cli_args_preserves_cli_password_prompt(monkeypatch: pytest.MonkeyPatch) -> None:

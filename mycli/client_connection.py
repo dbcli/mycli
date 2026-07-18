@@ -181,7 +181,7 @@ class ClientConnectionMixin:
         keyring_domain = 'mycli.net'
         keyring_retrieved_cleanly = False
 
-        password_candidates.add_value('mylogin_cnf', mylogin_cnf['password'])
+        password_candidates.add_value('login_path', mylogin_cnf['password'])
         if use_keyring and not reset_keyring:
             password_candidates.add_loader('keyring', lambda: keyring.get_password(keyring_domain, keyring_identifier))
 

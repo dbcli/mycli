@@ -974,7 +974,7 @@ def test_dsn(monkeypatch):
     assert result.exit_code == 0, result.output + " " + str(result.exception)
     assert (
         MockMyCli.connect_args["user"] == "arg_user"
-        and resolve_connect_password(MockMyCli.connect_args) == ('cli_literal', 'arg_password')
+        and resolve_connect_password(MockMyCli.connect_args) == ('literal', 'arg_password')
         and MockMyCli.connect_args["host"] == "arg_host"
         and MockMyCli.connect_args["port"] == 3
         and MockMyCli.connect_args["database"] == "arg_database"
@@ -1033,7 +1033,7 @@ def test_dsn(monkeypatch):
     assert result.exit_code == 0, result.output + " " + str(result.exception)
     assert (
         MockMyCli.connect_args["user"] == "arg_user"
-        and resolve_connect_password(MockMyCli.connect_args) == ('cli_literal', 'arg_password')
+        and resolve_connect_password(MockMyCli.connect_args) == ('literal', 'arg_password')
         and MockMyCli.connect_args["host"] == "arg_host"
         and MockMyCli.connect_args["port"] == 5
         and MockMyCli.connect_args["database"] == "arg_database"
@@ -1271,7 +1271,7 @@ def test_password_option_uses_cleartext_value(monkeypatch):
         ],
     )
     assert result.exit_code == 0, result.output + ' ' + str(result.exception)
-    assert resolve_connect_password(MockMyCli.connect_args) == ('cli_literal', 'cleartext_password')
+    assert resolve_connect_password(MockMyCli.connect_args) == ('literal', 'cleartext_password')
 
 
 def test_password_option_overrides_password_file_and_mysql_pwd(monkeypatch):
@@ -1340,7 +1340,7 @@ def test_password_option_overrides_password_file_and_mysql_pwd(monkeypatch):
             ],
         )
         assert result.exit_code == 0, result.output + ' ' + str(result.exception)
-        assert resolve_connect_password(MockMyCli.connect_args) == ('cli_literal', 'option_password')
+        assert resolve_connect_password(MockMyCli.connect_args) == ('literal', 'option_password')
     finally:
         os.remove(password_file.name)
 
@@ -1408,7 +1408,7 @@ def test_password_file_option_reads_password(monkeypatch):
             ],
         )
         assert result.exit_code == 0, result.output + ' ' + str(result.exception)
-        assert resolve_connect_password(MockMyCli.connect_args) == ('cli_file', 'file_password')
+        assert resolve_connect_password(MockMyCli.connect_args) == ('file', 'file_password')
     finally:
         os.remove(password_file.name)
 

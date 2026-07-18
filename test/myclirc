@@ -205,17 +205,17 @@ enable_pager = True
 # Choose a specific pager
 pager = python test/features/wrappager.py ---boundary---
 
-# Comma-separated sources to respect for a password, in order of precendence.
+# Comma-separated sources to respect for a password, in order of precedence.
 # Valid choices:
-# * prompt
-# * cli_literal
-# * cli_file
-# * environment
-# * dsn
-# * vault
-# * mylogin_cnf
-# * keyring
-password_sources = prompt, cli_literal, cli_file, environment, dsn, vault, mylogin_cnf, keyring
+# * prompt         # interactive fallback, or plain trailing --password at the CLI
+# * literal        # --password=<literal> at the CLI
+# * file           # --password-file=<file> at the CLI
+# * environment    # $MYSQL_PWD environment variable
+# * dsn            # mysql://user:password@ field in a DSN
+# * vault          # value retrieved from "vault kv get"
+# * login_path     # --login-path=<path> at the CLI
+# * keyring        # value retrieved from system keyring
+password_sources = prompt, literal, file, environment, dsn, vault, login_path, keyring
 
 # Whether to store and retrieve passwords from the system keyring.
 # * False - never use keyring
