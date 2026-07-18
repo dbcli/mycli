@@ -4,6 +4,7 @@ Upcoming (TBD)
 Features
 ---------
 * Make password sources and precedence configurable.
+* Ability to deselect fallback interactive password prompt.
 
 
 Bug Fixes

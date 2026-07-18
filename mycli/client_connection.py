@@ -192,7 +192,6 @@ class ClientConnectionMixin:
         # prompt for password if requested by user
         if passwd == EMPTY_PASSWORD_FLAG_SENTINEL:
             passwd = click.prompt(f"Enter password for {user}", hide_input=True, show_default=False, default='', type=str, err=True)
-            keyring_retrieved_cleanly = False
 
         # should not fail, but will help the typechecker
         assert not isinstance(passwd, int)
@@ -286,15 +285,18 @@ class ClientConnectionMixin:
                     _connect(
                         retry_ssl=True, keyring_retrieved_cleanly=keyring_retrieved_cleanly, keyring_save_eligible=keyring_save_eligible
                     )
-                elif e1.args[0] == ACCESS_DENIED_ERROR and connection_info["password"] is None:
+                elif e1.args[0] == ACCESS_DENIED_ERROR and connection_info["password"] is None and 'fallback' in password_source_precedence:
                     # if we already tried and failed to connect with a new password, raise the error
                     if retry_password:
                         raise e1
-                    # ask the user for a new password and try to connect again
-                    new_password = click.prompt(
-                        f"Enter password for {user}", hide_input=True, show_default=False, default='', type=str, err=True
+                    password_candidates.add_loader(
+                        'fallback',
+                        lambda: click.prompt(
+                            f"Enter password for {user}", hide_input=True, show_default=False, default='', type=str, err=True
+                        ),
                     )
-                    connection_info["password"] = new_password
+                    fallback_password = password_candidates.resolve(['fallback'])
+                    connection_info["password"] = fallback_password.value if fallback_password is not None else None
                     keyring_retrieved_cleanly = False
                     _connect(
                         retry_password=True,
