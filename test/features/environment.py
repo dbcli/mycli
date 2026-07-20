@@ -3,6 +3,7 @@
 import os
 import shutil
 import sys
+import tempfile
 
 import db_utils as dbutils
 import fixture_utils as fixutils
@@ -64,7 +65,11 @@ def before_all(context):
     os.environ['PAGER'] = (
         f'{sys.executable} {os.path.join(context.package_root, "test/features/wrappager.py")} {context.conf["pager_boundary"]}'
     )
-    context.conf["myclirc"] = os.path.join(context.package_root, "test", "myclirc")
+    source_myclirc = os.path.join(context.package_root, 'test', 'myclirc')
+    fd, context.myclirc_copy = tempfile.mkstemp(prefix='mycli-behave-', suffix='.myclirc')
+    os.close(fd)
+    shutil.copyfile(source_myclirc, context.myclirc_copy)
+    context.conf['myclirc'] = context.myclirc_copy
 
     context.cn = dbutils.create_db(
         context.conf["host"], context.conf["port"], context.conf["user"], context.conf["pass"], context.conf["dbname"]
@@ -81,6 +86,10 @@ def after_all(context):
         if os.path.exists(context.conf["defaults-file"]):
             os.remove(context.conf["defaults-file"])
     except Exception:
+        pass
+    try:
+        os.remove(context.myclirc_copy)
+    except FileNotFoundError:
         pass
 
     # Restore env vars.
