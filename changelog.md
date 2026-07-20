@@ -6,6 +6,11 @@ Features
 * Configurable sources of credentials to save to the keyring.
 
 
+Internal
+---------
+* Don't modify checked-in `test/myclirc` in the behave test suite.
+
+
 2.4.0 (2026/07/18)
 ==============
 
