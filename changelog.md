@@ -4,6 +4,8 @@ Upcoming (TBD)
 Features
 ---------
 * Configurable sources of credentials to save to the keyring.
+* Trailing operator `.|` to transform query results as dataframes.
+* Trailing operator `.>` to save query results as parquet files.
 
 
 Internal

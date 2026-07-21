@@ -71,6 +71,7 @@ Features
 * Pretty print tabular data (with colors!).
 * Support for SSL connections
 * Shell-style trailing redirects with `$>`, `$>>` and `$|` operators.
+* [Polars](https://pola.rs) dataframe [transforms](doc/transforms.md) with `.|` and Parquet saves with `.>`.
 * Support for querying LLMs with context derived from your schema using `/llm`.
 * Support for storing passwords in the system keyring.
 

@@ -49,8 +49,12 @@ llm = [
     "setuptools == 82.*",                   # Required by llm commands to install models
     "pip == 26.*",
 ]
+dataframe = [
+    "polars ~= 1.42.1",
+    "altair ~= 6.2.2",
+]
 all = [
-  "mycli[llm]",
+    "mycli[llm,dataframe]",
 ]
 dev = [
     "behave ~= 1.3.3",
@@ -67,6 +71,8 @@ dev = [
     "setuptools == 82.*",                   # Required by llm commands to install models
     "pip == 26.*",
     "ruff ~= 0.15.0",
+    "polars ~= 1.42.1",
+    "altair ~= 6.2.2",
 ]
 
 [project.scripts]
