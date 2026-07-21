@@ -939,6 +939,19 @@ def test_unset_once_and_post_redirect_hook(monkeypatch, tmp_path: Path) -> None:
         iocommands._run_post_redirect_hook('cat {}', str(target))
 
 
+def test_run_post_redirect_hook_delegates_to_private_helper(monkeypatch) -> None:
+    hook_calls: list[tuple[str, str]] = []
+    monkeypatch.setattr(
+        iocommands,
+        '_run_post_redirect_hook',
+        lambda command, filename: hook_calls.append((command, filename)),
+    )
+
+    iocommands.run_post_redirect_hook('post {}', 'output.parquet')
+
+    assert hook_calls == [('post {}', 'output.parquet')]
+
+
 def test_set_pipe_once_and_flush_short_circuits(monkeypatch) -> None:
     popen_calls: list[tuple[tuple[Any, ...], dict[str, Any]]] = []
     monkeypatch.setattr(iocommands, 'WIN', True)

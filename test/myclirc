@@ -93,9 +93,10 @@ numeric_alignment = right
 # to hex rendering if not possible.
 binary_display = hex
 
-# A command to run after a successful output redirect, with {} to be replaced
-# with the escaped filename.  Mac example: echo {} | pbcopy.  Escaping is not
-# reliable/safe on Windows.
+# A command to run after a successful Parquet save with ".>" or shell output
+# redirect with "$>".  The sequence "{}" will be replaced by the escaped
+# destination filename.  Mac example: echo {} | pbcopy.
+# Escaping is not reliable/safe on Windows.
 post_redirect_command = ""
 
 # Syntax coloring style. Possible values (many support the "-dark" suffix):

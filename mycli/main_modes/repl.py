@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import datetime
 import functools
@@ -14,7 +15,7 @@ import subprocess
 import sys
 import time
 import traceback
-from typing import TYPE_CHECKING, Any, Generator
+from typing import TYPE_CHECKING, Any
 from xml.parsers.expat import ExpatError
 
 import click
@@ -60,6 +61,13 @@ from mycli.packages.interactive_utils import confirm, confirm_destructive_query
 from mycli.packages.key_binding_utils import (
     handle_clip_command,
     handle_editor_command,
+)
+from mycli.packages.polars_transform import (
+    PolarsTransform,
+    PolarsTransformError,
+    parse_polars_transform,
+    prepare_polars_transform,
+    run_polars_transform,
 )
 from mycli.packages.ptoolkit.history import FileHistoryWithTimestamp
 from mycli.packages.special.utils import format_uptime, get_ssl_version, get_uptime, get_warning_count
@@ -420,7 +428,7 @@ def _get_continuation(
 def _output_results(
     mycli: 'MyCli',
     state: ReplState,
-    results: Generator[SQLResult],
+    results: Iterable[SQLResult],
     start: float,
 ) -> None:
     sqlexecute = mycli.sqlexecute
@@ -687,7 +695,15 @@ def _one_iteration(
     if not text:
         return
 
-    if is_redirect_command(text):
+    original_text = text
+    try:
+        polars_pipeline = parse_polars_transform(text)
+    except PolarsTransformError as exc:
+        mycli.echo(str(exc), err=True, fg='red')
+        return
+    if polars_pipeline is not None:
+        text = polars_pipeline.sql
+    elif is_redirect_command(text):
         sql_part, command_part, file_operator_part, file_part = get_redirect_components(text)
         text = sql_part or ''
         try:
@@ -719,19 +735,41 @@ def _one_iteration(
     successful = False
     try:
         mycli.logger.debug('sql: %r', text)
+        polars_transform: PolarsTransform | None = (
+            prepare_polars_transform(text, polars_pipeline.expression) if polars_pipeline is not None else None
+        )
+        query_history_text = original_text if polars_transform is not None else text
         special.write_tee(mycli.last_prompt_message, nl=False)
-        special.write_tee(text)
-        mycli.log_query(text)
+        special.write_tee(query_history_text)
+        mycli.log_query(query_history_text)
 
         start = time.time()
         results = sqlexecute.run(text)
         mycli.main_formatter.query = text
         mycli.redirect_formatter.query = text
         mycli.explorer_formatter.query = text
+        if polars_transform is not None:
+            assert polars_pipeline is not None
+            if polars_pipeline.parquet_path is None:
+                polars_result = run_polars_transform(polars_transform, results)
+            else:
+                polars_result = run_polars_transform(polars_transform, results, polars_pipeline.parquet_path)
+            if polars_pipeline.parquet_path is None:
+                if polars_pipeline.output_mode == 'explorer':
+                    special.set_explorer_output(True)
+                elif polars_pipeline.output_mode == 'expanded':
+                    special.set_expanded_output(True)
+            _output_results(mycli, state, iter([polars_result]), start)
+            if polars_pipeline.parquet_path is not None:
+                special.run_post_redirect_hook(
+                    mycli.post_redirect_command,
+                    polars_pipeline.parquet_path,
+                )
+        else:
+            _output_results(mycli, state, results, start)
+            special.unset_once_if_written(mycli.post_redirect_command)
+            special.flush_pipe_once_if_written(mycli.post_redirect_command)
         successful = True
-        _output_results(mycli, state, results, start)
-        special.unset_once_if_written(mycli.post_redirect_command)
-        special.flush_pipe_once_if_written(mycli.post_redirect_command)
     except pymysql.err.InterfaceError:
         if not mycli.reconnect():
             return
@@ -764,6 +802,9 @@ def _one_iteration(
             mycli.echo('Did not get a connection id, skip cancelling query', err=True, fg='red')
     except NotImplementedError:
         mycli.echo('Not Yet Implemented.', fg='yellow')
+    except PolarsTransformError as exc:
+        mycli.logger.error('sql: %r, error: %r', text, exc)
+        mycli.echo(str(exc), err=True, fg='red')
     except pymysql.OperationalError as e1:
         mycli.logger.debug('Exception: %r', e1)
         if e1.args[0] == ER_MUST_CHANGE_PASSWORD:
@@ -814,7 +855,7 @@ def _one_iteration(
         if mycli.logfile is False:
             mycli.echo('Warning: This query was not logged.', err=True, fg='red')
 
-    query = Query(text, successful, state.mutating)
+    query = Query(original_text if polars_pipeline is not None else text, successful, state.mutating)
     mycli.query_history.append(query)
 
 

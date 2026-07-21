@@ -1152,6 +1152,283 @@ def test_one_iteration_covers_redirect_destructive_success_refresh_and_logfile(m
     assert 'Wise choice!' in cli.echo_calls
 
 
+@pytest.mark.parametrize(
+    ('terminator', 'setter_name'),
+    [(r'\x', 'set_explorer_output'), (r'\G', 'set_expanded_output')],
+)
+def test_one_iteration_runs_polars_transform_and_preserves_full_command(
+    monkeypatch: pytest.MonkeyPatch,
+    terminator: str,
+    setter_name: str,
+) -> None:
+    patch_repl_runtime_defaults(monkeypatch)
+
+    class FakeSQLExecute:
+        dbname = 'db'
+        connection_id = 0
+
+        def __init__(self) -> None:
+            self.calls: list[str] = []
+
+        def run(self, text: str) -> Iterator[SQLResult]:
+            self.calls.append(text)
+            return iter([SQLResult(header=['id'], rows=[(1,)])])
+
+    sqlexecute = FakeSQLExecute()
+    cli = make_repl_cli(sqlexecute)
+    transform = object()
+    prepare_calls: list[tuple[str, str]] = []
+    run_calls: list[object] = []
+    output_flags: list[bool] = []
+    hook_calls: list[tuple[str, str]] = []
+
+    def prepare(sql: str, expression: str) -> object:
+        prepare_calls.append((sql, expression))
+        return transform
+
+    def run(received_transform: object, results: Iterator[SQLResult]) -> SQLResult:
+        run_calls.append(received_transform)
+        assert list(results) == [SQLResult(header=['id'], rows=[(1,)])]
+        return SQLResult(header=['count'], rows=[(1,)])
+
+    monkeypatch.setattr(repl_mode, 'prepare_polars_transform', prepare)
+    monkeypatch.setattr(repl_mode, 'run_polars_transform', run)
+    monkeypatch.setattr(repl_mode.special, setter_name, output_flags.append)
+
+    monkeypatch.setattr(
+        repl_mode.special,
+        'run_post_redirect_hook',
+        lambda command, filename: hook_calls.append((command, filename)),
+    )
+    cli.post_redirect_command = 'post {}'
+
+    command = f'SELECT * FROM orders .| df.group_by(\'customer_id\').len() {terminator}'
+    repl_mode._one_iteration(cli, repl_mode.ReplState(), command)
+
+    assert sqlexecute.calls == ['SELECT * FROM orders']
+    assert prepare_calls == [('SELECT * FROM orders', "df.group_by('customer_id').len()")]
+    assert run_calls == [transform]
+    assert output_flags == [True]
+    assert hook_calls == []
+    assert cli.log_queries == [command]
+    assert cli.query_history[-1].query == command
+    assert cli.query_history[-1].successful is True
+    assert cli.output_calls[-1][1] == SQLResult(header=['count'], rows=[(1,)])
+
+
+def test_one_iteration_reports_polars_parse_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    patch_repl_runtime_defaults(monkeypatch)
+    cli = make_repl_cli(object())
+
+    def parse_error(command: str) -> None:
+        raise repl_mode.PolarsTransformError('invalid Polars transform')
+
+    monkeypatch.setattr(repl_mode, 'parse_polars_transform', parse_error)
+
+    repl_mode._one_iteration(cli, repl_mode.ReplState(), 'SELECT 1 .| df')
+
+    assert cli.echo_calls == ['invalid Polars transform']
+    assert cli.query_history == []
+
+
+def test_one_iteration_writes_polars_parquet_without_rendering_rows(monkeypatch: pytest.MonkeyPatch) -> None:
+    patch_repl_runtime_defaults(monkeypatch)
+
+    class FakeSQLExecute:
+        dbname = 'db'
+        connection_id = 0
+
+        def __init__(self) -> None:
+            self.calls: list[str] = []
+
+        def run(self, text: str) -> Iterator[SQLResult]:
+            self.calls.append(text)
+            return iter([SQLResult(header=['id'], rows=[(1,)])])
+
+    sqlexecute = FakeSQLExecute()
+    cli = make_repl_cli(sqlexecute)
+    cli.post_redirect_command = 'post {}'
+    transform = object()
+    prepare_calls: list[tuple[str, str | None]] = []
+    run_calls: list[tuple[object, str]] = []
+
+    def prepare(sql: str, expression: str | None) -> object:
+        prepare_calls.append((sql, expression))
+        return transform
+
+    def run(received_transform: object, results: Iterator[SQLResult], path: str) -> SQLResult:
+        assert list(results) == [SQLResult(header=['id'], rows=[(1,)])]
+        run_calls.append((received_transform, path))
+        return SQLResult(status=f'Wrote 1 rows to {path}.')
+
+    monkeypatch.setattr(repl_mode, 'prepare_polars_transform', prepare)
+    monkeypatch.setattr(repl_mode, 'run_polars_transform', run)
+    hook_calls: list[tuple[str, str]] = []
+
+    def run_hook(command: str, filename: str) -> None:
+        assert cli.output_calls[-1][1] == SQLResult(status='Wrote 1 rows to orders.parquet.')
+        hook_calls.append((command, filename))
+
+    monkeypatch.setattr(repl_mode.special, 'run_post_redirect_hook', run_hook)
+
+    command = 'SELECT * FROM orders .> orders.parquet'
+    repl_mode._one_iteration(cli, repl_mode.ReplState(), command)
+
+    assert sqlexecute.calls == ['SELECT * FROM orders']
+    assert prepare_calls == [('SELECT * FROM orders', None)]
+    assert run_calls == [(transform, 'orders.parquet')]
+    assert cli.output_calls[-1][1] == SQLResult(status='Wrote 1 rows to orders.parquet.')
+    assert cli.output_calls[-1][1].rows is None
+    assert hook_calls == [('post {}', 'orders.parquet')]
+    assert cli.log_queries == [command]
+    assert cli.query_history[-1].query == command
+    assert cli.query_history[-1].successful is True
+
+
+def test_one_iteration_writes_transformed_polars_parquet(monkeypatch: pytest.MonkeyPatch) -> None:
+    patch_repl_runtime_defaults(monkeypatch)
+
+    class FakeSQLExecute:
+        dbname = 'db'
+        connection_id = 0
+
+        def run(self, text: str) -> Iterator[SQLResult]:
+            assert text == 'SELECT * FROM orders'
+            return iter([SQLResult(header=['id'], rows=[(1,)])])
+
+    cli = make_repl_cli(FakeSQLExecute())
+    cli.post_redirect_command = 'post {}'
+    transform = object()
+    prepare_calls: list[tuple[str, str | None]] = []
+    run_calls: list[str] = []
+
+    def prepare(sql: str, expression: str | None) -> object:
+        prepare_calls.append((sql, expression))
+        return transform
+
+    def run(received_transform: object, results: Iterator[SQLResult], path: str) -> SQLResult:
+        assert received_transform is transform
+        assert list(results) == [SQLResult(header=['id'], rows=[(1,)])]
+        run_calls.append(path)
+        return SQLResult(status=f'Wrote 1 rows to {path}.')
+
+    monkeypatch.setattr(repl_mode, 'prepare_polars_transform', prepare)
+    monkeypatch.setattr(repl_mode, 'run_polars_transform', run)
+    hook_calls: list[tuple[str, str]] = []
+    monkeypatch.setattr(
+        repl_mode.special,
+        'run_post_redirect_hook',
+        lambda command, filename: hook_calls.append((command, filename)),
+    )
+
+    repl_mode._one_iteration(
+        cli,
+        repl_mode.ReplState(),
+        'SELECT * FROM orders .| df.filter(pl.col(\'id\') > 0) .> orders.parquet',
+    )
+
+    assert prepare_calls == [('SELECT * FROM orders', "df.filter(pl.col('id') > 0)")]
+    assert run_calls == ['orders.parquet']
+    assert hook_calls == [('post {}', 'orders.parquet')]
+
+
+def test_one_iteration_reports_polars_post_redirect_hook_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    patch_repl_runtime_defaults(monkeypatch)
+
+    class FakeSQLExecute:
+        dbname = 'db'
+        connection_id = 0
+
+        def run(self, text: str) -> Iterator[SQLResult]:
+            assert text == 'SELECT * FROM orders'
+            return iter([SQLResult(header=['id'], rows=[(1,)])])
+
+    cli = make_repl_cli(FakeSQLExecute())
+    cli.post_redirect_command = 'post {}'
+    transform = object()
+
+    monkeypatch.setattr(repl_mode, 'prepare_polars_transform', lambda sql, expression: transform)
+    monkeypatch.setattr(
+        repl_mode,
+        'run_polars_transform',
+        lambda received_transform, results, path: SQLResult(status=f'Wrote 1 rows to {path}.'),
+    )
+
+    def raise_hook_error(command: str, filename: str) -> None:
+        assert (command, filename) == ('post {}', 'orders.parquet')
+        raise OSError('Redirect post hook failed: hook failed')
+
+    monkeypatch.setattr(repl_mode.special, 'run_post_redirect_hook', raise_hook_error)
+
+    repl_mode._one_iteration(cli, repl_mode.ReplState(), 'SELECT * FROM orders .> orders.parquet')
+
+    assert cli.output_calls[-1][1] == SQLResult(status='Wrote 1 rows to orders.parquet.')
+    assert cli.echo_calls[-1] == 'Redirect post hook failed: hook failed'
+    assert cli.query_history[-1].successful is False
+
+
+def test_one_iteration_does_not_run_hook_after_failed_polars_parquet_write(monkeypatch: pytest.MonkeyPatch) -> None:
+    patch_repl_runtime_defaults(monkeypatch)
+
+    class FakeSQLExecute:
+        dbname = 'db'
+        connection_id = 0
+
+        def run(self, text: str) -> Iterator[SQLResult]:
+            assert text == 'SELECT * FROM orders'
+            return iter([SQLResult(header=['id'], rows=[(1,)])])
+
+    cli = make_repl_cli(FakeSQLExecute())
+    cli.post_redirect_command = 'post {}'
+    hook_calls: list[tuple[str, str]] = []
+
+    monkeypatch.setattr(repl_mode, 'prepare_polars_transform', lambda sql, expression: object())
+
+    def fail_write(received_transform: object, results: Iterator[SQLResult], path: str) -> SQLResult:
+        raise repl_mode.PolarsTransformError('write failed')
+
+    monkeypatch.setattr(repl_mode, 'run_polars_transform', fail_write)
+    monkeypatch.setattr(
+        repl_mode.special,
+        'run_post_redirect_hook',
+        lambda command, filename: hook_calls.append((command, filename)),
+    )
+
+    repl_mode._one_iteration(cli, repl_mode.ReplState(), 'SELECT * FROM orders .> orders.parquet')
+
+    assert hook_calls == []
+    assert cli.echo_calls[-1] == 'write failed'
+    assert cli.query_history[-1].successful is False
+
+
+def test_one_iteration_reports_polars_expression_error_without_output(monkeypatch: pytest.MonkeyPatch) -> None:
+    patch_repl_runtime_defaults(monkeypatch)
+
+    class FakeSQLExecute:
+        dbname = 'db'
+        connection_id = 0
+
+        def run(self, text: str) -> Iterator[SQLResult]:
+            assert text == 'SELECT * FROM orders'
+            return iter([SQLResult(header=['id'], rows=[(1,)])])
+
+    cli = make_repl_cli(FakeSQLExecute())
+    monkeypatch.setattr(repl_mode, 'prepare_polars_transform', lambda sql, expression: object())
+    monkeypatch.setattr(
+        repl_mode,
+        'run_polars_transform',
+        lambda transform, results: (_ for _ in ()).throw(repl_mode.PolarsTransformError('Polars expression failed')),
+    )
+
+    command = 'SELECT * FROM orders .| df.bad_method()'
+    repl_mode._one_iteration(cli, repl_mode.ReplState(), command)
+
+    assert cli.output_calls == []
+    assert 'Polars expression failed' in cli.echo_calls
+    assert cli.query_history[-1].query == command
+    assert cli.query_history[-1].successful is False
+
+
 def test_one_iteration_covers_reconnect_and_error_paths(monkeypatch: pytest.MonkeyPatch) -> None:
     patch_repl_runtime_defaults(monkeypatch)
 

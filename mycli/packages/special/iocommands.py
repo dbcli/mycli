@@ -660,6 +660,11 @@ def unset_once_if_written(post_redirect_command: str) -> None:
         _run_post_redirect_hook(post_redirect_command, once_filename)
 
 
+def run_post_redirect_hook(post_redirect_command: str, filename: str) -> None:
+    """Run the configured command after a successful output redirect."""
+    _run_post_redirect_hook(post_redirect_command, filename)
+
+
 def _run_post_redirect_hook(post_redirect_command: str, filename: str) -> None:
     if not post_redirect_command:
         return
