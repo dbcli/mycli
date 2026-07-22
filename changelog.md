@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Internal
+---------
+* Sync test myclirc file closer to package myclirc file.
+
+
 2.5.1 (2026/07/22)
 ==============
 

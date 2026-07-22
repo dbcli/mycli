@@ -23,7 +23,7 @@ prefetch_schemas_mode = always
 
 # Comma-separated list of schemas to prefetch when
 # prefetch_schemas_mode = listed.  Ignored in other modes.
-prefetch_schemas_list = ""
+prefetch_schemas_list =
 
 # Expand whole DSN alias values in the form ${VAR} from the environment.
 expand_dsn_alias_env_vars = False
@@ -52,7 +52,7 @@ log_file = ~/.mycli.test.log
 
 # Default log level. Possible values: "CRITICAL", "ERROR", "WARNING", "INFO"
 # and "DEBUG". "NONE" disables logging.
-log_level = DEBUG
+log_level = INFO
 
 # Log every query and its results to a file. Enable this by uncommenting the
 # line below.
@@ -97,7 +97,7 @@ binary_display = hex
 # redirect with "$>".  The sequence "{}" will be replaced by the escaped
 # destination filename.  Mac example: echo {} | pbcopy.
 # Escaping is not reliable/safe on Windows.
-post_redirect_command = ""
+post_redirect_command =
 
 # Syntax coloring style. Possible values (many support the "-dark" suffix):
 # manni, igor, xcode, vim, autumn, vs, rrt, native, perldoc, borland, tango, emacs,
@@ -150,8 +150,8 @@ wider_completion_menu = False
 #   HTML styles cannot be combined with ANSI sequences.  HTML mode takes precedence.
 #   HTML color example: prompt = '\<html><red><u>root</u></red>@localhost:\d&gt; '
 #
-prompt = "\t \u@\h:\d> "
-prompt_continuation = ->
+prompt = '\t \u@\h:\d> '
+prompt_continuation = '->'
 
 # Use the same prompt format strings to construct a status line in the toolbar,
 # where \B in the first position refers to the default toolbar showing keystrokes
@@ -163,33 +163,33 @@ prompt_continuation = ->
 # lines can be added with \n.  If \B is not included, the customized toolbar
 # can be a single line.  An empty value is the same as the default "\B".  The
 # special literal value "None" will suppress the toolbar from appearing.
-toolbar = ""
+toolbar = ''
 
 # Use the same prompt format strings to construct a terminal tab title.
 # The original XTerm docs call this title the "window title", but it now
 # probably refers to a terminal tab.  This title is only updated as frequently
 # as the database is changed.
-terminal_tab_title = ""
+terminal_tab_title = ''
 
 # Use the same prompt format strings to construct a terminal window title.
 # The original XTerm docs call this title the "icon title", but it now
 # probably refers to a terminal window which contains tabs.  This title is
 # only updated as frequently as the database is changed.
-terminal_window_title = ""
+terminal_window_title = ''
 
 # Use the same prompt format strings to construct a window title in a terminal
 # multiplexer.  Currently only tmux is supported.  This title is only updated
 # as frequently as the database is changed.
-multiplex_window_title = ""
+multiplex_window_title = ''
 
 # Use the same prompt format strings to construct a pane title in a terminal
 # multiplexer.  Currently only tmux is supported.  This title is only updated
 # as frequently as the database is changed.
-multiplex_pane_title = ""
+multiplex_pane_title = ''
 
 # Skip intro info on startup and outro info on exit, and generally reduce
 # feedback.  This is equivalent to giving --quiet at the command line.
-less_chatty = True
+less_chatty = False
 
 # Use alias from --login-path instead of host name in prompt
 login_path_as_host = False
@@ -296,19 +296,19 @@ default_keepalive_ticks = 0
 default_ssl_mode = auto
 
 # SSL CA file for connections without --ssl-ca being set
-default_ssl_ca = ""
+default_ssl_ca =
 
 # SSL CA directory for connections without --ssl-capath being set
-default_ssl_capath = ""
+default_ssl_capath =
 
 # SSL X509 cert path for connections without --ssl-cert being set
-default_ssl_cert = ""
+default_ssl_cert =
 
 # SSL X509 key for connections without --ssl-key being set
-default_ssl_key = ""
+default_ssl_key =
 
 # SSL cipher to use for connections without --ssl-cipher being set
-default_ssl_cipher = ""
+default_ssl_cipher =
 
 # whether to verify server's "Common Name" in its cert, for connections without
 # --ssl-verify-server-cert being set
@@ -388,17 +388,17 @@ default_username_field = username
 # Attributes: (no)blink, bold, dim, hidden, inherit, italic, reverse, strike, underline.
 [colors]
 # Completion menus
-completion-menu.completion.current = "bg:#ffffff #000000"
-completion-menu.completion = "bg:#008888 #ffffff"
-completion-menu.meta.completion.current = "bg:#44aaaa #000000"
-completion-menu.meta.completion = "bg:#448888 #ffffff"
-completion-menu.multi-column-meta = "bg:#aaffff #000000"
-scrollbar.arrow = "bg:#003333"
-scrollbar = "bg:#00aaaa"
+completion-menu.completion.current = 'bg:#ffffff #000000'
+completion-menu.completion = 'bg:#008888 #ffffff'
+completion-menu.meta.completion.current = 'bg:#44aaaa #000000'
+completion-menu.meta.completion = 'bg:#448888 #ffffff'
+completion-menu.multi-column-meta = 'bg:#aaffff #000000'
+scrollbar.arrow = 'bg:#003333'
+scrollbar = 'bg:#00aaaa'
 
 # The prompt
-prompt = ""
-continuation = ""
+prompt = ''
+continuation = ''
 
 # Colored table output (query results)
 output.table-separator = ""
@@ -411,29 +411,29 @@ output.status.warning-count = ""
 output.timing = ""
 
 # Selected text (native selection; currently unused)
-selected = "#ffffff bg:#6666aa"
+selected = '#ffffff bg:#6666aa'
 
 # Search matches (for reverse i-search, not fuzzy search)
-search = "#ffffff bg:#4444aa"
-search.current = "#ffffff bg:#44aa44"
+search = '#ffffff bg:#4444aa'
+search.current = '#ffffff bg:#44aa44'
 
 # UI elements: bottom toolbar
-bottom-toolbar = "bg:#222222 #aaaaaa"
-bottom-toolbar.off = "bg:#222222 #888888"
-bottom-toolbar.on = "bg:#222222 #ffffff"
-bottom-toolbar.transaction.valid = "bg:#222222 #00ff5f bold"
-bottom-toolbar.transaction.failed = "bg:#222222 #ff005f bold"
+bottom-toolbar = 'bg:#222222 #aaaaaa'
+bottom-toolbar.off = 'bg:#222222 #888888'
+bottom-toolbar.on = 'bg:#222222 #ffffff'
+bottom-toolbar.transaction.valid = 'bg:#222222 #00ff5f bold'
+bottom-toolbar.transaction.failed = 'bg:#222222 #ff005f bold'
 
 # UI elements: other toolbars (currently unused)
-search-toolbar = noinherit bold
-search-toolbar.text = nobold
-system-toolbar = noinherit bold
-arg-toolbar = noinherit bold
-arg-toolbar.text = nobold
+search-toolbar = 'noinherit bold'
+search-toolbar.text = 'nobold'
+system-toolbar = 'noinherit bold'
+arg-toolbar = 'noinherit bold'
+arg-toolbar.text = 'nobold'
 
 # SQL enhacements: matching brackets
-matching-bracket.cursor = "#ff8888 bg:#880000"
-matching-bracket.other = "#000000 bg:#aacccc"
+matching-bracket.cursor = '#ff8888 bg:#880000'
+matching-bracket.other = '#000000 bg:#aacccc'
 
 # SQL syntax highlighting overrides: normally defined by main.syntax_style
 # sql.comment = 'italic #408080'
@@ -468,14 +468,12 @@ matching-bracket.other = "#000000 bg:#aacccc"
 # You can add your favorite queries here. They will be available in the
 # REPL when you type `/f` or `/f <query_name>`.
 [favorite_queries]
-check = 'select "✔"'
-foo_args = 'SELECT $1, "$2", "$3"'
 # example = "SELECT * FROM example_table WHERE id = 1"
 
 # Initial commands to execute when connecting to any database.
 [init-commands]
-global_limit = set sql_select_limit=9999
 # read_only = "SET SESSION TRANSACTION READ ONLY"
+global_limit = set sql_select_limit=9999
 
 
 # Use the -d option to reference a DSN.
