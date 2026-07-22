@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Bug Fixes
+---------
+* Keep Vault username and password fields from being confused.
+
+
 Internal
 ---------
 * Sync test myclirc file closer to package myclirc file.
