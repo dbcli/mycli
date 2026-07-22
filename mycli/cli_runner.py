@@ -384,13 +384,13 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
         vault_config = mycli.config.get('vault_beta', {})
         vault_address = cli_args.vault_address or os.environ.get('VAULT_ADDR') or vault_config.get('address') or None
         vault_mount = cli_args.vault_mount or vault_config.get('default_mount') or None
-        vault_field = cli_args.vault_password_field or vault_config.get('default_password_field') or DEFAULT_VAULT_PASSWORD_FIELD
+        vault_password_field = cli_args.vault_password_field or vault_config.get('default_password_field') or DEFAULT_VAULT_PASSWORD_FIELD
         vault_executable = vault_config.get('vault_executable') or DEFAULT_VAULT_EXECUTABLE
 
         def load_vault_password() -> str | None:
             try:
                 return get_field_from_vault(
-                    vault_field,
+                    vault_password_field,
                     vault_secret,
                     executable=vault_executable,
                     mount=vault_mount,
@@ -406,11 +406,11 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
         vault_config = mycli.config.get('vault_beta', {})
         vault_address = cli_args.vault_address or os.environ.get('VAULT_ADDR') or vault_config.get('address') or None
         vault_mount = cli_args.vault_mount or vault_config.get('default_mount') or None
-        vault_field = cli_args.vault_username_field or vault_config.get('default_username_field') or DEFAULT_VAULT_USERNAME_FIELD
+        vault_username_field = cli_args.vault_username_field or vault_config.get('default_username_field') or DEFAULT_VAULT_USERNAME_FIELD
         vault_executable = vault_config.get('vault_executable') or DEFAULT_VAULT_EXECUTABLE
         try:
             vault_username = get_field_from_vault(
-                vault_field,
+                vault_username_field,
                 cli_args.vault_secret,
                 executable=vault_executable,
                 mount=vault_mount,
