@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Features
+---------
+* Subcommand completions for the `/dsn` command.
+
+
 Bug Fixes
 ---------
 * Keep Vault username and password fields from being confused.
