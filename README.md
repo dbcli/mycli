@@ -7,8 +7,8 @@ A command line client for MySQL with auto-completion and syntax highlighting.
 Homepage: [https://mycli.net](https://mycli.net)
 Documentation: [https://mycli.net/docs](https://mycli.net/docs)
 
-![Completion](doc/screenshots/tables.png)
-![CompletionGif](doc/screenshots/main.gif)
+![Completion](https://raw.githubusercontent.com/dbcli/mycli/main/doc/screenshots/tables.png)
+![CompletionGif](https://raw.githubusercontent.com/dbcli/mycli/main/doc/screenshots/main.gif)
 
 Mycli is compatible with MySQL, MariaDB, Percona, TiDB, and Apache Doris.
 

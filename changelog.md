@@ -1,3 +1,11 @@
+2.5.1 (2026/07/22)
+==============
+
+Documentation
+---------
+* Attempt to make `README.md` images display on PyPi.
+
+
 2.5.0 (2026/07/22)
 ==============
 
