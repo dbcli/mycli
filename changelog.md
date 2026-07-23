@@ -4,6 +4,7 @@ Upcoming (TBD)
 Features
 ---------
 * Subcommand completions for the `/dsn` command.
+* Allow file target of `$>` redirection to be quoted.
 
 
 Bug Fixes

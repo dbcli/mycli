@@ -30,6 +30,17 @@ def test_find_token_indices_tracks_true_dollars_and_operators() -> None:
     }
 
 
+def test_find_token_indices_ignores_non_redirect_dollars() -> None:
+    tokens = tokenize('select 1 $ $> output.txt')
+
+    assert hybrid_redirection.find_token_indices(tokens) == {
+        'raw_dollar': [2, 3],
+        'true_dollar': [3],
+        'angle_bracket': [4],
+        'pipe': [],
+    }
+
+
 # todo there are still corner cases combining custom delimiters and redirection
 def test_find_sql_part_handles_valid_parse_custom_delimiter_and_invalid_sql(reset_hybrid_redirection) -> None:
     hybrid_redirection.delimiter_command._delimiter = '$$'
@@ -75,9 +86,26 @@ def test_assemble_tokens_quotes_identifier_and_string() -> None:
 
 
 @pytest.mark.parametrize(
+    ('file_part', 'expected'),
+    [
+        (None, None),
+        ('out.txt', 'out.txt'),
+        (r'C:\Users\alice\output.csv', r'C:\Users\alice\output.csv'),
+        ("'two words.txt'", 'two words.txt'),
+        ('"two words.txt"', 'two words.txt'),
+        ('two words.txt', None),
+        ("'missing quote", None),
+        ('', None),
+    ],
+)
+def test_parse_redirect_filename(file_part: str | None, expected: str | None) -> None:
+    assert hybrid_redirection.parse_redirect_filename(file_part) == expected
+
+
+@pytest.mark.parametrize(
     ('file_part', 'command_part', 'expected'),
     [
-        ('two words.txt', None, True),
+        ('two words.txt', None, False),
         ('bad>file.txt', None, True),
         (None, None, True),
         ('out.txt', None, False),
@@ -101,6 +129,24 @@ def test_get_redirect_components_valid_paths_and_logging() -> None:
         '>',
         'out.txt',
     )
+    assert hybrid_redirection.get_redirect_components('select 1 $> "two words.txt"') == (
+        'select 1',
+        None,
+        '>',
+        'two words.txt',
+    )
+    assert hybrid_redirection.get_redirect_components("select 1 $>> 'two words.txt'") == (
+        'select 1',
+        None,
+        '>>',
+        'two words.txt',
+    )
+    assert hybrid_redirection.get_redirect_components(r'select 1 $> C:\Users\alice\output.csv') == (
+        'select 1',
+        None,
+        '>',
+        r'C:\Users\alice\output.csv',
+    )
 
 
 def test_get_redirect_components_returns_none_on_token_error(monkeypatch) -> None:
@@ -116,7 +162,9 @@ def test_get_redirect_components_rejects_invalid_forms() -> None:
     assert hybrid_redirection.get_redirect_components('select 1 $> out.txt $> other.txt') == (None, None, None, None)
     assert hybrid_redirection.get_redirect_components('select 1 $> out.txt $| cat') == (None, None, None, None)
     assert hybrid_redirection.get_redirect_components('select from $> out.txt') == (None, None, None, None)
-    assert hybrid_redirection.get_redirect_components('select 1 $> "two words.txt"') == (None, None, None, None)
+    assert hybrid_redirection.get_redirect_components('select 1 $> two words.txt') == (None, None, None, None)
+    assert hybrid_redirection.get_redirect_components("select 1 $> 'missing quote") == (None, None, None, None)
+    assert hybrid_redirection.get_redirect_components('select 1 $> "bad>file.txt"') == (None, None, None, None)
 
 
 def test_get_redirect_components_rejects_multiple_pipes_on_windows(monkeypatch) -> None:

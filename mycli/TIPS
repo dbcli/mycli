@@ -296,8 +296,8 @@ customize password sources/precedence with "password_sources" in ~/.myclirc!
 
 redirect query output to a shell command with "$| <command>"!
 
-redirect query output to a file with "$> <filename>"!
+redirect query output to a CSV file with "$> <filename>"!
 
-append query output to a file with "$>> <filename>"!
+append query output to a CSV file with "$>> <filename>"!
 
 run a command after shell redirects with "post_redirect_command" in ~/.myclirc!
