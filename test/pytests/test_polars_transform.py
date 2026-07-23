@@ -14,7 +14,7 @@ from mycli.packages.polars_transform import (
     run_polars_transform,
 )
 from mycli.packages.sqlresult import SQLResult
-from mycli.types import OutputMode
+from mycli.types import ImageProtocol, OutputMode
 
 
 class FakeDataFrame:
@@ -68,8 +68,53 @@ class FailingPolars:
     DataFrame = FailingDataFrame
 
 
-class FakeAltair:
+class FakeTopLevelMixin:
     pass
+
+
+class FakeChart(FakeTopLevelMixin):
+    scale_factors: list[float] = []
+    ppis: list[int] = []
+
+    def __init__(self, _data: FakeDataFrame) -> None:
+        self.save_calls: list[str] = []
+
+    def save(self, file: Any, **kwargs: Any) -> None:
+        self.save_calls.append(kwargs['format'])
+        self.scale_factors.append(float(kwargs['scale_factor']))
+        self.ppis.append(kwargs['ppi'])
+        file.write(b'png image')
+
+
+class FailingChart(FakeTopLevelMixin):
+    def save(self, _file: Any, **_kwargs: str) -> None:
+        raise OSError('renderer failed')
+
+
+class FakeTheme:
+    enabled: list[str] = []
+
+    @classmethod
+    def enable(cls, name: str) -> None:
+        cls.enabled.append(name)
+
+
+class FakeAltair:
+    TopLevelMixin = FakeTopLevelMixin
+    theme = FakeTheme
+
+    @staticmethod
+    def Chart(data: FakeDataFrame) -> FakeChart:
+        return FakeChart(data)
+
+
+class FailingAltair:
+    TopLevelMixin = FakeTopLevelMixin
+    theme = FakeTheme
+
+    @staticmethod
+    def Chart(_data: FakeDataFrame) -> FailingChart:
+        return FailingChart()
 
 
 def make_transform(expression: str) -> PolarsTransform:
@@ -258,6 +303,20 @@ def test_load_altair_reports_missing_dependency(monkeypatch: pytest.MonkeyPatch)
         polars_transform._load_altair()
 
 
+def test_load_vl_convert_reports_missing_dependency(monkeypatch: pytest.MonkeyPatch) -> None:
+    original_import = __import__
+
+    def fail_vl_convert_import(name: str, *args: Any, **kwargs: Any) -> Any:
+        if name == 'vl_convert':
+            raise ImportError('not installed')
+        return original_import(name, *args, **kwargs)
+
+    monkeypatch.setattr('builtins.__import__', fail_vl_convert_import)
+
+    with pytest.raises(PolarsTransformError, match='requires vl-convert-python'):
+        polars_transform._load_vl_convert()
+
+
 def test_run_polars_transform_materializes_and_renders_returned_dataframe() -> None:
     result = run_polars_transform(
         make_transform('df'),
@@ -376,6 +435,114 @@ def test_run_polars_transform_reports_non_dataframe_result() -> None:
     )
 
     assert result.status_plain == "Nothing could be displayed for return type: <class 'int'>"
+
+
+def test_run_polars_transform_reports_disabled_altair_chart_output() -> None:
+    result = run_polars_transform(
+        make_transform('alt.Chart(df)'),
+        iter([SQLResult(header=['id'], rows=[(1,)])]),
+    )
+
+    assert result.status_plain == 'image_protocol is unset in ~/.myclirc. Inline plotting is disabled.'
+
+
+@pytest.mark.parametrize('image_protocol', ['iterm2', 'kitty'])
+def test_run_polars_transform_renders_altair_chart_for_image_protocol(
+    monkeypatch: pytest.MonkeyPatch,
+    image_protocol: ImageProtocol,
+) -> None:
+    load_calls: list[None] = []
+    FakeChart.scale_factors = []
+    FakeChart.ppis = []
+    FakeTheme.enabled = []
+    monkeypatch.setattr(polars_transform, '_load_vl_convert', lambda: load_calls.append(None))
+
+    result = run_polars_transform(
+        make_transform('alt.Chart(df)'),
+        iter([SQLResult(header=['id'], rows=[(1,)])]),
+        image_protocol=image_protocol,
+        plot_scale_factor=1.5,
+        plot_ppi=144,
+        plot_theme='dark',
+    )
+
+    assert load_calls == [None]
+    assert FakeChart.scale_factors == [1.5]
+    assert FakeChart.ppis == [144]
+    assert FakeTheme.enabled == ['dark']
+    assert result == SQLResult(image=b'png image', image_protocol=image_protocol)
+
+
+def test_run_polars_transform_uses_integer_default_plot_ppi(monkeypatch: pytest.MonkeyPatch) -> None:
+    FakeChart.ppis = []
+    monkeypatch.setattr(polars_transform, '_load_vl_convert', lambda: None)
+
+    run_polars_transform(
+        make_transform('alt.Chart(df)'),
+        iter([SQLResult(header=['id'], rows=[(1,)])]),
+        image_protocol='kitty',
+    )
+
+    assert FakeChart.ppis == [200]
+
+
+def test_run_polars_transform_reports_invalid_altair_theme(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(polars_transform, '_load_vl_convert', lambda: None)
+
+    def fail_enable(_name: str) -> None:
+        raise ValueError('unknown theme')
+
+    monkeypatch.setattr(FakeTheme, 'enable', fail_enable)
+
+    with pytest.raises(PolarsTransformError, match='Unable to enable Altair plot theme "not-a-theme": ValueError: unknown theme'):
+        run_polars_transform(
+            make_transform('alt.Chart(df)'),
+            iter([SQLResult(header=['id'], rows=[(1,)])]),
+            image_protocol='kitty',
+            plot_theme='not-a-theme',
+        )
+
+
+def test_run_polars_transform_reports_altair_chart_render_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(polars_transform, '_load_vl_convert', lambda: None)
+    transform = PolarsTransform(
+        sql='SELECT id FROM orders',
+        expression='alt.Chart(df)',
+        code=compile('alt.Chart(df)', '<test>', 'eval'),
+        polars=FakePolars,
+        altair=FailingAltair,
+    )
+
+    with pytest.raises(PolarsTransformError, match='Unable to render Altair chart: OSError: renderer failed'):
+        run_polars_transform(
+            transform,
+            iter([SQLResult(header=['id'], rows=[(1,)])]),
+            image_protocol='iterm2',
+        )
+
+
+def test_run_polars_transform_reports_missing_altair_renderer(monkeypatch: pytest.MonkeyPatch) -> None:
+    def fail_load() -> None:
+        raise PolarsTransformError('Altair plot rendering requires vl-convert-python. Install mycli[dataframe].')
+
+    monkeypatch.setattr(polars_transform, '_load_vl_convert', fail_load)
+
+    with pytest.raises(PolarsTransformError, match='requires vl-convert-python'):
+        run_polars_transform(
+            make_transform('alt.Chart(df)'),
+            iter([SQLResult(header=['id'], rows=[(1,)])]),
+            image_protocol='iterm2',
+        )
+
+
+def test_run_polars_transform_rejects_altair_chart_parquet_output() -> None:
+    with pytest.raises(PolarsTransformError, match='must return a DataFrame or Series'):
+        run_polars_transform(
+            make_transform('alt.Chart(df)'),
+            iter([SQLResult(header=['id'], rows=[(1,)])]),
+            'chart.parquet',
+            image_protocol='iterm2',
+        )
 
 
 def test_prepare_polars_transform_supports_direct_parquet_output(monkeypatch: pytest.MonkeyPatch) -> None:

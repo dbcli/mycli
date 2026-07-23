@@ -751,9 +751,24 @@ def _one_iteration(
         if polars_transform is not None:
             assert polars_pipeline is not None
             if polars_pipeline.parquet_path is None:
-                polars_result = run_polars_transform(polars_transform, results)
+                polars_result = run_polars_transform(
+                    polars_transform,
+                    results,
+                    image_protocol=mycli.image_protocol,
+                    plot_scale_factor=mycli.plot_scale_factor,
+                    plot_ppi=mycli.plot_ppi,
+                    plot_theme=mycli.plot_theme,
+                )
             else:
-                polars_result = run_polars_transform(polars_transform, results, polars_pipeline.parquet_path)
+                polars_result = run_polars_transform(
+                    polars_transform,
+                    results,
+                    polars_pipeline.parquet_path,
+                    image_protocol=mycli.image_protocol,
+                    plot_scale_factor=mycli.plot_scale_factor,
+                    plot_ppi=mycli.plot_ppi,
+                    plot_theme=mycli.plot_theme,
+                )
             if polars_pipeline.parquet_path is None:
                 if polars_pipeline.output_mode == 'explorer':
                     special.set_explorer_output(True)

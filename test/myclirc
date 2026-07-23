@@ -265,6 +265,27 @@ format = mysql_unicode
 # Whether to remove the last line from the formatted output.
 trim_footer = False
 
+[dataframe]
+
+# How to display inline image results in a terminal emulator. Possible values:
+# * kitty
+# * iterm2
+# empty to disable
+image_protocol = kitty
+
+# PNG plot resolution in pixels per inch. Must be a positive integer.
+# The apparent size is a combination of plot_ppi and plot_scale_factor.
+plot_ppi = 200
+
+# PNG plot resolution multiplier. Must be a positive number.
+# The apparent size is a combination of plot_ppi and plot_scale_factor.
+plot_scale_factor = 1.0
+
+# Altair theme for rendering plots. Examples: carbong90, dark, default.
+# Available themes depend on the installed libraries.  See
+# https://github.com/vega/vega-themes/#included-themes
+plot_theme = carbong90
+
 [search]
 
 # Whether to apply syntax highlighting to the preview window in fuzzy history

@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 from configobj import ConfigObj
 
 from mycli.config import strip_matching_quotes
+from mycli.types import ImageProtocol
 
 if TYPE_CHECKING:
     from mycli.client import MyCli
@@ -44,6 +45,16 @@ def normalize_ssl_mode(
         error_notice = f'Invalid config option provided for ssl_mode ({ssl_mode}); ignoring.'
         return None, error_notice
     return ssl_mode, error_notice
+
+
+def normalize_image_protocol(image_protocol: str | None) -> tuple[ImageProtocol, str | None]:
+    if image_protocol == 'iterm2':
+        return 'iterm2', None
+    if image_protocol == 'kitty':
+        return 'kitty', None
+    if image_protocol in ('none', '', None):
+        return 'none', None
+    return 'none', f'Invalid config option provided for image_protocol ({image_protocol}); disabling.'
 
 
 def configure_prompt_state(

@@ -9,3 +9,9 @@ OutputMode = Literal[
     'expanded',
     'tabular',
 ]
+
+ImageProtocol = Literal[
+    'none',
+    'iterm2',
+    'kitty',
+]

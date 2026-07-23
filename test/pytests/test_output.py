@@ -79,6 +79,39 @@ def test_echo_logs_and_prints(monkeypatch: pytest.MonkeyPatch) -> None:
     assert printed == [('message', {'fg': 'red'})]
 
 
+def test_output_emits_iterm2_image_without_text_sinks(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli = make_bare_mycli()
+    cli.explicit_pager = False
+    cli.get_output_margin = lambda status=None: 1  # type: ignore[assignment]
+    logged: list[Any] = []
+    emitted: list[str] = []
+    cli.log_output = lambda value: logged.append(value)  # type: ignore[assignment]
+    monkeypatch.setattr(click, 'echo', lambda value=None, **_kwargs: emitted.append(value))
+
+    OutputMixin.output(cli, itertools.chain(), SQLResult(image=b'png', image_protocol='iterm2'))
+
+    assert logged == []
+    assert emitted == ['\x1b]1337;File=name=Y2hhcnQucG5n;size=3;width=auto;height=auto;preserveAspectRatio=1;inline=1:cG5n\x07']
+
+
+def test_output_emits_kitty_image_in_base64_chunks(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli = make_bare_mycli()
+    cli.explicit_pager = False
+    cli.get_output_margin = lambda status=None: 1  # type: ignore[assignment]
+    emitted: list[tuple[str | None, dict[str, Any]]] = []
+    monkeypatch.setattr(click, 'echo', lambda value=None, **kwargs: emitted.append((value, kwargs)))
+    image = b'x' * 4000
+
+    OutputMixin.output(cli, itertools.chain(), SQLResult(image=image, image_protocol='kitty'))
+
+    encoded = output_module.base64.b64encode(image).decode('ascii')
+    assert emitted == [
+        (f'\x1b_Ga=T,f=100,m=1;{encoded[:4096]}\x1b\\', {'nl': False}),
+        (f'\x1b_Gm=0;{encoded[4096:]}\x1b\\', {'nl': False}),
+        (None, {}),
+    ]
+
+
 def test_get_output_margin_renders_prompt_once_and_counts_status_lines(monkeypatch: pytest.MonkeyPatch) -> None:
     cli = make_bare_mycli()
     cli.prompt_lines = 0
