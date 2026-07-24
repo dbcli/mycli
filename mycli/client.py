@@ -17,6 +17,7 @@ from mycli.app_state import (
     configure_prompt_state,
     destructive_keywords_from_config,
     llm_prompt_truncation,
+    normalize_image_protocol,
     normalize_ssl_mode,
 )
 from mycli.client_commands import ClientCommandsMixin
@@ -145,6 +146,12 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
         self.null_string = c['main'].get('null_string')
         self.numeric_alignment = c['main'].get('numeric_alignment', 'right') or 'right'
         self.binary_display = c['main'].get('binary_display')
+        self.image_protocol, image_protocol_error = normalize_image_protocol(c['dataframe'].get('image_protocol'))
+        if image_protocol_error:
+            self.echo(image_protocol_error, err=True, fg='red')
+        self.plot_scale_factor = c['dataframe'].as_float('plot_scale_factor')
+        self.plot_ppi = c['dataframe'].as_int('plot_ppi')
+        self.plot_theme = c['dataframe'].get('plot_theme', 'carbong90') or 'carbong90'
         self.llm_prompt_field_truncate, self.llm_prompt_section_truncate = llm_prompt_truncation(c)
 
         self.ssl_mode, ssl_mode_error = normalize_ssl_mode(c, self.config_without_package_defaults)

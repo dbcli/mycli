@@ -5,8 +5,10 @@ import pytest
 
 from mycli.app_state import (
     AppStateMixin,
+    configure_prompt_state,
     destructive_keywords_from_config,
     llm_prompt_truncation,
+    normalize_image_protocol,
     normalize_ssl_mode,
 )
 
@@ -14,6 +16,76 @@ from mycli.app_state import (
 class AppState(AppStateMixin):
     def __init__(self, login_path: str | None = None) -> None:
         self.login_path = login_path
+
+
+class PromptState:
+    prompt_format: str
+    prompt_lines: int
+    multiline_continuation_char: str
+    toolbar_format: str
+    terminal_tab_title_format: str
+    terminal_window_title_format: str
+    multiplex_window_title_format: str
+    multiplex_pane_title_format: str
+
+    def __init__(self) -> None:
+        self.default_prompt = 'default> '
+
+
+@pytest.mark.parametrize(
+    ('image_protocol', 'expected'),
+    [
+        ('iterm2', ('iterm2', None)),
+        ('kitty', ('kitty', None)),
+        ('none', ('none', None)),
+        ('', ('none', None)),
+        (None, ('none', None)),
+        ('unknown', ('none', 'Invalid config option provided for image_protocol (unknown); disabling.')),
+    ],
+)
+def test_normalize_image_protocol(image_protocol: str | None, expected: tuple[str, str | None]) -> None:
+    assert normalize_image_protocol(image_protocol) == expected
+
+
+@pytest.mark.parametrize(
+    ('prompt', 'config_prompt', 'toolbar_format', 'config_toolbar', 'expected_prompt', 'expected_toolbar'),
+    [
+        ('custom> ', 'configured> ', 'custom toolbar', 'configured toolbar', 'custom> ', 'custom toolbar'),
+        (None, 'configured> ', None, 'configured toolbar', 'configured> ', 'configured toolbar'),
+        ('', '', '', 'configured toolbar', 'default> ', 'configured toolbar'),
+    ],
+)
+def test_configure_prompt_state_uses_overrides_and_fallbacks(
+    prompt: str | None,
+    config_prompt: str,
+    toolbar_format: str | None,
+    config_toolbar: str,
+    expected_prompt: str,
+    expected_toolbar: str,
+) -> None:
+    state = PromptState()
+    config = ConfigObj({
+        'main': {
+            'prompt': config_prompt,
+            'prompt_continuation': '... ',
+            'toolbar': config_toolbar,
+            'terminal_tab_title': 'tab title',
+            'terminal_window_title': 'window title',
+            'multiplex_window_title': 'multiplex window title',
+            'multiplex_pane_title': 'multiplex pane title',
+        },
+    })
+
+    configure_prompt_state(state, config, prompt, toolbar_format)  # type: ignore[arg-type]
+
+    assert state.prompt_format == expected_prompt
+    assert state.prompt_lines == 0
+    assert state.multiline_continuation_char == '... '
+    assert state.toolbar_format == expected_toolbar
+    assert state.terminal_tab_title_format == 'tab title'
+    assert state.terminal_window_title_format == 'window title'
+    assert state.multiplex_window_title_format == 'multiplex window title'
+    assert state.multiplex_pane_title_format == 'multiplex pane title'
 
 
 @pytest.mark.parametrize('ssl_mode', ['auto', 'on', 'off'])

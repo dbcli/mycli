@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 from datetime import datetime
 from decimal import Decimal
 from io import TextIOWrapper
@@ -115,6 +116,13 @@ class OutputMixin(MyCliState):
         is_warnings_style: bool = False,
     ) -> None:
         """Output text to stdout or a pager command."""
+        if result.image is not None:
+            if result.image_protocol == 'iterm2':
+                click.secho('')
+                self.output_iterm2_image(result.image)
+            elif result.image_protocol == 'kitty':
+                click.secho('')
+                self.output_kitty_image(result.image)
         if output:
             if self.prompt_session is not None:
                 size = self.prompt_session.output.get_size()
@@ -185,6 +193,22 @@ class OutputMixin(MyCliState):
                 status = FormattedText([('', result.status_plain)])
             styled_status = to_formatted_text(status, style=add_style)
             prompt_toolkit.print_formatted_text(styled_status, style=self.ptoolkit_style)
+
+    def output_iterm2_image(self, image: bytes) -> None:
+        """Emit a PNG using the iTerm2 inline image protocol."""
+        filename = base64.b64encode(b'chart.png').decode('ascii')
+        contents = base64.b64encode(image).decode('ascii')
+        click.echo(f'\x1b]1337;File=name={filename};size={len(image)};width=auto;height=auto;preserveAspectRatio=1;inline=1:{contents}\x07')
+
+    def output_kitty_image(self, image: bytes) -> None:
+        """Emit a PNG using Kitty's direct graphics protocol."""
+        contents = base64.b64encode(image).decode('ascii')
+        chunks = [contents[index : index + 4096] for index in range(0, len(contents), 4096)] or ['']
+        for index, chunk in enumerate(chunks):
+            action = 'a=T,f=100,' if index == 0 else ''
+            more = 1 if index < len(chunks) - 1 else 0
+            click.echo(f'\x1b_G{action}m={more};{chunk}\x1b\\', nl=False)
+        click.echo()
 
     def configure_pager(self) -> None:
         if not os.environ.get("LESS"):

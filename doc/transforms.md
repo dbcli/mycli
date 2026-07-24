@@ -1,4 +1,4 @@
-# Transforms with Polars Dataframes
+# Transforms, Plots, and Parquets with Polars Dataframes
 
 ## Installing
 
@@ -8,19 +8,24 @@ Install mycli with dataframe support using:
 pip install --upgrade 'mycli[dataframe]'
 ```
 
-or install the Polars and Altair libraries separately.
+or install these libraries separately:
+
+ * [`polars`](https://pypi.org/project/polars/)
+ * [`altair`](https://pypi.org/project/altair/)
+ * [`vl-convert-python`](https://pypi.org/project/vl-convert-python/)
 
 ## BETA STATUS
 
-Dataframe transforms are new and experimental.  The interface and functionality
-may still change.
+Dataframe transforms and plots are new and experimental.  The interface and
+functionality may still change.
 
 Here are some known limitations:
 
- * transforms can't be mixed with `$|` shell redirection
+ * transforms can't be composed with `$|` shell redirection
  * multiple transform steps are not permitted
- * the Altair library is provided, but plots can't yet be displayed
  * results from `UNION`s may be unable to be transformed
+ * images cannot yet be saved
+ * PNG images are static and do not support all Altair features
 
 And there are inherent limitations to the post-processing model: the entire
 SQL result must be transferred from the server and loaded into local memory.
@@ -34,7 +39,7 @@ single SQL statement.  The Python expression receives
  * `pl`, the Polars module
  * `alt`, the Altair module
 
-Spaces may be required around the operator.
+Spaces may be required around the `.|` operator.
 
 Transform example:
 
@@ -51,20 +56,34 @@ SELECT customer_id, COUNT(1) AS len FROM orders GROUP BY customer_id;
 Transform expressions run with normal Python privileges, and expressions
 should not be run from untrusted sources.  If the transform operation
 returns a Polars `DataFrame` or `Series`, the result is rendered by mycli
-as tabular output; other return types currently give a warning and cannot
-be displayed.
+as tabular output.  Most other return types will be silently ignored.
 
 Transform expressions are useful for operations such as medians which
-cannot be done (or are simply awkward) in SQL.  Example:
+cannot be done (or are awkward) in SQL.  Example:
 
 ```sql
 SELECT * FROM orders .| df.describe();
 ```
 
+## Plotting
+
+If the dataframe transform operation returns an Altair plot, the result can
+be rendered as an inline PNG in many terminals.
+
+Example:
+
+```sql
+SELECT * FROM orders .| df['total'].plot.hist();
+```
+![histogram](https://raw.githubusercontent.com/dbcli/mycli/main/doc/screenshots/total_histogram.png)
+
+Image size, display protocol, and other properties can be configured in
+the `[dataframe]` section of `~/.myclirc`.
+
 ## Saving
 
 A query result, transformed `DataFrame`, or transformed `Series` can be
-written directly to Parquet with the `.>` operator.
+written directly to a Parquet file with the `.>` operator.
 
 Save example:
 

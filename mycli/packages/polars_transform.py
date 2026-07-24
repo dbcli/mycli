@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import builtins
 from dataclasses import dataclass
+from io import BytesIO
 from types import CodeType
 from typing import Any, Iterable
 
@@ -9,7 +10,7 @@ import sqlglot
 
 from mycli.packages.special.delimitercommand import DelimiterCommand
 from mycli.packages.sqlresult import SQLResult
-from mycli.types import OutputMode
+from mycli.types import ImageProtocol, OutputMode
 
 delimiter_command = DelimiterCommand()
 
@@ -169,10 +170,22 @@ def _load_altair() -> Any:
     return alt
 
 
+def _load_vl_convert() -> None:
+    try:
+        import vl_convert  # noqa: F401
+    except ImportError as exc:
+        raise PolarsTransformError('Altair plot rendering requires vl-convert-python. Install mycli[dataframe].') from exc
+
+
 def run_polars_transform(
     transform: PolarsTransform,
     results: Iterable[SQLResult],
     parquet_path: str | None = None,
+    *,
+    image_protocol: ImageProtocol = 'none',
+    plot_scale_factor: float = 1.0,
+    plot_ppi: int = 200,
+    plot_theme: str = 'carbong90',
 ) -> SQLResult:
     iterator = iter(results)
     try:
@@ -215,6 +228,27 @@ def run_polars_transform(
                 raise PolarsTransformError(f'Unable to write Parquet file "{parquet_path}": {type(exc).__name__}: {exc}') from exc
             return SQLResult(status=f'Wrote {len(series_dataframe)} rows to {parquet_path}.')
         return SQLResult(header=[column_name], rows=[(item,) for item in value])
+    if transform.altair is not None and isinstance(value, transform.altair.TopLevelMixin):
+        if parquet_path is not None:
+            raise PolarsTransformError('Polars transforms must return a DataFrame or Series before writing Parquet output.')
+        if image_protocol == 'none':
+            return SQLResult(status='image_protocol is unset in ~/.myclirc. Inline plotting is disabled.')
+        _load_vl_convert()
+        png = BytesIO()
+        try:
+            transform.altair.theme.enable(plot_theme)
+        except Exception as exc:
+            raise PolarsTransformError(f'Unable to enable Altair plot theme "{plot_theme}": {type(exc).__name__}: {exc}') from exc
+        try:
+            value.save(
+                png,
+                format='png',
+                scale_factor=plot_scale_factor,
+                ppi=plot_ppi,
+            )
+        except Exception as exc:
+            raise PolarsTransformError(f'Unable to render Altair chart: {type(exc).__name__}: {exc}') from exc
+        return SQLResult(image=png.getvalue(), image_protocol=image_protocol)
     if parquet_path is not None:
         raise PolarsTransformError('Polars transforms must return a DataFrame or Series before writing Parquet output.')
     return SQLResult(status=f'Nothing could be displayed for return type: {type(value)}')

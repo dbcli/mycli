@@ -154,6 +154,10 @@ def make_repl_cli(sqlexecute: Any | None = None) -> Any:
     cli.null_string = '<null>'
     cli.numeric_alignment = 'right'
     cli.binary_display = None
+    cli.image_protocol = 'none'
+    cli.plot_scale_factor = 1.0
+    cli.plot_ppi = 200
+    cli.plot_theme = 'carbong90'
     cli.prompt_session = None
     cli.post_redirect_command = None
     cli.logfile = None
@@ -1178,7 +1182,7 @@ def test_one_iteration_runs_polars_transform_and_preserves_full_command(
     cli = make_repl_cli(sqlexecute)
     transform = object()
     prepare_calls: list[tuple[str, str]] = []
-    run_calls: list[object] = []
+    run_calls: list[tuple[object, str, float, int, str]] = []
     output_flags: list[bool] = []
     hook_calls: list[tuple[str, str]] = []
 
@@ -1186,8 +1190,16 @@ def test_one_iteration_runs_polars_transform_and_preserves_full_command(
         prepare_calls.append((sql, expression))
         return transform
 
-    def run(received_transform: object, results: Iterator[SQLResult]) -> SQLResult:
-        run_calls.append(received_transform)
+    def run(
+        received_transform: object,
+        results: Iterator[SQLResult],
+        *,
+        image_protocol: str,
+        plot_scale_factor: float,
+        plot_ppi: int,
+        plot_theme: str,
+    ) -> SQLResult:
+        run_calls.append((received_transform, image_protocol, plot_scale_factor, plot_ppi, plot_theme))
         assert list(results) == [SQLResult(header=['id'], rows=[(1,)])]
         return SQLResult(header=['count'], rows=[(1,)])
 
@@ -1201,13 +1213,17 @@ def test_one_iteration_runs_polars_transform_and_preserves_full_command(
         lambda command, filename: hook_calls.append((command, filename)),
     )
     cli.post_redirect_command = 'post {}'
+    cli.image_protocol = 'iterm2'
+    cli.plot_scale_factor = 1.5
+    cli.plot_ppi = 144
+    cli.plot_theme = 'dark'
 
     command = f'SELECT * FROM orders .| df.group_by(\'customer_id\').len() {terminator}'
     repl_mode._one_iteration(cli, repl_mode.ReplState(), command)
 
     assert sqlexecute.calls == ['SELECT * FROM orders']
     assert prepare_calls == [('SELECT * FROM orders', "df.group_by('customer_id').len()")]
-    assert run_calls == [transform]
+    assert run_calls == [(transform, 'iterm2', 1.5, 144, 'dark')]
     assert output_flags == [True]
     assert hook_calls == []
     assert cli.log_queries == [command]
@@ -1256,7 +1272,20 @@ def test_one_iteration_writes_polars_parquet_without_rendering_rows(monkeypatch:
         prepare_calls.append((sql, expression))
         return transform
 
-    def run(received_transform: object, results: Iterator[SQLResult], path: str) -> SQLResult:
+    def run(
+        received_transform: object,
+        results: Iterator[SQLResult],
+        path: str,
+        *,
+        image_protocol: str,
+        plot_scale_factor: float,
+        plot_ppi: int,
+        plot_theme: str,
+    ) -> SQLResult:
+        assert image_protocol == 'none'
+        assert plot_scale_factor == 1.0
+        assert plot_ppi == 200
+        assert plot_theme == 'carbong90'
         assert list(results) == [SQLResult(header=['id'], rows=[(1,)])]
         run_calls.append((received_transform, path))
         return SQLResult(status=f'Wrote 1 rows to {path}.')
@@ -1306,7 +1335,20 @@ def test_one_iteration_writes_transformed_polars_parquet(monkeypatch: pytest.Mon
         prepare_calls.append((sql, expression))
         return transform
 
-    def run(received_transform: object, results: Iterator[SQLResult], path: str) -> SQLResult:
+    def run(
+        received_transform: object,
+        results: Iterator[SQLResult],
+        path: str,
+        *,
+        image_protocol: str,
+        plot_scale_factor: float,
+        plot_ppi: int,
+        plot_theme: str,
+    ) -> SQLResult:
+        assert image_protocol == 'none'
+        assert plot_scale_factor == 1.0
+        assert plot_ppi == 200
+        assert plot_theme == 'carbong90'
         assert received_transform is transform
         assert list(results) == [SQLResult(header=['id'], rows=[(1,)])]
         run_calls.append(path)
@@ -1351,7 +1393,9 @@ def test_one_iteration_reports_polars_post_redirect_hook_error(monkeypatch: pyte
     monkeypatch.setattr(
         repl_mode,
         'run_polars_transform',
-        lambda received_transform, results, path: SQLResult(status=f'Wrote 1 rows to {path}.'),
+        lambda received_transform, results, path, *, image_protocol, plot_scale_factor, plot_ppi, plot_theme: SQLResult(
+            status=f'Wrote 1 rows to {path}.'
+        ),
     )
 
     def raise_hook_error(command: str, filename: str) -> None:
@@ -1384,7 +1428,16 @@ def test_one_iteration_does_not_run_hook_after_failed_polars_parquet_write(monke
 
     monkeypatch.setattr(repl_mode, 'prepare_polars_transform', lambda sql, expression: object())
 
-    def fail_write(received_transform: object, results: Iterator[SQLResult], path: str) -> SQLResult:
+    def fail_write(
+        received_transform: object,
+        results: Iterator[SQLResult],
+        path: str,
+        *,
+        image_protocol: str,
+        plot_scale_factor: float,
+        plot_ppi: int,
+        plot_theme: str,
+    ) -> SQLResult:
         raise repl_mode.PolarsTransformError('write failed')
 
     monkeypatch.setattr(repl_mode, 'run_polars_transform', fail_write)
@@ -1417,7 +1470,9 @@ def test_one_iteration_reports_polars_expression_error_without_output(monkeypatc
     monkeypatch.setattr(
         repl_mode,
         'run_polars_transform',
-        lambda transform, results: (_ for _ in ()).throw(repl_mode.PolarsTransformError('Polars expression failed')),
+        lambda transform, results, *, image_protocol, plot_scale_factor, plot_ppi, plot_theme: (_ for _ in ()).throw(
+            repl_mode.PolarsTransformError('Polars expression failed')
+        ),
     )
 
     command = 'SELECT * FROM orders .| df.bad_method()'

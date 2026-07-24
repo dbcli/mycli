@@ -5,6 +5,7 @@ Features
 ---------
 * Subcommand completions for the `/dsn` command.
 * Allow file target of `$>` redirection to be quoted.
+* Display of inline plots returned from `.|` operations.
 
 
 Bug Fixes

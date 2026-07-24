@@ -42,6 +42,76 @@ def test_init_reports_invalid_ssl_mode(monkeypatch: pytest.MonkeyPatch, tmp_path
     assert echo_calls == [('Invalid config option provided for ssl_mode (invalid); ignoring.', {'err': True, 'fg': 'red'})]
 
 
+def test_init_configures_image_protocol(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    patch_constructor_side_effects(monkeypatch)
+    myclirc = write_myclirc(
+        tmp_path,
+        """
+        [dataframe]
+        image_protocol = iterm2
+        plot_scale_factor = 1.5
+        plot_ppi = 144
+        plot_theme = dark
+        """,
+    )
+
+    cli = MyCli(myclirc=myclirc)
+
+    assert cli.image_protocol == 'iterm2'
+    assert cli.plot_scale_factor == 1.5
+    assert cli.plot_ppi == 144
+    assert isinstance(cli.plot_ppi, int)
+    assert cli.plot_theme == 'dark'
+
+
+def test_init_uses_default_plot_theme_for_empty_value(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    patch_constructor_side_effects(monkeypatch)
+    myclirc = write_myclirc(
+        tmp_path,
+        """
+        [dataframe]
+        plot_theme =
+        """,
+    )
+
+    cli = MyCli(myclirc=myclirc)
+
+    assert cli.plot_theme == 'carbong90'
+
+
+def test_init_configures_kitty_image_protocol(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    patch_constructor_side_effects(monkeypatch)
+    myclirc = write_myclirc(
+        tmp_path,
+        """
+        [dataframe]
+        image_protocol = kitty
+        """,
+    )
+
+    cli = MyCli(myclirc=myclirc)
+
+    assert cli.image_protocol == 'kitty'
+
+
+def test_init_reports_invalid_image_protocol(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    patch_constructor_side_effects(monkeypatch)
+    echo_calls: list[tuple[str, dict[str, Any]]] = []
+    monkeypatch.setattr(MyCli, 'echo', lambda self, message, **kwargs: echo_calls.append((message, kwargs)))
+    myclirc = write_myclirc(
+        tmp_path,
+        """
+        [dataframe]
+        image_protocol = sixel
+        """,
+    )
+
+    cli = MyCli(myclirc=myclirc)
+
+    assert cli.image_protocol == 'none'
+    assert echo_calls == [('Invalid config option provided for image_protocol (sixel); disabling.', {'err': True, 'fg': 'red'})]
+
+
 def test_init_honors_explicit_show_warnings(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     patch_constructor_side_effects(monkeypatch)
     show_warnings_calls: list[bool] = []
