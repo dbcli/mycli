@@ -6,6 +6,7 @@ Features
 * Subcommand completions for the `/dsn` command.
 * Allow file target of `$>` redirection to be quoted.
 * Display of inline plots returned from `.|` operations.
+* Don't attempt inline plots in the Windows console.
 
 
 Bug Fixes
