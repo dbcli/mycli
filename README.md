@@ -5,6 +5,7 @@
 A command line client for MySQL with auto-completion and syntax highlighting.
 
 Homepage: [https://mycli.net](https://mycli.net)
+
 Documentation: [https://mycli.net/docs](https://mycli.net/docs)
 
 ![Completion](https://raw.githubusercontent.com/dbcli/mycli/main/doc/screenshots/tables.png)
