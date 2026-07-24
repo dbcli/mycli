@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import builtins
 from dataclasses import dataclass
+import datetime
+import decimal
+import fractions
 from io import BytesIO
 from types import CodeType
-from typing import Any, Iterable
+from typing import Any, Iterable, Sequence
 
 import sqlglot
 
@@ -34,6 +37,25 @@ class PolarsTransform:
     code: CodeType
     polars: Any
     altair: Any | None
+
+
+def _is_coerceable_scalarish(value: Any) -> bool:
+    # pretend str/bytes are scalars
+    return isinstance(
+        value,
+        (
+            bool,
+            int,
+            float,
+            complex,
+            bytes,
+            str,
+            datetime.datetime,
+            datetime.timedelta,
+            decimal.Decimal,
+            fractions.Fraction,
+        ),
+    )
 
 
 def parse_polars_transform(command: str) -> PolarsPipeline | None:
@@ -207,10 +229,32 @@ def run_polars_transform(
     try:
         value = eval(
             transform.code,
-            {'__builtins__': builtins, 'df': dataframe, 'pl': transform.polars, 'alt': transform.altair},
+            {
+                '__builtins__': builtins,
+                'df': dataframe,
+                'pl': transform.polars,
+                'alt': transform.altair,
+            },
         )
     except Exception as exc:
         raise PolarsTransformError(f'Polars expression failed: {type(exc).__name__}: {exc}') from exc
+
+    if _is_coerceable_scalarish(value):
+        try:
+            value = transform.polars.DataFrame([value], schema=[str(value)])
+        except Exception as exc:
+            raise PolarsTransformError(f'Unable to render scalar as DataFrame: {type(exc).__name__}: {exc}') from exc
+    elif isinstance(value, dict):
+        try:
+            value = transform.polars.DataFrame(value)
+        except Exception as exc:
+            raise PolarsTransformError(f'Unable to render dictionary as DataFrame: {type(exc).__name__}: {exc}') from exc
+    elif isinstance(value, Sequence):
+        try:
+            value = transform.polars.Series(value, strict=False)
+        except Exception as exc:
+            raise PolarsTransformError(f'Unable to render Sequence as Series: {type(exc).__name__}: {exc}') from exc
+
     if isinstance(value, transform.polars.DataFrame):
         if output_path is not None:
             if not output_path.lower().endswith('.parquet'):
@@ -221,7 +265,7 @@ def run_polars_transform(
                 raise PolarsTransformError(f'Unable to write Parquet file "{output_path}": {type(exc).__name__}: {exc}') from exc
             return SQLResult(status=f'Wrote {len(value)} rows to {output_path}.')
         return SQLResult(header=list(value.columns), rows=list(value.iter_rows()))
-    if isinstance(value, transform.polars.Series):
+    elif isinstance(value, transform.polars.Series):
         column_name = value.name or 'value'
         if output_path is not None:
             if not output_path.lower().endswith('.parquet'):
@@ -233,7 +277,7 @@ def run_polars_transform(
                 raise PolarsTransformError(f'Unable to write Parquet file "{output_path}": {type(exc).__name__}: {exc}') from exc
             return SQLResult(status=f'Wrote {len(series_dataframe)} rows to {output_path}.')
         return SQLResult(header=[column_name], rows=[(item,) for item in value])
-    if transform.altair is not None and isinstance(value, transform.altair.TopLevelMixin):
+    elif transform.altair is not None and isinstance(value, transform.altair.TopLevelMixin):
         if output_path is not None and not output_path.lower().endswith('.png'):
             raise PolarsTransformError('Altair charts can only be written to ".png" files.')
         if output_path is None and image_protocol == 'none':
@@ -265,8 +309,7 @@ def run_polars_transform(
         except Exception as exc:
             raise PolarsTransformError(f'Unable to render Altair chart: {type(exc).__name__}: {exc}') from exc
         return SQLResult(image=png.getvalue(), image_protocol=image_protocol)
-    if output_path is not None:
-        raise PolarsTransformError(
-            'Polars transforms must return a DataFrame or Series for Parquet output, or an Altair chart for PNG output.'
-        )
+    elif value is None:
+        return SQLResult()
+
     return SQLResult(status=f'Nothing could be displayed for return type: {type(value)}')

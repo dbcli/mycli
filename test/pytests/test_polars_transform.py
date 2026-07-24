@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Iterator
+from pathlib import Path
+from typing import Any, Iterator, Sequence
 
 import pytest
 
@@ -21,9 +22,17 @@ class FakeDataFrame:
     written_paths: list[str] = []
     written_dataframes: list['FakeDataFrame'] = []
 
-    def __init__(self, rows: list[tuple[Any, ...]], schema: list[str], orient: str) -> None:
-        assert orient == 'row'
-        self.rows = rows
+    def __init__(
+        self,
+        rows: list[tuple[Any, ...]] | list[Any],
+        schema: list[str],
+        orient: str | None = None,
+    ) -> None:
+        if orient is None:
+            self.rows = [(value,) for value in rows]
+        else:
+            assert orient == 'row'
+            self.rows = rows
         self.columns = schema
         self.parquet_paths: list[str] = []
 
@@ -40,9 +49,20 @@ class FakeDataFrame:
 
 
 class FakeSeries:
-    def __init__(self, name: str, values: list[Any]) -> None:
-        self.name = name
-        self.values = values
+    def __init__(
+        self,
+        name: str | Sequence[Any],
+        values: list[Any] | None = None,
+        *,
+        strict: bool = True,
+    ) -> None:
+        if values is None:
+            self.name = ''
+            self.values = list(name)
+        else:
+            assert isinstance(name, str)
+            self.name = name
+            self.values = values
 
     def __iter__(self) -> Iterator[Any]:
         return iter(self.values)
@@ -66,6 +86,41 @@ class FailingDataFrame(FakeDataFrame):
 
 class FailingPolars:
     DataFrame = FailingDataFrame
+
+
+class ScalarConstructionFailingDataFrame(FakeDataFrame):
+    def __init__(
+        self,
+        rows: list[tuple[Any, ...]] | list[Any],
+        schema: list[str],
+        orient: str | None = None,
+    ) -> None:
+        if orient is None:
+            raise TypeError('invalid scalar')
+        super().__init__(rows, schema, orient)
+
+
+class ScalarConstructionFailingPolars:
+    DataFrame = ScalarConstructionFailingDataFrame
+    Series = FakeSeries
+
+
+class SequenceConstructionFailingSeries(FakeSeries):
+    def __init__(
+        self,
+        name: str | Sequence[Any],
+        values: list[Any] | None = None,
+        *,
+        strict: bool = True,
+    ) -> None:
+        if values is None:
+            raise TypeError('invalid sequence')
+        super().__init__(name, values, strict=strict)
+
+
+class SequenceConstructionFailingPolars:
+    DataFrame = FakeDataFrame
+    Series = SequenceConstructionFailingSeries
 
 
 class FakeTopLevelMixin:
@@ -335,6 +390,158 @@ def test_run_polars_transform_materializes_and_renders_returned_dataframe() -> N
 
 
 @pytest.mark.parametrize(
+    ('expression', 'column_name', 'value'),
+    [
+        ('42', '42', 42),
+        ("'total'", 'total', 'total'),
+    ],
+)
+def test_run_polars_transform_coerces_scalar_to_dataframe(
+    expression: str,
+    column_name: str,
+    value: Any,
+) -> None:
+    result = run_polars_transform(
+        make_transform(expression),
+        iter([SQLResult(header=['id'], rows=[(1,)])]),
+    )
+
+    assert result == SQLResult(header=[column_name], rows=[(value,)])
+
+
+def test_run_polars_transform_reports_invalid_scalar() -> None:
+    transform = PolarsTransform(
+        sql='SELECT id FROM orders',
+        expression='42',
+        code=compile('42', '<test>', 'eval'),
+        polars=ScalarConstructionFailingPolars,
+        altair=None,
+    )
+
+    with pytest.raises(PolarsTransformError, match='Unable to render scalar as DataFrame: TypeError: invalid scalar'):
+        run_polars_transform(
+            transform,
+            iter([SQLResult(header=['id'], rows=[(1,)])]),
+        )
+
+
+@pytest.mark.parametrize(
+    ('expression', 'header', 'rows'),
+    [
+        ("{'id': [1, 2], 'name': ['one', 'two']}", ['id', 'name'], [(1, 'one'), (2, 'two')]),
+        ("{'id': 1, 'name': 'one'}", ['id', 'name'], [(1, 'one')]),
+        ('{}', [], []),
+    ],
+)
+def test_run_polars_transform_coerces_dictionary_to_dataframe(
+    expression: str,
+    header: list[str],
+    rows: list[tuple[Any, ...]],
+) -> None:
+    import polars as pl
+
+    transform = PolarsTransform(
+        sql='SELECT id FROM orders',
+        expression=expression,
+        code=compile(expression, '<test>', 'eval'),
+        polars=pl,
+        altair=None,
+    )
+
+    result = run_polars_transform(
+        transform,
+        iter([SQLResult(header=['id'], rows=[(1,)])]),
+    )
+
+    assert result == SQLResult(header=header, rows=rows)
+
+
+def test_run_polars_transform_coerces_sequence_to_series() -> None:
+    result = run_polars_transform(
+        make_transform('[1, None, 3]'),
+        iter([SQLResult(header=['id'], rows=[(1,)])]),
+    )
+
+    assert result == SQLResult(header=['value'], rows=[(1,), (None,), (3,)])
+
+
+def test_run_polars_transform_reports_invalid_sequence() -> None:
+    transform = PolarsTransform(
+        sql='SELECT id FROM orders',
+        expression='[1, 2]',
+        code=compile('[1, 2]', '<test>', 'eval'),
+        polars=SequenceConstructionFailingPolars,
+        altair=None,
+    )
+
+    with pytest.raises(PolarsTransformError, match='Unable to render Sequence as Series: TypeError: invalid sequence'):
+        run_polars_transform(
+            transform,
+            iter([SQLResult(header=['id'], rows=[(1,)])]),
+        )
+
+
+def test_run_polars_transform_returns_empty_result_for_none() -> None:
+    result = run_polars_transform(
+        make_transform('None'),
+        iter([SQLResult(header=['id'], rows=[(1,)])]),
+    )
+
+    assert result == SQLResult()
+
+
+def test_run_polars_transform_reports_unsupported_return_type() -> None:
+    result = run_polars_transform(
+        make_transform('object()'),
+        iter([SQLResult(header=['id'], rows=[(1,)])]),
+    )
+
+    assert result.status_plain == "Nothing could be displayed for return type: <class 'object'>"
+
+
+def test_run_polars_transform_reports_invalid_dictionary() -> None:
+    import polars as pl
+
+    expression = "{'id': [1, 2], 'name': ['one']}"
+    transform = PolarsTransform(
+        sql='SELECT id FROM orders',
+        expression=expression,
+        code=compile(expression, '<test>', 'eval'),
+        polars=pl,
+        altair=None,
+    )
+
+    with pytest.raises(PolarsTransformError, match='Unable to render dictionary as DataFrame'):
+        run_polars_transform(
+            transform,
+            iter([SQLResult(header=['id'], rows=[(1,)])]),
+        )
+
+
+def test_run_polars_transform_writes_dictionary_to_parquet(tmp_path: Path) -> None:
+    import polars as pl
+
+    path = tmp_path / 'orders.parquet'
+    expression = "{'id': [1, 2], 'name': ['one', 'two']}"
+    transform = PolarsTransform(
+        sql='SELECT id FROM orders',
+        expression=expression,
+        code=compile(expression, '<test>', 'eval'),
+        polars=pl,
+        altair=None,
+    )
+
+    result = run_polars_transform(
+        transform,
+        iter([SQLResult(header=['id'], rows=[(1,)])]),
+        str(path),
+    )
+
+    assert result == SQLResult(status=f'Wrote 2 rows to {path}.')
+    assert pl.read_parquet(path).to_dict(as_series=False) == {'id': [1, 2], 'name': ['one', 'two']}
+
+
+@pytest.mark.parametrize(
     ('expression', 'header', 'rows'),
     [
         ("pl.Series('total', [1, None, 3])", ['total'], [(1,), (None,), (3,)]),
@@ -425,24 +632,6 @@ def test_run_polars_transform_reports_parquet_write_error() -> None:
             iter([SQLResult(header=['id'], rows=[(1,)])]),
             'orders.parquet',
         )
-
-
-def test_run_polars_transform_rejects_non_tabular_parquet_output() -> None:
-    with pytest.raises(PolarsTransformError, match='must return a DataFrame or Series'):
-        run_polars_transform(
-            make_transform('1'),
-            iter([SQLResult(header=['id'], rows=[(1,)])]),
-            'orders.parquet',
-        )
-
-
-def test_run_polars_transform_reports_non_dataframe_result() -> None:
-    result = run_polars_transform(
-        make_transform('1'),
-        iter([SQLResult(header=['id'], rows=[(1,)])]),
-    )
-
-    assert result.status_plain == "Nothing could be displayed for return type: <class 'int'>"
 
 
 def test_run_polars_transform_reports_disabled_altair_chart_output() -> None:
