@@ -158,6 +158,7 @@ def test_parse_polars_transform_returns_output_mode(command: str, output_mode: O
     [
         ('SELECT * FROM orders .> orders.parquet', None, 'orders.parquet'),
         ('SELECT * FROM orders .> orders.parquet;', None, 'orders.parquet'),
+        (r'SELECT * FROM orders .> orders.parquet \g', None, 'orders.parquet'),
         ("SELECT * FROM orders .> 'order exports.parquet'", None, 'order exports.parquet'),
         ('SELECT * FROM orders .| df.head(10) .> orders.parquet', 'df.head(10)', 'orders.parquet'),
     ],
@@ -202,6 +203,7 @@ def test_parse_polars_transform_ignores_non_suffix_markers(command: str) -> None
         ('SELECT 1 .> export file.parquet', 'must be quoted'),
         ('SELECT 1 .> export.parquet .| df', 'must follow'),
         ('SELECT 1 .| df .> export.parquet \\x', 'cannot use special display terminators'),
+        ('SELECT 1 .| df .> export.parquet \\G', 'cannot use special display terminators'),
         ('SELECT 1 .| df .| df', 'only one ".|"'),
         ('SELECT 1 .> first.parquet .> second.parquet', 'only one ".>"'),
         ('SELECT 1 .> ;', 'require a destination path'),

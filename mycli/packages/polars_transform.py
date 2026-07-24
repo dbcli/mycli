@@ -86,8 +86,9 @@ def parse_polars_transform(command: str) -> PolarsPipeline | None:
         parquet_operator = tokens[parquet_index + 1]
         parquet_path = command[parquet_operator.end + 1 :].strip()
         parquet_path = parquet_path.removesuffix(delimiter_command.current).rstrip()
+        parquet_path = parquet_path.removesuffix(r'\g').rstrip()
 
-    has_display_terminator = any(value is not None and value.endswith((r'\x', r'\G', r'\g')) for value in (sql, expression, parquet_path))
+    has_display_terminator = any(value is not None and value.endswith((r'\x', r'\G')) for value in (sql, expression, parquet_path))
     if parquet_path is not None and has_display_terminator:
         raise PolarsTransformError('Parquet saves cannot use special display terminators.')
     if sql.endswith(r'\x') or expression is not None and expression.endswith(r'\x'):

@@ -11,6 +11,7 @@ Features
 Bug Fixes
 ---------
 * Keep Vault username and password fields from being confused.
+* Allow `\g` to terminate `.>` expressions.
 
 
 Documentation

@@ -100,7 +100,7 @@ reports its destination and row count.
 When `post_redirect_command` is set in `~/.myclirc`, the given command runs
 after a successful Parquet save.
 
-`.>` cannot be combined with `\x`, `\G`, or `\g` special display terminators.
+`.>` cannot be combined with the `\x` or `\G` special display terminators.
 
 ## Combining
 
