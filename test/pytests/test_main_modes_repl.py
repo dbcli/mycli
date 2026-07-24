@@ -1374,7 +1374,11 @@ def test_one_iteration_writes_transformed_polars_parquet(monkeypatch: pytest.Mon
     assert hook_calls == [('post {}', 'orders.parquet')]
 
 
-def test_one_iteration_writes_polars_png_and_runs_post_redirect_hook(monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize('path', ['orders.png', 'orders.pdf', 'orders.svg', 'orders.html'])
+def test_one_iteration_writes_polars_plot_and_runs_post_redirect_hook(
+    monkeypatch: pytest.MonkeyPatch,
+    path: str,
+) -> None:
     patch_repl_runtime_defaults(monkeypatch)
 
     class FakeSQLExecute:
@@ -1410,7 +1414,7 @@ def test_one_iteration_writes_polars_png_and_runs_post_redirect_hook(monkeypatch
         assert plot_ppi == 200
         assert plot_theme == 'carbong90'
         run_calls.append(path)
-        return SQLResult(status=f'Wrote PNG image to {path}.')
+        return SQLResult(status=f'Wrote plot to {path}.')
 
     monkeypatch.setattr(repl_mode, 'run_polars_transform', run)
     monkeypatch.setattr(
@@ -1422,11 +1426,11 @@ def test_one_iteration_writes_polars_png_and_runs_post_redirect_hook(monkeypatch
     repl_mode._one_iteration(
         cli,
         repl_mode.ReplState(),
-        'SELECT * FROM orders .| alt.Chart(df) .> orders.png',
+        f'SELECT * FROM orders .| alt.Plot(df) .> {path}',
     )
 
-    assert run_calls == ['orders.png']
-    assert hook_calls == [('post {}', 'orders.png')]
+    assert run_calls == [path]
+    assert hook_calls == [('post {}', path)]
 
 
 def test_one_iteration_reports_polars_post_redirect_hook_error(monkeypatch: pytest.MonkeyPatch) -> None:

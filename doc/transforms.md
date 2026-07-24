@@ -22,9 +22,8 @@ functionality may still change.
 Here are some known limitations:
 
  * transforms can't be composed with `$|` shell redirection
- * multiple transform steps are not supported
+ * composing multiple transform operations is not supported
  * results from `UNION`s may be unable to be transformed
- * PNG images are static and do not support all Altair features
 
 And there are inherent limitations to the post-processing model: the entire
 SQL result must be transferred from the server and loaded into local memory.
@@ -87,7 +86,7 @@ the `[dataframe]` section of `~/.myclirc`.
 
 A query result, transformed `DataFrame`, or transformed `Series` can be
 written directly to a Parquet file with the `.>` operator. An Altair plot can
-also be written to a PNG file with the same operator.
+also be written to a file with the same operator.
 
 Save example:
 
@@ -95,10 +94,14 @@ Save example:
 SELECT * FROM orders .> orders.parquet;
 ```
 
-The `.>` operator must be last, requires a `.parquet` or `.png` destination, and
-overwrites any existing file.  Spaces may be required around the operator.
-Destination paths containing whitespace must be quoted.  A successful write
-reports its destination and row count if appropriate.
+The `.>` operator must be last, requires a `.parquet`, `.png`, `.pdf`, `.svg`,
+or `.html` file extension on the destination, and overwrites any existing file.
+
+Spaces may be required around the operator.  Destination paths containing
+whitespace must be quoted.  A successful write reports its destination and row
+count if appropriate.
+
+When saving a plot, the format is deduced from the file extension.
 
 When `post_redirect_command` is set in `~/.myclirc`, the given command runs
 after a successful file save.
