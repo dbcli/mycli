@@ -16,6 +16,7 @@ from mycli.packages.sqlresult import SQLResult
 from mycli.types import ImageProtocol, OutputMode
 
 delimiter_command = DelimiterCommand()
+PLOT_FORMATS = ('png', 'pdf', 'svg', 'html')
 
 
 class PolarsTransformError(RuntimeError):
@@ -144,9 +145,14 @@ def _parse_output_path(path: str) -> str:
         path = path[1:-1]
     elif any(character.isspace() for character in path):
         raise PolarsTransformError('File save paths containing spaces must be quoted.')
-    if not path.lower().endswith(('.parquet', '.png')):
-        raise PolarsTransformError('File save paths must end in ".parquet" or ".png".')
+    if not path.lower().endswith(('.parquet', '.png', '.pdf', '.svg', '.html')):
+        raise PolarsTransformError('File save paths must end in ".parquet", ".png", ".pdf", ".svg", or ".html".')
     return path
+
+
+def _plot_format_for_path(path: str) -> str | None:
+    path = path.lower()
+    return next((plot_format for plot_format in PLOT_FORMATS if path.endswith(f'.{plot_format}')), None)
 
 
 def _validate_sql(sql: str) -> None:
@@ -278,26 +284,34 @@ def run_polars_transform(
             return SQLResult(status=f'Wrote {len(series_dataframe)} rows to {output_path}.')
         return SQLResult(header=[column_name], rows=[(item,) for item in value])
     elif transform.altair is not None and isinstance(value, transform.altair.TopLevelMixin):
-        if output_path is not None and not output_path.lower().endswith('.png'):
-            raise PolarsTransformError('Altair charts can only be written to ".png" files.')
+        plot_format = _plot_format_for_path(output_path) if output_path is not None else None
+        if output_path is not None and plot_format is None:
+            raise PolarsTransformError('Altair plots can only be written to ".png", ".pdf", ".svg", or ".html" files.')
         if output_path is None and image_protocol == 'none':
             return SQLResult(status='image_protocol is unset in ~/.myclirc. Inline plotting is disabled.')
-        _load_vl_convert()
+        if plot_format != 'html':
+            _load_vl_convert()
         try:
             transform.altair.theme.enable(plot_theme)
         except Exception as exc:
             raise PolarsTransformError(f'Unable to enable Altair plot theme "{plot_theme}": {type(exc).__name__}: {exc}') from exc
         if output_path is not None:
+            assert plot_format is not None
+            save_kwargs: dict[str, Any] = {
+                'format': plot_format,
+            }
+            if plot_format != 'html':
+                save_kwargs['scale_factor'] = plot_scale_factor
+            if plot_format == 'png':
+                save_kwargs['ppi'] = plot_ppi
             try:
-                value.save(
-                    output_path,
-                    format='png',
-                    scale_factor=plot_scale_factor,
-                    ppi=plot_ppi,
-                )
+                value.save(output_path, **save_kwargs)
             except Exception as exc:
-                raise PolarsTransformError(f'Unable to write PNG file "{output_path}": {type(exc).__name__}: {exc}') from exc
-            return SQLResult(status=f'Wrote PNG image to {output_path}.')
+                raise PolarsTransformError(
+                    f'Unable to write {plot_format.upper()} file "{output_path}": {type(exc).__name__}: {exc}'
+                ) from exc
+            output_kind = 'document' if plot_format == 'html' else 'image'
+            return SQLResult(status=f'Wrote {plot_format.upper()} {output_kind} to {output_path}.')
         png = BytesIO()
         try:
             value.save(
@@ -307,7 +321,7 @@ def run_polars_transform(
                 ppi=plot_ppi,
             )
         except Exception as exc:
-            raise PolarsTransformError(f'Unable to render Altair chart: {type(exc).__name__}: {exc}') from exc
+            raise PolarsTransformError(f'Unable to render Altair plot: {type(exc).__name__}: {exc}') from exc
         return SQLResult(image=png.getvalue(), image_protocol=image_protocol)
     elif value is None:
         return SQLResult()

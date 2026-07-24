@@ -127,7 +127,8 @@ class FakeTopLevelMixin:
     pass
 
 
-class FakeChart(FakeTopLevelMixin):
+class FakePlot(FakeTopLevelMixin):
+    formats: list[str] = []
     scale_factors: list[float] = []
     ppis: list[int] = []
     saved_paths: list[str] = []
@@ -137,15 +138,18 @@ class FakeChart(FakeTopLevelMixin):
 
     def save(self, file: Any, **kwargs: Any) -> None:
         self.save_calls.append(kwargs['format'])
-        self.scale_factors.append(float(kwargs['scale_factor']))
-        self.ppis.append(kwargs['ppi'])
+        self.formats.append(kwargs['format'])
+        if 'scale_factor' in kwargs:
+            self.scale_factors.append(float(kwargs['scale_factor']))
+        if 'ppi' in kwargs:
+            self.ppis.append(kwargs['ppi'])
         if isinstance(file, str):
             self.saved_paths.append(file)
         else:
             file.write(b'png image')
 
 
-class FailingChart(FakeTopLevelMixin):
+class FailingPlot(FakeTopLevelMixin):
     def save(self, _file: Any, **_kwargs: str) -> None:
         raise OSError('renderer failed')
 
@@ -163,8 +167,8 @@ class FakeAltair:
     theme = FakeTheme
 
     @staticmethod
-    def Chart(data: FakeDataFrame) -> FakeChart:
-        return FakeChart(data)
+    def Plot(data: FakeDataFrame) -> FakePlot:
+        return FakePlot(data)
 
 
 class FailingAltair:
@@ -172,8 +176,8 @@ class FailingAltair:
     theme = FakeTheme
 
     @staticmethod
-    def Chart(_data: FakeDataFrame) -> FailingChart:
-        return FailingChart()
+    def Plot(_data: FakeDataFrame) -> FailingPlot:
+        return FailingPlot()
 
 
 def make_transform(expression: str) -> PolarsTransform:
@@ -220,8 +224,11 @@ def test_parse_polars_transform_returns_output_mode(command: str, output_mode: O
         (r'SELECT * FROM orders .> orders.parquet \g', None, 'orders.parquet'),
         ("SELECT * FROM orders .> 'order exports.parquet'", None, 'order exports.parquet'),
         ('SELECT * FROM orders .| df.head(10) .> orders.parquet', 'df.head(10)', 'orders.parquet'),
-        ('SELECT * FROM orders .| alt.Chart(df) .> orders.png', 'alt.Chart(df)', 'orders.png'),
-        (r"SELECT * FROM orders .| alt.Chart(df) .> 'order charts.png' \g", 'alt.Chart(df)', 'order charts.png'),
+        ('SELECT * FROM orders .| alt.Plot(df) .> orders.png', 'alt.Plot(df)', 'orders.png'),
+        (r"SELECT * FROM orders .| alt.Plot(df) .> 'order plot.png' \g", 'alt.Plot(df)', 'order plot.png'),
+        ('SELECT * FROM orders .| alt.Plot(df) .> orders.pdf', 'alt.Plot(df)', 'orders.pdf'),
+        (r"SELECT * FROM orders .| alt.Plot(df) .> 'order plot.SVG' \g", 'alt.Plot(df)', 'order plot.SVG'),
+        (r"SELECT * FROM orders .| alt.Plot(df) .> 'order plot.HTML' \g", 'alt.Plot(df)', 'order plot.HTML'),
     ],
 )
 def test_parse_polars_transform_parses_file_redirect(
@@ -260,7 +267,7 @@ def test_parse_polars_transform_ignores_non_suffix_markers(command: str) -> None
         ('SELECT 1 .|', 'require a Python expression'),
         ('SELECT 1; SELECT 2 .| df', 'exactly one SQL statement'),
         ('SELECT 1 .>', 'require a destination path'),
-        ('SELECT 1 .> export.csv', 'end in ".parquet" or ".png"'),
+        ('SELECT 1 .> export.csv', 'end in ".parquet", ".png", ".pdf", ".svg", or ".html"'),
         ('SELECT 1 .> export file.parquet', 'must be quoted'),
         ('SELECT 1 .> export.parquet .| df', 'must follow'),
         ('SELECT 1 .| df .> export.parquet \\x', 'cannot use special display terminators'),
@@ -634,9 +641,9 @@ def test_run_polars_transform_reports_parquet_write_error() -> None:
         )
 
 
-def test_run_polars_transform_reports_disabled_altair_chart_output() -> None:
+def test_run_polars_transform_reports_disabled_altair_plot_output() -> None:
     result = run_polars_transform(
-        make_transform('alt.Chart(df)'),
+        make_transform('alt.Plot(df)'),
         iter([SQLResult(header=['id'], rows=[(1,)])]),
     )
 
@@ -644,18 +651,18 @@ def test_run_polars_transform_reports_disabled_altair_chart_output() -> None:
 
 
 @pytest.mark.parametrize('image_protocol', ['iterm2', 'kitty'])
-def test_run_polars_transform_renders_altair_chart_for_image_protocol(
+def test_run_polars_transform_renders_altair_plot_for_image_protocol(
     monkeypatch: pytest.MonkeyPatch,
     image_protocol: ImageProtocol,
 ) -> None:
     load_calls: list[None] = []
-    FakeChart.scale_factors = []
-    FakeChart.ppis = []
+    FakePlot.scale_factors = []
+    FakePlot.ppis = []
     FakeTheme.enabled = []
     monkeypatch.setattr(polars_transform, '_load_vl_convert', lambda: load_calls.append(None))
 
     result = run_polars_transform(
-        make_transform('alt.Chart(df)'),
+        make_transform('alt.Plot(df)'),
         iter([SQLResult(header=['id'], rows=[(1,)])]),
         image_protocol=image_protocol,
         plot_scale_factor=1.5,
@@ -664,67 +671,94 @@ def test_run_polars_transform_renders_altair_chart_for_image_protocol(
     )
 
     assert load_calls == [None]
-    assert FakeChart.scale_factors == [1.5]
-    assert FakeChart.ppis == [144]
+    assert FakePlot.scale_factors == [1.5]
+    assert FakePlot.ppis == [144]
     assert FakeTheme.enabled == ['dark']
     assert result == SQLResult(image=b'png image', image_protocol=image_protocol)
 
 
-def test_run_polars_transform_writes_altair_chart_to_png(monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize(
+    ('path', 'plot_format', 'expected_scale_factors', 'expected_ppis', 'expected_load_calls', 'output_kind'),
+    [
+        ('plot.png', 'png', [1.5], [144], [None], 'image'),
+        ('plot.pdf', 'pdf', [1.5], [], [None], 'image'),
+        ('plot.SVG', 'svg', [1.5], [], [None], 'image'),
+        ('plot.html', 'html', [], [], [], 'document'),
+    ],
+)
+def test_run_polars_transform_writes_altair_plot_to_file(
+    monkeypatch: pytest.MonkeyPatch,
+    path: str,
+    plot_format: str,
+    expected_scale_factors: list[float],
+    expected_ppis: list[int],
+    expected_load_calls: list[None],
+    output_kind: str,
+) -> None:
     load_calls: list[None] = []
-    FakeChart.scale_factors = []
-    FakeChart.ppis = []
-    FakeChart.saved_paths = []
+    FakePlot.formats = []
+    FakePlot.scale_factors = []
+    FakePlot.ppis = []
+    FakePlot.saved_paths = []
     FakeTheme.enabled = []
     monkeypatch.setattr(polars_transform, '_load_vl_convert', lambda: load_calls.append(None))
 
     result = run_polars_transform(
-        make_transform('alt.Chart(df)'),
+        make_transform('alt.Plot(df)'),
         iter([SQLResult(header=['id'], rows=[(1,)])]),
-        'chart.png',
+        path,
         image_protocol='none',
         plot_scale_factor=1.5,
         plot_ppi=144,
         plot_theme='dark',
     )
 
-    assert result == SQLResult(status='Wrote PNG image to chart.png.')
-    assert load_calls == [None]
-    assert FakeChart.saved_paths == ['chart.png']
-    assert FakeChart.scale_factors == [1.5]
-    assert FakeChart.ppis == [144]
+    assert result == SQLResult(status=f'Wrote {plot_format.upper()} {output_kind} to {path}.')
+    assert load_calls == expected_load_calls
+    assert FakePlot.formats == [plot_format]
+    assert FakePlot.saved_paths == [path]
+    assert FakePlot.scale_factors == expected_scale_factors
+    assert FakePlot.ppis == expected_ppis
     assert FakeTheme.enabled == ['dark']
 
 
-def test_run_polars_transform_reports_altair_png_write_error(monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize('plot_format', ['png', 'pdf', 'svg', 'html'])
+def test_run_polars_transform_reports_altair_file_write_error(
+    monkeypatch: pytest.MonkeyPatch,
+    plot_format: str,
+) -> None:
     monkeypatch.setattr(polars_transform, '_load_vl_convert', lambda: None)
     transform = PolarsTransform(
         sql='SELECT id FROM orders',
-        expression='alt.Chart(df)',
-        code=compile('alt.Chart(df)', '<test>', 'eval'),
+        expression='alt.Plot(df)',
+        code=compile('alt.Plot(df)', '<test>', 'eval'),
         polars=FakePolars,
         altair=FailingAltair,
     )
 
-    with pytest.raises(PolarsTransformError, match='Unable to write PNG file "chart.png": OSError: renderer failed'):
+    path = f'plot.{plot_format}'
+    with pytest.raises(
+        PolarsTransformError,
+        match=f'Unable to write {plot_format.upper()} file "{path}": OSError: renderer failed',
+    ):
         run_polars_transform(
             transform,
             iter([SQLResult(header=['id'], rows=[(1,)])]),
-            'chart.png',
+            path,
         )
 
 
 def test_run_polars_transform_uses_integer_default_plot_ppi(monkeypatch: pytest.MonkeyPatch) -> None:
-    FakeChart.ppis = []
+    FakePlot.ppis = []
     monkeypatch.setattr(polars_transform, '_load_vl_convert', lambda: None)
 
     run_polars_transform(
-        make_transform('alt.Chart(df)'),
+        make_transform('alt.Plot(df)'),
         iter([SQLResult(header=['id'], rows=[(1,)])]),
         image_protocol='kitty',
     )
 
-    assert FakeChart.ppis == [200]
+    assert FakePlot.ppis == [200]
 
 
 def test_run_polars_transform_reports_invalid_altair_theme(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -737,24 +771,24 @@ def test_run_polars_transform_reports_invalid_altair_theme(monkeypatch: pytest.M
 
     with pytest.raises(PolarsTransformError, match='Unable to enable Altair plot theme "not-a-theme": ValueError: unknown theme'):
         run_polars_transform(
-            make_transform('alt.Chart(df)'),
+            make_transform('alt.Plot(df)'),
             iter([SQLResult(header=['id'], rows=[(1,)])]),
             image_protocol='kitty',
             plot_theme='not-a-theme',
         )
 
 
-def test_run_polars_transform_reports_altair_chart_render_error(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_run_polars_transform_reports_altair_plot_render_error(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(polars_transform, '_load_vl_convert', lambda: None)
     transform = PolarsTransform(
         sql='SELECT id FROM orders',
-        expression='alt.Chart(df)',
-        code=compile('alt.Chart(df)', '<test>', 'eval'),
+        expression='alt.Plot(df)',
+        code=compile('alt.Plot(df)', '<test>', 'eval'),
         polars=FakePolars,
         altair=FailingAltair,
     )
 
-    with pytest.raises(PolarsTransformError, match='Unable to render Altair chart: OSError: renderer failed'):
+    with pytest.raises(PolarsTransformError, match='Unable to render Altair plot: OSError: renderer failed'):
         run_polars_transform(
             transform,
             iter([SQLResult(header=['id'], rows=[(1,)])]),
@@ -770,35 +804,40 @@ def test_run_polars_transform_reports_missing_altair_renderer(monkeypatch: pytes
 
     with pytest.raises(PolarsTransformError, match='requires vl-convert-python'):
         run_polars_transform(
-            make_transform('alt.Chart(df)'),
+            make_transform('alt.Plot(df)'),
             iter([SQLResult(header=['id'], rows=[(1,)])]),
             image_protocol='iterm2',
         )
 
 
-def test_run_polars_transform_rejects_altair_chart_parquet_output() -> None:
-    with pytest.raises(PolarsTransformError, match='Altair charts can only be written'):
+def test_run_polars_transform_rejects_altair_plot_parquet_output() -> None:
+    with pytest.raises(PolarsTransformError, match='Altair plots can only be written'):
         run_polars_transform(
-            make_transform('alt.Chart(df)'),
+            make_transform('alt.Plot(df)'),
             iter([SQLResult(header=['id'], rows=[(1,)])]),
-            'chart.parquet',
+            'plot.parquet',
             image_protocol='iterm2',
         )
 
 
 @pytest.mark.parametrize(
-    ('expression', 'message'),
+    ('expression', 'path', 'message'),
     [
-        ('df', 'DataFrame results can only be written'),
-        ("pl.Series('id', [1])", 'Series results can only be written'),
+        ('df', 'data.pdf', 'DataFrame results can only be written'),
+        ("pl.Series('id', [1])", 'data.svg', 'Series results can only be written'),
+        ('df', 'data.html', 'DataFrame results can only be written'),
     ],
 )
-def test_run_polars_transform_rejects_dataframe_and_series_png_output(expression: str, message: str) -> None:
+def test_run_polars_transform_rejects_dataframe_and_series_plot_output(
+    expression: str,
+    path: str,
+    message: str,
+) -> None:
     with pytest.raises(PolarsTransformError, match=message):
         run_polars_transform(
             make_transform(expression),
             iter([SQLResult(header=['id'], rows=[(1,)])]),
-            'data.png',
+            path,
         )
 
 
