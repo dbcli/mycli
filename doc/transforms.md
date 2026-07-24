@@ -75,7 +75,8 @@ Example:
 ```sql
 SELECT * FROM orders .| df['total'].plot.hist();
 ```
-![histogram](https://raw.githubusercontent.com/dbcli/mycli/main/doc/screenshots/total_histogram.png)
+
+<img src="https://raw.githubusercontent.com/dbcli/mycli/main/doc/screenshots/total_histogram.png", height=400>
 
 Image size, display protocol, and other properties can be configured in
 the `[dataframe]` section of `~/.myclirc`.
