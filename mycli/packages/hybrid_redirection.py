@@ -1,5 +1,6 @@
 import functools
 import logging
+import shlex
 
 import sqlglot
 
@@ -113,9 +114,6 @@ def invalid_shell_part(
     file_part: str | None,
     command_part: str | None,
 ) -> bool:
-    if file_part and ' ' in file_part:
-        return True
-
     if file_part and '>' in file_part:
         return True
 
@@ -123,6 +121,19 @@ def invalid_shell_part(
         return True
 
     return False
+
+
+def parse_redirect_filename(file_part: str | None) -> str | None:
+    """Return one unquoted redirect filename, or None for an invalid operand."""
+    if file_part is None or not file_part:
+        return None
+    if file_part[0] not in ('\'', '"'):
+        return file_part if not any(character.isspace() for character in file_part) else None
+    try:
+        parts = shlex.split(file_part)
+    except ValueError:
+        return None
+    return parts[0] if len(parts) == 1 else None
 
 
 # todo there are still corner cases combining custom delimiters, caching, and redirection
@@ -174,7 +185,9 @@ def get_redirect_components(command: str) -> tuple[str | None, str | None, str |
     )
 
     if file_part_tokens:
-        file_part = assemble_tokens(file_part_tokens)
+        file_part = parse_redirect_filename(assemble_tokens(file_part_tokens))
+        if file_part is None:
+            return None, None, None, None
     else:
         file_part = None
 
