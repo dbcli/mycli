@@ -13,6 +13,11 @@ Bug Fixes
 * Keep Vault username and password fields from being confused.
 
 
+Documentation
+---------
+* `README.md` formatting.
+
+
 Internal
 ---------
 * Sync test myclirc file closer to package myclirc file.
