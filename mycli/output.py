@@ -29,7 +29,7 @@ from prompt_toolkit.styles.style import _MergedStyle
 from pygments.style import Style as PygmentsStyle
 from pymysql.cursors import Cursor
 
-from mycli.compat import WIN
+from mycli.compat import WIN, is_windows_console
 from mycli.constants import DEFAULT_HEIGHT, DEFAULT_WIDTH
 import mycli.main_modes.repl as repl_mode
 from mycli.packages import special
@@ -116,7 +116,8 @@ class OutputMixin(MyCliState):
         is_warnings_style: bool = False,
     ) -> None:
         """Output text to stdout or a pager command."""
-        if result.image is not None:
+        prompt_output = self.prompt_session.output if self.prompt_session is not None else None
+        if result.image is not None and not is_windows_console(prompt_output):
             if result.image_protocol == 'iterm2':
                 click.secho('')
                 self.output_iterm2_image(result.image)
