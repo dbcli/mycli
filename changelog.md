@@ -8,6 +8,7 @@ Features
 * Display of inline plots returned from `.|` operations.
 * Don't attempt inline plots in the Windows console.
 * Save plots, like parquets, with the `.>` operator.
+* Display many native Python types returned from `.|` operations.
 
 
 Bug Fixes

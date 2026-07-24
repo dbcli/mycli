@@ -53,9 +53,12 @@ SELECT customer_id, COUNT(1) AS len FROM orders GROUP BY customer_id;
 ```
 
 Transform expressions run with normal Python privileges, and expressions
-should not be run from untrusted sources.  If the transform operation
-returns a Polars `DataFrame` or `Series`, the result is rendered by mycli
-as tabular output.  Most other return types will be silently ignored.
+should not be run from untrusted sources.
+
+If the transform operation returns a Polars `DataFrame` or `Series`, or a
+Python type which can be rendered as a table, the result is rendered by mycli
+as tabular output.  `None` return values will be silently ignored, and other
+return types will result in a warning message.
 
 Transform expressions are useful for operations such as medians which
 cannot be done (or are awkward) in SQL.  Example:
