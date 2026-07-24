@@ -1374,6 +1374,61 @@ def test_one_iteration_writes_transformed_polars_parquet(monkeypatch: pytest.Mon
     assert hook_calls == [('post {}', 'orders.parquet')]
 
 
+def test_one_iteration_writes_polars_png_and_runs_post_redirect_hook(monkeypatch: pytest.MonkeyPatch) -> None:
+    patch_repl_runtime_defaults(monkeypatch)
+
+    class FakeSQLExecute:
+        dbname = 'db'
+        connection_id = 0
+
+        def run(self, text: str) -> Iterator[SQLResult]:
+            assert text == 'SELECT * FROM orders'
+            return iter([SQLResult(header=['id'], rows=[(1,)])])
+
+    cli = make_repl_cli(FakeSQLExecute())
+    cli.post_redirect_command = 'post {}'
+    transform = object()
+    run_calls: list[str] = []
+    hook_calls: list[tuple[str, str]] = []
+
+    monkeypatch.setattr(repl_mode, 'prepare_polars_transform', lambda sql, expression: transform)
+
+    def run(
+        received_transform: object,
+        results: Iterator[SQLResult],
+        path: str,
+        *,
+        image_protocol: str,
+        plot_scale_factor: float,
+        plot_ppi: int,
+        plot_theme: str,
+    ) -> SQLResult:
+        assert received_transform is transform
+        assert list(results) == [SQLResult(header=['id'], rows=[(1,)])]
+        assert image_protocol == 'none'
+        assert plot_scale_factor == 1.0
+        assert plot_ppi == 200
+        assert plot_theme == 'carbong90'
+        run_calls.append(path)
+        return SQLResult(status=f'Wrote PNG image to {path}.')
+
+    monkeypatch.setattr(repl_mode, 'run_polars_transform', run)
+    monkeypatch.setattr(
+        repl_mode.special,
+        'run_post_redirect_hook',
+        lambda command, filename: hook_calls.append((command, filename)),
+    )
+
+    repl_mode._one_iteration(
+        cli,
+        repl_mode.ReplState(),
+        'SELECT * FROM orders .| alt.Chart(df) .> orders.png',
+    )
+
+    assert run_calls == ['orders.png']
+    assert hook_calls == [('post {}', 'orders.png')]
+
+
 def test_one_iteration_reports_polars_post_redirect_hook_error(monkeypatch: pytest.MonkeyPatch) -> None:
     patch_repl_runtime_defaults(monkeypatch)
 

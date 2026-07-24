@@ -7,6 +7,7 @@ Features
 * Allow file target of `$>` redirection to be quoted.
 * Display of inline plots returned from `.|` operations.
 * Don't attempt inline plots in the Windows console.
+* Save plots, like parquets, with the `.>` operator.
 
 
 Bug Fixes

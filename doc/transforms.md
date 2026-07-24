@@ -22,9 +22,8 @@ functionality may still change.
 Here are some known limitations:
 
  * transforms can't be composed with `$|` shell redirection
- * multiple transform steps are not permitted
+ * multiple transform steps are not supported
  * results from `UNION`s may be unable to be transformed
- * images cannot yet be saved
  * PNG images are static and do not support all Altair features
 
 And there are inherent limitations to the post-processing model: the entire
@@ -84,7 +83,8 @@ the `[dataframe]` section of `~/.myclirc`.
 ## Saving
 
 A query result, transformed `DataFrame`, or transformed `Series` can be
-written directly to a Parquet file with the `.>` operator.
+written directly to a Parquet file with the `.>` operator. An Altair plot can
+also be written to a PNG file with the same operator.
 
 Save example:
 
@@ -92,22 +92,22 @@ Save example:
 SELECT * FROM orders .> orders.parquet;
 ```
 
-The `.>` operator must be last, requires a `.parquet` destination, and
+The `.>` operator must be last, requires a `.parquet` or `.png` destination, and
 overwrites any existing file.  Spaces may be required around the operator.
 Destination paths containing whitespace must be quoted.  A successful write
-reports its destination and row count.
+reports its destination and row count if appropriate.
 
 When `post_redirect_command` is set in `~/.myclirc`, the given command runs
-after a successful Parquet save.
+after a successful file save.
 
 `.>` cannot be combined with the `\x` or `\G` special display terminators.
 
 ## Combining
 
-Parquet saves may be combined with dataframe transforms.  Again, `.>` must
-be the last operator.
+Parquet saves may be combined with dataframe transforms.  Again, the save
+operator `.>` must be the last operator.
 
-Combined transform and save example:
+Combined transform and save examples:
 
 ```sql
 SELECT * FROM orders .| df.group_by('customer_id').len() .> customer_counts.parquet;
@@ -115,4 +115,8 @@ SELECT * FROM orders .| df.group_by('customer_id').len() .> customer_counts.parq
 
 ```sql
 SELECT * FROM orders .| df['order_id'] .> order_ids.parquet;
+```
+
+```sql
+SELECT * FROM orders .| df['total'].plot.hist() .> total_histogram.png;
 ```
