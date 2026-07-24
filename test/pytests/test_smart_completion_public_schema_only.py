@@ -1,6 +1,7 @@
 # type: ignore
 
 import os.path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from prompt_toolkit.completion import Completion
@@ -103,6 +104,35 @@ def test_special_name_completion(completer, complete_event):
         Completion(text="\\dt", start_position=-2),
         Completion(text="\\dsn", start_position=-2),
     ]
+
+
+def test_dsn_subcommand_completion(completer, complete_event):
+    text = '/dsn '
+    result = completer.get_completions(Document(text=text, cursor_position=len(text)), complete_event)
+
+    assert {completion.text for completion in result} == {'help', 'list', 'show', 'save', 'delete'}
+
+
+def test_dsn_delete_alias_completion(completer, complete_event, monkeypatch):
+    import mycli.sqlcompleter as sqlcompleter
+
+    monkeypatch.setattr(
+        sqlcompleter.DsnAliases,
+        'instance',
+        SimpleNamespace(list=lambda: ['prod', 'staging']),
+        raising=False,
+    )
+    text = '/dsn delete pro'
+    result = completer.get_completions(Document(text=text, cursor_position=len(text)), complete_event)
+
+    assert list(result) == [Completion(text='prod', start_position=-3)]
+
+
+@pytest.mark.parametrize('text', ['/dsn show', '/dsn show ', '/dsn help', '/dsn help ', '/dsn delete prod '])
+def test_dsn_show_and_help_do_not_offer_completions(completer, complete_event, text):
+    result = list(completer.get_completions(Document(text=text, cursor_position=len(text)), complete_event))
+
+    assert result == []
 
 
 def test_empty_string_completion(completer, complete_event):

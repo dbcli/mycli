@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+DSN_SUBCOMMANDS = {'help', 'list', 'show', 'save', 'delete'}
+
 
 class DsnAliases:
     section_name: str = 'alias_dsn'

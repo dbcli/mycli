@@ -6,6 +6,7 @@ from typing import Any, Callable, Literal
 import sqlparse
 from sqlparse.sql import Comparison, Identifier, Token, Where
 
+from mycli.packages.special.dsn_aliases import DSN_SUBCOMMANDS
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
 from mycli.packages.special.main import parse_special_command
 from mycli.packages.sql_utils import extract_tables, find_prev_keyword, last_word
@@ -815,6 +816,17 @@ def suggest_special(text: str) -> list[dict[str, Any]]:
         return [{"type": "file_name"}]
     if cmd in ["\\llm", "/llm", "\\ai", "/ai"]:
         return [{"type": "llm"}]
+
+    if cmd.lower() in (r'\dsn', '/dsn'):
+        dsn_arguments = _arg.split(maxsplit=1)
+        completing_delete_target = (len(dsn_arguments) == 1 and text[-1].isspace()) or (len(dsn_arguments) == 2 and not text[-1].isspace())
+        if dsn_arguments and dsn_arguments[0].lower() == 'delete' and completing_delete_target:
+            return [{'type': 'dsn_alias'}]
+        if dsn_arguments and dsn_arguments[0].lower() == 'delete' and len(dsn_arguments) == 2:
+            return []
+        if dsn_arguments and dsn_arguments[0].lower() in DSN_SUBCOMMANDS - {'delete'}:
+            return []
+        return [{'type': 'special_subcommand', 'subcommands': list(DSN_SUBCOMMANDS)}]
 
     return [{"type": "keyword"}, {"type": "special"}]
 

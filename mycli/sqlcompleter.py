@@ -14,6 +14,7 @@ import rapidfuzz
 from mycli.packages.completion_engine import is_inside_quotes, suggest_type
 from mycli.packages.filepaths import complete_path, parse_path, suggest_path
 from mycli.packages.special import llm
+from mycli.packages.special.dsn_aliases import DsnAliases
 from mycli.packages.special.favoritequeries import FavoriteQueries
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
 from mycli.packages.sql_utils import extract_columns_from_select, extract_tables, last_word
@@ -1685,6 +1686,27 @@ class SQLCompleter(Completer):
                     text_before_cursor=document.text_before_cursor,
                 )
                 completions.extend([(*x, rank) for x in subcommands_m])
+
+            elif suggestion['type'] == 'special_subcommand':
+                subcommands_m = self.find_matches(
+                    word_before_cursor,
+                    suggestion['subcommands'],
+                    start_only=True,
+                    fuzzy=False,
+                    text_before_cursor=document.text_before_cursor,
+                )
+                completions.extend([(*x, rank) for x in subcommands_m])
+
+            elif suggestion['type'] == 'dsn_alias':
+                if hasattr(DsnAliases, 'instance'):
+                    aliases_m = self.find_matches(
+                        word_before_cursor,
+                        DsnAliases.instance.list(),
+                        start_only=True,
+                        fuzzy=False,
+                        text_before_cursor=document.text_before_cursor,
+                    )
+                    completions.extend([(*x, rank) for x in aliases_m])
 
             elif suggestion["type"] == "enum_value":
                 enum_values = self.populate_enum_values(

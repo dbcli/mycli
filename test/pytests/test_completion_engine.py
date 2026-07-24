@@ -7,6 +7,7 @@ import sqlparse
 
 from mycli.packages import completion_engine, special
 from mycli.packages.completion_engine import (
+    DSN_SUBCOMMANDS,
     _aliases,
     _build_suggest_context,
     _charset_suggestion,
@@ -841,6 +842,12 @@ def test_suggest_type_dispatches_backslash_commands_to_suggest_special(monkeypat
         ('\\edit ', [{'type': 'file_name'}]),
         ('\\llm ', [{'type': 'llm'}]),
         ('\\ai ', [{'type': 'llm'}]),
+        ('/dsn ', [{'type': 'special_subcommand', 'subcommands': list(DSN_SUBCOMMANDS)}]),
+        ('/dsn delete ', [{'type': 'dsn_alias'}]),
+        ('/dsn delete pro', [{'type': 'dsn_alias'}]),
+        ('/dsn delete prod ', []),
+        ('/dsn show', []),
+        ('/dsn help ', []),
         ('pager ', [{'type': 'keyword'}, {'type': 'special'}]),
     ],
 )

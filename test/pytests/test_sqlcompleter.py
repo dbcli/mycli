@@ -522,6 +522,57 @@ def test_get_completions_llm_branch_with_and_without_current_word(monkeypatch) -
     assert 'explain' not in partial_word
 
 
+def test_get_completions_special_subcommand_branch(monkeypatch) -> None:
+    monkeypatch.setattr(
+        mycli.sqlcompleter,
+        'suggest_type',
+        lambda full_text, before: [{'type': 'special_subcommand', 'subcommands': ['help', 'list', 'show', 'save', 'delete']}],
+    )
+    completer = make_completer()
+
+    result = [completion.text for completion in completer.get_completions(Document(text='/dsn s', cursor_position=6), None)]
+
+    assert result == ['show', 'save']
+
+
+def test_get_completions_dsn_alias_branch(monkeypatch) -> None:
+    monkeypatch.setattr(
+        mycli.sqlcompleter,
+        'suggest_type',
+        lambda full_text, before: [{'type': 'dsn_alias'}],
+    )
+    monkeypatch.setattr(
+        mycli.sqlcompleter.DsnAliases,
+        'instance',
+        SimpleNamespace(list=lambda: ['prod', 'staging']),
+        raising=False,
+    )
+    completer = make_completer()
+
+    result = [completion.text for completion in completer.get_completions(Document(text='/dsn delete pro', cursor_position=15), None)]
+
+    assert result == ['prod']
+
+
+def test_get_completions_dsn_alias_branch_without_aliases(monkeypatch) -> None:
+    monkeypatch.setattr(
+        mycli.sqlcompleter,
+        'suggest_type',
+        lambda full_text, before: [{'type': 'dsn_alias'}],
+    )
+    monkeypatch.setattr(
+        mycli.sqlcompleter.DsnAliases,
+        'instance',
+        SimpleNamespace(list=list),
+        raising=False,
+    )
+    completer = make_completer()
+
+    result = list(completer.get_completions(Document(text='/dsn delete ', cursor_position=12), None))
+
+    assert result == []
+
+
 def test_find_files_populate_scoped_cols_and_enum_helpers(monkeypatch) -> None:
     completer = make_completer()
     completer.extend_schemata('test')
