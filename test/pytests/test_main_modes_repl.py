@@ -288,13 +288,27 @@ def test_complete_while_typing_filter_covers_threshold_and_word_rules(monkeypatc
     assert repl_mode.complete_while_typing_filter() is True
 
 
-def test_complete_while_typing_filter_always_completes_slash_commands(
+@pytest.mark.parametrize(
+    ('text', 'expected'),
+    [
+        ('/', True),
+        ('/d', True),
+        ('/dsn', True),
+        ('  /d', True),
+        ('/dsn ', False),
+        ('/dsn d', False),
+        ('/dsn del', True),
+    ],
+)
+def test_complete_while_typing_filter_bypasses_threshold_for_initial_slash_command_only(
     monkeypatch: pytest.MonkeyPatch,
+    text: str,
+    expected: bool,
 ) -> None:
     monkeypatch.setattr(repl_mode, 'MIN_COMPLETION_TRIGGER', 3)
-    monkeypatch.setattr(repl_mode, 'get_app', lambda: SimpleNamespace(current_buffer=SimpleNamespace(text='/')))
+    monkeypatch.setattr(repl_mode, 'get_app', lambda: SimpleNamespace(current_buffer=SimpleNamespace(text=text)))
 
-    assert repl_mode.complete_while_typing_filter() is True
+    assert repl_mode.complete_while_typing_filter() is expected
 
 
 def test_complete_while_typing_filter_does_not_treat_block_comments_as_slash_commands(

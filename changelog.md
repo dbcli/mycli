@@ -9,6 +9,11 @@ Features
 * Highlight indexed columns in completions with a suffix and/or a text style.
 
 
+Bugfixes
+---------
+* Ignoring `min_completion_trigger` only applies to first token after `/`.
+
+
 Documentation
 ---------
 * Add `.|` and `.>` to TIPS.
