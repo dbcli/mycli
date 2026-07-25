@@ -301,3 +301,11 @@ redirect query output to a CSV file with "$> <filename>"!
 append query output to a CSV file with "$>> <filename>"!
 
 run a command after shell redirects with "post_redirect_command" in ~/.myclirc!
+
+###
+### transforms
+###
+
+transform or plot query output with a dataframe using ".| df"!
+
+save query output to a Parquet file with ".> output.parquet"!
