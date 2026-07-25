@@ -12,6 +12,11 @@ Documentation
 * Add `.|` and `.>` to TIPS.
 
 
+Internal
+---------
+* Update `cli_helpers` dependency to v2.15.1
+
+
 2.6.1 (2026/07/24)
 ==============
 
