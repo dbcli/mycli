@@ -71,6 +71,10 @@ def _keyword_suggestions() -> list[Suggestion]:
     return [{'type': 'keyword'}]
 
 
+def _special_suggestions() -> list[Suggestion]:
+    return [{'type': 'special'}]
+
+
 def _keyword_and_special_suggestions() -> list[Suggestion]:
     return [{'type': 'keyword'}, {'type': 'special'}]
 
@@ -144,8 +148,11 @@ def _emit_none_token(_ctx: SuggestContext) -> list[Suggestion]:
     return _keyword_suggestions()
 
 
-def _emit_blank_token(_ctx: SuggestContext) -> list[Suggestion]:
-    return _keyword_and_special_suggestions()
+def _emit_blank_token(ctx: SuggestContext) -> list[Suggestion]:
+    if ctx.text_before_cursor.startswith('/'):
+        return _special_suggestions()
+    else:
+        return _keyword_and_special_suggestions()
 
 
 def _emit_star(_ctx: SuggestContext) -> list[Suggestion]:
@@ -793,7 +800,8 @@ def suggest_special(text: str) -> list[dict[str, Any]]:
             {"type": "view", "schema": []},
             {"type": "schema"},
         ]
-    elif cmd.lower() in [
+
+    if cmd.lower() in [
         r'\.',
         r'/.',
         'source',
@@ -806,14 +814,16 @@ def suggest_special(text: str) -> list[dict[str, Any]]:
         '/tee',
     ]:
         return [{"type": "file_name"}]
+
     # todo: why is \edit case-sensitive?
-    elif cmd in [
+    if cmd in [
         r'\e',
         '/e',
         r'\edit',
         '/edit',
     ]:
         return [{"type": "file_name"}]
+
     if cmd in ["\\llm", "/llm", "\\ai", "/ai"]:
         return [{"type": "llm"}]
 
@@ -828,7 +838,17 @@ def suggest_special(text: str) -> list[dict[str, Any]]:
             return []
         return [{'type': 'special_subcommand', 'subcommands': list(DSN_SUBCOMMANDS)}]
 
-    return [{"type": "keyword"}, {"type": "special"}]
+    if cmd.lower() in [
+        'help',
+        '/help',
+        r'\help',
+        '?',
+        '/?',
+        r'\?',
+    ]:
+        return [{"type": "keyword"}, {"type": "special"}]
+
+    return []
 
 
 def suggest_based_on_last_token(

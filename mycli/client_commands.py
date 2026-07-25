@@ -52,7 +52,7 @@ class ClientCommandsMixin:
             "rehash",
             "/rehash",
             "Refresh auto-completions.",
-            arg_type=ArgType.NO_QUERY,
+            arg_type=ArgType.NO_ARGUMENT,
             aliases=[SpecialCommandAlias("\\#", case_sensitive=False)],
         )
         special.register_special_command(
