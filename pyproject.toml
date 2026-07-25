@@ -66,13 +66,7 @@ dev = [
     "pytest-random-order ~= 1.2.0",
     "tox ~= 4.35.0",
     "pdbpp ~= 0.11.7",
-    "llm ~= 0.31.1",
-    "setuptools == 83.*",                   # Required by llm commands to install models
-    "pip ~= 26.1.2",
     "ruff ~= 0.15.0",
-    "polars ~= 1.42.1",
-    "altair ~= 6.2.2",
-    "vl-convert-python ~= 1.9.0",
 ]
 
 [project.scripts]
@@ -142,7 +136,7 @@ passenv = ['PYTEST_HOST',
            'PYTEST_PORT',
            'PYTEST_CHARSET',
            'GITHUB_ACTION']
-commands = [['uv', 'pip', 'install', '-e', '.[dev,llm]'],
+commands = [['uv', 'pip', 'install', '-e', '.[dev,llm,dataframe]'],
             ['coverage', 'run', '-m', 'pytest', '-v', 'test'],
             ['coverage', 'report', '-m', '--sort=Miss'],
             ['behave', 'test/features']]
