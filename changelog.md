@@ -1,6 +1,12 @@
 Upcoming (TBD)
 ==============
 
+Features
+---------
+* Show purpose in tabular `--checkup` output.
+* Add optional dependencies to `--checkup`.
+
+
 Documentation
 ---------
 * Add `.|` and `.>` to TIPS.

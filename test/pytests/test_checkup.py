@@ -50,6 +50,11 @@ def test_dependencies_checkup(monkeypatch, capsys) -> None:
         'pygments': '2.19.2',
         'sqlglot': '30.7.0',
         'sqlglotc': '30.7.0',
+        'tabulate': '0.10.0',
+        'llm': '0.30',
+        'polars': '1.42.1',
+        'altair': '6.2.2',
+        'vl-convert-python': '1.9.0',
     }
 
     def fake_version(name: str) -> str:
@@ -68,11 +73,12 @@ def test_dependencies_checkup(monkeypatch, capsys) -> None:
     output = capsys.readouterr().out
 
     assert '### Key Python dependencies:' in output
-    assert 'cli_helpers version 1.0.0 (latest latest-cli_helpers)' in output
-    assert 'click version 2.0.0 (latest latest-click)' in output
-    assert 'prompt_toolkit version 3.0.0 (latest latest-prompt_toolkit)' in output
-    assert 'pymysql version 4.0.0 (latest latest-pymysql)' in output
-    assert 'tabulate version None (latest latest-tabulate)' in output
+    rows = [line.split() for line in output.splitlines()]
+    assert ['cli_helpers', '1.0.0', 'latest-cli_helpers', 'required'] in rows
+    assert ['click', '2.0.0', 'latest-click', 'required'] in rows
+    assert ['prompt_toolkit', '3.0.0', 'latest-prompt_toolkit', 'required'] in rows
+    assert ['pymysql', '4.0.0', 'latest-pymysql', 'required'] in rows
+    assert ['tabulate', 'latest-tabulate', 'required'] in rows
 
 
 def test_executables_checkup(monkeypatch, capsys) -> None:
@@ -86,9 +92,10 @@ def test_executables_checkup(monkeypatch, capsys) -> None:
     output = capsys.readouterr().out
 
     assert '### External executables:' in output
-    assert 'The "less" executable was found' in output
-    assert 'The recommended "fzf" executable was not found' in output
-    assert 'The "pygmentize" executable was found' in output
+    rows = [line.split() for line in output.splitlines()]
+    assert ['less', 'found', 'required', 'for', 'paging'] in rows
+    assert ['fzf', 'MISSING', 'optional', 'for', 'history', 'search', 'and', r'\x'] in rows
+    assert ['pygmentize', 'found', 'optional', 'for', 'history', 'search'] in rows
 
 
 def test_environment_checkup(monkeypatch, capsys) -> None:
@@ -99,8 +106,9 @@ def test_environment_checkup(monkeypatch, capsys) -> None:
     output = capsys.readouterr().out
 
     assert '### Environment variables:' in output
-    assert 'The $EDITOR environment variable was set to "vim" ' in output
-    assert 'The $VISUAL environment variable was not set' in output
+    rows = [line.split() for line in output.splitlines()]
+    assert ['$EDITOR', 'vim', 'optional', 'for', r'\edit', 'and', 'C-x', 'C-e'] in rows
+    assert ['$VISUAL', 'UNSET', 'optional', 'for', r'\edit', 'and', 'C-x', 'C-e'] in rows
 
 
 def test_configuration_checkup_missing_file(capsys) -> None:
