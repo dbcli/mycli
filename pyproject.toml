@@ -8,13 +8,13 @@ license = "BSD-3-Clause"
 authors = [{ name = "Mycli Core Team" }]
 
 dependencies = [
-    "click ~= 8.3.1",
+    "click ~= 8.4.2",
     "clickdc ~= 0.1.1",
-    "cryptography ~= 46.0.5",
-    "Pygments ~= 2.19.2",
-    "prompt_toolkit>=3.0.41,<4.0.0",
+    "cryptography ~= 49.0.0",
+    "Pygments ~= 2.20.0",
+    "prompt_toolkit >= 3.0.41,<4.0.0",
     "PyMySQL ~= 1.1.2",
-    "sqlparse>=0.3.0,<0.6.0",
+    "sqlparse >= 0.3.0,<0.6.0",
     "sqlglot ~= 30.8.0",
     "sqlglotc ~= 30.8.0",
     "configobj ~= 5.0.9",
@@ -44,10 +44,9 @@ build-backend = "setuptools.build_meta"
 
 [project.optional-dependencies]
 llm = [
-    "llm ~= 0.30.0",
-    "pydantic_core ~= 2.41.5",              # Required by llm; force a newer version
-    "setuptools == 82.*",                   # Required by llm commands to install models
-    "pip == 26.*",
+    "llm ~= 0.31.1",
+    "setuptools == 83.*",                   # Required by llm commands to install models
+    "pip ~= 26.1.2",
 ]
 dataframe = [
     "polars ~= 1.42.1",
@@ -62,15 +61,14 @@ dev = [
     "coverage ~= 7.13.4",
     "mypy ~= 1.19.1",
     "pexpect ~= 4.9.0",
-    "pytest ~= 9.0.2",
+    "pytest ~= 9.1.1",
     "pytest-cov ~= 7.0.0",
     "pytest-random-order ~= 1.2.0",
     "tox ~= 4.35.0",
     "pdbpp ~= 0.11.7",
-    "llm ~= 0.30.0",
-    "pydantic_core ~= 2.41.5",              # Required by llm; force a newer version
-    "setuptools == 82.*",                   # Required by llm commands to install models
-    "pip == 26.*",
+    "llm ~= 0.31.1",
+    "setuptools == 83.*",                   # Required by llm commands to install models
+    "pip ~= 26.1.2",
     "ruff ~= 0.15.0",
     "polars ~= 1.42.1",
     "altair ~= 6.2.2",
@@ -85,6 +83,10 @@ mycli = ["myclirc", "AUTHORS", "SPONSORS", "TIPS"]
 
 [tool.setuptools.packages.find]
 include = ["mycli*"]
+
+[tool.uv]
+exclude-newer = '1 week'
+exclude-newer-package = { cli_helpers = false, openai = false }
 
 [tool.ruff]
 target-version = 'py310'
