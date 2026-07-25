@@ -26,6 +26,7 @@ Internal
 * Exclude `cli_helpers` and `openai` from cooldown
 * Update `sqlglot`/`sqlglotc` to v30.12.0
 * Update `wcwidth` to v0.8.2
+* Remove duplication in dev dependencies.
 
 
 2.6.1 (2026/07/24)
