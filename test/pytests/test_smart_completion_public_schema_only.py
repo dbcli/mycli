@@ -827,6 +827,119 @@ def test_string_no_completion_spaces_inner_2(completer, complete_event):
     assert result == []
 
 
+def test_indexed_column_completion_is_styled(completer, complete_event):
+    completer.extend_indexed_columns([('users', 'email')])
+    text = 'SELECT  FROM users'
+    position = len('SELECT ')
+    result = {
+        completion.text: completion
+        for completion in completer.get_completions(
+            Document(text=text, cursor_position=position),
+            complete_event,
+        )
+    }
+
+    assert result['email'] == Completion(
+        text='email',
+        start_position=0,
+        display='email*',
+        style='class:completion-menu.completion.indexed',
+    )
+    assert result['email'].style == 'class:completion-menu.completion.indexed'
+    assert result['first_name'] == Completion(text='first_name', start_position=0)
+    assert result['first_name'].style == ''
+
+
+@pytest.mark.parametrize(
+    ('marker', 'display'),
+    [
+        (' [indexed]', 'email [indexed]'),
+        ('', 'email'),
+    ],
+)
+def test_indexed_column_completion_uses_configured_marker(
+    completer,
+    complete_event,
+    marker: str,
+    display: str,
+) -> None:
+    completer.indexed_column_suffix = marker
+    completer.extend_indexed_columns([('users', 'email')])
+    text = 'SELECT  FROM users'
+    position = len('SELECT ')
+    result = {
+        completion.text: completion
+        for completion in completer.get_completions(
+            Document(text=text, cursor_position=position),
+            complete_event,
+        )
+    }
+
+    assert result['email'] == Completion(
+        text='email',
+        start_position=0,
+        display=display,
+    )
+    assert result['email'].style == 'class:completion-menu.completion.indexed'
+
+
+def test_indexed_column_completion_uses_all_scoped_tables(completer, complete_event):
+    completer.extend_indexed_columns([('orders', 'id')])
+    text = 'SELECT  FROM users, orders'
+    position = len('SELECT ')
+    result = {
+        completion.text: completion
+        for completion in completer.get_completions(
+            Document(text=text, cursor_position=position),
+            complete_event,
+        )
+    }
+
+    assert result['id'] == Completion(
+        text='id',
+        start_position=0,
+        display='id*',
+        style='class:completion-menu.completion.indexed',
+    )
+    assert result['id'].style == 'class:completion-menu.completion.indexed'
+
+
+def test_indexed_column_completion_ignores_out_of_scope_tables(completer, complete_event):
+    completer.extend_indexed_columns([('orders', 'id')])
+    text = 'SELECT  FROM users'
+    position = len('SELECT ')
+    result = {
+        completion.text: completion
+        for completion in completer.get_completions(
+            Document(text=text, cursor_position=position),
+            complete_event,
+        )
+    }
+
+    assert result['id'] == Completion(text='id', start_position=0)
+    assert result['id'].style == ''
+
+
+def test_backticked_indexed_column_completion_is_styled(completer, complete_event):
+    completer.extend_indexed_columns([('select', 'insert')])
+    text = 'SELECT `ins FROM `select`'
+    position = len('SELECT `ins')
+    result = list(
+        completer.get_completions(
+            Document(text=text, cursor_position=position),
+            complete_event,
+        )
+    )
+    indexed_completion = next(completion for completion in result if completion.text == '`insert`')
+
+    assert indexed_completion == Completion(
+        text='`insert`',
+        start_position=-4,
+        display='`insert`*',
+    )
+    assert indexed_completion.style == 'class:completion-menu.completion.indexed'
+
+
 def test_backticked_column_completion(completer, complete_event):
     text = 'select `Tim'
     position = len(text)

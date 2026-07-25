@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 TOKEN_TO_PROMPT_STYLE: dict[Token, str] = {
     Token.Menu.Completions.Completion.Current: "completion-menu.completion.current",
     Token.Menu.Completions.Completion: "completion-menu.completion",
+    Token.Menu.Completions.Completion.Indexed: "completion-menu.completion.indexed",
     Token.Menu.Completions.Meta.Current: "completion-menu.meta.completion.current",
     Token.Menu.Completions.Meta: "completion-menu.meta.completion",
     Token.Menu.Completions.MultiColumnMeta: "completion-menu.multi-column-meta",

@@ -26,6 +26,7 @@ def _make_completer() -> SQLCompleter:
     completer.load_schema_metadata(
         schema="old_db",
         table_columns={"orders": ["*", "id", "total"]},
+        indexed_columns={"orders": {"id"}},
         foreign_keys={},
         enum_values={},
         functions={},
@@ -63,6 +64,7 @@ def test_columns_available_once_schema_loads() -> None:
     completer.load_schema_metadata(
         schema="new_db",
         table_columns={"customers": ["*", "name", "email"]},
+        indexed_columns={"customers": {"email"}},
         foreign_keys={},
         enum_values={},
         functions={},
@@ -105,6 +107,7 @@ def test_completion_during_concurrent_use_switch_does_not_crash() -> None:
             completer.load_schema_metadata(
                 schema=schema,
                 table_columns={"t": ["*", "c1", "c2"]},
+                indexed_columns={"t": {"c1"}},
                 foreign_keys={},
                 enum_values={},
                 functions={},

@@ -141,6 +141,7 @@ def test_style_factory_helpers_updates_known_tokens(monkeypatch, caplog) -> None
     cli_style = {
         'Token.Prompt': 'Token.Name',
         'Token.Toolbar': 'Token.Name',
+        'completion-menu.completion.indexed': 'ansired',
         'search': 'ansigreen',
         'search.current': 'skip-me',
         'sql.keyword': 'ansired',
@@ -152,6 +153,7 @@ def test_style_factory_helpers_updates_known_tokens(monkeypatch, caplog) -> None
         output_style = clistyle.style_factory_helpers('native', cli_style)
 
     assert output_style.styles[Token.Prompt] == 'ansiblue'
+    assert output_style.styles[Token.Menu.Completions.Completion.Indexed] == 'ansired'
     assert output_style.styles[Token.SearchMatch] == 'ansigreen'
     assert Token.SearchMatch.Current not in output_style.styles
     assert output_style.styles[Token.Keyword] == 'ansired'
@@ -186,6 +188,15 @@ def test_style_factory_helpers_falls_back_and_copies_warning_styles(monkeypatch)
 
 
 def test_style_factory_ptoolkit_returns_merged_style_object() -> None:
-    style = clistyle.style_factory_ptoolkit('native', {'prompt': 'bold'})
+    style = clistyle.style_factory_ptoolkit(
+        'native',
+        {
+            'prompt': 'bold',
+            'completion-menu.completion.indexed': '#ff0000',
+        },
+    )
 
     assert style.get_attrs_for_style_str('class:prompt') == PromptStyle([('prompt', 'bold')]).get_attrs_for_style_str('class:prompt')
+    assert style.get_attrs_for_style_str('class:completion-menu.completion.indexed') == PromptStyle([
+        ('completion-menu.completion.indexed', '#ff0000')
+    ]).get_attrs_for_style_str('class:completion-menu.completion.indexed')

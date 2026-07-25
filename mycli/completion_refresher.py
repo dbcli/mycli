@@ -167,6 +167,11 @@ def refresh_tables(completer: SQLCompleter, executor: SQLExecute) -> None:
     completer.extend_columns(table_columns_dbresult, kind="tables")
 
 
+@refresher("indexed_columns")
+def refresh_indexed_columns(completer: SQLCompleter, executor: SQLExecute) -> None:
+    completer.extend_indexed_columns(executor.indexed_columns())
+
+
 @refresher("foreign_keys")
 def refresh_foreign_keys(completer: SQLCompleter, executor: SQLExecute) -> None:
     completer.extend_foreign_keys(executor.foreign_keys())

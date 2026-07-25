@@ -72,6 +72,7 @@ def _fake_executor_factory(per_schema_tables, databases=None):
         executor = MagicMock()
         executor.databases.return_value = list(databases) if databases is not None else []
         executor.table_columns.side_effect = lambda schema=None: iter(per_schema_tables.get(schema, []))
+        executor.indexed_columns.side_effect = lambda schema=None: iter([])
         executor.foreign_keys.side_effect = lambda schema=None: iter([])
         executor.enum_values.side_effect = lambda schema=None: iter([])
         executor.functions.side_effect = lambda schema=None: iter([])
@@ -190,6 +191,7 @@ def test_start_skips_schemas_already_in_completer(monkeypatch):
             return iter([])
 
         executor.table_columns.side_effect = _track
+        executor.indexed_columns.side_effect = lambda schema=None: iter([])
         executor.foreign_keys.side_effect = lambda schema=None: iter([])
         executor.enum_values.side_effect = lambda schema=None: iter([])
         executor.functions.side_effect = lambda schema=None: iter([])
@@ -480,6 +482,11 @@ def test_prefetch_one_loads_foreign_keys_enums_functions_and_procedures(monkeypa
 
     executor = MagicMock()
     executor.table_columns.return_value = iter([('orders', 'id')])
+    executor.indexed_columns.return_value = iter([
+        ('orders', 'id'),
+        ('orders', 'id'),
+        ('order details', 'created at'),
+    ])
     executor.foreign_keys.return_value = iter([('orders', 'user_id', 'users', 'id')])
     executor.enum_values.return_value = iter([('orders', 'status', ['pending', 'shipped'])])
     executor.functions.return_value = iter([(), ('calc_tax',), (None,)])
@@ -490,6 +497,10 @@ def test_prefetch_one_loads_foreign_keys_enums_functions_and_procedures(monkeypa
     load_schema_metadata.assert_called_once_with(
         schema='analytics',
         table_columns={'orders': ['*', 'id']},
+        indexed_columns={
+            'orders': {'id'},
+            '`order details`': {'`created at`'},
+        },
         foreign_keys={
             'tables': {'orders': {'users'}, 'users': {'orders'}},
             'relations': [('orders', 'user_id', 'users', 'id')],

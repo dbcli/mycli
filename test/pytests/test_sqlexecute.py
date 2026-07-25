@@ -1161,6 +1161,45 @@ def test_table_columns_returns_empty_generator_when_schema_has_no_tables(monkeyp
     assert cursor.executed == [(SQLExecute.table_columns_query, ('empty_db',))]
 
 
+@pytest.mark.parametrize(
+    ('schema', 'expected_schema'),
+    [
+        (None, 'app_db'),
+        ('analytics', 'analytics'),
+    ],
+)
+def test_indexed_columns_executes_query_and_yields_rows(monkeypatch, schema, expected_schema) -> None:
+    cursor = FakeMetadataCursor([('users', 'id'), ('orders', 'customer_id')])
+    executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
+    executor.dbname = 'app_db'
+    monkeypatch.setattr(sqlexecute, 'Connection', FakeMetadataConnection)
+
+    result = list(executor.indexed_columns(schema=schema))
+
+    assert result == [('users', 'id'), ('orders', 'customer_id')]
+    assert cursor.executed == [(SQLExecute.indexed_columns_query, (expected_schema,))]
+    assert cursor.entered is True
+    assert cursor.exited is True
+    assert 'SEQ_IN_INDEX = 1' in SQLExecute.indexed_columns_query
+    assert 'COLUMN_NAME IS NOT NULL' in SQLExecute.indexed_columns_query
+
+
+def test_indexed_columns_returns_empty_generator_and_logs_execute_errors(monkeypatch, caplog) -> None:
+    cursor = FakeMetadataCursor([], execute_error=RuntimeError('boom'))
+    executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
+    executor.dbname = 'app_db'
+    monkeypatch.setattr(sqlexecute, 'Connection', FakeMetadataConnection)
+
+    with caplog.at_level('ERROR', logger='mycli.sqlexecute'):
+        result = list(executor.indexed_columns())
+
+    assert result == []
+    assert cursor.executed == [(SQLExecute.indexed_columns_query, ('app_db',))]
+    assert cursor.entered is True
+    assert cursor.exited is True
+    assert "No indexed-column metadata due to RuntimeError('boom')" in caplog.text
+
+
 def test_enum_values_executes_query_and_skips_non_enum_columns(monkeypatch) -> None:
     cursor = FakeMetadataCursor([
         ('orders', 'status', "enum('new','paid')"),
