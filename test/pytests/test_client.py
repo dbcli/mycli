@@ -79,6 +79,36 @@ def test_init_uses_default_plot_theme_for_empty_value(monkeypatch: pytest.Monkey
     assert cli.plot_theme == 'carbong90'
 
 
+def test_init_configures_indexed_column_suffix(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    patch_constructor_side_effects(monkeypatch)
+    myclirc = write_myclirc(
+        tmp_path,
+        """
+        [main]
+        indexed_column_suffix = " [indexed]"
+        """,
+    )
+
+    cli = MyCli(myclirc=myclirc)
+
+    assert cli.completer.indexed_column_suffix == ' [indexed]'
+
+
+def test_init_allows_empty_indexed_column_suffix(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    patch_constructor_side_effects(monkeypatch)
+    myclirc = write_myclirc(
+        tmp_path,
+        """
+        [main]
+        indexed_column_suffix =
+        """,
+    )
+
+    cli = MyCli(myclirc=myclirc)
+
+    assert cli.completer.indexed_column_suffix == ''
+
+
 def test_init_configures_kitty_image_protocol(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     patch_constructor_side_effects(monkeypatch)
     myclirc = write_myclirc(

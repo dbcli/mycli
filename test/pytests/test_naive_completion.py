@@ -96,6 +96,19 @@ def test_column_name_completion(completer, complete_event):
     assert result == list(map(Completion, completer.all_completions))
 
 
+def test_indexed_column_completion_is_not_styled(completer, complete_event):
+    completer.extend_schemata('test')
+    completer.set_dbname('test')
+    completer.extend_relations([('users',)], kind='tables')
+    completer.extend_columns([('users', 'indexed_id')], kind='tables')
+    completer.extend_indexed_columns([('users', 'indexed_id')])
+    text = 'SELECT indexed_ FROM users'
+    position = len('SELECT indexed_')
+    result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
+
+    assert result == [Completion(text='indexed_id', start_position=-8)]
+
+
 def test_special_name_completion(completer, complete_event):
     text = "\\"
     position = len("\\")

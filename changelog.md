@@ -6,6 +6,7 @@ Features
 * Show purpose in tabular `--checkup` output.
 * Add optional dependencies to `--checkup`.
 * Improve completions for `/command`s.
+* Highlight indexed columns in completions with a suffix and/or a text style.
 
 
 Documentation

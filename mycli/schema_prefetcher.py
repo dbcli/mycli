@@ -174,6 +174,7 @@ class SchemaPrefetcher:
     def _prefetch_one(self, executor: SQLExecute, schema: str) -> None:
         _logger.debug('prefetching schema %r', schema)
         table_rows = list(executor.table_columns(schema=schema))
+        indexed_rows = list(executor.indexed_columns(schema=schema))
         fk_rows = list(executor.foreign_keys(schema=schema))
         enum_rows = list(executor.enum_values(schema=schema))
         func_rows = list(executor.functions(schema=schema))
@@ -188,6 +189,12 @@ class SchemaPrefetcher:
             esc_col = completer.escape_name(column)
             cols = table_columns.setdefault(esc_table, ['*'])
             cols.append(esc_col)
+
+        indexed_columns: dict[str, set[str]] = {}
+        for table, column in indexed_rows:
+            esc_table = completer.escape_name(table)
+            esc_col = completer.escape_name(column)
+            indexed_columns.setdefault(esc_table, set()).add(esc_col)
 
         fk_tables: dict[str, set[str]] = {}
         fk_relations: list[tuple[str, str, str, str]] = []
@@ -224,6 +231,7 @@ class SchemaPrefetcher:
             live_completer.load_schema_metadata(
                 schema=schema,
                 table_columns=table_columns,
+                indexed_columns=indexed_columns,
                 foreign_keys=fk_payload,
                 enum_values=enum_values,
                 functions=functions,

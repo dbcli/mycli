@@ -52,6 +52,7 @@ class ClientQueryMixin:
                 "smart_completion": self.smart_completion,
                 "supported_formats": self.main_formatter.supported_formats,
                 "keyword_casing": self.completer.keyword_casing,
+                "indexed_column_suffix": self.completer.indexed_column_suffix,
             },
         )
 

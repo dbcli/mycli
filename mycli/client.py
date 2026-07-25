@@ -183,6 +183,7 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
         self.initialize_logging()
 
         keyword_casing = c["main"].get("keyword_casing", "auto")
+        indexed_column_suffix = c['main'].get('indexed_column_suffix', '')
 
         self.highlight_preview = c['search'].as_bool('highlight_preview')
 
@@ -191,7 +192,10 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
         # Initialize completer.
         self.smart_completion = c["main"].as_bool("smart_completion")
         self.completer = SQLCompleter(
-            self.smart_completion, supported_formats=self.main_formatter.supported_formats, keyword_casing=keyword_casing
+            self.smart_completion,
+            supported_formats=self.main_formatter.supported_formats,
+            keyword_casing=keyword_casing,
+            indexed_column_suffix=indexed_column_suffix,
         )
         self._completer_lock = threading.Lock()
 

@@ -24,6 +24,7 @@ def make_refresh_cli() -> tuple[Any, dict[str, Any]]:
     cli._on_completions_refreshed = callback
     cli.completer = SimpleNamespace(
         keyword_casing='upper',
+        indexed_column_suffix=' [indexed]',
         set_dbname=lambda dbname: state['set_dbname_calls'].append(dbname),
     )
     cli.main_formatter = SimpleNamespace(supported_formats=['ascii', 'csv'])
@@ -64,6 +65,7 @@ def test_refresh_completions_passes_options_to_refresher() -> None:
                 'smart_completion': True,
                 'supported_formats': ['ascii', 'csv'],
                 'keyword_casing': 'upper',
+                'indexed_column_suffix': ' [indexed]',
             },
         )
     ]
@@ -82,7 +84,11 @@ def test_refresh_completions_updates_dbname_when_reset() -> None:
     set_dbname_calls: list[str] = []
     cli.schema_prefetcher = SimpleNamespace(stop=lambda: None)
     cli.sqlexecute = SimpleNamespace(dbname='next_db')
-    cli.completer = SimpleNamespace(keyword_casing='lower', set_dbname=lambda dbname: set_dbname_calls.append(dbname))
+    cli.completer = SimpleNamespace(
+        keyword_casing='lower',
+        indexed_column_suffix='*',
+        set_dbname=lambda dbname: set_dbname_calls.append(dbname),
+    )
     cli.main_formatter = SimpleNamespace(supported_formats=['table'])
     cli.completion_refresher = SimpleNamespace(refresh=lambda executor, callbacks, options: None)
 
@@ -97,7 +103,11 @@ def test_refresh_completions_uses_lock_when_reset() -> None:
     cli.schema_prefetcher = SimpleNamespace(stop=lambda: None)
     cli.sqlexecute = SimpleNamespace(dbname='next_db')
     cli._completer_lock = cast(Any, ReusableLock(lambda: entered_lock.__setitem__('count', entered_lock['count'] + 1)))
-    cli.completer = SimpleNamespace(keyword_casing='lower', set_dbname=lambda dbname: None)
+    cli.completer = SimpleNamespace(
+        keyword_casing='lower',
+        indexed_column_suffix='*',
+        set_dbname=lambda dbname: None,
+    )
     cli.main_formatter = SimpleNamespace(supported_formats=['table'])
     cli.completion_refresher = SimpleNamespace(refresh=lambda executor, callbacks, options: None)
 

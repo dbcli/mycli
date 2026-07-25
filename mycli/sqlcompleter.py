@@ -21,6 +21,7 @@ from mycli.packages.sql_utils import extract_columns_from_select, extract_tables
 
 _logger = logging.getLogger(__name__)
 _CASE_CHANGE_PAT = re.compile('(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])')
+_INDEXED_COLUMN_STYLE = 'class:completion-menu.completion.indexed'
 
 
 class Fuzziness(IntEnum):
@@ -938,9 +939,11 @@ class SQLCompleter(Completer):
         smart_completion: bool = True,
         supported_formats: tuple = (),
         keyword_casing: str = "auto",
+        indexed_column_suffix: str = '*',
     ) -> None:
         super(self.__class__, self).__init__()
         self.smart_completion = smart_completion
+        self.indexed_column_suffix = indexed_column_suffix
         self.reserved_words = set()
         for x in self.keywords:
             self.reserved_words.update(x.split())
@@ -1042,6 +1045,15 @@ class SQLCompleter(Completer):
                 continue
             metadata[self.dbname][relname].append(column)
             self.all_completions.add(column)
+
+    def extend_indexed_columns(self, index_data: Iterable[tuple[str, str]]) -> None:
+        """Extend metadata for columns that lead an index."""
+        metadata = self.dbmetadata["indexed_columns"]
+        schema_meta = metadata.setdefault(self.dbname, {})
+        for table, column in index_data:
+            table = self.escape_name(table)
+            column = self.escape_name(column)
+            schema_meta.setdefault(table, set()).add(column)
 
     def extend_enum_values(self, enum_data: Iterable[tuple[str, str, list[str]]]) -> None:
         metadata = self.dbmetadata["enum_values"]
@@ -1162,6 +1174,7 @@ class SQLCompleter(Completer):
         self,
         schema: str,
         table_columns: dict[str, list[str]],
+        indexed_columns: dict[str, set[str]],
         foreign_keys: dict[str, Any],
         enum_values: dict[str, dict[str, list[str]]],
         functions: dict[str, None],
@@ -1177,6 +1190,7 @@ class SQLCompleter(Completer):
         if not schema:
             return
         self.dbmetadata["tables"][schema] = table_columns
+        self.dbmetadata["indexed_columns"][schema] = indexed_columns
         self.dbmetadata["views"].setdefault(schema, {})
         self.dbmetadata["functions"][schema] = functions
         self.dbmetadata["procedures"][schema] = procedures
@@ -1193,7 +1207,7 @@ class SQLCompleter(Completer):
         using qualified completions (``OtherSchema.table``) without a
         re-fetch.
         """
-        kinds = ("tables", "views", "functions", "procedures", "enum_values", "foreign_keys")
+        kinds = ("tables", "views", "functions", "procedures", "enum_values", "foreign_keys", "indexed_columns")
         for kind in kinds:
             src_map = source.dbmetadata.get(kind, {})
             dest_map = self.dbmetadata.setdefault(kind, {})
@@ -1238,6 +1252,7 @@ class SQLCompleter(Completer):
             "procedures": {},
             "enum_values": {},
             "foreign_keys": {},
+            "indexed_columns": {},
         }
         self.all_completions = set(self.keywords + self.functions)
 
@@ -1428,6 +1443,7 @@ class SQLCompleter(Completer):
             return (Completion(x[0], -len(text_for_len)) for x in matches)
 
         completions: list[tuple[str, int, int]] = []
+        indexed_column_candidates: set[str] = set()
         suggestions = suggest_type(document.text, document.text_before_cursor)
         rigid_sort = False
         length_based_on_path = False
@@ -1451,10 +1467,16 @@ class SQLCompleter(Completer):
                     # showing all columns. So make them unique and sort them.
                     scoped_cols = sorted(set(scoped_cols), key=lambda s: s.strip('`'))
 
-                cols = self.find_matches(
-                    word_before_cursor,
-                    scoped_cols,
-                    text_before_cursor=document.text_before_cursor,
+                cols = list(
+                    self.find_matches(
+                        word_before_cursor,
+                        scoped_cols,
+                        text_before_cursor=document.text_before_cursor,
+                    )
+                )
+                indexed_columns = {self._strip_backticks(column).casefold() for column in self.populate_scoped_indexed_columns(tables)}
+                indexed_column_candidates.update(
+                    candidate for candidate, _fuzziness in cols if self._strip_backticks(candidate).casefold() in indexed_columns
                 )
                 completions.extend([(*x, rank) for x in cols])
 
@@ -1745,9 +1767,25 @@ class SQLCompleter(Completer):
             uniq_completions_str = dict.fromkeys(x[0] for x in sorted_completions)
 
         if length_based_on_path:
-            return (Completion(x, -len(last_for_len_paths)) for x in uniq_completions_str)
+            return (
+                Completion(
+                    x,
+                    -len(last_for_len_paths),
+                    display=f'{x}{self.indexed_column_suffix}' if x in indexed_column_candidates else None,
+                    style=_INDEXED_COLUMN_STYLE if x in indexed_column_candidates else '',
+                )
+                for x in uniq_completions_str
+            )
         else:
-            return (Completion(x, -len(text_for_len)) for x in uniq_completions_str)
+            return (
+                Completion(
+                    x,
+                    -len(text_for_len),
+                    display=f'{x}{self.indexed_column_suffix}' if x in indexed_column_candidates else None,
+                    style=_INDEXED_COLUMN_STYLE if x in indexed_column_candidates else '',
+                )
+                for x in uniq_completions_str
+            )
 
     def find_files(self, word: str) -> Generator[tuple[str, int], None, None]:
         """Yield matching directory or file names.
@@ -1818,6 +1856,24 @@ class SQLCompleter(Completer):
                 pass
 
         return columns
+
+    def populate_scoped_indexed_columns(self, scoped_tbls: list[tuple[str | None, str, str | None]]) -> set[str]:
+        """Find leading indexed columns in a set of scoped tables."""
+        metadata = self.dbmetadata["indexed_columns"]
+        indexed_columns: set[str] = set()
+
+        if not scoped_tbls:
+            for columns in metadata.get(self.dbname, {}).values():
+                indexed_columns.update(columns)
+            return indexed_columns
+
+        for schema, relname, _alias in scoped_tbls:
+            schema_meta = metadata.get(schema or self.dbname, {})
+            escaped_relname = self.escape_name(relname)
+            indexed_columns.update(schema_meta.get(relname, set()))
+            indexed_columns.update(schema_meta.get(escaped_relname, set()))
+
+        return indexed_columns
 
     def populate_enum_values(
         self,

@@ -374,6 +374,12 @@ def test_init_invalid_keyword_casing_defaults_to_auto() -> None:
     assert completer.keyword_casing == 'auto'
 
 
+def test_init_configures_indexed_column_suffix() -> None:
+    completer = SQLCompleter(indexed_column_suffix=' [indexed]')
+
+    assert completer.indexed_column_suffix == ' [indexed]'
+
+
 def test_extend_metadata_helpers_and_logging(caplog) -> None:
     completer = make_completer()
     completer.set_dbname('missing')
@@ -409,6 +415,12 @@ def test_extend_metadata_helpers_and_logging(caplog) -> None:
         completer.extend_columns([('missing', 'id'), ('select', 'from')], kind='tables')
     assert "relname 'missing' was not found in db 'test'" in caplog.text
     assert completer.dbmetadata['tables']['test']['`select`'] == ['*', '`from`']
+
+    completer.extend_indexed_columns([('select', 'from'), ('select', 'from'), ('orders', 'created at')])
+    assert completer.dbmetadata['indexed_columns']['test'] == {
+        '`select`': {'`from`'},
+        'orders': {'`created at`'},
+    }
 
     completer.set_dbname('enumdb')
     completer.extend_enum_values([('order status', 'select', ['pending'])])
@@ -620,11 +632,33 @@ def test_matches_parent(parent: str, schema: str | None, relname: str, alias: st
     assert SQLCompleter._matches_parent(parent, schema, relname, alias) is expected
 
 
+def test_populate_scoped_indexed_columns_uses_current_schema() -> None:
+    completer = SQLCompleter()
+    completer.set_dbname('test')
+    completer.dbmetadata['indexed_columns']['test'] = {
+        'users': {'id'},
+        'orders': {'created_at'},
+    }
+
+    assert completer.populate_scoped_indexed_columns([]) == {'id', 'created_at'}
+
+
+def test_populate_scoped_indexed_columns_uses_explicit_schema_and_escaped_table() -> None:
+    completer = SQLCompleter()
+    completer.set_dbname('test')
+    completer.dbmetadata['indexed_columns']['analytics'] = {
+        '`order details`': {'`created at`'},
+    }
+
+    assert completer.populate_scoped_indexed_columns([('analytics', 'order details', None)]) == {'`created at`'}
+
+
 def test_copy_other_schemas_from_preserves_non_current_metadata() -> None:
     source = SQLCompleter()
     source.load_schema_metadata(
         schema='other',
         table_columns={'users': ['*', 'id', 'email']},
+        indexed_columns={'users': {'id'}},
         foreign_keys={'tables': {}, 'relations': []},
         enum_values={},
         functions={'fn_foo': None},
@@ -634,6 +668,7 @@ def test_copy_other_schemas_from_preserves_non_current_metadata() -> None:
     source.load_schema_metadata(
         schema='current',
         table_columns={'stale_current': ['*']},
+        indexed_columns={'stale_current': {'id'}},
         foreign_keys={'tables': {}, 'relations': []},
         enum_values={},
         functions={},
@@ -648,6 +683,7 @@ def test_copy_other_schemas_from_preserves_non_current_metadata() -> None:
 
     assert 'other' in dest.dbmetadata['tables']
     assert dest.dbmetadata['tables']['other'] == {'users': ['*', 'id', 'email']}
+    assert dest.dbmetadata['indexed_columns']['other'] == {'users': {'id'}}
     assert dest.dbmetadata['functions']['other'] == {'fn_foo': None}
     # The excluded schema is not overwritten with stale source data.
     assert dest.dbmetadata['tables']['current'] == {}
@@ -662,6 +698,7 @@ def test_copy_other_schemas_from_does_not_overwrite_existing_dest() -> None:
     source.load_schema_metadata(
         schema='shared',
         table_columns={'from_source': ['*']},
+        indexed_columns={'from_source': {'id'}},
         foreign_keys={'tables': {}, 'relations': []},
         enum_values={},
         functions={},
@@ -684,6 +721,7 @@ def test_load_schema_metadata_ignores_empty_schema() -> None:
     completer.load_schema_metadata(
         schema='',
         table_columns={'users': ['*', 'id']},
+        indexed_columns={'users': {'id'}},
         foreign_keys={'tables': {'users': []}, 'relations': [('users', 'id')]},
         enum_values={'users': {'status': ['pending']}},
         functions={'fn_users': None},
@@ -696,5 +734,6 @@ def test_load_schema_metadata_ignores_empty_schema() -> None:
     assert completer.dbmetadata['procedures'] == {}
     assert completer.dbmetadata['enum_values'] == {}
     assert completer.dbmetadata['foreign_keys'] == {}
+    assert completer.dbmetadata['indexed_columns'] == {}
     assert 'users' not in completer.all_completions
     assert 'fn_users' not in completer.all_completions

@@ -144,6 +144,8 @@ display output in an interactive explorer \x at the end of a query!
 
 run SQL scripts in batch mode using the standard input!
 
+indexed columns are tagged with a "*" in completion menus!
+
 ###
 ### keystrokes
 ###

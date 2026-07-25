@@ -108,6 +108,13 @@ class SQLExecute:
                                     where table_schema = %s
                                     order by table_name,ordinal_position"""
 
+    indexed_columns_query = """SELECT DISTINCT TABLE_NAME, COLUMN_NAME
+                                    FROM information_schema.STATISTICS
+                                    WHERE TABLE_SCHEMA = %s
+                                      AND SEQ_IN_INDEX = 1
+                                      AND COLUMN_NAME IS NOT NULL
+                                    ORDER BY TABLE_NAME, COLUMN_NAME"""
+
     enum_values_query = """select TABLE_NAME, COLUMN_NAME, COLUMN_TYPE from information_schema.columns
                                     where table_schema = %s and data_type = 'enum'
                                     order by table_name,ordinal_position"""
@@ -438,6 +445,18 @@ class SQLExecute:
             _logger.debug("Columns Query. sql: %r schema: %r", self.table_columns_query, target)
             cur.execute(self.table_columns_query, (target,))
             yield from cur
+
+    def indexed_columns(self, schema: str | None = None) -> Generator[tuple[str, str], None, None]:
+        """Yields leading indexed (table name, column name) pairs for *schema*."""
+        target = schema if schema is not None else self.dbname
+        assert isinstance(self.conn, Connection)
+        with self.conn.cursor() as cur:
+            _logger.debug("Indexed Columns Query. sql: %r schema: %r", self.indexed_columns_query, target)
+            try:
+                cur.execute(self.indexed_columns_query, (target,))
+                yield from cur
+            except Exception as e:
+                _logger.error('No indexed-column metadata due to %r', e)
 
     def enum_values(self, schema: str | None = None) -> Generator[tuple[str, str, list[str]], None, None]:
         """Yields (table name, column name, enum values) tuples for *schema*."""
