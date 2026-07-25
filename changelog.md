@@ -15,6 +15,15 @@ Documentation
 Internal
 ---------
 * Update `cli_helpers` dependency to v2.15.1
+* Update `click` to v8.4.2
+* Update `cryptography` to v49.0.0
+* Update `pygments` to v2.20.0
+* Update `llm` to v0.31.1
+* Update `setuptools` to v83.x
+* Update `pip` to v26.1.2
+* Update `pytest` to v9.1.1
+* Add dependency cooldown period
+* Exclude `cli_helpers` and `openai` from cooldown
 
 
 2.6.1 (2026/07/24)
