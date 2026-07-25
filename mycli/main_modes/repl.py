@@ -112,7 +112,7 @@ def complete_while_typing_filter() -> bool:
         return True
     app = get_app()
     text = app.current_buffer.text.lstrip()
-    if text.startswith('/') and not text.startswith('/*'):
+    if text.startswith('/') and not text.startswith('/*') and ' ' not in text:
         return True
     text_len = len(text)
     if text_len < MIN_COMPLETION_TRIGGER:
