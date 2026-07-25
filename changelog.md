@@ -24,6 +24,7 @@ Internal
 * Update `pytest` to v9.1.1
 * Add dependency cooldown period
 * Exclude `cli_helpers` and `openai` from cooldown
+* Update `sqlglot`/`sqlglotc` to v30.12.0
 
 
 2.6.1 (2026/07/24)
