@@ -27,6 +27,7 @@ Internal
 * Update `sqlglot`/`sqlglotc` to v30.12.0
 * Update `wcwidth` to v0.8.2
 * Remove duplication in dev dependencies.
+* Update `mypy` to v2.3.0.
 
 
 2.6.1 (2026/07/24)
