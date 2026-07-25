@@ -98,7 +98,7 @@ def is_show_warnings_enabled() -> bool:
     'warnings',
     '/warnings',
     'Enable automatic warnings display.',
-    arg_type=ArgType.NO_QUERY,
+    arg_type=ArgType.NO_ARGUMENT,
     case_sensitive=True,
     aliases=[SpecialCommandAlias('\\W', case_sensitive=True)],
 )
@@ -113,7 +113,7 @@ def enable_show_warnings() -> Generator[SQLResult, None, None]:
     'nowarnings',
     '/nowarnings',
     'Disable automatic warnings display.',
-    arg_type=ArgType.NO_QUERY,
+    arg_type=ArgType.NO_ARGUMENT,
     case_sensitive=True,
     aliases=[SpecialCommandAlias('\\w', case_sensitive=True)],
 )
@@ -152,7 +152,7 @@ def set_pager(arg: str, **_) -> list[SQLResult]:
     "nopager",
     "/nopager",
     "Disable pager; print to stdout.",
-    arg_type=ArgType.NO_QUERY,
+    arg_type=ArgType.NO_ARGUMENT,
     case_sensitive=True,
     aliases=[SpecialCommandAlias("\\n", case_sensitive=True)],
 )
@@ -165,7 +165,7 @@ def disable_pager() -> list[SQLResult]:
     "\\timing",
     "/timing",
     "Toggle timing of queries.",
-    arg_type=ArgType.NO_QUERY,
+    arg_type=ArgType.NO_ARGUMENT,
     case_sensitive=True,
     aliases=[SpecialCommandAlias("\\t", case_sensitive=True)],
 )

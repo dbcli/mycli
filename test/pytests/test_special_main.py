@@ -179,7 +179,7 @@ def test_execute_raises_when_case_sensitive_exact_lookup_falls_back_to_lowercase
         'Camel',
         'Camel',
         'Description',
-        arg_type=special_main.ArgType.NO_QUERY,
+        arg_type=special_main.ArgType.NO_ARGUMENT,
         hidden=False,
         case_sensitive=True,
         aliases=None,
@@ -204,7 +204,7 @@ def test_execute_dispatches_no_query_command(restore_commands: None) -> None:
         'demo',
         'demo',
         'Description',
-        arg_type=special_main.ArgType.NO_QUERY,
+        arg_type=special_main.ArgType.NO_ARGUMENT,
     )
 
     assert special_main.execute(cast(Any, None), 'demo') == [SQLResult(status='ok')]
@@ -224,7 +224,7 @@ def test_execute_uses_lowercase_lookup_for_case_insensitive_command(restore_comm
         'demo',
         'demo',
         'Description',
-        arg_type=special_main.ArgType.NO_QUERY,
+        arg_type=special_main.ArgType.NO_ARGUMENT,
     )
 
     assert special_main.execute(cast(Any, None), 'DEMO') == [SQLResult(status='ok')]

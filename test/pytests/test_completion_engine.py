@@ -4,6 +4,8 @@ from types import SimpleNamespace
 
 import pytest
 import sqlparse
+from sqlparse import tokens
+from sqlparse.sql import Statement, Token
 
 from mycli.packages import completion_engine, special
 from mycli.packages.completion_engine import (
@@ -428,9 +430,16 @@ def test_emit_none_token():
     assert _emit_none_token(context) == [{'type': 'keyword'}]
 
 
-def test_emit_blank_token():
-    context = _build_suggest_context('', '', None, '', empty_identifier())
-    assert _emit_blank_token(context) == [{'type': 'keyword'}, {'type': 'special'}]
+@pytest.mark.parametrize(
+    ('text_before_cursor', 'expected'),
+    [
+        ('', [{'type': 'keyword'}, {'type': 'special'}]),
+        ('/', [{'type': 'special'}]),
+    ],
+)
+def test_emit_blank_token(text_before_cursor, expected):
+    context = _build_suggest_context('', text_before_cursor, None, '', empty_identifier())
+    assert _emit_blank_token(context) == expected
 
 
 def test_emit_star():
@@ -816,6 +825,25 @@ def test_suggest_type_dispatches_backslash_commands_to_suggest_special(monkeypat
     assert suggestions == [{'type': 'special'}]
 
 
+def test_suggest_type_handles_whitespace_only_statement(monkeypatch):
+    whitespace_statement = Statement([Token(tokens.Text.Whitespace, ' ')])
+    monkeypatch.setattr(completion_engine.sqlparse, 'parse', lambda _text: [whitespace_statement])
+    monkeypatch.setattr(completion_engine, 'suggest_based_on_last_token', lambda *_args: [{'type': 'fallback'}])
+
+    assert suggest_type(' ', ' ') == [{'type': 'fallback'}]
+
+
+def test_suggest_type_handles_parser_results_shorter_than_cursor(monkeypatch):
+    statements = [
+        Statement([Token(tokens.Keyword, 'SELECT')]),
+        Statement([Token(tokens.Keyword, 'SELECT')]),
+    ]
+    monkeypatch.setattr(completion_engine.sqlparse, 'parse', lambda _text: statements)
+    monkeypatch.setattr(completion_engine, 'suggest_based_on_last_token', lambda *_args: [{'type': 'fallback'}])
+
+    assert suggest_type('long cursor text', 'long cursor text') == [{'type': 'fallback'}]
+
+
 @pytest.mark.parametrize(
     ('text', 'expected'),
     [
@@ -848,7 +876,8 @@ def test_suggest_type_dispatches_backslash_commands_to_suggest_special(monkeypat
         ('/dsn delete prod ', []),
         ('/dsn show', []),
         ('/dsn help ', []),
-        ('pager ', [{'type': 'keyword'}, {'type': 'special'}]),
+        ('/help ', [{'type': 'keyword'}, {'type': 'special'}]),
+        ('/pager ', []),
     ],
 )
 def test_suggest_special(text, expected):

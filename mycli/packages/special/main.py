@@ -27,7 +27,7 @@ CASE_INSENSITIVE_COMMANDS: set[str] = set()
 
 
 class ArgType(Enum):
-    NO_QUERY = 0
+    NO_ARGUMENT = 0
     PARSED_QUERY = 1
     RAW_QUERY = 2
 
@@ -205,7 +205,7 @@ def execute(cur: Cursor, sql: str) -> list[SQLResult]:
     if command.lower().startswith(("help", "/help", "\\?", "/?", "?")) and arg:
         return show_keyword_help(cur=cur, arg=arg)
 
-    if special_cmd.arg_type == ArgType.NO_QUERY:
+    if special_cmd.arg_type == ArgType.NO_ARGUMENT:
         return special_cmd.handler()
     elif special_cmd.arg_type == ArgType.PARSED_QUERY:
         return special_cmd.handler(cur=cur, arg=arg, command_verbosity=(command_verbosity == CommandVerbosity.VERBOSE))
@@ -219,7 +219,7 @@ def execute(cur: Cursor, sql: str) -> list[SQLResult]:
     "help",
     "/help [term]",
     "Show this table, or search for help on a term.",
-    arg_type=ArgType.NO_QUERY,
+    arg_type=ArgType.NO_ARGUMENT,
     aliases=[SpecialCommandAlias("\\?", case_sensitive=False), SpecialCommandAlias("?", case_sensitive=False)],
 )
 def show_help(*_args) -> list[SQLResult]:
@@ -283,7 +283,7 @@ def show_keyword_help(cur: Cursor, arg: str) -> list[SQLResult]:
     return _show_mysql_help(cur, keyword)
 
 
-@special_command('\\bug', '/bug', 'File a bug on GitHub.', arg_type=ArgType.NO_QUERY)
+@special_command('\\bug', '/bug', 'File a bug on GitHub.', arg_type=ArgType.NO_ARGUMENT)
 def file_bug(*_args) -> list[SQLResult]:
     webbrowser.open_new_tab(ISSUES_URL)
     return [SQLResult(status=f'{ISSUES_URL} — press "New Issue"')]
@@ -293,14 +293,14 @@ def file_bug(*_args) -> list[SQLResult]:
     "exit",
     "/exit",
     "Exit.",
-    arg_type=ArgType.NO_QUERY,
+    arg_type=ArgType.NO_ARGUMENT,
     aliases=[SpecialCommandAlias("\\q", case_sensitive=False)],
 )
 @special_command(
     "quit",
     "/quit",
     "Quit.",
-    arg_type=ArgType.NO_QUERY,
+    arg_type=ArgType.NO_ARGUMENT,
     aliases=[SpecialCommandAlias("\\q", case_sensitive=False)],
 )
 def quit_(*_args):
@@ -311,7 +311,7 @@ def quit_(*_args):
     "\\edit",
     "/edit <filename> | <query>\\edit",
     "Edit query with editor (uses $VISUAL or $EDITOR).",
-    arg_type=ArgType.NO_QUERY,
+    arg_type=ArgType.NO_ARGUMENT,
     case_sensitive=True,
     aliases=[SpecialCommandAlias("\\e", case_sensitive=True)],
 )
@@ -319,14 +319,14 @@ def quit_(*_args):
     "\\clip",
     "/clip | <query>\\clip",
     "Copy query to the system clipboard.",
-    arg_type=ArgType.NO_QUERY,
+    arg_type=ArgType.NO_ARGUMENT,
     case_sensitive=True,
 )
 @special_command(
     "\\G",
     "<query>\\G",
     "Display query results vertically.",
-    arg_type=ArgType.NO_QUERY,
+    arg_type=ArgType.NO_ARGUMENT,
     case_sensitive=True,
     backslash_only=True,
 )
@@ -334,7 +334,7 @@ def quit_(*_args):
     "\\g",
     "<query>\\g",
     "Display query results (mnemonic: go).",
-    arg_type=ArgType.NO_QUERY,
+    arg_type=ArgType.NO_ARGUMENT,
     case_sensitive=True,
     backslash_only=True,
 )
@@ -342,7 +342,7 @@ def quit_(*_args):
     "\\x",
     "<query>\\x",
     "Display query results in an explorer rather than a pager.",
-    arg_type=ArgType.NO_QUERY,
+    arg_type=ArgType.NO_ARGUMENT,
     case_sensitive=True,
     backslash_only=True,
 )
