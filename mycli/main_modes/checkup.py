@@ -6,6 +6,8 @@ import sys
 import urllib.error
 import urllib.request
 
+from tabulate import tabulate
+
 from mycli.constants import REPO_URL
 
 PYPI_API_BASE = 'https://pypi.org/pypi'
@@ -24,15 +26,20 @@ def pypi_api_fetch(fragment: str) -> dict:
 
 def _dependencies_checkup() -> None:
     print('\n### Key Python dependencies:\n')
-    for dependency in [
-        'cli_helpers',
-        'click',
-        'prompt_toolkit',
-        'pygments',
-        'pymysql',
-        'sqlglot',
-        'sqlglotc',
-        'tabulate',
+    table = []
+    for dependency, purpose in [
+        ('cli_helpers', 'required'),
+        ('click', 'required'),
+        ('prompt_toolkit', 'required'),
+        ('pygments', 'required'),
+        ('pymysql', 'required'),
+        ('sqlglot', 'required'),
+        ('sqlglotc', 'required'),
+        ('tabulate', 'required'),
+        ('llm', 'optional for /llm command'),
+        ('polars', 'optional for .| operator'),
+        ('altair', 'optional for .| operator'),
+        ('vl-convert-python', 'optional for .| operator'),
     ]:
         try:
             installed_version = importlib.metadata.version(dependency)
@@ -40,32 +47,38 @@ def _dependencies_checkup() -> None:
             installed_version = None
         pypi_profile = pypi_api_fetch(f'/{dependency}/json')
         latest_version = pypi_profile.get('info', {}).get('version', None)
-        print(f'{dependency} version {installed_version} (latest {latest_version})')
+        table.append([dependency, installed_version, latest_version, purpose])
+    print(tabulate(table, headers=['library', 'version', 'latest', 'purpose']))
 
 
 def _executables_checkup() -> None:
     print('\n### External executables:\n')
-    for executable in [
-        'less',
-        'fzf',
-        'pygmentize',
+    table = []
+    for executable, purpose in [
+        ('less', 'required for paging'),
+        ('fzf', r'optional for history search and \x'),
+        ('pygmentize', 'optional for history search'),
     ]:
+        # executable, purpose = external
         if shutil.which(executable):
-            print(f'The "{executable}" executable was found — good!')
+            table.append([executable, 'found', purpose])
         else:
-            print(f'The recommended "{executable}" executable was not found — some functionality will suffer.')
+            table.append([executable, 'MISSING', purpose])
+    print(tabulate(table, headers=['executable', 'status', 'purpose']))
 
 
 def _environment_checkup() -> None:
     print('\n### Environment variables:\n')
-    for variable in [
-        'EDITOR',
-        'VISUAL',
+    table = []
+    for variable, purpose in [
+        ('EDITOR', r'optional for \edit and C-x C-e'),
+        ('VISUAL', r'optional for \edit and C-x C-e'),
     ]:
         if value := os.environ.get(variable):
-            print(f'The ${variable} environment variable was set to "{value}" — good!')
+            table.append([f'${variable}', value, purpose])
         else:
-            print(f'The ${variable} environment variable was not set — some functionality will suffer.')
+            table.append([f'${variable}', 'UNSET', purpose])
+    print(tabulate(table, headers=['variable', 'setting', 'purpose']))
 
 
 def _configuration_checkup(mycli) -> None:
