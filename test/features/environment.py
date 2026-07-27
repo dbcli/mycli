@@ -12,14 +12,10 @@ import pexpect
 from mycli.constants import DEFAULT_HOST, DEFAULT_PORT, DEFAULT_USER
 from steps.wrappers import run_cli, wait_prompt
 
-test_log_file = os.path.join(os.environ["HOME"], ".mycli.test.log")
-
+fd, TEST_LOG_FILE = tempfile.mkstemp(prefix='mycli-behave-', suffix='.test.log')
+os.close(fd)
 
 SELF_CONNECTING_FEATURES = ("test/features/connection.feature",)
-
-
-MYLOGIN_CNF_PATH = os.path.expanduser("~/.mylogin.cnf")
-MYLOGIN_CNF_BACKUP_PATH = f"{MYLOGIN_CNF_PATH}.backup"
 
 
 def get_db_name_from_context(context):
@@ -111,19 +107,16 @@ def before_scenario(context, arg):
     # Skip flaky editor test in CI
     if os.getenv('GITHUB_ACTION') and 'skip_ci' in arg.tags:
         arg.skip('Skipped in CI')
-    with open(test_log_file, "w") as f:
+    with open(TEST_LOG_FILE, "w") as f:
         f.write("")
     if arg.location.filename not in SELF_CONNECTING_FEATURES:
         run_cli(context)
         wait_prompt(context)
 
-    if os.path.exists(MYLOGIN_CNF_PATH):
-        shutil.move(MYLOGIN_CNF_PATH, MYLOGIN_CNF_BACKUP_PATH)
-
 
 def after_scenario(context, _):
     """Cleans up after each test complete."""
-    with open(test_log_file) as f:
+    with open(TEST_LOG_FILE) as f:
         for line in f:
             if "error" in line.lower():
                 raise RuntimeError(f"Error in log file: {line}")
@@ -138,13 +131,6 @@ def after_scenario(context, _):
         context.cli.sendcontrol("c")
         context.cli.sendcontrol("d")
         context.cli.expect_exact(pexpect.EOF, timeout=5)
-
-    if os.path.exists(MYLOGIN_CNF_BACKUP_PATH):
-        shutil.move(MYLOGIN_CNF_BACKUP_PATH, MYLOGIN_CNF_PATH)
-    elif os.path.exists(MYLOGIN_CNF_PATH):
-        # This file was moved in `before_scenario`.
-        # If it exists now, it has been created during a test
-        os.remove(MYLOGIN_CNF_PATH)
 
 
 # TODO: uncomment to debug a failure
