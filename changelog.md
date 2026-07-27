@@ -4,6 +4,7 @@ Upcoming (TBD)
 Features
 ---------
 * Render tab literals as four spaces in the REPL.
+* Let cursor shape respond to vi modes: _eg_ bar for insert mode.
 
 
 2.7.0 (2026/07/25)
