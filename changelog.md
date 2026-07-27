@@ -7,6 +7,11 @@ Features
 * Let cursor shape respond to vi modes: _eg_ bar for insert mode.
 
 
+Internal
+---------
+* Add Trove classifiers for PyPi.
+
+
 2.7.0 (2026/07/25)
 ==============
 
