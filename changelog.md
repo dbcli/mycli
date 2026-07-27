@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Features
+---------
+* Render tab literals as four spaces in the REPL.
+
+
 2.7.0 (2026/07/25)
 ==============
 

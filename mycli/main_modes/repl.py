@@ -33,7 +33,11 @@ from prompt_toolkit.formatted_text import (
     to_plain_text,
 )
 from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.layout.processors import ConditionalProcessor, HighlightMatchingBracketProcessor
+from prompt_toolkit.layout.processors import (
+    ConditionalProcessor,
+    HighlightMatchingBracketProcessor,
+    TabsProcessor,
+)
 from prompt_toolkit.lexers import PygmentsLexer
 from prompt_toolkit.output import ColorDepth
 from prompt_toolkit.shortcuts import CompleteStyle, PromptSession
@@ -583,7 +587,9 @@ def _build_prompt_session(
                 ConditionalProcessor(
                     processor=HighlightMatchingBracketProcessor(chars='[](){}'),
                     filter=has_focus(DEFAULT_BUFFER) & ~is_done,
-                )
+                ),
+                # renders tab as four spaces rather than ^I control character
+                TabsProcessor(char1=' ', char2=' '),
             ],
             tempfile_suffix='.sql',
             completer=DynamicCompleter(lambda: mycli.completer),
