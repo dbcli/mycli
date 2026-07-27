@@ -10,6 +10,7 @@ Features
 Internal
 ---------
 * Add Trove classifiers for PyPi.
+* Don't let behave tests refer to real home-directory resources.
 
 
 2.7.0 (2026/07/25)
