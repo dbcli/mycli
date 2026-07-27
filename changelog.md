@@ -6,6 +6,11 @@ Features
 * Render tab literals as four spaces in the REPL.
 
 
+Internal
+---------
+* Add Trove classifiers for PyPi.
+
+
 2.7.0 (2026/07/25)
 ==============
 
