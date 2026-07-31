@@ -28,7 +28,7 @@ function _mycli_is_positional_db_arg
             case --
                 set options_ended 1
             case '--*=*'
-            case --host --hostname --port --user --username --socket --pass --password --password-file --vault-address --vault-mount --vault-secret --vault-password-field --vault-username-field --ssl-mode --ssl-ca --ssl-capath --ssl-cert --ssl-key --ssl-cipher --tls-version --database --dsn --prompt --toolbar --logfile --checkpoint --myclirc --local-infile --login-path --execute --init-command --charset --character-set --batch --format --throttle --use-keyring --keepalive-ticks --ssh-jump --ssh-options
+            case --host --hostname --port --user --username --socket --pass --password --password-file --vault-address --vault-mount --vault-secret --vault-password-field --vault-username-field --ssl-mode --ssl-ca --ssl-capath --ssl-cert --ssl-key --ssl-cipher --tls-version --database --dsn --completions --prompt --toolbar --logfile --checkpoint --myclirc --local-infile --login-path --execute --init-command --charset --character-set --batch --format --throttle --use-keyring --keepalive-ticks --ssh-jump --ssh-options
                 set expects_value 1
             case '-*'
                 set -l option_length (string length -- "$word")

@@ -22,6 +22,8 @@ if [ "${_MYCLI_COMPLETE:-}" = 'fish_complete' ]; then
     printf 'click\n' >> "$MYCLI_LOG"
     if [ "$COMP_CWORD" = '--s' ]; then
         printf 'plain,--socket\tSocket file\nplain,--ssl-mode\tTLS mode\n'
+    elif [ "$COMP_CWORD" = 'ba' ]; then
+        printf 'plain,bash\n'
     fi
     exit 0
 fi
@@ -55,6 +57,7 @@ fi
 
     assert result.stdout.splitlines() == [
         'generic|--socket\tSocket file|--ssl-mode\tTLS mode',
+        'completions|bash',
         'bare|prod',
         'dsn-separate|prod|staging',
         'dsn-long-separate|prod',
@@ -94,6 +97,7 @@ function run_completion --argument-names label command
 end
 
 run_completion generic 'mycli --s'
+run_completion completions 'mycli --completions ba'
 run_completion bare 'mycli pro'
 run_completion dsn-separate 'mycli -d '
 run_completion dsn-long-separate 'mycli --dsn pro'

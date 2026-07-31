@@ -46,6 +46,8 @@ if [ "${_MYCLI_COMPLETE:-}" = 'bash_complete' ]; then
     printf 'click\\n' >> "$MYCLI_LOG"
     if [ "$COMP_WORDS" = 'mycli --s' ]; then
         printf 'plain,--socket\\nplain,--ssl-mode\\n'
+    elif [ "$COMP_WORDS" = 'mycli --completions ba' ]; then
+        printf 'plain,bash\\n'
     fi
     exit 0
 fi
@@ -80,6 +82,7 @@ fi
     assert result.stdout.splitlines() == [
         'complete -F _mycli_completion mycli',
         'generic|reply<--socket><--ssl-mode>|compopt',
+        'completions|reply<bash>|compopt',
         'bare|reply<prod>|compopt',
         'dsn-separate|reply<prod><staging>|compopt',
         'dsn-attached|reply<-dprod>|compopt',
@@ -129,6 +132,7 @@ run_completion() {
 }
 
 run_completion generic mycli --s
+run_completion completions mycli --completions ba
 run_completion bare mycli pro
 run_completion dsn-separate mycli -d ''
 run_completion dsn-attached mycli -dpro

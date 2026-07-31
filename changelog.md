@@ -8,6 +8,7 @@ Features
 * Add bash completions which can complete DSN aliases.
 * Add fish completions which can complete DSN aliases.
 * Support Python 3.15 lazy imports for startup performance.
+* Add a `--completions` argument to emit a shell completion script.
 
 
 2.8.0 (2026/07/31)

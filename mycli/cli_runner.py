@@ -11,6 +11,7 @@ __lazy_modules__ = [
     'mycli.constants',
     'mycli.main_modes.batch',
     'mycli.main_modes.checkup',
+    'mycli.main_modes.completions',
     'mycli.main_modes.execute',
     'mycli.main_modes.list_dsn',
     'mycli.packages.cli_utils',
@@ -30,6 +31,7 @@ from mycli.config import str_to_bool
 from mycli.constants import EMPTY_PASSWORD_FLAG_SENTINEL
 from mycli.main_modes.batch import main_batch_from_stdin, main_batch_with_progress_bar, main_batch_without_progress_bar
 from mycli.main_modes.checkup import main_checkup
+from mycli.main_modes.completions import main_completions
 from mycli.main_modes.execute import main_execute_from_cli
 from mycli.main_modes.list_dsn import main_list_dsn
 from mycli.packages.cli_utils import is_valid_connection_scheme
@@ -141,6 +143,10 @@ def expand_dsn_alias_env_vars(
 
 def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> None:
     from mycli import main as main_module
+
+    if cli_args.completions:
+        main_completions(cli_args.completions)
+        return
 
     cli_verbosity = main_module.preprocess_cli_args(cli_args, is_valid_connection_scheme)
 

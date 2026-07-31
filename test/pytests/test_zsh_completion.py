@@ -20,6 +20,9 @@ def test_zsh_completion_lists_dsn_aliases_in_supported_contexts(tmp_path: Path) 
         '''#!/bin/sh
 if [ "${_MYCLI_COMPLETE:-}" = 'zsh_complete' ]; then
     printf 'click\\n' >> "$MYCLI_LOG"
+    if [ "$COMP_WORDS" = 'mycli --completions ba' ]; then
+        printf 'plain\\nbash\\n_\\n'
+    fi
     exit 0
 fi
 if [ "$1" = '--list-dsn' ]; then
@@ -49,6 +52,7 @@ fi
     assert result.stdout.splitlines() == [
         'prod,staging||0|',
         'prod||0|',
+        'bash||1|',
         'prod,staging||0|',
         'prod,staging||0|',
         '-dprod|-P -d|0|',
@@ -127,6 +131,7 @@ run_completion() {
 
 run_completion mycli ''
 run_completion mycli pro
+run_completion mycli --completions ba
 run_completion mycli -d ''
 run_completion mycli --dsn ''
 run_completion mycli -dpro
