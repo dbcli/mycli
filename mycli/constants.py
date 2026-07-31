@@ -4,6 +4,26 @@ DOCS_URL = f'{HOME_URL}/docs'
 ISSUES_URL = f'{REPO_URL}/issues'
 
 DEFAULT_CHARSET = 'utf8mb4'
+KNOWN_DSN_QUERY_PARAMS = {
+    'character_set',
+    'keepalive_ticks',
+    'prompt',
+    'socket',
+    'ssh_jump',
+    'ssl_ca',
+    'ssl_capath',
+    'ssl_cert',
+    'ssl_cipher',
+    'ssl_key',
+    'ssl_mode',
+    'ssl_verify_server_cert',
+    'tls_version',
+    'vault_address',
+    'vault_mount',
+    'vault_password_field',
+    'vault_secret',
+    'vault_username_field',
+}
 DEFAULT_DATABASE = 'mysql'
 DEFAULT_HOST = 'localhost'
 DEFAULT_PORT = 3306

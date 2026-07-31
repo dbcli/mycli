@@ -10,6 +10,7 @@ Features
 * Support Python 3.15 lazy imports for startup performance.
 * Add a `--completions` argument to emit a shell completion script.
 * Ability to set the `prompt` value as a DSN query parameter.
+* Add `--more` option to some `/dsn` subcommands, showing more DSN query parameters.
 
 
 Documentation

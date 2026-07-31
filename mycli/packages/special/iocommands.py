@@ -465,16 +465,21 @@ def dsn(
     command_verbosity: bool = False,
 ) -> list[SQLResult]:
     args = shlex.split(arg or '')
-    if len(args) == 1 and args[0].lower() == 'show':
+    if args and args[0].lower() == 'show' and (len(args) == 1 or (len(args) == 2 and args[1] == '--more')):
         dsn = compute_current_dsn(cur)
+        if len(args) == 2:
+            dsn = DsnAliases.instance.dsn_more(dsn)
         header = ['Current Connection']
         show_rows = [(dsn,)]
         return [SQLResult(header=header, rows=show_rows)]
     elif args and args[0].lower() == 'save':
-        if len(args) != 2:
+        include_more = len(args) == 3 and args[1] == '--more'
+        if not (len(args) == 2 and args[1] != '--more') and not include_more:
             return [SQLResult(status='Error: a single alias-name argument is required to save.')]
         dsn = compute_current_dsn(cur)
-        alias = args[1]
+        if include_more:
+            dsn = DsnAliases.instance.dsn_more(dsn)
+        alias = args[2] if include_more else args[1]
         status = DsnAliases.instance.save(alias, dsn)
         return [SQLResult(status=status)]
     elif args and args[0].lower() == 'delete':
@@ -483,9 +488,9 @@ def dsn(
         alias = args[1]
         status = DsnAliases.instance.delete(alias)
         return [SQLResult(status=status)]
-    elif args and args[0].lower() == 'list':
+    elif len(args) == 1 and args[0].lower() == 'list':
         header = ['Alias', 'DSN']
-        list_rows = [(r, DsnAliases.instance.get(r)) for r in DsnAliases.instance.list()]
+        list_rows = [(alias, DsnAliases.instance.get(alias)) for alias in DsnAliases.instance.list()]
         if not list_rows:
             status = 'No DSN Aliases found.'
         else:

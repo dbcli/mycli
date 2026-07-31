@@ -51,6 +51,7 @@ class FakeDsnAliases:
         self.aliases = {} if aliases is None else dict(aliases)
         self.saved: list[tuple[str, str]] = []
         self.deleted: list[str] = []
+        self.completed: list[str] = []
 
     def list(self) -> list[str]:
         return list(self.aliases)
@@ -66,6 +67,10 @@ class FakeDsnAliases:
     def delete(self, alias: str) -> str:
         self.deleted.append(alias)
         return f'Deleted: {alias}'
+
+    def dsn_more(self, dsn: str) -> str:
+        self.completed.append(dsn)
+        return f'{dsn}?prompt=prod%3E+'
 
 
 class FakeCursor:
@@ -721,6 +726,18 @@ def test_dsn_command_shows_current_connection(monkeypatch) -> None:
     assert result.rows == [('mysql://user@host/db',)]
 
 
+def test_dsn_command_shows_more_current_connection_settings(monkeypatch) -> None:
+    aliases = FakeDsnAliases()
+    monkeypatch.setattr(iocommands, 'compute_current_dsn', lambda cur: 'mysql://user@host/db')
+    monkeypatch.setattr(iocommands.DsnAliases, 'instance', aliases, raising=False)
+
+    result = iocommands.dsn(cur=FakeCursor(), arg='show --more')[0]
+
+    assert result.header == ['Current Connection']
+    assert result.rows == [('mysql://user@host/db?prompt=prod%3E+',)]
+    assert aliases.completed == ['mysql://user@host/db']
+
+
 def test_dsn_command_lists_aliases(monkeypatch) -> None:
     aliases = FakeDsnAliases({'prod': 'mysql://prod/db'})
     monkeypatch.setattr(iocommands.DsnAliases, 'instance', aliases, raising=False)
@@ -753,11 +770,24 @@ def test_dsn_command_saves_current_connection(monkeypatch) -> None:
     assert aliases.saved == [('prod', 'mysql://user@host/db')]
 
 
+def test_dsn_command_saves_more_current_connection_settings(monkeypatch) -> None:
+    aliases = FakeDsnAliases()
+    monkeypatch.setattr(iocommands, 'compute_current_dsn', lambda cur: 'mysql://user@host/db')
+    monkeypatch.setattr(iocommands.DsnAliases, 'instance', aliases, raising=False)
+
+    result = iocommands.dsn(cur=FakeCursor(), arg='save --more prod')[0]
+
+    assert result.status == 'Saved: prod'
+    assert aliases.completed == ['mysql://user@host/db']
+    assert aliases.saved == [('prod', 'mysql://user@host/db?prompt=prod%3E+')]
+
+
 def test_dsn_command_rejects_save_without_single_alias(monkeypatch) -> None:
     monkeypatch.setattr(iocommands.DsnAliases, 'instance', FakeDsnAliases(), raising=False)
 
-    assert iocommands.dsn(cur=FakeCursor(), arg='save')[0].status == 'Error: a single alias-name argument is required to save.'
-    assert iocommands.dsn(cur=FakeCursor(), arg='save one two')[0].status == ('Error: a single alias-name argument is required to save.')
+    error = 'Error: a single alias-name argument is required to save.'
+    for arg in ['save', 'save --more', 'save one two', 'save one --more', 'save --unknown one', 'save --more one two']:
+        assert iocommands.dsn(cur=FakeCursor(), arg=arg)[0].status == error
 
 
 def test_dsn_command_deletes_alias(monkeypatch) -> None:
@@ -785,6 +815,9 @@ def test_dsn_command_shows_usage_for_help_and_unknown_subcommands(monkeypatch) -
 
     assert iocommands.dsn(cur=FakeCursor(), arg='help')[0].preamble == aliases.usage
     assert iocommands.dsn(cur=FakeCursor(), arg='unknown')[0].preamble == aliases.usage
+    assert iocommands.dsn(cur=FakeCursor(), arg='show --unknown')[0].preamble == aliases.usage
+    assert iocommands.dsn(cur=FakeCursor(), arg='list --unknown')[0].preamble == aliases.usage
+    assert iocommands.dsn(cur=FakeCursor(), arg='list --more')[0].preamble == aliases.usage
 
 
 def test_execute_system_command_usage_parse_and_cd(monkeypatch) -> None:
