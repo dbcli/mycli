@@ -11,6 +11,11 @@ Features
 * Add a `--completions` argument to emit a shell completion script.
 
 
+Documentation
+---------
+* Add license badge to `README.md`.
+
+
 2.8.0 (2026/07/31)
 ==============
 
