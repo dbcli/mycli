@@ -177,6 +177,32 @@ def test_run_from_cli_args_treats_database_as_dsn_alias(monkeypatch: pytest.Monk
     assert connect_call['database'] == 'db'
 
 
+@pytest.mark.parametrize('argument', ['dsn', 'database'])
+def test_run_from_cli_args_rejects_dash_prefixed_dsn_alias(
+    monkeypatch: pytest.MonkeyPatch,
+    argument: str,
+) -> None:
+    cli_args = make_cli_args()
+    setattr(cli_args, argument, '-prod')
+    client = DummyMyCli(
+        config={
+            **default_config(),
+            'alias_dsn': {'-prod': 'mysql://u:p@h/db'},
+        }
+    )
+    secho_calls: list[tuple[str, dict[str, Any]]] = []
+    monkeypatch.setattr(cli_runner.click, 'secho', lambda text, **kwargs: secho_calls.append((text, kwargs)))
+
+    with pytest.raises(SystemExit) as excinfo:
+        run_with_client(monkeypatch, cli_args, client)
+
+    assert excinfo.value.code == 1
+    assert secho_calls == [
+        ('Error: DSN aliases cannot start with a dash.', {'err': True, 'fg': 'red'}),
+    ]
+    assert client.connect_calls == []
+
+
 def test_run_from_cli_args_reports_ambiguous_database_alias_with_connection_options(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -202,6 +228,25 @@ def test_run_from_cli_args_reports_ambiguous_database_alias_with_connection_opti
     ]
     assert client.dsn_alias is None
     assert client.connect_calls[-1]['database'] == 'prod'
+
+
+def test_run_from_cli_args_allows_dash_prefixed_database_with_connection_options(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cli_args = make_cli_args()
+    cli_args.database = '-prod'
+    cli_args.user = 'alice'
+    client = DummyMyCli(
+        config={
+            **default_config(),
+            'alias_dsn': {'-prod': 'mysql://u:p@h/alias-db'},
+        }
+    )
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    assert client.dsn_alias is None
+    assert client.connect_calls[-1]['database'] == '-prod'
 
 
 def test_run_from_cli_args_loads_password_from_file(monkeypatch: pytest.MonkeyPatch) -> None:

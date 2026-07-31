@@ -13,6 +13,11 @@ Features
 * Add `--more` option to some `/dsn` subcommands, showing more DSN query parameters.
 
 
+Bugfixes
+---------
+* Disallow DSN aliases starting with `-`, because of ambiguity.
+
+
 Documentation
 ---------
 * Add license badge to `README.md`.

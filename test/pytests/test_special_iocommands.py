@@ -782,6 +782,23 @@ def test_dsn_command_saves_more_current_connection_settings(monkeypatch) -> None
     assert aliases.saved == [('prod', 'mysql://user@host/db?prompt=prod%3E+')]
 
 
+@pytest.mark.parametrize('arg', ['save -prod', 'save --more -prod'])
+def test_dsn_command_rejects_dash_prefixed_alias_before_computing_dsn(monkeypatch, arg: str) -> None:
+    aliases = FakeDsnAliases()
+    monkeypatch.setattr(
+        iocommands,
+        'compute_current_dsn',
+        lambda cur: pytest.fail('The DSN should not be computed for an invalid alias.'),
+    )
+    monkeypatch.setattr(iocommands.DsnAliases, 'instance', aliases, raising=False)
+
+    result = iocommands.dsn(cur=FakeCursor(), arg=arg)[0]
+
+    assert result.status == 'Error: DSN aliases cannot start with a dash.'
+    assert aliases.saved == []
+    assert aliases.completed == []
+
+
 def test_dsn_command_rejects_save_without_single_alias(monkeypatch) -> None:
     monkeypatch.setattr(iocommands.DsnAliases, 'instance', FakeDsnAliases(), raising=False)
 
@@ -798,6 +815,16 @@ def test_dsn_command_deletes_alias(monkeypatch) -> None:
 
     assert result.status == 'Deleted: prod'
     assert aliases.deleted == ['prod']
+
+
+def test_dsn_command_rejects_legacy_dash_prefixed_alias(monkeypatch) -> None:
+    aliases = FakeDsnAliases({'-legacy': 'mysql://legacy/db'})
+    monkeypatch.setattr(iocommands.DsnAliases, 'instance', aliases, raising=False)
+
+    result = iocommands.dsn(cur=FakeCursor(), arg='delete -legacy')[0]
+
+    assert result.status == 'Error: DSN aliases cannot start with a dash.'
+    assert aliases.deleted == []
 
 
 def test_dsn_command_rejects_delete_without_single_alias(monkeypatch) -> None:

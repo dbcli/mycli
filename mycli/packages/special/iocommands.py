@@ -19,7 +19,7 @@ import sqlparse
 from mycli.compat import WIN
 from mycli.packages.interactive_utils import confirm_destructive_query
 from mycli.packages.special.delimitercommand import DelimiterCommand
-from mycli.packages.special.dsn_aliases import DsnAliases
+from mycli.packages.special.dsn_aliases import INVALID_DSN_ALIAS_ERROR, DsnAliases, is_valid_dsn_alias
 from mycli.packages.special.favoritequeries import FavoriteQueries
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
 from mycli.packages.special.main import ArgType, SpecialCommandAlias, special_command
@@ -476,16 +476,20 @@ def dsn(
         include_more = len(args) == 3 and args[1] == '--more'
         if not (len(args) == 2 and args[1] != '--more') and not include_more:
             return [SQLResult(status='Error: a single alias-name argument is required to save.')]
+        alias = args[2] if include_more else args[1]
+        if not is_valid_dsn_alias(alias):
+            return [SQLResult(status=INVALID_DSN_ALIAS_ERROR)]
         dsn = compute_current_dsn(cur)
         if include_more:
             dsn = DsnAliases.instance.dsn_more(dsn)
-        alias = args[2] if include_more else args[1]
         status = DsnAliases.instance.save(alias, dsn)
         return [SQLResult(status=status)]
     elif args and args[0].lower() == 'delete':
         if len(args) != 2:
             return [SQLResult(status='Error: a single alias-name argument is required to delete.')]
         alias = args[1]
+        if not is_valid_dsn_alias(alias):
+            return [SQLResult(status=INVALID_DSN_ALIAS_ERROR)]
         status = DsnAliases.instance.delete(alias)
         return [SQLResult(status=status)]
     elif len(args) == 1 and args[0].lower() == 'list':

@@ -4,6 +4,8 @@ from typing import TYPE_CHECKING
 
 import click
 
+from mycli.packages.special.dsn_aliases import is_valid_dsn_alias
+
 if TYPE_CHECKING:
     from mycli.client import MyCli
 
@@ -18,6 +20,8 @@ def main_list_dsn(mycli: 'MyCli') -> int:
         click.secho(str(e), err=True, fg='red')
         return 1
     for alias, value in alias_dsn.items():
+        if not is_valid_dsn_alias(alias):
+            continue
         if mycli.verbosity >= 1:
             click.secho(f'{alias} : {value}')
         else:

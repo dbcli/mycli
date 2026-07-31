@@ -34,7 +34,13 @@ def main_list_dsn(mycli: DummyMyCli) -> int:
 
 def test_main_list_dsn_lists_aliases_without_values(monkeypatch) -> None:
     secho_calls: list[tuple[str, bool | None, str | None]] = []
-    mycli = DummyMyCli(DummyConfig({'prod': 'mysql://u:p@h/db', 'staging': 'mysql://u2:p2@h2/db2'}))
+    mycli = DummyMyCli(
+        DummyConfig({
+            'prod': 'mysql://u:p@h/db',
+            '-hidden': 'mysql://hidden/db',
+            'staging': 'mysql://u2:p2@h2/db2',
+        })
+    )
 
     monkeypatch.setattr(
         list_dsn_mode.click,
@@ -53,7 +59,7 @@ def test_main_list_dsn_lists_aliases_without_values(monkeypatch) -> None:
 
 def test_main_list_dsn_lists_aliases_with_values_in_verbose_mode(monkeypatch) -> None:
     secho_calls: list[tuple[str, bool | None, str | None]] = []
-    mycli = DummyMyCli(DummyConfig({'prod': 'mysql://u:p@h/db'}))
+    mycli = DummyMyCli(DummyConfig({'prod': 'mysql://u:p@h/db', '-hidden': 'mysql://hidden/db'}))
     mycli.verbosity = 1
 
     monkeypatch.setattr(
