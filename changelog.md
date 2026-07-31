@@ -5,6 +5,7 @@ Features
 ---------
 * Improve filename completions for zsh.
 * Improve acceptance of a DSN alias as a positional argument.
+* Add bash completions which can complete DSN aliases.
 
 
 2.8.0 (2026/07/31)
