@@ -834,6 +834,25 @@ def suggest_special(text: str) -> list[dict[str, Any]]:
             return [{'type': 'dsn_alias'}]
         if dsn_arguments and dsn_arguments[0].lower() == 'delete' and len(dsn_arguments) == 2:
             return []
+        if dsn_arguments and dsn_arguments[0].lower() == 'save':
+            completing_option = (len(dsn_arguments) == 1 and text[-1].isspace()) or (
+                len(dsn_arguments) == 2
+                and dsn_arguments[1].startswith('-')
+                and dsn_arguments[1] != '--more'
+                and ' ' not in dsn_arguments[1]
+                and not text[-1].isspace()
+            )
+            if completing_option:
+                return [{'type': 'special_subcommand', 'subcommands': ['--more']}]
+            return []
+        if dsn_arguments and dsn_arguments[0].lower() == 'show':
+            option = '--more'
+            completing_option = (len(dsn_arguments) == 1 and text[-1].isspace()) or (
+                len(dsn_arguments) == 2 and dsn_arguments[1] != option and not text[-1].isspace()
+            )
+            if completing_option:
+                return [{'type': 'special_subcommand', 'subcommands': [option]}]
+            return []
         if dsn_arguments and dsn_arguments[0].lower() in DSN_SUBCOMMANDS - {'delete'}:
             return []
         return [{'type': 'special_subcommand', 'subcommands': list(DSN_SUBCOMMANDS)}]

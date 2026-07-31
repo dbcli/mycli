@@ -28,7 +28,7 @@ from urllib.parse import parse_qs, unquote, urlparse
 import click
 
 from mycli.config import str_to_bool
-from mycli.constants import EMPTY_PASSWORD_FLAG_SENTINEL
+from mycli.constants import EMPTY_PASSWORD_FLAG_SENTINEL, KNOWN_DSN_QUERY_PARAMS
 from mycli.main_modes.batch import main_batch_from_stdin, main_batch_with_progress_bar, main_batch_without_progress_bar
 from mycli.main_modes.checkup import main_checkup
 from mycli.main_modes.completions import main_completions
@@ -49,26 +49,6 @@ if TYPE_CHECKING:
 
 ClientFactory = Callable[..., Any]
 ENV_VAR_PATTERN = re.compile(r'^\$\{([A-Za-z_][A-Za-z0-9_]*)\}$')
-KNOWN_DSN_QUERY_PARAMS = {
-    'character_set',
-    'keepalive_ticks',
-    'prompt',
-    'socket',
-    'ssh_jump',
-    'ssl_ca',
-    'ssl_capath',
-    'ssl_cert',
-    'ssl_cipher',
-    'ssl_key',
-    'ssl_mode',
-    'ssl_verify_server_cert',
-    'tls_version',
-    'vault_address',
-    'vault_mount',
-    'vault_secret',
-    'vault_password_field',
-    'vault_username_field',
-}
 
 
 class DsnAliasEnvVarError(ValueError):

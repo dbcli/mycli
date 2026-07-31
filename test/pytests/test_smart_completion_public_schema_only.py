@@ -128,11 +128,46 @@ def test_dsn_delete_alias_completion(completer, complete_event, monkeypatch):
     assert list(result) == [Completion(text='prod', start_position=-3)]
 
 
-@pytest.mark.parametrize('text', ['/dsn show', '/dsn show ', '/dsn help', '/dsn help ', '/dsn delete prod '])
-def test_dsn_show_and_help_do_not_offer_completions(completer, complete_event, text):
+@pytest.mark.parametrize(
+    'text',
+    [
+        '/dsn show',
+        '/dsn show --more',
+        '/dsn show --more ',
+        '/dsn list',
+        '/dsn list ',
+        '/dsn list --m',
+        '/dsn list --more',
+        '/dsn list --more ',
+        '/dsn save --more',
+        '/dsn save --more ',
+        '/dsn save --more prod',
+        '/dsn save prod',
+        '/dsn save prod ',
+        '/dsn help',
+        '/dsn help ',
+        '/dsn delete prod ',
+    ],
+)
+def test_completed_dsn_commands_do_not_offer_completions(completer, complete_event, text):
     result = list(completer.get_completions(Document(text=text, cursor_position=len(text)), complete_event))
 
     assert result == []
+
+
+@pytest.mark.parametrize(
+    ('text', 'expected'),
+    [
+        ('/dsn show ', Completion(text='--more', start_position=0)),
+        ('/dsn show --m', Completion(text='--more', start_position=-3)),
+        ('/dsn save ', Completion(text='--more', start_position=0)),
+        ('/dsn save --m', Completion(text='--more', start_position=-3)),
+    ],
+)
+def test_dsn_commands_offer_more_option(completer, complete_event, text, expected):
+    result = list(completer.get_completions(Document(text=text, cursor_position=len(text)), complete_event))
+
+    assert result == [expected]
 
 
 def test_empty_string_completion(completer, complete_event):
