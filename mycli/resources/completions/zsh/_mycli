@@ -9,6 +9,56 @@ _mycli_dsn_aliases() {
     fi
 }
 
+# spelling out the args here is much faster than invoking mycli with _MYCLI_COMPLETE
+_mycli_is_positional_db_arg() {
+    local word
+    local index
+    local short_index
+    local positional_count=0
+    local options_ended=0
+    local expects_value=0
+
+    for (( index = 2; index < CURRENT; index++ )); do
+        word="${words[index]}"
+        if (( expects_value )); then
+            expects_value=0
+            continue
+        fi
+        if (( options_ended )); then
+            (( positional_count++ ))
+            continue
+        fi
+
+        case "$word" in
+            --)
+                options_ended=1
+                ;;
+            --*=*)
+                ;;
+            --host|--hostname|--port|--user|--username|--socket|--pass|--password|--password-file|--vault-address|--vault-mount|--vault-secret|--vault-password-field|--vault-username-field|--ssl-mode|--ssl-ca|--ssl-capath|--ssl-cert|--ssl-key|--ssl-cipher|--tls-version|--database|--dsn|--prompt|--toolbar|--logfile|--checkpoint|--myclirc|--local-infile|--login-path|--execute|--init-command|--charset|--character-set|--batch|--format|--throttle|--use-keyring|--keepalive-ticks|--ssh-jump|--ssh-options)
+                expects_value=1
+                ;;
+            -?*)
+                for (( short_index = 2; short_index <= ${#word}; short_index++ )); do
+                    case "${word[short_index]}" in
+                        h|P|u|S|p|g|e|R|l|D|d)
+                            if (( short_index == ${#word} )); then
+                                expects_value=1
+                            fi
+                            break
+                            ;;
+                    esac
+                done
+                ;;
+            *)
+                (( positional_count++ ))
+                ;;
+        esac
+    done
+
+    (( ! expects_value && positional_count == 0 )) && [[ "${words[CURRENT]}" != -* ]]
+}
+
 _mycli_completion() {
     local -a completions
     local -a completions_with_descriptions
@@ -24,6 +74,17 @@ _mycli_completion() {
             ;;
         -d*)
             compset -P '-d'
+            _mycli_dsn_aliases
+            return
+            ;;
+        # odd feature, but we do accept DSNs in the place of a database name
+        --database=*)
+            compset -P '--database='
+            _mycli_dsn_aliases
+            return
+            ;;
+        -D*)
+            compset -P '-D'
             _mycli_dsn_aliases
             return
             ;;
@@ -76,9 +137,12 @@ _mycli_completion() {
     fi
 
     # special cases for DSN aliases
-    if (( CURRENT == 2 )) && [[ "${words[CURRENT]}" != -* ]]; then
+    if [[ "${words[CURRENT - 1]}" == '-d' || "${words[CURRENT - 1]}" == '--dsn' ]]; then
         _mycli_dsn_aliases
-    elif [[ "${words[CURRENT - 1]}" == '-d' || "${words[CURRENT - 1]}" == '--dsn' ]]; then
+    elif [[ "${words[CURRENT - 1]}" == '-D' || "${words[CURRENT - 1]}" == '--database' ]]; then
+        # odd feature, but we do accept DSNs in the place of a database name
+        _mycli_dsn_aliases
+    elif _mycli_is_positional_db_arg; then
         _mycli_dsn_aliases
     # special cases for files denoted as str types in click
     elif [[ "${words[CURRENT - 1]}" == '-S' || "${words[CURRENT - 1]}" == '--socket' ]]; then

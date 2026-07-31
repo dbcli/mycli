@@ -3,7 +3,8 @@ Upcoming (TBD)
 
 Features
 ---------
-* Improved filename completions for zsh.
+* Improve filename completions for zsh.
+* Improve acceptance of a DSN alias as a positional argument.
 
 
 2.8.0 (2026/07/31)
