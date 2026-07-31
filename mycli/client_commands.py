@@ -166,6 +166,9 @@ class ClientCommandsMixin:
         if not arg:
             return [SQLResult(status=f'Prompt format: "{self.prompt_format}"')]
 
+        if len(arg) >= 2 and arg[0] == arg[-1] and arg[0] in {'\'', '"'}:
+            arg = arg[1:-1]
+
         self.prompt_format = arg
         return [SQLResult(status=f'Changed prompt format to: "{arg}"')]
 
