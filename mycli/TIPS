@@ -90,7 +90,7 @@ use /tee or /notee to write/stop-writing results to a output file!
 
 /P or /pager sets the pager.  Try "/pager less"!
 
-/R or /prompt changes the prompt format!
+/R or /prompt shows or changes the prompt format!
 
 /Tr or /redirectformat changes the table format for redirects!
 

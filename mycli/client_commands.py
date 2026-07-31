@@ -81,8 +81,8 @@ class ClientCommandsMixin:
         special.register_special_command(
             self.change_prompt_format,
             "prompt",
-            "/prompt <string>",
-            "Change prompt format.",
+            "/prompt [string]",
+            "Show or change prompt format.",
             case_sensitive=True,
             aliases=[SpecialCommandAlias("\\R", case_sensitive=True)],
         )
@@ -161,14 +161,13 @@ class ClientCommandsMixin:
 
     def change_prompt_format(self, arg: str, **_) -> list[SQLResult]:
         """
-        Change the prompt format.
+        Show or change the prompt format.
         """
         if not arg:
-            message = "Missing required argument, format."
-            return [SQLResult(status=message)]
+            return [SQLResult(status=f'Prompt format: "{self.prompt_format}"')]
 
         self.prompt_format = arg
-        return [SQLResult(status=f"Changed prompt format to {arg}")]
+        return [SQLResult(status=f'Changed prompt format to: "{arg}"')]
 
     def initialize_logging(self) -> None:
         log_file = os.path.expanduser(self.config["main"]["log_file"])

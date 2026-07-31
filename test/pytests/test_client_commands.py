@@ -83,6 +83,7 @@ def test_register_special_commands_registers_expected_commands(monkeypatch: pyte
     assert calls[4][0] == client.change_redirect_format
     assert calls[5][0] == client.execute_from_file
     assert calls[6][0] == client.change_prompt_format
+    assert calls[6][2:4] == ('/prompt [string]', 'Show or change prompt format.')
 
 
 def test_manual_reconnect_reports_not_connected() -> None:
@@ -224,16 +225,18 @@ def test_execute_from_file_runs_file_query(tmp_path: Path) -> None:
     assert client.sqlexecute.runs == ['select 1;']
 
 
-def test_change_prompt_format_requires_argument() -> None:
+def test_change_prompt_format_without_argument_shows_current_format() -> None:
     client = DummyClient()
+    client.prompt_format = '\\u> '
 
-    assert client.change_prompt_format('') == [SQLResult(status='Missing required argument, format.')]
+    assert client.change_prompt_format('') == [SQLResult(status='Prompt format: "\\u> "')]
+    assert client.prompt_format == '\\u> '
 
 
 def test_change_prompt_format_updates_prompt_format() -> None:
     client = DummyClient()
 
-    assert client.change_prompt_format('\\u> ') == [SQLResult(status='Changed prompt format to \\u> ')]
+    assert client.change_prompt_format('\\u> ') == [SQLResult(status='Changed prompt format to: "\\u> "')]
     assert client.prompt_format == '\\u> '
 
 

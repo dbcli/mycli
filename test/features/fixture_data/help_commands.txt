@@ -23,7 +23,7 @@
 | /once           | /o       | /once [-o] <filename>             | Append next result to an output file (overwrite using -o).  |
 | /pager          | /P       | /pager [command]                  | Set pager to [command]. Print query results via pager.      |
 | /pipe_once      | /|       | /pipe_once <command>              | Send next result to a subprocess.                           |
-| /prompt         | /R       | /prompt <string>                  | Change prompt format.                                       |
+| /prompt         | /R       | /prompt [string]                  | Show or change prompt format.                               |
 | /quit           | /q       | /quit                             | Quit.                                                       |
 | /redirectformat | /Tr      | /redirectformat <format>          | Change the table format used to output redirected results.  |
 | /rehash         | /#       | /rehash                           | Refresh auto-completions.                                   |
