@@ -4,7 +4,7 @@ from typing import Any
 from urllib.parse import parse_qsl, urlsplit
 
 from mycli.constants import KNOWN_DSN_QUERY_PARAMS
-from mycli.packages.special.dsn_aliases import DsnAliases
+from mycli.packages.special.dsn_aliases import INVALID_DSN_ALIAS_ERROR, DsnAliases, is_valid_dsn_alias
 
 
 class DummyConfig(dict):
@@ -15,6 +15,11 @@ class DummyConfig(dict):
 
     def write(self) -> None:
         self.write_calls += 1
+
+
+def test_is_valid_dsn_alias_rejects_dash_prefix() -> None:
+    assert is_valid_dsn_alias('prod') is True
+    assert is_valid_dsn_alias('-prod') is False
 
 
 def test_from_config_returns_instance_with_same_config() -> None:
@@ -56,6 +61,7 @@ def test_list_and_get_use_alias_dsn_section() -> None:
         'alias_dsn': {
             'prod': 'mysql://prod/db',
             'staging': 'mysql://staging/db',
+            '-hidden': 'mysql://hidden/db',
         },
     })
     aliases = DsnAliases(config)
@@ -63,6 +69,7 @@ def test_list_and_get_use_alias_dsn_section() -> None:
     assert aliases.list() == ['prod', 'staging']
     assert aliases.get('prod') == 'mysql://prod/db'
     assert aliases.get('missing') is None
+    assert aliases.get('-hidden') is None
 
 
 def test_list_returns_empty_list_when_section_is_missing() -> None:
@@ -98,6 +105,18 @@ def test_save_updates_existing_section_and_writes_config() -> None:
     assert config.write_calls == 1
 
 
+def test_save_rejects_dash_prefixed_alias_without_writing_config() -> None:
+    config = DummyConfig()
+    aliases = DsnAliases(config)
+
+    result = aliases.save('-prod', 'mysql://prod/db')
+
+    assert result == INVALID_DSN_ALIAS_ERROR
+    assert config.encoding is None
+    assert config == {}
+    assert config.write_calls == 0
+
+
 def test_delete_removes_existing_alias_and_writes_config() -> None:
     config = DummyConfig({'alias_dsn': {'prod': 'mysql://prod/db'}})
     aliases = DsnAliases(config)
@@ -107,6 +126,17 @@ def test_delete_removes_existing_alias_and_writes_config() -> None:
     assert result == 'Deleted: prod'
     assert config['alias_dsn'] == {}
     assert config.write_calls == 1
+
+
+def test_delete_rejects_dash_prefixed_alias_without_writing_config() -> None:
+    config = DummyConfig({'alias_dsn': {'-prod': 'mysql://prod/db'}})
+    aliases = DsnAliases(config)
+
+    result = aliases.delete('-prod')
+
+    assert result == INVALID_DSN_ALIAS_ERROR
+    assert config['alias_dsn'] == {'-prod': 'mysql://prod/db'}
+    assert config.write_calls == 0
 
 
 def test_delete_returns_not_found_without_writing_config() -> None:

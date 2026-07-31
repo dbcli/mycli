@@ -15,6 +15,7 @@ __lazy_modules__ = [
     'mycli.main_modes.execute',
     'mycli.main_modes.list_dsn',
     'mycli.packages.cli_utils',
+    'mycli.packages.special.dsn_aliases',
     'mycli.password_sources',
     'mycli.vault',
 ]
@@ -35,6 +36,7 @@ from mycli.main_modes.completions import main_completions
 from mycli.main_modes.execute import main_execute_from_cli
 from mycli.main_modes.list_dsn import main_list_dsn
 from mycli.packages.cli_utils import is_valid_connection_scheme
+from mycli.packages.special.dsn_aliases import INVALID_DSN_ALIAS_ERROR, is_valid_dsn_alias
 from mycli.password_sources import PasswordCandidates
 from mycli.vault import (
     DEFAULT_VAULT_EXECUTABLE,
@@ -189,12 +191,18 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
                     fg='yellow',
                 )
         else:
+            if not is_valid_dsn_alias(database):
+                click.secho(INVALID_DSN_ALIAS_ERROR, err=True, fg='red')
+                sys.exit(1)
             cli_args.dsn, database = database, ""
 
     if database and "://" in database:
         dsn_uri, database = database, ""
 
     if cli_args.dsn:
+        if not is_valid_dsn_alias(cli_args.dsn):
+            click.secho(INVALID_DSN_ALIAS_ERROR, err=True, fg='red')
+            sys.exit(1)
         try:
             dsn_uri = mycli.config["alias_dsn"][cli_args.dsn]
         except KeyError:

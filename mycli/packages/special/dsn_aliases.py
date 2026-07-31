@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from mycli.client import MyCli
 
 DSN_SUBCOMMANDS = {'help', 'list', 'show', 'save', 'delete'}
+INVALID_DSN_ALIAS_ERROR = 'Error: DSN aliases cannot start with a dash.'
 
 SSL_QUERY_PARAMS = {
     'ssl_ca': 'ca',
@@ -21,6 +22,10 @@ SSL_QUERY_PARAMS = {
     'ssl_verify_server_cert': 'check_hostname',
     'tls_version': 'tls_version',
 }
+
+
+def is_valid_dsn_alias(alias: str) -> bool:
+    return not alias.startswith('-')
 
 
 def _config_bool(value: Any) -> bool:
@@ -140,12 +145,16 @@ Examples:
         return urlunsplit(parsed._replace(query=urlencode(more_params)))
 
     def list(self) -> list[str]:
-        return list(self.config.get(self.section_name, {}))
+        return [alias for alias in self.config.get(self.section_name, {}) if is_valid_dsn_alias(alias)]
 
     def get(self, alias: str) -> str | None:
+        if not is_valid_dsn_alias(alias):
+            return None
         return self.config.get(self.section_name, {}).get(alias, None)
 
     def save(self, alias: str, dsn: str) -> str:
+        if not is_valid_dsn_alias(alias):
+            return INVALID_DSN_ALIAS_ERROR
         self.config.encoding = 'utf-8'
         if self.section_name not in self.config:
             self.config[self.section_name] = {}
@@ -154,6 +163,8 @@ Examples:
         return f'Saved: {alias}'
 
     def delete(self, alias: str) -> str:
+        if not is_valid_dsn_alias(alias):
+            return INVALID_DSN_ALIAS_ERROR
         try:
             del self.config[self.section_name][alias]
         except KeyError:
