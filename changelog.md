@@ -9,6 +9,7 @@ Features
 * Add fish completions which can complete DSN aliases.
 * Support Python 3.15 lazy imports for startup performance.
 * Add a `--completions` argument to emit a shell completion script.
+* Ability to set the `prompt` value as a DSN query parameter.
 
 
 Documentation

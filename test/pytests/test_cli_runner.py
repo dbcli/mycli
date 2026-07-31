@@ -32,6 +32,7 @@ class DummyMyCli:
         self.config_without_package_defaults = config_without_package_defaults or {}
         self.default_keepalive_ticks = 5
         self.ssl_mode: str | None = None
+        self.prompt_format = 'configured> '
         self.logger = DummyLogger()
         self.dsn_alias: str | None = None
         self.ssh_tunnel: Any = None
@@ -285,6 +286,7 @@ def test_run_from_cli_args_expands_whole_dsn_alias_env_vars_when_enabled(
     monkeypatch.setenv('MYCLI_TEST_DSN_DATABASE', 'env_db')
     monkeypatch.setenv('MYCLI_TEST_DSN_CHARSET', 'utf8mb4')
     monkeypatch.setenv('MYCLI_TEST_DSN_KEEPALIVE', '9')
+    monkeypatch.setenv('MYCLI_TEST_DSN_PROMPT', r'\u@\h:\d> ')
     config = default_config()
     config['main'] = {**config['main'], 'expand_dsn_alias_env_vars': 'true'}
     config['alias_dsn'] = {
@@ -292,6 +294,7 @@ def test_run_from_cli_args_expands_whole_dsn_alias_env_vars_when_enabled(
             'mysql://${MYCLI_TEST_DSN_USER}:${MYCLI_TEST_DSN_PASSWORD}'
             '@${MYCLI_TEST_DSN_HOST}:${MYCLI_TEST_DSN_PORT}/${MYCLI_TEST_DSN_DATABASE}'
             '?character_set=${MYCLI_TEST_DSN_CHARSET}&keepalive_ticks=${MYCLI_TEST_DSN_KEEPALIVE}'
+            '&prompt=${MYCLI_TEST_DSN_PROMPT}'
         )
     }
     client = DummyMyCli(config=config)
@@ -305,6 +308,7 @@ def test_run_from_cli_args_expands_whole_dsn_alias_env_vars_when_enabled(
     assert client.connect_calls[-1]['database'] == 'env_db'
     assert client.connect_calls[-1]['character_set'] == 'utf8mb4'
     assert client.connect_calls[-1]['keepalive_ticks'] == 9
+    assert client.prompt_format == r'\u@\h:\d> '
 
 
 def test_run_from_cli_args_expands_dsn_alias_ssh_jump_env_var_when_enabled(
@@ -532,6 +536,55 @@ def test_run_from_cli_args_maps_dsn_ssh_jump_parameter(monkeypatch: pytest.Monke
     run_with_client(monkeypatch, cli_args, client)
 
     assert client.connect_calls[-1]['ssh_jump'] == 'bastion'
+
+
+def test_run_from_cli_args_maps_percent_encoded_dsn_prompt(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli_args = make_cli_args()
+    cli_args.dsn = 'mysql://user@host/db?prompt=%5Cu%40%5Ch%3A%5Cd%3E+'
+    client = DummyMyCli()
+    secho_calls: list[tuple[str, dict[str, Any]]] = []
+    monkeypatch.setattr(cli_runner.click, 'secho', lambda text, **kwargs: secho_calls.append((text, kwargs)))
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    assert client.prompt_format == r'\u@\h:\d> '
+    assert secho_calls == []
+
+
+def test_run_from_cli_args_maps_dsn_alias_prompt(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli_args = make_cli_args()
+    cli_args.dsn = 'prod'
+    client = DummyMyCli(
+        config={
+            **default_config(),
+            'alias_dsn': {'prod': 'mysql://user@host/db?prompt=prod%3E+'},
+        }
+    )
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    assert client.prompt_format == 'prod> '
+
+
+def test_run_from_cli_args_prefers_cli_prompt_over_dsn_parameter(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli_args = make_cli_args()
+    cli_args.dsn = 'mysql://user@host/db?prompt=dsn%3E+'
+    cli_args.prompt = 'cli> '
+    client = DummyMyCli()
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    assert client.prompt_format == 'cli> '
+
+
+def test_run_from_cli_args_ignores_empty_dsn_prompt(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli_args = make_cli_args()
+    cli_args.dsn = 'mysql://user@host/db?prompt='
+    client = DummyMyCli()
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    assert client.prompt_format == 'configured> '
 
 
 def test_run_from_cli_args_does_not_warn_about_known_dsn_query_parameter(

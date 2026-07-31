@@ -52,6 +52,7 @@ ENV_VAR_PATTERN = re.compile(r'^\$\{([A-Za-z_][A-Za-z0-9_]*)\}$')
 KNOWN_DSN_QUERY_PARAMS = {
     'character_set',
     'keepalive_ticks',
+    'prompt',
     'socket',
     'ssh_jump',
     'ssl_ca',
@@ -304,6 +305,8 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
                 cli_args.keepalive_ticks = int(params[0])
         if params := dsn_params.get('character_set'):
             cli_args.character_set = cli_args.character_set or params[0]
+        if params := dsn_params.get('prompt'):
+            mycli.prompt_format = cli_args.prompt or params[0] or mycli.prompt_format
         if params := dsn_params.get('ssh_jump'):
             cli_args.ssh_jump = cli_args.ssh_jump or params[0]
         if params := dsn_params.get('vault_address'):
