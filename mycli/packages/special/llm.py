@@ -1,3 +1,7 @@
+__lazy_modules__ = [
+    'llm',
+]
+
 import contextlib
 import functools
 import io

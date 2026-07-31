@@ -1,5 +1,20 @@
 from __future__ import annotations
 
+__lazy_modules__ = [
+    'dataclasses',
+    'io',
+    'sys',
+    'textwrap',
+    'typing',
+    'click',
+    'clickdc',
+    'mycli',
+    'mycli.cli_runner',
+    'mycli.client',
+    'mycli.constants',
+    'mycli.packages.cli_utils',
+]
+
 from dataclasses import dataclass
 from io import TextIOWrapper
 import os
