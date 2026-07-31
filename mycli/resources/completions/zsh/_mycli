@@ -1,0 +1,66 @@
+#compdef mycli
+
+_mycli_dsn_aliases() {
+    local -a dsn_aliases
+
+    dsn_aliases=("${(@f)$(env MYCLI_LLM_OFF=1 command mycli --list-dsn 2>/dev/null)}")
+    if (( $#dsn_aliases )); then
+        compadd -V unsorted -a dsn_aliases
+    fi
+}
+
+_mycli_completion() {
+    local -a completions
+    local -a completions_with_descriptions
+    local -a response
+    (( ! $+commands[mycli] )) && return 1
+
+    case "${words[CURRENT]}" in
+        --dsn=*)
+            compset -P '--dsn='
+            _mycli_dsn_aliases
+            return
+            ;;
+        -d*)
+            compset -P '-d'
+            _mycli_dsn_aliases
+            return
+            ;;
+    esac
+
+    response=("${(@f)$(env MYCLI_LLM_OFF=1 COMP_WORDS="${words[*]}" COMP_CWORD=$((CURRENT-1)) _MYCLI_COMPLETE=zsh_complete command mycli)}")
+
+    for type key descr in ${response}; do
+        if [[ "$type" == "plain" ]]; then
+            if [[ "$descr" == "_" ]]; then
+                completions+=("$key")
+            else
+                completions_with_descriptions+=("$key":"$descr")
+            fi
+        elif [[ "$type" == "dir" ]]; then
+            _path_files -/
+        elif [[ "$type" == "file" ]]; then
+            _path_files -f
+        fi
+    done
+
+    if [ -n "$completions_with_descriptions" ]; then
+        _describe -V unsorted completions_with_descriptions -U
+    fi
+
+    if [ -n "$completions" ]; then
+        compadd -U -V unsorted -a completions
+    fi
+
+    if (( CURRENT == 2 )) && [[ "${words[CURRENT]}" != -* ]]; then
+        _mycli_dsn_aliases
+    elif [[ "${words[CURRENT - 1]}" == '-d' || "${words[CURRENT - 1]}" == '--dsn' ]]; then
+        _mycli_dsn_aliases
+    fi
+}
+
+if [[ $zsh_eval_context[-1] == loadautofunc ]]; then
+    _mycli_completion "$@"
+else
+    compdef _mycli_completion mycli
+fi

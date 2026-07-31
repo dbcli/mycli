@@ -5,6 +5,7 @@ Features
 ---------
 * Render tab literals as four spaces in the REPL.
 * Let cursor shape respond to vi modes: _eg_ bar for insert mode.
+* Add zsh completions which can complete DSN aliases.
 
 
 Internal
