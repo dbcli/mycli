@@ -1,4 +1,5 @@
 include LICENSE.txt *.md *.rst doc/screenshots/*
+recursive-include mycli/resources/completions *
 recursive-include test *.cnf
 recursive-include test *.feature
 recursive-include test *.py
