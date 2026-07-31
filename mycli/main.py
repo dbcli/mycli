@@ -185,6 +185,10 @@ class CliArgs:
         is_flag=True,
         help='Show list of DSN aliases configured in the [alias_dsn] section of ~/.myclirc.',
     )
+    completions: str | None = clickdc.option(
+        type=click.Choice(['bash', 'zsh', 'fish']),
+        help='Print a completion script for the selected shell.',
+    )
     prompt: str | None = clickdc.option(
         '-R',
         type=str,

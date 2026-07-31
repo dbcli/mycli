@@ -895,6 +895,40 @@ def test_list_dsn(monkeypatch):
         print(f"An error occurred while attempting to delete the file: {e}")
 
 
+@pytest.mark.parametrize(
+    ('shell', 'relative_path'),
+    (
+        ('bash', ('bash', 'mycli')),
+        ('zsh', ('zsh', '_mycli')),
+        ('fish', ('fish', 'mycli.fish')),
+    ),
+)
+def test_completions_prints_packaged_script_without_initializing_client(
+    monkeypatch: pytest.MonkeyPatch,
+    shell: str,
+    relative_path: tuple[str, str],
+) -> None:
+    def fail(*args: Any, **kwargs: Any) -> None:
+        pytest.fail('Completion output must not initialize the client or preprocess connection arguments.')
+
+    monkeypatch.setattr(main, 'MyCli', fail)
+    monkeypatch.setattr(main, 'preprocess_cli_args', fail)
+    completion_path = Path(project_root_dir, 'mycli', 'resources', 'completions', *relative_path)
+
+    result = CliRunner().invoke(click_entrypoint, args=['--completions', shell])
+
+    assert result.exit_code == 0
+    assert result.output == completion_path.read_text(encoding='utf-8')
+
+
+@pytest.mark.parametrize('args', (['--completions'], ['--completions', 'powershell']))
+def test_completions_rejects_missing_or_unknown_shell(args: list[str]) -> None:
+    result = CliRunner().invoke(click_entrypoint, args=args)
+
+    assert result.exit_code == 2
+    assert 'Error:' in result.output
+
+
 def test_dsn(monkeypatch):
     # Setup classes to mock mycli.main.MyCli
     class Formatter:
