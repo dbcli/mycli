@@ -1,0 +1,169 @@
+_mycli_append_dsn_aliases() {
+    local insert_prefix="$1"
+    local incomplete="$2"
+    local alias
+
+    while IFS= read -r alias; do
+        if [[ -n "$alias" && "$alias" == "$incomplete"* ]]; then
+            COMPREPLY+=("${insert_prefix}${alias}")
+        fi
+    done < <(env MYCLI_LLM_OFF=1 mycli --list-dsn 2>/dev/null)
+}
+
+# Spelling out the args here is much faster than invoking mycli with _MYCLI_COMPLETE.
+_mycli_is_positional_db_arg() {
+    local word
+    local index
+    local short_index
+    local short_option
+    local positional_count=0
+    local options_ended=0
+    local expects_value=0
+
+    for (( index = 1; index < COMP_CWORD; index++ )); do
+        word="${COMP_WORDS[index]}"
+        if (( expects_value )); then
+            expects_value=0
+            continue
+        fi
+        if (( options_ended )); then
+            (( positional_count += 1 ))
+            continue
+        fi
+
+        case "$word" in
+            --)
+                options_ended=1
+                ;;
+            --*=*)
+                ;;
+            --host|--hostname|--port|--user|--username|--socket|--pass|--password|--password-file|--vault-address|--vault-mount|--vault-secret|--vault-password-field|--vault-username-field|--ssl-mode|--ssl-ca|--ssl-capath|--ssl-cert|--ssl-key|--ssl-cipher|--tls-version|--database|--dsn|--prompt|--toolbar|--logfile|--checkpoint|--myclirc|--local-infile|--login-path|--execute|--init-command|--charset|--character-set|--batch|--format|--throttle|--use-keyring|--keepalive-ticks|--ssh-jump|--ssh-options)
+                expects_value=1
+                ;;
+            -?*)
+                for (( short_index = 1; short_index < ${#word}; short_index++ )); do
+                    short_option="${word:short_index:1}"
+                    case "$short_option" in
+                        h|P|u|S|p|g|e|R|l|D|d)
+                            if (( short_index == ${#word} - 1 )); then
+                                expects_value=1
+                            fi
+                            break
+                            ;;
+                    esac
+                done
+                ;;
+            *)
+                (( positional_count += 1 ))
+                ;;
+        esac
+    done
+
+    (( ! expects_value && positional_count == 0 )) && [[ "${COMP_WORDS[COMP_CWORD]}" != -* ]]
+}
+
+_mycli_complete_paths() {
+    local insert_prefix="$1"
+    local incomplete="$2"
+    local path
+    local -a paths=()
+
+    mapfile -t paths < <(compgen -f -- "$incomplete")
+    for path in "${paths[@]}"; do
+        COMPREPLY+=("${insert_prefix}${path}")
+    done
+    compopt -o filenames 2>/dev/null || true
+}
+
+_mycli_add_click_completions() {
+    local response
+    local type
+    local value
+
+    response=$(env MYCLI_LLM_OFF=1 COMP_WORDS="${COMP_WORDS[*]}" COMP_CWORD="$COMP_CWORD" _MYCLI_COMPLETE=bash_complete mycli)
+    while IFS=, read -r type value; do
+        case "$type" in
+            dir)
+                COMPREPLY=()
+                compopt -o dirnames
+                ;;
+            file)
+                COMPREPLY=()
+                compopt -o default
+                ;;
+            plain)
+                COMPREPLY+=("$value")
+                ;;
+        esac
+    done <<< "$response"
+}
+
+_mycli_completion() {
+    local current="${COMP_WORDS[COMP_CWORD]}"
+    local previous=''
+    COMPREPLY=()
+
+    command -v mycli >/dev/null 2>&1 || return 1
+    if (( COMP_CWORD > 0 )); then
+        previous="${COMP_WORDS[COMP_CWORD - 1]}"
+    fi
+
+    case "$current" in
+        --dsn=*)
+            _mycli_append_dsn_aliases '--dsn=' "${current#--dsn=}"
+            return
+            ;;
+        -d*)
+            _mycli_append_dsn_aliases '-d' "${current#-d}"
+            return
+            ;;
+        --database=*)
+            _mycli_append_dsn_aliases '--database=' "${current#--database=}"
+            return
+            ;;
+        -D*)
+            _mycli_append_dsn_aliases '-D' "${current#-D}"
+            return
+            ;;
+        --socket=*)
+            _mycli_complete_paths '--socket=' "${current#--socket=}"
+            return
+            ;;
+        -S*)
+            _mycli_complete_paths '-S' "${current#-S}"
+            return
+            ;;
+        --checkpoint=*)
+            _mycli_complete_paths '--checkpoint=' "${current#--checkpoint=}"
+            return
+            ;;
+        --batch=*)
+            _mycli_complete_paths '--batch=' "${current#--batch=}"
+            return
+            ;;
+    esac
+
+    _mycli_add_click_completions
+
+    case "$previous" in
+        -d|--dsn|-D|--database)
+            _mycli_append_dsn_aliases '' "$current"
+            ;;
+        -S|--socket|--checkpoint|--batch)
+            _mycli_complete_paths '' "$current"
+            ;;
+        *)
+            if _mycli_is_positional_db_arg; then
+                _mycli_append_dsn_aliases '' "$current"
+            fi
+            ;;
+    esac
+
+    return 0
+}
+
+_mycli_completion_setup() {
+    complete -F _mycli_completion mycli
+}
+
+_mycli_completion_setup;
