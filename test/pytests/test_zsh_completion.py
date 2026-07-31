@@ -59,8 +59,19 @@ fi
         '||0|-f',
         '|-P --socket=|0|-f',
         '|-P -S|0|-f',
+        'prod,staging||0|',
+        'prod,staging||0|',
+        '-Dprod|-P -D|0|',
+        '--database=prod|-P --database=|0|',
+        'prod||0|',
+        'staging||0|',
+        'prod||0|',
+        '||0|',
+        '||0|',
+        'prod||0|',
+        '||0|',
     ]
-    assert log_path.read_text(encoding='utf-8').splitlines().count('list-dsn') == 6
+    assert log_path.read_text(encoding='utf-8').splitlines().count('list-dsn') == 14
 
 
 ZSH_COMPLETION_HARNESS = r'''
@@ -126,4 +137,15 @@ run_completion mycli --socket ''
 run_completion mycli -S ''
 run_completion mycli --socket=/tmp/mysql
 run_completion mycli -S/tmp/mysql
+run_completion mycli -D ''
+run_completion mycli --database ''
+run_completion mycli -Dpro
+run_completion mycli --database=pro
+run_completion mycli --host db pro
+run_completion mycli --ssl-mode auto sta
+run_completion mycli -- prod
+run_completion mycli --host pro
+run_completion mycli --ssl-mode sta
+run_completion mycli -vP 3306 pro
+run_completion mycli prod --host db other
 '''

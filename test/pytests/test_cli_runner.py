@@ -176,54 +176,59 @@ def test_run_from_cli_args_treats_database_as_dsn_alias(monkeypatch: pytest.Monk
     assert connect_call['database'] == 'db'
 
 
-def test_run_from_cli_args_password_file_prevents_positional_dsn_alias(
+def test_run_from_cli_args_reports_ambiguous_database_alias_with_connection_options(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     cli_args = make_cli_args()
     cli_args.database = 'prod'
-    cli_args.password_file = 'secret.txt'
+    cli_args.user = 'alice'
     client = DummyMyCli(
         config={
             **default_config(),
             'alias_dsn': {'prod': 'mysql://u:p@h/db'},
         }
     )
-    password_file_calls: list[str | None] = []
-
-    def read_password_file(password_file: str | None) -> str:
-        password_file_calls.append(password_file)
-        return 'file-secret'
-
-    monkeypatch.setattr(main, 'get_password_from_file', read_password_file)
+    secho_calls: list[tuple[str, dict[str, Any]]] = []
+    monkeypatch.setattr(cli_runner.click, 'secho', lambda text, **kwargs: secho_calls.append((text, kwargs)))
 
     run_with_client(monkeypatch, cli_args, client)
 
-    connect_call = client.connect_calls[-1]
+    assert secho_calls == [
+        (
+            'Interpreting ambiguous database/DSN-alias argument "prod" as a database name.',
+            {'err': True, 'fg': 'yellow'},
+        )
+    ]
     assert client.dsn_alias is None
-    assert connect_call['database'] == 'prod'
-    assert resolve_connect_password(connect_call) == ('file', 'file-secret')
-    assert password_file_calls == ['secret.txt']
+    assert client.connect_calls[-1]['database'] == 'prod'
 
 
-def test_run_from_cli_args_mysql_pwd_prevents_positional_dsn_alias(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def test_run_from_cli_args_loads_password_from_file(monkeypatch: pytest.MonkeyPatch) -> None:
     cli_args = make_cli_args()
-    cli_args.database = 'prod'
-    client = DummyMyCli(
-        config={
-            **default_config(),
-            'alias_dsn': {'prod': 'mysql://u:p@h/db'},
-        }
-    )
+    cli_args.password_file = 'password.txt'
+    client = DummyMyCli()
+    password_file_calls: list[str] = []
+
+    def get_password_from_file(path: str) -> str:
+        password_file_calls.append(path)
+        return 'file-secret'
+
+    monkeypatch.setattr(main, 'get_password_from_file', get_password_from_file)
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    assert resolve_connect_password(client.connect_calls[-1]) == ('file', 'file-secret')
+    assert password_file_calls == ['password.txt']
+
+
+def test_run_from_cli_args_uses_mysql_pwd_password(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli_args = make_cli_args()
+    client = DummyMyCli()
     monkeypatch.setenv('MYSQL_PWD', 'environment-secret')
 
     run_with_client(monkeypatch, cli_args, client)
 
-    connect_call = client.connect_calls[-1]
-    assert client.dsn_alias is None
-    assert connect_call['database'] == 'prod'
-    assert resolve_connect_password(connect_call) == ('environment', 'environment-secret')
+    assert resolve_connect_password(client.connect_calls[-1]) == ('environment', 'environment-secret')
 
 
 def test_run_from_cli_args_keeps_empty_cli_password_over_dsn(monkeypatch: pytest.MonkeyPatch) -> None:

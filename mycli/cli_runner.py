@@ -168,26 +168,23 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
     dsn_uri = None
     dsn_password: str | None = None
 
-    # Treat the database argument as a DSN alias only if it matches a configured alias
     # todo why is port tested but not socket?
-    truthy_password = (
-        cli_args.password not in (None, EMPTY_PASSWORD_FLAG_SENTINEL)
-        or cli_args.password_file is not None
-        or os.environ.get('MYSQL_PWD') is not None
-    )
-    if (
-        database
-        and "://" not in database
-        and not any([
+    if database and "://" not in database and database in mycli.config.get("alias_dsn", {}):
+        if any([
             cli_args.user,
-            truthy_password,
             cli_args.host,
             cli_args.port,
+            cli_args.socket,
             cli_args.login_path,
-        ])
-        and database in mycli.config.get("alias_dsn", {})
-    ):
-        cli_args.dsn, database = database, ""
+        ]):
+            if cli_verbosity:
+                click.secho(
+                    f'Interpreting ambiguous database/DSN-alias argument "{database}" as a database name.',
+                    err=True,
+                    fg='yellow',
+                )
+        else:
+            cli_args.dsn, database = database, ""
 
     if database and "://" in database:
         dsn_uri, database = database, ""
