@@ -1,6 +1,7 @@
 # mycli
 
 [![Build Status](https://github.com/dbcli/mycli/workflows/mycli/badge.svg)](https://github.com/dbcli/mycli/actions?query=workflow%3Amycli)
+[![License](https://img.shields.io/github/license/dbcli/mycli.svg)](https://github.com/dbcli/mycli/blob/main/LICENSE.txt)
 
 A command line client for MySQL with auto-completion and syntax highlighting.
 
