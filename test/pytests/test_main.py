@@ -2106,14 +2106,17 @@ def test_null_string_config(monkeypatch):
         print(f'An error occurred while attempting to delete the file: {e}')
 
 
-def test_change_prompt_format_requires_argument() -> None:
+def test_change_prompt_format_without_argument_shows_current_format() -> None:
     cli = make_bare_mycli()
-    assert main.MyCli.change_prompt_format(cli, '')[0].status == 'Missing required argument, format.'
+    cli.prompt_format = '\\u> '
+
+    assert main.MyCli.change_prompt_format(cli, '')[0].status == 'Prompt format: "\\u> "'
+    assert cli.prompt_format == '\\u> '
 
 
 def test_change_prompt_format_updates_prompt() -> None:
     cli = make_bare_mycli()
-    assert main.MyCli.change_prompt_format(cli, '\\u@\\h> ')[0].status == 'Changed prompt format to \\u@\\h> '
+    assert main.MyCli.change_prompt_format(cli, '\\u@\\h> ')[0].status == 'Changed prompt format to: "\\u@\\h> "'
 
 
 def test_output_timing_logs_and_prints_with_warning_style(monkeypatch: pytest.MonkeyPatch) -> None:

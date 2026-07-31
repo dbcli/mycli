@@ -11,6 +11,7 @@ Features
 * Add a `--completions` argument to emit a shell completion script.
 * Ability to set the `prompt` value as a DSN query parameter.
 * Add `--more` option to some `/dsn` subcommands, showing more DSN query parameters.
+* Let `/prompt` with no arguments display the current prompt format string.
 
 
 Bugfixes
