@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Features
+---------
+* Improved filename completions for zsh.
+
+
 2.8.0 (2026/07/31)
 ==============
 

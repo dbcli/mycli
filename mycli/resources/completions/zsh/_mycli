@@ -16,6 +16,7 @@ _mycli_completion() {
     (( ! $+commands[mycli] )) && return 1
 
     case "${words[CURRENT]}" in
+        # special cases for DSN aliases
         --dsn=*)
             compset -P '--dsn='
             _mycli_dsn_aliases
@@ -24,6 +25,28 @@ _mycli_completion() {
         -d*)
             compset -P '-d'
             _mycli_dsn_aliases
+            return
+            ;;
+        # special cases for files denoted as str types in click
+        # alternatively: make these file types in click
+        --socket=*)
+            compset -P '--socket='
+            _path_files -f
+            return
+            ;;
+        -S*)
+            compset -P '-S'
+            _path_files -f
+            return
+            ;;
+        --checkpoint=*)
+            compset -P '--checkpoint='
+            _path_files -f
+            return
+            ;;
+        --batch=*)
+            compset -P '--batch='
+            _path_files -f
             return
             ;;
     esac
@@ -52,10 +75,18 @@ _mycli_completion() {
         compadd -U -V unsorted -a completions
     fi
 
+    # special cases for DSN aliases
     if (( CURRENT == 2 )) && [[ "${words[CURRENT]}" != -* ]]; then
         _mycli_dsn_aliases
     elif [[ "${words[CURRENT - 1]}" == '-d' || "${words[CURRENT - 1]}" == '--dsn' ]]; then
         _mycli_dsn_aliases
+    # special cases for files denoted as str types in click
+    elif [[ "${words[CURRENT - 1]}" == '-S' || "${words[CURRENT - 1]}" == '--socket' ]]; then
+        _path_files -f
+    elif [[ "${words[CURRENT - 1]}" == '--checkpoint' ]]; then
+        _path_files -f
+    elif [[ "${words[CURRENT - 1]}" == '--batch' ]]; then
+        _path_files -f
     fi
 }
 

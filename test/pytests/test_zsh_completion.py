@@ -47,14 +47,18 @@ fi
     )
 
     assert result.stdout.splitlines() == [
-        'prod,staging||0',
-        'prod||0',
-        'prod,staging||0',
-        'prod,staging||0',
-        '-dprod|-P -d|0',
-        '--dsn=prod|-P --dsn=|0',
-        '||0',
-        '||0',
+        'prod,staging||0|',
+        'prod||0|',
+        'prod,staging||0|',
+        'prod,staging||0|',
+        '-dprod|-P -d|0|',
+        '--dsn=prod|-P --dsn=|0|',
+        '||0|',
+        '||0|',
+        '||0|-f',
+        '||0|-f',
+        '|-P --socket=|0|-f',
+        '|-P -S|0|-f',
     ]
     assert log_path.read_text(encoding='utf-8').splitlines().count('list-dsn') == 6
 
@@ -62,9 +66,11 @@ fi
 ZSH_COMPLETION_HARNESS = r'''
 compdef() { :; }
 _describe() { :; }
-_path_files() { :; }
+_path_files() {
+    path_file_calls+=("$*")
+}
 
-typeset -a captured compset_calls
+typeset -a captured compset_calls path_file_calls
 typeset PREFIX IPREFIX used_unambiguous
 compadd() {
     local array_name=''
@@ -98,13 +104,14 @@ source "$COMPLETION_SCRIPT"
 run_completion() {
     captured=()
     compset_calls=()
+    path_file_calls=()
     words=("$@")
     CURRENT=$#
     PREFIX="${words[CURRENT]}"
     IPREFIX=''
     used_unambiguous=0
     _mycli_completion
-    print -r -- "${(j:,:)captured}|${(j:,:)compset_calls}|$used_unambiguous"
+    print -r -- "${(j:,:)captured}|${(j:,:)compset_calls}|$used_unambiguous|${(j:,:)path_file_calls}"
 }
 
 run_completion mycli ''
@@ -115,4 +122,8 @@ run_completion mycli -dpro
 run_completion mycli --dsn=pro
 run_completion mycli --host ''
 run_completion mycli --host
+run_completion mycli --socket ''
+run_completion mycli -S ''
+run_completion mycli --socket=/tmp/mysql
+run_completion mycli -S/tmp/mysql
 '''
