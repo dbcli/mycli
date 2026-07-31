@@ -9,8 +9,10 @@ Homepage: [https://mycli.net](https://mycli.net)
 
 Documentation: [https://mycli.net/docs](https://mycli.net/docs)
 
-![Completion](https://raw.githubusercontent.com/dbcli/mycli/main/doc/screenshots/tables.png)
-![CompletionGif](https://raw.githubusercontent.com/dbcli/mycli/main/doc/screenshots/main.gif)
+<div align="center">
+  <img alt="Completion" src="https://raw.githubusercontent.com/dbcli/mycli/main/doc/screenshots/tables.png">
+  <img alt="CompletionGif" src="https://raw.githubusercontent.com/dbcli/mycli/main/doc/screenshots/main.gif">
+</div>
 
 Mycli is compatible with MySQL, MariaDB, Percona, TiDB, and Apache Doris.
 

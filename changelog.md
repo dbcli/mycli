@@ -14,6 +14,7 @@ Features
 Documentation
 ---------
 * Add license badge to `README.md`.
+* Center images in `README.md`.
 
 
 2.8.0 (2026/07/31)
