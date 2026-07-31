@@ -1,5 +1,23 @@
 from __future__ import annotations
 
+__lazy_modules__ = [
+    'io',
+    're',
+    'sys',
+    'typing',
+    'urllib.parse',
+    'click',
+    'mycli.config',
+    'mycli.constants',
+    'mycli.main_modes.batch',
+    'mycli.main_modes.checkup',
+    'mycli.main_modes.execute',
+    'mycli.main_modes.list_dsn',
+    'mycli.packages.cli_utils',
+    'mycli.password_sources',
+    'mycli.vault',
+]
+
 import os
 import re
 import sys
