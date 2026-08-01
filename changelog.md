@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Documentation
+---------
+* Document shell completions in `README.md`.
+
+
 2.9.0 (2026/08/01)
 ==============
 

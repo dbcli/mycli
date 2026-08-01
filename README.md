@@ -100,11 +100,31 @@ get mycli running in a development setup.
 
 https://github.com/dbcli/mycli/blob/main/CONTRIBUTING.md
 
+## Additional Install Instructions
 
-## Additional Install Instructions:
+### Shell Completions
+
+If installed via Homebrew, shell completions [may already be configured](https://docs.brew.sh/Shell-Completion).
+
+Otherwise, to configure shell completions for the current session, execute a
+command like this:
+
+```bash
+eval "$(mycli --completions SHELL)"
+```
+
+replacing `SHELL` with `bash`, `zsh`, or `fish`, depending on your choice of
+shell.
+
+To permanently install shell completions, the above command may be added to your
+`~/.bashrc`, `~/.zshrc`, or `~/.config/fish/config.fish`.  To speed up login
+time, the output of `mycli --completions SHELL` may be saved to a file and
+loaded with `source`.
+
+## Alternative Install Methods
 
 These are some alternative ways to install mycli that are not managed by our
-team but provided by OS package maintainers.  OS packages could be somewhat
+team but provided by OS package maintainers.  OS packages could be considerably
 out of date.
 
 If present, the `fzf` package can be used for fuzzy history search, and as an
