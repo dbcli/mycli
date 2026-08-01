@@ -9,7 +9,7 @@
 | /dt             | <null>   | /dt[+] [table]                    | List or describe tables.                                    |
 | /edit           | /e       | /edit <filename> | <query>\edit   | Edit query with editor (uses $VISUAL or $EDITOR).           |
 | /exit           | /q       | /exit                             | Exit.                                                       |
-| /f              | <null>   | /f [name [args..]]                | List or execute favorite queries.                           |
+| /f              | <null>   | /f [name [args..] [--key=value]]  | List or execute favorite queries.                           |
 | /fd             | <null>   | /fd <name>                        | Delete a favorite query.                                    |
 | /fs             | <null>   | /fs <name> <query>                | Save a favorite query.                                      |
 | \g              | <null>   | <query>\g                         | Display query results (mnemonic: go).                       |

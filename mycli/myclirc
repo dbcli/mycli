@@ -495,8 +495,32 @@ matching-bracket.other = '#000000 bg:#aacccc'
 # Favorite queries.
 # You can add your favorite queries here. They will be available in the
 # REPL when you type `/f` or `/f <query_name>`.
+# Define multiine favorite queries using '''triplequotes'''.
 [favorite_queries]
 # example = "SELECT * FROM example_table WHERE id = 1"
+#
+# Favorite queries can use the Jinja2 templating language. Named argument
+# values are available as keys in a dictionary named "kv".
+# Run this example templated query with: /f find_user --name=henry
+# Any keys refereed to by name will be available as completions.
+# find_user = "SELECT * FROM users WHERE name = '{{ kv.name }}'"
+#
+# Jinja2 parameters are optional.
+# Run this example templated query with: /f recent_user --name=henry
+# or alternatively, with different behavior: /f recent_user
+# recent_user = "SELECT * FROM users WHERE create_date >= NOW() - INTERVAL 1 DAY {% if kv.name %} AND name = '{{ kv.name }}' {% endif %}"
+#
+# Since "kv" is a Python dictionary, collisions with existing dictionary
+# methods will require extra syntax, as will keys with internal dashes:
+# example = "SELECT * FROM example_table WHERE id = {{ kv['get'] }}"
+# example = "SELECT * FROM example_table WHERE id = {{ kv['my-id'] }}"
+#
+# Mandatory positional arguments are also supported:
+# Run this example templated query with: /f find_user henry
+# find_user = "SELECT * FROM users WHERE name = '$1'"
+#
+# Plase ambiguous positional arguments after "--":
+# /f find_user -- --unusual-name--
 
 # Initial commands to execute when connecting to any database.
 [init-commands]

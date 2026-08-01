@@ -87,3 +87,28 @@ def step_use_named_query_with_too_many_parameters(context):
 def step_see_named_query_with_parameters_fail_with_extra_parameters(context):
     """Wait to see select output."""
     wrappers.expect_exact(context, "query does not have substitution parameter $4:", timeout=2)
+
+
+@when("we save a templated named query")
+def step_save_templated_named_query(context):
+    context.cli.sendline("\\fs template SELECT '{{ kv.user }}', '$1'")
+
+
+@when("we use a templated named query with attached values")
+def step_use_templated_named_query_with_attached_values(context):
+    context.cli.sendline("\\f template positional --user=henry")
+
+
+@then("we see the attached template values rendered")
+def step_see_attached_template_values_rendered(context):
+    wrappers.expect_exact(context, "SELECT 'henry', 'positional'", timeout=2)
+
+
+@when("we use a templated named query with split values")
+def step_use_templated_named_query_with_split_values(context):
+    context.cli.sendline('\\f template second --user "Henry Ford"')
+
+
+@then("we see the split template values rendered")
+def step_see_split_template_values_rendered(context):
+    wrappers.expect_exact(context, "SELECT 'Henry Ford', 'second'", timeout=2)

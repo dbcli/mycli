@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import functools
 import re
+import shlex
 from typing import Any, Callable, Literal
 
 import sqlparse
@@ -791,7 +792,10 @@ def suggest_special(text: str) -> list[dict[str, Any]]:
     if cmd.lower() in ('tableformat', '/tableformat', 'redirectformat', '/redirectformat'):
         return [{"type": "table_format"}]
 
-    if cmd in ["\\f", "/f", "\\fs", "/fs", "\\fd", "/fd"]:
+    if cmd in ["\\f", "/f"]:
+        return suggest_favorite_query_with_template(text, _arg)
+
+    if cmd in ["\\fs", "/fs", "\\fd", "/fd"]:
         return [{"type": "favoritequery"}]
 
     if cmd in ["\\dt", "/dt", "\\dt+", "/dt+"]:
@@ -868,6 +872,52 @@ def suggest_special(text: str) -> list[dict[str, Any]]:
         return [{"type": "keyword"}, {"type": "special"}]
 
     return []
+
+
+def suggest_favorite_query_with_template(text: str, arg: str) -> list[dict[str, Any]]:
+    favorite_arguments = arg.split(maxsplit=1)
+    if not favorite_arguments or (len(favorite_arguments) == 1 and not text[-1].isspace()):
+        return [{'type': 'favoritequery'}]
+
+    name = favorite_arguments[0]
+    argument_text = favorite_arguments[1] if len(favorite_arguments) == 2 else ''
+    try:
+        arguments = shlex.split(argument_text)
+    except ValueError:
+        return []
+
+    used_keys: set[str] = set()
+    trailing_space = text[-1].isspace()
+    index = 0
+    while index < len(arguments):
+        argument = arguments[index]
+        is_current = index == len(arguments) - 1 and not trailing_space
+
+        if argument == '--':
+            return []
+        if argument.startswith('--'):
+            option = argument[2:]
+            if '=' in option:
+                key, _value = option.split('=', 1)
+                used_keys.add(key)
+                if is_current:
+                    return []
+            elif is_current:
+                break
+            elif index + 1 >= len(arguments) or arguments[index + 1].startswith('--'):
+                return []
+            else:
+                used_keys.add(option)
+                index += 1
+                if index == len(arguments) - 1 and not trailing_space:
+                    return []
+        elif is_current:
+            if argument.startswith('-'):
+                break
+            return []
+        index += 1
+
+    return [{'type': 'favoritequery_template_key', 'name': name, 'used_keys': used_keys}]
 
 
 def suggest_based_on_last_token(

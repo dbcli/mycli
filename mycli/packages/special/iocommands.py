@@ -8,9 +8,11 @@ import shlex
 import subprocess
 from time import sleep
 from typing import Any, Generator
+from uuid import uuid4
 
 import click
 from configobj import ConfigObj
+from jinja2 import TemplateError
 from prompt_toolkit.formatted_text import ANSI, FormattedText, to_plain_text
 from pymysql.cursors import Cursor
 import pyperclip
@@ -20,7 +22,12 @@ from mycli.compat import WIN
 from mycli.packages.interactive_utils import confirm_destructive_query
 from mycli.packages.special.delimitercommand import DelimiterCommand
 from mycli.packages.special.dsn_aliases import INVALID_DSN_ALIAS_ERROR, DsnAliases, is_valid_dsn_alias
-from mycli.packages.special.favoritequeries import FavoriteQueries
+from mycli.packages.special.favoritequeries import (
+    FavoriteQueries,
+    analyze_favorite_query_template,
+    favorite_query_template_environment,
+    favorite_query_variable_pattern,
+)
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
 from mycli.packages.special.main import ArgType, SpecialCommandAlias, special_command
 from mycli.packages.special.main import execute as special_execute
@@ -50,6 +57,10 @@ favoritequeries = FavoriteQueries(ConfigObj())
 dsn_aliases = DsnAliases(ConfigObj())
 DESTRUCTIVE_KEYWORDS: list[str] = []
 SHOW_WARNINGS_ENABLED: bool = False
+
+
+class FavoriteQueryArgumentError(ValueError):
+    pass
 
 
 def set_favorite_queries(config):
@@ -339,7 +350,7 @@ def set_redirect(command_part: str | None, file_operator_part: str | None, file_
 
 @special_command(
     "\\f",
-    "/f [name [args..]]",
+    "/f [name [args..] [--key=value]]",
     "List or execute favorite queries.",
     arg_type=ArgType.PARSED_QUERY,
     case_sensitive=True,
@@ -351,17 +362,33 @@ def execute_favorite_query(cur: Cursor, arg: str, **_) -> Generator[SQLResult, N
 
     # Parse out favorite name and optional substitution parameters
     name, _separator, arg_str = arg.partition(" ")
-    args = shlex.split(arg_str)
+    try:
+        args, template_values = parse_favorite_query_args(arg_str)
+    except ValueError as exc:
+        yield SQLResult(status=f'Invalid favorite query arguments: {exc}')
+        return
 
     query = FavoriteQueries.instance.get(name)
     if query is None:
         message = f"No favorite query: {name}"
         yield SQLResult(status=message)
     else:
-        query, arg_error = subst_favorite_query_args(query, args)
+        query, positional_values, arg_error = prepare_favorite_query_args(query, args)
         if query is None:
             yield SQLResult(status=arg_error)
         else:
+            try:
+                query = render_favorite_query(query, template_values)
+            except TemplateError as exc:
+                yield SQLResult(status=f'Favorite query template error: {exc}')
+                return
+            except FavoriteQueryArgumentError as exc:
+                yield SQLResult(status=f'Invalid favorite query arguments: {exc}')
+                return
+            except Exception as exc:
+                yield SQLResult(status=f'Favorite query template error: {exc}')
+                return
+            query = restore_favorite_query_args(query, positional_values)
             for sql in sqlparse.split(query):
                 sql = sql.rstrip(";")
                 preamble = f"> {sql}" if is_show_favorite_query() else None
@@ -384,6 +411,49 @@ def execute_favorite_query(cur: Cursor, arg: str, **_) -> Generator[SQLResult, N
                         yield SQLResult(preamble=preamble)
 
 
+def parse_favorite_query_args(arg_str: str) -> tuple[list[str], dict[str, str]]:
+    """Split favorite query arguments into positional and template values."""
+    tokens = shlex.split(arg_str)
+    positional: list[str] = []
+    template_values: dict[str, str] = {}
+    parse_options = True
+    index = 0
+
+    while index < len(tokens):
+        token = tokens[index]
+        if parse_options and token == '--':
+            parse_options = False
+        elif parse_options and token.startswith('--'):
+            option = token[2:]
+            if '=' in option:
+                name, value = option.split('=', 1)
+            else:
+                name = option
+                index += 1
+                if index >= len(tokens) or tokens[index].startswith('--'):
+                    raise ValueError(f'option --{name} requires a value')
+                value = tokens[index]
+
+            if not favorite_query_variable_pattern.fullmatch(name):
+                raise ValueError(f'invalid template variable name: {name or token}')
+            if name in template_values:
+                raise ValueError(f'duplicate template variable: {name}')
+            template_values[name] = value
+        else:
+            positional.append(token)
+        index += 1
+
+    return positional, template_values
+
+
+def render_favorite_query(query: str, template_values: dict[str, str]) -> str:
+    referenced_keys, dynamic_access = analyze_favorite_query_template(query)
+    unused_variables = sorted(set(template_values) - referenced_keys)
+    if unused_variables and not dynamic_access:
+        raise FavoriteQueryArgumentError(f'unused template variable: {", ".join(unused_variables)}')
+    return favorite_query_template_environment.from_string(query).render(kv=template_values)
+
+
 def list_favorite_queries() -> list[SQLResult]:
     """List of all favorite queries."""
 
@@ -397,20 +467,44 @@ def list_favorite_queries() -> list[SQLResult]:
     return [SQLResult(header=header, rows=rows, status=status)]
 
 
-def subst_favorite_query_args(query: str, args: list[str]) -> list[str | None]:
-    """replace positional parameters ($1...$N) in query."""
+def restore_favorite_query_args(query: str, positional_values: dict[str, str]) -> str:
+    for marker, value in positional_values.items():
+        query = query.replace(marker, value)
+    return query
+
+
+def prepare_favorite_query_args(query: str, args: list[str]) -> tuple[str | None, dict[str, str], str | None]:
+    """Replace positional parameters with markers that survive template rendering."""
+    marker_prefix = f'__mycli_favorite_arg_{uuid4().hex}_'
+
+    positional_values: dict[str, str] = {}
     for idx, val in enumerate(args):
         subst_var = "$" + str(idx + 1)
         if subst_var not in query:
-            return [None, "query does not have substitution parameter " + subst_var + ":\n  " + query]
+            display_query = restore_favorite_query_args(query, positional_values)
+            error = "query does not have substitution parameter " + subst_var + ":\n  " + display_query
+            return (None, {}, error)
 
-        query = query.replace(subst_var, val)
+        marker = f'{marker_prefix}{idx + 1}__'
+        query = query.replace(subst_var, marker)
+        positional_values[marker] = val
 
     match = re.search(r"\$\d+", query)
     if match:
-        return [None, "missing substitution for " + match.group(0) + " in query:\n  " + query]
+        display_query = restore_favorite_query_args(query, positional_values)
+        error = "missing substitution for " + match.group(0) + " in query:\n  " + display_query
+        return (None, {}, error)
 
-    return [query, None]
+    return (query, positional_values, None)
+
+
+def subst_favorite_query_args(query: str, args: list[str]) -> list[str | None]:
+    """Replace positional parameters ($1...$N) in query."""
+    prepared_query, positional_values, error = prepare_favorite_query_args(query, args)
+    if prepared_query is None:
+        return [None, error]
+
+    return [restore_favorite_query_args(prepared_query, positional_values), None]
 
 
 @special_command(

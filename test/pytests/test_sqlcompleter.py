@@ -511,6 +511,50 @@ def test_get_completions_branch_specific_suggestions(monkeypatch, suggestion, se
     assert expected in result
 
 
+def test_get_completions_favorite_query_template_keys(monkeypatch) -> None:
+    queries = {
+        'report': "select {{ kv.user }}, {{ kv.start_date }}, {{ kv['start-date'] }}, {{ range(2) }}, {{ kv.range }}",
+    }
+    monkeypatch.setattr(
+        mycli.sqlcompleter.FavoriteQueries,
+        'instance',
+        SimpleNamespace(list=lambda: list(queries), get=queries.get),
+        raising=False,
+    )
+    completer = make_completer()
+
+    blank_text = '/f report '
+    blank = list(completer.get_completions(Document(text=blank_text, cursor_position=len(blank_text)), None))
+    partial_text = '/f report --u'
+    partial = list(completer.get_completions(Document(text=partial_text, cursor_position=len(partial_text)), None))
+    dashed_text = '/f report --start-'
+    dashed = list(completer.get_completions(Document(text=dashed_text, cursor_position=len(dashed_text)), None))
+    used_text = '/f report --user=henry '
+    used = list(completer.get_completions(Document(text=used_text, cursor_position=len(used_text)), None))
+    used_dashed_text = '/f report --start-date=2026-08-03 '
+    used_dashed = list(completer.get_completions(Document(text=used_dashed_text, cursor_position=len(used_dashed_text)), None))
+
+    assert [completion.text for completion in blank] == ['--range=', '--start-date=', '--start_date=', '--user=']
+    assert [(completion.text, completion.start_position) for completion in partial] == [('--user=', -3)]
+    assert [(completion.text, completion.start_position) for completion in dashed] == [('--start-date=', -8)]
+    assert [completion.text for completion in used] == ['--range=', '--start-date=', '--start_date=']
+    assert [completion.text for completion in used_dashed] == ['--range=', '--start_date=', '--user=']
+
+
+@pytest.mark.parametrize('query', [None, '{{ invalid'])
+def test_get_completions_favorite_query_template_keys_fail_quietly(monkeypatch, query) -> None:
+    monkeypatch.setattr(
+        mycli.sqlcompleter.FavoriteQueries,
+        'instance',
+        SimpleNamespace(list=lambda: ['report'], get=lambda name: query),
+        raising=False,
+    )
+    completer = make_completer()
+    text = '/f report '
+
+    assert list(completer.get_completions(Document(text=text, cursor_position=len(text)), None)) == []
+
+
 def test_get_completions_llm_branch_with_and_without_current_word(monkeypatch) -> None:
     tokens_seen: list[list[str]] = []
 
