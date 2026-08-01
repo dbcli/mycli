@@ -169,24 +169,75 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
     if cli_args.list_dsn:
         sys.exit(main_list_dsn(mycli))
 
-    # Choose which ever one has a valid value.
-    database = cli_args.dbname or cli_args.database
-
     dsn_uri = None
     dsn_password: str | None = None
+    database: str | None = ''
+    explicit_dsn = bool(cli_args.dsn)
 
-    # todo why is port tested but not socket?
-    if database and "://" not in database and database in mycli.config.get("alias_dsn", {}):
+    # This could be better written, but it is all made harder by the fact that a DSN is recognized after --database
+    if (
+        cli_args.positional_database
+        and "://" not in cli_args.positional_database
+        and cli_args.positional_database in mycli.config.get("alias_dsn", {})
+    ):
         if any([
             cli_args.user,
             cli_args.host,
             cli_args.port,
             cli_args.socket,
             cli_args.login_path,
+            cli_args.dsn,
         ]):
             if cli_verbosity:
                 click.secho(
-                    f'Interpreting ambiguous database/DSN-alias argument "{database}" as a database name.',
+                    f'Interpreting ambiguous positional database/DSN-alias argument "{cli_args.positional_database}" as a database name.',
+                    err=True,
+                    fg='yellow',
+                )
+            database = cli_args.database or cli_args.positional_database
+        else:
+            if not is_valid_dsn_alias(cli_args.positional_database):
+                click.secho(INVALID_DSN_ALIAS_ERROR, err=True, fg='red')
+                sys.exit(1)
+            cli_args.dsn, database = cli_args.positional_database, cli_args.database or ''
+    elif cli_args.positional_database and '://' in cli_args.positional_database:
+        if cli_args.dsn:
+            click.secho(
+                f'Ignoring duplicate positional DSN argument "{cli_args.positional_database}".',
+                err=True,
+                fg='yellow',
+            )
+            database = cli_args.database or ''
+        else:
+            cli_args.dsn, database = cli_args.positional_database, cli_args.database or ''
+    elif cli_args.positional_database:
+        if cli_args.database:
+            click.secho(
+                f'Ignoring ambiguous positional database argument "{cli_args.positional_database}" since --database was given.',
+                err=True,
+                fg='yellow',
+            )
+            database = cli_args.database
+        else:
+            database = cli_args.positional_database
+    elif cli_args.database:
+        database = cli_args.database
+
+    database_from_option = bool(cli_args.database and database == cli_args.database)
+
+    if database and '://' not in database and database in mycli.config.get('alias_dsn', {}):
+        if any([
+            cli_args.user,
+            cli_args.host,
+            cli_args.port,
+            cli_args.socket,
+            cli_args.login_path,
+            cli_args.dsn,
+        ]):
+            if database_from_option and (cli_args.verbose or 0) >= 2:
+                click.secho(
+                    f'Interpreting ambiguous --database argument "{cli_args.database}" as a database name, not a DSN alias, '
+                    ' since other connection coordinates were given.',
                     err=True,
                     fg='yellow',
                 )
@@ -194,10 +245,18 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
             if not is_valid_dsn_alias(database):
                 click.secho(INVALID_DSN_ALIAS_ERROR, err=True, fg='red')
                 sys.exit(1)
-            cli_args.dsn, database = database, ""
-
-    if database and "://" in database:
-        dsn_uri, database = database, ""
+            cli_args.dsn, database = database, ''
+    elif database and '://' in database:
+        if explicit_dsn:
+            click.secho(
+                f'Ignoring duplicate DSN argument in --database "{database}".',
+                err=True,
+                fg='yellow',
+            )
+            database = ''
+        else:
+            cli_args.dsn = ''
+            dsn_uri, database = database, ''
 
     if cli_args.dsn:
         if not is_valid_dsn_alias(cli_args.dsn):
@@ -209,6 +268,9 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
             is_valid_scheme, scheme = is_valid_connection_scheme(cli_args.dsn)
             if is_valid_scheme:
                 dsn_uri = cli_args.dsn
+            elif '://' in cli_args.dsn:
+                click.secho(f'Error: Unknown connection scheme provided for DSN URI ({scheme}://)', err=True, fg='red')
+                sys.exit(1)
             else:
                 click.secho(
                     "Could not find the specified DSN in the config file. Please check the \"[alias_dsn]\" section in your myclirc.",
