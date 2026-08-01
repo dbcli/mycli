@@ -4,7 +4,8 @@ Upcoming (TBD)
 Features
 ---------
 * Improve filename completions for zsh.
-* Improve acceptance of a DSN alias as a positional argument.
+* Improve acceptance of a literal DSN or alias as a positional argument.
+* Improve acceptance of a literal DSN or alias as a `--database` argument.
 * Add bash completions which can complete DSN aliases.
 * Add fish completions which can complete DSN aliases.
 * Support Python 3.15 lazy imports for startup performance.

@@ -2387,7 +2387,7 @@ def test_preprocess_cli_args_moves_dsn_from_password_to_database() -> None:
     verbosity = preprocess_cli_args(cli_args, valid_connection_scheme)
 
     assert verbosity == 0
-    assert cli_args.database == 'mysql://user:pass@host/db'
+    assert cli_args.positional_database == 'mysql://user:pass@host/db'
     assert cli_args.password == EMPTY_PASSWORD_FLAG_SENTINEL  # type: ignore[comparison-overlap]
 
 
