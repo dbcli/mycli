@@ -4,6 +4,7 @@ Upcoming (TBD)
 Documentation
 ---------
 * Document shell completions in `README.md`.
+* Fix table alignment in favorite-queries example.
 
 
 Internal
