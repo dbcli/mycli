@@ -115,7 +115,7 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
         self.beep_after_seconds = float(c["main"]["beep_after_seconds"] or 0)
         self.default_keepalive_ticks = c['connection'].as_int('default_keepalive_ticks')
 
-        FavoriteQueries.instance = FavoriteQueries.from_config(self.config)
+        FavoriteQueries.instance = FavoriteQueries.from_config(self.config, myclirc)
         DsnAliases.instance = DsnAliases.from_config(self.config, self)
 
         self.dsn_alias: str | None = None

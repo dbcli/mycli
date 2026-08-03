@@ -9,6 +9,7 @@ import pytest
 
 import mycli.client as client_module
 from mycli.client import MyCli
+from mycli.packages.special.favoritequeries import FavoriteQueries
 
 
 def write_myclirc(tmp_path: Path, content: str) -> str:
@@ -172,6 +173,16 @@ def test_init_uses_existing_xdg_config_when_myclirc_is_not_given(monkeypatch: py
     cli = MyCli(myclirc=None)
 
     assert cli.config.filename == str(xdg_config)
+
+
+def test_init_configures_favorite_queries_with_user_config_path(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    patch_constructor_side_effects(monkeypatch)
+    myclirc = write_myclirc(tmp_path, '')
+
+    cli = MyCli(myclirc=myclirc)
+
+    assert FavoriteQueries.instance.config is cli.config
+    assert FavoriteQueries.instance.config_file == myclirc
 
 
 def test_init_uses_default_myclirc_when_xdg_config_is_missing(monkeypatch: pytest.MonkeyPatch) -> None:

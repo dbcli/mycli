@@ -6,6 +6,11 @@ Features
 * Let favorite queries use Jinja2 templates, allowing optional arguments.
 
 
+Bugfixes
+---------
+* Don't allow saving favorite queries to rewrite comments in `~/.myclirc`.
+
+
 Documentation
 ---------
 * Document shell completions in `README.md`.
