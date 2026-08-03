@@ -6,6 +6,11 @@ Documentation
 * Document shell completions in `README.md`.
 
 
+Internal
+---------
+* More tightly pin dependency `prompt-toolkit` after a CI problem.
+
+
 2.9.0 (2026/08/01)
 ==============
 
