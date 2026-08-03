@@ -6,6 +6,11 @@ Documentation
 * Document shell completions in `README.md`.
 
 
+Internal
+---------
+* Typing fixes for `prompt-toolkit`.
+
+
 2.9.0 (2026/08/01)
 ==============
 
