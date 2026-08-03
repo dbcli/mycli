@@ -582,7 +582,7 @@ def _build_prompt_session(
             lexer=PygmentsLexer(MyCliLexer),
             reserve_space_for_menu=mycli.get_reserved_space(),
             prompt_continuation=lambda width, two, three: _get_continuation(mycli, width, two, three),
-            bottom_toolbar=get_toolbar_tokens,
+            bottom_toolbar=get_toolbar_tokens,  # type: ignore[arg-type]
             complete_style=complete_style,
             input_processors=[
                 ConditionalProcessor(
