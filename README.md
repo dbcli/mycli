@@ -36,10 +36,10 @@ You might need `sudo` on Linux.
 pip install --upgrade 'mycli[all]'
 ```
 
-or, only on macOS (`fzf` and `pygments` are optional but recommended):
+or, only on macOS (`pygments` is optional but recommended):
 
 ```bash
-brew update && brew install mycli fzf pygments
+brew update && brew install mycli pygments
 ```
 
 or, only on Debian or Ubuntu (`fzf` and `pygments` are optional but recommended):
