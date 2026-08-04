@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import os
 from typing import TYPE_CHECKING, Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
-from mycli.config import str_to_bool
+from mycli.config import read_config_file, str_to_bool
 from mycli.constants import DEFAULT_CHARSET, DEFAULT_PROMPT, KNOWN_DSN_QUERY_PARAMS
 
 if TYPE_CHECKING:
@@ -11,6 +12,7 @@ if TYPE_CHECKING:
 
 DSN_SUBCOMMANDS = {'help', 'list', 'show', 'save', 'delete'}
 INVALID_DSN_ALIAS_ERROR = 'Error: DSN aliases cannot start with a dash.'
+MISSING = object()
 
 SSL_QUERY_PARAMS = {
     'ssl_ca': 'ca',
@@ -86,13 +88,28 @@ Examples:
     # Class-level variable, for convenience to use as a singleton.
     instance: DsnAliases
 
-    def __init__(self, config: Any, mycli: MyCli | None = None) -> None:
+    def __init__(self, config: Any, mycli: MyCli | None = None, config_file: str | None = None) -> None:
         self.config = config
         self.mycli = mycli
+        self.config_file = config_file
 
     @classmethod
-    def from_config(cls, config: Any, mycli: MyCli | None = None) -> DsnAliases:
-        return DsnAliases(config, mycli)
+    def from_config(cls, config: Any, mycli: MyCli | None = None, config_file: str | None = None) -> DsnAliases:
+        return DsnAliases(config, mycli, config_file)
+
+    def _config_for_write(self) -> Any:
+        if self.config_file is None:
+            return self.config
+
+        config = read_config_file(self.config_file)
+        if config is None:
+            raise OSError(f"Unable to read config file '{os.path.expanduser(self.config_file)}'.")
+        return config
+
+    def _set_alias(self, config: Any, alias: str, dsn: str) -> None:
+        if self.section_name not in config:
+            config[self.section_name] = {}
+        config[self.section_name][alias] = dsn
 
     def _query_param_defaults(self) -> dict[str, Any]:
         if self.mycli is None:
@@ -155,19 +172,45 @@ Examples:
     def save(self, alias: str, dsn: str) -> str:
         if not is_valid_dsn_alias(alias):
             return INVALID_DSN_ALIAS_ERROR
-        self.config.encoding = 'utf-8'
-        if self.section_name not in self.config:
-            self.config[self.section_name] = {}
-        self.config[self.section_name][alias] = dsn
-        self.config.write()
+
+        config = self._config_for_write()
+        config.encoding = 'utf-8'
+        section_existed = self.section_name in config
+        previous_dsn = config.get(self.section_name, {}).get(alias, MISSING)
+        self._set_alias(config, alias, dsn)
+        try:
+            config.write()
+        except Exception:
+            if previous_dsn is MISSING:
+                del config[self.section_name][alias]
+                if not section_existed:
+                    del config[self.section_name]
+            else:
+                config[self.section_name][alias] = previous_dsn
+            raise
+
+        if config is not self.config:
+            self._set_alias(self.config, alias, dsn)
         return f'Saved: {alias}'
 
     def delete(self, alias: str) -> str:
         if not is_valid_dsn_alias(alias):
             return INVALID_DSN_ALIAS_ERROR
         try:
-            del self.config[self.section_name][alias]
+            self.config[self.section_name][alias]
         except KeyError:
             return f'Not Found: {alias}'
-        self.config.write()
+
+        config = self._config_for_write()
+        if alias in config.get(self.section_name, {}):
+            dsn = config[self.section_name][alias]
+            del config[self.section_name][alias]
+            try:
+                config.write()
+            except Exception:
+                config[self.section_name][alias] = dsn
+                raise
+
+        if config is not self.config:
+            del self.config[self.section_name][alias]
         return f'Deleted: {alias}'

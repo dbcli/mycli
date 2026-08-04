@@ -9,6 +9,7 @@ import pytest
 
 import mycli.client as client_module
 from mycli.client import MyCli
+from mycli.packages.special.dsn_aliases import DsnAliases
 from mycli.packages.special.favoritequeries import FavoriteQueries
 
 
@@ -183,6 +184,17 @@ def test_init_configures_favorite_queries_with_user_config_path(monkeypatch: pyt
 
     assert FavoriteQueries.instance.config is cli.config
     assert FavoriteQueries.instance.config_file == myclirc
+
+
+def test_init_configures_dsn_aliases_with_user_config_path(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    patch_constructor_side_effects(monkeypatch)
+    myclirc = write_myclirc(tmp_path, '')
+
+    cli = MyCli(myclirc=myclirc)
+
+    assert DsnAliases.instance.config is cli.config
+    assert DsnAliases.instance.mycli is cli
+    assert DsnAliases.instance.config_file == myclirc
 
 
 def test_init_uses_default_myclirc_when_xdg_config_is_missing(monkeypatch: pytest.MonkeyPatch) -> None:
