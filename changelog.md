@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Features
+---------
+* Let favorite queries use Jinja2 templates, allowing optional arguments.
+
+
 Documentation
 ---------
 * Document shell completions in `README.md`.

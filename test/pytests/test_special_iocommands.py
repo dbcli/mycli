@@ -4,6 +4,7 @@ import builtins
 import os
 from pathlib import Path
 import platform
+import re
 import stat
 import subprocess
 import tempfile
@@ -12,11 +13,13 @@ from types import SimpleNamespace
 from typing import Any, Generator
 from unittest.mock import patch
 
+from jinja2 import TemplateError
 from pymysql import ProgrammingError
 import pytest
 
 import mycli.packages.special
 from mycli.packages.special import iocommands
+from mycli.packages.special.favoritequeries import analyze_favorite_query_template, find_favorite_query_template_keys
 from mycli.packages.sqlresult import SQLResult
 from test.utils import TEMPFILE_PREFIX, db_connection, dbtest, send_ctrl_c
 
@@ -675,6 +678,183 @@ def test_execute_favorite_query_returns_header_for_result_sets(monkeypatch) -> N
     assert results[0].rows is cursor
 
 
+@pytest.mark.parametrize(
+    ('arg_str', 'expected_positional', 'expected_template_values'),
+    (
+        ('', [], {}),
+        ('first second', ['first', 'second'], {}),
+        ('--user=henry', [], {'user': 'henry'}),
+        ('--user "Henry Ford"', [], {'user': 'Henry Ford'}),
+        ('--empty=', [], {'empty': ''}),
+        ('--start-date 2026-08-01', [], {'start-date': '2026-08-01'}),
+        (
+            '--start-date=one --start_date=two',
+            [],
+            {'start-date': 'one', 'start_date': 'two'},
+        ),
+        (
+            'first --user=henry second -- --literal --other=value',
+            ['first', 'second', '--literal', '--other=value'],
+            {'user': 'henry'},
+        ),
+    ),
+)
+def test_parse_favorite_query_args(
+    arg_str: str,
+    expected_positional: list[str],
+    expected_template_values: dict[str, str],
+) -> None:
+    assert iocommands.parse_favorite_query_args(arg_str) == (expected_positional, expected_template_values)
+
+
+@pytest.mark.parametrize(
+    ('arg_str', 'message'),
+    (
+        ('--user', 'option --user requires a value'),
+        ('--user --other=value', 'option --user requires a value'),
+        ('--=value', 'invalid template variable name: --=value'),
+        ('--1name=value', 'invalid template variable name: 1name'),
+        ('--start-date=one --start-date=two', 'duplicate template variable: start-date'),
+    ),
+)
+def test_parse_favorite_query_args_rejects_invalid_options(arg_str: str, message: str) -> None:
+    with pytest.raises(ValueError, match=re.escape(message)):
+        iocommands.parse_favorite_query_args(arg_str)
+
+
+def test_parse_favorite_query_args_rejects_malformed_quoting() -> None:
+    with pytest.raises(ValueError, match='No closing quotation'):
+        iocommands.parse_favorite_query_args('--user="henry')
+
+
+def test_render_favorite_query_supports_jinja_features_and_missing_values() -> None:
+    query = '{% for item in kv.item_list.split(",") %}{{ item|upper }} {% endfor %}{% if kv.enabled %}enabled{% endif %} {{ kv.missing }}'
+
+    assert iocommands.render_favorite_query(query, {'item_list': 'one,two', 'enabled': 'yes'}) == 'ONE TWO enabled '
+
+
+def test_find_favorite_query_template_keys_excludes_jinja_locals_and_globals() -> None:
+    query = '{% set local = kv.user %}{% for item in range(kv.limit|int) %}{{ local }} {{ item }}{% endfor %}'
+
+    assert find_favorite_query_template_keys(query) == {'user', 'limit'}
+
+
+def test_find_favorite_query_template_keys_supports_dictionary_access_forms() -> None:
+    query = "{{ kv.range }} {{ kv['dict'] }} {{ kv.get('namespace') }} {{ range(2) }} {{ kv.items() }}"
+
+    assert find_favorite_query_template_keys(query) == {'range', 'dict', 'namespace'}
+    assert (
+        iocommands.render_favorite_query(
+            "{{ kv.range }} {{ kv['dict'] }} {{ kv.get('namespace') }}",
+            {'range': 'one', 'dict': 'two', 'namespace': 'three'},
+        )
+        == 'one two three'
+    )
+
+
+@pytest.mark.parametrize(
+    ('query', 'expected_keys'),
+    (
+        ('{{ kv }}', set()),
+        ('{% for key, value in kv.items() %}{{ key }}={{ value }} {% endfor %}', set()),
+        ('{% set values = kv %}{{ values.user }}', set()),
+        ('{{ kv[kv.which] }}', {'which'}),
+        ('{{ kv.get(kv.which) }}', {'which'}),
+    ),
+)
+def test_analyze_favorite_query_template_detects_dynamic_access(query: str, expected_keys: set[str]) -> None:
+    assert analyze_favorite_query_template(query) == (expected_keys, True)
+
+
+def test_render_favorite_query_rejects_unused_values() -> None:
+    with pytest.raises(iocommands.FavoriteQueryArgumentError, match='unused template variable: extra, unused'):
+        iocommands.render_favorite_query('select {{ kv.used }}', {'used': '1', 'unused': '2', 'extra': '3'})
+
+
+@pytest.mark.parametrize(
+    ('query', 'template_values', 'expected'),
+    (
+        ('{{ kv.user }} {{ kv }}', {'user': 'henry', 'extra': 'value'}, "henry {'user': 'henry', 'extra': 'value'}"),
+        (
+            '{% for key, value in kv.items()|sort %}{{ key }}={{ value }} {% endfor %}',
+            {'user': 'henry', 'role': 'admin'},
+            'role=admin user=henry ',
+        ),
+        ('{% set values = kv %}{{ values.user }}', {'user': 'henry'}, 'henry'),
+        ('{{ kv[kv.which] }}', {'which': 'user', 'user': 'henry'}, 'henry'),
+        ('{{ kv.get(kv.which) }}', {'which': 'user', 'user': 'henry'}, 'henry'),
+    ),
+)
+def test_render_favorite_query_allows_dynamic_template_values(
+    query: str,
+    template_values: dict[str, str],
+    expected: str,
+) -> None:
+    assert iocommands.render_favorite_query(query, template_values) == expected
+
+
+def test_render_favorite_query_uses_sandbox() -> None:
+    with pytest.raises(TemplateError, match='unsafe'):
+        iocommands.render_favorite_query("{{ ''.__class__.__mro__ }}", {})
+
+
+def test_execute_favorite_query_renders_named_and_positional_values(monkeypatch) -> None:
+    query = """select '$1', '{{ kv.user }}', '{{ kv["start-date"] }}', '{{ kv.literal }}'"""
+    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', FakeFavoriteQueries({'report': query}), raising=False)
+    cursor = FakeCursor()
+
+    results = list(
+        iocommands.execute_favorite_query(
+            cursor,
+            "report positional --user=henry --start-date 2026-08-01 --literal='$1'",
+        )
+    )
+
+    expected_query = "select 'positional', 'henry', '2026-08-01', '$1'"
+    assert cursor.executed == [expected_query]
+    assert results[0].preamble == f'> {expected_query}'
+
+
+def test_execute_favorite_query_does_not_render_runtime_values_as_jinja(monkeypatch) -> None:
+    query = "select '$1', '{{ kv.literal }}'"
+    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', FakeFavoriteQueries({'report': query}), raising=False)
+    cursor = FakeCursor()
+
+    results = list(iocommands.execute_favorite_query(cursor, "report '{{ 2 * 3 }}' --literal='$1'"))
+
+    expected_query = "select '{{ 2 * 3 }}', '$1'"
+    assert cursor.executed == [expected_query]
+    assert results[0].preamble == f'> {expected_query}'
+
+
+@pytest.mark.parametrize(
+    ('query', 'arg', 'status_prefix'),
+    (
+        ('select {{ kv.user }}', 'report --user', 'Invalid favorite query arguments:'),
+        ('select {{ kv.user }}', 'report --unused=value', 'Invalid favorite query arguments:'),
+        ('select {{', 'report', 'Favorite query template error:'),
+        ("select {{ ''.__class__.__mro__ }}", 'report', 'Favorite query template error:'),
+        ('select {{ range(10**100) }}', 'report', 'Favorite query template error:'),
+        ('select {{ range(1, 2, 0) }}', 'report', 'Favorite query template error:'),
+        ('select {{ kv.user + 1 }}', 'report --user=2', 'Favorite query template error:'),
+    ),
+)
+def test_execute_favorite_query_reports_template_argument_errors_without_execution(
+    monkeypatch: pytest.MonkeyPatch,
+    query: str,
+    arg: str,
+    status_prefix: str,
+) -> None:
+    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', FakeFavoriteQueries({'report': query}), raising=False)
+    cursor = FakeCursor()
+
+    results = list(iocommands.execute_favorite_query(cursor, arg))
+
+    assert results[0].status is not None
+    assert results[0].status.startswith(status_prefix)
+    assert cursor.executed == []
+
+
 def test_list_substitute_save_delete_and_redirect_state(tmp_path: Path, monkeypatch) -> None:
     empty_favorites = FakeFavoriteQueries()
     monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', empty_favorites, raising=False)
@@ -690,6 +870,7 @@ def test_list_substitute_save_delete_and_redirect_state(tmp_path: Path, monkeypa
     assert rows_result.status == ''
 
     assert iocommands.subst_favorite_query_args('select $1', ['x']) == ['select x', None]
+    assert iocommands.subst_favorite_query_args('select $1, $2', ['$2', 'second']) == ['select $2, second', None]
     assert iocommands.subst_favorite_query_args('select 1', ['x']) == [None, 'query does not have substitution parameter $1:\n  select 1']
     assert iocommands.subst_favorite_query_args('select $1, $2', ['x']) == [None, 'missing substitution for $2 in query:\n  select x, $2']
 

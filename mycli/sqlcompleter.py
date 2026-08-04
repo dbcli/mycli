@@ -6,6 +6,7 @@ import logging
 import re
 from typing import Any, Collection, Generator, Iterable, Literal
 
+from jinja2 import TemplateError
 from prompt_toolkit.completion import CompleteEvent, Completer, Completion
 from prompt_toolkit.completion.base import Document
 from pygments.lexers._mysql_builtins import MYSQL_DATATYPES, MYSQL_FUNCTIONS, MYSQL_KEYWORDS
@@ -15,7 +16,11 @@ from mycli.packages.completion_engine import is_inside_quotes, suggest_type
 from mycli.packages.filepaths import complete_path, parse_path, suggest_path
 from mycli.packages.special import llm
 from mycli.packages.special.dsn_aliases import DsnAliases
-from mycli.packages.special.favoritequeries import FavoriteQueries
+from mycli.packages.special.favoritequeries import (
+    FavoriteQueries,
+    favorite_query_variable_pattern,
+    find_favorite_query_template_keys,
+)
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
 from mycli.packages.sql_utils import extract_columns_from_select, extract_tables, last_word
 
@@ -1679,6 +1684,27 @@ class SQLCompleter(Completer):
                         text_before_cursor=document.text_before_cursor,
                     )
                     completions.extend([(*x, rank) for x in queries_m])
+
+            elif suggestion['type'] == 'favoritequery_template_key':
+                if hasattr(FavoriteQueries, 'instance') and hasattr(FavoriteQueries.instance, 'get'):
+                    query = FavoriteQueries.instance.get(suggestion['name'])
+                    if query is not None:
+                        try:
+                            template_keys = find_favorite_query_template_keys(query)
+                        except TemplateError:
+                            continue
+                        used_keys = suggestion['used_keys']
+                        candidates = [
+                            f'--{key}=' for key in sorted(template_keys - used_keys) if favorite_query_variable_pattern.fullmatch(key)
+                        ]
+                        keys_m = self.find_matches(
+                            word_before_cursor,
+                            candidates,
+                            start_only=True,
+                            fuzzy=False,
+                            text_before_cursor=document.text_before_cursor,
+                        )
+                        completions.extend([(*x, rank) for x in keys_m])
 
             elif suggestion["type"] == "table_format":
                 formats_m = self.find_matches(

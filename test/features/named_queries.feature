@@ -22,3 +22,13 @@ Feature: named queries:
       then we see the named query with parameters fail with missing parameters
       when we use named query with too many parameters
       then we see the named query with parameters fail with extra parameters
+
+  Scenario: use a named query as a Jinja template
+     When we connect to test database
+      then we see database connected
+      when we save a templated named query
+      then we see the named query saved
+      when we use a templated named query with attached values
+      then we see the attached template values rendered
+      when we use a templated named query with split values
+      then we see the split template values rendered
