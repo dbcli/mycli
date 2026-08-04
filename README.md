@@ -68,8 +68,8 @@ Features
     - `SELECT * FROM <tab>` will only show table names.
     - `SELECT * FROM users WHERE <tab>` will only show column names.
 * Support for multiline queries.
-* Favorite queries with optional positional parameters. Save a query using
-  `/fs <alias> <query>` and execute it with `/f <alias>`.
+* Favorite queries with positional or named parameters using [Jinja2](https://jinja.palletsprojects.com/en/stable/). Save a query using
+  `/fs <alias> <query>` and execute it with `/f <alias>` or `/f <alias> --key=value`.
 * Timing of sql statements and table rendering.
 * Log every query and its results to a file (disabled by default).
 * Pretty print tabular data (with colors!).
