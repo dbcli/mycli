@@ -1,9 +1,15 @@
 from __future__ import annotations
 
+import os
 import re
+from typing import Any
 
 from jinja2 import meta, nodes
 from jinja2.sandbox import SandboxedEnvironment
+
+from mycli.config import read_config_file
+
+MISSING = object()
 
 favorite_query_template_environment = SandboxedEnvironment(autoescape=False)
 favorite_query_variable_pattern = re.compile(r'^[A-Za-z_][A-Za-z0-9_-]*$')
@@ -108,12 +114,27 @@ Examples:
     # Class-level variable, for convenience to use as a singleton.
     instance: FavoriteQueries
 
-    def __init__(self, config) -> None:
+    def __init__(self, config: Any, config_file: str | None = None) -> None:
         self.config = config
+        self.config_file = config_file
 
     @classmethod
-    def from_config(cls, config):
-        return FavoriteQueries(config)
+    def from_config(cls, config: Any, config_file: str | None = None) -> FavoriteQueries:
+        return FavoriteQueries(config, config_file)
+
+    def _config_for_write(self) -> Any:
+        if self.config_file is None:
+            return self.config
+
+        config = read_config_file(self.config_file)
+        if config is None:
+            raise OSError(f"Unable to read config file '{os.path.expanduser(self.config_file)}'.")
+        return config
+
+    def _set_query(self, config: Any, name: str, query: str) -> None:
+        if self.section_name not in config:
+            config[self.section_name] = {}
+        config[self.section_name][name] = query
 
     def list(self) -> list[str | None]:
         return list(self.config.get(self.section_name, {}))
@@ -122,16 +143,41 @@ Examples:
         return self.config.get(self.section_name, {}).get(name, None)
 
     def save(self, name: str, query: str) -> None:
-        self.config.encoding = "utf-8"
-        if self.section_name not in self.config:
-            self.config[self.section_name] = {}
-        self.config[self.section_name][name] = query
-        self.config.write()
+        config = self._config_for_write()
+        config.encoding = "utf-8"
+        section_existed = self.section_name in config
+        previous_query = config.get(self.section_name, {}).get(name, MISSING)
+        self._set_query(config, name, query)
+        try:
+            config.write()
+        except Exception:
+            if previous_query is MISSING:
+                del config[self.section_name][name]
+                if not section_existed:
+                    del config[self.section_name]
+            else:
+                config[self.section_name][name] = previous_query
+            raise
+
+        if config is not self.config:
+            self._set_query(self.config, name, query)
 
     def delete(self, name: str) -> str:
         try:
-            del self.config[self.section_name][name]
+            self.config[self.section_name][name]
         except KeyError:
             return f'{name}: Not Found.'
-        self.config.write()
+
+        config = self._config_for_write()
+        if name in config.get(self.section_name, {}):
+            query = config[self.section_name][name]
+            del config[self.section_name][name]
+            try:
+                config.write()
+            except Exception:
+                config[self.section_name][name] = query
+                raise
+
+        if config is not self.config:
+            del self.config[self.section_name][name]
         return f'{name}: Deleted.'
