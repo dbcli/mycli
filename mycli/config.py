@@ -14,6 +14,19 @@ from Cryptodome.Cipher import AES
 logger = logging.getLogger(__name__)
 
 
+class LimiitedQuotePreservingConfigObj(ConfigObj):
+    """Useful for saving individual items without modifying the whole file."""
+
+    def __init__(self, *args, **kwargs):
+        ConfigObj.__init__(self, *args, **kwargs)
+
+    def _unquote(self, value):
+        return value
+
+    def _quote(self, value, multiline=True):
+        return value
+
+
 def log(logger: logging.Logger, level: int, message: str) -> None:
     """Logs message to stderr if logging isn't initialized."""
 
@@ -23,7 +36,11 @@ def log(logger: logging.Logger, level: int, message: str) -> None:
     logger.log(level, message)
 
 
-def read_config_file(f: str | IO[str], list_values: bool = True) -> ConfigObj | None:
+def read_config_file(
+    f: str | IO[str],
+    list_values: bool = True,
+    preserve_quotes: bool = False,
+) -> ConfigObj | LimiitedQuotePreservingConfigObj | None:
     """Read a config file.
 
     *list_values* set to `True` is the default behavior of ConfigObj.
@@ -38,7 +55,10 @@ def read_config_file(f: str | IO[str], list_values: bool = True) -> ConfigObj | 
         f = os.path.expanduser(f)
 
     try:
-        config = ConfigObj(f, interpolation=False, encoding="utf8", list_values=list_values)
+        if preserve_quotes:
+            config = LimiitedQuotePreservingConfigObj(f, interpolation=False, encoding="utf8", list_values=False)
+        else:
+            config = ConfigObj(f, interpolation=False, encoding="utf8", list_values=list_values)
     except ConfigObjError as e:
         log(logger, logging.WARNING, "Unable to parse line {0} of config file '{1}'.".format(e.line_number, f))
         log(logger, logging.WARNING, "Using successfully parsed config values.")

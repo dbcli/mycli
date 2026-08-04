@@ -126,7 +126,7 @@ Examples:
         if self.config_file is None:
             return self.config
 
-        config = read_config_file(self.config_file)
+        config = read_config_file(self.config_file, preserve_quotes=True)
         if config is None:
             raise OSError(f"Unable to read config file '{os.path.expanduser(self.config_file)}'.")
         return config
@@ -144,10 +144,15 @@ Examples:
 
     def save(self, name: str, query: str) -> None:
         config = self._config_for_write()
+        query = query.rstrip(' \t\n\r;')
+        if '\n' in query:
+            manually_quoted_query = f"'''{query}'''"
+        else:
+            manually_quoted_query = query
         config.encoding = "utf-8"
         section_existed = self.section_name in config
         previous_query = config.get(self.section_name, {}).get(name, MISSING)
-        self._set_query(config, name, query)
+        self._set_query(config, name, manually_quoted_query)
         try:
             config.write()
         except Exception:
@@ -160,6 +165,7 @@ Examples:
             raise
 
         if config is not self.config:
+            # use the unquoted query for the current session
             self._set_query(self.config, name, query)
 
     def delete(self, name: str) -> str:
