@@ -101,7 +101,7 @@ Examples:
         if self.config_file is None:
             return self.config
 
-        config = read_config_file(self.config_file)
+        config = read_config_file(self.config_file, preserve_quotes=True)
         if config is None:
             raise OSError(f"Unable to read config file '{os.path.expanduser(self.config_file)}'.")
         return config

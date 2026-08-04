@@ -15,7 +15,13 @@ logger = logging.getLogger(__name__)
 
 
 class LimiitedQuotePreservingConfigObj(ConfigObj):
-    """Useful for saving individual items without modifying the whole file."""
+    """Useful for saving individual items without modifying the whole file.
+
+    Triplequotes must be manually added for multiline values, and despite the
+    name of the class, could change from double to single in style.  If we
+    don't do this, multiline triplequoted strings lose their quotes entirely,
+    resulting in unreadable files.
+    """
 
     def __init__(self, *args, **kwargs):
         ConfigObj.__init__(self, *args, **kwargs)
@@ -24,6 +30,8 @@ class LimiitedQuotePreservingConfigObj(ConfigObj):
         return value
 
     def _quote(self, value, multiline=True):
+        if '\n' in value:
+            return f"'''{value}'''"
         return value
 
 

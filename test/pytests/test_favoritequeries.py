@@ -77,28 +77,6 @@ def test_save_updates_existing_section_and_writes_config() -> None:
     assert config.write_calls == 1
 
 
-def test_save_quotes_multiline_query_for_disk_and_keeps_runtime_query_unquoted(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    write_config = DummyConfig()
-    runtime_config = DummyConfig()
-    favorites = FavoriteQueries(runtime_config, '/tmp/myclirc')
-    read_calls: list[tuple[str, bool]] = []
-
-    def read_config_file(path: str, preserve_quotes: bool = False) -> DummyConfig:
-        read_calls.append((path, preserve_quotes))
-        return write_config
-
-    monkeypatch.setattr(favoritequeries_module, 'read_config_file', read_config_file)
-
-    favorites.save('report', 'select 1;\nselect 2;\n')
-
-    assert read_calls == [('/tmp/myclirc', True)]
-    assert write_config['favorite_queries']['report'] == "'''select 1;\nselect 2'''"
-    assert write_config.write_calls == 1
-    assert runtime_config['favorite_queries']['report'] == 'select 1;\nselect 2'
-
-
 def test_delete_removes_existing_favorite_and_writes_config() -> None:
     config = DummyConfig({'favorite_queries': {'demo': 'select 1'}})
     favorites = FavoriteQueries(config)

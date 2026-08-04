@@ -11,6 +11,7 @@ Bugfixes
 * Don't allow saving favorite queries to rewrite comments in `~/.myclirc`.
 * Don't allow saving favorite queries to rewrite quoting in `~/.myclirc`.
 * Don't allow saving named DSNs to rewrite comments in `~/.myclirc`.
+* Don't allow saving named DSNs to rewrite quoting in `~/.myclirc`.
 
 
 Documentation
