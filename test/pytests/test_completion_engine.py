@@ -863,6 +863,8 @@ def test_suggest_type_handles_parser_results_shorter_than_cursor(monkeypatch):
         ('/f report ', [{'type': 'favoritequery_template_key', 'name': 'report', 'used_keys': set()}]),
         ('\\f report --u', [{'type': 'favoritequery_template_key', 'name': 'report', 'used_keys': set()}]),
         ('/f report -', [{'type': 'favoritequery_template_key', 'name': 'report', 'used_keys': set()}]),
+        ('/f report --', [{'type': 'favoritequery_template_key', 'name': 'report', 'used_keys': set()}]),
+        ('/f report -- ', []),
         ('/f report positional', []),
         ('/f report positional ', [{'type': 'favoritequery_template_key', 'name': 'report', 'used_keys': set()}]),
         ('/f report --user=', []),
