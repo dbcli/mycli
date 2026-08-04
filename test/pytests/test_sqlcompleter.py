@@ -525,6 +525,8 @@ def test_get_completions_favorite_query_template_keys(monkeypatch) -> None:
 
     blank_text = '/f report '
     blank = list(completer.get_completions(Document(text=blank_text, cursor_position=len(blank_text)), None))
+    option_prefix_text = '/f report --'
+    option_prefix = list(completer.get_completions(Document(text=option_prefix_text, cursor_position=len(option_prefix_text)), None))
     partial_text = '/f report --u'
     partial = list(completer.get_completions(Document(text=partial_text, cursor_position=len(partial_text)), None))
     dashed_text = '/f report --start-'
@@ -535,6 +537,8 @@ def test_get_completions_favorite_query_template_keys(monkeypatch) -> None:
     used_dashed = list(completer.get_completions(Document(text=used_dashed_text, cursor_position=len(used_dashed_text)), None))
 
     assert [completion.text for completion in blank] == ['--range=', '--start-date=', '--start_date=', '--user=']
+    assert {completion.text for completion in option_prefix} == {'--range=', '--start-date=', '--start_date=', '--user='}
+    assert {completion.start_position for completion in option_prefix} == {-2}
     assert [(completion.text, completion.start_position) for completion in partial] == [('--user=', -3)]
     assert [(completion.text, completion.start_position) for completion in dashed] == [('--start-date=', -8)]
     assert [completion.text for completion in used] == ['--range=', '--start-date=', '--start_date=']

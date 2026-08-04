@@ -894,6 +894,8 @@ def suggest_favorite_query_with_template(text: str, arg: str) -> list[dict[str, 
         is_current = index == len(arguments) - 1 and not trailing_space
 
         if argument == '--':
+            if is_current:
+                break
             return []
         if argument.startswith('--'):
             option = argument[2:]
