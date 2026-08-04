@@ -145,14 +145,10 @@ Examples:
     def save(self, name: str, query: str) -> None:
         config = self._config_for_write()
         query = query.rstrip(' \t\n\r;')
-        if '\n' in query:
-            manually_quoted_query = f"'''{query}'''"
-        else:
-            manually_quoted_query = query
         config.encoding = "utf-8"
         section_existed = self.section_name in config
         previous_query = config.get(self.section_name, {}).get(name, MISSING)
-        self._set_query(config, name, manually_quoted_query)
+        self._set_query(config, name, query)
         try:
             config.write()
         except Exception:
@@ -165,7 +161,6 @@ Examples:
             raise
 
         if config is not self.config:
-            # use the unquoted query for the current session
             self._set_query(self.config, name, query)
 
     def delete(self, name: str) -> str:

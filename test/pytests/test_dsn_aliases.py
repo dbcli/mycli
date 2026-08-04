@@ -314,7 +314,7 @@ def test_save_does_not_update_runtime_config_when_user_config_cannot_be_read(
 ) -> None:
     merged_config = DummyConfig({'alias_dsn': {'existing': 'mysql://existing/db'}})
     aliases = DsnAliases(merged_config, config_file='~/.myclirc')
-    monkeypatch.setattr(dsn_aliases_module, 'read_config_file', lambda _path: None)
+    monkeypatch.setattr(dsn_aliases_module, 'read_config_file', lambda _path, **kwargs: None)
 
     with pytest.raises(OSError, match=r"Unable to read config file '.*/\.myclirc'\."):
         aliases.save('new', 'mysql://new/db')

@@ -14,6 +14,7 @@ import pytest
 
 from mycli import config as config_module
 from mycli.config import (
+    LimiitedQuotePreservingConfigObj,
     _remove_pad,
     create_default_config,
     get_mylogin_cnf_path,
@@ -21,6 +22,7 @@ from mycli.config import (
     open_mylogin_cnf,
     read_and_decrypt_mylogin_cnf,
     read_config_file,
+    read_config_files,
     str_to_bool,
     strip_matching_quotes,
     write_default_config,
@@ -167,6 +169,71 @@ def test_read_config_file_list_values_off():
     config = read_config_file(f, list_values=False)
 
     assert config["main"]["weather"] == "'cloudy with a chance of meatballs'"
+
+
+def test_quote_preserving_config_retains_quotes_and_quotes_multiline_values() -> None:
+    config = read_config_file(StringIO('[main]\nquoted = "value"\n'), preserve_quotes=True)
+
+    assert isinstance(config, LimiitedQuotePreservingConfigObj)
+    assert config['main']['quoted'] == '"value"'
+    assert config._quote('one line') == 'one line'
+    assert config._quote('first line\nsecond line') == "'''first line\nsecond line'''"
+
+
+def test_read_config_files_merges_files_in_order(monkeypatch: pytest.MonkeyPatch) -> None:
+    defaults = config_module.ConfigObj({'main': {'default': 'yes', 'color': 'default'}})
+    first = config_module.ConfigObj({'main': {'color': 'blue'}})
+    first.filename = '/tmp/first.cnf'
+    second = config_module.ConfigObj({'main': {'color': 'green'}})
+    second.filename = '/tmp/second.cnf'
+    files = ['first.cnf', 'missing.cnf', 'second.cnf']
+    create_calls: list[bool] = []
+    read_calls: list[tuple[str, bool]] = []
+
+    def create_default_config(list_values: bool = True) -> config_module.ConfigObj:
+        create_calls.append(list_values)
+        return defaults
+
+    def read_config_file(path: str, list_values: bool = True) -> config_module.ConfigObj | None:
+        read_calls.append((path, list_values))
+        return {'first.cnf': first, 'missing.cnf': None, 'second.cnf': second}[path]
+
+    monkeypatch.setattr(config_module, 'create_default_config', create_default_config)
+    monkeypatch.setattr(config_module, 'read_config_file', read_config_file)
+
+    config = read_config_files(files, list_values=False)
+
+    assert files == ['first.cnf', 'missing.cnf', 'second.cnf']
+    assert create_calls == [False]
+    assert read_calls == [('first.cnf', False), ('missing.cnf', False), ('second.cnf', False)]
+    assert config['main'] == {'default': 'yes', 'color': 'green'}
+    assert config.filename == '/tmp/second.cnf'
+
+
+def test_read_config_files_can_ignore_package_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        config_module,
+        'create_default_config',
+        lambda **_kwargs: pytest.fail('package defaults should not be read'),
+    )
+
+    config = read_config_files([], ignore_package_defaults=True)
+
+    assert config == {}
+
+
+def test_read_config_files_can_ignore_user_options(monkeypatch: pytest.MonkeyPatch) -> None:
+    defaults = config_module.ConfigObj({'main': {'default': 'yes'}})
+    monkeypatch.setattr(config_module, 'create_default_config', lambda **_kwargs: defaults)
+    monkeypatch.setattr(
+        config_module,
+        'read_config_file',
+        lambda *_args, **_kwargs: pytest.fail('user options should not be read'),
+    )
+
+    config = read_config_files(['user.cnf'], ignore_user_options=True)
+
+    assert config is defaults
 
 
 def test_log_prints_to_stderr_when_root_logger(capsys) -> None:
