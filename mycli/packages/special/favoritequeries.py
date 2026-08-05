@@ -75,14 +75,17 @@ with a short name.
 Examples:
 
     # Save a new favorite query.
-    > /fs simple select * from abc where a is not Null;
+    > /fs simple SELECT * FROM abc WHERE a IS NOT NULL;
+
+    # When multi-line mode is on, pressing Return twice is needed to save.
+    # This supports multi-statement favorites.
 
     # List all favorite queries.
     > /f
     ╒═══════════╤══════════════════════════════════════════════════╕
     │ Name      │ Query                                            │
     ╞═══════════╪══════════════════════════════════════════════════╡
-    │ simple    │ SELECT * FROM abc where a is not NULL            │
+    │ simple    │ SELECT * FROM abc WHERE a IS NOT NULL            │
     │ find_user │ SELECT * FROM users WHERE name = '{{ kv.name }}' │
     ╘═══════════╧══════════════════════════════════════════════════╛
 
@@ -94,15 +97,16 @@ Examples:
     │ 日本語 │ 日本語 │
     ╘════════╧════════╛
 
-    # Run a favorite query containing {{ kv.name }} in the template:
+    # Run a favorite query containing {{ kv.name }} in the template.
     > /f find_user --name=henry
     > /f find_user --name henry
 
-    # Run a favorite query containing $1 in the template:
+    # Run a favorite query containing positional parameter $1 in the
+    # template.
     > /f find_user henry
 
-    # Use -- to disambiguate positional parameters, especially if
-    # the positional value starts with a dash.
+    # Use -- to disambiguate positional parameters such as $1, especially
+    # if the positional value starts with a dash.
     > /f query --key=value -- positional-value
     > /f query -- --positional-value-which-looks-like-a-flag--
 

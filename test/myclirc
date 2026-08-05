@@ -37,7 +37,8 @@ expand_dsn_alias_env_vars = False
 # Multi-line mode allows breaking up the sql statements into multiple lines. If
 # this is set to True, then the end of the statements must have a semi-colon.
 # If this is set to False then sql statements can't be split into multiple
-# lines. End of line (return) is considered as the end of the statement.
+# lines. End of line (Return) is considered as the end of the statement.
+# When True, saving a favorite query requires pressing Return twice.
 multi_line = False
 
 # Destructive warning mode will alert you before executing a sql statement

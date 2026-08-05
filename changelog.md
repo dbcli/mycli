@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Documentation
+---------
+* Document double-return requirement after `/fs` in multi-line mode.
+
+
 2.10.0 (2026/08/05)
 ==============
 
