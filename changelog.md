@@ -24,6 +24,7 @@ Documentation
 Internal
 ---------
 * Typing fixes for `prompt-toolkit`.
+* Update `cryptography` to v50.0.0.
 
 
 2.9.0 (2026/08/01)

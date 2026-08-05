@@ -27,7 +27,7 @@ classifiers = [
 dependencies = [
     "click ~= 8.4.2",
     "clickdc ~= 0.1.1",
-    "cryptography ~= 49.0.0",
+    "cryptography ~= 50.0.0",
     "Pygments ~= 2.20.0",
     "prompt_toolkit >= 3.0.41,<4.0.0",
     "PyMySQL ~= 1.1.2",
@@ -98,7 +98,7 @@ include = ["mycli*"]
 
 [tool.uv]
 exclude-newer = '1 week'
-exclude-newer-package = { cli_helpers = false, openai = false }
+exclude-newer-package = { cli_helpers = false, openai = false, cryptography = false }
 
 [tool.ruff]
 target-version = 'py310'
