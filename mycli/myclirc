@@ -499,13 +499,13 @@ matching-bracket.other = '#000000 bg:#aacccc'
 [favorite_queries]
 # example = "SELECT * FROM example_table WHERE id = 1"
 #
-# Favorite queries can use the Jinja2 templating language. Named argument
+# Favorite queries can use the Jinja templating language. Named argument
 # values are available as keys in a dictionary named "kv".
 # Run this example templated query with: /f find_user --name=henry
 # Any keys refereed to by name will be available as completions.
 # find_user = "SELECT * FROM users WHERE name = '{{ kv.name }}'"
 #
-# Jinja2 parameters are optional.
+# Jinja parameters are optional.
 # Run this example templated query with: /f recent_user --name=henry
 # or alternatively, with different behavior: /f recent_user
 # recent_user = "SELECT * FROM users WHERE create_date >= NOW() - INTERVAL 1 DAY {% if kv.name %} AND name = '{{ kv.name }}' {% endif %}"

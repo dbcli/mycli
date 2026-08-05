@@ -62,7 +62,7 @@ edit a query in an external editor using /edit <filename>!
 
 /fd <name> deletes a saved favorite query!
 
-Favorite queries support Jinja2 templates and named arguments!
+Favorite queries support Jinja templates and named arguments!
 
 /l lists databases!
 

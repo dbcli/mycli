@@ -3,7 +3,7 @@ Upcoming (TBD)
 
 Features
 ---------
-* Let favorite queries use Jinja2 templates, allowing optional arguments.
+* Let favorite queries use Jinja templates, allowing optional arguments.
 
 
 Bugfixes
