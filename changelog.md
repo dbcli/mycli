@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Features
+---------
+* Always clean favorite queries on save and fetch.
+
+
 Documentation
 ---------
 * Document double-return requirement after `/fs` in multi-line mode.
