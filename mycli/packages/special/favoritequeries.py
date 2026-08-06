@@ -126,6 +126,17 @@ Examples:
     def from_config(cls, config: Any, config_file: str | None = None) -> FavoriteQueries:
         return FavoriteQueries(config, config_file)
 
+    def _clean_query(self, query: str | None) -> str | None:
+        if not query:
+            return query
+        query = query.lstrip(' \t\n\r')
+        query = query.rstrip(' \t\n\r')
+        query = query.removesuffix(';')
+        query = query.removesuffix(r'\G')
+        query = query.removesuffix(r'\x')
+        query = query.rstrip(' \t\n\r')
+        return query
+
     def _config_for_write(self) -> Any:
         if self.config_file is None:
             return self.config
@@ -141,14 +152,14 @@ Examples:
         config[self.section_name][name] = query
 
     def list(self) -> list[str | None]:
-        return list(self.config.get(self.section_name, {}))
+        return [self._clean_query(x) for x in self.config.get(self.section_name, {})]
 
     def get(self, name) -> str | None:
-        return self.config.get(self.section_name, {}).get(name, None)
+        return self._clean_query(self.config.get(self.section_name, {}).get(name, None))
 
     def save(self, name: str, query: str) -> None:
         config = self._config_for_write()
-        query = query.rstrip(' \t\n\r;')
+        query = self._clean_query(query) or ''
         config.encoding = "utf-8"
         section_existed = self.section_name in config
         previous_query = config.get(self.section_name, {}).get(name, MISSING)
