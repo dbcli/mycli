@@ -187,6 +187,7 @@ class SshTunnel:
                 stdin=subprocess.DEVNULL,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
+                start_new_session=True,
             )
         except OSError as exc:
             self._startup_error = exc
