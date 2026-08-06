@@ -6,6 +6,11 @@ Features
 * Always clean favorite queries on save and fetch.
 
 
+Bugfixes
+---------
+* Call `setsid()` to keep SSH tunnels from receiving Ctrl-C interrupts.
+
+
 Documentation
 ---------
 * Document double-return requirement after `/fs` in multi-line mode.
