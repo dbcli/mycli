@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Features
+---------
+* Allow reading DSN aliases from a shared configuration file.
+
+
 2.11.0 (2026/08/07)
 ==============
 

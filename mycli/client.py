@@ -120,7 +120,12 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
             myclirc,
             c['main'].get('shared_favorites_file'),
         )
-        DsnAliases.instance = DsnAliases.from_config(self.config, self, config_file=myclirc)
+        DsnAliases.instance = DsnAliases.from_config(
+            self.config,
+            self,
+            config_file=myclirc,
+            shared_dsns_file=c['main'].get('shared_dsns_file'),
+        )
 
         self.dsn_alias: str | None = None
         self.main_formatter = TabularOutputFormatter(format_name=c["main"]["table_format"])

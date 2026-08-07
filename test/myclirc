@@ -77,6 +77,12 @@ show_favorite_query = True
 # Example: /usr/local/etc/mycli/shared-favorites.ini
 shared_favorites_file =
 
+# Load additional DSN aliases from the [alias_dsn] section of this file. DSN
+# aliases in the user's configuration file take precedence over the shared
+# file. The path must be absolute after expanding ~.
+# Example: /usr/local/etc/mycli/shared-dsns.ini
+shared_dsns_file =
+
 # Beep after long-running queries are completed; 0 to disable.
 beep_after_seconds = 0
 

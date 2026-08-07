@@ -1,4 +1,5 @@
 from collections.abc import Mapping
+import logging
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -48,6 +49,108 @@ def test_from_config_retains_mycli_runtime() -> None:
     aliases = DsnAliases.from_config(config, mycli)  # type: ignore[arg-type]
 
     assert aliases.mycli is mycli
+
+
+def test_from_config_merges_shared_aliases_with_configured_precedence(tmp_path: Path) -> None:
+    shared_file = tmp_path / 'shared-myclirc'
+    shared_file.write_text(
+        """[main]
+prompt = ignored
+
+[alias_dsn]
+shared = mysql://shared/db
+overridden = mysql://shared/override
+-hidden = mysql://hidden/db
+
+[alias_dsn.init-commands]
+shared = set shared=1
+""",
+        encoding='utf-8',
+    )
+    config = DummyConfig({
+        'alias_dsn': {
+            'local': 'mysql://local/db',
+            'overridden': 'mysql://local/override',
+        },
+        'alias_dsn.init-commands': {'local': 'set local=1'},
+    })
+
+    aliases = DsnAliases.from_config(config, shared_dsns_file=str(shared_file))
+
+    assert aliases.list() == ['shared', 'overridden', 'local']
+    assert aliases.get('shared') == 'mysql://shared/db'
+    assert aliases.get('overridden') == 'mysql://local/override'
+    assert aliases.get('-hidden') is None
+    assert config['alias_dsn.init-commands'] == {'local': 'set local=1'}
+    assert 'main' not in config
+
+
+def test_from_config_rejects_relative_shared_file(caplog: pytest.LogCaptureFixture) -> None:
+    config = DummyConfig({'alias_dsn': {'local': 'mysql://local/db'}})
+
+    with caplog.at_level(logging.WARNING, logger='mycli.packages.special.dsn_aliases'):
+        aliases = DsnAliases.from_config(config, shared_dsns_file='shared-myclirc')
+
+    assert aliases.get('local') == 'mysql://local/db'
+    assert "Shared DSNs file path must be absolute: 'shared-myclirc'." in caplog.text
+
+
+def test_from_config_expands_user_in_shared_file_path(monkeypatch: pytest.MonkeyPatch) -> None:
+    read_paths: list[str] = []
+    monkeypatch.setattr(dsn_aliases_module.os.path, 'expanduser', lambda path: '/expanded/shared-myclirc')
+    monkeypatch.setattr(dsn_aliases_module.os.path, 'isfile', lambda path: True)
+
+    def read_config_file(path: str) -> DummyConfig:
+        read_paths.append(path)
+        return DummyConfig({'alias_dsn': {'shared': 'mysql://shared/db'}})
+
+    monkeypatch.setattr(dsn_aliases_module, 'read_config_file', read_config_file)
+
+    aliases = DsnAliases.from_config(DummyConfig(), shared_dsns_file='~/shared-myclirc')
+
+    assert read_paths == ['/expanded/shared-myclirc']
+    assert aliases.get('shared') == 'mysql://shared/db'
+
+
+def test_from_config_warns_and_continues_for_missing_shared_file(
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    config = DummyConfig({'alias_dsn': {'local': 'mysql://local/db'}})
+    missing_file = tmp_path / 'missing-myclirc'
+
+    with caplog.at_level(logging.WARNING, logger='mycli.packages.special.dsn_aliases'):
+        aliases = DsnAliases.from_config(config, shared_dsns_file=str(missing_file))
+
+    assert aliases.get('local') == 'mysql://local/db'
+    assert f"Unable to read shared DSNs file '{missing_file}'." in caplog.text
+
+
+def test_from_config_continues_when_shared_file_cannot_be_read(monkeypatch: pytest.MonkeyPatch) -> None:
+    config = DummyConfig({'alias_dsn': {'local': 'mysql://local/db'}})
+    monkeypatch.setattr(dsn_aliases_module.os.path, 'isfile', lambda path: True)
+    monkeypatch.setattr(dsn_aliases_module, 'read_config_file', lambda path: None)
+
+    aliases = DsnAliases.from_config(config, shared_dsns_file='/shared-myclirc')
+
+    assert aliases.get('local') == 'mysql://local/db'
+
+
+def test_from_config_uses_successfully_parsed_shared_aliases(
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    shared_file = tmp_path / 'shared-myclirc'
+    shared_file.write_text(
+        '[alias_dsn]\nshared = mysql://shared/db\n[invalid\n',
+        encoding='utf-8',
+    )
+
+    with caplog.at_level(logging.WARNING, logger='mycli.config'):
+        aliases = DsnAliases.from_config(DummyConfig(), shared_dsns_file=str(shared_file))
+
+    assert aliases.get('shared') == 'mysql://shared/db'
+    assert 'Unable to parse line 3 of config file' in caplog.text
 
 
 def test_query_param_defaults_without_runtime_returns_empty_dict() -> None:
@@ -295,6 +398,47 @@ def test_delete_effective_system_alias_does_not_rewrite_user_config(tmp_path: Pa
     assert result == 'Deleted: system'
     assert config_file.read_text(encoding='utf-8') == original
     assert merged_config['alias_dsn'] == {}
+
+
+def test_save_shared_alias_override_writes_only_user_config(tmp_path: Path) -> None:
+    shared_file = tmp_path / 'shared-myclirc'
+    shared_contents = '[alias_dsn]\nprod = mysql://shared/db\n'
+    shared_file.write_text(shared_contents, encoding='utf-8')
+    config_file = tmp_path / 'myclirc'
+    config_file.write_text('# User config.\n', encoding='utf-8')
+    aliases = DsnAliases.from_config(
+        DummyConfig(),
+        config_file=str(config_file),
+        shared_dsns_file=str(shared_file),
+    )
+
+    result = aliases.save('prod', 'mysql://local/db')
+
+    assert result == 'Saved: prod'
+    assert shared_file.read_text(encoding='utf-8') == shared_contents
+    assert config_file.read_text(encoding='utf-8') == '# User config.\n[alias_dsn]\nprod = mysql://local/db\n'
+    assert aliases.get('prod') == 'mysql://local/db'
+
+
+def test_delete_shared_alias_does_not_write_either_config_file(tmp_path: Path) -> None:
+    shared_file = tmp_path / 'shared-myclirc'
+    shared_contents = '[alias_dsn]\nprod = mysql://shared/db\n'
+    shared_file.write_text(shared_contents, encoding='utf-8')
+    config_file = tmp_path / 'myclirc'
+    user_contents = '# User config.\n'
+    config_file.write_text(user_contents, encoding='utf-8')
+    aliases = DsnAliases.from_config(
+        DummyConfig(),
+        config_file=str(config_file),
+        shared_dsns_file=str(shared_file),
+    )
+
+    result = aliases.delete('prod')
+
+    assert result == 'Deleted: prod'
+    assert aliases.get('prod') is None
+    assert shared_file.read_text(encoding='utf-8') == shared_contents
+    assert config_file.read_text(encoding='utf-8') == user_contents
 
 
 def test_invalid_alias_does_not_read_user_config(monkeypatch: pytest.MonkeyPatch) -> None:
