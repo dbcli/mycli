@@ -311,7 +311,11 @@ class CliArgs:
     )
     ssh_jump: str | None = clickdc.option(
         type=str,
-        help='Open an SSH tunnel via [user@]host[:port] and connect to MySQL through it.',
+        help=dedent(
+            """Open an SSH tunnel via [user@]host[:port] and connect to MySQL through it.
+            Works best if SSH is configured not to prompt for a password interactively.
+            """
+        ),
     )
     ssh_options: str | None = clickdc.option(
         type=str,
