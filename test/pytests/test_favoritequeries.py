@@ -1,4 +1,5 @@
 from collections.abc import Mapping
+import logging
 from pathlib import Path
 
 import pytest
@@ -30,6 +31,106 @@ def test_from_config_returns_instance_with_same_config() -> None:
     assert isinstance(favorites, FavoriteQueries)
     assert favorites.config is config
     assert favorites.config_file == '/tmp/myclirc'
+
+
+def test_from_config_merges_shared_queries_with_configured_precedence(tmp_path: Path) -> None:
+    shared_file = tmp_path / 'shared-myclirc'
+    shared_file.write_text(
+        """[main]
+prompt = ignored
+
+[favorite_queries]
+shared = select 1
+overridden = select 'shared'
+""",
+        encoding='utf-8',
+    )
+    config = DummyConfig({
+        'favorite_queries': {
+            'local': 'select 2',
+            'overridden': "select 'local'",
+        },
+    })
+
+    favorites = FavoriteQueries.from_config(config, shared_favorites_file=str(shared_file))
+
+    assert favorites.list() == ['shared', 'overridden', 'local']
+    assert favorites.get('shared') == 'select 1'
+    assert favorites.get('overridden') == "select 'local'"
+    assert 'main' not in config
+
+
+def test_from_config_rejects_relative_shared_file(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    config = DummyConfig({'favorite_queries': {'local': 'select 1'}})
+
+    with caplog.at_level(logging.WARNING, logger='mycli.packages.special.favoritequeries'):
+        favorites = FavoriteQueries.from_config(config, shared_favorites_file='shared-myclirc')
+
+    assert favorites.get('local') == 'select 1'
+    assert favorites.get('shared') is None
+    assert "Shared favorites file path must be absolute: 'shared-myclirc'." in caplog.text
+
+
+def test_from_config_expands_user_in_shared_file_path(monkeypatch: pytest.MonkeyPatch) -> None:
+    read_paths: list[str] = []
+    monkeypatch.setattr(favoritequeries_module.os.path, 'expanduser', lambda path: '/expanded/shared-myclirc')
+    monkeypatch.setattr(favoritequeries_module.os.path, 'isfile', lambda path: True)
+
+    def read_config_file(path: str) -> DummyConfig:
+        read_paths.append(path)
+        return DummyConfig({'favorite_queries': {'shared': 'select 1'}})
+
+    monkeypatch.setattr(favoritequeries_module, 'read_config_file', read_config_file)
+
+    favorites = FavoriteQueries.from_config(DummyConfig(), shared_favorites_file='~/shared-myclirc')
+
+    assert read_paths == ['/expanded/shared-myclirc']
+    assert favorites.get('shared') == 'select 1'
+
+
+def test_from_config_warns_and_continues_for_missing_shared_file(
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    config = DummyConfig({'favorite_queries': {'local': 'select 1'}})
+    missing_file = tmp_path / 'missing-myclirc'
+
+    with caplog.at_level(logging.WARNING, logger='mycli.packages.special.favoritequeries'):
+        favorites = FavoriteQueries.from_config(config, shared_favorites_file=str(missing_file))
+
+    assert favorites.get('local') == 'select 1'
+    assert f"Unable to read shared favorites file '{missing_file}'." in caplog.text
+
+
+def test_from_config_continues_when_shared_file_cannot_be_read(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config = DummyConfig({'favorite_queries': {'local': 'select 1'}})
+    monkeypatch.setattr(favoritequeries_module.os.path, 'isfile', lambda path: True)
+    monkeypatch.setattr(favoritequeries_module, 'read_config_file', lambda path: None)
+
+    favorites = FavoriteQueries.from_config(config, shared_favorites_file='/shared-myclirc')
+
+    assert favorites.get('local') == 'select 1'
+
+
+def test_from_config_uses_successfully_parsed_shared_queries(
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    shared_file = tmp_path / 'shared-myclirc'
+    shared_file.write_text(
+        '[favorite_queries]\nshared = select 1\n[invalid\n',
+        encoding='utf-8',
+    )
+
+    with caplog.at_level(logging.WARNING, logger='mycli.config'):
+        favorites = FavoriteQueries.from_config(DummyConfig(), shared_favorites_file=str(shared_file))
+
+    assert favorites.get('shared') == 'select 1'
+    assert 'Unable to parse line 3 of config file' in caplog.text
 
 
 def test_list_and_get_use_favorite_queries_section() -> None:
@@ -215,6 +316,46 @@ def test_delete_effective_system_favorite_does_not_rewrite_user_config(tmp_path:
     assert result == 'system: Deleted.'
     assert config_file.read_text(encoding='utf-8') == original
     assert merged_config['favorite_queries'] == {}
+
+
+def test_save_shared_favorite_override_writes_only_user_config(tmp_path: Path) -> None:
+    shared_file = tmp_path / 'shared-myclirc'
+    shared_contents = '[favorite_queries]\nreport = select 1\n'
+    shared_file.write_text(shared_contents, encoding='utf-8')
+    config_file = tmp_path / 'myclirc'
+    config_file.write_text('# User config.\n', encoding='utf-8')
+    favorites = FavoriteQueries.from_config(
+        DummyConfig(),
+        str(config_file),
+        str(shared_file),
+    )
+
+    favorites.save('report', 'select 2')
+
+    assert shared_file.read_text(encoding='utf-8') == shared_contents
+    assert config_file.read_text(encoding='utf-8') == '# User config.\n[favorite_queries]\nreport = select 2\n'
+    assert favorites.get('report') == 'select 2'
+
+
+def test_delete_shared_favorite_does_not_write_either_config_file(tmp_path: Path) -> None:
+    shared_file = tmp_path / 'shared-myclirc'
+    shared_contents = '[favorite_queries]\nreport = select 1\n'
+    shared_file.write_text(shared_contents, encoding='utf-8')
+    config_file = tmp_path / 'myclirc'
+    user_contents = '# User config.\n'
+    config_file.write_text(user_contents, encoding='utf-8')
+    favorites = FavoriteQueries.from_config(
+        DummyConfig(),
+        str(config_file),
+        str(shared_file),
+    )
+
+    result = favorites.delete('report')
+
+    assert result == 'report: Deleted.'
+    assert favorites.get('report') is None
+    assert shared_file.read_text(encoding='utf-8') == shared_contents
+    assert config_file.read_text(encoding='utf-8') == user_contents
 
 
 def test_save_does_not_update_runtime_config_when_user_config_cannot_be_read(

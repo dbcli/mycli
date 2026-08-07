@@ -186,6 +186,35 @@ def test_init_configures_favorite_queries_with_user_config_path(monkeypatch: pyt
     assert FavoriteQueries.instance.config_file == myclirc
 
 
+def test_init_loads_shared_favorite_queries(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    patch_constructor_side_effects(monkeypatch)
+    shared_file = tmp_path / 'shared-myclirc'
+    shared_file.write_text(
+        """[favorite_queries]
+shared = select 1
+overridden = select 'shared'
+""",
+        encoding='utf-8',
+    )
+    myclirc = write_myclirc(
+        tmp_path,
+        f"""[main]
+shared_favorites_file = {shared_file}
+
+[favorite_queries]
+local = select 2
+overridden = select 'local'
+""",
+    )
+
+    cli = MyCli(myclirc=myclirc)
+
+    assert FavoriteQueries.instance.config is cli.config
+    assert FavoriteQueries.instance.get('shared') == 'select 1'
+    assert FavoriteQueries.instance.get('local') == 'select 2'
+    assert FavoriteQueries.instance.get('overridden') == "select 'local'"
+
+
 def test_init_configures_dsn_aliases_with_user_config_path(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     patch_constructor_side_effects(monkeypatch)
     myclirc = write_myclirc(tmp_path, '')

@@ -71,6 +71,12 @@ timing = True
 # Show the full SQL when running a favorite query. Set to False to hide.
 show_favorite_query = True
 
+# Load additional favorite queries from the [favorite_queries] section of this
+# file.  Favorites in the user's configuration file take precedence over the
+# shared file.  The path must be absolute after expanding ~.
+# Example: /usr/local/etc/mycli/shared-favorites.ini
+shared_favorites_file =
+
 # Beep after long-running queries are completed; 0 to disable.
 beep_after_seconds = 0
 

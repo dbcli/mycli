@@ -6,6 +6,7 @@ Features
 * Always clean favorite queries on save and fetch.
 * Give a clearer message on a Vault connection if the user is not logged in.
 * Promote Vault integration out of beta status.
+* Allow reading favorite queries from a shared configuration file.
 
 
 Bugfixes
