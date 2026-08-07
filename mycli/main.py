@@ -107,23 +107,23 @@ class CliArgs:
     )
     vault_address: str | None = clickdc.option(
         type=str,
-        help='EXPERIMENTAL "vault kv get" integration: value for $VAULT_ADDR if unset in the environment or ~/.myclirc.',
+        help='"vault kv get" integration: value for $VAULT_ADDR if unset in the environment or ~/.myclirc.',
     )
     vault_mount: str | None = clickdc.option(
         type=str,
-        help='EXPERIMENTAL "vault kv get" integration: value for -mount if unset in ~/.myclirc.',
+        help='"vault kv get" integration: value for -mount if unset in ~/.myclirc.',
     )
     vault_secret: str | None = clickdc.option(
         type=str,
-        help='EXPERIMENTAL "vault kv get" integration: secret name.',
+        help='"vault kv get" integration: secret name.',
     )
     vault_password_field: str | None = clickdc.option(
         type=str,
-        help='EXPERIMENTAL "vault kv get" integration: field containing the password.',
+        help='"vault kv get" integration: field containing the password.',
     )
     vault_username_field: str | None = clickdc.option(
         type=str,
-        help='EXPERIMENTAL "vault kv get" integration: field containing the username.',
+        help='"vault kv get" integration: field containing the username.',
     )
     ssl_mode: str = clickdc.option(
         type=click.Choice(['auto', 'on', 'off']),

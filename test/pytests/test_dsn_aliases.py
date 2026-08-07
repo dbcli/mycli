@@ -364,7 +364,7 @@ def test_dsn_more_adds_non_default_runtime_parameters_in_sorted_order() -> None:
             'default_ssl_ca': '/default-ca.pem',
             'default_ssl_verify_server_cert': 'False',
         },
-        'vault_beta': {
+        'vault': {
             'address': 'https://default-vault',
             'default_mount': 'kv',
             'default_password_field': 'password',
@@ -435,7 +435,7 @@ def test_dsn_more_omits_empty_false_and_active_default_parameters() -> None:
             'default_ssl_mode': 'on',
             'default_ssl_verify_server_cert': 'True',
         },
-        'vault_beta': {
+        'vault': {
             'address': 'https://default-vault',
             'default_mount': 'kv',
             'default_password_field': 'secret',

@@ -455,7 +455,7 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
 
     if cli_args.vault_secret:
         vault_secret = cli_args.vault_secret
-        vault_config = mycli.config.get('vault_beta', {})
+        vault_config = mycli.config.get('vault', {})
         vault_address = cli_args.vault_address or os.environ.get('VAULT_ADDR') or vault_config.get('address') or None
         vault_mount = cli_args.vault_mount or vault_config.get('default_mount') or None
         vault_password_field = cli_args.vault_password_field or vault_config.get('default_password_field') or DEFAULT_VAULT_PASSWORD_FIELD
@@ -477,7 +477,7 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
         password_candidates.add_loader('vault', load_vault_password)
 
     if cli_args.user is None and cli_args.vault_secret:
-        vault_config = mycli.config.get('vault_beta', {})
+        vault_config = mycli.config.get('vault', {})
         vault_address = cli_args.vault_address or os.environ.get('VAULT_ADDR') or vault_config.get('address') or None
         vault_mount = cli_args.vault_mount or vault_config.get('default_mount') or None
         vault_username_field = cli_args.vault_username_field or vault_config.get('default_username_field') or DEFAULT_VAULT_USERNAME_FIELD

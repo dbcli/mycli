@@ -394,7 +394,7 @@ ssh_options = -a -o ServerAliveInterval=60 -o ExitOnForwardFailure=yes -o IPQoS=
 # auto means: port if on Windows, socket otherwise.
 tunnel_method = auto
 
-[vault_beta]
+[vault]
 # Path to the vault executable used for Vault integration.
 vault_executable = vault
 
