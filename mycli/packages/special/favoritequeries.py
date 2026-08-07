@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import re
 from typing import Any
@@ -7,7 +8,9 @@ from typing import Any
 from jinja2 import meta, nodes
 from jinja2.sandbox import SandboxedEnvironment
 
-from mycli.config import read_config_file
+from mycli.config import log, read_config_file
+
+logger = logging.getLogger(__name__)
 
 MISSING = object()
 
@@ -123,8 +126,43 @@ Examples:
         self.config_file = config_file
 
     @classmethod
-    def from_config(cls, config: Any, config_file: str | None = None) -> FavoriteQueries:
-        return FavoriteQueries(config, config_file)
+    def from_config(
+        cls,
+        config: Any,
+        config_file: str | None = None,
+        shared_favorites_file: str | None = None,
+    ) -> FavoriteQueries:
+        favorites = cls(config, config_file)
+        if not shared_favorites_file:
+            return favorites
+
+        shared_favorites_file = os.path.expanduser(shared_favorites_file)
+        if not os.path.isabs(shared_favorites_file):
+            log(
+                logger,
+                logging.WARNING,
+                f"Shared favorites file path must be absolute: '{shared_favorites_file}'.",
+            )
+            return favorites
+
+        if not os.path.isfile(shared_favorites_file):
+            log(
+                logger,
+                logging.WARNING,
+                f"Unable to read shared favorites file '{shared_favorites_file}'.",
+            )
+            return favorites
+
+        shared_config = read_config_file(shared_favorites_file)
+        if shared_config is None:
+            return favorites
+
+        configured_queries = config.get(cls.section_name, {})
+        shared_queries = shared_config.get(cls.section_name, {})
+        config[cls.section_name] = {}
+        config[cls.section_name].update(shared_queries)
+        config[cls.section_name].update(configured_queries)
+        return favorites
 
     def _clean_query(self, query: str | None) -> str | None:
         if not query:
