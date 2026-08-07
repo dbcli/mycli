@@ -17,6 +17,11 @@ Documentation
 * Document double-return requirement after `/fs` in multi-line mode.
 
 
+Internal
+---------
+* Fix flaky `watch` test for CI.
+
+
 2.10.0 (2026/08/05)
 ==============
 
