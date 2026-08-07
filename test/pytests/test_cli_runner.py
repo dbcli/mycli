@@ -56,7 +56,7 @@ def default_config() -> dict[str, Any]:
     return {
         'main': {'use_keyring': 'false'},
         'connection': {'default_keepalive_ticks': 0},
-        'vault_beta': {},
+        'vault': {},
         'alias_dsn': {},
         'init-commands': {},
         'alias_dsn.init-commands': {},
@@ -964,7 +964,7 @@ def test_run_from_cli_args_reads_password_from_vault_when_password_is_missing(
     client = DummyMyCli(
         config={
             **default_config(),
-            'vault_beta': {
+            'vault': {
                 'vault_executable': '/opt/bin/vault',
                 'address': 'https://vault.config',
                 'default_mount': 'kv',
@@ -1005,7 +1005,7 @@ def test_run_from_cli_args_reads_username_from_vault_when_user_is_missing(
     client = DummyMyCli(
         config={
             **default_config(),
-            'vault_beta': {
+            'vault': {
                 'vault_executable': '/opt/bin/vault',
                 'address': 'https://vault.config',
                 'default_mount': 'kv',
@@ -1110,7 +1110,7 @@ def test_run_from_cli_args_prefers_vault_cli_values_and_env_address(
     client = DummyMyCli(
         config={
             **default_config(),
-            'vault_beta': {
+            'vault': {
                 'vault_executable': '/opt/bin/vault',
                 'address': 'https://vault.config',
                 'default_mount': 'config-mount',

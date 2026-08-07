@@ -117,7 +117,7 @@ Examples:
 
         main_config = self.config.get('main', {})
         connection_config = self.config.get('connection', {})
-        vault_config = self.config.get('vault_beta', {})
+        vault_config = self.config.get('vault', {})
         return {
             'character_set': connection_config.get('default_character_set') or DEFAULT_CHARSET,
             'keepalive_ticks': self.mycli.default_keepalive_ticks,
