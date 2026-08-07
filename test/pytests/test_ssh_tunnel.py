@@ -292,6 +292,38 @@ def test_ssh_tunnel_start_reports_process_start_error(monkeypatch: pytest.Monkey
     assert isinstance(excinfo.value.__cause__, FileNotFoundError)
 
 
+def test_ssh_tunnel_start_reports_interactive_retry_start_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    start_new_session_calls: list[bool] = []
+
+    class FakeProcess:
+        def wait(self, timeout: float | None = None) -> int:
+            return 255
+
+        def poll(self) -> int:
+            return 255
+
+    def fake_popen(*_args: Any, start_new_session: bool, **_kwargs: Any) -> FakeProcess:
+        start_new_session_calls.append(start_new_session)
+        if start_new_session:
+            return FakeProcess()
+        raise FileNotFoundError('missing interactive ssh')
+
+    monkeypatch.setattr(ssh_tunnel.subprocess, 'Popen', fake_popen)
+    monkeypatch.setattr(ssh_tunnel, '_make_local_socket_path', lambda: '/tmp/mycli-ssh.sock')
+    tunnel = SshTunnel(
+        ssh_target='bastion',
+        remote_host='db.internal',
+        remote_port=3306,
+    )
+    monkeypatch.setattr(tunnel, '_is_listening', lambda: False)
+
+    with pytest.raises(SshTunnelError, match='Unable to start SSH tunnel process: missing interactive ssh') as excinfo:
+        tunnel.start()
+
+    assert start_new_session_calls == [True, False]
+    assert isinstance(excinfo.value.__cause__, FileNotFoundError)
+
+
 def test_ssh_tunnel_start_reports_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(ssh_tunnel, '_make_local_socket_path', lambda: '/tmp/mycli-ssh.sock')
     tunnel = SshTunnel(
