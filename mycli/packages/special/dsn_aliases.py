@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import logging
 import os
 from typing import TYPE_CHECKING, Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
-from mycli.config import read_config_file, str_to_bool
+from mycli.config import log, read_config_file, str_to_bool
 from mycli.constants import DEFAULT_CHARSET, DEFAULT_PROMPT, KNOWN_DSN_QUERY_PARAMS
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from mycli.client import MyCli
@@ -94,8 +97,44 @@ Examples:
         self.config_file = config_file
 
     @classmethod
-    def from_config(cls, config: Any, mycli: MyCli | None = None, config_file: str | None = None) -> DsnAliases:
-        return DsnAliases(config, mycli, config_file)
+    def from_config(
+        cls,
+        config: Any,
+        mycli: MyCli | None = None,
+        config_file: str | None = None,
+        shared_dsns_file: str | None = None,
+    ) -> DsnAliases:
+        aliases = cls(config, mycli, config_file)
+        if not shared_dsns_file:
+            return aliases
+
+        shared_dsns_file = os.path.expanduser(shared_dsns_file)
+        if not os.path.isabs(shared_dsns_file):
+            log(
+                logger,
+                logging.WARNING,
+                f"Shared DSNs file path must be absolute: '{shared_dsns_file}'.",
+            )
+            return aliases
+
+        if not os.path.isfile(shared_dsns_file):
+            log(
+                logger,
+                logging.WARNING,
+                f"Unable to read shared DSNs file '{shared_dsns_file}'.",
+            )
+            return aliases
+
+        shared_config = read_config_file(shared_dsns_file)
+        if shared_config is None:
+            return aliases
+
+        configured_aliases = config.get(cls.section_name, {})
+        shared_aliases = shared_config.get(cls.section_name, {})
+        config[cls.section_name] = {}
+        config[cls.section_name].update(shared_aliases)
+        config[cls.section_name].update(configured_aliases)
+        return aliases
 
     def _config_for_write(self) -> Any:
         if self.config_file is None:

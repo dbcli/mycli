@@ -895,6 +895,34 @@ def test_list_dsn(monkeypatch):
         print(f"An error occurred while attempting to delete the file: {e}")
 
 
+def test_list_dsn_includes_shared_aliases(monkeypatch, tmp_path):
+    monkeypatch.setattr(MyCli, 'system_config_files', [])
+    shared_file = tmp_path / 'shared-myclirc'
+    shared_file.write_text(
+        '[alias_dsn]\nshared = mysql://shared/db\noverridden = mysql://shared/override\n',
+        encoding='utf-8',
+    )
+    myclirc = tmp_path / 'myclirc'
+    myclirc.write_text(
+        f"""[main]
+shared_dsns_file = {shared_file}
+
+[alias_dsn]
+local = mysql://local/db
+overridden = mysql://local/override
+""",
+        encoding='utf-8',
+    )
+
+    result = CliRunner().invoke(
+        click_entrypoint,
+        args=['--list-dsn', '--verbose', '--myclirc', str(myclirc)],
+    )
+
+    assert result.exit_code == 0
+    assert result.output == ('shared : mysql://shared/db\noverridden : mysql://local/override\nlocal : mysql://local/db\n')
+
+
 @pytest.mark.parametrize(
     ('shell', 'relative_path'),
     (

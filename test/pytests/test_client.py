@@ -226,6 +226,35 @@ def test_init_configures_dsn_aliases_with_user_config_path(monkeypatch: pytest.M
     assert DsnAliases.instance.config_file == myclirc
 
 
+def test_init_loads_shared_dsn_aliases(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    patch_constructor_side_effects(monkeypatch)
+    shared_file = tmp_path / 'shared-myclirc'
+    shared_file.write_text(
+        """[alias_dsn]
+shared = mysql://shared/db
+overridden = mysql://shared/override
+""",
+        encoding='utf-8',
+    )
+    myclirc = write_myclirc(
+        tmp_path,
+        f"""[main]
+shared_dsns_file = {shared_file}
+
+[alias_dsn]
+local = mysql://local/db
+overridden = mysql://local/override
+""",
+    )
+
+    cli = MyCli(myclirc=myclirc)
+
+    assert DsnAliases.instance.config is cli.config
+    assert DsnAliases.instance.get('shared') == 'mysql://shared/db'
+    assert DsnAliases.instance.get('local') == 'mysql://local/db'
+    assert DsnAliases.instance.get('overridden') == 'mysql://local/override'
+
+
 def test_init_uses_default_myclirc_when_xdg_config_is_missing(monkeypatch: pytest.MonkeyPatch) -> None:
     patch_constructor_side_effects(monkeypatch)
     config_file_args: list[list[str | Any]] = []
