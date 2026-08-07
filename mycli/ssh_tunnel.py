@@ -187,6 +187,8 @@ class SshTunnel:
                 stdin=subprocess.DEVNULL,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
+                # better insulate the thread from signals, but interactivity
+                # is disabled
                 start_new_session=True,
             )
         except OSError as exc:
@@ -195,7 +197,23 @@ class SshTunnel:
             return
         return_code = self.process.wait()
         if return_code != 0 and not self._ready.is_set():
-            self._failed.set()
+            # in case the user needed to enter an SSH password, try again with
+            # start_new_session=False
+            try:
+                self.process = subprocess.Popen(
+                    self.command(),
+                    stdin=subprocess.DEVNULL,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    start_new_session=False,
+                )
+            except OSError as exc:
+                self._startup_error = exc
+                self._failed.set()
+                return
+            return_code = self.process.wait()
+            if return_code != 0 and not self._ready.is_set():
+                self._failed.set()
 
     def _is_listening(self) -> bool:
         try:
