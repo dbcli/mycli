@@ -4,6 +4,7 @@ Upcoming (TBD)
 Features
 ---------
 * Always clean favorite queries on save and fetch.
+* Give a clearer message on a Vault connection if the user is not logged in.
 
 
 Bugfixes
