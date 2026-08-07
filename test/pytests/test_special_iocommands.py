@@ -21,7 +21,7 @@ import mycli.packages.special
 from mycli.packages.special import iocommands
 from mycli.packages.special.favoritequeries import analyze_favorite_query_template, find_favorite_query_template_keys
 from mycli.packages.sqlresult import SQLResult
-from test.utils import TEMPFILE_PREFIX, db_connection, dbtest, send_ctrl_c
+from test.utils import TEMPFILE_PREFIX, db_connection, dbtest
 
 
 class FakeFavoriteQueries:
@@ -388,32 +388,32 @@ def test_watch_query_iteration():
 
 
 @dbtest
-@pytest.mark.skipif(os.name == "nt", reason="Bug: Win handles this differently.  May need to refactor watch_query to work for Win")
-def test_watch_query_full():
+def test_watch_query_full(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that `watch_query`:
 
     * Returns the expected results.
-    * Executes the defined times inside the given interval, in this case with
-      a 0.3 seconds wait, it should execute 4 times inside a 1 seconds
-      interval.
+    * Sleeps for the configured interval after each result.
     * Stops at Ctrl-C
 
     """
     watch_seconds = 0.3
-    wait_interval = 1
     expected_value = "1"
     query = f"SELECT {expected_value}"
     expected_preamble = f"> {query}"
-    # Faster Python 3.14 + OS combinations are skipping ahead as fast as 10
-    # Python 3.11 is as slow as 3
-    # todo: something is wrong here, but the expected_results are liberal,
-    # to keep from being flaky in CI
-    expected_results = [3, 4, 5, 6, 7, 8, 9, 10]
-    ctrl_c_process = send_ctrl_c(wait_interval)
+    sleep_calls: list[float] = []
+
+    def interrupt_after_four_calls(seconds: float) -> None:
+        sleep_calls.append(seconds)
+        if len(sleep_calls) == 4:
+            raise KeyboardInterrupt
+
+    monkeypatch.setattr(iocommands, 'sleep', interrupt_after_four_calls)
+
     with db_connection().cursor() as cur:
         results = list(mycli.packages.special.iocommands.watch_query(arg=f"{watch_seconds} {query}", cur=cur))
-    ctrl_c_process.join(1)
-    assert len(results) in expected_results
+
+    assert sleep_calls == [watch_seconds] * 4
+    assert len(results) == 4
     for result in results:
         assert result.preamble == expected_preamble
         assert result.header[0] == expected_value

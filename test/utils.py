@@ -1,11 +1,7 @@
 # type: ignore
 
 from collections.abc import Iterator
-import multiprocessing
 import os
-import platform
-import signal
-import time
 from types import SimpleNamespace
 from typing import Any, Callable, Literal, cast
 
@@ -298,26 +294,3 @@ def set_expanded_output(is_expanded):
 def is_expanded_output():
     """Pass-through for the tests."""
     return special.is_expanded_output()
-
-
-def send_ctrl_c_to_pid(pid, wait_seconds):
-    """Sends a Ctrl-C like signal to the given `pid` after `wait_seconds`
-    seconds."""
-    time.sleep(wait_seconds)
-    system_name = platform.system()
-    if system_name == "Windows":
-        os.kill(pid, signal.CTRL_C_EVENT)
-    else:
-        os.kill(pid, signal.SIGINT)
-
-
-def send_ctrl_c(wait_seconds):
-    """Create a process that sends a Ctrl-C like signal to the current process
-    after `wait_seconds` seconds.
-
-    Returns the `multiprocessing.Process` created.
-
-    """
-    ctrl_c_process = multiprocessing.Process(target=send_ctrl_c_to_pid, args=(os.getpid(), wait_seconds))
-    ctrl_c_process.start()
-    return ctrl_c_process
