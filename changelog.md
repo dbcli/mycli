@@ -4,6 +4,7 @@ Upcoming (TBD)
 Features
 ---------
 * Allow reading DSN aliases from a shared configuration file.
+* Add a `/config` command to inspect configuration values from the REPL.
 
 
 2.11.0 (2026/08/07)

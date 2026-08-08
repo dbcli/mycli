@@ -114,6 +114,8 @@ use /bug to file a bug on GitHub!
 
 use /dsn to manage saved DSNs!
 
+use /config to inspect persistent configuration from the REPL!
+
 ###
 ### environment variables
 ###

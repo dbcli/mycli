@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Generator, Iterable
+from collections.abc import Generator, Iterable, Mapping
 import logging
 import os
 import re
@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 import click
 
+from mycli.config import write_default_config
 from mycli.main_modes.repl import set_all_external_titles
 from mycli.packages import special
 from mycli.packages.filepaths import dir_path_exists
@@ -15,6 +16,72 @@ from mycli.packages.interactive_utils import confirm_destructive_query
 from mycli.packages.special.main import ArgType, SpecialCommandAlias
 from mycli.packages.sqlresult import SQLResult
 from mycli.sqlexecute import SQLExecute
+
+CONFIG_COMMAND_USAGE = '''Syntax:
+  /config get <key>
+  /config search <regex>
+  /config edit
+Examples:
+  /config get main.show_warnings
+  /config search warning
+  /config edit'''
+MISSING_CONFIG_VALUE = object()
+DSN_CONFIG_VALUE = object()
+FAVORITES_CONFIG_VALUE = object()
+HIDDEN_CONFIG_SECTIONS = frozenset({'alias_dsn', 'favorite_queries'})
+
+
+def _render_config_value(value: Any) -> str:
+    if isinstance(value, list):
+        return ', '.join(str(item) for item in value)
+    return str(value)
+
+
+def _iter_config_values(
+    config: Mapping[str, Any],
+    prefix: str = '',
+) -> Generator[tuple[str, str], None, None]:
+    """Yield dotted paths and rendered values for searchable settings."""
+    for key, value in config.items():
+        if not prefix and key in HIDDEN_CONFIG_SECTIONS:
+            continue
+
+        path = f'{prefix}.{key}' if prefix else key
+        if isinstance(value, Mapping):
+            yield from _iter_config_values(value, path)
+        else:
+            yield path, _render_config_value(value)
+
+
+def get_config_property_names(config: Mapping[str, Any]) -> list[str]:
+    """Return sorted leaf paths available to the config command."""
+    return sorted(path for path, _value in _iter_config_values(config))
+
+
+def _resolve_config_path(config: Mapping[str, Any], path: str) -> Any:
+    """Resolve a dotted path while allowing dots within mapping keys."""
+    parts = path.split('.')
+    value: Any = config
+    top_level = True
+    while parts:
+        if not isinstance(value, Mapping):
+            return MISSING_CONFIG_VALUE
+
+        for part_count in range(len(parts), 0, -1):
+            key = '.'.join(parts[:part_count])
+            if key in value:
+                if top_level and key == 'alias_dsn':
+                    return DSN_CONFIG_VALUE
+                if top_level and key == 'favorite_queries':
+                    return FAVORITES_CONFIG_VALUE
+                value = value[key]
+                parts = parts[part_count:]
+                top_level = False
+                break
+        else:
+            return MISSING_CONFIG_VALUE
+
+    return value
 
 
 class ClientCommandsMixin:
@@ -25,6 +92,7 @@ class ClientCommandsMixin:
         destructive_warning: bool
         destructive_keywords: Any
         config: Any
+        myclirc_path: str
         prompt_format: str
 
         def refresh_completions(self, reset: bool = False) -> list[SQLResult]: ...
@@ -86,6 +154,12 @@ class ClientCommandsMixin:
             case_sensitive=True,
             aliases=[SpecialCommandAlias("\\R", case_sensitive=True)],
         )
+        special.register_special_command(
+            self.config_command,
+            r'\config',
+            '/config <help|get|search|edit> [key]',
+            'Inspect settings from config files.',
+        )
 
     def manual_reconnect(self, arg: str = "", **_) -> Generator[SQLResult, None, None]:
         """
@@ -118,6 +192,54 @@ class ClientCommandsMixin:
             for table_type in self.redirect_formatter.supported_formats:
                 msg += f"\n\t{table_type}"
             yield SQLResult(status=msg)
+
+    def config_command(self, arg: str, **_) -> list[SQLResult]:
+        args = arg.strip().split(maxsplit=1)
+        if not args or args[0].lower() == 'help':
+            return [SQLResult(preamble=CONFIG_COMMAND_USAGE)]
+
+        subcommand = args[0].lower()
+        if subcommand == 'edit' and len(args) == 1:
+            return self.edit_config_file()
+
+        if subcommand == 'get' and len(args) == 2 and len(args[1].split()) == 1:
+            path = args[1]
+            value = _resolve_config_path(self.config, path)
+            if value is MISSING_CONFIG_VALUE:
+                return [SQLResult(status=f'Config key not found: {path}.')]
+            if value is DSN_CONFIG_VALUE:
+                return [SQLResult(status='See "/dsn list" for DSNs.')]
+            if value is FAVORITES_CONFIG_VALUE:
+                return [SQLResult(status='See "/f" for favorite queries.')]
+            if isinstance(value, Mapping):
+                return [SQLResult(status=f'Config path is not a value: {path}.')]
+            return [SQLResult(header=['Key', 'Value'], rows=[(path, _render_config_value(value))])]
+
+        if subcommand == 'search' and len(args) == 2:
+            pattern_text = args[1]
+            try:
+                pattern = re.compile(pattern_text, re.IGNORECASE)
+            except re.error as error:
+                return [SQLResult(status=f'Invalid regular expression: {error}.')]
+
+            rows = sorted(
+                (path, value) for path, value in _iter_config_values(self.config) if pattern.search(path) or pattern.search(value)
+            )
+            if not rows:
+                return [SQLResult(status=f'No configuration values match "{pattern_text}".')]
+            return [SQLResult(header=['Key', 'Value'], rows=rows)]
+
+        return [SQLResult(preamble=CONFIG_COMMAND_USAGE)]
+
+    def edit_config_file(self) -> list[SQLResult]:
+        try:
+            write_default_config(self.myclirc_path, overwrite=False)
+            click.edit(filename=self.myclirc_path)
+        except KeyboardInterrupt:
+            return [SQLResult(status='Config edit cancelled.')]
+        except (click.ClickException, OSError) as error:
+            return [SQLResult(status=f'Unable to edit config file "{self.myclirc_path}": {error}')]
+        return [SQLResult(status=f'Config file edited: {self.myclirc_path}. Restart mycli to apply changes.')]
 
     def change_db(self, arg: str, **_) -> Generator[SQLResult, None, None]:
         if arg.startswith("`") and arg.endswith("`"):

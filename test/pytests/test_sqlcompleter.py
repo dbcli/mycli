@@ -595,6 +595,31 @@ def test_get_completions_special_subcommand_branch(monkeypatch) -> None:
     assert result == ['show', 'save']
 
 
+@pytest.mark.parametrize(
+    ('prefix', 'expected'),
+    (
+        ('warnings', ['main.show_warnings']),
+        ('main.sh', ['main.show_warnings', 'main.less_chatty']),
+        ('', ['colors.sql.keyword', 'main.less_chatty', 'main.show_warnings']),
+    ),
+)
+def test_get_completions_config_property_branch(monkeypatch, prefix: str, expected: list[str]) -> None:
+    monkeypatch.setattr(
+        mycli.sqlcompleter,
+        'suggest_type',
+        lambda full_text, before: [{'type': 'config_property', 'prefix': prefix}],
+    )
+    completer = make_completer(
+        config_property_names=['main.show_warnings', 'colors.sql.keyword', 'main.less_chatty'],
+    )
+    text = f'/config get {prefix}'
+
+    result = list(completer.get_completions(Document(text=text, cursor_position=len(text)), None))
+
+    assert [completion.text for completion in result] == expected
+    assert {completion.start_position for completion in result} == {-len(prefix)}
+
+
 def test_get_completions_dsn_alias_branch(monkeypatch) -> None:
     monkeypatch.setattr(
         mycli.sqlcompleter,

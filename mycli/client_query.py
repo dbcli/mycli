@@ -53,6 +53,7 @@ class ClientQueryMixin:
                 "supported_formats": self.main_formatter.supported_formats,
                 "keyword_casing": self.completer.keyword_casing,
                 "indexed_column_suffix": self.completer.indexed_column_suffix,
+                "config_property_names": self.completer.config_property_names,
             },
         )
 

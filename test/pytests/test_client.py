@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from io import TextIOWrapper
+import os
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
@@ -111,6 +112,30 @@ def test_init_allows_empty_indexed_column_suffix(monkeypatch: pytest.MonkeyPatch
     assert cli.completer.indexed_column_suffix == ''
 
 
+def test_init_configures_visible_config_property_names(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    patch_constructor_side_effects(monkeypatch)
+    myclirc = write_myclirc(
+        tmp_path,
+        """
+        [custom]
+        setting = value
+        [alias_dsn]
+        prod = mysql://user:password@host/database
+        [favorite_queries]
+        report = select secret from reports
+        [alias_dsn.init-commands]
+        prod = set visible=1
+        """,
+    )
+
+    cli = MyCli(myclirc=myclirc)
+
+    assert 'custom.setting' in cli.completer.config_property_names
+    assert 'alias_dsn.init-commands.prod' in cli.completer.config_property_names
+    assert 'alias_dsn.prod' not in cli.completer.config_property_names
+    assert 'favorite_queries.report' not in cli.completer.config_property_names
+
+
 def test_init_configures_kitty_image_protocol(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     patch_constructor_side_effects(monkeypatch)
     myclirc = write_myclirc(
@@ -174,6 +199,7 @@ def test_init_uses_existing_xdg_config_when_myclirc_is_not_given(monkeypatch: py
     cli = MyCli(myclirc=None)
 
     assert cli.config.filename == str(xdg_config)
+    assert cli.myclirc_path == str(xdg_config.resolve())
 
 
 def test_init_configures_favorite_queries_with_user_config_path(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
@@ -184,6 +210,7 @@ def test_init_configures_favorite_queries_with_user_config_path(monkeypatch: pyt
 
     assert FavoriteQueries.instance.config is cli.config
     assert FavoriteQueries.instance.config_file == myclirc
+    assert cli.myclirc_path == str(Path(myclirc).resolve())
 
 
 def test_init_loads_shared_favorite_queries(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
@@ -270,9 +297,10 @@ def test_init_uses_default_myclirc_when_xdg_config_is_missing(monkeypatch: pytes
 
     monkeypatch.setattr(client_module, 'read_config_files', read_config_files)
 
-    MyCli(myclirc=None)
+    cli = MyCli(myclirc=None)
 
     assert config_file_args[0] == ['~/.myclirc']
+    assert cli.myclirc_path == os.path.abspath(os.path.expanduser('~/.myclirc'))
 
 
 def test_init_writes_default_config_when_user_config_is_missing(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
