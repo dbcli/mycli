@@ -327,6 +327,21 @@ def test_format_connection_dsn_includes_ssh_jump() -> None:
     )
 
 
+def test_format_connection_dsn_includes_encoded_boundary_id() -> None:
+    assert (
+        format_connection_dsn(
+            user=None,
+            host='db.example.com',
+            port=3307,
+            database='prod',
+            socket=None,
+            character_set='utf8mb4',
+            boundary_id='ttcp target/1',
+        )
+        == 'mysql://db.example.com:3307/prod?boundary_id=ttcp+target%2F1'
+    )
+
+
 def test_format_connection_dsn_includes_vault_parameters() -> None:
     assert format_connection_dsn(
         user=None,

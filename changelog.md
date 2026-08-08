@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Features
+---------
+* Add beta support for HashiCorp Boundary tunnels.
+
+
 2.12.0 (2026/08/08)
 ==============
 

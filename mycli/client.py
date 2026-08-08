@@ -20,6 +20,7 @@ from mycli.app_state import (
     normalize_image_protocol,
     normalize_ssl_mode,
 )
+from mycli.boundary_tunnel import BoundaryTunnel
 from mycli.client_commands import ClientCommandsMixin, get_config_property_names
 from mycli.client_connection import ClientConnectionMixin
 from mycli.client_query import ClientQueryMixin
@@ -79,6 +80,7 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
     ) -> None:
         self.sqlexecute = sqlexecute
         self.ssh_tunnel: SshTunnel | None = None
+        self.boundary_tunnel: BoundaryTunnel | None = None
         self.logfile = logfile
         self.login_path = login_path
         self.toolbar_error_message: str | None = None
@@ -251,6 +253,11 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
         if self.ssh_tunnel is not None:
             try:
                 self.ssh_tunnel.close()
+            except Exception:
+                pass
+        if self.boundary_tunnel:
+            try:
+                self.boundary_tunnel.close()
             except Exception:
                 pass
 

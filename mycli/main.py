@@ -321,6 +321,11 @@ class CliArgs:
         type=str,
         help='Extra CLI arguments for SSH with --ssh-jump, placed after options from myclirc.',
     )
+    boundary_id: str | None = clickdc.option(
+        type=str,
+        help='BETA: open a HashiCorp Boundary tunnel to TARGET_ID and connect through it.',
+        hidden=True,
+    )
     checkup: bool = clickdc.option(
         is_flag=True,
         help='Run a checkup on your configuration.',
