@@ -6,6 +6,11 @@ Features
 * Add beta support for HashiCorp Boundary tunnels.
 
 
+Internal
+---------
+* Remove CRLF line endings from fixture data.
+
+
 2.12.0 (2026/08/08)
 ==============
 
