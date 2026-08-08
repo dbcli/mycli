@@ -75,14 +75,14 @@ Features
 * Pretty print tabular data (with colors!).
 * Support for SSL connections
 * Shell-style trailing redirects with `$>`, `$>>` and `$|` operators.
-* [Polars](https://pola.rs) dataframe [transforms and plots](doc/transforms.md) with `.|`, and Parquet saves with `.>`.
-* Support for querying LLMs with context derived from your schema using `/llm`.
+* [Polars](https://pola.rs) dataframe [transforms and plots](https://github.com/dbcli/mycli/blob/main/doc/transforms.md) with `.|`, and Parquet saves with `.>`.
+* Support for [querying LLMs](https://www.mycli.net/llm) with context derived from your schema using `/llm`.
 * Support for storing passwords in the system keyring.
 
 Mycli creates a config file `~/.myclirc` on the first run; you can use the
 options in that file to configure the above features, and more.
 
-Some features are only exposed as [key bindings](doc/key_bindings.rst).
+Some features are only exposed as [key bindings](https://github.com/dbcli/mycli/blob/main/doc/key_bindings.rst).
 
 
 Implementation
