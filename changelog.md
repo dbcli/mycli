@@ -24,6 +24,11 @@ Documentation
 * Make all links in `README.md` absolute, so that they don't break on PyPi.
 
 
+Internal
+---------
+* Tiny change to quoting in `client_commands.py`.
+
+
 2.11.0 (2026/08/07)
 ==============
 
