@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Generator
 from io import StringIO
 import logging
 from pathlib import Path
@@ -61,6 +62,28 @@ class FakeSQLExecute:
     def run(self, query: str) -> list[SQLResult]:
         self.runs.append(query)
         return [SQLResult(status=f'ran {query}')]
+
+
+class IteratedFile(StringIO):
+    def read(self, *args: Any, **kwargs: Any) -> str:
+        raise AssertionError('Source files must not be read in full.')
+
+
+class FailingFile:
+    def __init__(self) -> None:
+        self.closed = False
+
+    def __enter__(self) -> FailingFile:
+        return self
+
+    def __exit__(self, *args: Any) -> None:
+        self.closed = True
+
+    def __iter__(self) -> FailingFile:
+        return self
+
+    def __next__(self) -> str:
+        raise OSError('read failed')
 
 
 @pytest.fixture(autouse=True)
@@ -473,18 +496,112 @@ def test_execute_from_file_reports_open_errors() -> None:
     assert '/does/not/exist.sql' in result[0].status
 
 
-def test_execute_from_file_stops_when_destructive_query_is_rejected(
+def test_execute_from_file_skips_rejected_destructive_query(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
     client = DummyClient()
     sql_file = tmp_path / 'query.sql'
+    sql_file.write_text('drop table users;\nselect 1;', encoding='utf-8')
+    client.destructive_warning = True
+    client.destructive_keywords = {'drop'}
+    client.sqlexecute = FakeSQLExecute()
+    confirmation_queries: list[str] = []
+
+    def confirm_destructive_query(keywords: set[str], query: str) -> bool:
+        confirmation_queries.append(query)
+        return not query.startswith('drop')
+
+    monkeypatch.setattr(client_commands, 'confirm_destructive_query', confirm_destructive_query)
+
+    assert list(client.execute_from_file(str(sql_file))) == [SQLResult(status='ran select 1;')]
+    assert client.sqlexecute.runs == ['select 1;']
+    assert confirmation_queries == ['drop table users;', 'select 1;']
+
+
+def test_execute_from_file_runs_accepted_destructive_query(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    client = DummyClient()
+    sql_file = tmp_path / 'query.sql'
     sql_file.write_text('drop table users;', encoding='utf-8')
     client.destructive_warning = True
     client.destructive_keywords = {'drop'}
-    monkeypatch.setattr(client_commands, 'confirm_destructive_query', lambda keywords, query: False)
+    client.sqlexecute = FakeSQLExecute()
+    monkeypatch.setattr(client_commands, 'confirm_destructive_query', lambda keywords, query: True)
 
-    assert list(client.execute_from_file(str(sql_file))) == [SQLResult(status='Wise choice. Command execution stopped.')]
+    assert list(client.execute_from_file(str(sql_file))) == [SQLResult(status='ran drop table users;')]
+    assert client.sqlexecute.runs == ['drop table users;']
+
+
+def test_execute_from_file_iterates_statements_without_reading_entire_file(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = DummyClient()
+    client.destructive_warning = False
+    client.destructive_keywords = set()
+    client.sqlexecute = FakeSQLExecute()
+    file_h = IteratedFile('select 1;\nselect\n 2;\nselect 3; select 4;\nselect 5')
+    opened_paths: list[str] = []
+
+    def open_file(path: str) -> IteratedFile:
+        opened_paths.append(path)
+        return file_h
+
+    monkeypatch.setattr(client_commands.os.path, 'expanduser', lambda path: '/expanded/query.sql')
+    monkeypatch.setattr(client_commands, 'open', open_file, raising=False)
+
+    assert result_statuses(client.execute_from_file('~/query.sql')) == [
+        'ran select 1;',
+        'ran select\n 2;',
+        'ran select 3;',
+        'ran select 4;',
+        'ran select 5',
+    ]
+    assert opened_paths == ['/expanded/query.sql']
+    assert file_h.closed is True
+
+
+def test_execute_from_file_reports_read_errors(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = DummyClient()
+    client.sqlexecute = FakeSQLExecute()
+    file_h = FailingFile()
+    monkeypatch.setattr(client_commands, 'open', lambda path: file_h, raising=False)
+
+    assert list(client.execute_from_file('query.sql')) == [SQLResult(status='read failed')]
+    assert file_h.closed is True
+
+
+def test_execute_from_file_reports_parser_errors(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    client = DummyClient()
+    client.sqlexecute = FakeSQLExecute()
+    sql_file = tmp_path / 'query.sql'
+    sql_file.write_text('select 1;', encoding='utf-8')
+
+    def invalid_statements(file_h: StringIO) -> Generator[tuple[str, int], None, None]:
+        yield from ()
+        raise ValueError('invalid batch input')
+
+    monkeypatch.setattr(client_commands, 'statements_from_filehandle', invalid_statements)
+
+    assert list(client.execute_from_file(str(sql_file))) == [SQLResult(status='invalid batch input')]
+
+
+def test_execute_from_file_does_not_report_query_errors_as_file_errors(tmp_path: Path) -> None:
+    client = DummyClient()
+    client.destructive_warning = False
+    client.sqlexecute = FakeSQLExecute()
+    client.sqlexecute.run = lambda query: (_ for _ in ()).throw(OSError('query failed'))  # type: ignore[method-assign]
+    sql_file = tmp_path / 'query.sql'
+    sql_file.write_text('select 1;', encoding='utf-8')
+
+    with pytest.raises(OSError, match='query failed'):
+        list(client.execute_from_file(str(sql_file)))
+
+
+def test_execute_from_empty_file_returns_no_results(tmp_path: Path) -> None:
+    client = DummyClient()
+    client.sqlexecute = FakeSQLExecute()
+    sql_file = tmp_path / 'query.sql'
+    sql_file.write_text('', encoding='utf-8')
+
+    assert list(client.execute_from_file(str(sql_file))) == []
 
 
 def test_execute_from_file_runs_file_query(tmp_path: Path) -> None:
@@ -497,6 +614,31 @@ def test_execute_from_file_runs_file_query(tmp_path: Path) -> None:
 
     assert list(client.execute_from_file(str(sql_file))) == [SQLResult(status='ran select 1;')]
     assert client.sqlexecute.runs == ['select 1;']
+
+
+@pytest.mark.parametrize('command', ['/fs report select 1; select 2;', '\\fs report select 1; select 2;', 'pager;'])
+def test_execute_from_file_rejects_special_commands(command: str, tmp_path: Path) -> None:
+    client = DummyClient()
+    sql_file = tmp_path / 'query.sql'
+    sql_file.write_text(command, encoding='utf-8')
+    client.destructive_warning = False
+    client.destructive_keywords = set()
+    client.sqlexecute = FakeSQLExecute()
+
+    assert list(client.execute_from_file(str(sql_file))) == [SQLResult(status='Special commands are not supported in source files.')]
+    assert client.sqlexecute.runs == []
+
+
+def test_execute_from_file_allows_sql_comments(tmp_path: Path) -> None:
+    client = DummyClient()
+    sql_file = tmp_path / 'query.sql'
+    sql_file.write_text('/* comment */ select 1;', encoding='utf-8')
+    client.destructive_warning = False
+    client.destructive_keywords = set()
+    client.sqlexecute = FakeSQLExecute()
+
+    assert list(client.execute_from_file(str(sql_file))) == [SQLResult(status='ran /* comment */ select 1;')]
+    assert client.sqlexecute.runs == ['/* comment */ select 1;']
 
 
 def test_change_prompt_format_without_argument_shows_current_format() -> None:
