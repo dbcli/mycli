@@ -233,7 +233,7 @@ pager = python test/features/wrappager.py ---boundary---
 # * file           # --password-file=<file> at the CLI
 # * environment    # $MYSQL_PWD environment variable
 # * dsn            # mysql://user:password@ field in a DSN
-# * boundary       # value provided by Boundary client (not yet implemented)
+# * boundary       # value provided by Boundary client
 # * vault          # value retrieved from "vault kv get"
 # * login_path     # --login-path=<path> at the CLI
 # * keyring        # value retrieved from system keyring
@@ -421,6 +421,19 @@ default_password_field = password
 
 # Field/property containing the username, if --vault-username-field is not provided.
 default_username_field = username
+
+[boundary_beta]
+# Path to the HashiCorp Boundary executable used by --boundary-id.
+boundary_executable = boundary
+
+# Address of the Boundary controller. If empty, use Boundary's default resolution.
+address =
+
+# Boundary auth method ID. If empty, use BOUNDARY_AUTH_METHOD_ID from the environment.
+auth_method_id =
+
+# Additional options passed to the "boundary connect" command.
+boundary_options =
 
 # Custom colors for the completion menu, toolbar, etc, with actual support
 # depending on the terminal, and the property being set.

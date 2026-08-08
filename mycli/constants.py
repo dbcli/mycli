@@ -5,6 +5,7 @@ ISSUES_URL = f'{REPO_URL}/issues'
 
 DEFAULT_CHARSET = 'utf8mb4'
 KNOWN_DSN_QUERY_PARAMS = {
+    'boundary_id',
     'character_set',
     'keepalive_ticks',
     'prompt',

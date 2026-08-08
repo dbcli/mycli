@@ -11,6 +11,7 @@ A command line client for MySQL with auto-completion and syntax highlighting.
 ├── mycli/                                # application source
 ├── mycli/__init__.py                     # provides version number
 ├── mycli/app_state.py                    # `AppStateMixin` application state mixin and related functions
+├── mycli/boundary_tunnel.py              # connection over Boundary tunnel
 ├── mycli/cli_runner.py                   # connects and dispatches main modes based on CLI arguments
 ├── mycli/clibuffer.py                    # prompt_toolkit buffer utilities
 ├── mycli/client_commands.py              # special commands which must be registered separately

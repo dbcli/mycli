@@ -359,6 +359,8 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
             mycli.prompt_format = cli_args.prompt or params[0] or mycli.prompt_format
         if params := dsn_params.get('ssh_jump'):
             cli_args.ssh_jump = cli_args.ssh_jump or params[0]
+        if params := dsn_params.get('boundary_id'):
+            cli_args.boundary_id = cli_args.boundary_id or params[0]
         if params := dsn_params.get('vault_address'):
             cli_args.vault_address = cli_args.vault_address or params[0]
         if params := dsn_params.get('vault_mount'):
@@ -521,6 +523,7 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
             vault_password_field=cli_args.vault_password_field,
             vault_username_field=cli_args.vault_username_field,
             vault_username_from_vault=vault_username_from_vault,
+            boundary_target_id=cli_args.boundary_id,
         )
 
         if combined_init_cmd:

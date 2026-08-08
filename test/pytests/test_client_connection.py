@@ -35,6 +35,7 @@ class DummyClient(ClientConnectionMixin):
         cnf: dict[str, Any] | None = None,
         config: dict[str, Any] | None = None,
         config_without_package_defaults: dict[str, Any] | None = None,
+        verbosity: int = 0,
     ) -> None:
         self.cnf = cnf or default_cnf()
         self.mylogin_cnf = object()
@@ -48,6 +49,7 @@ class DummyClient(ClientConnectionMixin):
         self.config_without_package_defaults = config_without_package_defaults or {}
         self.keepalive_ticks: int | None = None
         self.sandbox_mode = False
+        self.verbosity = verbosity
         self.sqlexecute: Any = None
         self.logger = DummyLogger()
         self.echo_calls: list[tuple[tuple[Any, ...], dict[str, Any]]] = []
@@ -646,7 +648,339 @@ def test_connect_swallows_ssh_jump_cleanup_error(monkeypatch: pytest.MonkeyPatch
 
     with pytest.raises(SystemExit) as excinfo:
         client.connect(host='db.internal', ssh_jump='bastion')
+    assert excinfo.value.code == 1
 
+
+@pytest.mark.parametrize(
+    ('verbosity', 'expected_warning', 'expected_credentials'),
+    [
+        (-1, False, []),
+        (
+            0,
+            True,
+            [
+                (
+                    'The Boundary db connection will expire at: 03:04:05 Wed 02 Jan 2030',
+                    {'fg': 'white', 'bg': 'red', 'bold': True, 'err': True},
+                ),
+            ],
+        ),
+        (
+            1,
+            True,
+            [
+                (
+                    'The Boundary db connection will expire at: 03:04:05 Wed 02 Jan 2030',
+                    {'fg': 'white', 'bg': 'red', 'bold': True, 'err': True},
+                ),
+            ],
+        ),
+        (
+            2,
+            True,
+            [
+                (
+                    'The Boundary db connection will expire at: 03:04:05 Wed 02 Jan 2030',
+                    {'fg': 'white', 'bg': 'red', 'bold': True, 'err': True},
+                ),
+                ('Temporary username: 1234', {'err': True}),
+                ('Temporary password: 5678', {'err': True}),
+                ('Temporary host:     127.0.0.1', {'err': True}),
+                ('Temporary port:     4406', {'err': True}),
+            ],
+        ),
+    ],
+)
+def test_connect_uses_boundary_tunnel(
+    monkeypatch: pytest.MonkeyPatch,
+    verbosity: int,
+    expected_warning: bool,
+    expected_credentials: list[tuple[str, dict[str, bool]]],
+) -> None:
+    tunnel_calls: list[dict[str, Any]] = []
+    warning_calls: list[bool] = []
+    secho_calls: list[tuple[str, dict[str, Any]]] = []
+
+    class FakeTunnel:
+        local_host = '127.0.0.1'
+        local_port = 4406
+        username = '1234'
+        password = '5678'
+        expiry = '03:04:05 Wed 02 Jan 2030'
+
+        def __init__(
+            self,
+            *,
+            target_id: str,
+            boundary_executable: str,
+            address: str | None,
+            auth_method_id: str | None,
+            boundary_options: str | None,
+        ) -> None:
+            tunnel_calls.append({
+                'target_id': target_id,
+                'boundary_executable': boundary_executable,
+                'address': address,
+                'auth_method_id': auth_method_id,
+                'boundary_options': boundary_options,
+            })
+
+        def start(self, *, show_expiration_warning: bool) -> None:
+            warning_calls.append(show_expiration_warning)
+
+        def close(self) -> None:
+            pass
+
+    monkeypatch.setattr(client_connection, 'BoundaryTunnel', FakeTunnel)
+    monkeypatch.setattr(client_connection.click, 'secho', lambda message, **kwargs: secho_calls.append((message, kwargs)))
+    client = DummyClient(
+        config={
+            'main': {'password_sources': KNOWN_PASSWORD_SOURCES},
+            'boundary_beta': {
+                'boundary_executable': '/opt/bin/boundary',
+                'address': 'https://boundary.example.com',
+                'auth_method_id': 'ampw_123',
+                'boundary_options': '-token env://BOUNDARY_TOKEN',
+            },
+            'connection': {},
+        },
+        verbosity=verbosity,
+    )
+
+    client.connect(
+        user='alice',
+        host='db.internal',
+        port=3307,
+        socket='/tmp/mysql.sock',
+        boundary_target_id='ttcp_123',
+    )
+
+    assert tunnel_calls == [
+        {
+            'target_id': 'ttcp_123',
+            'boundary_executable': '/opt/bin/boundary',
+            'address': 'https://boundary.example.com',
+            'auth_method_id': 'ampw_123',
+            'boundary_options': '-token env://BOUNDARY_TOKEN',
+        }
+    ]
+    assert warning_calls == [expected_warning]
+    assert secho_calls == expected_credentials
+    assert FakeSQLExecute.calls[-1]['host'] == '127.0.0.1'
+    assert FakeSQLExecute.calls[-1]['port'] == 4406
+    assert FakeSQLExecute.calls[-1]['socket'] is None
+    assert FakeSQLExecute.calls[-1]['password'] == '5678'
+    assert FakeSQLExecute.calls[-1]['display_dsn'] == 'mysql://db.internal?boundary_id=ttcp_123'
+    assert client.selected_password is not None
+    assert client.selected_password.source == 'boundary'
+
+
+@pytest.mark.parametrize(
+    ('password_sources', 'expected_source', 'expected_password'),
+    [
+        (['dsn', 'boundary'], 'dsn', 'dsn-secret'),
+        (['boundary', 'dsn'], 'boundary', '5678'),
+        (['dsn'], 'dsn', 'dsn-secret'),
+    ],
+)
+def test_connect_boundary_tunnel_respects_password_source_precedence(
+    monkeypatch: pytest.MonkeyPatch,
+    password_sources: list[str],
+    expected_source: str,
+    expected_password: str,
+) -> None:
+    class FakeTunnel:
+        local_host = '127.0.0.1'
+        local_port = 4406
+        username = '1234'
+        password = '5678'
+        expiry = '03:04:05 Wed 02 Jan 2030'
+
+        def __init__(
+            self,
+            *,
+            target_id: str,
+            boundary_executable: str,
+            address: str | None,
+            auth_method_id: str | None,
+            boundary_options: str | None,
+        ) -> None:
+            pass
+
+        def start(self, *, show_expiration_warning: bool) -> None:
+            pass
+
+        def close(self) -> None:
+            pass
+
+    candidates = PasswordCandidates()
+    candidates.add_value('dsn', 'dsn-secret')
+    monkeypatch.setattr(client_connection, 'BoundaryTunnel', FakeTunnel)
+    client = DummyClient(
+        config={'main': {'password_sources': password_sources}, 'connection': {}},
+        verbosity=-1,
+    )
+
+    client.connect(
+        host='db.internal',
+        password_candidates=candidates,
+        boundary_target_id='ttcp_123',
+    )
+
+    assert FakeSQLExecute.calls[-1]['user'] == '1234'
+    assert FakeSQLExecute.calls[-1]['password'] == expected_password
+    assert client.selected_password is not None
+    assert client.selected_password.source == expected_source
+
+
+def test_connect_boundary_tunnel_uses_default_config(monkeypatch: pytest.MonkeyPatch) -> None:
+    tunnel_calls: list[tuple[str, str | None, str | None, str | None]] = []
+    warning_calls: list[bool] = []
+
+    class FakeTunnel:
+        local_host = '127.0.0.1'
+        local_port = 4406
+        username = '1234'
+        password = '5678'
+        expiry = '03:04:05 Wed 02 Jan 2030'
+
+        def __init__(
+            self,
+            *,
+            target_id: str,
+            boundary_executable: str,
+            address: str | None,
+            auth_method_id: str | None,
+            boundary_options: str | None,
+        ) -> None:
+            tunnel_calls.append((boundary_executable, address, auth_method_id, boundary_options))
+
+        def start(self, *, show_expiration_warning: bool) -> None:
+            warning_calls.append(show_expiration_warning)
+
+        def close(self) -> None:
+            pass
+
+    monkeypatch.setattr(client_connection, 'BoundaryTunnel', FakeTunnel)
+    client = DummyClient()
+
+    client.connect(host='db.internal', boundary_target_id='ttcp_123')
+
+    assert tunnel_calls == [('boundary', None, None, None)]
+    assert warning_calls == [True]
+
+
+def test_connect_boundary_tunnel_disables_keyring(monkeypatch: pytest.MonkeyPatch) -> None:
+    get_password_calls: list[tuple[str, str]] = []
+
+    class FakeTunnel:
+        local_host = '127.0.0.1'
+        local_port = 4406
+        username = '1234'
+        password = '5678'
+
+        def __init__(
+            self,
+            *,
+            target_id: str,
+            boundary_executable: str,
+            address: str | None,
+            auth_method_id: str | None,
+            boundary_options: str | None,
+        ) -> None:
+            pass
+
+        def start(self, *, show_expiration_warning: bool) -> None:
+            pass
+
+        def close(self) -> None:
+            pass
+
+    def fake_get_password(domain: str, identifier: str) -> None:
+        get_password_calls.append((domain, identifier))
+        return None
+
+    monkeypatch.setattr(client_connection, 'BoundaryTunnel', FakeTunnel)
+    monkeypatch.setattr(client_connection.keyring, 'get_password', fake_get_password)
+    client = DummyClient(verbosity=-1)
+
+    client.connect(user='alice', host='db.internal', port=3307, use_keyring=True, boundary_target_id='ttcp_123')
+
+    assert get_password_calls == []
+    assert FakeSQLExecute.calls[-1]['password'] == '5678'
+    assert client.selected_password is not None
+    assert client.selected_password.source == 'boundary'
+
+
+def test_connect_reports_boundary_tunnel_start_error_and_closes_tunnel(monkeypatch: pytest.MonkeyPatch) -> None:
+    close_calls: list[bool] = []
+    secho_calls: list[tuple[str, dict[str, Any]]] = []
+
+    class FakeTunnel:
+        local_host = '127.0.0.1'
+        local_port = 4406
+        username = '1234'
+        password = '5678'
+
+        def __init__(
+            self,
+            *,
+            target_id: str,
+            boundary_executable: str,
+            address: str | None,
+            auth_method_id: str | None,
+            boundary_options: str | None,
+        ) -> None:
+            pass
+
+        def start(self, *, show_expiration_warning: bool) -> None:
+            raise client_connection.BoundaryTunnelError('no tunnel')
+
+        def close(self) -> None:
+            close_calls.append(True)
+
+    monkeypatch.setattr(client_connection, 'BoundaryTunnel', FakeTunnel)
+    monkeypatch.setattr(client_connection.click, 'secho', lambda message, **kwargs: secho_calls.append((message, kwargs)))
+    client = DummyClient()
+
+    with pytest.raises(SystemExit) as excinfo:
+        client.connect(host='db.internal', boundary_target_id='ttcp_123')
+
+    assert excinfo.value.code == 1
+    assert close_calls == [True]
+    assert secho_calls == [('Error: Unable to start Boundary tunnel: no tunnel', {'err': True, 'fg': 'red'})]
+    assert FakeSQLExecute.calls == []
+
+
+def test_connect_swallows_boundary_tunnel_cleanup_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    class FakeTunnel:
+        local_host = '127.0.0.1'
+        local_port = 4406
+        username = '1234'
+        password = '5678'
+
+        def __init__(
+            self,
+            *,
+            target_id: str,
+            boundary_executable: str,
+            address: str | None,
+            auth_method_id: str | None,
+            boundary_options: str | None,
+        ) -> None:
+            pass
+
+        def start(self, *, show_expiration_warning: bool) -> None:
+            raise OSError('no process')
+
+        def close(self) -> None:
+            raise RuntimeError('close failed')
+
+    monkeypatch.setattr(client_connection, 'BoundaryTunnel', FakeTunnel)
+    client = DummyClient()
+
+    with pytest.raises(SystemExit) as excinfo:
+        client.connect(host='db.internal', boundary_target_id='ttcp_123')
     assert excinfo.value.code == 1
 
 

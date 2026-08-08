@@ -810,6 +810,30 @@ def test_run_from_cli_args_maps_dsn_ssh_jump_parameter(monkeypatch: pytest.Monke
     assert client.connect_calls[-1]['ssh_jump'] == 'bastion'
 
 
+def test_run_from_cli_args_maps_known_dsn_boundary_id_parameter(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli_args = make_cli_args()
+    cli_args.dsn = 'mysql://user@host/db?boundary_id=ttcp_dsn'
+    client = DummyMyCli()
+    secho_calls: list[tuple[str, dict[str, Any]]] = []
+    monkeypatch.setattr(cli_runner.click, 'secho', lambda text, **kwargs: secho_calls.append((text, kwargs)))
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    assert client.connect_calls[-1]['boundary_target_id'] == 'ttcp_dsn'
+    assert secho_calls == []
+
+
+def test_run_from_cli_args_prefers_cli_boundary_id_over_dsn_parameter(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli_args = make_cli_args()
+    cli_args.dsn = 'mysql://user@host/db?boundary_id=ttcp_dsn'
+    cli_args.boundary_id = 'ttcp_cli'
+    client = DummyMyCli()
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    assert client.connect_calls[-1]['boundary_target_id'] == 'ttcp_cli'
+
+
 def test_run_from_cli_args_maps_percent_encoded_dsn_prompt(monkeypatch: pytest.MonkeyPatch) -> None:
     cli_args = make_cli_args()
     cli_args.dsn = 'mysql://user@host/db?prompt=%5Cu%40%5Ch%3A%5Cd%3E+'
@@ -1464,4 +1488,27 @@ def test_run_from_cli_args_stdin_batch_exits_with_mode_result(monkeypatch: pytes
 
     assert excinfo.value.code == 14
     assert batch_calls == [(client, cli_args)]
+    assert client.close_called is True
+
+
+def test_run_from_cli_args_passes_boundary_target_id(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli_args = make_cli_args()
+    cli_args.boundary_id = 'ttcp_123'
+    client = DummyMyCli()
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    assert client.connect_calls[-1]['boundary_target_id'] == 'ttcp_123'
+
+
+def test_run_from_cli_args_closes_client_when_mode_exits(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli_args = make_cli_args()
+    cli_args.execute = 'select 1'
+    client = DummyMyCli()
+    monkeypatch.setattr(cli_runner, 'main_execute_from_cli', lambda _mycli, _cli_args: 7)
+
+    with pytest.raises(SystemExit) as excinfo:
+        run_with_client(monkeypatch, cli_args, client)
+
+    assert excinfo.value.code == 7
     assert client.close_called is True

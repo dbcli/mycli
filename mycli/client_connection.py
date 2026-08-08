@@ -12,6 +12,7 @@ import pymysql
 from pymysql.constants.CR import CR_SERVER_LOST
 from pymysql.constants.ER import ACCESS_DENIED_ERROR, HANDSHAKE_ERROR
 
+from mycli.boundary_tunnel import BoundaryTunnel, BoundaryTunnelError
 from mycli.compat import WIN
 from mycli.config import str_to_bool
 from mycli.constants import (
@@ -40,8 +41,10 @@ class ClientConnectionMixin:
         config_without_package_defaults: Any
         keepalive_ticks: int | None
         sandbox_mode: bool
+        verbosity: int
         sqlexecute: Any
         logger: Any
+        boundary_tunnel: BoundaryTunnel | None
 
         def read_mylogin_cnf(self, cnf: Any) -> dict[str, Any]: ...
         def echo(self, *args: Any, **kwargs: Any) -> None: ...
@@ -70,6 +73,7 @@ class ClientConnectionMixin:
         vault_password_field: str | None = None,
         vault_username_field: str | None = None,
         vault_username_from_vault: bool = False,
+        boundary_target_id: str | None = None,
     ) -> None:
         mylogin_cnf: dict[str, Any] = self.read_mylogin_cnf(self.mylogin_cnf)
         # Fall back to .mylogin.cnf values only if user did not specify a value.
@@ -81,6 +85,7 @@ class ClientConnectionMixin:
         self.keepalive_ticks = keepalive_ticks
         self.ssh_tunnel = None
         self.selected_password = None
+        self.boundary_tunnel = None
 
         int_port = port and int(port)
         if not int_port:
@@ -125,9 +130,48 @@ class ClientConnectionMixin:
                 except Exception:
                     pass
                 sys.exit(1)
+        elif boundary_target_id:
+            use_keyring = False
+            boundary_executable = self.config.get('boundary_beta', {}).get('boundary_executable', 'boundary') or 'boundary'
+            boundary_address = self.config.get('boundary_beta', {}).get('address') or None
+            boundary_auth_method_id = self.config.get('boundary_beta', {}).get('auth_method_id') or None
+            boundary_options = self.config.get('boundary_beta', {}).get('boundary_options') or None
+            try:
+                self.boundary_tunnel = BoundaryTunnel(
+                    target_id=boundary_target_id,
+                    boundary_executable=boundary_executable,
+                    address=boundary_address,
+                    auth_method_id=boundary_auth_method_id,
+                    boundary_options=boundary_options,
+                )
+                self.boundary_tunnel.start(show_expiration_warning=self.verbosity >= 0)
+                if self.verbosity >= 0:
+                    click.secho(
+                        f'The Boundary db connection will expire at: {self.boundary_tunnel.expiry}',
+                        fg='white',
+                        bg='red',
+                        bold=True,
+                        err=True,
+                    )
+                if self.verbosity >= 2:
+                    click.secho(f'Temporary username: {self.boundary_tunnel.username}', err=True)
+                    click.secho(f'Temporary password: {self.boundary_tunnel.password}', err=True)
+                    click.secho(f'Temporary host:     {self.boundary_tunnel.local_host}', err=True)
+                    click.secho(f'Temporary port:     {self.boundary_tunnel.local_port}', err=True)
+                socket = None
+            except (OSError, BoundaryTunnelError) as exc:
+                click.secho(f'Error: Unable to start Boundary tunnel: {exc}', err=True, fg='red')
+                try:
+                    if self.boundary_tunnel:
+                        self.boundary_tunnel.close()
+                except Exception:
+                    pass
+                sys.exit(1)
 
         if password_candidates is None:
             password_candidates = PasswordCandidates()
+        if self.boundary_tunnel:
+            password_candidates.add_value('boundary', self.boundary_tunnel.password)
 
         if not character_set:
             if 'main' in self.config_without_package_defaults and 'default_character_set' in self.config_without_package_defaults['main']:
@@ -219,6 +263,16 @@ class ClientConnectionMixin:
                 vault_password_field=vault_password_field,
                 vault_username_field=vault_username_field,
             )
+        elif self.boundary_tunnel:
+            display_dsn = format_connection_dsn(
+                user=None,
+                host=host,
+                port=None,
+                socket=None,
+                database=database,
+                character_set=character_set,
+                boundary_id=boundary_target_id,
+            )
         elif vault_secret:
             display_dsn = format_connection_dsn(
                 user=display_dsn_user,
@@ -253,6 +307,11 @@ class ClientConnectionMixin:
         elif self.ssh_tunnel:
             connection_info['host'] = self.ssh_tunnel.local_host
             connection_info['port'] = self.ssh_tunnel.local_port
+            connection_info['socket'] = None
+        elif self.boundary_tunnel:
+            connection_info['user'] = self.boundary_tunnel.username
+            connection_info['host'] = self.boundary_tunnel.local_host
+            connection_info['port'] = self.boundary_tunnel.local_port
             connection_info['socket'] = None
         else:
             connection_info['host'] = host
