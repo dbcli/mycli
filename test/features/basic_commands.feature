@@ -10,7 +10,7 @@ Feature: run the cli,
 
   Scenario: run source command
      When we send source command
-      then we see help output
+      then we see one
 
   Scenario: check our application_name
      When we run query to check application_name

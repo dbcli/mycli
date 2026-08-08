@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Generator, Iterable, Mapping
+from collections.abc import Generator, Mapping
 import logging
 import os
 import re
@@ -11,6 +11,7 @@ import click
 from mycli.config import write_default_config
 from mycli.main_modes.repl import set_all_external_titles
 from mycli.packages import special
+from mycli.packages.batch_utils import statements_from_filehandle
 from mycli.packages.filepaths import dir_path_exists
 from mycli.packages.interactive_utils import confirm_destructive_query
 from mycli.packages.special.main import ArgType, SpecialCommandAlias
@@ -264,22 +265,36 @@ class ClientCommandsMixin:
 
         yield SQLResult(status=msg)
 
-    def execute_from_file(self, arg: str, **_) -> Iterable[SQLResult]:
+    def execute_from_file(self, arg: str, **_) -> Generator[SQLResult, None, None]:
         if not arg:
-            message = "Missing required argument: filename."
-            return [SQLResult(status=message)]
-        try:
-            with open(os.path.expanduser(arg)) as f:
-                query = f.read()
-        except IOError as e:
-            return [SQLResult(status=str(e))]
+            yield SQLResult(status="Missing required argument: filename.")
+            return
 
-        if self.destructive_warning and confirm_destructive_query(self.destructive_keywords, query) is False:
-            message = "Wise choice. Command execution stopped."
-            return [SQLResult(status=message)]
+        try:
+            file_h = open(os.path.expanduser(arg))
+        except OSError as error:
+            yield SQLResult(status=str(error))
+            return
 
         assert isinstance(self.sqlexecute, SQLExecute)
-        return self.sqlexecute.run(query)
+        with file_h:
+            statements = statements_from_filehandle(file_h)
+            while True:
+                try:
+                    query, _counter = next(statements)
+                except StopIteration:
+                    return
+                except (OSError, ValueError) as error:
+                    yield SQLResult(status=str(error))
+                    return
+
+                if special.is_special_command(query.rstrip(';')):
+                    yield SQLResult(status='Special commands are not supported in source files.')
+                    return
+
+                if self.destructive_warning and confirm_destructive_query(self.destructive_keywords, query) is False:
+                    continue
+                yield from self.sqlexecute.run(query)
 
     def change_prompt_format(self, arg: str, **_) -> list[SQLResult]:
         """

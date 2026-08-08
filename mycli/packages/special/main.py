@@ -72,6 +72,11 @@ def parse_special_command(sql: str) -> tuple[str, CommandVerbosity, str]:
     return (command, command_verbosity, arg.strip())
 
 
+def is_special_command(sql: str) -> bool:
+    command, _, _ = parse_special_command(sql)
+    return command in CASE_SENSITIVE_COMMANDS or command.lower() in CASE_INSENSITIVE_COMMANDS
+
+
 def special_command(
     command: str,
     usage: str,
@@ -190,7 +195,7 @@ def execute(cur: Cursor, sql: str) -> list[SQLResult]:
     """
     command, command_verbosity, arg = parse_special_command(sql)
 
-    if (command not in CASE_SENSITIVE_COMMANDS) and (command.lower() not in CASE_INSENSITIVE_COMMANDS):
+    if not is_special_command(sql):
         raise CommandNotFound(f'Command not found: {command}')
 
     try:

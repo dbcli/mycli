@@ -58,7 +58,7 @@ def step_send_help(context):
 @when("we send source command")
 def step_send_source_command(context):
     with tempfile.NamedTemporaryFile(prefix=TEMPFILE_PREFIX) as f:
-        f.write(b"\\?")
+        f.write(b"SELECT 1")
         f.flush()
         context.cli.sendline(f"\\. {f.name}")
         wrappers.expect_exact(context, context.conf["pager_boundary"] + "\r\n", timeout=5)
@@ -89,6 +89,28 @@ def step_see_found(context):
     wrappers.expect_exact(
         context,
         context.conf["pager_boundary"] + '\r\n' + expected + context.conf["pager_boundary"],
+        timeout=5,
+    )
+
+
+@then("we see one")
+def step_see_one(context):
+    expected = (
+        dedent(
+            """
+            +---+\r
+            | 1 |\r
+            +---+\r
+            | 1 |\r
+            +---+
+            """
+        ).strip()
+        + '\r\n\r\n'
+    )
+
+    wrappers.expect_exact(
+        context,
+        expected + context.conf["pager_boundary"],
         timeout=5,
     )
 

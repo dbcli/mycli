@@ -71,6 +71,12 @@ def test_parse_special_command(sql: str, expected: tuple[str, special_main.Comma
     assert special_main.parse_special_command(sql) == expected
 
 
+def test_is_special_command() -> None:
+    assert special_main.is_special_command('help') is True
+    assert special_main.is_special_command('HELP select') is True
+    assert special_main.is_special_command('select 1') is False
+
+
 def test_register_special_command_adds_primary_and_alias_entries(restore_commands: None) -> None:
     def handler() -> None:
         return None

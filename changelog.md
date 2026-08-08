@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Breaking Changes
+---------
+* `/source` scripts can no longer contain special /commands, but only SQL.
+
+
 Features
 ---------
 * Allow reading DSN aliases from a shared configuration file.
@@ -10,6 +15,8 @@ Features
 Bugfixes
 ---------
 * Downgrade `click` to v8.3.3, since v8.4.2 broke the pager on Windows.
+* Don't read `/source` targets entirely into memory.
+* Continue with a `/source` script after declining a destructive query.
 
 
 Documentation
