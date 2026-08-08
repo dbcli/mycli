@@ -311,6 +311,31 @@ def test_complete_while_typing_filter_bypasses_threshold_for_initial_slash_comma
     assert repl_mode.complete_while_typing_filter() is expected
 
 
+@pytest.mark.parametrize(
+    ('text', 'expected'),
+    [
+        ('/config get ma', False),
+        ('/config get mai', True),
+        ('/config get main.', True),
+        ('/config get main.s', True),
+        (r'\config get main.', True),
+        ('/CONFIG GET main.', True),
+        ('/config get main.-', False),
+        ('/config search main.', False),
+        ('select main.', False),
+    ],
+)
+def test_complete_while_typing_filter_treats_periods_as_config_property_characters(
+    monkeypatch: pytest.MonkeyPatch,
+    text: str,
+    expected: bool,
+) -> None:
+    monkeypatch.setattr(repl_mode, 'MIN_COMPLETION_TRIGGER', 3)
+    monkeypatch.setattr(repl_mode, 'get_app', lambda: SimpleNamespace(current_buffer=SimpleNamespace(text=text)))
+
+    assert repl_mode.complete_while_typing_filter() is expected
+
+
 def test_complete_while_typing_filter_does_not_treat_block_comments_as_slash_commands(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

@@ -119,6 +119,7 @@ def complete_while_typing_filter() -> bool:
     text = app.current_buffer.text.lstrip()
     if text.startswith('/') and not text.startswith('/*') and ' ' not in text:
         return True
+    completing_config_property = bool(re.match(r'^(?:/|\\)config\s+get\s+', text, re.IGNORECASE))
     text_len = len(text)
     if text_len < MIN_COMPLETION_TRIGGER:
         return False
@@ -137,7 +138,8 @@ def complete_while_typing_filter() -> bool:
         # limit. We would have to parse the statement, or at least go back more
         # characters, costing performance. This still works within a backtick! So
         # long as there are three trailing non-punctuation characters.
-        return not bool(re.search(r'[\s!-/:-@\[-^\{-~]', last_word))
+        punctuation_check = last_word.replace('.', '') if completing_config_property else last_word
+        return not bool(re.search(r'[\s!-/:-@\[-^\{-~]', punctuation_check))
 
 
 def _create_history(mycli: 'MyCli') -> FileHistoryWithTimestamp | None:
