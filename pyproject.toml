@@ -25,7 +25,9 @@ classifiers = [
 ]
 
 dependencies = [
-    "click ~= 8.4.2",
+    # click 8.4.2 breaks the pager on Windows; check the next
+    # version for https://github.com/pallets/click/pull/3739
+    "click ~= 8.3.3",
     "clickdc ~= 0.1.1",
     "cryptography ~= 50.0.0",
     "Pygments ~= 2.20.0",
