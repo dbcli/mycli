@@ -12,6 +12,11 @@ Bugfixes
 * Downgrade `click` to v8.3.3, since v8.4.2 broke the pager on Windows.
 
 
+Documentation
+---------
+* Make all links in `README.md` absolute, so that they don't break on PyPi.
+
+
 2.11.0 (2026/08/07)
 ==============
 
