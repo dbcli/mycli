@@ -834,6 +834,42 @@ def test_run_from_cli_args_prefers_cli_boundary_id_over_dsn_parameter(monkeypatc
     assert client.connect_calls[-1]['boundary_target_id'] == 'ttcp_cli'
 
 
+@pytest.mark.parametrize(
+    ('ssh_jump', 'boundary_id', 'dsn'),
+    [
+        ('cli-bastion', 'ttcp_cli', ''),
+        ('cli-bastion', None, 'mysql://user@host/db?boundary_id=ttcp_dsn'),
+        (None, 'ttcp_cli', 'mysql://user@host/db?ssh_jump=dsn-bastion'),
+        (None, None, 'mysql://user@host/db?ssh_jump=dsn-bastion&boundary_id=ttcp_dsn'),
+    ],
+)
+def test_run_from_cli_args_rejects_ssh_and_boundary_tunnels(
+    monkeypatch: pytest.MonkeyPatch,
+    ssh_jump: str | None,
+    boundary_id: str | None,
+    dsn: str,
+) -> None:
+    cli_args = make_cli_args()
+    cli_args.ssh_jump = ssh_jump
+    cli_args.boundary_id = boundary_id
+    cli_args.dsn = dsn
+    client = DummyMyCli()
+    secho_calls: list[tuple[str, dict[str, Any]]] = []
+    monkeypatch.setattr(cli_runner.click, 'secho', lambda text, **kwargs: secho_calls.append((text, kwargs)))
+
+    with pytest.raises(SystemExit) as excinfo:
+        run_with_client(monkeypatch, cli_args, client)
+
+    assert excinfo.value.code == 1
+    assert client.connect_calls == []
+    assert secho_calls == [
+        (
+            'Error: --ssh-jump and --boundary-id are incompatible.',
+            {'err': True, 'fg': 'red'},
+        )
+    ]
+
+
 def test_run_from_cli_args_maps_percent_encoded_dsn_prompt(monkeypatch: pytest.MonkeyPatch) -> None:
     cli_args = make_cli_args()
     cli_args.dsn = 'mysql://user@host/db?prompt=%5Cu%40%5Ch%3A%5Cd%3E+'
