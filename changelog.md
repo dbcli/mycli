@@ -1,4 +1,4 @@
-Upcoming (TBD)
+2.12.0 (2026/08/08)
 ==============
 
 Breaking Changes
