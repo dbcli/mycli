@@ -831,6 +831,21 @@ def suggest_special(text: str) -> list[dict[str, Any]]:
     if cmd in ["\\llm", "/llm", "\\ai", "/ai"]:
         return [{"type": "llm"}]
 
+    if cmd.lower() in (r'\config', '/config'):
+        config_arguments = _arg.split(maxsplit=1)
+        config_subcommands = ['help', 'get', 'search', 'edit']
+        if config_arguments and config_arguments[0].lower() == 'get':
+            completing_property = (len(config_arguments) == 1 and text[-1].isspace()) or (
+                len(config_arguments) == 2 and not text[-1].isspace()
+            )
+            if completing_property:
+                prefix = config_arguments[1] if len(config_arguments) == 2 else ''
+                return [{'type': 'config_property', 'prefix': prefix}]
+            return []
+        if config_arguments and config_arguments[0].lower() in config_subcommands:
+            return []
+        return [{'type': 'special_subcommand', 'subcommands': config_subcommands}]
+
     if cmd.lower() in (r'\dsn', '/dsn'):
         dsn_arguments = _arg.split(maxsplit=1)
         completing_delete_target = (len(dsn_arguments) == 1 and text[-1].isspace()) or (len(dsn_arguments) == 2 and not text[-1].isspace())

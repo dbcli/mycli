@@ -20,7 +20,7 @@ from mycli.app_state import (
     normalize_image_protocol,
     normalize_ssl_mode,
 )
-from mycli.client_commands import ClientCommandsMixin
+from mycli.client_commands import ClientCommandsMixin, get_config_property_names
 from mycli.client_connection import ClientConnectionMixin
 from mycli.client_query import ClientQueryMixin
 from mycli.clistyle import style_factory_helpers, style_factory_ptoolkit
@@ -93,6 +93,7 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
                 myclirc = self.xdg_config_file
             else:
                 myclirc = '~/.myclirc'
+        self.myclirc_path = os.path.abspath(os.path.expanduser(myclirc))
 
         # Load config.
         config_files: list[str | IO[str]] = self.system_config_files + [myclirc]
@@ -205,6 +206,7 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
             supported_formats=self.main_formatter.supported_formats,
             keyword_casing=keyword_casing,
             indexed_column_suffix=indexed_column_suffix,
+            config_property_names=get_config_property_names(self.config),
         )
         self._completer_lock = threading.Lock()
 

@@ -945,10 +945,12 @@ class SQLCompleter(Completer):
         supported_formats: tuple = (),
         keyword_casing: str = "auto",
         indexed_column_suffix: str = '*',
+        config_property_names: Collection[str] = (),
     ) -> None:
         super(self.__class__, self).__init__()
         self.smart_completion = smart_completion
         self.indexed_column_suffix = indexed_column_suffix
+        self.config_property_names = tuple(sorted(config_property_names))
         self.reserved_words = set()
         for x in self.keywords:
             self.reserved_words.update(x.split())
@@ -1452,6 +1454,8 @@ class SQLCompleter(Completer):
         suggestions = suggest_type(document.text, document.text_before_cursor)
         rigid_sort = False
         length_based_on_path = False
+        config_property_length: int | None = None
+        completion_filter_text = text_for_len
 
         rank = 0
         for suggestion in suggestions:
@@ -1745,6 +1749,13 @@ class SQLCompleter(Completer):
                 )
                 completions.extend([(*x, rank) for x in subcommands_m])
 
+            elif suggestion['type'] == 'config_property':
+                prefix = suggestion['prefix']
+                property_matches = self.find_fuzzy_matches(prefix, prefix.lower(), self.config_property_names)
+                completions.extend([(*x, rank) for x in property_matches])
+                config_property_length = len(prefix)
+                completion_filter_text = prefix.lower()
+
             elif suggestion['type'] == 'dsn_alias':
                 if hasattr(DsnAliases, 'instance'):
                     aliases_m = self.find_matches(
@@ -1789,10 +1800,12 @@ class SQLCompleter(Completer):
         if rigid_sort:
             uniq_completions_str = dict.fromkeys(x[0] for x in completions)
         else:
-            sorted_completions = sorted(completions, key=lambda item: completion_sort_key(item, text_for_len.lower()))
+            sorted_completions = sorted(completions, key=lambda item: completion_sort_key(item, completion_filter_text))
             uniq_completions_str = dict.fromkeys(x[0] for x in sorted_completions)
 
-        if length_based_on_path:
+        if config_property_length is not None:
+            return (Completion(x, -config_property_length) for x in uniq_completions_str)
+        elif length_based_on_path:
             return (
                 Completion(
                     x,
