@@ -44,6 +44,7 @@ class BoundaryTunnel:
         self.stdout = ''
         self._startup_error: OSError | ValueError | None = None
         self._started = threading.Event()
+        self._output_ready = threading.Event()
         self._ready = threading.Event()
         self._failed = threading.Event()
         self._thread: threading.Thread | None = None
@@ -71,18 +72,22 @@ class BoundaryTunnel:
         self._thread.start()
         deadline = time.monotonic() + self.ready_timeout
         while time.monotonic() < deadline:
-            if self._failed.is_set():
-                self.close()
-                if self._startup_error is not None:
-                    raise BoundaryTunnelError(f'Unable to start Boundary tunnel process: {self._startup_error}') from self._startup_error
-                raise BoundaryTunnelError('Boundary tunnel process exited before it was ready.')
+            self._raise_if_failed()
             if self._started.is_set():
-                self._read_stdout()
                 break
             time.sleep(0.05)
         else:
             self.close()
             raise BoundaryTunnelError('Timed out waiting for Boundary tunnel process to start.')
+
+        while time.monotonic() < deadline:
+            self._raise_if_failed()
+            if self._output_ready.is_set():
+                break
+            time.sleep(0.05)
+        else:
+            self.close()
+            raise BoundaryTunnelError('Timed out waiting for Boundary tunnel process output.')
 
         connection_details = json.loads(self.stdout)
         self.username = connection_details['credentials'][0]['secret']['decoded']['username']
@@ -93,17 +98,21 @@ class BoundaryTunnel:
         self.expiry = datetime.datetime.strftime(expiry_local, '%H:%M:%S %a %d %b %Y')
 
         while time.monotonic() < deadline:
-            if self._failed.is_set():
-                self.close()
-                if self._startup_error is not None:
-                    raise BoundaryTunnelError(f'Unable to start Boundary tunnel process: {self._startup_error}') from self._startup_error
-                raise BoundaryTunnelError('Boundary tunnel process exited before it was ready.')
+            self._raise_if_failed()
             if self._is_listening():
                 self._ready.set()
                 return
             time.sleep(0.05)
         self.close()
         raise BoundaryTunnelError('Timed out waiting for Boundary tunnel to become ready.')
+
+    def _raise_if_failed(self) -> None:
+        if not self._failed.is_set():
+            return
+        self.close()
+        if self._startup_error is not None:
+            raise BoundaryTunnelError(f'Unable to start Boundary tunnel process: {self._startup_error}') from self._startup_error
+        raise BoundaryTunnelError('Boundary tunnel process exited before it was ready.')
 
     def _read_stdout(self) -> None:
         process = self.process
@@ -141,6 +150,8 @@ class BoundaryTunnel:
                 env=self._environment(),
             )
             self._started.set()
+            self._read_stdout()
+            self._output_ready.set()
         except (OSError, ValueError) as exc:
             self._startup_error = exc
             self._failed.set()

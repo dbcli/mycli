@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import socket
 import subprocess
+import threading
 from typing import Any, cast
 
 import pytest
@@ -100,8 +101,8 @@ def test_find_free_local_port_returns_available_port() -> None:
         sock.bind(('127.0.0.1', port))
 
 
-def test_boundary_tunnel_start_reads_stdout_in_main_thread(monkeypatch: pytest.MonkeyPatch) -> None:
-    calls: list[str] = []
+def test_boundary_tunnel_start_reads_stdout_in_worker_thread(monkeypatch: pytest.MonkeyPatch) -> None:
+    read_threads: list[str] = []
 
     class FakeProcess:
         returncode = 0
@@ -118,9 +119,11 @@ def test_boundary_tunnel_start_reads_stdout_in_main_thread(monkeypatch: pytest.M
     def fake_run() -> None:
         tunnel.process = cast(Any, FakeProcess())
         tunnel._started.set()
+        tunnel._read_stdout()
+        tunnel._output_ready.set()
 
     def fake_read_stdout() -> None:
-        calls.append('read_stdout')
+        read_threads.append(threading.current_thread().name)
         tunnel.stdout = CONNECTION_DETAILS
 
     tunnel = BoundaryTunnel(target_id='ttcp_123', local_port=4406)
@@ -131,7 +134,7 @@ def test_boundary_tunnel_start_reads_stdout_in_main_thread(monkeypatch: pytest.M
 
     tunnel.start()
 
-    assert calls == ['read_stdout']
+    assert read_threads == ['mycli-boundary-tunnel']
     assert tunnel.stdout == CONNECTION_DETAILS
     assert tunnel.username == '1234'
     assert tunnel.password == '5678'
@@ -145,12 +148,10 @@ def test_boundary_tunnel_start_waits_for_process_to_start(monkeypatch: pytest.Mo
     def fake_sleep(seconds: float) -> None:
         sleeps.append(seconds)
         tunnel._started.set()
-
-    def fake_read_stdout() -> None:
         tunnel.stdout = CONNECTION_DETAILS
+        tunnel._output_ready.set()
 
     monkeypatch.setattr(tunnel, '_run', lambda: None)
-    monkeypatch.setattr(tunnel, '_read_stdout', fake_read_stdout)
     monkeypatch.setattr(tunnel, '_is_listening', lambda: True)
     monkeypatch.setattr(boundary_tunnel.time, 'sleep', fake_sleep)
 
@@ -188,6 +189,8 @@ def test_boundary_tunnel_start_reports_process_exit_after_stdout(monkeypatch: py
 
     def fake_run() -> None:
         tunnel._started.set()
+        tunnel._read_stdout()
+        tunnel._output_ready.set()
 
     def fake_read_stdout() -> None:
         tunnel.stdout = CONNECTION_DETAILS
@@ -205,6 +208,8 @@ def test_boundary_tunnel_start_reports_startup_error_after_stdout(monkeypatch: p
 
     def fake_run() -> None:
         tunnel._started.set()
+        tunnel._read_stdout()
+        tunnel._output_ready.set()
 
     def fake_read_stdout() -> None:
         tunnel.stdout = CONNECTION_DETAILS
@@ -251,16 +256,51 @@ def test_boundary_tunnel_start_reports_process_start_timeout(monkeypatch: pytest
         tunnel.start()
 
 
+def test_boundary_tunnel_start_reports_process_output_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[str] = []
+    output_released = threading.Event()
+
+    class BlockingStdout:
+        def readline(self) -> bytes:
+            calls.append('read')
+            output_released.wait()
+            return b''
+
+    class FakeProcess:
+        stdout = BlockingStdout()
+
+        def poll(self) -> None:
+            return None
+
+        def terminate(self) -> None:
+            calls.append('terminate')
+            output_released.set()
+
+        def wait(self, timeout: float | None = None) -> int:
+            calls.append(f'wait:{timeout}')
+            return 0
+
+    monkeypatch.setattr(boundary_tunnel.subprocess, 'Popen', lambda *_args, **_kwargs: FakeProcess())
+    tunnel = BoundaryTunnel(target_id='ttcp_123', local_port=4406, ready_timeout=0.1)
+
+    with pytest.raises(BoundaryTunnelError, match='Timed out waiting for Boundary tunnel process output'):
+        tunnel.start()
+
+    assert calls[:2] == ['read', 'terminate']
+    assert sorted(calls[2:]) == ['wait:5', 'wait:None']
+
+
 def test_boundary_tunnel_start_reports_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
     tunnel = BoundaryTunnel(target_id='ttcp_123', local_port=4406)
     tunnel.stdout = CONNECTION_DETAILS
 
     def fake_run() -> None:
         tunnel._started.set()
+        tunnel._output_ready.set()
 
     monkeypatch.setattr(tunnel, '_run', fake_run)
     monkeypatch.setattr(tunnel, '_is_listening', lambda: False)
-    monotonic_values = iter([0.0, 0.0, 31.0])
+    monotonic_values = iter([0.0, 0.0, 0.0, 31.0])
     monkeypatch.setattr(boundary_tunnel.time, 'monotonic', lambda: next(monotonic_values))
 
     with pytest.raises(BoundaryTunnelError, match='Timed out waiting for Boundary tunnel'):
@@ -310,6 +350,8 @@ def test_boundary_tunnel_run_tracks_process_status(
     popen_calls: list[tuple[list[str], dict[str, Any]]] = []
 
     class FakeProcess:
+        stdout = None
+
         def wait(self) -> int:
             return return_code
 
