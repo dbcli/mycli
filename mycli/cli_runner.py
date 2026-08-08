@@ -372,6 +372,10 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
         if params := dsn_params.get('vault_username_field'):
             cli_args.vault_username_field = cli_args.vault_username_field or params[0]
 
+    if cli_args.ssh_jump and cli_args.boundary_id:
+        click.secho('Error: --ssh-jump and --boundary-id are incompatible.', err=True, fg='red')
+        sys.exit(1)
+
     keepalive_ticks = cli_args.keepalive_ticks if cli_args.keepalive_ticks is not None else mycli.default_keepalive_ticks
     ssl_mode = cli_args.ssl_mode or mycli.ssl_mode
 
