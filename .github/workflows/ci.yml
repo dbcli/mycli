@@ -130,7 +130,7 @@ jobs:
         run: uv sync --all-extras -p ${{ matrix.python-version }}
 
       - name: Set up MySQL
-        uses: shogo82148/actions-setup-mysql@3dcedf762c5e82d781a9e414462785b30208e79c # v1.53.0
+        uses: shogo82148/actions-setup-mysql@62da9377d83991fce27b6ed2a397d3306121e41d # v1.53.1
         with:
           mysql-version: '9.7'
           root-password: root
