@@ -6,6 +6,11 @@ Features
 * Add beta support for HashiCorp Boundary tunnels.
 
 
+Documentation
+---------
+* Harmonize GitHub description and `pyproject.toml` description.
+
+
 Internal
 ---------
 * Remove CRLF line endings from fixture data.
