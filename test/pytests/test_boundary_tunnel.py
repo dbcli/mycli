@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+from contextlib import nullcontext
+from io import StringIO
 import os
 import socket
 import subprocess
 import threading
+from types import SimpleNamespace
 from typing import Any, cast
 
 import pytest
@@ -72,7 +75,10 @@ def test_boundary_tunnel_command_splits_options_before_generated_flags() -> None
 def test_boundary_tunnel_environment_uses_parent_default(auth_method_id: str | None) -> None:
     tunnel = BoundaryTunnel(target_id='ttcp_123', auth_method_id=auth_method_id)
 
-    assert tunnel._environment() is None
+    environment = tunnel._environment()
+
+    assert environment is not None
+    assert environment == dict(os.environ)
 
 
 def test_boundary_tunnel_environment_sets_configured_auth_method(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -84,6 +90,347 @@ def test_boundary_tunnel_environment_sets_configured_auth_method(monkeypatch: py
     assert environment is not None
     assert environment['BOUNDARY_AUTH_METHOD_ID'] == 'ampw_config'
     assert os.environ['BOUNDARY_AUTH_METHOD_ID'] == 'ampw_parent'
+
+
+def test_boundary_tunnel_environment_sets_configured_address(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv('BOUNDARY_ADDR', 'https://parent.example.com')
+    tunnel = BoundaryTunnel(target_id='ttcp_123', address='https://config.example.com')
+
+    environment = tunnel._environment()
+
+    assert environment is not None
+    assert environment['BOUNDARY_ADDR'] == 'https://config.example.com'
+    assert os.environ['BOUNDARY_ADDR'] == 'https://parent.example.com'
+
+
+@pytest.mark.parametrize(
+    ('test_command', 'auth_command'),
+    [
+        (None, 'boundary authenticate'),
+        ('boundary authenticate status', None),
+        ('', 'boundary authenticate'),
+        ('boundary authenticate status', ''),
+    ],
+)
+def test_boundary_tunnel_authentication_requires_both_commands(
+    monkeypatch: pytest.MonkeyPatch,
+    test_command: str | None,
+    auth_command: str | None,
+) -> None:
+    monkeypatch.setattr(boundary_tunnel.subprocess, 'run', lambda *_args, **_kwargs: pytest.fail('unexpected command'))
+    tunnel = BoundaryTunnel(
+        target_id='ttcp_123',
+        boundary_test_command=test_command,
+        boundary_auth_command=auth_command,
+        local_port=4406,
+    )
+
+    tunnel._authenticate_if_needed()
+
+
+def test_boundary_tunnel_authentication_skips_auth_when_test_succeeds(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[tuple[list[str], dict[str, Any]]] = []
+
+    def fake_run(command: list[str], **kwargs: Any) -> SimpleNamespace:
+        calls.append((command, kwargs))
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(boundary_tunnel.subprocess, 'run', fake_run)
+    tunnel = BoundaryTunnel(
+        target_id='ttcp_123',
+        auth_method_id='ampw_123',
+        boundary_test_command='boundary authenticate status -name "my auth"',
+        boundary_auth_command='boundary authenticate password',
+        local_port=4406,
+    )
+
+    tunnel._authenticate_if_needed()
+
+    assert calls == [
+        (
+            ['boundary', 'authenticate', 'status', '-name', 'my auth'],
+            {
+                'check': False,
+                'stdin': subprocess.DEVNULL,
+                'stdout': subprocess.DEVNULL,
+                'stderr': subprocess.DEVNULL,
+                'env': {**os.environ, 'BOUNDARY_AUTH_METHOD_ID': 'ampw_123'},
+            },
+        )
+    ]
+
+
+def test_boundary_tunnel_authentication_runs_auth_after_failed_test(monkeypatch: pytest.MonkeyPatch) -> None:
+    class FakeTerminal(StringIO):
+        def __init__(self, responses: str) -> None:
+            super().__init__(responses)
+            self.output = StringIO()
+
+        def write(self, value: str) -> int:
+            return self.output.write(value)
+
+        def flush(self) -> None:
+            self.output.flush()
+
+        def close(self) -> None:
+            pass
+
+    calls: list[tuple[list[str], dict[str, Any]]] = []
+    return_codes = iter([1, 0])
+    sql_input = StringIO('select 1;\n')
+    redirected_error = StringIO()
+    terminal = FakeTerminal('\n\n')
+    opened_paths: list[tuple[str, str, str]] = []
+
+    def fake_run(command: list[str], **kwargs: Any) -> SimpleNamespace:
+        calls.append((command, kwargs))
+        return SimpleNamespace(returncode=next(return_codes))
+
+    def fake_open(path: str, mode: str, *, encoding: str) -> FakeTerminal:
+        opened_paths.append((path, mode, encoding))
+        return terminal
+
+    monkeypatch.setattr(boundary_tunnel.subprocess, 'run', fake_run)
+    monkeypatch.setattr(boundary_tunnel, 'WIN', False)
+    monkeypatch.setattr(boundary_tunnel.sys, 'stdin', sql_input)
+    monkeypatch.setattr(boundary_tunnel.sys, 'stderr', redirected_error)
+    monkeypatch.setattr(boundary_tunnel, 'open', fake_open, raising=False)
+    tunnel = BoundaryTunnel(
+        target_id='ttcp_123',
+        boundary_test_command='boundary authenticate status',
+        boundary_auth_command='boundary authenticate password -login-name "Jane Doe"',
+        local_port=4406,
+    )
+
+    tunnel._authenticate_if_needed()
+
+    assert calls == [
+        (
+            ['boundary', 'authenticate', 'status'],
+            {
+                'check': False,
+                'stdin': subprocess.DEVNULL,
+                'stdout': subprocess.DEVNULL,
+                'stderr': subprocess.DEVNULL,
+                'env': {**os.environ},
+            },
+        ),
+        (
+            ['boundary', 'authenticate', 'password', '-login-name', 'Jane Doe'],
+            {
+                'check': False,
+                'stdin': terminal,
+                'stdout': terminal,
+                'stderr': terminal,
+                'env': {**os.environ},
+            },
+        ),
+    ]
+    assert opened_paths == [('/dev/tty', 'r+', 'utf-8')]
+    assert sql_input.read() == 'select 1;\n'
+    assert redirected_error.getvalue() == ''
+    assert terminal.output.getvalue() == (
+        'Authenticate with Boundary before connecting? [Yn] Press return to continue after authenticating: '
+    )
+
+
+def test_boundary_tunnel_authentication_uses_tty_streams(monkeypatch: pytest.MonkeyPatch) -> None:
+    terminal_input = StringIO('response\n')
+    terminal_output = StringIO()
+    monkeypatch.setattr(terminal_input, 'isatty', lambda: True)
+    monkeypatch.setattr(terminal_output, 'isatty', lambda: True)
+    monkeypatch.setattr(boundary_tunnel.sys, 'stdin', terminal_input)
+    monkeypatch.setattr(boundary_tunnel.sys, 'stderr', terminal_output)
+
+    with boundary_tunnel._authentication_terminal() as (authentication_input, authentication_output):
+        assert authentication_input is terminal_input
+        assert authentication_output is terminal_output
+
+
+def test_boundary_tunnel_authentication_opens_windows_console(monkeypatch: pytest.MonkeyPatch) -> None:
+    terminal_input = StringIO('response\n')
+    terminal_output = StringIO()
+    opened_paths: list[tuple[str, str, str]] = []
+
+    def fake_open(path: str, mode: str, *, encoding: str) -> StringIO:
+        opened_paths.append((path, mode, encoding))
+        return terminal_input if path == 'CONIN$' else terminal_output
+
+    monkeypatch.setattr(boundary_tunnel, 'WIN', True)
+    monkeypatch.setattr(boundary_tunnel.sys, 'stdin', StringIO())
+    monkeypatch.setattr(boundary_tunnel.sys, 'stderr', StringIO())
+    monkeypatch.setattr(boundary_tunnel, 'open', fake_open, raising=False)
+
+    with boundary_tunnel._authentication_terminal() as (authentication_input, authentication_output):
+        assert authentication_input is terminal_input
+        assert authentication_output is terminal_output
+
+    assert opened_paths == [
+        ('CONIN$', 'r', 'utf-8'),
+        ('CONOUT$', 'w', 'utf-8'),
+    ]
+
+
+def test_boundary_tunnel_authentication_reports_missing_terminal(monkeypatch: pytest.MonkeyPatch) -> None:
+    sql_input = StringIO('select 1;\n')
+
+    def fail_open(*_args: Any, **_kwargs: Any) -> None:
+        raise OSError('no terminal')
+
+    monkeypatch.setattr(boundary_tunnel.sys, 'stdin', sql_input)
+    monkeypatch.setattr(boundary_tunnel.sys, 'stderr', StringIO())
+    monkeypatch.setattr(boundary_tunnel, 'open', fail_open, raising=False)
+
+    with pytest.raises(BoundaryTunnelError, match='Unable to open a terminal') as excinfo:
+        with boundary_tunnel._authentication_terminal():
+            pass
+
+    assert isinstance(excinfo.value.__cause__, OSError)
+    assert sql_input.read() == 'select 1;\n'
+
+
+def test_boundary_tunnel_authentication_reports_terminal_eof() -> None:
+    with pytest.raises(BoundaryTunnelError, match='Unable to read a response from the terminal'):
+        boundary_tunnel._prompt_for_authentication(StringIO(), StringIO(), 'Prompt: ')
+
+
+def test_boundary_tunnel_authentication_reports_declined_auth(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        boundary_tunnel.subprocess,
+        'run',
+        lambda *_args, **_kwargs: SimpleNamespace(returncode=1),
+    )
+    monkeypatch.setattr(
+        boundary_tunnel,
+        '_authentication_terminal',
+        lambda: nullcontext((StringIO('n\n'), StringIO())),
+    )
+    tunnel = BoundaryTunnel(
+        target_id='ttcp_123',
+        boundary_test_command='boundary authenticate status',
+        boundary_auth_command='boundary authenticate password',
+        local_port=4406,
+    )
+
+    with pytest.raises(BoundaryTunnelError, match='Not authenticated'):
+        tunnel._authenticate_if_needed()
+
+
+@pytest.mark.parametrize(
+    ('command', 'expected'),
+    [
+        (
+            r'C:\boundary\boundary.exe authenticate status',
+            [r'C:\boundary\boundary.exe', 'authenticate', 'status'],
+        ),
+        (
+            r'"C:\Program Files\Boundary\boundary.exe" authenticate -name "Jane Doe"',
+            [r'C:\Program Files\Boundary\boundary.exe', 'authenticate', '-name', 'Jane Doe'],
+        ),
+    ],
+)
+def test_boundary_tunnel_authentication_parses_windows_commands(
+    monkeypatch: pytest.MonkeyPatch,
+    command: str,
+    expected: list[str],
+) -> None:
+    monkeypatch.setattr(boundary_tunnel, 'WIN', True)
+
+    assert BoundaryTunnel._parse_authentication_command(command, 'test') == expected
+
+
+def test_boundary_tunnel_authentication_reports_failed_auth(monkeypatch: pytest.MonkeyPatch) -> None:
+    return_codes = iter([1, 2])
+    monkeypatch.setattr(
+        boundary_tunnel.subprocess,
+        'run',
+        lambda *_args, **_kwargs: SimpleNamespace(returncode=next(return_codes)),
+    )
+    monkeypatch.setattr(
+        boundary_tunnel,
+        '_authentication_terminal',
+        lambda: nullcontext((StringIO('\n'), StringIO())),
+    )
+    tunnel = BoundaryTunnel(
+        target_id='ttcp_123',
+        boundary_test_command='boundary authenticate status',
+        boundary_auth_command='boundary authenticate password',
+        local_port=4406,
+    )
+
+    with pytest.raises(BoundaryTunnelError, match='Authentication command exited with status 2'):
+        tunnel._authenticate_if_needed()
+
+
+@pytest.mark.parametrize(
+    ('test_command', 'auth_command', 'error_match'),
+    [
+        ('"unterminated', 'boundary authenticate', 'Unable to parse test command'),
+        ('   ', 'boundary authenticate', 'test command is empty'),
+        ('boundary test', '"unterminated', 'Unable to parse authentication command'),
+        ('boundary test', '   ', 'authentication command is empty'),
+    ],
+)
+def test_boundary_tunnel_authentication_reports_invalid_commands(
+    monkeypatch: pytest.MonkeyPatch,
+    test_command: str,
+    auth_command: str,
+    error_match: str,
+) -> None:
+    monkeypatch.setattr(boundary_tunnel.subprocess, 'run', lambda *_args, **_kwargs: SimpleNamespace(returncode=1))
+    monkeypatch.setattr(
+        boundary_tunnel,
+        '_authentication_terminal',
+        lambda: nullcontext((StringIO('\n'), StringIO())),
+    )
+    tunnel = BoundaryTunnel(
+        target_id='ttcp_123',
+        boundary_test_command=test_command,
+        boundary_auth_command=auth_command,
+        local_port=4406,
+    )
+
+    with pytest.raises(BoundaryTunnelError, match=error_match):
+        tunnel._authenticate_if_needed()
+
+
+@pytest.mark.parametrize(
+    ('return_codes', 'error_match'),
+    [
+        ([], 'Unable to run test command: command failed'),
+        ([1], 'Unable to run authentication command: command failed'),
+    ],
+)
+def test_boundary_tunnel_authentication_reports_process_errors(
+    monkeypatch: pytest.MonkeyPatch,
+    return_codes: list[int],
+    error_match: str,
+) -> None:
+    remaining_codes = iter(return_codes)
+
+    def fake_run(*_args: Any, **_kwargs: Any) -> SimpleNamespace:
+        try:
+            return SimpleNamespace(returncode=next(remaining_codes))
+        except StopIteration:
+            raise OSError('command failed') from None
+
+    monkeypatch.setattr(boundary_tunnel.subprocess, 'run', fake_run)
+    monkeypatch.setattr(
+        boundary_tunnel,
+        '_authentication_terminal',
+        lambda: nullcontext((StringIO('\n'), StringIO())),
+    )
+    tunnel = BoundaryTunnel(
+        target_id='ttcp_123',
+        boundary_test_command='boundary authenticate status',
+        boundary_auth_command='boundary authenticate password',
+        local_port=4406,
+    )
+
+    with pytest.raises(BoundaryTunnelError, match=error_match) as excinfo:
+        tunnel._authenticate_if_needed()
+
+    assert isinstance(excinfo.value.__cause__, OSError)
 
 
 def test_boundary_tunnel_allocates_local_port(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -141,6 +488,28 @@ def test_boundary_tunnel_start_reads_stdout_in_worker_thread(monkeypatch: pytest
     assert tunnel.expiry is not None
 
 
+def test_boundary_tunnel_start_authenticates_before_starting_worker(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[str] = []
+    tunnel = BoundaryTunnel(target_id='ttcp_123', local_port=4406)
+    tunnel.stdout = CONNECTION_DETAILS
+
+    def fake_authenticate() -> None:
+        calls.append('authenticate')
+
+    def fake_run() -> None:
+        calls.append('run')
+        tunnel._started.set()
+        tunnel._output_ready.set()
+
+    monkeypatch.setattr(tunnel, '_authenticate_if_needed', fake_authenticate)
+    monkeypatch.setattr(tunnel, '_run', fake_run)
+    monkeypatch.setattr(tunnel, '_is_listening', lambda: True)
+
+    tunnel.start()
+
+    assert calls == ['authenticate', 'run']
+
+
 def test_boundary_tunnel_start_waits_for_process_to_start(monkeypatch: pytest.MonkeyPatch) -> None:
     sleeps: list[float] = []
     tunnel = BoundaryTunnel(target_id='ttcp_123', local_port=4406)
@@ -170,7 +539,7 @@ def test_boundary_tunnel_start_reports_cli_status_code(monkeypatch: pytest.Monke
 
     monkeypatch.setattr(tunnel, '_run', fake_run)
 
-    with pytest.raises(BoundaryTunnelError, match='Boundary tunnel CLI raised status code 403'):
+    with pytest.raises(BoundaryTunnelError, match='Tunnel CLI raised status code 403'):
         tunnel.start()
 
 
@@ -191,7 +560,7 @@ def test_boundary_tunnel_start_reports_missing_credentials(monkeypatch: pytest.M
 
     monkeypatch.setattr(tunnel, '_run', fake_run)
 
-    with pytest.raises(BoundaryTunnelError, match='Boundary tunnel CLI did not return credentials'):
+    with pytest.raises(BoundaryTunnelError, match='Tunnel CLI did not return credentials'):
         tunnel.start()
 
 
@@ -254,7 +623,7 @@ def test_boundary_tunnel_start_reports_startup_error_after_stdout(monkeypatch: p
     monkeypatch.setattr(tunnel, '_run', fake_run)
     monkeypatch.setattr(tunnel, '_read_stdout', fake_read_stdout)
 
-    with pytest.raises(BoundaryTunnelError, match='Unable to start Boundary tunnel process: boundary failed') as excinfo:
+    with pytest.raises(BoundaryTunnelError, match='Unable to start tunnel process: boundary failed') as excinfo:
         tunnel.start()
 
     assert isinstance(excinfo.value.__cause__, OSError)
@@ -268,7 +637,7 @@ def test_boundary_tunnel_start_reports_process_start_error(monkeypatch: pytest.M
     tunnel = BoundaryTunnel(target_id='ttcp_123', local_port=4406)
     monkeypatch.setattr(tunnel, '_is_listening', lambda: False)
 
-    with pytest.raises(BoundaryTunnelError, match='Unable to start Boundary tunnel process: missing boundary') as excinfo:
+    with pytest.raises(BoundaryTunnelError, match='Unable to start tunnel process: missing boundary') as excinfo:
         tunnel.start()
 
     assert isinstance(excinfo.value.__cause__, FileNotFoundError)
@@ -277,7 +646,7 @@ def test_boundary_tunnel_start_reports_process_start_error(monkeypatch: pytest.M
 def test_boundary_tunnel_start_reports_invalid_options() -> None:
     tunnel = BoundaryTunnel(target_id='ttcp_123', boundary_options='"unterminated', local_port=4406)
 
-    with pytest.raises(BoundaryTunnelError, match='Unable to start Boundary tunnel process: No closing quotation') as excinfo:
+    with pytest.raises(BoundaryTunnelError, match='Unable to start tunnel process: No closing quotation') as excinfo:
         tunnel.start()
 
     assert isinstance(excinfo.value.__cause__, ValueError)
@@ -287,7 +656,7 @@ def test_boundary_tunnel_start_reports_process_start_timeout(monkeypatch: pytest
     tunnel = BoundaryTunnel(target_id='ttcp_123', local_port=4406, ready_timeout=0)
     monkeypatch.setattr(tunnel, '_run', lambda: None)
 
-    with pytest.raises(BoundaryTunnelError, match='Timed out waiting for Boundary tunnel process to start'):
+    with pytest.raises(BoundaryTunnelError, match='Timed out waiting for tunnel process to start'):
         tunnel.start()
 
 
@@ -318,7 +687,7 @@ def test_boundary_tunnel_start_reports_process_output_timeout(monkeypatch: pytes
     monkeypatch.setattr(boundary_tunnel.subprocess, 'Popen', lambda *_args, **_kwargs: FakeProcess())
     tunnel = BoundaryTunnel(target_id='ttcp_123', local_port=4406, ready_timeout=0.1)
 
-    with pytest.raises(BoundaryTunnelError, match='Timed out waiting for Boundary tunnel process output'):
+    with pytest.raises(BoundaryTunnelError, match='Timed out waiting for tunnel process output'):
         tunnel.start()
 
     assert calls[:2] == ['read', 'terminate']
@@ -338,7 +707,7 @@ def test_boundary_tunnel_start_reports_timeout(monkeypatch: pytest.MonkeyPatch) 
     monotonic_values = iter([0.0, 0.0, 0.0, 31.0])
     monkeypatch.setattr(boundary_tunnel.time, 'monotonic', lambda: next(monotonic_values))
 
-    with pytest.raises(BoundaryTunnelError, match='Timed out waiting for Boundary tunnel'):
+    with pytest.raises(BoundaryTunnelError, match='Timed out waiting for tunnel'):
         tunnel.start()
 
 
@@ -411,7 +780,7 @@ def test_boundary_tunnel_run_tracks_process_status(
                 'stdout': subprocess.PIPE,
                 'stderr': subprocess.DEVNULL,
                 'start_new_session': True,
-                'env': None,
+                'env': {**os.environ},
             },
         )
     ]

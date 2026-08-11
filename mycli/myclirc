@@ -435,6 +435,18 @@ auth_method_id =
 # Additional options passed to the "boundary connect" command.
 boundary_options =
 
+# Command used to test whether Boundary authentication is valid.
+# If empty, establishing the tunnel will fail when not authenticated.
+# If set, boundary_auth_command must also be set.
+# Example: boundary targets read -id ttcp_zzzzzzzzzz
+boundary_test_command =
+
+# Command used to authenticate when boundary_test_command exits nonzero.
+# If empty, establishing the tunnel will fail when not authenticated.
+# If set, boundary_test_command must also be set.
+# Example: boundary authenticate oidc
+boundary_auth_command =
+
 # Custom colors for the completion menu, toolbar, etc, with actual support
 # depending on the terminal, and the property being set.
 # Colors: #ffffff, bg:#ffffff, border:#ffffff.
