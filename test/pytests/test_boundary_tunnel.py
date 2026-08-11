@@ -160,6 +160,41 @@ def test_boundary_tunnel_start_waits_for_process_to_start(monkeypatch: pytest.Mo
     assert sleeps == [0.05]
 
 
+def test_boundary_tunnel_start_reports_cli_status_code(monkeypatch: pytest.MonkeyPatch) -> None:
+    tunnel = BoundaryTunnel(target_id='ttcp_123', local_port=4406)
+    tunnel.stdout = '{"status_code":403}'
+
+    def fake_run() -> None:
+        tunnel._started.set()
+        tunnel._output_ready.set()
+
+    monkeypatch.setattr(tunnel, '_run', fake_run)
+
+    with pytest.raises(BoundaryTunnelError, match='Boundary tunnel CLI raised status code 403'):
+        tunnel.start()
+
+
+@pytest.mark.parametrize(
+    'connection_details',
+    [
+        '{"credentials":[]}',
+        '{"credentials":[{}]}',
+    ],
+)
+def test_boundary_tunnel_start_reports_missing_credentials(monkeypatch: pytest.MonkeyPatch, connection_details: str) -> None:
+    tunnel = BoundaryTunnel(target_id='ttcp_123', local_port=4406)
+    tunnel.stdout = connection_details
+
+    def fake_run() -> None:
+        tunnel._started.set()
+        tunnel._output_ready.set()
+
+    monkeypatch.setattr(tunnel, '_run', fake_run)
+
+    with pytest.raises(BoundaryTunnelError, match='Boundary tunnel CLI did not return credentials'):
+        tunnel.start()
+
+
 def test_boundary_tunnel_start_reports_process_exit_before_ready(monkeypatch: pytest.MonkeyPatch) -> None:
     class FakeStdout:
         def readline(self) -> bytes:

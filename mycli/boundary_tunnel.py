@@ -90,8 +90,16 @@ class BoundaryTunnel:
             raise BoundaryTunnelError('Timed out waiting for Boundary tunnel process output.')
 
         connection_details = json.loads(self.stdout)
-        self.username = connection_details['credentials'][0]['secret']['decoded']['username']
-        self.password = connection_details['credentials'][0]['secret']['decoded']['password']
+
+        if 'status_code' in connection_details:
+            raise BoundaryTunnelError(f'Boundary tunnel CLI raised status code {connection_details["status_code"]}.')
+
+        try:
+            self.username = connection_details['credentials'][0]['secret']['decoded']['username']
+            self.password = connection_details['credentials'][0]['secret']['decoded']['password']
+        except (IndexError, KeyError):
+            raise BoundaryTunnelError('Boundary tunnel CLI did not return credentials.') from None
+
         expiry_raw = connection_details['expiration']
         expiry_utc = datetime.datetime.strptime(expiry_raw, '%Y-%m-%dT%H:%M:%S.%f%z')
         expiry_local = datetime.datetime.fromtimestamp(expiry_utc.timestamp())
