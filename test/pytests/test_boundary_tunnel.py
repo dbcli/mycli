@@ -12,7 +12,11 @@ from typing import Any, cast
 import pytest
 
 from mycli import boundary_tunnel
-from mycli.boundary_tunnel import BoundaryTunnel, BoundaryTunnelError
+from mycli.boundary_tunnel import (
+    TUNNEL_STABILIZATION_PAUSE,
+    BoundaryTunnel,
+    BoundaryTunnelError,
+)
 
 CONNECTION_DETAILS = (
     '{"address":"127.0.0.1","credentials":[{"secret":{"decoded":{"username":"1234","password":"5678"}}}],'
@@ -478,6 +482,7 @@ def test_boundary_tunnel_start_reads_stdout_in_worker_thread(monkeypatch: pytest
     monkeypatch.setattr(tunnel, '_read_stdout', fake_read_stdout)
     checks = iter([False, True])
     monkeypatch.setattr(tunnel, '_is_listening', lambda: next(checks))
+    monkeypatch.setattr(boundary_tunnel.time, 'sleep', lambda _seconds: None)
 
     tunnel.start()
 
@@ -504,6 +509,7 @@ def test_boundary_tunnel_start_authenticates_before_starting_worker(monkeypatch:
     monkeypatch.setattr(tunnel, '_authenticate_if_needed', fake_authenticate)
     monkeypatch.setattr(tunnel, '_run', fake_run)
     monkeypatch.setattr(tunnel, '_is_listening', lambda: True)
+    monkeypatch.setattr(boundary_tunnel.time, 'sleep', lambda _seconds: None)
 
     tunnel.start()
 
@@ -526,7 +532,7 @@ def test_boundary_tunnel_start_waits_for_process_to_start(monkeypatch: pytest.Mo
 
     tunnel.start()
 
-    assert sleeps == [0.05]
+    assert sleeps == [0.05, TUNNEL_STABILIZATION_PAUSE]
 
 
 def test_boundary_tunnel_start_reports_cli_status_code(monkeypatch: pytest.MonkeyPatch) -> None:

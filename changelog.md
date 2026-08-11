@@ -1,3 +1,11 @@
+2.13.1 (2026/08/11)
+==============
+
+Bugfixes
+---------
+* Pause before connecting over Boundary tunnels, to avoid SSL errors.
+
+
 2.13.0 (2026/08/11)
 ==============
 

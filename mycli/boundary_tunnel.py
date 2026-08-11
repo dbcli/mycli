@@ -15,6 +15,8 @@ from typing import IO
 
 from mycli.compat import WIN
 
+TUNNEL_STABILIZATION_PAUSE = 0.25
+
 
 class BoundaryTunnelError(RuntimeError):
     pass
@@ -146,6 +148,9 @@ class BoundaryTunnel:
             self._raise_if_failed()
             if self._is_listening():
                 self._ready.set()
+                # todo: if this works to ward off SSL errors at connection time,
+                # try making the pause as small as possible
+                time.sleep(TUNNEL_STABILIZATION_PAUSE)
                 return
             time.sleep(0.05)
         self.close()
