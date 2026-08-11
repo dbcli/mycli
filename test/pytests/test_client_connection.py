@@ -716,6 +716,8 @@ def test_connect_uses_boundary_tunnel(
             address: str | None,
             auth_method_id: str | None,
             boundary_options: str | None,
+            boundary_test_command: str | None,
+            boundary_auth_command: str | None,
         ) -> None:
             tunnel_calls.append({
                 'target_id': target_id,
@@ -723,6 +725,8 @@ def test_connect_uses_boundary_tunnel(
                 'address': address,
                 'auth_method_id': auth_method_id,
                 'boundary_options': boundary_options,
+                'boundary_test_command': boundary_test_command,
+                'boundary_auth_command': boundary_auth_command,
             })
 
         def start(self, *, show_expiration_warning: bool) -> None:
@@ -741,6 +745,8 @@ def test_connect_uses_boundary_tunnel(
                 'address': 'https://boundary.example.com',
                 'auth_method_id': 'ampw_123',
                 'boundary_options': '-token env://BOUNDARY_TOKEN',
+                'boundary_test_command': 'boundary authenticate status',
+                'boundary_auth_command': 'boundary authenticate password',
             },
             'connection': {},
         },
@@ -762,6 +768,8 @@ def test_connect_uses_boundary_tunnel(
             'address': 'https://boundary.example.com',
             'auth_method_id': 'ampw_123',
             'boundary_options': '-token env://BOUNDARY_TOKEN',
+            'boundary_test_command': 'boundary authenticate status',
+            'boundary_auth_command': 'boundary authenticate password',
         }
     ]
     assert warning_calls == [expected_warning]
@@ -804,6 +812,8 @@ def test_connect_boundary_tunnel_respects_password_source_precedence(
             address: str | None,
             auth_method_id: str | None,
             boundary_options: str | None,
+            boundary_test_command: str | None,
+            boundary_auth_command: str | None,
         ) -> None:
             pass
 
@@ -834,7 +844,7 @@ def test_connect_boundary_tunnel_respects_password_source_precedence(
 
 
 def test_connect_boundary_tunnel_uses_default_config(monkeypatch: pytest.MonkeyPatch) -> None:
-    tunnel_calls: list[tuple[str, str | None, str | None, str | None]] = []
+    tunnel_calls: list[tuple[str, str | None, str | None, str | None, str | None, str | None]] = []
     warning_calls: list[bool] = []
 
     class FakeTunnel:
@@ -852,8 +862,17 @@ def test_connect_boundary_tunnel_uses_default_config(monkeypatch: pytest.MonkeyP
             address: str | None,
             auth_method_id: str | None,
             boundary_options: str | None,
+            boundary_test_command: str | None,
+            boundary_auth_command: str | None,
         ) -> None:
-            tunnel_calls.append((boundary_executable, address, auth_method_id, boundary_options))
+            tunnel_calls.append((
+                boundary_executable,
+                address,
+                auth_method_id,
+                boundary_options,
+                boundary_test_command,
+                boundary_auth_command,
+            ))
 
         def start(self, *, show_expiration_warning: bool) -> None:
             warning_calls.append(show_expiration_warning)
@@ -866,7 +885,7 @@ def test_connect_boundary_tunnel_uses_default_config(monkeypatch: pytest.MonkeyP
 
     client.connect(host='db.internal', boundary_target_id='ttcp_123')
 
-    assert tunnel_calls == [('boundary', None, None, None)]
+    assert tunnel_calls == [('boundary', None, None, None, None, None)]
     assert warning_calls == [True]
 
 
@@ -887,6 +906,8 @@ def test_connect_boundary_tunnel_disables_keyring(monkeypatch: pytest.MonkeyPatc
             address: str | None,
             auth_method_id: str | None,
             boundary_options: str | None,
+            boundary_test_command: str | None,
+            boundary_auth_command: str | None,
         ) -> None:
             pass
 
@@ -930,6 +951,8 @@ def test_connect_reports_boundary_tunnel_start_error_and_closes_tunnel(monkeypat
             address: str | None,
             auth_method_id: str | None,
             boundary_options: str | None,
+            boundary_test_command: str | None,
+            boundary_auth_command: str | None,
         ) -> None:
             pass
 
@@ -967,6 +990,8 @@ def test_connect_swallows_boundary_tunnel_cleanup_error(monkeypatch: pytest.Monk
             address: str | None,
             auth_method_id: str | None,
             boundary_options: str | None,
+            boundary_test_command: str | None,
+            boundary_auth_command: str | None,
         ) -> None:
             pass
 

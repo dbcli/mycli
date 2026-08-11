@@ -136,6 +136,8 @@ class ClientConnectionMixin:
             boundary_address = self.config.get('boundary_beta', {}).get('address') or None
             boundary_auth_method_id = self.config.get('boundary_beta', {}).get('auth_method_id') or None
             boundary_options = self.config.get('boundary_beta', {}).get('boundary_options') or None
+            boundary_test_command = self.config.get('boundary_beta', {}).get('boundary_test_command') or None
+            boundary_auth_command = self.config.get('boundary_beta', {}).get('boundary_auth_command') or None
             try:
                 self.boundary_tunnel = BoundaryTunnel(
                     target_id=boundary_target_id,
@@ -143,6 +145,8 @@ class ClientConnectionMixin:
                     address=boundary_address,
                     auth_method_id=boundary_auth_method_id,
                     boundary_options=boundary_options,
+                    boundary_test_command=boundary_test_command,
+                    boundary_auth_command=boundary_auth_command,
                 )
                 self.boundary_tunnel.start(show_expiration_warning=self.verbosity >= 0)
                 if self.verbosity >= 0:
