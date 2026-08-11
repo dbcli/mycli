@@ -1,7 +1,7 @@
 [project]
 name = "mycli"
 dynamic = ["version"]
-description = "CLI for MySQL Database. With auto-completion and syntax highlighting."
+description = "Rich terminal client for MySQL with autocompletion, syntax highlighting, and dataframes"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "BSD-3-Clause"
