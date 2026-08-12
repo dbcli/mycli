@@ -391,23 +391,18 @@ def test_init_reads_mylogin_cnf(monkeypatch: pytest.MonkeyPatch, tmp_path: Path)
     assert cli.mylogin_cnf == {'client': 'config'}
 
 
-def test_close_stops_schema_prefetcher_and_closes_sqlexecute() -> None:
+def test_close_stops_refreshers_before_closing_connection_and_tunnels() -> None:
     cli = MyCli.__new__(MyCli)
-    stopped: list[bool] = []
-    closed: list[bool] = []
-    ssh_tunnel_closed: list[bool] = []
-    boundary_tunnel_closed: list[bool] = []
-    cli.schema_prefetcher = SimpleNamespace(stop=lambda: stopped.append(True))
-    cli.sqlexecute = SimpleNamespace(close=lambda: closed.append(True))  # type: ignore[assignment]
-    cast(Any, cli).ssh_tunnel = SimpleNamespace(close=lambda: ssh_tunnel_closed.append(True))
-    cli.boundary_tunnel = SimpleNamespace(close=lambda: boundary_tunnel_closed.append(True))  # type: ignore[assignment]
+    calls: list[str] = []
+    cli.completion_refresher = SimpleNamespace(stop=lambda: calls.append('completion'))
+    cli.schema_prefetcher = SimpleNamespace(stop=lambda: calls.append('prefetch'))
+    cli.sqlexecute = SimpleNamespace(close=lambda: calls.append('connection'))  # type: ignore[assignment]
+    cast(Any, cli).ssh_tunnel = SimpleNamespace(close=lambda: calls.append('ssh'))
+    cli.boundary_tunnel = SimpleNamespace(close=lambda: calls.append('boundary'))  # type: ignore[assignment]
 
     MyCli.close(cli)
 
-    assert stopped == [True]
-    assert closed == [True]
-    assert ssh_tunnel_closed == [True]
-    assert boundary_tunnel_closed == [True]
+    assert calls == ['completion', 'prefetch', 'connection', 'ssh', 'boundary']
 
 
 def test_close_swallows_cleanup_errors() -> None:
@@ -416,6 +411,7 @@ def test_close_swallows_cleanup_errors() -> None:
     def fail() -> None:
         raise RuntimeError('cleanup failed')
 
+    cli.completion_refresher = SimpleNamespace(stop=fail)
     cli.schema_prefetcher = SimpleNamespace(stop=fail)
     cli.sqlexecute = SimpleNamespace(close=fail)  # type: ignore[assignment]
     cast(Any, cli).ssh_tunnel = SimpleNamespace(close=fail)
@@ -425,6 +421,8 @@ def test_close_swallows_cleanup_errors() -> None:
 
 def test_close_swallows_boundary_tunnel_close_error() -> None:
     cli = MyCli.__new__(MyCli)
+    cli.completion_refresher = SimpleNamespace(stop=lambda: None)
+    cli.schema_prefetcher = SimpleNamespace(stop=lambda: None)
     cli.sqlexecute = None
     tunnel_closed: list[bool] = []
     cast(Any, cli).ssh_tunnel = SimpleNamespace(close=lambda: tunnel_closed.append(True))

@@ -242,6 +242,10 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
 
     def close(self) -> None:
         try:
+            self.completion_refresher.stop()
+        except Exception:
+            pass
+        try:
             self.schema_prefetcher.stop()
         except Exception:
             pass
