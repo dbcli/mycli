@@ -742,6 +742,10 @@ def _one_iteration(
             mycli.echo('Wise choice!')
             return
 
+    dropping_active_database = is_dropping_database(text, sqlexecute.dbname)
+    if dropping_active_database:
+        mycli.completion_refresher.stop()
+
     successful = False
     try:
         mycli.logger.debug('sql: %r', text)
@@ -870,13 +874,15 @@ def _one_iteration(
                     fg='yellow',
                 )
 
-        if is_dropping_database(text, sqlexecute.dbname):
+        if dropping_active_database:
             sqlexecute.dbname = None
             sqlexecute.connect()
 
         if need_completion_refresh(text):
-            mycli.refresh_completions(reset=need_completion_reset(text))
+            mycli.refresh_completions(reset=dropping_active_database or need_completion_reset(text))
     finally:
+        if dropping_active_database and not successful:
+            mycli.refresh_completions()
         if mycli.logfile is False:
             mycli.echo('Warning: This query was not logged.', err=True, fg='red')
 

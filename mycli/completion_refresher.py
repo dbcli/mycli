@@ -3,6 +3,7 @@ from time import monotonic
 from typing import Callable
 
 import pymysql
+from pymysql.constants.ER import BAD_DB_ERROR
 
 from mycli.packages.special.main import COMMANDS
 from mycli.packages.sqlresult import SQLResult
@@ -146,6 +147,9 @@ class CompletionRefresher:
             if not self._stop_refresh.is_set():
                 for callback in callbacks:
                     callback(completer)
+        except pymysql.err.OperationalError as error:
+            if not self._stop_refresh.is_set() and error.args[0] != BAD_DB_ERROR:
+                raise
         except Exception:
             if not self._stop_refresh.is_set():
                 raise

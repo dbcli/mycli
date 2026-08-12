@@ -15,6 +15,7 @@ def make_refresh_cli() -> tuple[Any, dict[str, Any]]:
     cli = make_bare_mycli()
     state: dict[str, Any] = {
         'stopped': [],
+        'completion_stopped': [],
         'refresh_calls': [],
         'set_dbname_calls': [],
     }
@@ -30,7 +31,8 @@ def make_refresh_cli() -> tuple[Any, dict[str, Any]]:
     )
     cli.main_formatter = SimpleNamespace(supported_formats=['ascii', 'csv'])
     cli.completion_refresher = SimpleNamespace(
-        refresh=lambda executor, callbacks, options: state['refresh_calls'].append((executor, callbacks, options))
+        stop=lambda: state['completion_stopped'].append(True),
+        refresh=lambda executor, callbacks, options: state['refresh_calls'].append((executor, callbacks, options)),
     )
     cli.smart_completion = True
     state['callback'] = callback
@@ -79,6 +81,15 @@ def test_refresh_completions_does_not_update_dbname_without_reset() -> None:
     main.MyCli.refresh_completions(cli)
 
     assert state['set_dbname_calls'] == []
+    assert state['completion_stopped'] == []
+
+
+def test_refresh_completions_stops_completion_worker_when_reset() -> None:
+    cli, state = make_refresh_cli()
+
+    main.MyCli.refresh_completions(cli, reset=True)
+
+    assert state['completion_stopped'] == [True]
 
 
 def test_refresh_completions_updates_dbname_when_reset() -> None:
@@ -93,7 +104,7 @@ def test_refresh_completions_updates_dbname_when_reset() -> None:
         set_dbname=lambda dbname: set_dbname_calls.append(dbname),
     )
     cli.main_formatter = SimpleNamespace(supported_formats=['table'])
-    cli.completion_refresher = SimpleNamespace(refresh=lambda executor, callbacks, options: None)
+    cli.completion_refresher = SimpleNamespace(stop=lambda: None, refresh=lambda executor, callbacks, options: None)
 
     main.MyCli.refresh_completions(cli, reset=True)
 
@@ -113,7 +124,7 @@ def test_refresh_completions_uses_lock_when_reset() -> None:
         set_dbname=lambda dbname: None,
     )
     cli.main_formatter = SimpleNamespace(supported_formats=['table'])
-    cli.completion_refresher = SimpleNamespace(refresh=lambda executor, callbacks, options: None)
+    cli.completion_refresher = SimpleNamespace(stop=lambda: None, refresh=lambda executor, callbacks, options: None)
 
     main.MyCli.refresh_completions(cli, reset=True)
 
