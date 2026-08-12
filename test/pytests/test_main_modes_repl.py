@@ -193,6 +193,7 @@ def make_repl_cli(sqlexecute: Any | None = None) -> Any:
     timing_calls: list[tuple[str, bool]] = []
     log_queries: list[str] = []
     cli.refresh_calls = refresh_calls
+    cli.completion_stop_calls = []
     cli.output_calls = output_calls
     cli.echo_calls = echo_calls
     cli.timing_calls = timing_calls
@@ -208,6 +209,7 @@ def make_repl_cli(sqlexecute: Any | None = None) -> Any:
         return [SQLResult(status='refresh')]
 
     cli.refresh_completions = refresh_completions
+    cli.completion_refresher = SimpleNamespace(stop=lambda: cli.completion_stop_calls.append(True))
 
     def output_timing(timing: str, is_warnings_style: bool = False) -> None:
         cli.timing_calls.append((timing, is_warnings_style))
@@ -1162,6 +1164,7 @@ def test_one_iteration_covers_redirect_destructive_success_refresh_and_logfile(m
 
     sqlexecute = FakeSQLExecute()
     cli = make_repl_cli(sqlexecute)
+    cli.completion_refresher = SimpleNamespace(stop=lambda: sqlexecute.calls.append('stop'))
     cli.logfile = False
     cli.destructive_warning = True
     monkeypatch.setattr(repl_mode, 'is_redirect_command', lambda text: text == 'redirect')
@@ -1185,7 +1188,7 @@ def test_one_iteration_covers_redirect_destructive_success_refresh_and_logfile(m
     assert cli.query_history[-1].successful is True
     assert cli.query_history[-1].mutating is True
     assert sqlexecute.dbname is None
-    assert sqlexecute.calls == ['dropdb', 'connect']
+    assert sqlexecute.calls == ['stop', 'dropdb', 'connect']
     assert 'Warning: This query was not logged.' in cli.echo_calls
 
     repl_mode._one_iteration(cli, repl_mode.ReplState(), 'approved')
@@ -1193,6 +1196,26 @@ def test_one_iteration_covers_redirect_destructive_success_refresh_and_logfile(m
 
     repl_mode._one_iteration(cli, repl_mode.ReplState(), 'denied')
     assert 'Wise choice!' in cli.echo_calls
+
+
+def test_one_iteration_restarts_completions_when_active_database_drop_fails(monkeypatch: pytest.MonkeyPatch) -> None:
+    patch_repl_runtime_defaults(monkeypatch)
+
+    class FakeSQLExecute:
+        dbname = 'db'
+        connection_id = 0
+
+        def run(self, text: str) -> Iterator[SQLResult]:
+            raise pymysql.OperationalError(1064, 'drop failed')
+
+    cli = make_repl_cli(FakeSQLExecute())
+    monkeypatch.setattr(repl_mode, 'is_dropping_database', lambda text, dbname: True)
+
+    repl_mode._one_iteration(cli, repl_mode.ReplState(), 'drop database db')
+
+    assert cli.completion_stop_calls == [True]
+    assert cli.refresh_calls == [False]
+    assert cli.sqlexecute.dbname == 'db'
 
 
 @pytest.mark.parametrize(

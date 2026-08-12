@@ -4,6 +4,7 @@ Upcoming (TBD)
 Bugfixes
 ---------
 * Avoid an exception when exiting while completions are being refreshed.
+* Avoid a completions exception when changing to a nonexistent database.
 
 
 Documentation

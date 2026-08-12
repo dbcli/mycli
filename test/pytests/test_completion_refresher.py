@@ -593,6 +593,22 @@ def test_bg_refresh_stops_after_current_refresher(monkeypatch, refresher) -> Non
     executor.close.assert_called_once_with()
 
 
+def test_bg_refresh_suppresses_non_operational_error_during_stop(monkeypatch, refresher) -> None:
+    executor = Mock()
+
+    def stop_with_error(completer, active_executor) -> None:
+        refresher._stop_refresh.set()
+        raise RuntimeError('cancelled refresh')
+
+    monkeypatch.setattr(completion_refresher, 'SQLCompleter', Mock())
+    monkeypatch.setattr(completion_refresher, 'SQLExecute', Mock(return_value=executor))
+    refresher.refreshers = {'stop': stop_with_error}
+
+    refresher._bg_refresh(make_sqlexecute(), Mock(), {})
+
+    executor.close.assert_called_once_with()
+
+
 def test_bg_refresh_skips_callbacks_when_stopped_after_refresh(monkeypatch, refresher) -> None:
     callback = Mock()
     executor = Mock()
@@ -622,6 +638,28 @@ def test_bg_refresh_propagates_unexpected_refresher_error(monkeypatch, refresher
     with pytest.raises(RuntimeError, match='refresh failed'):
         refresher._bg_refresh(make_sqlexecute(), Mock(), {})
 
+    executor.close.assert_called_once_with()
+
+
+@pytest.mark.parametrize('error_code', [completion_refresher.BAD_DB_ERROR, 2003])
+def test_bg_refresh_only_suppresses_stale_database_error(monkeypatch, refresher, error_code) -> None:
+    executor = Mock()
+    callback = Mock()
+
+    def fail_refresh(completer, active_executor) -> None:
+        raise completion_refresher.pymysql.err.OperationalError(error_code, 'metadata failed')
+
+    monkeypatch.setattr(completion_refresher, 'SQLCompleter', Mock())
+    monkeypatch.setattr(completion_refresher, 'SQLExecute', Mock(return_value=executor))
+    refresher.refreshers = {'fail': fail_refresh}
+
+    if error_code == completion_refresher.BAD_DB_ERROR:
+        refresher._bg_refresh(make_sqlexecute(), callback, {})
+    else:
+        with pytest.raises(completion_refresher.pymysql.err.OperationalError, match='metadata failed'):
+            refresher._bg_refresh(make_sqlexecute(), callback, {})
+
+    callback.assert_not_called()
     executor.close.assert_called_once_with()
 
 

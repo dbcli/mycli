@@ -40,6 +40,7 @@ class ClientQueryMixin:
 
         assert self.sqlexecute is not None
         if reset:
+            self.completion_refresher.stop()
             # Update the active completer's current-schema pointer right
             # away so unqualified completions reflect a schema switch
             # even before the background refresh finishes.
