@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Internal
+---------
+* Fix CI by pinning the `openai` library to v2.48.0.
+
+
 2.13.1 (2026/08/11)
 ==============
 
