@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Documentation
+---------
+* Shorten/clarify `pyproject.toml` project description.
+
+
 Internal
 ---------
 * Fix CI by pinning the `openai` library to v2.48.0.
