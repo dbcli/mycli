@@ -67,6 +67,7 @@ llm = [
     "llm ~= 0.31.1",
     "setuptools == 83.*",                   # Required by llm commands to install models
     "pip ~= 26.1.2",
+    "openai ~= 2.48.0",                     # openai v3.0.0 broke CI and would need work to support
 ]
 dataframe = [
     "polars ~= 1.42.1",
@@ -100,7 +101,7 @@ include = ["mycli*"]
 
 [tool.uv]
 exclude-newer = '1 week'
-exclude-newer-package = { cli_helpers = false, openai = false, cryptography = false }
+exclude-newer-package = { cli_helpers = false,  cryptography = false }
 
 [tool.ruff]
 target-version = 'py310'
