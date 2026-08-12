@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Bugfixes
+---------
+* Avoid an exception when exiting while completions are being refreshed.
+
+
 Documentation
 ---------
 * Shorten/clarify `pyproject.toml` project description.

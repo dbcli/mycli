@@ -18,6 +18,9 @@ class CompletionRefresher:
     def __init__(self, invalidate_app: Callable[[], None] | None = None) -> None:
         self._completer_thread: threading.Thread | None = None
         self._restart_refresh = threading.Event()
+        self._stop_refresh = threading.Event()
+        self._executor_lock = threading.Lock()
+        self._active_executor: SQLExecute | None = None
         self._refresh_visible_until = 0.0
         self._visibility_timer: threading.Timer | None = None
         self._invalidate_app = invalidate_app
@@ -49,6 +52,7 @@ class CompletionRefresher:
             if self._visibility_timer is not None:
                 self._visibility_timer.cancel()
                 self._visibility_timer = None
+            self._stop_refresh.clear()
             self._refresh_visible_until = monotonic() + MIN_COMPLETION_REFRESH_MESSAGE_SECONDS
             self._completer_thread = threading.Thread(
                 target=self._bg_refresh, args=(executor, callbacks, completer_options), name="completion_refresh"
@@ -62,6 +66,29 @@ class CompletionRefresher:
 
     def _thread_is_alive(self) -> bool:
         return bool(self._completer_thread and self._completer_thread.is_alive())
+
+    def stop(self) -> None:
+        """Stop and wait for an in-flight completion refresh."""
+        self._stop_refresh.set()
+        self._restart_refresh.clear()
+        self._refresh_visible_until = 0.0
+        if self._visibility_timer is not None:
+            self._visibility_timer.cancel()
+            self._visibility_timer = None
+
+        with self._executor_lock:
+            executor = self._active_executor
+        if executor is not None:
+            try:
+                executor.close()
+            except Exception:
+                pass
+
+        thread = self._completer_thread
+        if thread is not None and thread.is_alive() and thread is not threading.current_thread():
+            thread.join()
+        if thread is not None and not thread.is_alive():
+            self._completer_thread = None
 
     def _bg_refresh(
         self,
@@ -89,7 +116,12 @@ class CompletionRefresher:
             self._finish_refreshing()
             return
 
+        with self._executor_lock:
+            self._active_executor = executor
         try:
+            if self._stop_refresh.is_set():
+                return
+
             # If callbacks is a single function then push it into a list.
             if callable(callbacks):
                 callbacks = [callbacks]
@@ -97,6 +129,8 @@ class CompletionRefresher:
             while 1:
                 for refresher in self.refreshers.values():
                     refresher(completer, executor)
+                    if self._stop_refresh.is_set():
+                        return
                     if self._restart_refresh.is_set():
                         self._restart_refresh.clear()
                         break
@@ -109,11 +143,23 @@ class CompletionRefresher:
                 # break statement.
                 continue
 
-            for callback in callbacks:
-                callback(completer)
+            if not self._stop_refresh.is_set():
+                for callback in callbacks:
+                    callback(completer)
+        except Exception:
+            if not self._stop_refresh.is_set():
+                raise
         finally:
-            executor.close()
-            self._finish_refreshing()
+            with self._executor_lock:
+                if self._active_executor is executor:
+                    self._active_executor = None
+            try:
+                executor.close()
+            except Exception:
+                if not self._stop_refresh.is_set():
+                    raise
+            finally:
+                self._finish_refreshing()
 
     def _finish_refreshing(self) -> None:
         self._invalidate()

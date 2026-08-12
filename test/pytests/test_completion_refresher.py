@@ -256,6 +256,108 @@ def test_refresh_cancels_pending_visibility_timer(monkeypatch, refresher) -> Non
     assert refresher._visibility_timer is None
 
 
+def test_stop_interrupts_and_joins_active_refresh(monkeypatch, refresher) -> None:
+    refresh_started = completion_refresher.threading.Event()
+    executor_closed = completion_refresher.threading.Event()
+    callback = Mock()
+    timer = Mock()
+
+    class FakeCompleter:
+        def __init__(self, **options) -> None:
+            pass
+
+    class FakeExecutor:
+        def __init__(self, *args) -> None:
+            pass
+
+        def close(self) -> None:
+            executor_closed.set()
+
+    def blocking_refresh(completer, executor) -> None:
+        refresh_started.set()
+        assert executor_closed.wait(timeout=1)
+        raise completion_refresher.pymysql.err.OperationalError(2013, 'connection closed')
+
+    monkeypatch.setattr(completion_refresher, 'SQLCompleter', FakeCompleter)
+    monkeypatch.setattr(completion_refresher, 'SQLExecute', FakeExecutor)
+    refresher.refreshers = {'blocking': blocking_refresh}
+
+    refresher.refresh(make_sqlexecute(), callback)
+    assert refresh_started.wait(timeout=1)
+    refresher._visibility_timer = timer
+
+    refresher.stop()
+
+    assert executor_closed.is_set()
+    assert refresher._completer_thread is None
+    assert refresher._active_executor is None
+    assert refresher._restart_refresh.is_set() is False
+    assert refresher.is_refreshing() is False
+    timer.cancel.assert_called_once_with()
+    callback.assert_not_called()
+
+
+def test_stop_before_executor_is_ready_prevents_refresh_and_callback(monkeypatch, refresher) -> None:
+    constructor_started = completion_refresher.threading.Event()
+    release_constructor = completion_refresher.threading.Event()
+    stop_finished = completion_refresher.threading.Event()
+    refresh = Mock()
+    callback = Mock()
+
+    class FakeCompleter:
+        def __init__(self, **options) -> None:
+            pass
+
+    class FakeExecutor:
+        def __init__(self, *args) -> None:
+            constructor_started.set()
+            assert release_constructor.wait(timeout=1)
+
+        def close(self) -> None:
+            pass
+
+    monkeypatch.setattr(completion_refresher, 'SQLCompleter', FakeCompleter)
+    monkeypatch.setattr(completion_refresher, 'SQLExecute', FakeExecutor)
+    refresher.refreshers = {'refresh': refresh}
+
+    refresher.refresh(make_sqlexecute(), callback)
+    assert constructor_started.wait(timeout=1)
+    stop_thread = completion_refresher.threading.Thread(target=lambda: (refresher.stop(), stop_finished.set()))
+    stop_thread.start()
+    assert refresher._stop_refresh.wait(timeout=1)
+    assert stop_finished.is_set() is False
+    release_constructor.set()
+    stop_thread.join(timeout=1)
+
+    assert stop_finished.is_set()
+    refresh.assert_not_called()
+    callback.assert_not_called()
+    assert refresher._completer_thread is None
+
+
+def test_stop_tolerates_executor_close_error_without_worker(refresher) -> None:
+    executor = Mock()
+    executor.close.side_effect = RuntimeError('close failed')
+    refresher._active_executor = executor
+
+    refresher.stop()
+
+    executor.close.assert_called_once_with()
+    assert refresher._completer_thread is None
+
+
+def test_stop_does_not_join_current_worker(monkeypatch, refresher) -> None:
+    thread = Mock()
+    thread.is_alive.return_value = True
+    refresher._completer_thread = thread
+    monkeypatch.setattr(completion_refresher.threading, 'current_thread', lambda: thread)
+
+    refresher.stop()
+
+    thread.join.assert_not_called()
+    assert refresher._completer_thread is thread
+
+
 def test_finish_refreshing_schedules_delayed_invalidation_before_deadline(monkeypatch, refresher) -> None:
     now = 10.0
     monkeypatch.setattr(completion_refresher, 'monotonic', lambda: now)
@@ -472,6 +574,72 @@ def test_bg_refresh_returns_when_executor_connection_fails(monkeypatch, refreshe
     assert len(completers) == 1
     refresh.assert_not_called()
     callback.assert_not_called()
+
+
+def test_bg_refresh_stops_after_current_refresher(monkeypatch, refresher) -> None:
+    callback = Mock()
+    executor = Mock()
+
+    def stop_refresh(completer, active_executor) -> None:
+        refresher._stop_refresh.set()
+
+    monkeypatch.setattr(completion_refresher, 'SQLCompleter', Mock())
+    monkeypatch.setattr(completion_refresher, 'SQLExecute', Mock(return_value=executor))
+    refresher.refreshers = {'stop': stop_refresh}
+
+    refresher._bg_refresh(make_sqlexecute(), callback, {})
+
+    callback.assert_not_called()
+    executor.close.assert_called_once_with()
+
+
+def test_bg_refresh_skips_callbacks_when_stopped_after_refresh(monkeypatch, refresher) -> None:
+    callback = Mock()
+    executor = Mock()
+    is_stopped = Mock(side_effect=[False, True])
+    monkeypatch.setattr(refresher._stop_refresh, 'is_set', is_stopped)
+    monkeypatch.setattr(completion_refresher, 'SQLCompleter', Mock())
+    monkeypatch.setattr(completion_refresher, 'SQLExecute', Mock(return_value=executor))
+    refresher.refreshers = {}
+
+    refresher._bg_refresh(make_sqlexecute(), callback, {})
+
+    callback.assert_not_called()
+    assert is_stopped.call_count == 2
+
+
+def test_bg_refresh_propagates_unexpected_refresher_error(monkeypatch, refresher) -> None:
+    executor = Mock()
+
+    def fail_refresh(completer, active_executor) -> None:
+        refresher._active_executor = None
+        raise RuntimeError('refresh failed')
+
+    monkeypatch.setattr(completion_refresher, 'SQLCompleter', Mock())
+    monkeypatch.setattr(completion_refresher, 'SQLExecute', Mock(return_value=executor))
+    refresher.refreshers = {'fail': fail_refresh}
+
+    with pytest.raises(RuntimeError, match='refresh failed'):
+        refresher._bg_refresh(make_sqlexecute(), Mock(), {})
+
+    executor.close.assert_called_once_with()
+
+
+@pytest.mark.parametrize('stopping', [False, True])
+def test_bg_refresh_only_suppresses_executor_close_error_when_stopping(monkeypatch, refresher, stopping) -> None:
+    executor = Mock()
+    executor.close.side_effect = RuntimeError('close failed')
+    monkeypatch.setattr(completion_refresher, 'SQLCompleter', Mock())
+    monkeypatch.setattr(completion_refresher, 'SQLExecute', Mock(return_value=executor))
+    refresher.refreshers = {}
+    if stopping:
+        refresher._stop_refresh.set()
+
+    if stopping:
+        refresher._bg_refresh(make_sqlexecute(), Mock(), {})
+    else:
+        with pytest.raises(RuntimeError, match='close failed'):
+            refresher._bg_refresh(make_sqlexecute(), Mock(), {})
 
 
 def test_refresher_decorator_registers_function() -> None:
