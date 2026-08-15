@@ -1,3 +1,11 @@
+2.14.0 (2026/08/15)
+==============
+
+Features
+---------
+* Revert modal cursor shapes in vi edit mode.
+
+
 2.13.2 (2026/08/12)
 ==============
 

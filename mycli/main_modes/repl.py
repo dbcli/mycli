@@ -23,7 +23,6 @@ import prompt_toolkit
 from prompt_toolkit.application.current import get_app
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory, ThreadedAutoSuggest
 from prompt_toolkit.completion import DynamicCompleter
-from prompt_toolkit.cursor_shapes import CursorShape, ModalCursorShapeConfig
 from prompt_toolkit.enums import DEFAULT_BUFFER, EditingMode
 from prompt_toolkit.filters import Condition, has_focus, is_done
 from prompt_toolkit.formatted_text import (
@@ -608,7 +607,6 @@ def _build_prompt_session(
             enable_system_prompt=True,
             enable_suspend=True,
             editing_mode=editing_mode,
-            cursor=ModalCursorShapeConfig() if editing_mode == EditingMode.VI else CursorShape.BLOCK,
             search_ignore_case=True,
         )
 
