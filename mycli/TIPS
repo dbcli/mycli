@@ -64,6 +64,8 @@ edit a query in an external editor using /edit <filename>!
 
 Favorite queries support Jinja templates and named arguments!
 
+Manage favorite queries with /favorite!
+
 /l lists databases!
 
 /once <filename> appends the next result to <filename>!

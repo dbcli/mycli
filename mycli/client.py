@@ -122,6 +122,7 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
             self.config,
             myclirc,
             c['main'].get('shared_favorites_file'),
+            system_config_files=self.system_config_files,
         )
         DsnAliases.instance = DsnAliases.from_config(
             self.config,

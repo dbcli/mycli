@@ -365,7 +365,7 @@ class SQLExecute:
         # Split the sql into separate queries and run each one.
         # Unless it's saving a favorite query, in which case we
         # want to save them all together.
-        if statement.startswith(("\\fs", "/fs")):
+        if iocommands.is_favorite_save_command(statement):
             components: Iterable[str] = [statement]
         else:
             components = iocommands.split_queries(statement)

@@ -19,7 +19,11 @@ import pytest
 
 import mycli.packages.special
 from mycli.packages.special import iocommands
-from mycli.packages.special.favoritequeries import analyze_favorite_query_template, find_favorite_query_template_keys
+from mycli.packages.special.favoritequeries import (
+    FavoriteQueryReloadError,
+    analyze_favorite_query_template,
+    find_favorite_query_template_keys,
+)
 from mycli.packages.sqlresult import SQLResult
 from test.utils import TEMPFILE_PREFIX, db_connection, dbtest
 
@@ -31,6 +35,7 @@ class FakeFavoriteQueries:
         self.queries = {} if queries is None else dict(queries)
         self.saved: list[tuple[str, str]] = []
         self.deleted: list[str] = []
+        self.reload_calls = 0
 
     def list(self) -> list[str]:
         return list(self.queries)
@@ -45,6 +50,9 @@ class FakeFavoriteQueries:
     def delete(self, name: str) -> str:
         self.deleted.append(name)
         return f'{name}: Deleted.'
+
+    def reload(self) -> None:
+        self.reload_calls += 1
 
 
 class FakeDsnAliases:
@@ -651,6 +659,329 @@ def test_execute_favorite_query_list_missing_and_bad_args(monkeypatch) -> None:
     assert bad_args[0].status == 'missing substitution for $1 in query:\n  select $1'
 
 
+@pytest.mark.parametrize('arg', ['', 'help', 'HELP', 'unknown', 'list extra'])
+def test_favorite_command_shows_help_for_non_list_forms(monkeypatch, arg: str) -> None:
+    favorite_queries = FakeFavoriteQueries({'demo': 'select 1'})
+    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+
+    assert iocommands.favorite(arg=arg) == [SQLResult(preamble=iocommands.FAVORITE_COMMAND_HELP)]
+    assert iocommands.FAVORITE_COMMAND_HELP != favorite_queries.usage
+
+
+@pytest.mark.parametrize('arg', ['list', 'LIST'])
+def test_favorite_command_delegates_list(monkeypatch, arg: str) -> None:
+    listed = SQLResult(status='listed')
+    include_usage_values: list[bool] = []
+
+    def list_favorite_queries(include_usage: bool = True) -> list[SQLResult]:
+        include_usage_values.append(include_usage)
+        return [listed]
+
+    monkeypatch.setattr(iocommands, 'list_favorite_queries', list_favorite_queries)
+
+    assert iocommands.favorite(arg=arg) == [listed]
+    assert include_usage_values == [False]
+
+
+def test_favorite_list_empty_does_not_show_legacy_help(monkeypatch) -> None:
+    favorite_queries = FakeFavoriteQueries()
+    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+
+    result = iocommands.favorite(arg='list')[0]
+
+    assert result.status == '\nNo favorite queries found.'
+    assert favorite_queries.usage not in result.status
+
+
+@pytest.mark.parametrize('command', ['/favorite reload', r'\favorite RELOAD'])
+def test_favorite_reload_command(monkeypatch, command: str) -> None:
+    favorite_queries = FakeFavoriteQueries()
+    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+
+    assert mycli.packages.special.execute(FakeCursor(), command) == [SQLResult(status='Favorite queries reloaded.')]
+    assert favorite_queries.reload_calls == 1
+
+
+def test_favorite_reload_command_reports_errors(monkeypatch) -> None:
+    favorite_queries = FakeFavoriteQueries()
+
+    def fail_reload() -> None:
+        raise FavoriteQueryReloadError('unable to read user configuration file')
+
+    favorite_queries.reload = fail_reload
+    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+
+    assert iocommands.favorite(arg='reload') == [
+        SQLResult(status='Error: Unable to reload favorite queries: unable to read user configuration file.')
+    ]
+
+
+def test_favorite_reload_command_rejects_arguments() -> None:
+    assert iocommands.favorite(arg='reload extra') == [SQLResult(status='Syntax: /favorite reload.')]
+
+
+def test_favorite_help_documents_reload() -> None:
+    assert '> /favorite reload' in iocommands.FAVORITE_COMMAND_HELP
+
+
+@pytest.mark.parametrize(
+    'command',
+    [
+        '/favorite run report value --user=henry',
+        r'\favorite RUN report value --user=henry',
+    ],
+)
+def test_favorite_run_command_executes_with_arguments(monkeypatch, command: str) -> None:
+    favorite_queries = FakeFavoriteQueries({'report': 'select $1; select {{ kv.user }}'})
+    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+    cursor = FakeCursor()
+
+    results = list(mycli.packages.special.execute(cursor, command))
+
+    assert [result.preamble for result in results] == ['> select value', '> select henry']
+    assert cursor.executed == ['select value', 'select henry']
+
+
+def test_favorite_command_delegates_run_lazily(monkeypatch) -> None:
+    cursor = FakeCursor()
+    calls: list[tuple[FakeCursor, str]] = []
+
+    def execute(cur: FakeCursor, arg: str):
+        calls.append((cur, arg))
+        yield SQLResult(status='ran')
+
+    monkeypatch.setattr(iocommands, 'execute_favorite_query', execute)
+
+    results = iocommands.favorite(cur=cursor, arg='run report positional --user=henry')
+
+    assert calls == []
+    assert list(results) == [SQLResult(status='ran')]
+    assert calls == [(cursor, 'report positional --user=henry')]
+
+
+def test_favorite_command_reports_run_usage() -> None:
+    assert iocommands.favorite(arg='run') == [SQLResult(status='Syntax: /favorite run <name> [args..] [--key=value].')]
+
+
+@pytest.mark.parametrize(
+    'command',
+    [
+        '/favorite eval report value --user=henry',
+        r'\favorite EVAL report value --user=henry',
+    ],
+)
+def test_favorite_eval_command_expands_without_execution(monkeypatch, command: str) -> None:
+    favorite_queries = FakeFavoriteQueries({'report': 'select $1; select {{ kv.user }}'})
+    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+    cursor = FakeCursor()
+
+    assert mycli.packages.special.execute(cursor, command) == [
+        SQLResult(
+            status='Error: /favorite eval is only available in the interactive REPL.',
+            command={'name': 'set_buffer', 'text': 'select value; select henry;'},
+        )
+    ]
+    assert cursor.executed == []
+
+
+def test_favorite_command_reports_eval_usage() -> None:
+    assert iocommands.favorite(arg='eval') == [SQLResult(status='Syntax: /favorite eval <name> [args..] [--key=value].')]
+
+
+@pytest.mark.parametrize(
+    ('query', 'delimiter', 'expected'),
+    [
+        ('select 1', ';', 'select 1;'),
+        ('select 1;', ';', 'select 1;'),
+        ('select 1\\G', ';', 'select 1\\G'),
+        ('select 1\\g', ';', 'select 1\\g'),
+        ('select 1\\x', ';', 'select 1\\x'),
+        ('select 1   ', ';', 'select 1;'),
+        ('select 1//', '//', 'select 1//'),
+        ('select 1;', '//', 'select 1;//'),
+        ('', ';', ';'),
+    ],
+)
+def test_favorite_eval_uses_active_terminator(monkeypatch, query: str, delimiter: str, expected: str) -> None:
+    monkeypatch.setattr(iocommands, 'get_current_delimiter', lambda: delimiter)
+
+    assert iocommands._terminate_favorite_eval_query(query) == expected
+
+
+def test_favorite_eval_termination_does_not_change_shared_expansion(monkeypatch) -> None:
+    monkeypatch.setattr(
+        iocommands.FavoriteQueries,
+        'instance',
+        FakeFavoriteQueries({'report': 'select 1'}),
+        raising=False,
+    )
+
+    assert iocommands.expand_favorite_query('report') == ('select 1', None)
+    assert iocommands.favorite(arg='eval report')[0].command == {'name': 'set_buffer', 'text': 'select 1;'}
+
+
+@pytest.mark.parametrize('arg', ['save report select 1; select 2', 'SAVE report select 1; select 2'])
+def test_favorite_command_saves_query(monkeypatch, arg: str) -> None:
+    favorite_queries = FakeFavoriteQueries()
+    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+
+    assert iocommands.favorite(arg=arg) == [SQLResult(status='Saved.')]
+    assert favorite_queries.saved == [('report', 'select 1; select 2')]
+
+
+@pytest.mark.parametrize('command', ['/favorite save report select 1', r'\favorite SAVE report select 1'])
+def test_favorite_save_command_is_registered(monkeypatch, command: str) -> None:
+    favorite_queries = FakeFavoriteQueries()
+    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+
+    assert mycli.packages.special.execute(None, command) == [SQLResult(status='Saved.')]
+    assert favorite_queries.saved == [('report', 'select 1')]
+
+
+@pytest.mark.parametrize('arg', ['save', 'save report'])
+def test_favorite_command_reports_save_usage(monkeypatch, arg: str) -> None:
+    favorite_queries = FakeFavoriteQueries()
+    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+    usage = 'Syntax: /favorite save <name> <query>.'
+
+    result = iocommands.favorite(arg=arg)[0]
+
+    if arg == 'save':
+        assert result.status == usage
+    else:
+        assert result.status == usage + ' Err: Both name and query are required.'
+
+
+@pytest.mark.parametrize('command', ['/favorite edit report', r'\favorite EDIT report'])
+def test_favorite_edit_command_edits_and_saves_query(monkeypatch, command: str) -> None:
+    favorite_queries = FakeFavoriteQueries({'report': 'select 1'})
+    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+    edit_calls: list[tuple[str, str]] = []
+
+    def edit(query: str, extension: str) -> str:
+        edit_calls.append((query, extension))
+        return 'select 2\n'
+
+    monkeypatch.setattr(iocommands.click, 'edit', edit)
+
+    assert mycli.packages.special.execute(None, command) == [SQLResult(status='report: Edited.')]
+    assert edit_calls == [('select 1', '.sql')]
+    assert favorite_queries.saved == [('report', 'select 2\n')]
+
+
+def test_favorite_edit_command_reports_missing_and_unknown_names(monkeypatch) -> None:
+    favorite_queries = FakeFavoriteQueries()
+    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+    edit_calls: list[str] = []
+    monkeypatch.setattr(iocommands.click, 'edit', lambda query, extension: edit_calls.append(query))
+
+    assert iocommands.favorite(arg='edit') == [SQLResult(status='Syntax: /favorite edit <name>.')]
+    assert iocommands.favorite(arg='edit unknown') == [SQLResult(status='No favorite query: unknown')]
+    assert edit_calls == []
+    assert favorite_queries.saved == []
+
+
+@pytest.mark.parametrize(
+    ('edited_query', 'expected_status'),
+    [
+        (None, 'report: Not Changed.'),
+        ('', 'report: Edited.'),
+    ],
+)
+def test_favorite_edit_command_handles_unchanged_and_empty_queries(
+    monkeypatch,
+    edited_query: str | None,
+    expected_status: str,
+) -> None:
+    favorite_queries = FakeFavoriteQueries({'report': 'select 1'})
+    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+    monkeypatch.setattr(iocommands.click, 'edit', lambda query, extension: edited_query)
+
+    assert iocommands.favorite(arg='edit report') == [SQLResult(status=expected_status)]
+    assert favorite_queries.saved == ([] if edited_query is None else [('report', '')])
+
+
+@pytest.mark.parametrize(
+    ('error', 'expected_status'),
+    [
+        (KeyboardInterrupt(), 'report: Edit Cancelled.'),
+        (iocommands.click.ClickException('editor failed'), 'Unable to edit favorite "report": editor failed'),
+        (OSError('editor unavailable'), 'Unable to edit favorite "report": editor unavailable'),
+    ],
+)
+def test_favorite_edit_command_reports_editor_errors(monkeypatch, error: BaseException, expected_status: str) -> None:
+    favorite_queries = FakeFavoriteQueries({'report': 'select 1'})
+    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+
+    def edit(query: str, extension: str) -> str:
+        raise error
+
+    monkeypatch.setattr(iocommands.click, 'edit', edit)
+
+    assert iocommands.favorite(arg='edit report') == [SQLResult(status=expected_status)]
+    assert favorite_queries.saved == []
+
+
+def test_favorite_edit_command_reports_save_error(monkeypatch) -> None:
+    favorite_queries = FakeFavoriteQueries({'report': 'select 1'})
+    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+    monkeypatch.setattr(iocommands.click, 'edit', lambda query, extension: 'select 2\n')
+
+    def save(name: str, query: str) -> None:
+        raise OSError('write failed')
+
+    monkeypatch.setattr(favorite_queries, 'save', save)
+
+    assert iocommands.favorite(arg='edit report') == [SQLResult(status='Unable to edit favorite "report": write failed')]
+
+
+def test_favorite_edit_command_creates_local_override_for_shared_query(monkeypatch, tmp_path: Path) -> None:
+    shared_file = tmp_path / 'shared-myclirc'
+    shared_contents = '[favorite_queries]\nreport = select 1\n'
+    shared_file.write_text(shared_contents, encoding='utf-8')
+    config_file = tmp_path / 'myclirc'
+    config_file.write_text('# User config.\n', encoding='utf-8')
+    favorite_queries = iocommands.FavoriteQueries.from_config(
+        iocommands.ConfigObj(),
+        str(config_file),
+        str(shared_file),
+    )
+    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+    monkeypatch.setattr(iocommands.click, 'edit', lambda query, extension: 'select 2\n')
+
+    assert iocommands.favorite(arg='edit report') == [SQLResult(status='report: Edited.')]
+    assert shared_file.read_text(encoding='utf-8') == shared_contents
+    assert 'report = select 2' in config_file.read_text(encoding='utf-8')
+    assert favorite_queries.get('report') == 'select 2'
+
+
+@pytest.mark.parametrize('arg', ['delete report', 'DELETE report'])
+def test_favorite_command_deletes_query(monkeypatch, arg: str) -> None:
+    favorite_queries = FakeFavoriteQueries({'report': 'select 1'})
+    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+
+    assert iocommands.favorite(arg=arg) == [SQLResult(status='report: Deleted.')]
+    assert favorite_queries.deleted == ['report']
+
+
+@pytest.mark.parametrize('command', ['/favorite delete report', r'\favorite DELETE report'])
+def test_favorite_delete_command_is_registered(monkeypatch, command: str) -> None:
+    favorite_queries = FakeFavoriteQueries({'report': 'select 1'})
+    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+
+    assert mycli.packages.special.execute(None, command) == [SQLResult(status='report: Deleted.')]
+    assert favorite_queries.deleted == ['report']
+
+
+def test_favorite_command_reports_delete_usage(monkeypatch) -> None:
+    favorite_queries = FakeFavoriteQueries()
+    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+    usage = 'Syntax: /favorite delete <name>.'
+
+    assert iocommands.favorite(arg='delete') == [SQLResult(status=usage)]
+    assert favorite_queries.deleted == []
+
+
 def test_execute_favorite_query_special_and_plain_sql(monkeypatch) -> None:
     favorite_queries = FakeFavoriteQueries({'combo': 'help demo; select 1'})
     monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
@@ -849,10 +1180,32 @@ def test_execute_favorite_query_reports_template_argument_errors_without_executi
     cursor = FakeCursor()
 
     results = list(iocommands.execute_favorite_query(cursor, arg))
+    expanded_query, expansion_error = iocommands.expand_favorite_query(arg)
 
     assert results[0].status is not None
     assert results[0].status.startswith(status_prefix)
+    assert expanded_query is None
+    assert expansion_error == results[0].status
     assert cursor.executed == []
+
+
+@pytest.mark.parametrize(
+    ('query', 'arg'),
+    [
+        (None, 'unknown'),
+        ('select $1', 'report'),
+        ('select 1', 'report "'),
+    ],
+)
+def test_favorite_eval_errors_match_execution(monkeypatch, query: str | None, arg: str) -> None:
+    queries = {} if query is None else {'report': query}
+    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', FakeFavoriteQueries(queries), raising=False)
+
+    execution_result = next(iocommands.execute_favorite_query(FakeCursor(), arg))
+    eval_result = iocommands.favorite(arg=f'eval {arg}')[0]
+
+    assert eval_result.status == execution_result.status
+    assert eval_result.command is None
 
 
 def test_list_substitute_save_delete_and_redirect_state(tmp_path: Path, monkeypatch) -> None:

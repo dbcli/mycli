@@ -1,21 +1,83 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 import logging
 import os
 import re
-from typing import Any
+from typing import IO, Any
 
+from configobj import ConfigObjError
 from jinja2 import meta, nodes
 from jinja2.sandbox import SandboxedEnvironment
 
-from mycli.config import log, read_config_file
+from mycli.config import log, read_config_file, read_config_files
 
 logger = logging.getLogger(__name__)
 
 MISSING = object()
+FAVORITE_SUBCOMMANDS = ('help', 'list', 'reload', 'run', 'eval', 'save', 'edit', 'delete')
+FAVORITE_COMMAND_HELP = '''
+Favorite Queries are a way to save frequently used queries
+with a short name.
+Examples:
+
+    # Save a new favorite query.
+    > /favorite save simple SELECT * FROM abc WHERE a IS NOT NULL;
+
+    # When multi-line mode is on, pressing Return twice is needed to save.
+    # This supports multi-statement favorites.
+
+    # List all favorite queries.
+    > /favorite list
+    ╒═══════════╤══════════════════════════════════════════════════╕
+    │ Name      │ Query                                            │
+    ╞═══════════╪══════════════════════════════════════════════════╡
+    │ simple    │ SELECT * FROM abc WHERE a IS NOT NULL            │
+    │ find_user │ SELECT * FROM users WHERE name = '{{ kv.name }}' │
+    ╘═══════════╧══════════════════════════════════════════════════╛
+
+    # Run a favorite query.
+    > /favorite run simple
+    ╒════════╤════════╕
+    │ a      │ b      │
+    ╞════════╪════════╡
+    │ 日本語 │ 日本語 │
+    ╘════════╧════════╛
+
+    # Run a favorite query containing {{ kv.name }} in the template.
+    > /favorite run find_user --name=henry
+    > /favorite run find_user --name henry
+
+    # Run a favorite query containing positional parameter $1 in the
+    # template.
+    > /favorite run find_user henry
+
+    # Use -- to disambiguate positional parameters such as $1, especially
+    # if the positional value starts with a dash.
+    > /favorite run query --key=value -- positional-value
+    > /favorite run query -- --positional-value-which-looks-like-a-flag--
+
+    # Expand a favorite query into the command-line buffer without running it.
+    > /favorite eval find_user --name=henry
+
+    # Edit a favorite query in an external editor.
+    > /favorite edit simple
+
+    # Delete a favorite query.
+    > /favorite delete simple
+    simple: Deleted.
+
+    # Reload favorite queries from the configuration files.
+    > /favorite reload
+
+    See also the alternative interface /f, /fs, /fd.'''
 
 favorite_query_template_environment = SandboxedEnvironment(autoescape=False)
 favorite_query_variable_pattern = re.compile(r'^[A-Za-z_][A-Za-z0-9_-]*$')
+
+
+class FavoriteQueryReloadError(Exception):
+    pass
 
 
 def analyze_favorite_query_template(query: str) -> tuple[set[str], bool]:
@@ -116,14 +178,24 @@ Examples:
     # Delete a favorite query.
     > /fd simple
     simple: Deleted.
+
+    See also the alternative interface /favorite.
 """
 
     # Class-level variable, for convenience to use as a singleton.
     instance: FavoriteQueries
 
-    def __init__(self, config: Any, config_file: str | None = None) -> None:
+    def __init__(
+        self,
+        config: Any,
+        config_file: str | None = None,
+        shared_favorites_file: str | None = None,
+        system_config_files: list[str | IO[str]] | None = None,
+    ) -> None:
         self.config = config
         self.config_file = config_file
+        self.shared_favorites_file = shared_favorites_file
+        self.system_config_files = list(system_config_files or [])
 
     @classmethod
     def from_config(
@@ -131,10 +203,10 @@ Examples:
         config: Any,
         config_file: str | None = None,
         shared_favorites_file: str | None = None,
+        system_config_files: list[str | IO[str]] | None = None,
     ) -> FavoriteQueries:
-        favorites = cls(config, config_file)
         if not shared_favorites_file:
-            return favorites
+            return cls(config, config_file, system_config_files=system_config_files)
 
         shared_favorites_file = os.path.expanduser(shared_favorites_file)
         if not os.path.isabs(shared_favorites_file):
@@ -143,7 +215,9 @@ Examples:
                 logging.WARNING,
                 f"Shared favorites file path must be absolute: '{shared_favorites_file}'.",
             )
-            return favorites
+            return cls(config, config_file, system_config_files=system_config_files)
+
+        favorites = cls(config, config_file, shared_favorites_file, system_config_files)
 
         if not os.path.isfile(shared_favorites_file):
             log(
@@ -163,6 +237,45 @@ Examples:
         config[cls.section_name].update(shared_queries)
         config[cls.section_name].update(configured_queries)
         return favorites
+
+    def _reload_queries(self, path: str, description: str) -> dict[str, str]:
+        expanded_path = os.path.expanduser(path)
+        if not os.path.isfile(expanded_path):
+            raise FavoriteQueryReloadError(f"unable to read {description} file '{expanded_path}'")
+        try:
+            config = read_config_file(expanded_path, raise_errors=True)
+        except (ConfigObjError, OSError, UnicodeError) as exc:
+            raise FavoriteQueryReloadError(
+                f"unable to read {description} file '{expanded_path}': {exc}",
+            ) from exc
+
+        assert config is not None
+        configured_queries = config.get(self.section_name, {})
+        if not isinstance(configured_queries, Mapping) or any(
+            not isinstance(name, str) or not isinstance(query, str) for name, query in configured_queries.items()
+        ):
+            raise FavoriteQueryReloadError(
+                f"invalid [{self.section_name}] section in {description} file '{expanded_path}'",
+            )
+        return dict(configured_queries)
+
+    def reload(self) -> None:
+        if self.config_file is None:
+            raise FavoriteQueryReloadError('no user configuration file is configured')
+
+        user_queries = self._reload_queries(self.config_file, 'user configuration')
+        system_config = read_config_files(self.system_config_files, ignore_package_defaults=True)
+        system_queries = system_config.get(self.section_name, {})
+        if not isinstance(system_queries, Mapping) or any(
+            not isinstance(name, str) or not isinstance(query, str) for name, query in system_queries.items()
+        ):
+            raise FavoriteQueryReloadError(f'invalid [{self.section_name}] section in system configuration files')
+        queries: dict[str, str] = {}
+        if self.shared_favorites_file is not None:
+            queries.update(self._reload_queries(self.shared_favorites_file, 'shared favorites'))
+        queries.update(system_queries)
+        queries.update(user_queries)
+        self.config[self.section_name] = queries
 
     def _clean_query(self, query: str | None) -> str | None:
         if not query:

@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 import mycli.packages.special.favoritequeries as favoritequeries_module
-from mycli.packages.special.favoritequeries import FavoriteQueries
+from mycli.packages.special.favoritequeries import FavoriteQueries, FavoriteQueryReloadError
 
 
 class DummyConfig(dict):
@@ -131,6 +131,182 @@ def test_from_config_uses_successfully_parsed_shared_queries(
 
     assert favorites.get('shared') == 'select 1'
     assert 'Unable to parse line 3 of config file' in caplog.text
+
+
+def test_reload_readds_user_and_shared_favorites_atomically(tmp_path: Path) -> None:
+    user_file = tmp_path / 'myclirc'
+    shared_file = tmp_path / 'shared-myclirc'
+    user_file.write_text('[favorite_queries]\nlocal = select 1\nremoved = select 2\n', encoding='utf-8')
+    shared_file.write_text('[favorite_queries]\nshared = select 3\noverridden = select 4\n', encoding='utf-8')
+    config = DummyConfig({
+        'main': {'setting': 'unchanged'},
+        'favorite_queries': {'local': 'select 1', 'removed': 'select 2', 'runtime': 'select 5'},
+    })
+    favorites = FavoriteQueries.from_config(config, str(user_file), str(shared_file))
+
+    user_file.write_text('[favorite_queries]\nlocal = select 10\noverridden = select 40\n', encoding='utf-8')
+    shared_file.write_text('[favorite_queries]\nshared = select 30\noverridden = select 4\n', encoding='utf-8')
+
+    favorites.reload()
+
+    assert config['main'] == {'setting': 'unchanged'}
+    assert config['favorite_queries'] == {
+        'shared': 'select 30',
+        'overridden': 'select 40',
+        'local': 'select 10',
+    }
+
+
+def test_reload_readds_system_favorites_with_startup_precedence(tmp_path: Path) -> None:
+    user_file = tmp_path / 'myclirc'
+    system_file = tmp_path / 'system-myclirc'
+    shared_file = tmp_path / 'shared-myclirc'
+    user_file.write_text('[favorite_queries]\nuser = select 1\noverridden = select user\n', encoding='utf-8')
+    system_file.write_text('[favorite_queries]\nsystem = select 2\noverridden = select system\n', encoding='utf-8')
+    shared_file.write_text('[favorite_queries]\nshared = select 3\noverridden = select shared\n', encoding='utf-8')
+    config = DummyConfig({'favorite_queries': {'runtime': 'select 4'}})
+    favorites = FavoriteQueries.from_config(
+        config,
+        str(user_file),
+        str(shared_file),
+        system_config_files=[str(system_file)],
+    )
+
+    favorites.reload()
+
+    assert config['favorite_queries'] == {
+        'shared': 'select 3',
+        'overridden': 'select user',
+        'system': 'select 2',
+        'user': 'select 1',
+    }
+
+
+def test_reload_invalid_system_favorites_preserves_runtime_favorites(tmp_path: Path) -> None:
+    user_file = tmp_path / 'myclirc'
+    system_file = tmp_path / 'system-myclirc'
+    user_file.write_text('[favorite_queries]\nuser = select 1\n', encoding='utf-8')
+    system_file.write_text('favorite_queries = invalid\n', encoding='utf-8')
+    config = DummyConfig({'favorite_queries': {'runtime': 'select 2'}})
+    favorites = FavoriteQueries.from_config(
+        config,
+        str(user_file),
+        system_config_files=[str(system_file)],
+    )
+
+    with pytest.raises(FavoriteQueryReloadError, match=r'invalid \[favorite_queries\] section in system'):
+        favorites.reload()
+
+    assert config['favorite_queries'] == {'runtime': 'select 2'}
+
+
+def test_reload_keeps_startup_shared_favorites_path(tmp_path: Path) -> None:
+    user_file = tmp_path / 'myclirc'
+    startup_shared_file = tmp_path / 'startup-shared-myclirc'
+    replacement_shared_file = tmp_path / 'replacement-shared-myclirc'
+    user_file.write_text('[favorite_queries]\nlocal = select 1\n', encoding='utf-8')
+    startup_shared_file.write_text('[favorite_queries]\nshared = select 2\n', encoding='utf-8')
+    replacement_shared_file.write_text('[favorite_queries]\nreplacement = select 3\n', encoding='utf-8')
+    favorites = FavoriteQueries.from_config(DummyConfig(), str(user_file), str(startup_shared_file))
+    user_file.write_text(
+        f'[main]\nshared_favorites_file = {replacement_shared_file}\n[favorite_queries]\nlocal = select 10\n',
+        encoding='utf-8',
+    )
+
+    favorites.reload()
+
+    assert favorites.get('shared') == 'select 2'
+    assert favorites.get('replacement') is None
+    assert favorites.get('local') == 'select 10'
+
+
+@pytest.mark.parametrize('broken_source', ['user', 'shared'])
+def test_reload_failure_preserves_runtime_favorites(tmp_path: Path, broken_source: str) -> None:
+    user_file = tmp_path / 'myclirc'
+    shared_file = tmp_path / 'shared-myclirc'
+    user_file.write_text('[favorite_queries]\nlocal = select 1\n', encoding='utf-8')
+    shared_file.write_text('[favorite_queries]\nshared = select 2\n', encoding='utf-8')
+    config = DummyConfig({'favorite_queries': {'runtime': 'select 3'}})
+    favorites = FavoriteQueries.from_config(config, str(user_file), str(shared_file))
+    before_reload = dict(config['favorite_queries'])
+    broken_file = user_file if broken_source == 'user' else shared_file
+    broken_file.write_text('[favorite_queries\ninvalid = select 4\n', encoding='utf-8')
+
+    with pytest.raises(FavoriteQueryReloadError, match=f'unable to read {broken_source}'):
+        favorites.reload()
+
+    assert config['favorite_queries'] == before_reload
+
+
+@pytest.mark.parametrize(
+    ('contents', 'error_pattern'),
+    [
+        (b'[favorite_queries]\ninvalid = \xff\n', 'unable to read user configuration'),
+        (b'favorite_queries = invalid\n', r'invalid \[favorite_queries\] section'),
+        (b'[favorite_queries]\ninvalid = select 1, select 2\n', r'invalid \[favorite_queries\] section'),
+    ],
+)
+def test_reload_invalid_config_preserves_runtime_favorites(
+    tmp_path: Path,
+    contents: bytes,
+    error_pattern: str,
+) -> None:
+    user_file = tmp_path / 'myclirc'
+    user_file.write_bytes(contents)
+    config = DummyConfig({'favorite_queries': {'runtime': 'select 3'}})
+    favorites = FavoriteQueries(config, str(user_file))
+
+    with pytest.raises(FavoriteQueryReloadError, match=error_pattern):
+        favorites.reload()
+
+    assert config['favorite_queries'] == {'runtime': 'select 3'}
+
+
+@pytest.mark.parametrize('missing_source', ['user', 'shared'])
+def test_reload_missing_file_preserves_runtime_favorites(tmp_path: Path, missing_source: str) -> None:
+    user_file = tmp_path / 'myclirc'
+    shared_file = tmp_path / 'shared-myclirc'
+    user_file.write_text('[favorite_queries]\nlocal = select 1\n', encoding='utf-8')
+    shared_file.write_text('[favorite_queries]\nshared = select 2\n', encoding='utf-8')
+    config = DummyConfig({'favorite_queries': {'runtime': 'select 3'}})
+    favorites = FavoriteQueries.from_config(config, str(user_file), str(shared_file))
+    before_reload = dict(config['favorite_queries'])
+    missing_file = user_file if missing_source == 'user' else shared_file
+    missing_file.unlink()
+
+    with pytest.raises(FavoriteQueryReloadError, match=f'unable to read {missing_source}'):
+        favorites.reload()
+
+    assert config['favorite_queries'] == before_reload
+
+
+def test_reload_unreadable_file_preserves_runtime_favorites(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    user_file = tmp_path / 'myclirc'
+    user_file.write_text('[favorite_queries]\nlocal = select 1\n', encoding='utf-8')
+    config = DummyConfig({'favorite_queries': {'runtime': 'select 3'}})
+    favorites = FavoriteQueries.from_config(config, str(user_file))
+
+    def deny_read(_path: str, **_kwargs: object) -> None:
+        raise OSError(13, 'Permission denied', str(user_file))
+
+    monkeypatch.setattr(favoritequeries_module, 'read_config_file', deny_read)
+
+    with pytest.raises(FavoriteQueryReloadError, match='Permission denied'):
+        favorites.reload()
+
+    assert config['favorite_queries'] == {'runtime': 'select 3'}
+
+
+def test_reload_requires_user_config_file() -> None:
+    favorites = FavoriteQueries(DummyConfig({'favorite_queries': {'runtime': 'select 1'}}))
+
+    with pytest.raises(FavoriteQueryReloadError, match='no user configuration file is configured'):
+        favorites.reload()
+
+    assert favorites.get('runtime') == 'select 1'
 
 
 def test_list_and_get_use_favorite_queries_section() -> None:

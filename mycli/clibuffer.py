@@ -29,7 +29,7 @@ def _multiline_exception(text: str) -> bool:
     # Multi-statement favorite query is a special case. Because there will
     # be a semicolon separating statements, we can't consider semicolon an
     # EOL. Let's consider an empty line an EOL instead.
-    if first_word.startswith(("\\fs", "/fs")):
+    if iocommands.is_favorite_save_command(text):
         return orig.endswith("\n")
 
     return (

@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Features
+---------
+* Add alternative interface `/favorite` for favorite queries.
+
+
 Bug Fixes
 ---------
 * Lower Boundary tunnel stabilization pause to 0.15 sec.

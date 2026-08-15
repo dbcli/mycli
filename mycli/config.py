@@ -48,6 +48,7 @@ def read_config_file(
     f: str | IO[str],
     list_values: bool = True,
     preserve_quotes: bool = False,
+    raise_errors: bool = False,
 ) -> ConfigObj | LimiitedQuotePreservingConfigObj | None:
     """Read a config file.
 
@@ -56,6 +57,9 @@ def read_config_file(
     (e.g. 'a,b,c' -> ['a', 'b', 'c']. Additionally, the config values are
     not unquoted. We are disabling list_values when reading MySQL config files
     so we can correctly interpret commas in passwords.
+
+    Set *raise_errors* to propagate parsing and I/O errors instead of logging
+    them and returning a partial config or ``None``.
 
     """
 
@@ -68,10 +72,14 @@ def read_config_file(
         else:
             config = ConfigObj(f, interpolation=False, encoding="utf8", list_values=list_values)
     except ConfigObjError as e:
+        if raise_errors:
+            raise
         log(logger, logging.WARNING, "Unable to parse line {0} of config file '{1}'.".format(e.line_number, f))
         log(logger, logging.WARNING, "Using successfully parsed config values.")
         return e.config
     except (IOError, OSError) as e:
+        if raise_errors:
+            raise
         log(logger, logging.WARNING, "You don't have permission to read config file '{0}'.".format(e.filename))
         return None
 

@@ -7,7 +7,7 @@ import re
 import shlex
 import subprocess
 from time import sleep
-from typing import Any, Generator
+from typing import Any, Generator, Iterable
 from uuid import uuid4
 
 import click
@@ -23,7 +23,9 @@ from mycli.packages.interactive_utils import confirm_destructive_query
 from mycli.packages.special.delimitercommand import DelimiterCommand
 from mycli.packages.special.dsn_aliases import INVALID_DSN_ALIAS_ERROR, DsnAliases, is_valid_dsn_alias
 from mycli.packages.special.favoritequeries import (
+    FAVORITE_COMMAND_HELP,
     FavoriteQueries,
+    FavoriteQueryReloadError,
     analyze_favorite_query_template,
     favorite_query_template_environment,
     favorite_query_variable_pattern,
@@ -349,6 +351,61 @@ def set_redirect(command_part: str | None, file_operator_part: str | None, file_
 
 
 @special_command(
+    r'\favorite',
+    '/favorite <command>',
+    'Alternative favorite query interface. See /favorite help.',
+    arg_type=ArgType.PARSED_QUERY,
+    case_sensitive=False,
+)
+def favorite(arg: str, cur: Cursor | None = None, **_) -> Iterable[SQLResult]:
+    args = arg.strip().split(maxsplit=1)
+    if len(args) == 1 and args[0].lower() == 'list':
+        return list_favorite_queries(include_usage=False)
+    if args and args[0].lower() == 'reload':
+        if len(args) != 1:
+            return [SQLResult(status='Syntax: /favorite reload.')]
+        try:
+            FavoriteQueries.instance.reload()
+        except FavoriteQueryReloadError as exc:
+            return [SQLResult(status=f'Error: Unable to reload favorite queries: {exc}.')]
+        return [SQLResult(status='Favorite queries reloaded.')]
+    if args and args[0].lower() == 'eval':
+        eval_arg = args[1] if len(args) == 2 else ''
+        if not eval_arg:
+            return [SQLResult(status='Syntax: /favorite eval <name> [args..] [--key=value].')]
+        query, error = expand_favorite_query(eval_arg)
+        if query is None:
+            return [SQLResult(status=error)]
+        query = _terminate_favorite_eval_query(query)
+        return [
+            SQLResult(
+                status='Error: /favorite eval is only available in the interactive REPL.',
+                command={'name': 'set_buffer', 'text': query},
+            )
+        ]
+    if args and args[0].lower() == 'run':
+        run_arg = args[1] if len(args) == 2 else ''
+        if not run_arg:
+            return [SQLResult(status='Syntax: /favorite run <name> [args..] [--key=value].')]
+        assert cur is not None
+        return execute_favorite_query(cur, run_arg)
+    if args and args[0].lower() == 'save':
+        save_arg = args[1] if len(args) == 2 else ''
+        usage = 'Syntax: /favorite save <name> <query>.'
+        return _save_favorite_query(save_arg, usage)
+    if args and args[0].lower() == 'edit':
+        edit_arg = args[1] if len(args) == 2 else ''
+        if not edit_arg:
+            return [SQLResult(status='Syntax: /favorite edit <name>.')]
+        return _edit_favorite_query(edit_arg)
+    if args and args[0].lower() == 'delete':
+        delete_arg = args[1] if len(args) == 2 else ''
+        usage = 'Syntax: /favorite delete <name>.'
+        return _delete_favorite_query(delete_arg, usage)
+    return [SQLResult(preamble=FAVORITE_COMMAND_HELP)]
+
+
+@special_command(
     "\\f",
     "/f [name [args..] [--key=value]]",
     "List or execute favorite queries.",
@@ -360,55 +417,31 @@ def execute_favorite_query(cur: Cursor, arg: str, **_) -> Generator[SQLResult, N
         yield from list_favorite_queries()
         return
 
-    # Parse out favorite name and optional substitution parameters
-    name, _separator, arg_str = arg.partition(" ")
-    try:
-        args, template_values = parse_favorite_query_args(arg_str)
-    except ValueError as exc:
-        yield SQLResult(status=f'Invalid favorite query arguments: {exc}')
+    query, error = expand_favorite_query(arg)
+    if query is None:
+        yield SQLResult(status=error)
         return
 
-    query = FavoriteQueries.instance.get(name)
-    if query is None:
-        message = f"No favorite query: {name}"
-        yield SQLResult(status=message)
-    else:
-        query, positional_values, arg_error = prepare_favorite_query_args(query, args)
-        if query is None:
-            yield SQLResult(status=arg_error)
+    for sql in sqlparse.split(query):
+        sql = sql.rstrip(";")
+        preamble = f"> {sql}" if is_show_favorite_query() else None
+        is_special = False
+        for special in SPECIAL_COMMANDS:
+            if sql.lower().startswith(special.lower()):
+                is_special = True
+                break
+        if is_special:
+            for result in special_execute(cur, sql):
+                result.preamble = preamble
+                # special_execute() already returns a SQLResult
+                yield result
         else:
-            try:
-                query = render_favorite_query(query, template_values)
-            except TemplateError as exc:
-                yield SQLResult(status=f'Favorite query template error: {exc}')
-                return
-            except FavoriteQueryArgumentError as exc:
-                yield SQLResult(status=f'Invalid favorite query arguments: {exc}')
-                return
-            except Exception as exc:
-                yield SQLResult(status=f'Favorite query template error: {exc}')
-                return
-            query = restore_favorite_query_args(query, positional_values)
-            for sql in sqlparse.split(query):
-                sql = sql.rstrip(";")
-                preamble = f"> {sql}" if is_show_favorite_query() else None
-                is_special = False
-                for special in SPECIAL_COMMANDS:
-                    if sql.lower().startswith(special.lower()):
-                        is_special = True
-                        break
-                if is_special:
-                    for result in special_execute(cur, sql):
-                        result.preamble = preamble
-                        # special_execute() already returns a SQLResult
-                        yield result
-                else:
-                    cur.execute(sql)
-                    if cur.description:
-                        header = [x[0] for x in cur.description]
-                        yield SQLResult(preamble=preamble, header=header, rows=cur)
-                    else:
-                        yield SQLResult(preamble=preamble)
+            cur.execute(sql)
+            if cur.description:
+                header = [x[0] for x in cur.description]
+                yield SQLResult(preamble=preamble, header=header, rows=cur)
+            else:
+                yield SQLResult(preamble=preamble)
 
 
 def parse_favorite_query_args(arg_str: str) -> tuple[list[str], dict[str, str]]:
@@ -454,14 +487,52 @@ def render_favorite_query(query: str, template_values: dict[str, str]) -> str:
     return favorite_query_template_environment.from_string(query).render(kv=template_values)
 
 
-def list_favorite_queries() -> list[SQLResult]:
+def expand_favorite_query(arg: str) -> tuple[str | None, str | None]:
+    """Expand favorite query arguments without executing the query."""
+    name, _separator, arg_str = arg.partition(" ")
+    try:
+        args, template_values = parse_favorite_query_args(arg_str)
+    except ValueError as exc:
+        return None, f'Invalid favorite query arguments: {exc}'
+
+    query = FavoriteQueries.instance.get(name)
+    if query is None:
+        return None, f"No favorite query: {name}"
+
+    query, positional_values, error = prepare_favorite_query_args(query, args)
+    if query is None:
+        return None, error
+
+    try:
+        query = render_favorite_query(query, template_values)
+    except TemplateError as exc:
+        return None, f'Favorite query template error: {exc}'
+    except FavoriteQueryArgumentError as exc:
+        return None, f'Invalid favorite query arguments: {exc}'
+    except Exception as exc:
+        return None, f'Favorite query template error: {exc}'
+
+    return restore_favorite_query_args(query, positional_values), None
+
+
+def _terminate_favorite_eval_query(query: str) -> str:
+    query = query.rstrip()
+    delimiter = get_current_delimiter()
+    if query.endswith((delimiter, r'\G', r'\g', r'\x')):
+        return query
+    return query + delimiter
+
+
+def list_favorite_queries(include_usage: bool = True) -> list[SQLResult]:
     """List of all favorite queries."""
 
     header = ["Name", "Query"]
     rows = [(r, FavoriteQueries.instance.get(r)) for r in FavoriteQueries.instance.list()]
 
     if not rows:
-        status = "\nNo favorite queries found." + FavoriteQueries.instance.usage
+        status = "\nNo favorite queries found."
+        if include_usage:
+            status += FavoriteQueries.instance.usage
     else:
         status = ""
     return [SQLResult(header=header, rows=rows, status=status)]
@@ -516,6 +587,10 @@ def save_favorite_query(arg: str, **_) -> list[SQLResult]:
     """Save a new favorite query."""
 
     usage = "Syntax: \\fs name query.\n\n" + FavoriteQueries.instance.usage
+    return _save_favorite_query(arg, usage)
+
+
+def _save_favorite_query(arg: str, usage: str) -> list[SQLResult]:
     if not arg:
         return [SQLResult(status=usage)]
 
@@ -529,6 +604,34 @@ def save_favorite_query(arg: str, **_) -> list[SQLResult]:
     return [SQLResult(status="Saved.")]
 
 
+def _edit_favorite_query(name: str) -> list[SQLResult]:
+    query = FavoriteQueries.instance.get(name)
+    if query is None:
+        return [SQLResult(status=f'No favorite query: {name}')]
+
+    try:
+        edited_query = click.edit(query, extension='.sql')
+        if edited_query is None:
+            return [SQLResult(status=f'{name}: Not Changed.')]
+        FavoriteQueries.instance.save(name, edited_query)
+    except KeyboardInterrupt:
+        return [SQLResult(status=f'{name}: Edit Cancelled.')]
+    except (click.ClickException, OSError) as error:
+        return [SQLResult(status=f'Unable to edit favorite "{name}": {error}')]
+
+    return [SQLResult(status=f'{name}: Edited.')]
+
+
+def is_favorite_save_command(statement: str) -> bool:
+    """Return whether a statement saves a favorite query."""
+    parts = statement.lstrip().split(maxsplit=2)
+    if not parts:
+        return False
+    if parts[0].startswith((r'\fs', '/fs')):
+        return True
+    return len(parts) >= 2 and parts[0].lower() in (r'\favorite', '/favorite') and parts[1].lower() == 'save'
+
+
 @special_command(
     "\\fd",
     "/fd <name>",
@@ -537,6 +640,10 @@ def save_favorite_query(arg: str, **_) -> list[SQLResult]:
 def delete_favorite_query(arg: str, **_) -> list[SQLResult]:
     """Delete an existing favorite query."""
     usage = "Syntax: \\fd name.\n\n" + FavoriteQueries.instance.usage
+    return _delete_favorite_query(arg, usage)
+
+
+def _delete_favorite_query(arg: str, usage: str) -> list[SQLResult]:
     if not arg:
         return [SQLResult(status=usage)]
 

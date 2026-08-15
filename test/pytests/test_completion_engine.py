@@ -10,6 +10,7 @@ from sqlparse.sql import Statement, Token
 from mycli.packages import completion_engine, special
 from mycli.packages.completion_engine import (
     DSN_SUBCOMMANDS,
+    FAVORITE_SUBCOMMANDS,
     _aliases,
     _build_suggest_context,
     _charset_suggestion,
@@ -910,6 +911,51 @@ def test_suggest_type_handles_parser_results_shorter_than_cursor(monkeypatch):
         ('/config get main.show_warnings ', []),
         ('/config search', []),
         ('/config search ', []),
+        ('/favorite ', [{'type': 'special_subcommand', 'subcommands': list(FAVORITE_SUBCOMMANDS)}]),
+        ('/favorite h', [{'type': 'special_subcommand', 'subcommands': list(FAVORITE_SUBCOMMANDS)}]),
+        ('\\favorite l', [{'type': 'special_subcommand', 'subcommands': list(FAVORITE_SUBCOMMANDS)}]),
+        ('/favorite help', []),
+        ('/favorite help ', []),
+        ('/favorite list', []),
+        ('/favorite list ', []),
+        ('/favorite reload', []),
+        ('/favorite reload ', []),
+        ('/favorite run', []),
+        ('/favorite run ', [{'type': 'favoritequery'}]),
+        ('/favorite run rep', [{'type': 'favoritequery'}]),
+        ('/favorite run report ', [{'type': 'favoritequery_template_key', 'name': 'report', 'used_keys': set()}]),
+        ('\\favorite RUN report --u', [{'type': 'favoritequery_template_key', 'name': 'report', 'used_keys': set()}]),
+        ('/favorite run report --user=', []),
+        (
+            '/favorite run report --user=henry ',
+            [{'type': 'favoritequery_template_key', 'name': 'report', 'used_keys': {'user'}}],
+        ),
+        ('/favorite eval', []),
+        ('/favorite eval ', [{'type': 'favoritequery'}]),
+        ('/favorite eval rep', [{'type': 'favoritequery'}]),
+        ('/favorite eval report ', [{'type': 'favoritequery_template_key', 'name': 'report', 'used_keys': set()}]),
+        ('\\favorite EVAL report --u', [{'type': 'favoritequery_template_key', 'name': 'report', 'used_keys': set()}]),
+        ('/favorite eval report --user=', []),
+        (
+            '/favorite eval report --user=henry ',
+            [{'type': 'favoritequery_template_key', 'name': 'report', 'used_keys': {'user'}}],
+        ),
+        ('/favorite save', []),
+        ('/favorite save ', [{'type': 'favoritequery'}]),
+        ('/favorite save rep', [{'type': 'favoritequery'}]),
+        ('\\favorite SAVE ', [{'type': 'favoritequery'}]),
+        ('/favorite edit', []),
+        ('/favorite edit ', [{'type': 'favoritequery'}]),
+        ('/favorite edit rep', [{'type': 'favoritequery'}]),
+        ('/favorite edit report ', []),
+        ('/favorite edit report extra', []),
+        ('\\favorite EDIT ', [{'type': 'favoritequery'}]),
+        ('/favorite delete', []),
+        ('/favorite delete ', [{'type': 'favoritequery'}]),
+        ('/favorite delete rep', [{'type': 'favoritequery'}]),
+        ('/favorite delete report ', []),
+        ('/favorite delete report extra', []),
+        ('\\favorite DELETE ', [{'type': 'favoritequery'}]),
         ('/dsn ', [{'type': 'special_subcommand', 'subcommands': list(DSN_SUBCOMMANDS)}]),
         ('/dsn delete ', [{'type': 'dsn_alias'}]),
         ('/dsn delete pro', [{'type': 'dsn_alias'}]),
@@ -938,6 +984,28 @@ def test_suggest_type_handles_parser_results_shorter_than_cursor(monkeypatch):
 )
 def test_suggest_special(text, expected):
     assert suggest_special(text) == expected
+
+
+@pytest.mark.parametrize(
+    ('text', 'query'),
+    [
+        ('/favorite save report ', ''),
+        ('/favorite save report SELECT * FROM ', 'SELECT * FROM '),
+        (r'\favorite SAVE report SELECT col', 'SELECT col'),
+    ],
+)
+def test_suggest_special_routes_favorite_save_query_to_sql_completion(monkeypatch, text: str, query: str) -> None:
+    suggestions = [{'type': 'sql-query'}]
+    calls: list[tuple[str, str]] = []
+
+    def suggest_sql(full_text: str, text_before_cursor: str) -> list[dict[str, str]]:
+        calls.append((full_text, text_before_cursor))
+        return suggestions
+
+    monkeypatch.setattr(completion_engine, 'suggest_type', suggest_sql)
+
+    assert suggest_special(text) == suggestions
+    assert calls == [(query, query)]
 
 
 @pytest.mark.parametrize(
