@@ -15,7 +15,10 @@ from typing import IO
 
 from mycli.compat import WIN
 
-TUNNEL_STABILIZATION_PAUSE = 0.25
+# This should be as small as possible and yet still
+# ward off SSL errors at connection time.  We know
+# that 0.1 is too small on at least one Mac.
+TUNNEL_STABILIZATION_PAUSE = 0.15
 
 
 class BoundaryTunnelError(RuntimeError):
@@ -148,8 +151,6 @@ class BoundaryTunnel:
             self._raise_if_failed()
             if self._is_listening():
                 self._ready.set()
-                # todo: if this works to ward off SSL errors at connection time,
-                # try making the pause as small as possible
                 time.sleep(TUNNEL_STABILIZATION_PAUSE)
                 return
             time.sleep(0.05)
