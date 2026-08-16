@@ -5,6 +5,10 @@ Bug Fixes
 ---------
 * Lower Boundary tunnel stabilization pause to 0.15 sec.
 
+Documentation
+-------------
+* Fix favorite query commands shown with a forward slash instead of a backslash (`/fs` → `\fs`).
+
 
 2.14.0 (2026/08/15)
 ==============

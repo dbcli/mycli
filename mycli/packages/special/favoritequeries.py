@@ -78,13 +78,13 @@ with a short name.
 Examples:
 
     # Save a new favorite query.
-    > /fs simple SELECT * FROM abc WHERE a IS NOT NULL;
+    > \fs simple SELECT * FROM abc WHERE a IS NOT NULL;
 
     # When multi-line mode is on, pressing Return twice is needed to save.
     # This supports multi-statement favorites.
 
     # List all favorite queries.
-    > /f
+    > \f
     ╒═══════════╤══════════════════════════════════════════════════╕
     │ Name      │ Query                                            │
     ╞═══════════╪══════════════════════════════════════════════════╡
@@ -93,7 +93,7 @@ Examples:
     ╘═══════════╧══════════════════════════════════════════════════╛
 
     # Run a favorite query.
-    > /f simple
+    > \f simple
     ╒════════╤════════╕
     │ a      │ b      │
     ╞════════╪════════╡
@@ -101,20 +101,20 @@ Examples:
     ╘════════╧════════╛
 
     # Run a favorite query containing {{ kv.name }} in the template.
-    > /f find_user --name=henry
-    > /f find_user --name henry
+    > \f find_user --name=henry
+    > \f find_user --name henry
 
     # Run a favorite query containing positional parameter $1 in the
     # template.
-    > /f find_user henry
+    > \f find_user henry
 
     # Use -- to disambiguate positional parameters such as $1, especially
     # if the positional value starts with a dash.
-    > /f query --key=value -- positional-value
-    > /f query -- --positional-value-which-looks-like-a-flag--
+    > \f query --key=value -- positional-value
+    > \f query -- --positional-value-which-looks-like-a-flag--
 
     # Delete a favorite query.
-    > /fd simple
+    > \fd simple
     simple: Deleted.
 """
 
