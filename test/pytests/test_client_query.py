@@ -305,6 +305,25 @@ def test_run_query_writes_checkpoint(monkeypatch, tmp_path) -> None:
     assert state['checkpoint_path'].read_text(encoding='utf-8') == 'select 1;\n'
 
 
+def test_run_query_displays_set_buffer_fallback_outside_repl(monkeypatch) -> None:
+    cli = make_bare_mycli()
+    status = 'Error: /favorite eval is only available in the interactive REPL.'
+    result = SQLResult(status=status, command={'name': 'set_buffer', 'text': 'select 1'})
+    echoed: list[str] = []
+    cli.sqlexecute = SimpleNamespace(run=lambda query: [result])
+    cli.log_query = lambda query: None
+    cli.log_output = lambda line: None
+    cli.format_sqlresult = lambda result, **kwargs: [result.status_plain]
+    monkeypatch.setattr(client_query.special, 'is_expanded_output', lambda: False)
+    monkeypatch.setattr(client_query.special, 'is_redirected', lambda: False)
+    monkeypatch.setattr(client_query.special, 'is_show_warnings_enabled', lambda: False)
+    monkeypatch.setattr(client_query.click, 'echo', lambda line, nl=True: echoed.append(line))
+
+    main.MyCli.run_query(cli, '/favorite eval report')
+
+    assert echoed == [status]
+
+
 def test_get_last_query_returns_none() -> None:
     cli = make_bare_mycli()
 

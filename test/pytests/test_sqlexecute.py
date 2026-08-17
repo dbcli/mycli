@@ -911,9 +911,17 @@ def test_run_returns_empty_result_for_blank_statement(monkeypatch) -> None:
     assert split_inputs == ['']
 
 
-def test_run_does_not_split_favorite_query(monkeypatch) -> None:
+@pytest.mark.parametrize(
+    'favorite_sql',
+    [
+        '\\fs test-name select 1; select 2',
+        '/fs test-name select 1; select 2',
+        '\\favorite save test-name select 1; select 2',
+        '/favorite save test-name select 1; select 2',
+    ],
+)
+def test_run_does_not_split_favorite_query(monkeypatch, favorite_sql: str) -> None:
     favorite_results = [SQLResult(status='Saved.')]
-    favorite_sql = '\\fs test-name select 1; select 2'
     cursor = FakeQueryCursor()
     execute_calls: list[str] = []
 

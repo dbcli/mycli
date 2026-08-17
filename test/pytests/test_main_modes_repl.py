@@ -821,6 +821,34 @@ def test_output_results_handles_abort_default_width_and_bad_watch(monkeypatch: p
         )
 
 
+def test_output_results_moves_set_buffer_command_to_repl_state() -> None:
+    cli = make_repl_cli(SimpleNamespace())
+    state = repl_mode.ReplState()
+    result = SQLResult(
+        status='Error: /favorite eval is only available in the interactive REPL.',
+        command={'name': 'set_buffer', 'text': 'select 1'},
+    )
+
+    repl_mode._output_results(cli, state, iter([result]), start=0.0)
+
+    assert state.buffer_text == 'select 1'
+    assert cli.output_calls == []
+    assert cli.echo_calls == []
+
+
+def test_one_iteration_prefills_and_clears_pending_buffer_text(monkeypatch: pytest.MonkeyPatch) -> None:
+    patch_repl_runtime_defaults(monkeypatch)
+    cli = make_repl_cli(SimpleNamespace())
+    cli.prompt_session = FakePromptSession([''])
+    state = repl_mode.ReplState(buffer_text='select 1')
+
+    repl_mode._one_iteration(cli, state)
+
+    assert cli.prompt_session.prompt_calls[0]['default'] == 'select 1'
+    assert state.buffer_text is None
+    assert cli.query_history == []
+
+
 def test_keepalive_hook_covers_threshold_and_errors() -> None:
     cli = make_repl_cli(SimpleNamespace(conn=FakeConnection()))
     repl_mode._keepalive_hook(cli, None)

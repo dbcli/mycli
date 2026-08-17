@@ -616,7 +616,16 @@ def test_execute_from_file_runs_file_query(tmp_path: Path) -> None:
     assert client.sqlexecute.runs == ['select 1;']
 
 
-@pytest.mark.parametrize('command', ['/fs report select 1; select 2;', '\\fs report select 1; select 2;', 'pager;'])
+@pytest.mark.parametrize(
+    'command',
+    [
+        '/fs report select 1; select 2;',
+        '\\fs report select 1; select 2;',
+        '/favorite save report select 1; select 2;',
+        '\\favorite save report select 1; select 2;',
+        'pager;',
+    ],
+)
 def test_execute_from_file_rejects_special_commands(command: str, tmp_path: Path) -> None:
     client = DummyClient()
     sql_file = tmp_path / 'query.sql'

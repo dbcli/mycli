@@ -10,6 +10,7 @@ import sys
 from tempfile import NamedTemporaryFile
 from types import SimpleNamespace
 
+from configobj import ConfigObjError
 import pytest
 
 from mycli import config as config_module
@@ -270,6 +271,28 @@ def test_read_config_file_permission_error(monkeypatch, caplog) -> None:
     with caplog.at_level(logging.WARNING, logger='mycli.config'):
         assert read_config_file('/tmp/test.cnf') is None
         assert "You don't have permission to read config file '/tmp/test.cnf'." in caplog.text
+
+
+def test_read_config_file_can_raise_parse_errors(tmp_path) -> None:
+    invalid_path = tmp_path / 'invalid.cnf'
+    invalid_path.write_text('[main\nfoo=bar\n', encoding='utf8')
+
+    with pytest.raises(ConfigObjError):
+        read_config_file(str(invalid_path), raise_errors=True)
+
+
+def test_read_config_file_can_raise_io_errors(monkeypatch) -> None:
+    error = OSError(13, 'denied', '/tmp/test.cnf')
+
+    def raise_oserror(*_args, **_kwargs):
+        raise error
+
+    monkeypatch.setattr(config_module, 'ConfigObj', raise_oserror)
+
+    with pytest.raises(OSError) as exc_info:
+        read_config_file('/tmp/test.cnf', raise_errors=True)
+
+    assert exc_info.value is error
 
 
 def test_create_and_write_default_config(tmp_path) -> None:

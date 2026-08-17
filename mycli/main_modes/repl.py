@@ -105,6 +105,7 @@ _PROMPT_TARGETS: dict[int, 'MyCli'] = {}
 class ReplState:
     iterations: int = 0
     mutating: bool = False
+    buffer_text: str | None = None
 
 
 @Condition
@@ -449,6 +450,9 @@ def _output_results(
         mycli.logger.debug('status: %r', result.status)
         mycli.logger.debug('command: %r', result.command)
         threshold = 1000
+        if result.command is not None and result.command['name'] == 'set_buffer':
+            state.buffer_text = str(result.command['text'])
+            continue
         if result.command is not None and result.command['name'] == 'watch':
             if watch_count > 0:
                 try:
@@ -630,10 +634,19 @@ def _one_iteration(
         try:
             assert mycli.prompt_session is not None
             loaded_message_fn = partial(_get_prompt_message, mycli, mycli.prompt_session.app)
-            text = mycli.prompt_session.prompt(
-                inputhook=inputhook,
-                message=loaded_message_fn,
-            )
+            if state.buffer_text is None:
+                text = mycli.prompt_session.prompt(
+                    inputhook=inputhook,
+                    message=loaded_message_fn,
+                )
+            else:
+                default = state.buffer_text
+                state.buffer_text = None
+                text = mycli.prompt_session.prompt(
+                    default=default,
+                    inputhook=inputhook,
+                    message=loaded_message_fn,
+                )
         except KeyboardInterrupt:
             return
 

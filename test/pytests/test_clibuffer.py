@@ -34,9 +34,12 @@ def make_app_for_text(text: str) -> tuple[SimpleNamespace, DummyLayout]:
     return SimpleNamespace(layout=layout), layout
 
 
-def test_multiline_exception_handles_favorite_queries_only_after_blank_line() -> None:
-    assert clibuffer._multiline_exception(r'\fs demo select 1; select 2') is False
-    assert clibuffer._multiline_exception('\\fs demo select 1; select 2\n') is True
+@pytest.mark.parametrize('command', [r'\fs', '/fs', r'\favorite save', '/favorite save'])
+def test_multiline_exception_handles_favorite_queries_only_after_blank_line(command: str) -> None:
+    text = f'{command} demo select 1; select 2'
+
+    assert clibuffer._multiline_exception(text) is False
+    assert clibuffer._multiline_exception(f'{text}\n') is True
 
 
 @pytest.mark.parametrize(
