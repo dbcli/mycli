@@ -220,8 +220,7 @@ def test_reload_keeps_startup_shared_favorites_path(tmp_path: Path) -> None:
     assert favorites.get('local') == 'select 10'
 
 
-@pytest.mark.parametrize('broken_source', ['user', 'shared'])
-def test_reload_failure_preserves_runtime_favorites(tmp_path: Path, broken_source: str) -> None:
+def test_reload_user_failure_preserves_runtime_favorites(tmp_path: Path) -> None:
     user_file = tmp_path / 'myclirc'
     shared_file = tmp_path / 'shared-myclirc'
     user_file.write_text('[favorite_queries]\nlocal = select 1\n', encoding='utf-8')
@@ -229,13 +228,31 @@ def test_reload_failure_preserves_runtime_favorites(tmp_path: Path, broken_sourc
     config = DummyConfig({'favorite_queries': {'runtime': 'select 3'}})
     favorites = FavoriteQueries.from_config(config, str(user_file), str(shared_file))
     before_reload = dict(config['favorite_queries'])
-    broken_file = user_file if broken_source == 'user' else shared_file
-    broken_file.write_text('[favorite_queries\ninvalid = select 4\n', encoding='utf-8')
+    user_file.write_text('[favorite_queries\ninvalid = select 4\n', encoding='utf-8')
 
-    with pytest.raises(FavoriteQueryReloadError, match=f'unable to read {broken_source}'):
+    with pytest.raises(FavoriteQueryReloadError, match='unable to read user'):
         favorites.reload()
 
     assert config['favorite_queries'] == before_reload
+
+
+def test_reload_shared_failure_warns_and_uses_user_favorites(
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    user_file = tmp_path / 'myclirc'
+    shared_file = tmp_path / 'shared-myclirc'
+    user_file.write_text('[favorite_queries]\nlocal = select 1\n', encoding='utf-8')
+    shared_file.write_text('[favorite_queries]\nshared = select 2\n', encoding='utf-8')
+    config = DummyConfig({'favorite_queries': {'runtime': 'select 3'}})
+    favorites = FavoriteQueries.from_config(config, str(user_file), str(shared_file))
+    shared_file.write_text('[favorite_queries\ninvalid = select 4\n', encoding='utf-8')
+
+    with caplog.at_level(logging.WARNING, logger='mycli.packages.special.favoritequeries'):
+        favorites.reload()
+
+    assert 'unable to read shared favorites' in caplog.text
+    assert config['favorite_queries'] == {'local': 'select 1'}
 
 
 @pytest.mark.parametrize(
@@ -262,8 +279,7 @@ def test_reload_invalid_config_preserves_runtime_favorites(
     assert config['favorite_queries'] == {'runtime': 'select 3'}
 
 
-@pytest.mark.parametrize('missing_source', ['user', 'shared'])
-def test_reload_missing_file_preserves_runtime_favorites(tmp_path: Path, missing_source: str) -> None:
+def test_reload_missing_user_file_preserves_runtime_favorites(tmp_path: Path) -> None:
     user_file = tmp_path / 'myclirc'
     shared_file = tmp_path / 'shared-myclirc'
     user_file.write_text('[favorite_queries]\nlocal = select 1\n', encoding='utf-8')
@@ -271,13 +287,31 @@ def test_reload_missing_file_preserves_runtime_favorites(tmp_path: Path, missing
     config = DummyConfig({'favorite_queries': {'runtime': 'select 3'}})
     favorites = FavoriteQueries.from_config(config, str(user_file), str(shared_file))
     before_reload = dict(config['favorite_queries'])
-    missing_file = user_file if missing_source == 'user' else shared_file
-    missing_file.unlink()
+    user_file.unlink()
 
-    with pytest.raises(FavoriteQueryReloadError, match=f'unable to read {missing_source}'):
+    with pytest.raises(FavoriteQueryReloadError, match='unable to read user'):
         favorites.reload()
 
     assert config['favorite_queries'] == before_reload
+
+
+def test_reload_missing_shared_file_warns_and_uses_user_favorites(
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    user_file = tmp_path / 'myclirc'
+    shared_file = tmp_path / 'shared-myclirc'
+    user_file.write_text('[favorite_queries]\nlocal = select 1\n', encoding='utf-8')
+    shared_file.write_text('[favorite_queries]\nshared = select 2\n', encoding='utf-8')
+    config = DummyConfig({'favorite_queries': {'runtime': 'select 3'}})
+    favorites = FavoriteQueries.from_config(config, str(user_file), str(shared_file))
+    shared_file.unlink()
+
+    with caplog.at_level(logging.WARNING, logger='mycli.packages.special.favoritequeries'):
+        favorites.reload()
+
+    assert 'unable to read shared favorites' in caplog.text
+    assert config['favorite_queries'] == {'local': 'select 1'}
 
 
 def test_reload_unreadable_file_preserves_runtime_favorites(

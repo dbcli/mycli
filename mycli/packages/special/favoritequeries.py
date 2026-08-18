@@ -272,7 +272,10 @@ Examples:
             raise FavoriteQueryReloadError(f'invalid [{self.section_name}] section in system configuration files')
         queries: dict[str, str] = {}
         if self.shared_favorites_file is not None:
-            queries.update(self._reload_queries(self.shared_favorites_file, 'shared favorites'))
+            try:
+                queries.update(self._reload_queries(self.shared_favorites_file, 'shared favorites'))
+            except FavoriteQueryReloadError as exc:
+                log(logger, logging.WARNING, str(exc))
         queries.update(system_queries)
         queries.update(user_queries)
         self.config[self.section_name] = queries
