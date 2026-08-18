@@ -654,8 +654,8 @@ def _delete_favorite_query(arg: str, usage: str) -> list[SQLResult]:
 
 @special_command(
     r'\dsn',
-    '/dsn <help|list|show|save|delete>',
-    'Manage saved DSNs.',
+    '/dsn <help|list|show|save|edit|delete>',
+    'Manage saved DSNs. See /dsn help.',
     arg_type=ArgType.PARSED_QUERY,
     case_sensitive=False,
 )
@@ -685,6 +685,13 @@ def dsn(
             dsn = DsnAliases.instance.dsn_more(dsn)
         status = DsnAliases.instance.save(alias, dsn)
         return [SQLResult(status=status)]
+    elif args and args[0].lower() == 'edit':
+        if len(args) != 2:
+            return [SQLResult(status='Error: a single alias-name argument is required to edit.')]
+        alias = args[1]
+        if not is_valid_dsn_alias(alias):
+            return [SQLResult(status=INVALID_DSN_ALIAS_ERROR)]
+        return _edit_dsn_alias(alias)
     elif args and args[0].lower() == 'delete':
         if len(args) != 2:
             return [SQLResult(status='Error: a single alias-name argument is required to delete.')]
@@ -703,6 +710,24 @@ def dsn(
         return [SQLResult(status=status, header=header, rows=list_rows)]
     else:
         return [SQLResult(preamble=DsnAliases.instance.usage)]
+
+
+def _edit_dsn_alias(alias: str) -> list[SQLResult]:
+    dsn = DsnAliases.instance.get(alias)
+    if dsn is None:
+        return [SQLResult(status=f'No DSN alias: {alias}')]
+
+    try:
+        edited_dsn = click.edit(dsn)
+        if edited_dsn is None:
+            return [SQLResult(status=f'{alias}: Not Changed.')]
+        DsnAliases.instance.save(alias, edited_dsn.strip())
+    except KeyboardInterrupt:
+        return [SQLResult(status=f'{alias}: Edit Cancelled.')]
+    except (click.ClickException, OSError) as error:
+        return [SQLResult(status=f'Unable to edit DSN alias "{alias}": {error}')]
+
+    return [SQLResult(status=f'{alias}: Edited.')]
 
 
 @special_command(

@@ -110,10 +110,11 @@ def test_dsn_subcommand_completion(completer, complete_event):
     text = '/dsn '
     result = completer.get_completions(Document(text=text, cursor_position=len(text)), complete_event)
 
-    assert {completion.text for completion in result} == {'help', 'list', 'show', 'save', 'delete'}
+    assert {completion.text for completion in result} == {'help', 'list', 'show', 'save', 'edit', 'delete'}
 
 
-def test_dsn_delete_alias_completion(completer, complete_event, monkeypatch):
+@pytest.mark.parametrize('command', ['edit', 'delete'])
+def test_dsn_alias_completion(completer, complete_event, monkeypatch, command):
     import mycli.sqlcompleter as sqlcompleter
 
     monkeypatch.setattr(
@@ -122,7 +123,7 @@ def test_dsn_delete_alias_completion(completer, complete_event, monkeypatch):
         SimpleNamespace(list=lambda: ['prod', 'staging']),
         raising=False,
     )
-    text = '/dsn delete pro'
+    text = f'/dsn {command} pro'
     result = completer.get_completions(Document(text=text, cursor_position=len(text)), complete_event)
 
     assert list(result) == [Completion(text='prod', start_position=-3)]

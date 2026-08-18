@@ -4,6 +4,7 @@ Upcoming (TBD)
 Features
 ---------
 * Add alternative interface `/favorite` for favorite queries.
+* Add `/dsn edit` subcommand to edit an existing DSN.
 
 
 Bug Fixes
