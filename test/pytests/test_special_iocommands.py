@@ -1341,6 +1341,90 @@ def test_dsn_command_rejects_save_without_single_alias(monkeypatch) -> None:
         assert iocommands.dsn(cur=FakeCursor(), arg=arg)[0].status == error
 
 
+def test_dsn_command_edits_alias(monkeypatch) -> None:
+    aliases = FakeDsnAliases({'prod': 'mysql://prod/db'})
+    monkeypatch.setattr(iocommands.DsnAliases, 'instance', aliases, raising=False)
+    monkeypatch.setattr(iocommands.click, 'edit', lambda dsn: '  mysql://new/db\n')
+
+    result = iocommands.dsn(cur=FakeCursor(), arg='edit prod')[0]
+
+    assert result.status == 'prod: Edited.'
+    assert aliases.saved == [('prod', 'mysql://new/db')]
+
+
+def test_dsn_command_reports_missing_edit_alias(monkeypatch) -> None:
+    aliases = FakeDsnAliases()
+    monkeypatch.setattr(iocommands.DsnAliases, 'instance', aliases, raising=False)
+
+    assert iocommands.dsn(cur=FakeCursor(), arg='edit unknown')[0].status == 'No DSN alias: unknown'
+
+
+@pytest.mark.parametrize(
+    ('editor_result', 'expected_status', 'expected_saved'),
+    [
+        (None, 'prod: Not Changed.', []),
+        ('', 'prod: Edited.', [('prod', '')]),
+    ],
+)
+def test_dsn_command_handles_unchanged_and_empty_edits(
+    monkeypatch,
+    editor_result: str | None,
+    expected_status: str,
+    expected_saved: list[tuple[str, str]],
+) -> None:
+    aliases = FakeDsnAliases({'prod': 'mysql://prod/db'})
+    monkeypatch.setattr(iocommands.DsnAliases, 'instance', aliases, raising=False)
+    monkeypatch.setattr(iocommands.click, 'edit', lambda dsn: editor_result)
+
+    result = iocommands.dsn(cur=FakeCursor(), arg='edit prod')[0]
+
+    assert result.status == expected_status
+    assert aliases.saved == expected_saved
+
+
+@pytest.mark.parametrize(
+    ('error', 'expected_status'),
+    [
+        (KeyboardInterrupt(), 'prod: Edit Cancelled.'),
+        (OSError('editor failed'), 'Unable to edit DSN alias "prod": editor failed'),
+        (iocommands.click.ClickException('editor failed'), 'Unable to edit DSN alias "prod": editor failed'),
+    ],
+)
+def test_dsn_command_reports_edit_errors(monkeypatch, error: BaseException, expected_status: str) -> None:
+    aliases = FakeDsnAliases({'prod': 'mysql://prod/db'})
+    monkeypatch.setattr(iocommands.DsnAliases, 'instance', aliases, raising=False)
+
+    def fail_edit(dsn: str) -> None:
+        raise error
+
+    monkeypatch.setattr(iocommands.click, 'edit', fail_edit)
+
+    assert iocommands.dsn(cur=FakeCursor(), arg='edit prod')[0].status == expected_status
+    assert aliases.saved == []
+
+
+def test_dsn_command_reports_edit_save_error(monkeypatch) -> None:
+    aliases = FakeDsnAliases({'prod': 'mysql://prod/db'})
+
+    def fail_save(alias: str, dsn: str) -> str:
+        raise OSError('write failed')
+
+    aliases.save = fail_save
+    monkeypatch.setattr(iocommands.DsnAliases, 'instance', aliases, raising=False)
+    monkeypatch.setattr(iocommands.click, 'edit', lambda dsn: 'mysql://new/db')
+
+    assert iocommands.dsn(cur=FakeCursor(), arg='edit prod')[0].status == 'Unable to edit DSN alias "prod": write failed'
+
+
+def test_dsn_command_rejects_edit_without_single_valid_alias(monkeypatch) -> None:
+    monkeypatch.setattr(iocommands.DsnAliases, 'instance', FakeDsnAliases(), raising=False)
+
+    error = 'Error: a single alias-name argument is required to edit.'
+    assert iocommands.dsn(cur=FakeCursor(), arg='edit')[0].status == error
+    assert iocommands.dsn(cur=FakeCursor(), arg='edit one two')[0].status == error
+    assert iocommands.dsn(cur=FakeCursor(), arg='edit -legacy')[0].status == iocommands.INVALID_DSN_ALIAS_ERROR
+
+
 def test_dsn_command_deletes_alias(monkeypatch) -> None:
     aliases = FakeDsnAliases({'prod': 'mysql://prod/db'})
     monkeypatch.setattr(iocommands.DsnAliases, 'instance', aliases, raising=False)

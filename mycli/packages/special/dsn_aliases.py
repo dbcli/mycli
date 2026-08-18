@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from mycli.client import MyCli
 
-DSN_SUBCOMMANDS = {'help', 'list', 'show', 'save', 'delete'}
+DSN_SUBCOMMANDS = {'help', 'list', 'show', 'save', 'edit', 'delete'}
 INVALID_DSN_ALIAS_ERROR = 'Error: DSN aliases cannot start with a dash.'
 MISSING = object()
 
@@ -83,6 +83,9 @@ Examples:
     ├───────┼──────────────────────────────────────────────────┤
     │ rocks │ mysql://mycli@localhost/mysql?prompt=%5Cd%3E%5C_ │
     └───────┴──────────────────────────────────────────────────┘
+
+    # Edit a DSN saved alias in an external editor.
+    mysql> /dsn edit rocks
 
     # Delete a DSN alias.
     mysql> /dsn delete rocks

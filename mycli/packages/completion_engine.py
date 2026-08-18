@@ -879,10 +879,10 @@ def suggest_special(text: str) -> list[dict[str, Any]]:
 
     if cmd.lower() in (r'\dsn', '/dsn'):
         dsn_arguments = _arg.split(maxsplit=1)
-        completing_delete_target = (len(dsn_arguments) == 1 and text[-1].isspace()) or (len(dsn_arguments) == 2 and not text[-1].isspace())
-        if dsn_arguments and dsn_arguments[0].lower() == 'delete' and completing_delete_target:
+        completing_alias_target = (len(dsn_arguments) == 1 and text[-1].isspace()) or (len(dsn_arguments) == 2 and not text[-1].isspace())
+        if dsn_arguments and dsn_arguments[0].lower() in ('edit', 'delete') and completing_alias_target:
             return [{'type': 'dsn_alias'}]
-        if dsn_arguments and dsn_arguments[0].lower() == 'delete' and len(dsn_arguments) == 2:
+        if dsn_arguments and dsn_arguments[0].lower() in ('edit', 'delete') and len(dsn_arguments) == 2:
             return []
         if dsn_arguments and dsn_arguments[0].lower() == 'save':
             completing_option = (len(dsn_arguments) == 1 and text[-1].isspace()) or (
@@ -903,7 +903,7 @@ def suggest_special(text: str) -> list[dict[str, Any]]:
             if completing_option:
                 return [{'type': 'special_subcommand', 'subcommands': [option]}]
             return []
-        if dsn_arguments and dsn_arguments[0].lower() in DSN_SUBCOMMANDS - {'delete'}:
+        if dsn_arguments and dsn_arguments[0].lower() in DSN_SUBCOMMANDS - {'edit', 'delete'}:
             return []
         return [{'type': 'special_subcommand', 'subcommands': list(DSN_SUBCOMMANDS)}]
 
