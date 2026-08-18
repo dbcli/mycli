@@ -148,6 +148,8 @@ display output vertically using \G at the end of a query!
 
 display output in an interactive explorer \x at the end of a query!
 
+"/favorite run" can be combined with the \G or \x terminators!
+
 run SQL scripts in batch mode using the standard input!
 
 indexed columns are tagged with a "*" in completion menus!

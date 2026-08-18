@@ -11,6 +11,11 @@ Bug Fixes
 * Lower Boundary tunnel stabilization pause to 0.15 sec.
 
 
+Documentation
+---------
+* TIPS: `/favorite run` composes with the `\G` and `\x` terminators.
+
+
 2.14.0 (2026/08/15)
 ==============
 
