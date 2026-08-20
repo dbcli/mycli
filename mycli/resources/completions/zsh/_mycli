@@ -35,7 +35,7 @@ _mycli_is_positional_db_arg() {
                 ;;
             --*=*)
                 ;;
-            --host|--hostname|--port|--user|--username|--socket|--pass|--password|--password-file|--vault-address|--vault-mount|--vault-secret|--vault-password-field|--vault-username-field|--ssl-mode|--ssl-ca|--ssl-capath|--ssl-cert|--ssl-key|--ssl-cipher|--tls-version|--database|--dsn|--completions|--prompt|--toolbar|--logfile|--checkpoint|--myclirc|--local-infile|--login-path|--execute|--init-command|--charset|--character-set|--batch|--format|--throttle|--use-keyring|--keepalive-ticks|--ssh-jump|--ssh-options)
+            --host|--hostname|--port|--user|--username|--socket|--pass|--password|--password-file|--vault-address|--vault-mount|--vault-secret|--vault-password-field|--vault-username-field|--ssl-mode|--ssl-ca|--ssl-capath|--ssl-cert|--ssl-key|--ssl-cipher|--tls-version|--database|--dsn|--completions|--prompt|--toolbar|--logfile|--checkpoint|--myclirc|--local-infile|--login-path|--execute|--init-command|--charset|--character-set|--batch|--format|--throttle|--use-keyring|--keepalive-ticks|--ssh-jump|--ssh-options|--boundary-id)
                 expects_value=1
                 ;;
             -?*)

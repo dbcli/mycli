@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Features
+---------
+* Advertise beta `--boundary-id` option in helpdoc and completions.
+
+
 2.15.0 (2026/08/20)
 ==============
 
