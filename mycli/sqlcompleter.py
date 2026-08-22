@@ -3,7 +3,10 @@ from __future__ import annotations
 from collections import Counter
 from enum import IntEnum
 import logging
+import os
 import re
+import shlex
+import subprocess
 from typing import Any, Collection, Generator, Iterable, Literal
 
 from jinja2 import TemplateError
@@ -12,6 +15,7 @@ from prompt_toolkit.completion.base import Document
 from pygments.lexers._mysql_builtins import MYSQL_DATATYPES, MYSQL_FUNCTIONS, MYSQL_KEYWORDS
 import rapidfuzz
 
+from mycli.compat import WIN
 from mycli.packages.completion_engine import is_inside_quotes, suggest_type
 from mycli.packages.filepaths import complete_path, parse_path, suggest_path
 from mycli.packages.special import llm
@@ -1454,6 +1458,7 @@ class SQLCompleter(Completer):
         suggestions = suggest_type(document.text, document.text_before_cursor)
         rigid_sort = False
         length_based_on_path = False
+        source_file_completion_length: int | None = None
         config_property_length: int | None = None
         completion_filter_text = text_for_len
 
@@ -1719,7 +1724,26 @@ class SQLCompleter(Completer):
                 completions.extend([(*x, rank) for x in formats_m])
 
             elif suggestion["type"] == "file_name":
-                file_names_m = self.find_files(word_before_cursor)
+                source_filename = suggestion.get('source_filename')
+                if source_filename is None:
+                    file_names_m = self.find_files(word_before_cursor)
+                else:
+                    source_file_completion_length = len(source_filename)
+                    quote = source_filename[0] if source_filename[:1] in ("'", '"') else None
+                    partial_path = source_filename[1:] if quote else source_filename
+                    if quote and partial_path.endswith(quote):
+                        partial_path = partial_path[:-1]
+                    base_path, _last_path, _position = parse_path(partial_path)
+                    file_names_m = (
+                        (
+                            self._quote_source_path(
+                                os.path.join(base_path, path) if base_path and not path.startswith('~') else path,
+                                quote,
+                            ),
+                            fuzziness,
+                        )
+                        for path, fuzziness in self.find_files(partial_path)
+                    )
                 completions.extend([(*x, rank) for x in file_names_m])
                 # for filenames we _really_ want directories to go last
                 rigid_sort = True
@@ -1805,6 +1829,8 @@ class SQLCompleter(Completer):
 
         if config_property_length is not None:
             return (Completion(x, -config_property_length) for x in uniq_completions_str)
+        elif source_file_completion_length is not None:
+            return (Completion(x, -source_file_completion_length) for x in uniq_completions_str)
         elif length_based_on_path:
             return (
                 Completion(
@@ -1841,6 +1867,19 @@ class SQLCompleter(Completer):
             suggestion = complete_path(name, last_path)
             if suggestion:
                 yield (suggestion, Fuzziness.PERFECT)
+
+    @staticmethod
+    def _quote_source_path(path: str, quote: str | None) -> str:
+        is_directory = path.endswith(('/', os.sep))
+        if is_directory and any(character.isspace() for character in path) and not path.startswith(('/', '~', './')):
+            path = f'./{path}'
+        if quote:
+            return f'{quote}{path}' if is_directory else f'{quote}{path}{quote}'
+        if not any(character.isspace() for character in path):
+            return path
+        if is_directory:
+            return f'"{path}' if WIN else f"'{path}"
+        return subprocess.list2cmdline([path]) if WIN else shlex.quote(path)
 
     def populate_scoped_cols(self, scoped_tbls: list[tuple[str | None, str, str | None]]) -> list[str]:
         """Find all columns in a set of scoped_tables

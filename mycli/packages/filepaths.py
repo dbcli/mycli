@@ -85,7 +85,7 @@ def suggest_path(root_dir: str) -> list[str]:
             *list_path(os.curdir),
         ]
 
-    if root_dir[0] not in ('/', '~') and root_dir[0:1] != './':
+    if root_dir[0] not in ('/', '~') and root_dir[0:2] != './':
         return list_path(os.curdir)
 
     if "~" in root_dir:

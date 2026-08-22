@@ -703,6 +703,10 @@ def suggest_type(full_text: str, text_before_cursor: str) -> list[dict[str, Any]
     A scope for a column category will be a list of tables.
     """
 
+    stripped_text = text_before_cursor.lstrip()
+    if re.match(r'^(?:source|/source|\\\.|/\.)\s', stripped_text, re.IGNORECASE):
+        return suggest_special(text_before_cursor)
+
     word_before_cursor = last_word(text_before_cursor, include="many_punctuations")
 
     identifier: Identifier | None = None
@@ -817,7 +821,7 @@ def suggest_special(text: str) -> list[dict[str, Any]]:
         if not source_arguments:
             return [
                 {'type': 'special_subcommand', 'subcommands': source_options},
-                {'type': 'file_name'},
+                {'type': 'file_name', 'quote_spaces': True, 'source_filename': ''},
             ]
 
         used_options: set[str] = set()
@@ -826,17 +830,22 @@ def suggest_special(text: str) -> list[dict[str, Any]]:
             used_options.add(source_arguments[argument_index])
             argument_index += 1
         remaining_options = [option for option in source_options if option not in used_options]
+        source_filename = _arg
+        for _index in range(argument_index):
+            parsed_argument = source_filename.split(maxsplit=1)
+            source_filename = parsed_argument[1] if len(parsed_argument) == 2 else ''
+        file_suggestion = {'type': 'file_name', 'quote_spaces': True, 'source_filename': source_filename}
 
         if argument_index < len(source_arguments):
             if source_arguments[argument_index].startswith('-'):
                 return [{'type': 'special_subcommand', 'subcommands': remaining_options}]
-            return [{'type': 'file_name'}]
+            return [file_suggestion]
         if not text[-1].isspace():
             return []
-        suggestions = []
+        suggestions: list[dict[str, Any]] = []
         if remaining_options:
             suggestions.append({'type': 'special_subcommand', 'subcommands': remaining_options})
-        suggestions.append({'type': 'file_name'})
+        suggestions.append(file_suggestion)
         return suggestions
 
     if cmd.lower() in [

@@ -4,11 +4,13 @@ from collections.abc import Generator, Mapping
 import logging
 import os
 import re
+import shlex
 from typing import TYPE_CHECKING, Any, cast
 
 import click
 import sqlparse
 
+from mycli.compat import WIN
 from mycli.config import write_default_config
 from mycli.main_modes.repl import set_all_external_titles
 from mycli.packages import special
@@ -33,6 +35,7 @@ MISSING_CONFIG_VALUE = object()
 DSN_CONFIG_VALUE = object()
 FAVORITES_CONFIG_VALUE = object()
 HIDDEN_CONFIG_SECTIONS = frozenset({'alias_dsn', 'favorite_queries'})
+INVALID_SOURCE_FILENAME = 'Source accepts exactly one filename; filenames containing spaces must be quoted.'
 SOURCE_SAFE_SPECIAL_COMMANDS = frozenset({
     'connect',
     'fd',
@@ -79,6 +82,45 @@ def _parse_source_arguments(arg: str) -> tuple[str, bool, bool, bool]:
             break
         filename = arguments[1] if len(arguments) == 2 else ''
     return filename, allow_special, show_queries, page_output
+
+
+def _has_unquoted_whitespace(value: str) -> bool:
+    quote: str | None = None
+    escaped = False
+    for character in value:
+        if escaped:
+            if quote is None and character.isspace():
+                return True
+            escaped = False
+            continue
+        if not WIN and character == '\\' and quote != "'":
+            escaped = True
+            continue
+        if character in ("'", '"'):
+            if quote is None:
+                quote = character
+            elif quote == character:
+                quote = None
+        elif quote is None and character.isspace():
+            return True
+    return False
+
+
+def _parse_source_filename(filename: str) -> str:
+    if not filename:
+        return ''
+    if _has_unquoted_whitespace(filename):
+        raise ValueError(INVALID_SOURCE_FILENAME)
+    try:
+        arguments = shlex.split(filename, posix=not WIN)
+    except ValueError as error:
+        raise ValueError(f'Invalid source filename: {error}.') from None
+    if len(arguments) != 1:
+        raise ValueError(INVALID_SOURCE_FILENAME)
+    parsed_filename = arguments[0]
+    if WIN and len(parsed_filename) >= 2 and parsed_filename[0] == parsed_filename[-1] and parsed_filename[0] in ("'", '"'):
+        parsed_filename = parsed_filename[1:-1]
+    return parsed_filename
 
 
 def _registered_special_command(query: str) -> tuple[str, str] | None:
@@ -355,8 +397,13 @@ class ClientCommandsMixin:
         filename, allow_special, show_queries, page_output = _parse_source_arguments(arg)
         if page_output:
             yield SQLResult(command={'name': 'source_page'})
+        try:
+            filename = _parse_source_filename(filename)
+        except ValueError as error:
+            yield SQLResult(status=str(error), is_error=True)
+            return
         if not filename:
-            yield SQLResult(status="Missing required argument: filename.")
+            yield SQLResult(status="Missing required argument: filename.", is_error=True)
             return
 
         try:

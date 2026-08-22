@@ -726,11 +726,14 @@ def dummy_list_path(dir_name):
         ('source --show ', [('--special', 0), ('--page', 0), ('/', 0), ('~', 0), ('.', 0), ('..', 0)]),
         ('source --special --show ', [('--page', 0), ('/', 0), ('~', 0), ('.', 0), ('..', 0)]),
         ('source --special --show --page ', [('/', 0), ('~', 0), ('.', 0), ('..', 0)]),
-        ("source /", [("dir1", 0), ("file1.sql", 0), ("file2.sql", 0)]),
-        ('source --special /', [('dir1', 0), ('file1.sql', 0), ('file2.sql', 0)]),
-        ('source --show /', [('dir1', 0), ('file1.sql', 0), ('file2.sql', 0)]),
-        ("source /dir1/", [("subdir1", 0), ("subfile1.sql", 0), ("subfile2.sql", 0)]),
-        ("source /dir1/subdir1/", [("lastfile.sql", 0)]),
+        ("source /", [("/dir1", -1), ("/file1.sql", -1), ("/file2.sql", -1)]),
+        ('source --special /', [('/dir1', -1), ('/file1.sql', -1), ('/file2.sql', -1)]),
+        ('source --show /', [('/dir1', -1), ('/file1.sql', -1), ('/file2.sql', -1)]),
+        (
+            "source /dir1/",
+            [("/dir1/subdir1", -6), ("/dir1/subfile1.sql", -6), ("/dir1/subfile2.sql", -6)],
+        ),
+        ("source /dir1/subdir1/", [("/dir1/subdir1/lastfile.sql", -14)]),
     ],
 )
 @pytest.mark.skipif(os.name == 'nt', reason='todo: unknown')
@@ -803,6 +806,63 @@ def test_source_eager_completion(completer, complete_event, tmp_path, monkeypatc
         raise AssertionError(error)
 
 
+@pytest.mark.skipif(os.name == 'nt', reason='POSIX quoting expectations')
+def test_source_completion_quotes_paths_with_spaces(completer, complete_event, tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / 'spaced query.sql').touch()
+    (tmp_path / 'spaced dir').mkdir()
+    (tmp_path / 'spaced dir' / 'file.sql').touch()
+    special.register_special_command(
+        ...,
+        'source',
+        '\\. <file>',
+        'Execute commands from file.',
+        aliases=[special.SpecialCommandAlias('\\.', case_sensitive=False)],
+    )
+
+    text = 'source spaced'
+    result = list(completer.get_completions(Document(text=text, cursor_position=len(text)), complete_event))
+    assert result == [
+        Completion(text="'spaced query.sql'", start_position=-6),
+        Completion(text="'./spaced dir/", start_position=-6),
+    ]
+
+    text = 'source "spaced'
+    result = list(completer.get_completions(Document(text=text, cursor_position=len(text)), complete_event))
+    assert result == [
+        Completion(text='"spaced query.sql"', start_position=-7),
+        Completion(text='"./spaced dir/', start_position=-7),
+    ]
+
+    text = 'source "spaced query.sql"'
+    result = list(completer.get_completions(Document(text=text, cursor_position=len(text)), complete_event))
+    assert result == [Completion(text='"spaced query.sql"', start_position=-18)]
+
+    text = "source './spaced dir/fi"
+    result = list(completer.get_completions(Document(text=text, cursor_position=len(text)), complete_event))
+    assert result == [Completion(text="'./spaced dir/file.sql'", start_position=-16)]
+
+
+def test_non_source_file_completion_uses_current_path_token(completer, complete_event, monkeypatch):
+    import mycli.sqlcompleter as sqlcompleter
+
+    monkeypatch.setattr(sqlcompleter, 'suggest_type', lambda *_args: [{'type': 'file_name'}])
+    monkeypatch.setattr(completer, 'find_files', lambda _path: [('file.sql', 0)])
+
+    result = list(completer.get_completions(Document('fi'), complete_event))
+
+    assert result == [Completion(text='file.sql', start_position=-2)]
+
+
+def test_source_path_completion_uses_windows_quotes(monkeypatch: pytest.MonkeyPatch) -> None:
+    import mycli.sqlcompleter as sqlcompleter
+
+    monkeypatch.setattr(sqlcompleter, 'WIN', True)
+
+    assert sqlcompleter.SQLCompleter._quote_source_path(r'C:\my queries\query.sql', None) == r'"C:\my queries\query.sql"'
+    assert sqlcompleter.SQLCompleter._quote_source_path('my directory/', None) == '"./my directory/'
+
+
 def test_source_leading_dot_suggestions_completion(completer, complete_event, tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     os.mkdir('doc')
@@ -823,8 +883,8 @@ def test_source_leading_dot_suggestions_completion(completer, complete_event, tm
     error = 'unknown'
     try:
         assert [x.text for x in result] == [
-            script_filename,
-            'doc/',
+            f'./{script_filename}',
+            './doc/',
         ]
     except AssertionError as e:
         success = False

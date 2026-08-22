@@ -91,6 +91,7 @@ def test_suggest_path_branches(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     nested.mkdir()
     (nested / 'inside.sql').write_text('select 1\n', encoding='utf-8')
     assert filepaths.suggest_path(str(nested / 'missing.sql')) == ['inside.sql']
+    assert filepaths.suggest_path('./nested/missing.sql') == ['inside.sql']
 
 
 def test_dir_path_exists(tmp_path: Path) -> None:

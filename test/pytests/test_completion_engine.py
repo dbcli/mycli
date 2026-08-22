@@ -59,6 +59,8 @@ from mycli.packages.completion_engine import (
     suggest_type,
 )
 
+SOURCE_FILE_SUGGESTION = {'type': 'file_name', 'quote_spaces': True, 'source_filename': ''}
+
 
 def sorted_dicts(dicts):
     """input is a list of dicts."""
@@ -889,31 +891,34 @@ def test_suggest_type_handles_parser_results_shorter_than_cursor(monkeypatch):
         ('\\dt+ ', [{'type': 'table', 'schema': []}, {'type': 'view', 'schema': []}, {'type': 'schema'}]),
         (
             '\\. ',
-            [{'type': 'special_subcommand', 'subcommands': ['--special', '--show', '--page']}, {'type': 'file_name'}],
+            [{'type': 'special_subcommand', 'subcommands': ['--special', '--show', '--page']}, SOURCE_FILE_SUGGESTION],
         ),
         (
             'source ',
-            [{'type': 'special_subcommand', 'subcommands': ['--special', '--show', '--page']}, {'type': 'file_name'}],
+            [{'type': 'special_subcommand', 'subcommands': ['--special', '--show', '--page']}, SOURCE_FILE_SUGGESTION],
         ),
         ('source --s', [{'type': 'special_subcommand', 'subcommands': ['--special', '--show', '--page']}]),
         ('source --special', []),
         (
             'source --special ',
-            [{'type': 'special_subcommand', 'subcommands': ['--show', '--page']}, {'type': 'file_name'}],
+            [{'type': 'special_subcommand', 'subcommands': ['--show', '--page']}, SOURCE_FILE_SUGGESTION],
         ),
         ('source --special --s', [{'type': 'special_subcommand', 'subcommands': ['--show', '--page']}]),
         ('source --show', []),
         (
             'source --show ',
-            [{'type': 'special_subcommand', 'subcommands': ['--special', '--page']}, {'type': 'file_name'}],
+            [{'type': 'special_subcommand', 'subcommands': ['--special', '--page']}, SOURCE_FILE_SUGGESTION],
         ),
         (
             'source --show --special ',
-            [{'type': 'special_subcommand', 'subcommands': ['--page']}, {'type': 'file_name'}],
+            [{'type': 'special_subcommand', 'subcommands': ['--page']}, SOURCE_FILE_SUGGESTION],
         ),
-        ('source --show --special --page ', [{'type': 'file_name'}]),
-        ('source --special query.sql', [{'type': 'file_name'}]),
-        ('source query.sql', [{'type': 'file_name'}]),
+        ('source --show --special --page ', [SOURCE_FILE_SUGGESTION]),
+        (
+            'source --special query.sql',
+            [{'type': 'file_name', 'quote_spaces': True, 'source_filename': 'query.sql'}],
+        ),
+        ('source query.sql', [{'type': 'file_name', 'quote_spaces': True, 'source_filename': 'query.sql'}]),
         ('\\o ', [{'type': 'file_name'}]),
         ('\\once ', [{'type': 'file_name'}]),
         ('tee ', [{'type': 'file_name'}]),
@@ -1869,7 +1874,7 @@ def test_source_is_file(expression):
     suggestions = suggest_type(expression, expression)
     assert suggestions == [
         {'type': 'special_subcommand', 'subcommands': ['--special', '--show', '--page']},
-        {'type': 'file_name'},
+        SOURCE_FILE_SUGGESTION,
     ]
 
 
