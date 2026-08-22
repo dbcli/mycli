@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Generator, Iterable
 from dataclasses import dataclass
 from datetime import datetime
 import functools
 from functools import partial
 import html
 from importlib import resources
+import itertools
 import os
 import random
 import re
@@ -441,6 +442,27 @@ def _output_results(
     sqlexecute = mycli.sqlexecute
     assert sqlexecute is not None
 
+    result_iterator = iter(results)
+    try:
+        first_result = next(result_iterator)
+    except StopIteration:
+        return
+
+    if first_result.command is not None and first_result.command['name'] == 'source_page':
+        if special.is_redirected():
+            _output_results(mycli, state, result_iterator, start)
+            return
+        paged_output = _single_paged_output_results(mycli, state, result_iterator, start)
+        try:
+            click.echo_via_pager(paged_output)
+        except KeyboardInterrupt:
+            pass
+        finally:
+            paged_output.close()
+        return
+
+    results = itertools.chain([first_result], result_iterator)
+
     result_count = 0
     watch_count = 0
     for result in results:
@@ -450,6 +472,9 @@ def _output_results(
         mycli.logger.debug('status: %r', result.status)
         mycli.logger.debug('command: %r', result.command)
         threshold = 1000
+        if result.command is not None and result.command['name'] == 'source_show':
+            click.secho(f"> {result.command['text']}")
+            continue
         if result.command is not None and result.command['name'] == 'set_buffer':
             state.buffer_text = str(result.command['text'])
             continue
@@ -532,6 +557,126 @@ def _output_results(
 
             if saw_warning and special.is_timing_enabled():
                 mycli.output_timing(f'Time: {warnings_duration:0.03f}s', is_warnings_style=True)
+
+
+def _single_paged_output_results(
+    mycli: 'MyCli',
+    state: ReplState,
+    results: Iterable[SQLResult],
+    start: float,
+) -> Generator[str, None, None]:
+    """Render results lazily through one pager session."""
+    sqlexecute = mycli.sqlexecute
+    assert sqlexecute is not None
+    result_iterator = iter(results)
+    result_count = 0
+    watch_count = 0
+    try:
+        for result in result_iterator:
+            mycli.logger.debug('preamble: %r', result.preamble)
+            mycli.logger.debug('header: %r', result.header)
+            mycli.logger.debug('rows: %r', result.rows)
+            mycli.logger.debug('status: %r', result.status)
+            mycli.logger.debug('command: %r', result.command)
+
+            if result.command is not None and result.command['name'] == 'source_show':
+                yield f"> {result.command['text']}\n"
+                continue
+            if result.command is not None and result.command['name'] == 'set_buffer':
+                state.buffer_text = str(result.command['text'])
+                continue
+            if result.command is not None and result.command['name'] == 'watch':
+                if watch_count > 0:
+                    try:
+                        start += float(result.command['seconds'])
+                    except ValueError as error:
+                        message = f'Invalid watch sleep time provided ({error}).'
+                        mycli.log_output(message)
+                        yield f'{message}\n'
+                        return
+                else:
+                    watch_count += 1
+
+            if mycli.auto_vertical_output:
+                if mycli.prompt_session is not None:
+                    max_width = mycli.prompt_session.output.get_size().columns
+                else:
+                    max_width = DEFAULT_WIDTH
+            else:
+                max_width = None
+
+            formatted = mycli.format_sqlresult(
+                result,
+                is_expanded=special.is_expanded_output(),
+                is_redirected=False,
+                null_string=mycli.null_string,
+                numeric_alignment=mycli.numeric_alignment,
+                binary_display=mycli.binary_display,
+                max_width=max_width,
+            )
+            duration = time.time() - start
+
+            if result_count > 0:
+                mycli.log_output('')
+                yield '\n'
+            for line in formatted:
+                mycli.log_output(line)
+                special.write_tee(line)
+                special.write_once(line)
+                special.write_pipe_once(line)
+                yield f'{line}\n'
+            if result.status:
+                mycli.log_output(result.status_plain)
+                yield f'{result.status_plain}\n'
+
+            if mycli.beep_after_seconds > 0 and duration >= mycli.beep_after_seconds:
+                assert mycli.prompt_session is not None
+                mycli.prompt_session.output.bell()
+            if special.is_timing_enabled():
+                timing = f'Time: {duration:0.03f}s'
+                mycli.log_output(timing)
+                yield f'{timing}\n'
+
+            start = time.time()
+            result_count += 1
+            state.mutating = state.mutating or is_mutating(result.status_plain)
+
+            if special.is_show_warnings_enabled() and isinstance(result.rows, Cursor) and result.rows.warning_count > 0:
+                warnings = sqlexecute.run('SHOW WARNINGS')
+                warnings_duration = time.time() - start
+                saw_warning = False
+                for warning in warnings:
+                    saw_warning = True
+                    warning_output = mycli.format_sqlresult(
+                        warning,
+                        is_expanded=special.is_expanded_output(),
+                        is_redirected=False,
+                        null_string=mycli.null_string,
+                        numeric_alignment=mycli.numeric_alignment,
+                        binary_display=mycli.binary_display,
+                        max_width=max_width,
+                        is_warnings_style=True,
+                    )
+                    mycli.log_output('')
+                    yield '\n'
+                    for line in warning_output:
+                        mycli.log_output(line)
+                        special.write_tee(line)
+                        special.write_once(line)
+                        special.write_pipe_once(line)
+                        yield f'{line}\n'
+                    if warning.status:
+                        mycli.log_output(warning.status_plain)
+                        yield f'{warning.status_plain}\n'
+
+                if saw_warning and special.is_timing_enabled():
+                    timing = f'Time: {warnings_duration:0.03f}s'
+                    mycli.log_output(timing)
+                    yield f'{timing}\n'
+    finally:
+        close = getattr(result_iterator, 'close', None)
+        if close is not None:
+            close()
 
 
 def _keepalive_hook(

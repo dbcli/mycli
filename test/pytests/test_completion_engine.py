@@ -889,25 +889,29 @@ def test_suggest_type_handles_parser_results_shorter_than_cursor(monkeypatch):
         ('\\dt+ ', [{'type': 'table', 'schema': []}, {'type': 'view', 'schema': []}, {'type': 'schema'}]),
         (
             '\\. ',
-            [{'type': 'special_subcommand', 'subcommands': ['--special', '--show']}, {'type': 'file_name'}],
+            [{'type': 'special_subcommand', 'subcommands': ['--special', '--show', '--page']}, {'type': 'file_name'}],
         ),
         (
             'source ',
-            [{'type': 'special_subcommand', 'subcommands': ['--special', '--show']}, {'type': 'file_name'}],
+            [{'type': 'special_subcommand', 'subcommands': ['--special', '--show', '--page']}, {'type': 'file_name'}],
         ),
-        ('source --s', [{'type': 'special_subcommand', 'subcommands': ['--special', '--show']}]),
+        ('source --s', [{'type': 'special_subcommand', 'subcommands': ['--special', '--show', '--page']}]),
         ('source --special', []),
         (
             'source --special ',
-            [{'type': 'special_subcommand', 'subcommands': ['--show']}, {'type': 'file_name'}],
+            [{'type': 'special_subcommand', 'subcommands': ['--show', '--page']}, {'type': 'file_name'}],
         ),
-        ('source --special --s', [{'type': 'special_subcommand', 'subcommands': ['--show']}]),
+        ('source --special --s', [{'type': 'special_subcommand', 'subcommands': ['--show', '--page']}]),
         ('source --show', []),
         (
             'source --show ',
-            [{'type': 'special_subcommand', 'subcommands': ['--special']}, {'type': 'file_name'}],
+            [{'type': 'special_subcommand', 'subcommands': ['--special', '--page']}, {'type': 'file_name'}],
         ),
-        ('source --show --special ', [{'type': 'file_name'}]),
+        (
+            'source --show --special ',
+            [{'type': 'special_subcommand', 'subcommands': ['--page']}, {'type': 'file_name'}],
+        ),
+        ('source --show --special --page ', [{'type': 'file_name'}]),
         ('source --special query.sql', [{'type': 'file_name'}]),
         ('source query.sql', [{'type': 'file_name'}]),
         ('\\o ', [{'type': 'file_name'}]),
@@ -1864,7 +1868,7 @@ def test_source_is_file(expression):
     )
     suggestions = suggest_type(expression, expression)
     assert suggestions == [
-        {'type': 'special_subcommand', 'subcommands': ['--special', '--show']},
+        {'type': 'special_subcommand', 'subcommands': ['--special', '--show', '--page']},
         {'type': 'file_name'},
     ]
 

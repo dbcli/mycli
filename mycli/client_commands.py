@@ -63,19 +63,22 @@ def _render_config_value(value: Any) -> str:
     return str(value)
 
 
-def _parse_source_arguments(arg: str) -> tuple[str, bool, bool]:
+def _parse_source_arguments(arg: str) -> tuple[str, bool, bool, bool]:
     allow_special = False
     show_queries = False
+    page_output = False
     filename = arg
     while arguments := filename.split(maxsplit=1):
         if arguments[0] == '--special':
             allow_special = True
         elif arguments[0] == '--show':
             show_queries = True
+        elif arguments[0] == '--page':
+            page_output = True
         else:
             break
         filename = arguments[1] if len(arguments) == 2 else ''
-    return filename, allow_special, show_queries
+    return filename, allow_special, show_queries, page_output
 
 
 def _registered_special_command(query: str) -> tuple[str, str] | None:
@@ -226,7 +229,7 @@ class ClientCommandsMixin:
         special.register_special_command(
             self.execute_from_file,
             "source",
-            "/source [--special] [--show] <file>",
+            "/source [--special|--show|--page] <file>",
             "Execute queries from a file.",
             aliases=[SpecialCommandAlias("\\.", case_sensitive=False)],
         )
@@ -349,7 +352,9 @@ class ClientCommandsMixin:
         yield SQLResult(status=msg)
 
     def execute_from_file(self, arg: str, **_) -> Generator[SQLResult, None, None]:
-        filename, allow_special, show_queries = _parse_source_arguments(arg)
+        filename, allow_special, show_queries, page_output = _parse_source_arguments(arg)
+        if page_output:
+            yield SQLResult(command={'name': 'source_page'})
         if not filename:
             yield SQLResult(status="Missing required argument: filename.")
             return
@@ -388,14 +393,20 @@ class ClientCommandsMixin:
                         )
                         return
                     if show_queries:
-                        click.secho(f'> {special_query}')
+                        if page_output:
+                            yield SQLResult(command={'name': 'source_show', 'text': special_query})
+                        else:
+                            click.secho(f'> {special_query}')
                     yield from self.sqlexecute.run(special_query)
                     continue
 
                 if self.destructive_warning and confirm_destructive_query(self.destructive_keywords, query) is False:
                     continue
                 if show_queries:
-                    click.secho(f'> {query}')
+                    if page_output:
+                        yield SQLResult(command={'name': 'source_show', 'text': query})
+                    else:
+                        click.secho(f'> {query}')
                 yield from self.sqlexecute.run(query)
 
     def change_prompt_format(self, arg: str, **_) -> list[SQLResult]:

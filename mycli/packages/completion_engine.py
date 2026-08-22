@@ -812,7 +812,7 @@ def suggest_special(text: str) -> list[dict[str, Any]]:
         'source',
         '/source',
     ]:
-        source_options = ['--special', '--show']
+        source_options = ['--special', '--show', '--page']
         source_arguments = _arg.split()
         if not source_arguments:
             return [

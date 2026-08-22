@@ -198,6 +198,7 @@ def make_repl_cli(sqlexecute: Any | None = None) -> Any:
     cli.echo_calls = echo_calls
     cli.timing_calls = timing_calls
     cli.log_queries = log_queries
+    cli.logged_output = []
     cli.title_calls = 0
     cli.sqlexecute = sqlexecute
     cli.get_reserved_space = lambda: 3
@@ -220,6 +221,7 @@ def make_repl_cli(sqlexecute: Any | None = None) -> Any:
         cli.log_queries.append(text)
 
     cli.log_query = log_query
+    cli.log_output = lambda output: cli.logged_output.append(output)
     cli.reconnect = lambda database='': False
 
     def echo(message: Any, **kwargs: Any) -> None:
@@ -833,7 +835,347 @@ def test_output_results_moves_set_buffer_command_to_repl_state() -> None:
 
     assert state.buffer_text == 'select 1'
     assert cli.output_calls == []
+
+
+def test_output_results_pages_entire_source_with_show_and_timing(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli = make_repl_cli(SimpleNamespace())
+    cli.format_sqlresult = lambda result, **kwargs: iter([f'table:{result.status_plain}'])
+    state = repl_mode.ReplState()
+    pager_calls: list[list[str]] = []
+    monkeypatch.setattr(repl_mode.click, 'echo_via_pager', lambda output: pager_calls.append(list(output)))
+    monkeypatch.setattr(repl_mode.special, 'is_redirected', lambda: False)
+    monkeypatch.setattr(repl_mode.special, 'is_expanded_output', lambda: False)
+    monkeypatch.setattr(repl_mode.special, 'is_timing_enabled', lambda: True)
+    monkeypatch.setattr(repl_mode.special, 'is_show_warnings_enabled', lambda: False)
+    monkeypatch.setattr(repl_mode.special, 'write_tee', lambda line: None)
+    monkeypatch.setattr(repl_mode.special, 'write_once', lambda line: None)
+    monkeypatch.setattr(repl_mode.special, 'write_pipe_once', lambda line: None)
+    monkeypatch.setattr(repl_mode, 'is_select', lambda status: False)
+    monkeypatch.setattr(repl_mode, 'is_mutating', lambda status: status == 'second')
+    times = iter([1.0, 2.0, 3.0, 4.0])
+    monkeypatch.setattr(repl_mode.time, 'time', lambda: next(times))
+
+    results = sqlresult_generator(
+        SQLResult(command={'name': 'source_page'}),
+        SQLResult(command={'name': 'source_show', 'text': 'select 1;'}),
+        SQLResult(status='first'),
+        SQLResult(command={'name': 'source_show', 'text': 'select 2;'}),
+        SQLResult(status='second'),
+    )
+    repl_mode._output_results(cli, state, results, start=0.0)
+
+    assert pager_calls == [
+        [
+            '> select 1;\n',
+            'table:first\n',
+            'first\n',
+            'Time: 1.000s\n',
+            '> select 2;\n',
+            '\n',
+            'table:second\n',
+            'second\n',
+            'Time: 1.000s\n',
+        ]
+    ]
+    assert state.mutating is True
+    assert cli.output_calls == []
+
+
+def test_output_results_stops_source_when_pager_exits_early(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli = make_repl_cli(SimpleNamespace())
+    cli.format_sqlresult = lambda result, **kwargs: iter([result.status_plain or ''])
+    executed: list[int] = []
+    closed: list[bool] = []
+
+    def source_results() -> Generator[SQLResult, None, None]:
+        try:
+            yield SQLResult(command={'name': 'source_page'})
+            executed.append(1)
+            yield SQLResult(status='first')
+            executed.append(2)
+            yield SQLResult(status='second')
+        finally:
+            closed.append(True)
+
+    def stop_pager(output: Generator[str, None, None]) -> None:
+        assert next(output) == 'first\n'
+
+    monkeypatch.setattr(repl_mode.click, 'echo_via_pager', stop_pager)
+    monkeypatch.setattr(repl_mode.special, 'is_redirected', lambda: False)
+    monkeypatch.setattr(repl_mode.special, 'is_expanded_output', lambda: False)
+    monkeypatch.setattr(repl_mode.special, 'is_timing_enabled', lambda: False)
+    monkeypatch.setattr(repl_mode.special, 'is_show_warnings_enabled', lambda: False)
+    monkeypatch.setattr(repl_mode.special, 'write_tee', lambda line: None)
+    monkeypatch.setattr(repl_mode.special, 'write_once', lambda line: None)
+    monkeypatch.setattr(repl_mode.special, 'write_pipe_once', lambda line: None)
+    monkeypatch.setattr(repl_mode, 'is_select', lambda status: False)
+    monkeypatch.setattr(repl_mode, 'is_mutating', lambda status: False)
+
+    repl_mode._output_results(cli, repl_mode.ReplState(), source_results(), start=0.0)
+
+    assert executed == [1]
+    assert closed == [True]
+
+
+def test_output_results_redirect_bypasses_source_pager(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli = make_repl_cli(SimpleNamespace())
+    monkeypatch.setattr(repl_mode.special, 'is_redirected', lambda: True)
+    monkeypatch.setattr(repl_mode.special, 'is_expanded_output', lambda: False)
+    monkeypatch.setattr(repl_mode.special, 'is_timing_enabled', lambda: False)
+    monkeypatch.setattr(repl_mode.special, 'is_show_warnings_enabled', lambda: False)
+    monkeypatch.setattr(repl_mode, 'is_select', lambda status: False)
+    monkeypatch.setattr(repl_mode, 'is_mutating', lambda status: False)
+    monkeypatch.setattr(
+        repl_mode.click,
+        'echo_via_pager',
+        lambda output: (_ for _ in ()).throw(AssertionError('pager should not run')),
+    )
+
+    repl_mode._output_results(
+        cli,
+        repl_mode.ReplState(),
+        sqlresult_generator(SQLResult(command={'name': 'source_page'}), SQLResult(status='result')),
+        start=0.0,
+    )
+
+    assert cli.output_calls == [(['None', 'result'], SQLResult(status='result'), False)]
     assert cli.echo_calls == []
+
+
+def test_output_results_handles_empty_source_show_and_pager_interrupt(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli = make_repl_cli(SimpleNamespace())
+    shown: list[str] = []
+    monkeypatch.setattr(repl_mode.click, 'secho', lambda message: shown.append(message))
+    monkeypatch.setattr(repl_mode.special, 'is_redirected', lambda: False)
+
+    repl_mode._output_results(cli, repl_mode.ReplState(), iter([]), start=0.0)
+    repl_mode._output_results(
+        cli,
+        repl_mode.ReplState(),
+        iter([SQLResult(command={'name': 'source_show', 'text': 'select 1;'})]),
+        start=0.0,
+    )
+    monkeypatch.setattr(
+        repl_mode.click,
+        'echo_via_pager',
+        lambda output: (_ for _ in ()).throw(KeyboardInterrupt()),
+    )
+    repl_mode._output_results(
+        cli,
+        repl_mode.ReplState(),
+        iter([SQLResult(command={'name': 'source_page'})]),
+        start=0.0,
+    )
+
+    assert shown == ['> select 1;']
+
+
+def patch_single_paged_output_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(repl_mode.special, 'is_expanded_output', lambda: False)
+    monkeypatch.setattr(repl_mode.special, 'is_timing_enabled', lambda: False)
+    monkeypatch.setattr(repl_mode.special, 'is_show_warnings_enabled', lambda: False)
+    monkeypatch.setattr(repl_mode.special, 'write_tee', lambda line: None)
+    monkeypatch.setattr(repl_mode.special, 'write_once', lambda line: None)
+    monkeypatch.setattr(repl_mode.special, 'write_pipe_once', lambda line: None)
+    monkeypatch.setattr(repl_mode, 'is_mutating', lambda status: False)
+
+
+def test_single_paged_output_handles_set_buffer_command() -> None:
+    cli = make_repl_cli(SimpleNamespace())
+    state = repl_mode.ReplState()
+
+    output = list(
+        repl_mode._single_paged_output_results(
+            cli,
+            state,
+            iter([SQLResult(command={'name': 'set_buffer', 'text': 'select 1'})]),
+            start=0.0,
+        )
+    )
+
+    assert state.buffer_text == 'select 1'
+    assert output == []
+
+
+def test_single_paged_output_handles_watch_commands(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli = make_repl_cli(SimpleNamespace())
+    patch_single_paged_output_runtime(monkeypatch)
+    monkeypatch.setattr(repl_mode.time, 'time', lambda: 2.0)
+
+    output = list(
+        repl_mode._single_paged_output_results(
+            cli,
+            repl_mode.ReplState(),
+            iter([
+                SQLResult(status='first watch', command={'name': 'watch', 'seconds': '1'}),
+                SQLResult(status='second watch', command={'name': 'watch', 'seconds': '1'}),
+                SQLResult(status='bad watch', command={'name': 'watch', 'seconds': 'bad'}),
+            ]),
+            start=0.0,
+        )
+    )
+
+    assert output[-1].startswith('Invalid watch sleep time provided')
+
+
+def test_single_paged_output_uses_terminal_width(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli = make_repl_cli(SimpleNamespace())
+    cli.auto_vertical_output = True
+    cli.prompt_session = FakePromptSession(columns=91)
+    widths: list[int | None] = []
+
+    def format_sqlresult(result: SQLResult, **kwargs: Any) -> Iterator[str]:
+        widths.append(kwargs.get('max_width'))
+        return iter([result.status_plain or 'row'])
+
+    cli.format_sqlresult = format_sqlresult
+    patch_single_paged_output_runtime(monkeypatch)
+    monkeypatch.setattr(repl_mode.time, 'time', lambda: 0.0)
+
+    list(
+        repl_mode._single_paged_output_results(
+            cli,
+            repl_mode.ReplState(),
+            iter([SQLResult(status='result')]),
+            start=0.0,
+        )
+    )
+
+    assert widths == [91]
+
+
+def test_single_paged_output_uses_default_width_without_prompt(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli = make_repl_cli(SimpleNamespace())
+    cli.auto_vertical_output = True
+    widths: list[int | None] = []
+
+    def format_sqlresult(result: SQLResult, **kwargs: Any) -> Iterator[str]:
+        widths.append(kwargs.get('max_width'))
+        return iter([result.status_plain or 'row'])
+
+    cli.format_sqlresult = format_sqlresult
+    patch_single_paged_output_runtime(monkeypatch)
+    monkeypatch.setattr(repl_mode.time, 'time', lambda: 0.0)
+
+    list(
+        repl_mode._single_paged_output_results(
+            cli,
+            repl_mode.ReplState(),
+            iter([SQLResult(status='default width')]),
+            start=0.0,
+        )
+    )
+
+    assert widths[-1] == repl_mode.DEFAULT_WIDTH
+
+
+def test_single_paged_output_beeps_after_threshold(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli = make_repl_cli(SimpleNamespace())
+    cli.prompt_session = FakePromptSession()
+    cli.beep_after_seconds = 0.5
+    patch_single_paged_output_runtime(monkeypatch)
+    monkeypatch.setattr(repl_mode.time, 'time', lambda: 1.0)
+
+    list(
+        repl_mode._single_paged_output_results(
+            cli,
+            repl_mode.ReplState(),
+            iter([SQLResult(status='result')]),
+            start=0.0,
+        )
+    )
+
+    assert cli.prompt_session.output.bell_count == 1
+
+
+def make_single_paged_warning_cli(monkeypatch: pytest.MonkeyPatch) -> tuple[Any, Any]:
+    class FakeSQLExecute:
+        def run(self, query: str) -> list[SQLResult]:
+            assert query == 'SHOW WARNINGS'
+            return [SQLResult(status='warning')]
+
+    cli = make_repl_cli(FakeSQLExecute())
+
+    def format_sqlresult(result: SQLResult, **kwargs: Any) -> Iterator[str]:
+        prefix = 'warning' if kwargs.get('is_warnings_style') else 'result'
+        return iter([f'{prefix} row'])
+
+    cli.format_sqlresult = format_sqlresult
+    times = iter([1.0, 2.0, 3.0])
+    monkeypatch.setattr(repl_mode.time, 'time', lambda: next(times))
+    monkeypatch.setattr(repl_mode.special, 'is_expanded_output', lambda: False)
+    monkeypatch.setattr(repl_mode.special, 'is_timing_enabled', lambda: False)
+    monkeypatch.setattr(repl_mode.special, 'is_show_warnings_enabled', lambda: True)
+    monkeypatch.setattr(repl_mode.special, 'write_tee', lambda line: None)
+    monkeypatch.setattr(repl_mode.special, 'write_once', lambda line: None)
+    monkeypatch.setattr(repl_mode.special, 'write_pipe_once', lambda line: None)
+    monkeypatch.setattr(repl_mode, 'Cursor', FakeCursorBase)
+    monkeypatch.setattr(repl_mode, 'is_mutating', lambda status: False)
+    rows = cast(Any, FakeCursorBase(rowcount=1, warning_count=1))
+    return cli, rows
+
+
+def test_single_paged_output_renders_warnings(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli, rows = make_single_paged_warning_cli(monkeypatch)
+
+    output = list(
+        repl_mode._single_paged_output_results(
+            cli,
+            repl_mode.ReplState(),
+            iter([SQLResult(status='result', rows=rows)]),
+            start=0.0,
+        )
+    )
+
+    assert output == [
+        'result row\n',
+        'result\n',
+        '\n',
+        'warning row\n',
+        'warning\n',
+    ]
+
+
+def test_single_paged_output_reports_warning_timing(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli, rows = make_single_paged_warning_cli(monkeypatch)
+    monkeypatch.setattr(repl_mode.special, 'is_timing_enabled', lambda: True)
+
+    output = list(
+        repl_mode._single_paged_output_results(
+            cli,
+            repl_mode.ReplState(),
+            iter([SQLResult(status='result', rows=rows)]),
+            start=0.0,
+        )
+    )
+
+    assert output[-1] == 'Time: 1.000s\n'
+
+
+def test_single_paged_output_writes_warning_rows_to_output_sinks(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli, rows = make_single_paged_warning_cli(monkeypatch)
+    writes: list[tuple[str, str]] = []
+    monkeypatch.setattr(repl_mode.special, 'write_tee', lambda line: writes.append(('tee', line)))
+    monkeypatch.setattr(repl_mode.special, 'write_once', lambda line: writes.append(('once', line)))
+    monkeypatch.setattr(repl_mode.special, 'write_pipe_once', lambda line: writes.append(('pipe', line)))
+
+    list(
+        repl_mode._single_paged_output_results(
+            cli,
+            repl_mode.ReplState(),
+            iter([SQLResult(status='result', rows=rows)]),
+            start=0.0,
+        )
+    )
+
+    assert writes == [
+        ('tee', 'result row'),
+        ('once', 'result row'),
+        ('pipe', 'result row'),
+        ('tee', 'warning row'),
+        ('once', 'warning row'),
+        ('pipe', 'warning row'),
+    ]
 
 
 def test_one_iteration_prefills_and_clears_pending_buffer_text(monkeypatch: pytest.MonkeyPatch) -> None:
