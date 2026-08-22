@@ -12,6 +12,7 @@ Features
 Bug Fixes
 ---------
 * Show CLI error on invalid `--execute` containing `/source`.
+* Require `/source` filenames containing spaces to be quoted.
 
 
 2.15.0 (2026/08/20)

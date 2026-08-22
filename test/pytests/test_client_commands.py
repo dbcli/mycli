@@ -113,6 +113,55 @@ def test_parse_source_arguments(arg: str, expected: tuple[str, bool, bool, bool]
     assert client_commands._parse_source_arguments(arg) == expected
 
 
+@pytest.mark.parametrize(
+    ('filename', 'expected'),
+    [
+        ('query.sql', 'query.sql'),
+        ('"query file.sql"', 'query file.sql'),
+        ("'query file.sql'", 'query file.sql'),
+        ('prefix" query".sql', 'prefix query.sql'),
+    ],
+)
+def test_parse_source_filename(filename: str, expected: str) -> None:
+    assert client_commands._parse_source_filename(filename) == expected
+
+
+@pytest.mark.parametrize(
+    'filename',
+    [
+        'query file.sql',
+        r'query\ file.sql',
+        '"first file.sql" second.sql',
+    ],
+)
+def test_parse_source_filename_rejects_multiple_unquoted_arguments(filename: str) -> None:
+    with pytest.raises(ValueError, match='filenames containing spaces must be quoted'):
+        client_commands._parse_source_filename(filename)
+
+
+def test_parse_source_filename_rejects_unclosed_quote() -> None:
+    with pytest.raises(ValueError, match='No closing quotation'):
+        client_commands._parse_source_filename('"query file.sql')
+
+
+def test_parse_source_filename_rejects_missing_parsed_argument(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(client_commands.shlex, 'split', lambda *_args, **_kwargs: [])
+
+    with pytest.raises(ValueError, match='accepts exactly one filename'):
+        client_commands._parse_source_filename('query.sql')
+
+
+def test_source_filename_whitespace_scanner_allows_escaped_non_whitespace() -> None:
+    assert not client_commands._has_unquoted_whitespace(r'query\name.sql')
+
+
+def test_parse_source_filename_preserves_windows_backslashes(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(client_commands, 'WIN', True)
+
+    assert client_commands._parse_source_filename(r'C:\queries\query.sql') == r'C:\queries\query.sql'
+    assert client_commands._parse_source_filename(r'"C:\my queries\query.sql"') == r'C:\my queries\query.sql'
+
+
 def test_register_special_commands_registers_expected_commands(monkeypatch: pytest.MonkeyPatch) -> None:
     client = DummyClient()
     calls: list[tuple[Any, ...]] = []
@@ -502,7 +551,7 @@ def test_change_db_without_argument_reports_error(monkeypatch: pytest.MonkeyPatc
 def test_execute_from_file_requires_filename() -> None:
     client = DummyClient()
 
-    assert list(client.execute_from_file('')) == [SQLResult(status='Missing required argument: filename.')]
+    assert list(client.execute_from_file('')) == [SQLResult(status='Missing required argument: filename.', is_error=True)]
 
 
 def test_execute_from_file_reports_open_errors() -> None:
@@ -706,19 +755,44 @@ def test_execute_from_file_parses_special_option_and_preserves_filename(
         return file_h
 
     monkeypatch.setattr(client_commands, 'open', open_file, raising=False)
+    monkeypatch.setattr(client_commands.os.path, 'expanduser', lambda path: f'/expanded/{path.removeprefix("~/")}')
 
-    assert result_statuses(client.execute_from_file('--special query file.sql')) == ['ran select 1;']
-    assert opened_paths == ['query file.sql']
+    assert result_statuses(client.execute_from_file('--special "~/query file.sql"')) == ['ran select 1;']
+    assert opened_paths == ['/expanded/query file.sql']
 
 
 @pytest.mark.parametrize('options', ['--special', '--show', '--page', '--special --show --page'])
 def test_execute_from_file_reports_missing_filename_after_options(options: str) -> None:
     client = DummyClient()
 
-    expected = [SQLResult(status='Missing required argument: filename.')]
+    expected = [SQLResult(status='Missing required argument: filename.', is_error=True)]
     if '--page' in options:
         expected.insert(0, SQLResult(command={'name': 'source_page'}))
     assert list(client.execute_from_file(options)) == expected
+
+
+def test_execute_from_file_rejects_unquoted_filename_with_spaces(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = DummyClient()
+    opened_paths: list[str] = []
+    monkeypatch.setattr(client_commands, 'open', lambda path: opened_paths.append(path), raising=False)
+
+    assert list(client.execute_from_file('query file.sql')) == [SQLResult(status=client_commands.INVALID_SOURCE_FILENAME, is_error=True)]
+    assert opened_paths == []
+
+
+def test_execute_from_file_pages_invalid_filename_error() -> None:
+    client = DummyClient()
+
+    assert list(client.execute_from_file('--page query file.sql')) == [
+        SQLResult(command={'name': 'source_page'}),
+        SQLResult(status=client_commands.INVALID_SOURCE_FILENAME, is_error=True),
+    ]
+
+
+def test_execute_from_file_treats_empty_quotes_as_missing_filename() -> None:
+    client = DummyClient()
+
+    assert list(client.execute_from_file('""')) == [SQLResult(status='Missing required argument: filename.', is_error=True)]
 
 
 def test_execute_from_file_runs_permitted_special_commands(capsys: pytest.CaptureFixture[str], tmp_path: Path) -> None:
