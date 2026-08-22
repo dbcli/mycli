@@ -10,6 +10,10 @@ from mycli.packages.sqlresult import SQLResult
 from mycli.sqlcompleter import SQLCompleter
 
 
+class QueryError(Exception):
+    """An error reported while consuming query results."""
+
+
 class ClientQueryMixin:
     if TYPE_CHECKING:
         schema_prefetcher: Any
@@ -80,6 +84,7 @@ class ClientQueryMixin:
         query: str,
         checkpoint: str | None = None,
         new_line: bool = True,
+        raise_on_error: bool = False,
     ) -> None:
         """Runs *query*."""
         assert self.sqlexecute is not None
@@ -91,6 +96,10 @@ class ClientQueryMixin:
             self.main_formatter.query = query
             self.redirect_formatter.query = query
             self.explorer_formatter.query = query
+            if result.is_error and raise_on_error:
+                message = result.status_plain or 'Query failed.'
+                self.log_output(message)
+                raise QueryError(message)
             output = self.format_sqlresult(
                 result,
                 is_expanded=special.is_expanded_output(),

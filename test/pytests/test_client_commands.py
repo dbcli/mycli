@@ -666,10 +666,13 @@ def test_execute_from_file_stops_at_disallowed_special_command(tmp_path: Path) -
     client.destructive_keywords = set()
     client.sqlexecute = FakeSQLExecute()
 
-    assert result_statuses(client.execute_from_file(f'--special {sql_file}')) == [
+    results = list(client.execute_from_file(f'--special {sql_file}'))
+
+    assert result_statuses(iter(results)) == [
         'ran select 1;',
         'Special command is never permitted in source files: /pager.',
     ]
+    assert results[-1].is_error is True
     assert client.sqlexecute.runs == ['select 1;']
 
 
@@ -798,7 +801,7 @@ def test_execute_from_file_rejects_special_commands(command: str, tmp_path: Path
     client.sqlexecute = FakeSQLExecute()
 
     assert list(client.execute_from_file(str(sql_file))) == [
-        SQLResult(status='Special commands are not supported without /source --special.')
+        SQLResult(status='Special commands are not supported without /source --special.', is_error=True)
     ]
     assert client.sqlexecute.runs == []
 

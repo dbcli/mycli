@@ -36,14 +36,14 @@ class DummyMyCli:
     def __init__(self, run_query_error: Exception | None = None) -> None:
         self.main_formatter = DummyFormatter()
         self.run_query_error = run_query_error
-        self.ran_queries: list[tuple[str, str | None]] = []
+        self.ran_queries: list[tuple[str, str | None, bool]] = []
         self.destructive_keywords = ['drop']
         self.logger = DummyLogger()
 
-    def run_query(self, query: str, checkpoint: str | None = None) -> None:
+    def run_query(self, query: str, checkpoint: str | None = None, raise_on_error: bool = False) -> None:
         if self.run_query_error is not None:
             raise self.run_query_error
-        self.ran_queries.append((query, checkpoint))
+        self.ran_queries.append((query, checkpoint, raise_on_error))
 
 
 def main_execute_from_cli(mycli: DummyMyCli, cli_args: DummyCliArgs) -> int:
@@ -94,7 +94,7 @@ def test_main_execute_from_cli_sets_format_and_runs_query(
 
     assert result == 0
     assert mycli.main_formatter.format_name == expected_format
-    assert mycli.ran_queries == [(expected_sql, 'cp')]
+    assert mycli.ran_queries == [(expected_sql, 'cp', True)]
     assert secho_calls == [
         ('Ignoring STDIN since --execute was also given.', True, 'red'),
         ('Ignoring --batch since --execute was also given.', True, 'red'),
@@ -116,7 +116,7 @@ def test_main_execute_from_cli_does_not_warn_when_stdin_is_tty_and_batch_is_unse
 
     assert result == 0
     assert mycli.main_formatter.format_name == 'csv'
-    assert mycli.ran_queries == [('select 1', None)]
+    assert mycli.ran_queries == [('select 1', None, True)]
     assert secho_calls == []
 
 
@@ -159,7 +159,7 @@ def test_main_execute_from_cli_confirms_destructive_query(monkeypatch) -> None:
     assert result == 0
     assert execute_mode.sys.stdin is tty
     assert confirm_calls == [(['drop'], 'drop table t')]
-    assert mycli.ran_queries == [('drop table t', None)]
+    assert mycli.ran_queries == [('drop table t', None, True)]
 
 
 def test_main_execute_from_cli_returns_error_when_destructive_query_is_rejected(monkeypatch) -> None:

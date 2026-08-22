@@ -7,6 +7,11 @@ Features
 * Add `/source --special` to allow executing some special commands.
 
 
+Bug Fixes
+---------
+* Show CLI error on invalid `--execute` containing `/source`.
+
+
 2.15.0 (2026/08/20)
 ==============
 

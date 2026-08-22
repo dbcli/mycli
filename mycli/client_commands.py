@@ -367,11 +367,17 @@ class ClientCommandsMixin:
                 special_query = query.rstrip(';')
                 if special.is_special_command(special_query):
                     if not allow_special:
-                        yield SQLResult(status='Special commands are not supported without /source --special.')
+                        yield SQLResult(
+                            status='Special commands are not supported without /source --special.',
+                            is_error=True,
+                        )
                         return
                     if not _source_special_command_is_safe(special_query):
                         command, _verbosity, _arg = special.parse_special_command(special_query)
-                        yield SQLResult(status=f'Special command is never permitted in source files: {command}.')
+                        yield SQLResult(
+                            status=f'Special command is never permitted in source files: {command}.',
+                            is_error=True,
+                        )
                         return
                     yield from self.sqlexecute.run(special_query)
                     continue
