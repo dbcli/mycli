@@ -380,6 +380,65 @@ def test_init_configures_indexed_column_suffix() -> None:
     assert completer.indexed_column_suffix == ' [indexed]'
 
 
+def test_init_configures_frecency_sorting() -> None:
+    def provider() -> dict[str, float]:
+        return {'orders': 1.0}
+
+    completer = SQLCompleter(frecency_provider=provider)
+
+    assert completer.frecency_provider is provider
+
+
+def test_get_completions_uses_frecency_before_prefix_length(monkeypatch) -> None:
+    completer = make_completer(frecency_provider=lambda: {'alphabet': 10.0})
+    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda text, before: [{'type': 'column', 'tables': []}])
+    monkeypatch.setattr(completer, 'populate_scoped_cols', lambda tables: ['ant', 'alphabet'])
+    monkeypatch.setattr(completer, 'populate_scoped_indexed_columns', lambda tables: [])
+
+    result = [completion.text for completion in completer.get_completions(Document(text='SELECT a'), None)]
+
+    assert result == ['alphabet', 'ant']
+
+
+def test_get_completions_preserves_stronger_fuzzy_match(monkeypatch) -> None:
+    completer = make_completer(frecency_provider=lambda: {'far': 100.0})
+    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda text, before: [{'type': 'column', 'tables': []}])
+    monkeypatch.setattr(completer, 'populate_scoped_cols', lambda tables: ['foo', 'far'])
+    monkeypatch.setattr(completer, 'populate_scoped_indexed_columns', lambda tables: [])
+    monkeypatch.setattr(
+        completer,
+        'find_matches',
+        lambda *args, **kwargs: iter([('far', Fuzziness.RAPIDFUZZ), ('foo', Fuzziness.PERFECT)]),
+    )
+
+    result = [completion.text for completion in completer.get_completions(Document(text='SELECT x'), None)]
+
+    assert result == ['foo', 'far']
+
+
+def test_naive_completions_use_live_frecency_provider() -> None:
+    frecency = {'bravo': 2.0}
+    completer = make_completer(smart_completion=False, frecency_provider=lambda: frecency)
+    completer.all_completions = {'alpha', 'bravo'}
+
+    first = [completion.text for completion in completer.get_completions(Document(text=''), None)]
+    frecency = {'alpha': 3.0}
+    second = [completion.text for completion in completer.get_completions(Document(text=''), None)]
+
+    assert first == ['bravo', 'alpha']
+    assert second == ['alpha', 'bravo']
+
+
+def test_file_completions_preserve_rigid_ordering(monkeypatch) -> None:
+    completer = make_completer(frecency_provider=lambda: {'alpha': 100.0})
+    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda text, before: [{'type': 'file_name'}])
+    monkeypatch.setattr(completer, 'find_files', lambda word: iter([('zeta', 0), ('alpha', 0)]))
+
+    result = [completion.text for completion in completer.get_completions(Document(text='/source '), None)]
+
+    assert result == ['zeta', 'alpha']
+
+
 def test_extend_metadata_helpers_and_logging(caplog) -> None:
     completer = make_completer()
     completer.set_dbname('missing')

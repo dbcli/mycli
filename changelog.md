@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Features
+--------
+* Sort completion candidates by frecency from history.
+
+
 Internal
 ---------
 * Upgrade `pygments` to v2.21.0, removing hacks for `set*` identifiers.

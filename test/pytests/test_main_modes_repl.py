@@ -351,16 +351,49 @@ def test_complete_while_typing_filter_does_not_treat_block_comments_as_slash_com
 
 def test_repl_create_history(monkeypatch: pytest.MonkeyPatch) -> None:
     cli = make_repl_cli()
+    cli.config['main']['frecency_history_entries'] = '25'
+    cli.config['main']['frecency_refresh_interval'] = '10'
     monkeypatch.setenv('MYCLI_HISTFILE', '~/override-history')
     monkeypatch.setattr(repl_mode, 'dir_path_exists', lambda path: True)
-    monkeypatch.setattr(repl_mode, 'FileHistoryWithTimestamp', lambda path: f'history:{path}')
+    monkeypatch.setattr(
+        repl_mode,
+        'FileHistoryWithTimestamp',
+        lambda path, frecency_history_entries, frecency_refresh_interval: (
+            f'history:{path}:{frecency_history_entries}:{frecency_refresh_interval}'
+        ),
+    )
     history = cast(Any, repl_mode._create_history(cli))
-    assert history == f'history:{os.path.expanduser("~/override-history")}'
+    assert history == f'history:{os.path.expanduser("~/override-history")}:25:10'
 
     monkeypatch.delenv('MYCLI_HISTFILE')
     monkeypatch.setattr(repl_mode, 'dir_path_exists', lambda path: False)
     assert repl_mode._create_history(cli) is None
     assert 'Unable to open the history file' in cli.echo_calls[-1]
+
+
+@pytest.mark.parametrize('configured_history_entries', ['', '0'])
+def test_repl_create_history_can_disable_frecency(
+    monkeypatch: pytest.MonkeyPatch,
+    configured_history_entries: str,
+) -> None:
+    cli = make_repl_cli()
+    cli.config['main']['frecency_history_entries'] = configured_history_entries
+    monkeypatch.setattr(repl_mode, 'dir_path_exists', lambda path: True)
+    history_arguments: dict[str, int] = {}
+
+    def create_history(
+        path: str,
+        frecency_history_entries: int,
+        frecency_refresh_interval: int,
+    ) -> str:
+        history_arguments['frecency_history_entries'] = frecency_history_entries
+        return path
+
+    monkeypatch.setattr(repl_mode, 'FileHistoryWithTimestamp', create_history)
+
+    repl_mode._create_history(cli)
+
+    assert history_arguments['frecency_history_entries'] == 0
 
 
 def test_repl_picker_helpers_cover_present_and_missing_resources(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -2140,7 +2173,9 @@ def test_main_repl_covers_setup_loop_and_goodbye(monkeypatch: pytest.MonkeyPatch
     cli.verbosity = 0
     cli.smart_completion = True
     loop_iterations: list[int] = []
-    monkeypatch.setattr(repl_mode, '_create_history', lambda mycli: 'history')
+    history = SimpleNamespace(frecency={'select': 1.0})
+    cli.completer = SimpleNamespace(frecency_provider=None)
+    monkeypatch.setattr(repl_mode, '_create_history', lambda mycli: history)
     monkeypatch.setattr(repl_mode, 'mycli_bindings', lambda mycli: 'bindings')
     monkeypatch.setattr(repl_mode, '_show_startup_banner', lambda mycli, sqlexecute: None)
     monkeypatch.setattr(
@@ -2162,6 +2197,7 @@ def test_main_repl_covers_setup_loop_and_goodbye(monkeypatch: pytest.MonkeyPatch
     repl_mode.main_repl(cli)
 
     assert cli.pager_configured == 1
+    assert cli.completer.frecency_provider() == {'select': 1.0}
     assert cli.refresh_calls == [False]
     assert cli.title_calls == 1
     assert loop_iterations == [0, 1]
@@ -2173,7 +2209,9 @@ def test_main_repl_covers_no_refresh_and_quiet_exit(monkeypatch: pytest.MonkeyPa
     cli = make_repl_cli(SimpleNamespace())
     cli.verbosity = -1
     cli.smart_completion = False
-    monkeypatch.setattr(repl_mode, '_create_history', lambda mycli: 'history')
+    history = SimpleNamespace(frecency={})
+    cli.completer = SimpleNamespace(frecency_provider=None)
+    monkeypatch.setattr(repl_mode, '_create_history', lambda mycli: history)
     monkeypatch.setattr(repl_mode, 'mycli_bindings', lambda mycli: 'bindings')
     monkeypatch.setattr(repl_mode, '_show_startup_banner', lambda mycli, sqlexecute: None)
     monkeypatch.setattr(
