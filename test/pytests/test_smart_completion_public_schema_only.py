@@ -720,11 +720,12 @@ def dummy_list_path(dir_name):
 @pytest.mark.parametrize(
     "text,expected",
     [
-        ('source ', [('--special', 0), ('--show', 0), ('/', 0), ('~', 0), ('.', 0), ('..', 0)]),
+        ('source ', [('--special', 0), ('--show', 0), ('--page', 0), ('/', 0), ('~', 0), ('.', 0), ('..', 0)]),
         ('source --s', [('--show', -3), ('--special', -3)]),
-        ('source --special ', [('--show', 0), ('/', 0), ('~', 0), ('.', 0), ('..', 0)]),
-        ('source --show ', [('--special', 0), ('/', 0), ('~', 0), ('.', 0), ('..', 0)]),
-        ('source --special --show ', [('/', 0), ('~', 0), ('.', 0), ('..', 0)]),
+        ('source --special ', [('--show', 0), ('--page', 0), ('/', 0), ('~', 0), ('.', 0), ('..', 0)]),
+        ('source --show ', [('--special', 0), ('--page', 0), ('/', 0), ('~', 0), ('.', 0), ('..', 0)]),
+        ('source --special --show ', [('--page', 0), ('/', 0), ('~', 0), ('.', 0), ('..', 0)]),
+        ('source --special --show --page ', [('/', 0), ('~', 0), ('.', 0), ('..', 0)]),
         ("source /", [("dir1", 0), ("file1.sql", 0), ("file2.sql", 0)]),
         ('source --special /', [('dir1', 0), ('file1.sql', 0), ('file2.sql', 0)]),
         ('source --show /', [('dir1', 0), ('file1.sql', 0), ('file2.sql', 0)]),
