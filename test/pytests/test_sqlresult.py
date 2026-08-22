@@ -11,6 +11,7 @@ def test_sqlresult_str_includes_all_fields() -> None:
         postamble='after',
         status='ok',
         command={'name': 'watch', 'seconds': 1.0},
+        is_error=True,
     )
 
     assert 'before' in str(result)
@@ -19,6 +20,7 @@ def test_sqlresult_str_includes_all_fields() -> None:
     assert 'after' in str(result)
     assert 'ok' in str(result)
     assert "{'name': 'watch', 'seconds': 1.0}" in str(result)
+    assert 'True' in str(result)
 
 
 def test_sqlresult_status_plain_handles_none_and_formatted_text() -> None:

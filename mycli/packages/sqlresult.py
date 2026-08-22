@@ -17,11 +17,13 @@ class SQLResult:
     command: dict[str, str | float] | None = None
     image: bytes | None = None
     image_protocol: ImageProtocol = 'none'
+    is_error: bool = False
 
     def __str__(self):
         image = f'<{len(self.image)} bytes>' if self.image is not None else None
         return (
-            f"{self.preamble}, {self.header}, {self.rows}, {self.postamble}, {self.status}, {self.command}, {image}, {self.image_protocol}"
+            f"{self.preamble}, {self.header}, {self.rows}, {self.postamble}, {self.status}, {self.command}, "
+            f"{image}, {self.image_protocol}, {self.is_error}"
         )
 
     @cached_property

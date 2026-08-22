@@ -1,6 +1,8 @@
 from types import SimpleNamespace
 from typing import Any, cast
 
+import pytest
+
 from mycli import client_query, main
 from mycli.packages.sqlresult import SQLResult
 from mycli.types import Query
@@ -303,6 +305,45 @@ def test_run_query_writes_checkpoint(monkeypatch, tmp_path) -> None:
     state = run_query_with_state(monkeypatch, tmp_path, warnings_enabled=False)
 
     assert state['checkpoint_path'].read_text(encoding='utf-8') == 'select 1;\n'
+
+
+def test_run_query_raises_for_error_result_when_requested(tmp_path) -> None:
+    cli = make_bare_mycli()
+    logged_output: list[str] = []
+    checkpoint_path = tmp_path / 'checkpoint.sql'
+    cli.sqlexecute = SimpleNamespace(run=lambda query: [SQLResult(status='source failed', is_error=True)])
+    cli.log_query = lambda query: None
+    cli.log_output = logged_output.append
+
+    with pytest.raises(client_query.QueryError, match='source failed'):
+        main.MyCli.run_query(
+            cli,
+            '/source test.sql',
+            checkpoint=str(checkpoint_path),
+            raise_on_error=True,
+        )
+
+    assert logged_output == ['source failed']
+    assert checkpoint_path.read_text(encoding='utf-8') == ''
+    cli.checkpoint.close()
+
+
+def test_run_query_displays_error_result_by_default(monkeypatch) -> None:
+    cli = make_bare_mycli()
+    result = SQLResult(status='source failed', is_error=True)
+    echoed: list[str] = []
+    cli.sqlexecute = SimpleNamespace(run=lambda query: [result])
+    cli.log_query = lambda query: None
+    cli.log_output = lambda line: None
+    cli.format_sqlresult = lambda result, **kwargs: [result.status_plain]
+    monkeypatch.setattr(client_query.special, 'is_expanded_output', lambda: False)
+    monkeypatch.setattr(client_query.special, 'is_redirected', lambda: False)
+    monkeypatch.setattr(client_query.special, 'is_show_warnings_enabled', lambda: False)
+    monkeypatch.setattr(client_query.click, 'echo', lambda line, nl=True: echoed.append(line))
+
+    main.MyCli.run_query(cli, '/source test.sql')
+
+    assert echoed == ['source failed']
 
 
 def test_run_query_displays_set_buffer_fallback_outside_repl(monkeypatch) -> None:

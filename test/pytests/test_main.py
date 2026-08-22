@@ -987,7 +987,7 @@ def test_boundary_option_reaches_connect(monkeypatch):
         def connect(self, **args):
             MockMyCli.connect_args = args
 
-        def run_query(self, query, checkpoint=None, new_line=True):
+        def run_query(self, query, checkpoint=None, new_line=True, raise_on_error=False):
             return []
 
         def close(self, **args):
@@ -2058,7 +2058,7 @@ def noninteractive_mock_mycli(monkeypatch):
         def connect(self, **_args):
             MockMyCli.connect_calls += 1
 
-        def run_query(self, query, checkpoint=None, new_line=True):
+        def run_query(self, query, checkpoint=None, new_line=True, raise_on_error=False):
             MockMyCli.ran_queries.append(query)
 
         def run_cli(self):

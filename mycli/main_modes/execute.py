@@ -46,7 +46,7 @@ def main_execute_from_cli(mycli: 'MyCli', cli_args: 'CliArgs') -> int:
                 mycli.logger.warning('Unable to open TTY as stdin.')
                 raise e
         if execution_confirmed:
-            mycli.run_query(execute_sql, checkpoint=cli_args.checkpoint)
+            mycli.run_query(execute_sql, checkpoint=cli_args.checkpoint, raise_on_error=True)
             return 0
         else:
             return 1
