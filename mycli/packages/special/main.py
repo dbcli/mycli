@@ -314,7 +314,7 @@ def quit_(*_args):
 
 @special_command(
     "\\edit",
-    "/edit <filename> | <query>\\edit",
+    "/edit <file> | <query>\\edit",
     "Edit query with editor (uses $VISUAL or $EDITOR).",
     arg_type=ArgType.NO_ARGUMENT,
     case_sensitive=True,

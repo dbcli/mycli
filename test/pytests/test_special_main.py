@@ -366,7 +366,7 @@ def test_show_keyword_help_for_case_sensitive_special_alias() -> None:
     assert result.rows == [
         (
             r'/e',
-            '/edit <filename> | <query>\\edit\nEdit query with editor (uses $VISUAL or $EDITOR).',
+            '/edit <file> | <query>\\edit\nEdit query with editor (uses $VISUAL or $EDITOR).',
             '',
         )
     ]

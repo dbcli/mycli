@@ -889,15 +889,25 @@ def test_suggest_type_handles_parser_results_shorter_than_cursor(monkeypatch):
         ('\\dt+ ', [{'type': 'table', 'schema': []}, {'type': 'view', 'schema': []}, {'type': 'schema'}]),
         (
             '\\. ',
-            [{'type': 'special_subcommand', 'subcommands': ['--special']}, {'type': 'file_name'}],
+            [{'type': 'special_subcommand', 'subcommands': ['--special', '--show']}, {'type': 'file_name'}],
         ),
         (
             'source ',
+            [{'type': 'special_subcommand', 'subcommands': ['--special', '--show']}, {'type': 'file_name'}],
+        ),
+        ('source --s', [{'type': 'special_subcommand', 'subcommands': ['--special', '--show']}]),
+        ('source --special', []),
+        (
+            'source --special ',
+            [{'type': 'special_subcommand', 'subcommands': ['--show']}, {'type': 'file_name'}],
+        ),
+        ('source --special --s', [{'type': 'special_subcommand', 'subcommands': ['--show']}]),
+        ('source --show', []),
+        (
+            'source --show ',
             [{'type': 'special_subcommand', 'subcommands': ['--special']}, {'type': 'file_name'}],
         ),
-        ('source --s', [{'type': 'special_subcommand', 'subcommands': ['--special']}]),
-        ('source --special', []),
-        ('source --special ', [{'type': 'file_name'}]),
+        ('source --show --special ', [{'type': 'file_name'}]),
         ('source --special query.sql', [{'type': 'file_name'}]),
         ('source query.sql', [{'type': 'file_name'}]),
         ('\\o ', [{'type': 'file_name'}]),
@@ -1848,13 +1858,13 @@ def test_source_is_file(expression):
     special.register_special_command(
         ...,
         'source',
-        '\\. <filename>',
+        '\\. <file>',
         'Execute commands from file.',
         aliases=[special.SpecialCommandAlias('\\.', case_sensitive=False)],
     )
     suggestions = suggest_type(expression, expression)
     assert suggestions == [
-        {'type': 'special_subcommand', 'subcommands': ['--special']},
+        {'type': 'special_subcommand', 'subcommands': ['--special', '--show']},
         {'type': 'file_name'},
     ]
 

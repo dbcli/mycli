@@ -63,11 +63,19 @@ def _render_config_value(value: Any) -> str:
     return str(value)
 
 
-def _parse_source_arguments(arg: str) -> tuple[str, bool]:
-    arguments = arg.split(maxsplit=1)
-    if arguments and arguments[0] == '--special':
-        return (arguments[1] if len(arguments) == 2 else '', True)
-    return (arg, False)
+def _parse_source_arguments(arg: str) -> tuple[str, bool, bool]:
+    allow_special = False
+    show_queries = False
+    filename = arg
+    while arguments := filename.split(maxsplit=1):
+        if arguments[0] == '--special':
+            allow_special = True
+        elif arguments[0] == '--show':
+            show_queries = True
+        else:
+            break
+        filename = arguments[1] if len(arguments) == 2 else ''
+    return filename, allow_special, show_queries
 
 
 def _registered_special_command(query: str) -> tuple[str, str] | None:
@@ -218,7 +226,7 @@ class ClientCommandsMixin:
         special.register_special_command(
             self.execute_from_file,
             "source",
-            "/source [--special] <filename>",
+            "/source [--special] [--show] <file>",
             "Execute queries from a file.",
             aliases=[SpecialCommandAlias("\\.", case_sensitive=False)],
         )
@@ -341,7 +349,7 @@ class ClientCommandsMixin:
         yield SQLResult(status=msg)
 
     def execute_from_file(self, arg: str, **_) -> Generator[SQLResult, None, None]:
-        filename, allow_special = _parse_source_arguments(arg)
+        filename, allow_special, show_queries = _parse_source_arguments(arg)
         if not filename:
             yield SQLResult(status="Missing required argument: filename.")
             return
@@ -379,11 +387,15 @@ class ClientCommandsMixin:
                             is_error=True,
                         )
                         return
+                    if show_queries:
+                        click.secho(f'> {special_query}')
                     yield from self.sqlexecute.run(special_query)
                     continue
 
                 if self.destructive_warning and confirm_destructive_query(self.destructive_keywords, query) is False:
                     continue
+                if show_queries:
+                    click.secho(f'> {query}')
                 yield from self.sqlexecute.run(query)
 
     def change_prompt_format(self, arg: str, **_) -> list[SQLResult]:

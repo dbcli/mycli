@@ -813,7 +813,7 @@ def parseargfile(arg: str) -> tuple[str, str]:
 
 @special_command(
     "tee",
-    "/tee [-o] <filename>",
+    "/tee [-o] <file>",
     "Append all results to an output file (overwrite using -o).",
 )
 def set_tee(arg: str, **_) -> list[SQLResult]:
@@ -856,7 +856,7 @@ def write_tee(output: str | ANSI | FormattedText, nl: bool = True) -> None:
 
 @special_command(
     "\\once",
-    "/once [-o] <filename>",
+    "/once [-o] <file>",
     "Append next result to an output file (overwrite using -o).",
     aliases=[SpecialCommandAlias("\\o", case_sensitive=False)],
 )
