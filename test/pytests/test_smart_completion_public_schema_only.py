@@ -720,8 +720,11 @@ def dummy_list_path(dir_name):
 @pytest.mark.parametrize(
     "text,expected",
     [
-        ('source ', [('/', 0), ('~', 0), ('.', 0), ('..', 0)]),
+        ('source ', [('--special', 0), ('/', 0), ('~', 0), ('.', 0), ('..', 0)]),
+        ('source --s', [('--special', -3)]),
+        ('source --special ', [('/', 0), ('~', 0), ('.', 0), ('..', 0)]),
         ("source /", [("dir1", 0), ("file1.sql", 0), ("file2.sql", 0)]),
+        ('source --special /', [('dir1', 0), ('file1.sql', 0), ('file2.sql', 0)]),
         ("source /dir1/", [("subdir1", 0), ("subfile1.sql", 0), ("subfile2.sql", 0)]),
         ("source /dir1/subdir1/", [("lastfile.sql", 0)]),
     ],

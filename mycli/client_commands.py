@@ -7,6 +7,7 @@ import re
 from typing import TYPE_CHECKING, Any, cast
 
 import click
+import sqlparse
 
 from mycli.config import write_default_config
 from mycli.main_modes.repl import set_all_external_titles
@@ -14,6 +15,8 @@ from mycli.packages import special
 from mycli.packages.batch_utils import statements_from_filehandle
 from mycli.packages.filepaths import dir_path_exists
 from mycli.packages.interactive_utils import confirm_destructive_query
+from mycli.packages.special import main as special_main
+from mycli.packages.special.iocommands import expand_favorite_query
 from mycli.packages.special.main import ArgType, SpecialCommandAlias
 from mycli.packages.sqlresult import SQLResult
 from mycli.sqlexecute import SQLExecute
@@ -30,12 +33,84 @@ MISSING_CONFIG_VALUE = object()
 DSN_CONFIG_VALUE = object()
 FAVORITES_CONFIG_VALUE = object()
 HIDDEN_CONFIG_SECTIONS = frozenset({'alias_dsn', 'favorite_queries'})
+SOURCE_SAFE_SPECIAL_COMMANDS = frozenset({
+    'connect',
+    'fd',
+    'fs',
+    'help',
+    'l',
+    'nowarnings',
+    'prompt',
+    'redirectformat',
+    'rehash',
+    'status',
+    'tableformat',
+    'timing',
+    'use',
+    'warnings',
+    'dt',
+})
+SOURCE_SAFE_SUBCOMMANDS = {
+    'config': frozenset({'help', 'get', 'search'}),
+    'dsn': frozenset({'help', 'list', 'show', 'save', 'delete'}),
+    'favorite': frozenset({'help', 'list', 'reload', 'run', 'save', 'delete'}),
+}
 
 
 def _render_config_value(value: Any) -> str:
     if isinstance(value, list):
         return ', '.join(str(item) for item in value)
     return str(value)
+
+
+def _parse_source_arguments(arg: str) -> tuple[str, bool]:
+    arguments = arg.split(maxsplit=1)
+    if arguments and arguments[0] == '--special':
+        return (arguments[1] if len(arguments) == 2 else '', True)
+    return (arg, False)
+
+
+def _registered_special_command(query: str) -> tuple[str, str] | None:
+    command, _verbosity, arg = special.parse_special_command(query)
+    registered = special_main.COMMANDS.get(command)
+    if registered is None:
+        registered = special_main.COMMANDS.get(command.lower())
+    if registered is None:
+        return None
+    return registered.command.removeprefix('\\').removeprefix('/').lower(), arg
+
+
+def _favorite_source_command_is_safe(arg: str) -> bool:
+    query, _error = expand_favorite_query(arg)
+    if query is None:
+        return True
+    return not any(special.is_special_command(statement.rstrip(';')) for statement in sqlparse.split(query))
+
+
+def _source_special_command_is_safe(query: str) -> bool:
+    parsed = _registered_special_command(query)
+    if parsed is None:
+        return False
+
+    command, arg = parsed
+    if command == 'f':
+        return not arg or _favorite_source_command_is_safe(arg)
+    if command in ('fd', 'fs'):
+        return True
+    if command in SOURCE_SAFE_SPECIAL_COMMANDS:
+        return True
+
+    subcommands = SOURCE_SAFE_SUBCOMMANDS.get(command)
+    if subcommands is None:
+        return False
+    arguments = arg.split(maxsplit=1)
+    subcommand = arguments[0].lower() if arguments else 'help'
+    if subcommand not in subcommands:
+        return False
+    if command == 'favorite' and subcommand == 'run':
+        run_arg = arguments[1] if len(arguments) == 2 else ''
+        return not run_arg or _favorite_source_command_is_safe(run_arg)
+    return True
 
 
 def _iter_config_values(
@@ -143,7 +218,7 @@ class ClientCommandsMixin:
         special.register_special_command(
             self.execute_from_file,
             "source",
-            "/source <filename>",
+            "/source [--special] <filename>",
             "Execute queries from a file.",
             aliases=[SpecialCommandAlias("\\.", case_sensitive=False)],
         )
@@ -266,12 +341,13 @@ class ClientCommandsMixin:
         yield SQLResult(status=msg)
 
     def execute_from_file(self, arg: str, **_) -> Generator[SQLResult, None, None]:
-        if not arg:
+        filename, allow_special = _parse_source_arguments(arg)
+        if not filename:
             yield SQLResult(status="Missing required argument: filename.")
             return
 
         try:
-            file_h = open(os.path.expanduser(arg))
+            file_h = open(os.path.expanduser(filename))
         except OSError as error:
             yield SQLResult(status=str(error))
             return
@@ -288,9 +364,17 @@ class ClientCommandsMixin:
                     yield SQLResult(status=str(error))
                     return
 
-                if special.is_special_command(query.rstrip(';')):
-                    yield SQLResult(status='Special commands are not supported in source files.')
-                    return
+                special_query = query.rstrip(';')
+                if special.is_special_command(special_query):
+                    if not allow_special:
+                        yield SQLResult(status='Special commands are not supported without /source --special.')
+                        return
+                    if not _source_special_command_is_safe(special_query):
+                        command, _verbosity, _arg = special.parse_special_command(special_query)
+                        yield SQLResult(status=f'Special command is never permitted in source files: {command}.')
+                        return
+                    yield from self.sqlexecute.run(special_query)
+                    continue
 
                 if self.destructive_warning and confirm_destructive_query(self.destructive_keywords, query) is False:
                     continue

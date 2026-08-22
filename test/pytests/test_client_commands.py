@@ -118,6 +118,7 @@ def test_register_special_commands_registers_expected_commands(monkeypatch: pyte
     assert calls[3][0] == client.change_table_format
     assert calls[4][0] == client.change_redirect_format
     assert calls[5][0] == client.execute_from_file
+    assert calls[5][2:4] == ('/source [--special] <filename>', 'Execute queries from a file.')
     assert calls[6][0] == client.change_prompt_format
     assert calls[6][2:4] == ('/prompt [string]', 'Show or change prompt format.')
     assert calls[7][0] == client.config_command
@@ -616,6 +617,168 @@ def test_execute_from_file_runs_file_query(tmp_path: Path) -> None:
     assert client.sqlexecute.runs == ['select 1;']
 
 
+def test_execute_from_file_parses_special_option_and_preserves_filename(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = DummyClient()
+    client.destructive_warning = False
+    client.sqlexecute = FakeSQLExecute()
+    file_h = IteratedFile('select 1;')
+    opened_paths: list[str] = []
+
+    def open_file(path: str) -> IteratedFile:
+        opened_paths.append(path)
+        return file_h
+
+    monkeypatch.setattr(client_commands, 'open', open_file, raising=False)
+
+    assert result_statuses(client.execute_from_file('--special query file.sql')) == ['ran select 1;']
+    assert opened_paths == ['query file.sql']
+
+
+def test_execute_from_file_reports_missing_filename_after_special_option() -> None:
+    client = DummyClient()
+
+    assert list(client.execute_from_file('--special')) == [SQLResult(status='Missing required argument: filename.')]
+
+
+def test_execute_from_file_runs_permitted_special_commands(tmp_path: Path) -> None:
+    client = DummyClient()
+    sql_file = tmp_path / 'query.sql'
+    sql_file.write_text('select 1; /status; select 2;', encoding='utf-8')
+    client.destructive_warning = False
+    client.destructive_keywords = set()
+    client.sqlexecute = FakeSQLExecute()
+
+    assert result_statuses(client.execute_from_file(f'--special {sql_file}')) == [
+        'ran select 1;',
+        'ran /status',
+        'ran select 2;',
+    ]
+    assert client.sqlexecute.runs == ['select 1;', '/status', 'select 2;']
+
+
+def test_execute_from_file_stops_at_disallowed_special_command(tmp_path: Path) -> None:
+    client = DummyClient()
+    sql_file = tmp_path / 'query.sql'
+    sql_file.write_text('select 1; /pager; select 2;', encoding='utf-8')
+    client.destructive_warning = False
+    client.destructive_keywords = set()
+    client.sqlexecute = FakeSQLExecute()
+
+    assert result_statuses(client.execute_from_file(f'--special {sql_file}')) == [
+        'ran select 1;',
+        'Special command is never permitted in source files: /pager.',
+    ]
+    assert client.sqlexecute.runs == ['select 1;']
+
+
+def test_execute_from_file_requires_semicolon_for_special_commands(tmp_path: Path) -> None:
+    client = DummyClient()
+    sql_file = tmp_path / 'query.sql'
+    sql_file.write_text('/status\nselect 1;', encoding='utf-8')
+    client.destructive_warning = False
+    client.destructive_keywords = set()
+    client.sqlexecute = FakeSQLExecute()
+
+    assert result_statuses(client.execute_from_file(f'--special {sql_file}')) == ['ran /status\nselect 1;']
+    assert client.sqlexecute.runs == ['/status\nselect 1;']
+
+
+@pytest.mark.parametrize(
+    ('command', 'arg', 'expected'),
+    [
+        ('status', '', True),
+        ('connect', 'db', True),
+        ('config', 'get main.prompt', True),
+        ('config', 'edit', False),
+        ('dsn', 'list', True),
+        ('dsn', 'edit prod', False),
+        ('favorite', 'list', True),
+        ('favorite', 'eval report', False),
+        ('pager', '', False),
+        ('delimiter', '$$', False),
+        ('plugin_command', '', False),
+    ],
+)
+def test_source_special_command_policy(
+    monkeypatch: pytest.MonkeyPatch,
+    command: str,
+    arg: str,
+    expected: bool,
+) -> None:
+    monkeypatch.setattr(client_commands, '_registered_special_command', lambda query: (command, arg))
+
+    assert client_commands._source_special_command_is_safe('/command') is expected
+
+
+def test_registered_source_special_command_uses_case_insensitive_registry_lookup(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    registered = special_main.SpecialCommand(
+        handler=lambda: None,
+        command='status',
+        usage='/status',
+        description='Show status.',
+        arg_type=special_main.ArgType.NO_ARGUMENT,
+        hidden=False,
+        case_sensitive=False,
+        aliases=None,
+        backslash_only=False,
+    )
+    monkeypatch.setattr(special_main, 'COMMANDS', {'/status': registered})
+
+    assert client_commands._registered_special_command('/STATUS verbose') == ('status', 'verbose')
+
+
+def test_registered_source_special_command_rejects_unknown_command(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(special_main, 'COMMANDS', {})
+
+    assert client_commands._registered_special_command('/unknown') is None
+    assert client_commands._source_special_command_is_safe('/unknown') is False
+
+
+@pytest.mark.parametrize('command', ['fd', 'fs'])
+def test_source_special_command_policy_allows_favorite_aliases(
+    monkeypatch: pytest.MonkeyPatch,
+    command: str,
+) -> None:
+    monkeypatch.setattr(client_commands, '_registered_special_command', lambda query: (command, 'report'))
+
+    assert client_commands._source_special_command_is_safe('/command') is True
+
+
+@pytest.mark.parametrize(
+    ('expanded_query', 'expected'),
+    [
+        ('select 1; select 2;', True),
+        ('select 1; /system echo unsafe;', False),
+        (None, True),
+    ],
+)
+def test_favorite_source_command_requires_sql_only_expansion(
+    monkeypatch: pytest.MonkeyPatch,
+    expanded_query: str | None,
+    expected: bool,
+) -> None:
+    monkeypatch.setattr(
+        client_commands,
+        'expand_favorite_query',
+        lambda arg: (expanded_query, None if expanded_query is not None else 'invalid arguments'),
+    )
+
+    assert client_commands._favorite_source_command_is_safe('report') is expected
+
+
+@pytest.mark.parametrize('command', ['f', 'favorite'])
+def test_source_favorite_run_uses_expansion_policy(monkeypatch: pytest.MonkeyPatch, command: str) -> None:
+    arg = 'report' if command == 'f' else 'run report'
+    monkeypatch.setattr(client_commands, '_registered_special_command', lambda query: (command, arg))
+    monkeypatch.setattr(client_commands, '_favorite_source_command_is_safe', lambda favorite_arg: False)
+
+    assert client_commands._source_special_command_is_safe('/favorite') is False
+
+
 @pytest.mark.parametrize(
     'command',
     [
@@ -634,7 +797,9 @@ def test_execute_from_file_rejects_special_commands(command: str, tmp_path: Path
     client.destructive_keywords = set()
     client.sqlexecute = FakeSQLExecute()
 
-    assert list(client.execute_from_file(str(sql_file))) == [SQLResult(status='Special commands are not supported in source files.')]
+    assert list(client.execute_from_file(str(sql_file))) == [
+        SQLResult(status='Special commands are not supported without /source --special.')
+    ]
     assert client.sqlexecute.runs == []
 
 

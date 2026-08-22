@@ -29,7 +29,7 @@
 | /quit           | /q       | /quit                                  | Quit.                                                       |
 | /redirectformat | /Tr      | /redirectformat <format>               | Change the table format used to output redirected results.  |
 | /rehash         | /#       | /rehash                                | Refresh auto-completions.                                   |
-| /source         | /.       | /source <filename>                     | Execute queries from a file.                                |
+| /source         | /.       | /source [--special] <filename>         | Execute queries from a file.                                |
 | /status         | /s       | /status                                | Get status information from the server.                     |
 | /system         | <null>   | /system [-r] <command>                 | Execute a system shell command (raw mode with -r).          |
 | /tableformat    | /T       | /tableformat <format>                  | Change the table format used to output interactive results. |

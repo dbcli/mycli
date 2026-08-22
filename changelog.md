@@ -4,6 +4,7 @@ Upcoming (TBD)
 Features
 ---------
 * Advertise beta `--boundary-id` option in helpdoc and completions.
+* Add `/source --special` to allow executing some special commands.
 
 
 2.15.0 (2026/08/20)
