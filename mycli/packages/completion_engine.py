@@ -811,6 +811,20 @@ def suggest_special(text: str) -> list[dict[str, Any]]:
         r'/.',
         'source',
         '/source',
+    ]:
+        source_arguments = _arg.split(maxsplit=1)
+        if not source_arguments:
+            return [
+                {'type': 'special_subcommand', 'subcommands': ['--special']},
+                {'type': 'file_name'},
+            ]
+        if source_arguments[0].startswith('-') and source_arguments[0] != '--special':
+            return [{'type': 'special_subcommand', 'subcommands': ['--special']}]
+        if source_arguments[0] == '--special' and len(source_arguments) == 1 and not text[-1].isspace():
+            return []
+        return [{'type': 'file_name'}]
+
+    if cmd.lower() in [
         r'\o',
         '/o',
         r'\once',

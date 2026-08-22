@@ -887,8 +887,19 @@ def test_suggest_type_handles_parser_results_shorter_than_cursor(monkeypatch):
         ('/f report --user="henry', []),
         ('\\dt ', [{'type': 'table', 'schema': []}, {'type': 'view', 'schema': []}, {'type': 'schema'}]),
         ('\\dt+ ', [{'type': 'table', 'schema': []}, {'type': 'view', 'schema': []}, {'type': 'schema'}]),
-        ('\\. ', [{'type': 'file_name'}]),
-        ('source ', [{'type': 'file_name'}]),
+        (
+            '\\. ',
+            [{'type': 'special_subcommand', 'subcommands': ['--special']}, {'type': 'file_name'}],
+        ),
+        (
+            'source ',
+            [{'type': 'special_subcommand', 'subcommands': ['--special']}, {'type': 'file_name'}],
+        ),
+        ('source --s', [{'type': 'special_subcommand', 'subcommands': ['--special']}]),
+        ('source --special', []),
+        ('source --special ', [{'type': 'file_name'}]),
+        ('source --special query.sql', [{'type': 'file_name'}]),
+        ('source query.sql', [{'type': 'file_name'}]),
         ('\\o ', [{'type': 'file_name'}]),
         ('\\once ', [{'type': 'file_name'}]),
         ('tee ', [{'type': 'file_name'}]),
@@ -1842,7 +1853,10 @@ def test_source_is_file(expression):
         aliases=[special.SpecialCommandAlias('\\.', case_sensitive=False)],
     )
     suggestions = suggest_type(expression, expression)
-    assert suggestions == [{"type": "file_name"}]
+    assert suggestions == [
+        {'type': 'special_subcommand', 'subcommands': ['--special']},
+        {'type': 'file_name'},
+    ]
 
 
 @pytest.mark.parametrize(
