@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Internal
+---------
+* Upgrade `pygments` to v2.21.0, removing hacks for `set*` identifiers.
+
+
 2.16.0 (2026/08/22)
 ==============
 
