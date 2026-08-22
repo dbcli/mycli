@@ -54,7 +54,7 @@ copy the previous query to the clipboard with /clip!
 
 edit a query in an external editor using <query>\edit!
 
-edit a query in an external editor using /edit <filename>!
+edit a query in an external editor using /edit <file>!
 
 /f lists favorite queries; /f <name> executes a favorite!
 
@@ -68,7 +68,7 @@ Manage favorite queries with /favorite!
 
 /l lists databases!
 
-/once <filename> appends the next result to <filename>!
+/once <file> appends the next result to <file>!
 
 /| <command> sends the next result to a subprocess!
 
@@ -306,9 +306,9 @@ customize password sources/precedence with "password_sources" in ~/.myclirc!
 
 redirect query output to a shell command with "$| <command>"!
 
-redirect query output to a CSV file with "$> <filename>"!
+redirect query output to a CSV file with "$> <file>"!
 
-append query output to a CSV file with "$>> <filename>"!
+append query output to a CSV file with "$>> <file>"!
 
 run a command after shell redirects with "post_redirect_command" in ~/.myclirc!
 

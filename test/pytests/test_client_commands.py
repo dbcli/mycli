@@ -95,6 +95,22 @@ def result_statuses(results: Any) -> list[str | None]:
     return [result.status for result in list(results)]
 
 
+@pytest.mark.parametrize(
+    ('arg', 'expected'),
+    [
+        ('query.sql', ('query.sql', False, False)),
+        ('--special query.sql', ('query.sql', True, False)),
+        ('--show query.sql', ('query.sql', False, True)),
+        ('--special --show query file.sql', ('query file.sql', True, True)),
+        ('--show --special query file.sql', ('query file.sql', True, True)),
+        ('--show --show query.sql', ('query.sql', False, True)),
+        ('--show', ('', False, True)),
+    ],
+)
+def test_parse_source_arguments(arg: str, expected: tuple[str, bool, bool]) -> None:
+    assert client_commands._parse_source_arguments(arg) == expected
+
+
 def test_register_special_commands_registers_expected_commands(monkeypatch: pytest.MonkeyPatch) -> None:
     client = DummyClient()
     calls: list[tuple[Any, ...]] = []
@@ -118,7 +134,7 @@ def test_register_special_commands_registers_expected_commands(monkeypatch: pyte
     assert calls[3][0] == client.change_table_format
     assert calls[4][0] == client.change_redirect_format
     assert calls[5][0] == client.execute_from_file
-    assert calls[5][2:4] == ('/source [--special] <filename>', 'Execute queries from a file.')
+    assert calls[5][2:4] == ('/source [--special] [--show] <file>', 'Execute queries from a file.')
     assert calls[6][0] == client.change_prompt_format
     assert calls[6][2:4] == ('/prompt [string]', 'Show or change prompt format.')
     assert calls[7][0] == client.config_command
@@ -498,6 +514,7 @@ def test_execute_from_file_reports_open_errors() -> None:
 
 
 def test_execute_from_file_skips_rejected_destructive_query(
+    capsys: pytest.CaptureFixture[str],
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
@@ -515,7 +532,8 @@ def test_execute_from_file_skips_rejected_destructive_query(
 
     monkeypatch.setattr(client_commands, 'confirm_destructive_query', confirm_destructive_query)
 
-    assert list(client.execute_from_file(str(sql_file))) == [SQLResult(status='ran select 1;')]
+    assert list(client.execute_from_file(f'--show {sql_file}')) == [SQLResult(status='ran select 1;')]
+    assert capsys.readouterr().out == '> select 1;\n'
     assert client.sqlexecute.runs == ['select 1;']
     assert confirmation_queries == ['drop table users;', 'select 1;']
 
@@ -617,6 +635,44 @@ def test_execute_from_file_runs_file_query(tmp_path: Path) -> None:
     assert client.sqlexecute.runs == ['select 1;']
 
 
+def test_execute_from_file_shows_query_before_execution(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    client = DummyClient()
+    sql_file = tmp_path / 'query.sql'
+    sql_file.write_text('select 1;', encoding='utf-8')
+    client.destructive_warning = False
+    client.destructive_keywords = set()
+    client.sqlexecute = FakeSQLExecute()
+    events: list[tuple[str, str]] = []
+    monkeypatch.setattr(client_commands.click, 'secho', lambda query: events.append(('show', query)))
+
+    def run(query: str) -> list[SQLResult]:
+        events.append(('run', query))
+        return [SQLResult(status=f'ran {query}')]
+
+    client.sqlexecute.run = run  # type: ignore[method-assign]
+    results = client.execute_from_file(f'--show {sql_file}')
+
+    assert next(results) == SQLResult(status='ran select 1;')
+    assert events == [('show', '> select 1;'), ('run', 'select 1;')]
+    with pytest.raises(StopIteration):
+        next(results)
+
+
+def test_execute_from_file_shows_each_query(capsys: pytest.CaptureFixture[str], tmp_path: Path) -> None:
+    client = DummyClient()
+    sql_file = tmp_path / 'query.sql'
+    sql_file.write_text('select 1; select 2;', encoding='utf-8')
+    client.destructive_warning = False
+    client.destructive_keywords = set()
+    client.sqlexecute = FakeSQLExecute()
+
+    assert list(client.execute_from_file(f'--show {sql_file}')) == [
+        SQLResult(status='ran select 1;'),
+        SQLResult(status='ran select 2;'),
+    ]
+    assert capsys.readouterr().out == '> select 1;\n> select 2;\n'
+
+
 def test_execute_from_file_parses_special_option_and_preserves_filename(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -636,13 +692,14 @@ def test_execute_from_file_parses_special_option_and_preserves_filename(
     assert opened_paths == ['query file.sql']
 
 
-def test_execute_from_file_reports_missing_filename_after_special_option() -> None:
+@pytest.mark.parametrize('options', ['--special', '--show', '--special --show'])
+def test_execute_from_file_reports_missing_filename_after_options(options: str) -> None:
     client = DummyClient()
 
-    assert list(client.execute_from_file('--special')) == [SQLResult(status='Missing required argument: filename.')]
+    assert list(client.execute_from_file(options)) == [SQLResult(status='Missing required argument: filename.')]
 
 
-def test_execute_from_file_runs_permitted_special_commands(tmp_path: Path) -> None:
+def test_execute_from_file_runs_permitted_special_commands(capsys: pytest.CaptureFixture[str], tmp_path: Path) -> None:
     client = DummyClient()
     sql_file = tmp_path / 'query.sql'
     sql_file.write_text('select 1; /status; select 2;', encoding='utf-8')
@@ -650,15 +707,16 @@ def test_execute_from_file_runs_permitted_special_commands(tmp_path: Path) -> No
     client.destructive_keywords = set()
     client.sqlexecute = FakeSQLExecute()
 
-    assert result_statuses(client.execute_from_file(f'--special {sql_file}')) == [
-        'ran select 1;',
-        'ran /status',
-        'ran select 2;',
+    assert list(client.execute_from_file(f'--show --special {sql_file}')) == [
+        SQLResult(status='ran select 1;'),
+        SQLResult(status='ran /status'),
+        SQLResult(status='ran select 2;'),
     ]
+    assert capsys.readouterr().out == '> select 1;\n> /status\n> select 2;\n'
     assert client.sqlexecute.runs == ['select 1;', '/status', 'select 2;']
 
 
-def test_execute_from_file_stops_at_disallowed_special_command(tmp_path: Path) -> None:
+def test_execute_from_file_stops_at_disallowed_special_command(capsys: pytest.CaptureFixture[str], tmp_path: Path) -> None:
     client = DummyClient()
     sql_file = tmp_path / 'query.sql'
     sql_file.write_text('select 1; /pager; select 2;', encoding='utf-8')
@@ -666,12 +724,16 @@ def test_execute_from_file_stops_at_disallowed_special_command(tmp_path: Path) -
     client.destructive_keywords = set()
     client.sqlexecute = FakeSQLExecute()
 
-    results = list(client.execute_from_file(f'--special {sql_file}'))
+    results = list(client.execute_from_file(f'--show --special {sql_file}'))
 
-    assert result_statuses(iter(results)) == [
-        'ran select 1;',
-        'Special command is never permitted in source files: /pager.',
+    assert results == [
+        SQLResult(status='ran select 1;'),
+        SQLResult(
+            status='Special command is never permitted in source files: /pager.',
+            is_error=True,
+        ),
     ]
+    assert capsys.readouterr().out == '> select 1;\n'
     assert results[-1].is_error is True
     assert client.sqlexecute.runs == ['select 1;']
 

@@ -812,17 +812,32 @@ def suggest_special(text: str) -> list[dict[str, Any]]:
         'source',
         '/source',
     ]:
-        source_arguments = _arg.split(maxsplit=1)
+        source_options = ['--special', '--show']
+        source_arguments = _arg.split()
         if not source_arguments:
             return [
-                {'type': 'special_subcommand', 'subcommands': ['--special']},
+                {'type': 'special_subcommand', 'subcommands': source_options},
                 {'type': 'file_name'},
             ]
-        if source_arguments[0].startswith('-') and source_arguments[0] != '--special':
-            return [{'type': 'special_subcommand', 'subcommands': ['--special']}]
-        if source_arguments[0] == '--special' and len(source_arguments) == 1 and not text[-1].isspace():
+
+        used_options: set[str] = set()
+        argument_index = 0
+        while argument_index < len(source_arguments) and source_arguments[argument_index] in source_options:
+            used_options.add(source_arguments[argument_index])
+            argument_index += 1
+        remaining_options = [option for option in source_options if option not in used_options]
+
+        if argument_index < len(source_arguments):
+            if source_arguments[argument_index].startswith('-'):
+                return [{'type': 'special_subcommand', 'subcommands': remaining_options}]
+            return [{'type': 'file_name'}]
+        if not text[-1].isspace():
             return []
-        return [{'type': 'file_name'}]
+        suggestions = []
+        if remaining_options:
+            suggestions.append({'type': 'special_subcommand', 'subcommands': remaining_options})
+        suggestions.append({'type': 'file_name'})
+        return suggestions
 
     if cmd.lower() in [
         r'\o',

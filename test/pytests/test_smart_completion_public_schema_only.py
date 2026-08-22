@@ -720,11 +720,14 @@ def dummy_list_path(dir_name):
 @pytest.mark.parametrize(
     "text,expected",
     [
-        ('source ', [('--special', 0), ('/', 0), ('~', 0), ('.', 0), ('..', 0)]),
-        ('source --s', [('--special', -3)]),
-        ('source --special ', [('/', 0), ('~', 0), ('.', 0), ('..', 0)]),
+        ('source ', [('--special', 0), ('--show', 0), ('/', 0), ('~', 0), ('.', 0), ('..', 0)]),
+        ('source --s', [('--show', -3), ('--special', -3)]),
+        ('source --special ', [('--show', 0), ('/', 0), ('~', 0), ('.', 0), ('..', 0)]),
+        ('source --show ', [('--special', 0), ('/', 0), ('~', 0), ('.', 0), ('..', 0)]),
+        ('source --special --show ', [('/', 0), ('~', 0), ('.', 0), ('..', 0)]),
         ("source /", [("dir1", 0), ("file1.sql", 0), ("file2.sql", 0)]),
         ('source --special /', [('dir1', 0), ('file1.sql', 0), ('file2.sql', 0)]),
+        ('source --show /', [('dir1', 0), ('file1.sql', 0), ('file2.sql', 0)]),
         ("source /dir1/", [("subdir1", 0), ("subfile1.sql", 0), ("subfile2.sql", 0)]),
         ("source /dir1/subdir1/", [("lastfile.sql", 0)]),
     ],
@@ -735,7 +738,7 @@ def test_file_name_completion(completer, complete_event, text, expected):
     special.register_special_command(
         ...,
         'source',
-        '\\. <filename>',
+        '\\. <file>',
         'Execute commands from file.',
         aliases=[special.SpecialCommandAlias('\\.', case_sensitive=False)],
     )
@@ -778,7 +781,7 @@ def test_source_eager_completion(completer, complete_event, tmp_path, monkeypatc
     special.register_special_command(
         ...,
         'source',
-        '\\. <filename>',
+        '\\. <file>',
         'Execute commands from file.',
         aliases=[special.SpecialCommandAlias('\\.', case_sensitive=False)],
     )
@@ -810,7 +813,7 @@ def test_source_leading_dot_suggestions_completion(completer, complete_event, tm
     special.register_special_command(
         ...,
         'source',
-        '\\. <filename>',
+        '\\. <file>',
         'Execute commands from file.',
         aliases=[special.SpecialCommandAlias('\\.', case_sensitive=False)],
     )

@@ -5,6 +5,7 @@ Features
 ---------
 * Advertise beta `--boundary-id` option in helpdoc and completions.
 * Add `/source --special` to allow executing some special commands.
+* Add `/source --show` to display each query before executing it.
 
 
 Bug Fixes
