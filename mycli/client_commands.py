@@ -17,6 +17,7 @@ from mycli.packages import special
 from mycli.packages.batch_utils import statements_from_filehandle
 from mycli.packages.filepaths import dir_path_exists
 from mycli.packages.interactive_utils import confirm_destructive_query
+from mycli.packages.ptoolkit.history import FileHistoryWithTimestamp
 from mycli.packages.special import main as special_main
 from mycli.packages.special.iocommands import expand_favorite_query
 from mycli.packages.special.main import ArgType, SpecialCommandAlias
@@ -222,6 +223,7 @@ class ClientCommandsMixin:
         destructive_keywords: Any
         config: Any
         myclirc_path: str
+        prompt_session: Any
         prompt_format: str
 
         def refresh_completions(self, reset: bool = False) -> list[SQLResult]: ...
@@ -245,7 +247,7 @@ class ClientCommandsMixin:
             aliases=[SpecialCommandAlias("\\r", case_sensitive=True)],
         )
         special.register_special_command(
-            self.refresh_completions,
+            self.rehash,
             "rehash",
             "/rehash",
             "Refresh auto-completions.",
@@ -301,6 +303,13 @@ class ClientCommandsMixin:
             yield SQLResult()
         else:
             yield self.change_db(arg).send(None)
+
+    def rehash(self) -> list[SQLResult]:
+        prompt_session = getattr(self, 'prompt_session', None)
+        history = getattr(prompt_session, 'history', None)
+        if isinstance(history, FileHistoryWithTimestamp):
+            history.refresh_frecency()
+        return self.refresh_completions()
 
     def change_table_format(self, arg: str, **_) -> Generator[SQLResult, None, None]:
         try:

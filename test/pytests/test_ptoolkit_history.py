@@ -112,6 +112,7 @@ def test_nonpositive_history_entry_count_disables_frecency(
 
     history = FileHistoryWithTimestamp(history_path, frecency_history_entries=history_entries, frecency_refresh_interval=1)
     history.append_string('SELECT new_token')
+    history.refresh_frecency()
 
     assert history.frecency_history_entries == 0
     assert history.frecency == {}
@@ -187,6 +188,20 @@ def test_history_frecency_uses_configured_refresh_interval(tmp_path: Path) -> No
     assert history.frecency_refresh_interval == 2
     assert history.frecency['second_token'] == 1.0
     assert history.frecency['first_token'] == 0.5
+
+
+def test_manual_frecency_refresh_recomputes_before_interval(tmp_path: Path) -> None:
+    history = FileHistoryWithTimestamp(tmp_path / 'history.txt')
+    wait_for_frecency_refresh(history)
+
+    history.append_string('SELECT manual_token')
+    assert history.frecency == {}
+
+    history.refresh_frecency()
+    wait_for_frecency_refresh(history)
+
+    assert history.frecency['manual_token'] == 1.0
+    assert history._frecency_entries_since_refresh == 0
 
 
 @pytest.mark.parametrize('refresh_interval', [0, -1])

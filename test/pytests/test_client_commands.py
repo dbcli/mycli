@@ -4,6 +4,7 @@ from collections.abc import Generator
 from io import StringIO
 import logging
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 from configobj import ConfigObj
@@ -181,7 +182,7 @@ def test_register_special_commands_registers_expected_commands(monkeypatch: pyte
     ]
     assert calls[0][0] == client.change_db
     assert calls[1][0] == client.manual_reconnect
-    assert calls[2][0] == client.refresh_completions
+    assert calls[2][0] == client.rehash
     assert calls[3][0] == client.change_table_format
     assert calls[4][0] == client.change_redirect_format
     assert calls[5][0] == client.execute_from_file
@@ -190,6 +191,30 @@ def test_register_special_commands_registers_expected_commands(monkeypatch: pyte
     assert calls[6][2:4] == ('/prompt [string]', 'Show or change prompt format.')
     assert calls[7][0] == client.config_command
     assert calls[7][2:4] == ('/config <help|get|search|edit> [key]', 'Inspect settings from config files.')
+
+
+def test_rehash_refreshes_frecency_and_completions(monkeypatch: pytest.MonkeyPatch) -> None:
+    class FakeHistory:
+        def __init__(self) -> None:
+            self.refresh_calls = 0
+
+        def refresh_frecency(self) -> None:
+            self.refresh_calls += 1
+
+    monkeypatch.setattr(client_commands, 'FileHistoryWithTimestamp', FakeHistory)
+    client = DummyClient()
+    history = FakeHistory()
+    client.prompt_session = SimpleNamespace(history=history)
+
+    assert result_statuses(client.rehash()) == ['refresh False']
+    assert history.refresh_calls == 1
+
+
+def test_rehash_without_file_history_still_refreshes_completions() -> None:
+    client = DummyClient()
+    client.prompt_session = SimpleNamespace(history=object())
+
+    assert result_statuses(client.rehash()) == ['refresh False']
 
 
 def test_manual_reconnect_reports_not_connected() -> None:
