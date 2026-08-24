@@ -101,7 +101,7 @@ include = ["mycli*"]
 [tool.uv]
 exclude-newer = '1 week'
 # TODO: should be able to remove llm and openai from the exceptions after 2026-08-29
-exclude-newer-package = { cli_helpers = false,  openai = false, llm = false, pygments = false }
+exclude-newer-package = { cli_helpers = false,  openai = false, llm = false }
 
 [tool.ruff]
 target-version = 'py310'

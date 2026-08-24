@@ -10,6 +10,7 @@ Internal
 ---------
 * Upgrade `pygments` to v2.21.0, removing hacks for `set*` identifiers.
 * Upgrade `llm` dependency to v3.33, removing pin for `openai`.
+* Remove `pygments` cooldown exception as no longer needed.
 
 
 2.16.0 (2026/08/22)
