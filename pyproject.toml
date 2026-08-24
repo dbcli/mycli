@@ -64,10 +64,9 @@ build-backend = "setuptools.build_meta"
 
 [project.optional-dependencies]
 llm = [
-    "llm ~= 0.31.1",
+    "llm ~= 0.33",
     "setuptools == 83.*",                   # Required by llm commands to install models
     "pip ~= 26.1.2",
-    "openai ~= 2.48.0",                     # openai v3.0.0 broke CI and would need work to support
 ]
 dataframe = [
     "polars ~= 1.42.1",
@@ -101,7 +100,8 @@ include = ["mycli*"]
 
 [tool.uv]
 exclude-newer = '1 week'
-exclude-newer-package = { cli_helpers = false,  pygments = false }
+# TODO: should be able to remove llm and openai from the exceptions after 2026-08-29
+exclude-newer-package = { cli_helpers = false,  openai = false, llm = false, pygments = false }
 
 [tool.ruff]
 target-version = 'py310'
