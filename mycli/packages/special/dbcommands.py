@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
     "List or describe tables.",
     arg_type=ArgType.PARSED_QUERY,
     case_sensitive=True,
+    completion_snippet='list or describe tables',
 )
 def list_tables(
     cur: Cursor,
@@ -65,6 +66,7 @@ def list_tables(
     "List databases.",
     arg_type=ArgType.RAW_QUERY,
     case_sensitive=True,
+    completion_snippet='list databases',
 )
 def list_databases(cur: Cursor, **_) -> list[SQLResult]:
     query = "SHOW DATABASES"
@@ -85,6 +87,7 @@ def list_databases(cur: Cursor, **_) -> list[SQLResult]:
     arg_type=ArgType.RAW_QUERY,
     case_sensitive=True,
     aliases=[SpecialCommandAlias("\\s", case_sensitive=True)],
+    completion_snippet='get status from server',
 )
 def status(cur: Cursor, **_) -> list[SQLResult]:
     query = "SHOW GLOBAL STATUS;"

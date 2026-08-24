@@ -24,6 +24,10 @@ metadata = {
 }
 
 
+def special_command_snippets() -> dict[str, str]:
+    return {name: command.completion_snippet or command.description for name, command in special.COMMANDS.items()}
+
+
 @pytest.fixture
 def completer():
     import mycli.sqlcompleter as sqlcompleter
@@ -45,7 +49,7 @@ def completer():
     comp.extend_relations(tables, kind="tables")
     comp.extend_columns(columns, kind="tables")
     comp.extend_enum_values([("orders", "status", ["pending", "shipped"])])
-    comp.extend_special_commands(special.COMMANDS)
+    comp.extend_special_commands(special_command_snippets())
 
     return comp
 
@@ -67,7 +71,7 @@ def empty_completer():
     comp.extend_schemata(db)
     comp.extend_database_names([db])
     comp.set_dbname(db)
-    comp.extend_special_commands(special.COMMANDS)
+    comp.extend_special_commands(special_command_snippets())
 
     return comp
 
@@ -101,8 +105,8 @@ def test_special_name_completion(completer, complete_event):
     position = len("\\d")
     result = completer.get_completions(Document(text=text, cursor_position=position), complete_event)
     assert list(result) == [
-        Completion(text="\\dt", start_position=-2),
-        Completion(text="\\dsn", start_position=-2),
+        Completion(text="\\dt", start_position=-2, display_meta='list or describe tables'),
+        Completion(text="\\dsn", start_position=-2, display_meta='manage saved DSNs'),
     ]
 
 
@@ -175,7 +179,10 @@ def test_empty_string_completion(completer, complete_event):
     text = ""
     position = 0
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
-    assert list(map(Completion, completer.special_commands + completer.keywords)) == result
+    expected_special = [
+        Completion(command, display_meta=completer.special_command_snippets[command]) for command in completer.special_commands
+    ]
+    assert expected_special + list(map(Completion, completer.keywords)) == result
 
 
 def test_select_keyword_completion(completer, complete_event):
@@ -683,7 +690,7 @@ def test_deleted_keyword_completion(completer, complete_event):
     position = len("exi")
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
     assert result == [
-        Completion(text="exit", start_position=-3),
+        Completion(text="exit", start_position=-3, display_meta='exit'),
         Completion(text='exists', start_position=-3),
         Completion(text='explain', start_position=-3),
         Completion(text='expire', start_position=-3),
@@ -1295,7 +1302,6 @@ def fk_completer():
         users  (id, email, first_name)
         tags   (id, name)                           no FK
     """
-    import mycli.packages.special.main as special
     import mycli.sqlcompleter as sqlcompleter
 
     comp = sqlcompleter.SQLCompleter(smart_completion=True)
@@ -1320,7 +1326,7 @@ def fk_completer():
     comp.extend_relations(tables, kind="tables")
     comp.extend_columns(columns, kind="tables")
     comp.extend_foreign_keys(fk_data)
-    comp.extend_special_commands(special.COMMANDS)
+    comp.extend_special_commands(special_command_snippets())
 
     return comp
 

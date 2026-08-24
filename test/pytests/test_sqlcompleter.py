@@ -389,6 +389,33 @@ def test_init_configures_frecency_sorting() -> None:
     assert completer.frecency_provider is provider
 
 
+def test_special_command_completion_displays_snippet(monkeypatch) -> None:
+    completer = make_completer()
+    favorite = mycli.sqlcompleter.SPECIAL_COMMANDS['/favorite']
+    assert favorite.completion_snippet == 'manage favorite queries'
+    completer.extend_special_commands({'/favorite': favorite.completion_snippet})
+    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda text, before: [{'type': 'special'}])
+
+    result = list(completer.get_completions(Document(text='/fav'), None))
+
+    assert len(result) == 1
+    assert result[0].text == '/favorite'
+    assert result[0].display_meta_text == 'manage favorite queries'
+
+
+def test_sql_keyword_completion_does_not_display_special_command_snippet(monkeypatch) -> None:
+    completer = make_completer()
+    completer.keywords = ['exit']
+    completer.extend_special_commands({'exit': 'Exit.'})
+    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda text, before: [{'type': 'keyword'}])
+
+    result = list(completer.get_completions(Document(text='SELECT exi'), None))
+
+    assert len(result) == 1
+    assert result[0].text == 'exit'
+    assert result[0].display_meta_text == ''
+
+
 def test_get_completions_uses_frecency_before_prefix_length(monkeypatch) -> None:
     completer = make_completer(frecency_provider=lambda: {'alphabet': 10.0})
     monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda text, before: [{'type': 'column', 'tables': []}])

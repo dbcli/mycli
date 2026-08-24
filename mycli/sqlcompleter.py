@@ -965,6 +965,7 @@ class SQLCompleter(Completer):
         self.name_pattern = re.compile(r"^[_a-zA-Z][_a-zA-Z0-9\$]*$")
 
         self.special_commands: list[str] = []
+        self.special_command_snippets: dict[str, str] = {}
         self.table_formats = supported_formats
         if keyword_casing not in ("upper", "lower", "auto"):
             keyword_casing = "auto"
@@ -980,10 +981,11 @@ class SQLCompleter(Completer):
     def escaped_names(self, names: Collection[str]) -> list[str]:
         return [self.escape_name(name) for name in names]
 
-    def extend_special_commands(self, special_commands: list[str]) -> None:
+    def extend_special_commands(self, special_commands: Mapping[str, str]) -> None:
         # Special commands are not part of all_completions since they can only
         # be at the beginning of a line.
         self.special_commands.extend(special_commands)
+        self.special_command_snippets.update(special_commands)
 
     def extend_database_names(self, databases: list[str]) -> None:
         self.databases.extend([self.escape_name(db) for db in databases])
@@ -1462,6 +1464,7 @@ class SQLCompleter(Completer):
 
         completions: list[tuple[str, int, int]] = []
         indexed_column_candidates: set[str] = set()
+        special_command_candidates: set[str] = set()
         suggestions = suggest_type(document.text, document.text_before_cursor)
         rigid_sort = False
         length_based_on_path = False
@@ -1680,15 +1683,18 @@ class SQLCompleter(Completer):
                 completions.extend([(*x, rank) for x in users_m])
 
             elif suggestion["type"] == "special":
-                special_m = self.find_matches(
-                    word_before_cursor,
-                    self.special_commands,
-                    start_only=True,
-                    fuzzy=False,
-                    text_before_cursor=document.text_before_cursor,
+                special_m = list(
+                    self.find_matches(
+                        word_before_cursor,
+                        self.special_commands,
+                        start_only=True,
+                        fuzzy=False,
+                        text_before_cursor=document.text_before_cursor,
+                    )
                 )
                 # specials are special, and go early in the candidates, first if possible
                 completions.extend([(*x, 0) for x in special_m])
+                special_command_candidates.update(x[0] for x in special_m)
 
             elif suggestion["type"] == "favoritequery":
                 if hasattr(FavoriteQueries, 'instance') and hasattr(FavoriteQueries.instance, 'list'):
@@ -1845,6 +1851,7 @@ class SQLCompleter(Completer):
                     x,
                     -len(last_for_len_paths),
                     display=f'{x}{self.indexed_column_suffix}' if x in indexed_column_candidates else None,
+                    display_meta=self.special_command_snippets.get(x) if x in special_command_candidates else None,
                     style=_INDEXED_COLUMN_STYLE if x in indexed_column_candidates else '',
                 )
                 for x in uniq_completions_str
@@ -1855,6 +1862,7 @@ class SQLCompleter(Completer):
                     x,
                     -len(text_for_len),
                     display=f'{x}{self.indexed_column_suffix}' if x in indexed_column_candidates else None,
+                    display_meta=self.special_command_snippets.get(x) if x in special_command_candidates else None,
                     style=_INDEXED_COLUMN_STYLE if x in indexed_column_candidates else '',
                 )
                 for x in uniq_completions_str

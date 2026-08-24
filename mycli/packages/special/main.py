@@ -49,6 +49,7 @@ class SpecialCommand:
     case_sensitive: bool | None
     aliases: list[SpecialCommandAlias] | None
     backslash_only: bool
+    completion_snippet: str | None = None
 
 
 class CommandNotFound(Exception):
@@ -86,6 +87,7 @@ def special_command(
     case_sensitive: bool = False,
     aliases: list[SpecialCommandAlias] | None = None,
     backslash_only: bool = False,
+    completion_snippet: str | None = None,
 ) -> Callable:
     def wrapper(wrapped):
         register_special_command(
@@ -98,6 +100,7 @@ def special_command(
             case_sensitive=case_sensitive,
             aliases=aliases,
             backslash_only=backslash_only,
+            completion_snippet=completion_snippet,
         )
         return wrapped
 
@@ -114,6 +117,7 @@ def register_special_command(
     case_sensitive: bool = False,
     aliases: list[SpecialCommandAlias] | None = None,
     backslash_only: bool = False,
+    completion_snippet: str | None = None,
 ) -> None:
     if command.startswith('\\'):
         forwardslash_command = '/' + command.removeprefix('\\')
@@ -131,6 +135,7 @@ def register_special_command(
         case_sensitive=case_sensitive,
         aliases=aliases,
         backslash_only=backslash_only,
+        completion_snippet=completion_snippet,
     )
     if not backslash_only:
         COMMANDS[fcmd] = SpecialCommand(
@@ -143,6 +148,7 @@ def register_special_command(
             case_sensitive=case_sensitive,
             aliases=aliases,
             backslash_only=backslash_only,
+            completion_snippet=completion_snippet,
         )
     if case_sensitive:
         CASE_SENSITIVE_COMMANDS.add(command)
@@ -174,6 +180,7 @@ def register_special_command(
             hidden=True,
             aliases=None,
             backslash_only=backslash_only,
+            completion_snippet=completion_snippet,
         )
         if not backslash_only:
             COMMANDS[fcmd] = SpecialCommand(
@@ -186,6 +193,7 @@ def register_special_command(
                 hidden=True,
                 aliases=None,
                 backslash_only=backslash_only,
+                completion_snippet=completion_snippet,
             )
 
 
@@ -226,6 +234,7 @@ def execute(cur: Cursor, sql: str) -> list[SQLResult]:
     "Show this table, or search for help on a term.",
     arg_type=ArgType.NO_ARGUMENT,
     aliases=[SpecialCommandAlias("\\?", case_sensitive=False), SpecialCommandAlias("?", case_sensitive=False)],
+    completion_snippet='show help or search',
 )
 def show_help(*_args) -> list[SQLResult]:
     header = ["Command", "Shortcut", "Usage", "Description"]
@@ -288,7 +297,13 @@ def show_keyword_help(cur: Cursor, arg: str) -> list[SQLResult]:
     return _show_mysql_help(cur, keyword)
 
 
-@special_command('\\bug', '/bug', 'File a bug on GitHub.', arg_type=ArgType.NO_ARGUMENT)
+@special_command(
+    '\\bug',
+    '/bug',
+    'File a bug on GitHub.',
+    arg_type=ArgType.NO_ARGUMENT,
+    completion_snippet='file a bug on GitHub',
+)
 def file_bug(*_args) -> list[SQLResult]:
     webbrowser.open_new_tab(ISSUES_URL)
     return [SQLResult(status=f'{ISSUES_URL} — press "New Issue"')]
@@ -300,6 +315,7 @@ def file_bug(*_args) -> list[SQLResult]:
     "Exit.",
     arg_type=ArgType.NO_ARGUMENT,
     aliases=[SpecialCommandAlias("\\q", case_sensitive=False)],
+    completion_snippet='exit',
 )
 @special_command(
     "quit",
@@ -307,6 +323,7 @@ def file_bug(*_args) -> list[SQLResult]:
     "Quit.",
     arg_type=ArgType.NO_ARGUMENT,
     aliases=[SpecialCommandAlias("\\q", case_sensitive=False)],
+    completion_snippet='exit',
 )
 def quit_(*_args):
     raise EOFError
@@ -319,6 +336,7 @@ def quit_(*_args):
     arg_type=ArgType.NO_ARGUMENT,
     case_sensitive=True,
     aliases=[SpecialCommandAlias("\\e", case_sensitive=True)],
+    completion_snippet='edit query with editor',
 )
 @special_command(
     "\\clip",
@@ -326,6 +344,7 @@ def quit_(*_args):
     "Copy query to the system clipboard.",
     arg_type=ArgType.NO_ARGUMENT,
     case_sensitive=True,
+    completion_snippet='copy query to clipboard',
 )
 @special_command(
     "\\G",
@@ -364,6 +383,7 @@ if LLM_IMPORTED:
         arg_type=ArgType.RAW_QUERY,
         case_sensitive=True,
         aliases=[SpecialCommandAlias("\\ai", case_sensitive=True)],
+        completion_snippet='interrogate an LLM',
     )
     def llm_stub():
         raise NotImplementedError

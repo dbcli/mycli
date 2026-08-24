@@ -88,6 +88,7 @@ def test_register_special_command_adds_primary_and_alias_entries(restore_command
         'demo',
         'Description',
         aliases=[special_main.SpecialCommandAlias('\\d', case_sensitive=False)],
+        completion_snippet='Manage demos.',
     )
 
     assert special_main.COMMANDS['demo'] == special_main.SpecialCommand(
@@ -100,6 +101,7 @@ def test_register_special_command_adds_primary_and_alias_entries(restore_command
         case_sensitive=False,
         aliases=[special_main.SpecialCommandAlias('\\d', case_sensitive=False)],
         backslash_only=False,
+        completion_snippet='Manage demos.',
     )
     assert special_main.COMMANDS['\\d'] == special_main.SpecialCommand(
         handler,
@@ -111,7 +113,10 @@ def test_register_special_command_adds_primary_and_alias_entries(restore_command
         case_sensitive=False,
         aliases=None,
         backslash_only=False,
+        completion_snippet='Manage demos.',
     )
+    assert special_main.COMMANDS['/demo'].completion_snippet == 'Manage demos.'
+    assert special_main.COMMANDS['/d'].completion_snippet == 'Manage demos.'
 
 
 def test_register_special_command_tracks_case_insensitive_commands(restore_commands: None) -> None:
@@ -136,11 +141,18 @@ def test_special_command_decorator_registers_case_sensitive_command(restore_comm
     special_main.CASE_SENSITIVE_COMMANDS.clear()
     special_main.CASE_INSENSITIVE_COMMANDS.clear()
 
-    @special_main.special_command('Camel', 'Camel', 'Description', case_sensitive=True)
+    @special_main.special_command(
+        'Camel',
+        'Camel',
+        'Description',
+        case_sensitive=True,
+        completion_snippet='Run Camel.',
+    )
     def handler() -> None:
         return None
 
     assert special_main.COMMANDS['Camel'].handler is handler
+    assert special_main.COMMANDS['Camel'].completion_snippet == 'Run Camel.'
     assert 'Camel' in special_main.CASE_SENSITIVE_COMMANDS
     assert '/Camel' in special_main.CASE_SENSITIVE_COMMANDS
     assert special_main.CASE_INSENSITIVE_COMMANDS == set()
@@ -337,6 +349,7 @@ def test_show_help_lists_only_visible_commands(restore_commands: None) -> None:
         '/visible',
         'Visible command',
         aliases=[special_main.SpecialCommandAlias('\\v', case_sensitive=False)],
+        completion_snippet='Complete visible.',
     )
     special_main.register_special_command(lambda: None, 'hidden', 'hidden', 'Hidden command', hidden=True)
 

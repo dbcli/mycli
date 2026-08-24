@@ -267,7 +267,7 @@ def refresh_collations(completer: SQLCompleter, executor: SQLExecute) -> None:
 
 @refresher("special_commands")
 def refresh_special(completer: SQLCompleter, executor: SQLExecute) -> None:
-    completer.extend_special_commands(list(COMMANDS.keys()))
+    completer.extend_special_commands({command: details.completion_snippet or details.description for command, details in COMMANDS.items()})
 
 
 @refresher("show_commands")
