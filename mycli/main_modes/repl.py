@@ -74,7 +74,7 @@ from mycli.packages.polars_transform import (
     prepare_polars_transform,
     run_polars_transform,
 )
-from mycli.packages.ptoolkit.history import FileHistoryWithTimestamp
+from mycli.packages.ptoolkit.history import FRECENCY_HISTORY_ENTRIES, FRECENCY_REFRESH_INTERVAL, FileHistoryWithTimestamp
 from mycli.packages.special.utils import format_uptime, get_ssl_version, get_uptime, get_warning_count
 from mycli.packages.sql_utils import (
     extract_new_password,
@@ -146,7 +146,13 @@ def complete_while_typing_filter() -> bool:
 def _create_history(mycli: 'MyCli') -> FileHistoryWithTimestamp | None:
     history_file = os.path.expanduser(os.environ.get('MYCLI_HISTFILE', mycli.config['main'].get('history_file', '~/.mycli-history')))
     if dir_path_exists(history_file):
-        return FileHistoryWithTimestamp(history_file)
+        frecency_history_entries = int(mycli.config['main'].get('frecency_history_entries', FRECENCY_HISTORY_ENTRIES) or 0)
+        frecency_refresh_interval = int(mycli.config['main'].get('frecency_refresh_interval', FRECENCY_REFRESH_INTERVAL) or 0)
+        return FileHistoryWithTimestamp(
+            history_file,
+            frecency_history_entries=frecency_history_entries,
+            frecency_refresh_interval=frecency_refresh_interval,
+        )
 
     mycli.echo(
         f'Error: Unable to open the history file "{history_file}". Your query history will not be saved.',
@@ -1113,10 +1119,12 @@ def main_repl(mycli: 'MyCli') -> None:
 
     mycli.configure_pager()
     _configure_editor(mycli)
+    history = _create_history(mycli)
+    if history is not None:
+        mycli.completer.frecency_provider = lambda: history.frecency
     if mycli.smart_completion and not mycli.sandbox_mode:
         mycli.refresh_completions()
 
-    history = _create_history(mycli)
     key_bindings = mycli_bindings(mycli)
     _show_startup_banner(mycli, sqlexecute)
     _build_prompt_session(mycli, state, history, key_bindings)

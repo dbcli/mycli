@@ -54,6 +54,14 @@ destructive_keywords = DROP SHUTDOWN DELETE TRUNCATE ALTER UPDATE
 # interactive query history location.
 history_file = ~/.mycli-history
 
+# Number of recent history entries used to calculate frecency. Set to 0 or
+# leave empty to disable frecency calculation entirely.
+frecency_history_entries = 1000
+
+# Number of REPL entries between frecency recalculation. Set to 0 to disable
+# periodic recalculation.
+frecency_refresh_interval = 50
+
 # log_file location.
 log_file = ~/.mycli.log
 

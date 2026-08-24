@@ -59,6 +59,7 @@ class ClientQueryMixin:
                 "keyword_casing": self.completer.keyword_casing,
                 "indexed_column_suffix": self.completer.indexed_column_suffix,
                 "config_property_names": self.completer.config_property_names,
+                'frecency_provider': self.completer.frecency_provider,
             },
         )
 
