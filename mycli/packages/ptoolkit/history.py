@@ -118,6 +118,14 @@ class FileHistoryWithTimestamp(FileHistory):
                     self._frecency_thread = None
             logger.exception('Failed to start history frecency calculation.')
 
+    def refresh_frecency(self) -> None:
+        """Request an immediate background refresh of history frecency."""
+        if not self.frecency_history_entries:
+            return
+        with self._frecency_lock:
+            self._frecency_entries_since_refresh = 0
+        self._request_frecency_refresh()
+
     def _refresh_frecency(self) -> None:
         while True:
             with self._frecency_lock:
