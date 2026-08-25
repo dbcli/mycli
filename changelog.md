@@ -12,6 +12,8 @@ Internal
 * Upgrade `pygments` to v2.21.0, removing hacks for `set*` identifiers.
 * Upgrade `llm` dependency to v3.33, removing pin for `openai`.
 * Remove `pygments` cooldown exception as no longer needed.
+* Upgrade `mypy` dev dependency to v2.3.1.
+* Upgrade `ruff` dev dependency to v0.16.3.
 
 
 2.16.0 (2026/08/22)
