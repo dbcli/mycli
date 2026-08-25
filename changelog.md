@@ -5,6 +5,7 @@ Features
 --------
 * Sort completion candidates by frecency from history.
 * Add help snippets in special /command completions.
+* Add completions on Polars methods in dataframe transforms.
 
 
 Internal

@@ -19,6 +19,7 @@ import rapidfuzz
 from mycli.compat import WIN
 from mycli.packages.completion_engine import is_inside_quotes, suggest_type
 from mycli.packages.filepaths import complete_path, parse_path, suggest_path
+from mycli.packages.polars_completion import complete_polars_transform
 from mycli.packages.ptoolkit.history import frecency_score
 from mycli.packages.special import llm
 from mycli.packages.special.dsn_aliases import DsnAliases
@@ -1439,6 +1440,18 @@ class SQLCompleter(Completer):
         complete_event: CompleteEvent | None,
         smart_completion: bool | None = None,
     ) -> Iterable[Completion]:
+        polars_completions = complete_polars_transform(document.text_before_cursor)
+        if polars_completions is not None:
+            return (
+                Completion(
+                    candidate.text,
+                    candidate.start_position,
+                    display=candidate.display,
+                    display_meta=candidate.display_meta,
+                )
+                for candidate in polars_completions
+            )
+
         word_before_cursor = document.get_word_before_cursor(WORD=True)
         last_for_len = last_word(word_before_cursor, include="most_punctuations")
         text_for_len = last_for_len.lower()
