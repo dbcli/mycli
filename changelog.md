@@ -4,6 +4,7 @@ Upcoming (TBD)
 Features
 --------
 * Sort completion candidates by frecency from history.
+* Add help snippets in special /command completions.
 
 
 Internal

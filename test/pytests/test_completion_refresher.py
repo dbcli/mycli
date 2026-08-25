@@ -705,7 +705,11 @@ def test_refresh_helpers_delegate_to_completer_and_executor(monkeypatch) -> None
     executor.collations.return_value = iter([('utf8mb4_unicode_ci',)])
     executor.show_candidates.return_value = iter([('FULL TABLES',)])
 
-    monkeypatch.setattr(completion_refresher, 'COMMANDS', {'\\x': object(), 'help': object()})
+    commands = {
+        '\\x': SimpleNamespace(description='Expanded output.', completion_snippet=None),
+        'help': SimpleNamespace(description='Show help.', completion_snippet='Find help.'),
+    }
+    monkeypatch.setattr(completion_refresher, 'COMMANDS', commands)
 
     completion_refresher.refresh_databases(completer, executor)
     completion_refresher.refresh_schemata(completer, executor)
@@ -732,7 +736,7 @@ def test_refresh_helpers_delegate_to_completer_and_executor(monkeypatch) -> None
     completer.extend_procedures.assert_called_once_with(executor.procedures.return_value)
     completer.extend_character_sets.assert_called_once_with(executor.character_sets.return_value)
     completer.extend_collations.assert_called_once_with(executor.collations.return_value)
-    completer.extend_special_commands.assert_called_once_with(['\\x', 'help'])
+    completer.extend_special_commands.assert_called_once_with({'\\x': 'Expanded output.', 'help': 'Find help.'})
     completer.extend_show_items.assert_called_once_with(executor.show_candidates.return_value)
 
 

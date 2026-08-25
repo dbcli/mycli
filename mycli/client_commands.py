@@ -237,6 +237,7 @@ class ClientCommandsMixin:
             "/use <database>",
             "Change to a new database.",
             aliases=[SpecialCommandAlias("\\u", case_sensitive=False)],
+            completion_snippet='change databases',
         )
         special.register_special_command(
             self.manual_reconnect,
@@ -245,6 +246,7 @@ class ClientCommandsMixin:
             "Reconnect to the server, optionally switching databases.",
             case_sensitive=True,
             aliases=[SpecialCommandAlias("\\r", case_sensitive=True)],
+            completion_snippet='reconnect to server',
         )
         special.register_special_command(
             self.rehash,
@@ -253,6 +255,7 @@ class ClientCommandsMixin:
             "Refresh auto-completions.",
             arg_type=ArgType.NO_ARGUMENT,
             aliases=[SpecialCommandAlias("\\#", case_sensitive=False)],
+            completion_snippet='refresh completions',
         )
         special.register_special_command(
             self.change_table_format,
@@ -261,6 +264,7 @@ class ClientCommandsMixin:
             "Change the table format used to output interactive results.",
             case_sensitive=True,
             aliases=[SpecialCommandAlias("\\T", case_sensitive=True)],
+            completion_snippet='change interactive output format',
         )
         special.register_special_command(
             self.change_redirect_format,
@@ -269,6 +273,7 @@ class ClientCommandsMixin:
             "Change the table format used to output redirected results.",
             case_sensitive=True,
             aliases=[SpecialCommandAlias("\\Tr", case_sensitive=True)],
+            completion_snippet='change redirected output format',
         )
         special.register_special_command(
             self.execute_from_file,
@@ -276,6 +281,7 @@ class ClientCommandsMixin:
             "/source [--special|--show|--page] <file>",
             "Execute queries from a file.",
             aliases=[SpecialCommandAlias("\\.", case_sensitive=False)],
+            completion_snippet='execute queries from file',
         )
         special.register_special_command(
             self.change_prompt_format,
@@ -284,12 +290,14 @@ class ClientCommandsMixin:
             "Show or change prompt format.",
             case_sensitive=True,
             aliases=[SpecialCommandAlias("\\R", case_sensitive=True)],
+            completion_snippet='show or change prompt format',
         )
         special.register_special_command(
             self.config_command,
             r'\config',
             '/config <help|get|search|edit> [key]',
             'Inspect settings from config files.',
+            completion_snippet='inspect config file settings',
         )
 
     def manual_reconnect(self, arg: str = "", **_) -> Generator[SQLResult, None, None]:
