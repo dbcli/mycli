@@ -66,30 +66,7 @@ def parse_polars_transform(command: str) -> PolarsPipeline | None:
     except sqlglot.errors.TokenError as exc:
         raise PolarsTransformError(f'Unable to parse Polars transform: {exc}') from exc
 
-    pipe_index: int | None = None
-    parquet_index: int | None = None
-    for index, token in enumerate(tokens[:-1]):
-        following = tokens[index + 1]
-        if token.token_type != sqlglot.TokenType.DOT:
-            continue
-        if token.start == 0 or not command[token.start - 1].isspace():
-            continue
-        if following.token_type not in (sqlglot.TokenType.PIPE, sqlglot.TokenType.GT):
-            continue
-        if following.end + 1 >= len(command):
-            if following.token_type == sqlglot.TokenType.PIPE:
-                raise PolarsTransformError('Polars transforms require a Python expression.')
-            raise PolarsTransformError('File saves require a destination path.')
-        if not command[following.end + 1].isspace():
-            continue
-        if following.token_type == sqlglot.TokenType.PIPE:
-            if pipe_index is not None:
-                raise PolarsTransformError('Polars transforms support only one ".|" operator.')
-            pipe_index = index
-        else:
-            if parquet_index is not None:
-                raise PolarsTransformError('File saves support only one ".>" operator.')
-            parquet_index = index
+    pipe_index, parquet_index = _pipeline_operator_indexes(command, tokens)
 
     if pipe_index is None and parquet_index is None:
         return None
@@ -136,6 +113,41 @@ def parse_polars_transform(command: str) -> PolarsPipeline | None:
         output_path = _parse_output_path(output_path)
     _validate_sql(sql)
     return PolarsPipeline(sql=sql, expression=expression, output_path=output_path, output_mode=output_mode)
+
+
+def _pipeline_operator_indexes(
+    command: str,
+    tokens: list[sqlglot.Token],
+    *,
+    require_operands: bool = True,
+) -> tuple[int | None, int | None]:
+    """Locate transform and redirect operators in tokenized command text."""
+
+    pipe_index: int | None = None
+    parquet_index: int | None = None
+    for index, token in enumerate(tokens[:-1]):
+        following = tokens[index + 1]
+        if token.token_type != sqlglot.TokenType.DOT:
+            continue
+        if token.start == 0 or not command[token.start - 1].isspace():
+            continue
+        if following.token_type not in (sqlglot.TokenType.PIPE, sqlglot.TokenType.GT):
+            continue
+        if following.end + 1 >= len(command) and require_operands:
+            if following.token_type == sqlglot.TokenType.PIPE:
+                raise PolarsTransformError('Polars transforms require a Python expression.')
+            raise PolarsTransformError('File saves require a destination path.')
+        if following.end + 1 < len(command) and not command[following.end + 1].isspace():
+            continue
+        if following.token_type == sqlglot.TokenType.PIPE:
+            if pipe_index is not None:
+                raise PolarsTransformError('Polars transforms support only one ".|" operator.')
+            pipe_index = index
+        else:
+            if parquet_index is not None:
+                raise PolarsTransformError('File saves support only one ".>" operator.')
+            parquet_index = index
+    return pipe_index, parquet_index
 
 
 def _parse_output_path(path: str) -> str:
