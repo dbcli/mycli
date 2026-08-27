@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Bug Fixes
+--------
+* Default split-line prompt was missing trailing space.
+
+
 2.17.0 (2026/08/25)
 ==============
 

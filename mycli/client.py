@@ -52,7 +52,7 @@ sqlparse.engine.grouping.MAX_GROUPING_TOKENS = None  # type: ignore[assignment]
 
 class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMixin, ClientQueryMixin):
     default_prompt = DEFAULT_PROMPT
-    default_prompt_splitln = "\\u@\\h\\n(\\t):\\d>"
+    default_prompt_splitln = r'\u@\h\n(\t):\d>\_'
     max_len_prompt = 45
     prompt_lines: int
     sqlexecute: SQLExecute | None
