@@ -67,8 +67,9 @@ build-backend = "setuptools.build_meta"
 [project.optional-dependencies]
 llm = [
     "llm ~= 0.33",
-    "setuptools == 83.*",                   # Required by llm commands to install models
-    "pip ~= 26.1.2",
+    "setuptools == 83.*",              # Required by llm commands to install models
+    "pip ~= 26.1.2",                   # Required by llm commands to install models
+    "pydantic_core ~= 2.48.0",         # Force a version with 3.15 binary wheels for faster CI
 ]
 dataframe = [
     "polars ~= 1.42.1",
@@ -82,6 +83,7 @@ dev = [
     "behave ~= 1.3.3",
     "coverage ~= 7.13.4",
     "mypy ~= 2.3.1",
+    "ast-serialize ~= 0.8.0",         # Force a version with 3.15 binary wheels for faster CI
     "pexpect ~= 4.9.0",
     "pytest ~= 9.1.1",
     "pytest-cov ~= 7.0.0",

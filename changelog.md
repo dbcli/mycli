@@ -6,6 +6,12 @@ Bug Fixes
 * Default split-line prompt was missing trailing space.
 
 
+Internal
+--------
+* Add Python 3.15 release candidate 1 to CI.
+* Pin `pydantic_core` LLM transitive dependency to 3.15-friendly 2.48.0.
+
+
 2.17.0 (2026/08/25)
 ==============
 
