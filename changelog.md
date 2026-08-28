@@ -6,6 +6,11 @@ Bug Fixes
 * Default split-line prompt was missing trailing space.
 
 
+Documentation
+---------
+* Modernize `README.md` screenshots.
+
+
 2.17.0 (2026/08/25)
 ==============
 
