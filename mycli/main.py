@@ -323,7 +323,7 @@ class CliArgs:
     )
     boundary_id: str | None = clickdc.option(
         type=str,
-        help='BETA: open a HashiCorp Boundary tunnel to TARGET_ID and connect through it.',
+        help='Open a HashiCorp Boundary tunnel to TARGET_ID and connect through it.',
     )
     checkup: bool = clickdc.option(
         is_flag=True,

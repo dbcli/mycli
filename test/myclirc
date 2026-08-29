@@ -430,7 +430,7 @@ default_password_field = password
 # Field/property containing the username, if --vault-username-field is not provided.
 default_username_field = username
 
-[boundary_beta]
+[boundary]
 # Path to the HashiCorp Boundary executable used by --boundary-id.
 boundary_executable = boundary
 
