@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Features
+--------
+* Promote Boundary tunnel feature out of beta.
+
+
 Bug Fixes
 --------
 * Default split-line prompt was missing trailing space.
