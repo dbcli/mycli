@@ -1,3 +1,11 @@
+2.18.3 (2026/08/29)
+==============
+
+Documentation
+--------
+* Iterate on `README.md` appearance on PyPi.
+
+
 2.18.2 (2026/08/29)
 ==============
 
