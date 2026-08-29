@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Documentation
+--------
+* Add line breaks between `README.md` screenshots.
+
+
 2.18.0 (2026/08/29)
 ==============
 
