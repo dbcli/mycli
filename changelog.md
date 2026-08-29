@@ -1,3 +1,11 @@
+2.18.4 (2026/08/29)
+==============
+
+Documentation
+--------
+* Add 10px rounded corners to animated `main.gif`.
+
+
 2.18.3 (2026/08/29)
 ==============
 
