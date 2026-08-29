@@ -12,6 +12,7 @@ Documentation: [https://mycli.net/docs](https://mycli.net/docs)
 <div align="center">
   <img alt="Completion" src="https://raw.githubusercontent.com/dbcli/mycli/main/doc/screenshots/tables.png">
 </div>
+</br>
 <div align="center">
   <img alt="CompletionGif" src="https://raw.githubusercontent.com/dbcli/mycli/main/doc/screenshots/main.gif">
 </div>
