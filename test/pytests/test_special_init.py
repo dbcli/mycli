@@ -68,6 +68,7 @@ def test_special_init_reexports_dbcommands(load_special: Callable[[bool], Module
 
     assert special.list_databases is dbcommands.list_databases
     assert special.list_tables is dbcommands.list_tables
+    assert special.ping is dbcommands.ping
     assert special.status is dbcommands.status
 
 

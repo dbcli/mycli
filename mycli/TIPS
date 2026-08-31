@@ -118,6 +118,8 @@ use /dsn to manage saved DSNs!
 
 use /config to inspect persistent configuration from the REPL!
 
+/ping checks the health of the connection!
+
 ###
 ### environment variables
 ###

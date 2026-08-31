@@ -10,6 +10,7 @@ import os
 from mycli.packages.special.dbcommands import (
     list_databases,
     list_tables,
+    ping,
     status,
 )
 from mycli.packages.special.iocommands import (
@@ -118,6 +119,7 @@ __all__: list[str] = [
     'list_tables',
     'open_external_editor',
     'parse_special_command',
+    'ping',
     'register_special_command',
     'run_post_redirect_hook',
     'set_delimiter',

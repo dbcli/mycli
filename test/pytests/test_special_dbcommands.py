@@ -2,11 +2,14 @@
 
 from unittest.mock import MagicMock
 
-from pymysql import ProgrammingError
+from pymysql import Error, ProgrammingError
+import pytest
 
 from mycli.packages.completion_engine import suggest_type
 from mycli.packages.special import dbcommands
-from mycli.packages.special.dbcommands import list_databases, list_tables, status
+from mycli.packages.special import main as special_main
+from mycli.packages.special.dbcommands import list_databases, list_tables, ping, status
+from mycli.packages.sqlresult import SQLResult
 from test.pytests.test_completion_engine import sorted_dicts
 
 
@@ -19,15 +22,23 @@ class FakeConnection:
         host_info: str = 'Localhost via UNIX socket',
         unix_socket: str | None = None,
         thread_id_value: int = 42,
+        ping_error: Exception | None = None,
     ) -> None:
         self.host = host
         self.port = port
         self.host_info = host_info
         self.unix_socket = unix_socket
         self._thread_id_value = thread_id_value
+        self.ping_error = ping_error
+        self.ping_calls: list[bool] = []
 
     def thread_id(self) -> int:
         return self._thread_id_value
+
+    def ping(self, reconnect: bool = True) -> None:
+        self.ping_calls.append(reconnect)
+        if self.ping_error is not None:
+            raise self.ping_error
 
 
 class FakeCursor:
@@ -175,6 +186,48 @@ def test_list_databases_with_and_without_description() -> None:
     empty = list_databases(empty_cursor)
     assert empty[0].header is None
     assert empty[0].rows is None
+
+
+def test_ping_reports_connected_without_reconnecting() -> None:
+    connection = FakeConnection()
+    cursor = FakeCursor(query_results={}, connection=connection)
+
+    assert ping(cursor) == [SQLResult(status='Connected')]
+    assert connection.ping_calls == [False]
+
+
+def test_ping_reports_not_connected_on_pymysql_error() -> None:
+    connection = FakeConnection(ping_error=Error('connection lost'))
+    cursor = FakeCursor(query_results={}, connection=connection)
+
+    assert ping(cursor) == [SQLResult(status='Not connected')]
+    assert connection.ping_calls == [False]
+
+
+def test_ping_propagates_unrelated_errors() -> None:
+    connection = FakeConnection(ping_error=RuntimeError('unexpected'))
+    cursor = FakeCursor(query_results={}, connection=connection)
+
+    with pytest.raises(RuntimeError, match='unexpected'):
+        ping(cursor)
+
+
+def test_ping_rejects_arguments_without_contacting_server() -> None:
+    connection = FakeConnection()
+    cursor = FakeCursor(query_results={}, connection=connection)
+
+    assert ping(cursor, arg='unexpected') == [SQLResult(status='Syntax: /ping.')]
+    assert connection.ping_calls == []
+
+
+def test_ping_command_registration() -> None:
+    command = special_main.COMMANDS[r'\ping']
+
+    assert command.handler is ping
+    assert command.usage == '/ping'
+    assert command.description == 'Check the connection.'
+    assert command.completion_snippet == 'check connection'
+    assert special_main.COMMANDS['/ping'].handler is ping
 
 
 def test_status_uses_global_queries_decodes_bytes_and_formats_stats(monkeypatch) -> None:

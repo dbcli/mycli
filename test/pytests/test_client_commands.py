@@ -891,6 +891,7 @@ def test_execute_from_file_requires_semicolon_for_special_commands(tmp_path: Pat
     ('command', 'arg', 'expected'),
     [
         ('status', '', True),
+        ('ping', '', True),
         ('connect', 'db', True),
         ('config', 'get main.prompt', True),
         ('config', 'edit', False),
