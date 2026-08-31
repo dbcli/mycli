@@ -71,7 +71,7 @@ llm = [
     "pip ~= 26.1.2",
 ]
 dataframe = [
-    "polars ~= 1.42.1",
+    "polars ~= 1.43.2",                     # Can be upgraded after 2 Sep 2026
     "altair ~= 6.2.2",
     "vl-convert-python ~= 1.9.0",
 ]
