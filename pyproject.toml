@@ -28,7 +28,7 @@ dependencies = [
     # TODO click 8.4.2 breaks the pager on Windows; check the next
     # version after 8.4.2 for https://github.com/pallets/click/pull/3739
     # which has been merged.  The click changelog predicts the next
-    # version to be 8.5.0.
+    # version to be 8.5.0, which can be merged around 2 Sep 2026.
     "click ~= 8.3.3",
     "clickdc ~= 0.1.1",
     "cryptography ~= 50.0.0",
@@ -102,8 +102,7 @@ include = ["mycli*"]
 
 [tool.uv]
 exclude-newer = '1 week'
-# TODO: should be able to remove llm and openai from the exceptions after 2026-08-29
-exclude-newer-package = { cli_helpers = false,  openai = false, llm = false }
+exclude-newer-package = { cli_helpers = false }
 
 [tool.ruff]
 target-version = 'py310'
