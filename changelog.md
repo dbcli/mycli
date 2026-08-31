@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Features
+--------
+* Show a trailing dot on database names in completion menus.
+
+
 2.18.5 (2026/08/31)
 ==============
 

@@ -1477,6 +1477,7 @@ class SQLCompleter(Completer):
 
         completions: list[tuple[str, int, int]] = []
         indexed_column_candidates: set[str] = set()
+        schema_candidates: set[str] = set()
         special_command_candidates: set[str] = set()
         suggestions = suggest_type(document.text, document.text_before_cursor)
         rigid_sort = False
@@ -1648,11 +1649,14 @@ class SQLCompleter(Completer):
                 completions.extend([(*x, rank) for x in aliases_m])
 
             elif suggestion["type"] == "database":
-                dbs_m = self.find_matches(
-                    word_before_cursor,
-                    self.databases,
-                    text_before_cursor=document.text_before_cursor,
+                dbs_m = list(
+                    self.find_matches(
+                        word_before_cursor,
+                        self.databases,
+                        text_before_cursor=document.text_before_cursor,
+                    )
                 )
+                schema_candidates.update(candidate for candidate, _fuzziness in dbs_m)
                 completions.extend([(*x, rank) for x in dbs_m])
 
             elif suggestion["type"] == "keyword":
@@ -1854,6 +1858,13 @@ class SQLCompleter(Completer):
             sorted_completions = sorted(completions, key=lambda item: completion_sort_key(item, completion_filter_text))
             uniq_completions_str = dict.fromkeys(x[0] for x in sorted_completions)
 
+        def completion_display(candidate: str) -> str | None:
+            if candidate in indexed_column_candidates:
+                return f'{candidate}{self.indexed_column_suffix}'
+            if candidate in schema_candidates:
+                return f'{candidate}.'
+            return None
+
         if config_property_length is not None:
             return (Completion(x, -config_property_length) for x in uniq_completions_str)
         elif source_file_completion_length is not None:
@@ -1863,7 +1874,7 @@ class SQLCompleter(Completer):
                 Completion(
                     x,
                     -len(last_for_len_paths),
-                    display=f'{x}{self.indexed_column_suffix}' if x in indexed_column_candidates else None,
+                    display=completion_display(x),
                     display_meta=self.special_command_snippets.get(x) if x in special_command_candidates else None,
                     style=_INDEXED_COLUMN_STYLE if x in indexed_column_candidates else '',
                 )
@@ -1874,7 +1885,7 @@ class SQLCompleter(Completer):
                 Completion(
                     x,
                     -len(text_for_len),
-                    display=f'{x}{self.indexed_column_suffix}' if x in indexed_column_candidates else None,
+                    display=completion_display(x),
                     display_meta=self.special_command_snippets.get(x) if x in special_command_candidates else None,
                     style=_INDEXED_COLUMN_STYLE if x in indexed_column_candidates else '',
                 )
