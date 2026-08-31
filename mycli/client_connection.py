@@ -132,12 +132,12 @@ class ClientConnectionMixin:
                 sys.exit(1)
         elif boundary_target_id:
             use_keyring = False
-            boundary_executable = self.config.get('boundary_beta', {}).get('boundary_executable', 'boundary') or 'boundary'
-            boundary_address = self.config.get('boundary_beta', {}).get('address') or None
-            boundary_auth_method_id = self.config.get('boundary_beta', {}).get('auth_method_id') or None
-            boundary_options = self.config.get('boundary_beta', {}).get('boundary_options') or None
-            boundary_test_command = self.config.get('boundary_beta', {}).get('boundary_test_command') or None
-            boundary_auth_command = self.config.get('boundary_beta', {}).get('boundary_auth_command') or None
+            boundary_executable = self.config.get('boundary', {}).get('boundary_executable', 'boundary') or 'boundary'
+            boundary_address = self.config.get('boundary', {}).get('address') or None
+            boundary_auth_method_id = self.config.get('boundary', {}).get('auth_method_id') or None
+            boundary_options = self.config.get('boundary', {}).get('boundary_options') or None
+            boundary_test_command = self.config.get('boundary', {}).get('boundary_test_command') or None
+            boundary_auth_command = self.config.get('boundary', {}).get('boundary_auth_command') or None
             try:
                 self.boundary_tunnel = BoundaryTunnel(
                     target_id=boundary_target_id,

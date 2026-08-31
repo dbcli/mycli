@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Bug Fixes
+--------
+* Fix incomplete release of Boundary tunnels from beta.
+
+
 2.18.4 (2026/08/29)
 ==============
 

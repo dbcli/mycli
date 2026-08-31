@@ -740,7 +740,7 @@ def test_connect_uses_boundary_tunnel(
     client = DummyClient(
         config={
             'main': {'password_sources': KNOWN_PASSWORD_SOURCES},
-            'boundary_beta': {
+            'boundary': {
                 'boundary_executable': '/opt/bin/boundary',
                 'address': 'https://boundary.example.com',
                 'auth_method_id': 'ampw_123',
