@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Features
+--------
+* Add `/ping` special command.
+
+
 2.18.5 (2026/08/31)
 ==============
 

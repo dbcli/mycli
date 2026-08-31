@@ -2,7 +2,7 @@ import logging
 import os
 import platform
 
-from pymysql import ProgrammingError
+from pymysql import Error, ProgrammingError
 from pymysql.cursors import Cursor
 
 from mycli import __version__
@@ -78,6 +78,24 @@ def list_databases(cur: Cursor, **_) -> list[SQLResult]:
         return [SQLResult(header=header, rows=cur)]
     else:
         return [SQLResult()]
+
+
+@special_command(
+    r'\ping',
+    '/ping',
+    'Check the connection.',
+    arg_type=ArgType.PARSED_QUERY,
+    completion_snippet='check connection',
+)
+def ping(cur: Cursor, arg: str | None = None, **_) -> list[SQLResult]:
+    if arg:
+        return [SQLResult(status='Syntax: /ping.')]
+
+    try:
+        cur.connection.ping(reconnect=False)
+    except Error:
+        return [SQLResult(status='Not connected')]
+    return [SQLResult(status='Connected')]
 
 
 @special_command(

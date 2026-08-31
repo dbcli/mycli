@@ -44,6 +44,7 @@ SOURCE_SAFE_SPECIAL_COMMANDS = frozenset({
     'help',
     'l',
     'nowarnings',
+    'ping',
     'prompt',
     'redirectformat',
     'rehash',
