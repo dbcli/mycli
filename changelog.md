@@ -6,6 +6,11 @@ Bug Fixes
 * Fix incomplete release of Boundary tunnels from beta.
 
 
+Internal
+---------
+* Upgrade `sqlglot` to v30.17.0.
+
+
 2.18.4 (2026/08/29)
 ==============
 
