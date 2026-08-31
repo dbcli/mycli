@@ -9,6 +9,7 @@ Bug Fixes
 Internal
 ---------
 * Upgrade `sqlglot` to v30.17.0.
+* Remove `pyproject.toml` llm library cooldown policy exceptions.
 
 
 2.18.4 (2026/08/29)
