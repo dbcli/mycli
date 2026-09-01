@@ -6,6 +6,11 @@ Features
 * Add `/ping` special command.
 
 
+Documentation
+--------
+* Minor edits to `README.md`.
+
+
 2.18.5 (2026/08/31)
 ==============
 
