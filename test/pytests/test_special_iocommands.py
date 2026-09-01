@@ -1491,6 +1491,7 @@ def test_execute_system_command_usage_parse_and_cd(monkeypatch) -> None:
     [
         ('-r echo ok', 0, None),
         ('vim file.sql', 1, 'Command exited with return code 1'),
+        ('clear', 1, 'Command exited with return code 1'),
     ],
 )
 def test_execute_system_command_raw_modes(
@@ -1510,6 +1511,20 @@ def test_execute_system_command_raw_modes(
 
     assert calls
     assert result.status == expected_status
+
+
+@pytest.mark.parametrize('command', ['clear', 'CLEAR', '-r clear'])
+def test_execute_system_clear_returns_no_result(monkeypatch, command: str) -> None:
+    calls: list[list[str]] = []
+
+    def fake_run(cmd: list[str], check: bool = False) -> SimpleNamespace:
+        calls.append(cmd)
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(iocommands.subprocess, 'run', fake_run)
+
+    assert iocommands.execute_system_command(command) == []
+    assert calls == [[part for part in command.split() if part != '-r']]
 
 
 def test_execute_system_command_nonraw_paths(monkeypatch) -> None:

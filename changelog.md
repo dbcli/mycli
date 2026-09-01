@@ -4,6 +4,7 @@ Upcoming (TBD)
 Features
 --------
 * Add `/ping` special command.
+* Hide timings after `/system clear`.
 
 
 Documentation

@@ -787,8 +787,9 @@ def execute_system_command(arg: str, **_) -> list[SQLResult]:
             completed_process = subprocess.run(command, check=False)
             if completed_process.returncode:
                 return [SQLResult(status=f'Command exited with return code {completed_process.returncode}')]
-            else:
-                return [SQLResult()]
+            if command[0].lower() == 'clear':
+                return []
+            return [SQLResult()]
         else:
             process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             try:
