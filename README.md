@@ -1,7 +1,7 @@
 # mycli
 
 [![Build Status](https://github.com/dbcli/mycli/workflows/mycli/badge.svg)](https://github.com/dbcli/mycli/actions?query=workflow%3Amycli)
-[![License](https://img.shields.io/github/license/dbcli/mycli.svg)](https://github.com/dbcli/mycli/blob/main/LICENSE.txt)
+[![License](https://img.shields.io/github/license/dbcli/mycli.svg?color=2FC745)](https://github.com/dbcli/mycli/blob/main/LICENSE.txt)
 
 Rich MySQL terminal client with auto-completion, syntax highlighting, and dataframes.
 
