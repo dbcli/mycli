@@ -25,11 +25,7 @@ classifiers = [
 ]
 
 dependencies = [
-    # TODO click 8.4.2 breaks the pager on Windows; check the next
-    # version after 8.4.2 for https://github.com/pallets/click/pull/3739
-    # which has been merged.  The click changelog predicts the next
-    # version to be 8.5.0, which can be merged around 2 Sep 2026.
-    "click ~= 8.3.3",
+    "click ~= 8.5.0",
     "clickdc ~= 0.1.1",
     "cryptography ~= 50.0.0",
     "Pygments ~= 2.21.0",
