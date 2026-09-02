@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Documentation
+--------
+* Badge color nit in `README.md`.
+
+
 2.19.0 (2026/09/02)
 ==============
 
