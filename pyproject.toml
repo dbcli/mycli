@@ -68,7 +68,7 @@ build-backend = "setuptools.build_meta"
 llm = [
     "llm ~= 0.33",
     "setuptools == 83.*",                   # Required by llm commands to install models
-    "pip ~= 26.1.2",
+    "pip ~= 26.2.1",
 ]
 dataframe = [
     "polars ~= 1.44.1",
