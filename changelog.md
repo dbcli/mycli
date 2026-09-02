@@ -16,6 +16,7 @@ Internal
 ---------
 * Upgrade `polars` dependency to v1.44.1.
 * Upgrade `sqlparse` dependency to v0.6.0.
+* Upgrade optional `pip` dependency to v26.2.1.
 
 
 2.18.5 (2026/08/31)
