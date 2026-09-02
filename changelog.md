@@ -18,6 +18,7 @@ Internal
 * Upgrade `sqlparse` dependency to v0.6.0.
 * Upgrade optional `pip` dependency to v26.2.1.
 * Use cache and turn off distro update for WSL tests in CI.
+* Upgrade WSL OS to Ubuntu 26.04 in for tests in CI.
 
 
 2.18.5 (2026/08/31)

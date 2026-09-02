@@ -158,7 +158,7 @@ jobs:
     steps:
     - uses: vampire/setup-wsl@d1da7f2c0322a5ee4f24975344f67fc0f5baf364 # v7.0.0
       with:
-        distribution: Ubuntu-24.04
+        distribution: Ubuntu-26.04
         use-cache: 'true'
         update: 'false'
         additional-packages: |
