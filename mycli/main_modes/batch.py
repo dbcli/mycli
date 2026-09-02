@@ -214,9 +214,8 @@ def main_batch_without_progress_bar(mycli: 'MyCli', cli_args: 'CliArgs') -> int:
 
 
 def main_batch_from_stdin(mycli: 'MyCli', cli_args: 'CliArgs') -> int:
-    batch_h = click.get_text_stream('stdin')
     try:
-        for statement, counter in statements_from_filehandle(batch_h):
+        for statement, counter in statements_from_filehandle(sys.stdin):
             dispatch_batch_statements(mycli, cli_args, statement, counter)
     except (ValueError, StopIteration, IOError, OSError, pymysql.err.Error) as e:
         click.secho(str(e), err=True, fg='red')

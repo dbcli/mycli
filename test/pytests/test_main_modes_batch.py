@@ -798,9 +798,7 @@ def test_main_batch_without_progress_bar_returns_error_when_iteration_fails(monk
 
 def test_main_batch_from_stdin_processes_statements(monkeypatch) -> None:
     dispatch_calls: list[tuple[str, int]] = []
-    batch_handle = object()
 
-    monkeypatch.setattr(batch_mode.click, 'get_text_stream', lambda _name: batch_handle)
     monkeypatch.setattr(batch_mode, 'statements_from_filehandle', lambda _handle: iter([('select 1;', 0), ('select 2;', 1)]))
     monkeypatch.setattr(
         batch_mode,
@@ -817,7 +815,6 @@ def test_main_batch_from_stdin_processes_statements(monkeypatch) -> None:
 def test_main_batch_from_stdin_returns_error_for_value_errors(monkeypatch) -> None:
     messages: list[tuple[str, bool, str]] = []
 
-    monkeypatch.setattr(batch_mode.click, 'get_text_stream', lambda _name: object())
     monkeypatch.setattr(batch_mode, 'statements_from_filehandle', lambda _handle: (_ for _ in ()).throw(ValueError('bad stdin')))
     monkeypatch.setattr(batch_mode.click, 'secho', lambda message, err, fg: messages.append((message, err, fg)))
 
