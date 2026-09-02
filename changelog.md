@@ -12,6 +12,11 @@ Documentation
 * Minor edits to `README.md`.
 
 
+Internal
+---------
+* Upgrade `polars` dependency to v1.44.1.
+
+
 2.18.5 (2026/08/31)
 ==============
 
