@@ -106,6 +106,10 @@ use /tee or /notee to write/stop-writing results to a output file!
 
 use "/system <command>" to execute a shell command!
 
+use "/system cd" to change the working directory!
+
+use "/system clear" to clear the screen!
+
 /T or /tableformat changes the interactive table format!
 
 /u or /use changes to a new database!
