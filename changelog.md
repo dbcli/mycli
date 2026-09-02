@@ -10,6 +10,7 @@ Features
 Documentation
 --------
 * Minor edits to `README.md`.
+* Add `/system` special cases to TIPS.
 
 
 Internal
