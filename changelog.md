@@ -13,6 +13,7 @@ Internal
 * Upgrade `ruff` dev dependency to v0.16.5.
 * Upgrade `coverage` dev dependency to v7.15.4.
 * Upgrade `pytest-cov` dev dependency to v7.1.0.
+* Upgrade `wcwidth` dependency to v0.8.3.
 
 
 2.19.0 (2026/09/02)
