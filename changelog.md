@@ -5,6 +5,10 @@ Documentation
 --------
 * Badge color nit in `README.md`.
 
+Internal
+---------
+* Upgrade `cryptography` dependency to v50.0.1.
+
 
 2.19.0 (2026/09/02)
 ==============
