@@ -10,6 +10,7 @@ Internal
 ---------
 * Upgrade `cryptography` dependency to v50.0.1.
 * Upgrade `rapidfuzz` dependency to v3.14.5.
+* Upgrade `ruff` dev dependency to v0.16.5.
 
 
 2.19.0 (2026/09/02)
