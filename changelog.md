@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Bug Fixes
+--------
+* Raise Boundary tunnel stabilization pause to 0.2 sec.
+
+
 2.20.0 (2026/09/05)
 ==============
 
