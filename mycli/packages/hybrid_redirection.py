@@ -16,7 +16,8 @@ logger = logging.getLogger(__name__)
 delimiter_command = DelimiterCommand()
 SOURCE_COMMAND_PATTERN = re.compile(r'^([/]?source|[/\\]\.)\s+', re.IGNORECASE)
 SOURCE_OPTIONS_PATTERN = re.compile(
-    r'^([/]?source|[/\\]\.)\s+(?P<options>(?:(?:--special|--show|--page)\s+)*)',
+    r'^([/]?source|[/\\]\.)\s+'
+    r'(?P<options>(?:(?:--special|--show|--page)\s+|--throttle(?:=[^\s]+|\s+[^\s]+)\s+)*)',
     re.IGNORECASE,
 )
 
@@ -67,7 +68,7 @@ def find_sql_part(
     if SOURCE_COMMAND_PATTERN.match(sql_part):
         source_arg_str = SOURCE_COMMAND_PATTERN.sub('', sql_part)
         try:
-            filename, _allow_special, _show_queries, _page_output = parse_source_arguments(source_arg_str)
+            filename, _allow_special, _show_queries, _page_output, _throttle = parse_source_arguments(source_arg_str)
             filename = parse_source_filename(filename)
         except ValueError:
             return ''

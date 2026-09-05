@@ -727,12 +727,36 @@ def dummy_list_path(dir_name):
 @pytest.mark.parametrize(
     "text,expected",
     [
-        ('source ', [('--special', 0), ('--show', 0), ('--page', 0), ('/', 0), ('~', 0), ('.', 0), ('..', 0)]),
+        (
+            'source ',
+            [('--special', 0), ('--show', 0), ('--page', 0), ('--throttle', 0), ('/', 0), ('~', 0), ('.', 0), ('..', 0)],
+        ),
         ('source --s', [('--show', -3), ('--special', -3)]),
-        ('source --special ', [('--show', 0), ('--page', 0), ('/', 0), ('~', 0), ('.', 0), ('..', 0)]),
-        ('source --show ', [('--special', 0), ('--page', 0), ('/', 0), ('~', 0), ('.', 0), ('..', 0)]),
-        ('source --special --show ', [('--page', 0), ('/', 0), ('~', 0), ('.', 0), ('..', 0)]),
-        ('source --special --show --page ', [('/', 0), ('~', 0), ('.', 0), ('..', 0)]),
+        (
+            'source --special ',
+            [('--show', 0), ('--page', 0), ('--throttle', 0), ('/', 0), ('~', 0), ('.', 0), ('..', 0)],
+        ),
+        (
+            'source --show ',
+            [('--special', 0), ('--page', 0), ('--throttle', 0), ('/', 0), ('~', 0), ('.', 0), ('..', 0)],
+        ),
+        (
+            'source --special --show ',
+            [('--page', 0), ('--throttle', 0), ('/', 0), ('~', 0), ('.', 0), ('..', 0)],
+        ),
+        (
+            'source --special --show --page ',
+            [('--throttle', 0), ('/', 0), ('~', 0), ('.', 0), ('..', 0)],
+        ),
+        ('source --throttle ', []),
+        (
+            'source --throttle 0.25 ',
+            [('--special', 0), ('--show', 0), ('--page', 0), ('/', 0), ('~', 0), ('.', 0), ('..', 0)],
+        ),
+        (
+            'source --throttle=0.25 ',
+            [('--special', 0), ('--show', 0), ('--page', 0), ('/', 0), ('~', 0), ('.', 0), ('..', 0)],
+        ),
         ("source /", [("/dir1", -1), ("/file1.sql", -1), ("/file2.sql", -1)]),
         ('source --special /', [('/dir1', -1), ('/file1.sql', -1), ('/file2.sql', -1)]),
         ('source --show /', [('/dir1', -1), ('/file1.sql', -1), ('/file2.sql', -1)]),

@@ -120,7 +120,10 @@ def test_register_special_commands_registers_expected_commands(monkeypatch: pyte
     assert calls[3][0] == client.change_table_format
     assert calls[4][0] == client.change_redirect_format
     assert calls[5][0] == client.execute_from_file
-    assert calls[5][2:4] == ('/source [--special|--show|--page] <file>', 'Execute queries from a file.')
+    assert calls[5][2:4] == (
+        '/source [options] <file>',
+        'Execute queries from a file.',
+    )
     assert calls[6][0] == client.change_prompt_format
     assert calls[6][2:4] == ('/prompt [string]', 'Show or change prompt format.')
     assert calls[7][0] == client.config_command
@@ -643,6 +646,54 @@ def test_execute_from_file_runs_file_query(tmp_path: Path) -> None:
 
     assert list(client.execute_from_file(str(sql_file))) == [SQLResult(status='ran select 1;')]
     assert client.sqlexecute.runs == ['select 1;']
+
+
+def test_execute_from_file_throttles_between_executed_statements(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    client = DummyClient()
+    sql_file = tmp_path / 'query.sql'
+    sql_file.write_text('select 1; /status; select 2;', encoding='utf-8')
+    client.destructive_warning = False
+    client.destructive_keywords = set()
+    client.sqlexecute = FakeSQLExecute()
+    sleep_calls: list[float] = []
+    monkeypatch.setattr(client_commands.time, 'sleep', lambda seconds: sleep_calls.append(seconds))
+
+    results = list(client.execute_from_file(f'--special --throttle 0.25 {sql_file}'))
+
+    assert result_statuses(results) == ['ran select 1;', 'ran /status', 'ran select 2;']
+    assert sleep_calls == [0.25, 0.25]
+
+
+def test_execute_from_file_does_not_throttle_after_declined_statement(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    client = DummyClient()
+    sql_file = tmp_path / 'query.sql'
+    sql_file.write_text('drop table users; select 1;', encoding='utf-8')
+    client.destructive_warning = True
+    client.destructive_keywords = {'drop'}
+    client.sqlexecute = FakeSQLExecute()
+    sleep_calls: list[float] = []
+    monkeypatch.setattr(client_commands, 'confirm_destructive_query', lambda keywords, query: not query.startswith('drop'))
+    monkeypatch.setattr(client_commands.time, 'sleep', lambda seconds: sleep_calls.append(seconds))
+
+    results = list(client.execute_from_file(f'--throttle=0.25 {sql_file}'))
+
+    assert result_statuses(results) == ['ran select 1;']
+    assert client.sqlexecute.runs == ['select 1;']
+    assert sleep_calls == []
+
+
+def test_execute_from_file_reports_invalid_throttle_without_opening_file(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = DummyClient()
+    opened_paths: list[str] = []
+    monkeypatch.setattr(client_commands, 'open', lambda path: opened_paths.append(path), raising=False)
+
+    assert list(client.execute_from_file('--throttle nope query.sql')) == [
+        SQLResult(
+            status='Invalid --throttle value: nope. Expected a finite, non-negative number.',
+            is_error=True,
+        )
+    ]
+    assert opened_paths == []
 
 
 def test_execute_from_file_emits_page_and_show_commands_lazily(tmp_path: Path) -> None:

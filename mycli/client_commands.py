@@ -4,6 +4,7 @@ from collections.abc import Generator, Mapping
 import logging
 import os
 import re
+import time
 from typing import TYPE_CHECKING, Any, cast
 
 import click
@@ -155,7 +156,7 @@ class ClientCommandsMixin:
         special.register_special_command(
             self.execute_from_file,
             "source",
-            "/source [--special|--show|--page] <file>",
+            "/source [options] <file>",
             "Execute queries from a file.",
             aliases=[SpecialCommandAlias("\\.", case_sensitive=False)],
             completion_snippet='execute queries from file',
@@ -288,7 +289,11 @@ class ClientCommandsMixin:
         yield SQLResult(status=msg)
 
     def execute_from_file(self, arg: str, **_) -> Generator[SQLResult, None, None]:
-        filename, allow_special, show_queries, page_output = parse_source_arguments(arg)
+        try:
+            filename, allow_special, show_queries, page_output, throttle = parse_source_arguments(arg)
+        except ValueError as error:
+            yield SQLResult(status=str(error), is_error=True)
+            return
         if page_output:
             yield SQLResult(command={'name': 'source_page'})
         try:
@@ -307,6 +312,7 @@ class ClientCommandsMixin:
             return
 
         assert isinstance(self.sqlexecute, SQLExecute)
+        executed_statement = False
         with file_h:
             statements = statements_from_filehandle(file_h)
             while True:
@@ -333,22 +339,28 @@ class ClientCommandsMixin:
                             is_error=True,
                         )
                         return
+                    if executed_statement and throttle > 0:
+                        time.sleep(throttle)
                     if show_queries:
                         if page_output:
                             yield SQLResult(command={'name': 'source_show', 'text': special_query})
                         else:
                             click.secho(f'> {special_query}')
                     yield from self.sqlexecute.run(special_query)
+                    executed_statement = True
                     continue
 
                 if self.destructive_warning and confirm_destructive_query(self.destructive_keywords, query) is False:
                     continue
+                if executed_statement and throttle > 0:
+                    time.sleep(throttle)
                 if show_queries:
                     if page_output:
                         yield SQLResult(command={'name': 'source_show', 'text': query})
                     else:
                         click.secho(f'> {query}')
                 yield from self.sqlexecute.run(query)
+                executed_statement = True
 
     def change_prompt_format(self, arg: str, **_) -> list[SQLResult]:
         """

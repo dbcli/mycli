@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Features
+--------
+* Add a `/source --throttle` option to pause between sourced statements.
+
+
 Bug Fixes
 --------
 * Allow shell-style redirects with `/source` when the filename is unquoted.
