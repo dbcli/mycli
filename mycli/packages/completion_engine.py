@@ -816,7 +816,8 @@ def suggest_special(text: str) -> list[dict[str, Any]]:
         'source',
         '/source',
     ]:
-        source_options = ['--special', '--show', '--page']
+        source_options = ['--special', '--show', '--page', '--throttle']
+        source_boolean_options = source_options[:-1]
         source_arguments = _arg.split()
         if not source_arguments:
             return [
@@ -826,9 +827,28 @@ def suggest_special(text: str) -> list[dict[str, Any]]:
 
         used_options: set[str] = set()
         argument_index = 0
-        while argument_index < len(source_arguments) and source_arguments[argument_index] in source_options:
-            used_options.add(source_arguments[argument_index])
-            argument_index += 1
+        while argument_index < len(source_arguments):
+            argument = source_arguments[argument_index]
+            if argument in source_boolean_options:
+                used_options.add(argument)
+                argument_index += 1
+                continue
+            if argument == '--throttle':
+                used_options.add(argument)
+                argument_index += 1
+                if argument_index >= len(source_arguments):
+                    return []
+                if argument_index == len(source_arguments) - 1 and not text[-1].isspace():
+                    return []
+                argument_index += 1
+                continue
+            if argument.startswith('--throttle='):
+                used_options.add('--throttle')
+                if argument == '--throttle=' or not text[-1].isspace():
+                    return []
+                argument_index += 1
+                continue
+            break
         remaining_options = [option for option in source_options if option not in used_options]
         source_filename = _arg
         for _index in range(argument_index):

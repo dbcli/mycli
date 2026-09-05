@@ -1,3 +1,4 @@
+import math
 import shlex
 
 import sqlparse
@@ -72,10 +73,23 @@ def _favorite_source_command_is_safe(arg: str) -> bool:
     return not any(special.is_special_command(statement.rstrip(';')) for statement in sqlparse.split(query))
 
 
-def parse_source_arguments(arg: str) -> tuple[str, bool, bool, bool]:
+def _parse_throttle(value: str) -> float:
+    if not value:
+        raise ValueError('Missing value for --throttle.')
+    try:
+        throttle = float(value)
+    except ValueError:
+        raise ValueError(f'Invalid --throttle value: {value}. Expected a finite, non-negative number.') from None
+    if not math.isfinite(throttle) or throttle < 0:
+        raise ValueError(f'Invalid --throttle value: {value}. Expected a finite, non-negative number.')
+    return throttle
+
+
+def parse_source_arguments(arg: str) -> tuple[str, bool, bool, bool, float]:
     allow_special = False
     show_queries = False
     page_output = False
+    throttle = 0.0
     filename = arg
     while arguments := filename.split(maxsplit=1):
         if arguments[0] == '--special':
@@ -84,10 +98,19 @@ def parse_source_arguments(arg: str) -> tuple[str, bool, bool, bool]:
             show_queries = True
         elif arguments[0] == '--page':
             page_output = True
+        elif arguments[0] == '--throttle':
+            if len(arguments) != 2:
+                raise ValueError('Missing value for --throttle.')
+            throttle_arguments = arguments[1].split(maxsplit=1)
+            throttle = _parse_throttle(throttle_arguments[0])
+            filename = throttle_arguments[1] if len(throttle_arguments) == 2 else ''
+            continue
+        elif arguments[0].startswith('--throttle='):
+            throttle = _parse_throttle(arguments[0].partition('=')[2])
         else:
             break
         filename = arguments[1] if len(arguments) == 2 else ''
-    return filename, allow_special, show_queries, page_output
+    return filename, allow_special, show_queries, page_output, throttle
 
 
 def parse_source_filename(filename: str) -> str:

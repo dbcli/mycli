@@ -891,29 +891,82 @@ def test_suggest_type_handles_parser_results_shorter_than_cursor(monkeypatch):
         ('\\dt+ ', [{'type': 'table', 'schema': []}, {'type': 'view', 'schema': []}, {'type': 'schema'}]),
         (
             '\\. ',
-            [{'type': 'special_subcommand', 'subcommands': ['--special', '--show', '--page']}, SOURCE_FILE_SUGGESTION],
+            [
+                {
+                    'type': 'special_subcommand',
+                    'subcommands': ['--special', '--show', '--page', '--throttle'],
+                },
+                SOURCE_FILE_SUGGESTION,
+            ],
         ),
         (
             'source ',
-            [{'type': 'special_subcommand', 'subcommands': ['--special', '--show', '--page']}, SOURCE_FILE_SUGGESTION],
+            [
+                {
+                    'type': 'special_subcommand',
+                    'subcommands': ['--special', '--show', '--page', '--throttle'],
+                },
+                SOURCE_FILE_SUGGESTION,
+            ],
         ),
-        ('source --s', [{'type': 'special_subcommand', 'subcommands': ['--special', '--show', '--page']}]),
+        (
+            'source --s',
+            [
+                {
+                    'type': 'special_subcommand',
+                    'subcommands': ['--special', '--show', '--page', '--throttle'],
+                }
+            ],
+        ),
         ('source --special', []),
         (
             'source --special ',
-            [{'type': 'special_subcommand', 'subcommands': ['--show', '--page']}, SOURCE_FILE_SUGGESTION],
+            [
+                {'type': 'special_subcommand', 'subcommands': ['--show', '--page', '--throttle']},
+                SOURCE_FILE_SUGGESTION,
+            ],
         ),
-        ('source --special --s', [{'type': 'special_subcommand', 'subcommands': ['--show', '--page']}]),
+        (
+            'source --special --s',
+            [{'type': 'special_subcommand', 'subcommands': ['--show', '--page', '--throttle']}],
+        ),
         ('source --show', []),
         (
             'source --show ',
-            [{'type': 'special_subcommand', 'subcommands': ['--special', '--page']}, SOURCE_FILE_SUGGESTION],
+            [
+                {'type': 'special_subcommand', 'subcommands': ['--special', '--page', '--throttle']},
+                SOURCE_FILE_SUGGESTION,
+            ],
         ),
         (
             'source --show --special ',
-            [{'type': 'special_subcommand', 'subcommands': ['--page']}, SOURCE_FILE_SUGGESTION],
+            [
+                {'type': 'special_subcommand', 'subcommands': ['--page', '--throttle']},
+                SOURCE_FILE_SUGGESTION,
+            ],
         ),
-        ('source --show --special --page ', [SOURCE_FILE_SUGGESTION]),
+        (
+            'source --show --special --page ',
+            [{'type': 'special_subcommand', 'subcommands': ['--throttle']}, SOURCE_FILE_SUGGESTION],
+        ),
+        ('source --throttle', []),
+        ('source --throttle ', []),
+        ('source --throttle 0.25', []),
+        (
+            'source --throttle 0.25 ',
+            [
+                {'type': 'special_subcommand', 'subcommands': ['--special', '--show', '--page']},
+                SOURCE_FILE_SUGGESTION,
+            ],
+        ),
+        ('source --throttle=0.25', []),
+        (
+            'source --throttle=0.25 ',
+            [
+                {'type': 'special_subcommand', 'subcommands': ['--special', '--show', '--page']},
+                SOURCE_FILE_SUGGESTION,
+            ],
+        ),
         (
             'source --special query.sql',
             [{'type': 'file_name', 'quote_spaces': True, 'source_filename': 'query.sql'}],
@@ -1873,7 +1926,7 @@ def test_source_is_file(expression):
     )
     suggestions = suggest_type(expression, expression)
     assert suggestions == [
-        {'type': 'special_subcommand', 'subcommands': ['--special', '--show', '--page']},
+        {'type': 'special_subcommand', 'subcommands': ['--special', '--show', '--page', '--throttle']},
         SOURCE_FILE_SUGGESTION,
     ]
 

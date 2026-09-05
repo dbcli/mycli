@@ -7,19 +7,38 @@ from mycli.packages.special import source
 @pytest.mark.parametrize(
     ('arg', 'expected'),
     [
-        ('query.sql', ('query.sql', False, False, False)),
-        ('--special query.sql', ('query.sql', True, False, False)),
-        ('--show query.sql', ('query.sql', False, True, False)),
-        ('--page query.sql', ('query.sql', False, False, True)),
-        ('--special --show --page query file.sql', ('query file.sql', True, True, True)),
-        ('--page --show --special query file.sql', ('query file.sql', True, True, True)),
-        ('--show --show query.sql', ('query.sql', False, True, False)),
-        ('--page --page query.sql', ('query.sql', False, False, True)),
-        ('--show', ('', False, True, False)),
+        ('query.sql', ('query.sql', False, False, False, 0.0)),
+        ('--special query.sql', ('query.sql', True, False, False, 0.0)),
+        ('--show query.sql', ('query.sql', False, True, False, 0.0)),
+        ('--page query.sql', ('query.sql', False, False, True, 0.0)),
+        ('--special --show --page query file.sql', ('query file.sql', True, True, True, 0.0)),
+        ('--page --show --special query file.sql', ('query file.sql', True, True, True, 0.0)),
+        ('--show --show query.sql', ('query.sql', False, True, False, 0.0)),
+        ('--page --page query.sql', ('query.sql', False, False, True, 0.0)),
+        ('--show', ('', False, True, False, 0.0)),
+        ('--throttle 0.25 query.sql', ('query.sql', False, False, False, 0.25)),
+        ('--throttle=1e-2 query.sql', ('query.sql', False, False, False, 0.01)),
+        ('--throttle 1 --show --throttle=0.5 query.sql', ('query.sql', False, True, False, 0.5)),
     ],
 )
-def test_parse_source_arguments(arg: str, expected: tuple[str, bool, bool, bool]) -> None:
+def test_parse_source_arguments(arg: str, expected: tuple[str, bool, bool, bool, float]) -> None:
     assert source.parse_source_arguments(arg) == expected
+
+
+@pytest.mark.parametrize(
+    'arg',
+    [
+        '--throttle',
+        '--throttle=',
+        '--throttle nope query.sql',
+        '--throttle -1 query.sql',
+        '--throttle inf query.sql',
+        '--throttle nan query.sql',
+    ],
+)
+def test_parse_source_arguments_rejects_invalid_throttle(arg: str) -> None:
+    with pytest.raises(ValueError, match='throttle'):
+        source.parse_source_arguments(arg)
 
 
 @pytest.mark.parametrize(

@@ -165,7 +165,7 @@ def test_get_redirect_components_valid_paths_and_logging() -> None:
     )
 
 
-@pytest.mark.parametrize('option', ['--special', '--show', '--page'])
+@pytest.mark.parametrize('option', ['--special', '--show', '--page', '--throttle 0.25', '--throttle=0.25'])
 def test_get_redirect_components_preserves_source_options(option: str) -> None:
     command = f'/source {option} query.sql $> out.txt'
 
