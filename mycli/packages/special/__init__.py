@@ -3,6 +3,7 @@ __lazy_modules__ = [
     'mycli.packages.special.iocommands',
     'mycli.packages.special.llm',
     'mycli.packages.special.main',
+    'mycli.packages.special.source',
 ]
 
 import os
@@ -53,6 +54,10 @@ from mycli.packages.special.iocommands import (
     write_once,
     write_pipe_once,
     write_tee,
+)
+from mycli.packages.special.source import (
+    parse_source_arguments,
+    parse_source_filename,
 )
 
 if not os.environ.get('MYCLI_LLM_OFF'):
@@ -112,12 +117,15 @@ __all__: list[str] = [
     'is_llm_command',
     'is_pager_enabled',
     'is_redirected',
-    'is_special_command',
+    'is_show_favorite_query',
     'is_show_warnings_enabled',
+    'is_special_command',
     'is_timing_enabled',
     'list_databases',
     'list_tables',
     'open_external_editor',
+    'parse_source_arguments',
+    'parse_source_filename',
     'parse_special_command',
     'ping',
     'register_special_command',
@@ -131,10 +139,9 @@ __all__: list[str] = [
     'set_pager',
     'set_pager_enabled',
     'set_redirect',
+    'set_show_favorite_query',
     'set_show_warnings_enabled',
     'set_timing_enabled',
-    'set_show_favorite_query',
-    'is_show_favorite_query',
     'special_command',
     'split_queries',
     'sql_using_llm',

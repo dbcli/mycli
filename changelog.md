@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Bug Fixes
+--------
+* Allow shell-style redirects with `/source` when the filename is unquoted.
+
+
 Documentation
 --------
 * Badge color nit in `README.md`.

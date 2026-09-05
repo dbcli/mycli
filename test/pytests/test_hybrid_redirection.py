@@ -54,6 +54,22 @@ def test_find_sql_part_handles_valid_parse_custom_delimiter_and_invalid_sql(rese
     assert hybrid_redirection.find_sql_part('select 1; select 2 $> out.txt', multiple_tokens, [5]) == ''
 
 
+@pytest.mark.parametrize(
+    ('command', 'expected'),
+    [
+        ('/source query.sql $> out.txt', '/source query.sql'),
+        ('source "query file.sql" $| cat', 'source "query file.sql"'),
+        ('/source query file.sql $> out.txt', ''),
+        ('/source "" $> out.txt', ''),
+    ],
+)
+def test_find_sql_part_handles_source_commands(command: str, expected: str) -> None:
+    tokens = tokenize(command)
+    indices = hybrid_redirection.find_token_indices(tokens)
+
+    assert hybrid_redirection.find_sql_part(command, tokens, indices['true_dollar']) == expected
+
+
 def test_find_command_and_file_tokens_extract_expected_parts() -> None:
     tokens = tokenize('select 1 $| cat $>> out.txt')
     indices = hybrid_redirection.find_token_indices(tokens)
@@ -146,6 +162,29 @@ def test_get_redirect_components_valid_paths_and_logging() -> None:
         None,
         '>',
         r'C:\Users\alice\output.csv',
+    )
+
+
+@pytest.mark.parametrize('option', ['--special', '--show', '--page'])
+def test_get_redirect_components_preserves_source_options(option: str) -> None:
+    command = f'/source {option} query.sql $> out.txt'
+
+    assert hybrid_redirection.get_redirect_components(command) == (
+        f'/source {option} query.sql',
+        None,
+        '>',
+        'out.txt',
+    )
+
+
+def test_get_redirect_components_handles_combined_source_options_and_redirects() -> None:
+    command = '/source --page --show --special query.sql $| cat $>> out.txt'
+
+    assert hybrid_redirection.get_redirect_components(command) == (
+        '/source --page --show --special query.sql',
+        'cat',
+        '>>',
+        'out.txt',
     )
 
 
