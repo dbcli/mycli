@@ -14,6 +14,7 @@ from mycli import client_commands
 from mycli.client_commands import ClientCommandsMixin
 from mycli.packages import special
 from mycli.packages.special import main as special_main
+from mycli.packages.special import source as source_commands
 from mycli.packages.sqlresult import SQLResult
 
 
@@ -94,73 +95,6 @@ def patch_sql_execute(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def result_statuses(results: Any) -> list[str | None]:
     return [result.status for result in list(results)]
-
-
-@pytest.mark.parametrize(
-    ('arg', 'expected'),
-    [
-        ('query.sql', ('query.sql', False, False, False)),
-        ('--special query.sql', ('query.sql', True, False, False)),
-        ('--show query.sql', ('query.sql', False, True, False)),
-        ('--page query.sql', ('query.sql', False, False, True)),
-        ('--special --show --page query file.sql', ('query file.sql', True, True, True)),
-        ('--page --show --special query file.sql', ('query file.sql', True, True, True)),
-        ('--show --show query.sql', ('query.sql', False, True, False)),
-        ('--page --page query.sql', ('query.sql', False, False, True)),
-        ('--show', ('', False, True, False)),
-    ],
-)
-def test_parse_source_arguments(arg: str, expected: tuple[str, bool, bool, bool]) -> None:
-    assert client_commands._parse_source_arguments(arg) == expected
-
-
-@pytest.mark.parametrize(
-    ('filename', 'expected'),
-    [
-        ('query.sql', 'query.sql'),
-        ('"query file.sql"', 'query file.sql'),
-        ("'query file.sql'", 'query file.sql'),
-        ('prefix" query".sql', 'prefix query.sql'),
-    ],
-)
-def test_parse_source_filename(filename: str, expected: str) -> None:
-    assert client_commands._parse_source_filename(filename) == expected
-
-
-@pytest.mark.parametrize(
-    'filename',
-    [
-        'query file.sql',
-        r'query\ file.sql',
-        '"first file.sql" second.sql',
-    ],
-)
-def test_parse_source_filename_rejects_multiple_unquoted_arguments(filename: str) -> None:
-    with pytest.raises(ValueError, match='filenames containing spaces must be quoted'):
-        client_commands._parse_source_filename(filename)
-
-
-def test_parse_source_filename_rejects_unclosed_quote() -> None:
-    with pytest.raises(ValueError, match='No closing quotation'):
-        client_commands._parse_source_filename('"query file.sql')
-
-
-def test_parse_source_filename_rejects_missing_parsed_argument(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(client_commands.shlex, 'split', lambda *_args, **_kwargs: [])
-
-    with pytest.raises(ValueError, match='accepts exactly one filename'):
-        client_commands._parse_source_filename('query.sql')
-
-
-def test_source_filename_whitespace_scanner_allows_escaped_non_whitespace() -> None:
-    assert not client_commands._has_unquoted_whitespace(r'query\name.sql')
-
-
-def test_parse_source_filename_preserves_windows_backslashes(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(client_commands, 'WIN', True)
-
-    assert client_commands._parse_source_filename(r'C:\queries\query.sql') == r'C:\queries\query.sql'
-    assert client_commands._parse_source_filename(r'"C:\my queries\query.sql"') == r'C:\my queries\query.sql'
 
 
 def test_register_special_commands_registers_expected_commands(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -801,7 +735,7 @@ def test_execute_from_file_rejects_unquoted_filename_with_spaces(monkeypatch: py
     opened_paths: list[str] = []
     monkeypatch.setattr(client_commands, 'open', lambda path: opened_paths.append(path), raising=False)
 
-    assert list(client.execute_from_file('query file.sql')) == [SQLResult(status=client_commands.INVALID_SOURCE_FILENAME, is_error=True)]
+    assert list(client.execute_from_file('query file.sql')) == [SQLResult(status=source_commands.INVALID_SOURCE_FILENAME, is_error=True)]
     assert opened_paths == []
 
 
@@ -810,7 +744,7 @@ def test_execute_from_file_pages_invalid_filename_error() -> None:
 
     assert list(client.execute_from_file('--page query file.sql')) == [
         SQLResult(command={'name': 'source_page'}),
-        SQLResult(status=client_commands.INVALID_SOURCE_FILENAME, is_error=True),
+        SQLResult(status=source_commands.INVALID_SOURCE_FILENAME, is_error=True),
     ]
 
 
@@ -885,101 +819,6 @@ def test_execute_from_file_requires_semicolon_for_special_commands(tmp_path: Pat
 
     assert result_statuses(client.execute_from_file(f'--special {sql_file}')) == ['ran /status\nselect 1;']
     assert client.sqlexecute.runs == ['/status\nselect 1;']
-
-
-@pytest.mark.parametrize(
-    ('command', 'arg', 'expected'),
-    [
-        ('status', '', True),
-        ('ping', '', True),
-        ('connect', 'db', True),
-        ('config', 'get main.prompt', True),
-        ('config', 'edit', False),
-        ('dsn', 'list', True),
-        ('dsn', 'edit prod', False),
-        ('favorite', 'list', True),
-        ('favorite', 'eval report', False),
-        ('pager', '', False),
-        ('delimiter', '$$', False),
-        ('plugin_command', '', False),
-    ],
-)
-def test_source_special_command_policy(
-    monkeypatch: pytest.MonkeyPatch,
-    command: str,
-    arg: str,
-    expected: bool,
-) -> None:
-    monkeypatch.setattr(client_commands, '_registered_special_command', lambda query: (command, arg))
-
-    assert client_commands._source_special_command_is_safe('/command') is expected
-
-
-def test_registered_source_special_command_uses_case_insensitive_registry_lookup(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    registered = special_main.SpecialCommand(
-        handler=lambda: None,
-        command='status',
-        usage='/status',
-        description='Show status.',
-        arg_type=special_main.ArgType.NO_ARGUMENT,
-        hidden=False,
-        case_sensitive=False,
-        aliases=None,
-        backslash_only=False,
-    )
-    monkeypatch.setattr(special_main, 'COMMANDS', {'/status': registered})
-
-    assert client_commands._registered_special_command('/STATUS verbose') == ('status', 'verbose')
-
-
-def test_registered_source_special_command_rejects_unknown_command(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(special_main, 'COMMANDS', {})
-
-    assert client_commands._registered_special_command('/unknown') is None
-    assert client_commands._source_special_command_is_safe('/unknown') is False
-
-
-@pytest.mark.parametrize('command', ['fd', 'fs'])
-def test_source_special_command_policy_allows_favorite_aliases(
-    monkeypatch: pytest.MonkeyPatch,
-    command: str,
-) -> None:
-    monkeypatch.setattr(client_commands, '_registered_special_command', lambda query: (command, 'report'))
-
-    assert client_commands._source_special_command_is_safe('/command') is True
-
-
-@pytest.mark.parametrize(
-    ('expanded_query', 'expected'),
-    [
-        ('select 1; select 2;', True),
-        ('select 1; /system echo unsafe;', False),
-        (None, True),
-    ],
-)
-def test_favorite_source_command_requires_sql_only_expansion(
-    monkeypatch: pytest.MonkeyPatch,
-    expanded_query: str | None,
-    expected: bool,
-) -> None:
-    monkeypatch.setattr(
-        client_commands,
-        'expand_favorite_query',
-        lambda arg: (expanded_query, None if expanded_query is not None else 'invalid arguments'),
-    )
-
-    assert client_commands._favorite_source_command_is_safe('report') is expected
-
-
-@pytest.mark.parametrize('command', ['f', 'favorite'])
-def test_source_favorite_run_uses_expansion_policy(monkeypatch: pytest.MonkeyPatch, command: str) -> None:
-    arg = 'report' if command == 'f' else 'run report'
-    monkeypatch.setattr(client_commands, '_registered_special_command', lambda query: (command, arg))
-    monkeypatch.setattr(client_commands, '_favorite_source_command_is_safe', lambda favorite_arg: False)
-
-    assert client_commands._source_special_command_is_safe('/favorite') is False
 
 
 @pytest.mark.parametrize(

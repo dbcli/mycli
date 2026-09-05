@@ -1,14 +1,34 @@
 import functools
 import logging
+import re
 import shlex
 
 import sqlglot
 
 from mycli.compat import WIN
 from mycli.packages.special.delimitercommand import DelimiterCommand
+from mycli.packages.special.source import (
+    parse_source_arguments,
+    parse_source_filename,
+)
 
 logger = logging.getLogger(__name__)
 delimiter_command = DelimiterCommand()
+SOURCE_COMMAND_PATTERN = re.compile(r'^([/]?source|[/\\]\.)\s+', re.IGNORECASE)
+SOURCE_OPTIONS_PATTERN = re.compile(
+    r'^([/]?source|[/\\]\.)\s+(?P<options>(?:(?:--special|--show|--page)\s+)*)',
+    re.IGNORECASE,
+)
+
+
+def tokenize_command(command: str) -> list[sqlglot.Token]:
+    """Tokenize a command without treating source options as SQL comments."""
+    source_match = SOURCE_OPTIONS_PATTERN.match(command)
+    if source_match:
+        options_start, options_end = source_match.span('options')
+        options = command[options_start:options_end].replace('-', '_')
+        command = command[:options_start] + options + command[options_end:]
+    return sqlglot.tokenize(command)
 
 
 def find_token_indices(tokens: list[sqlglot.Token]) -> dict[str, list[int]]:
@@ -44,6 +64,16 @@ def find_sql_part(
 ):
     leftmost_dollar_pos = tokens[true_dollar_indices[0]].start
     sql_part = command[0:leftmost_dollar_pos].strip().removesuffix(delimiter_command.current).rstrip()
+    if SOURCE_COMMAND_PATTERN.match(sql_part):
+        source_arg_str = SOURCE_COMMAND_PATTERN.sub('', sql_part)
+        try:
+            filename, _allow_special, _show_queries, _page_output = parse_source_arguments(source_arg_str)
+            filename = parse_source_filename(filename)
+        except ValueError:
+            return ''
+        if not filename:
+            return ''
+        return sql_part
     try:
         statements = sqlglot.parse(sql_part, read='mysql')
     except sqlglot.errors.ParseError:
@@ -142,7 +172,7 @@ def get_redirect_components(command: str) -> tuple[str | None, str | None, str |
     """Get the parts of a hybrid shell-style redirect command."""
 
     try:
-        tokens = sqlglot.tokenize(command)
+        tokens = tokenize_command(command)
     except sqlglot.errors.TokenError:
         return None, None, None, None
 
