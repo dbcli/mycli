@@ -7,21 +7,23 @@ from mycli.packages.special import source
 @pytest.mark.parametrize(
     ('arg', 'expected'),
     [
-        ('query.sql', ('query.sql', False, False, False, 0.0)),
-        ('--special query.sql', ('query.sql', True, False, False, 0.0)),
-        ('--show query.sql', ('query.sql', False, True, False, 0.0)),
-        ('--page query.sql', ('query.sql', False, False, True, 0.0)),
-        ('--special --show --page query file.sql', ('query file.sql', True, True, True, 0.0)),
-        ('--page --show --special query file.sql', ('query file.sql', True, True, True, 0.0)),
-        ('--show --show query.sql', ('query.sql', False, True, False, 0.0)),
-        ('--page --page query.sql', ('query.sql', False, False, True, 0.0)),
-        ('--show', ('', False, True, False, 0.0)),
-        ('--throttle 0.25 query.sql', ('query.sql', False, False, False, 0.25)),
-        ('--throttle=1e-2 query.sql', ('query.sql', False, False, False, 0.01)),
-        ('--throttle 1 --show --throttle=0.5 query.sql', ('query.sql', False, True, False, 0.5)),
+        ('query.sql', ('query.sql', False, False, False, 0.0, False)),
+        ('--special query.sql', ('query.sql', True, False, False, 0.0, False)),
+        ('--show query.sql', ('query.sql', False, True, False, 0.0, False)),
+        ('--page query.sql', ('query.sql', False, False, True, 0.0, False)),
+        ('--special --show --page query file.sql', ('query file.sql', True, True, True, 0.0, False)),
+        ('--page --show --special query file.sql', ('query file.sql', True, True, True, 0.0, False)),
+        ('--show --show query.sql', ('query.sql', False, True, False, 0.0, False)),
+        ('--page --page query.sql', ('query.sql', False, False, True, 0.0, False)),
+        ('--show', ('', False, True, False, 0.0, False)),
+        ('--throttle 0.25 query.sql', ('query.sql', False, False, False, 0.25, False)),
+        ('--throttle=1e-2 query.sql', ('query.sql', False, False, False, 0.01, False)),
+        ('--throttle 1 --show --throttle=0.5 query.sql', ('query.sql', False, True, False, 0.5, False)),
+        ('--help', ('', False, False, False, 0.0, True)),
+        ('--show --help ignored.sql', ('', False, True, False, 0.0, True)),
     ],
 )
-def test_parse_source_arguments(arg: str, expected: tuple[str, bool, bool, bool, float]) -> None:
+def test_parse_source_arguments(arg: str, expected: tuple[str, bool, bool, bool, float, bool]) -> None:
     assert source.parse_source_arguments(arg) == expected
 
 

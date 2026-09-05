@@ -68,7 +68,7 @@ def find_sql_part(
     if SOURCE_COMMAND_PATTERN.match(sql_part):
         source_arg_str = SOURCE_COMMAND_PATTERN.sub('', sql_part)
         try:
-            filename, _allow_special, _show_queries, _page_output, _throttle = parse_source_arguments(source_arg_str)
+            filename, _allow_special, _show_queries, _page_output, _throttle, _show_help = parse_source_arguments(source_arg_str)
             filename = parse_source_filename(filename)
         except ValueError:
             return ''

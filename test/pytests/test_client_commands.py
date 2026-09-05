@@ -513,7 +513,9 @@ def test_change_db_without_argument_reports_error(monkeypatch: pytest.MonkeyPatc
 def test_execute_from_file_requires_filename() -> None:
     client = DummyClient()
 
-    assert list(client.execute_from_file('')) == [SQLResult(status='Missing required argument: filename.', is_error=True)]
+    assert list(client.execute_from_file('')) == [
+        SQLResult(status='Missing required argument: filename.  See /source --help.', is_error=True)
+    ]
 
 
 def test_execute_from_file_reports_open_errors() -> None:
@@ -648,6 +650,35 @@ def test_execute_from_file_runs_file_query(tmp_path: Path) -> None:
     assert client.sqlexecute.runs == ['select 1;']
 
 
+def test_execute_from_file_help_is_terminal(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = DummyClient()
+    client.sqlexecute = FakeSQLExecute()
+    opened_paths: list[str] = []
+    sleep_calls: list[float] = []
+    monkeypatch.setattr(client_commands, 'open', lambda path: opened_paths.append(path), raising=False)
+    monkeypatch.setattr(client_commands.time, 'sleep', lambda seconds: sleep_calls.append(seconds))
+
+    assert list(client.execute_from_file('--page --help ignored.sql')) == [
+        SQLResult(
+            header=['Argument', 'Description'],
+            rows=[
+                ('--special', 'Allow supported special /commands in the source file.'),
+                ('--show', 'Show each statement before executing it.'),
+                ('--page', 'Display all source output using the pager.'),
+                (
+                    '--throttle <float>, --throttle=<float>',
+                    'Seconds to wait between executing statements.',
+                ),
+                ('--help', 'Show this help.'),
+                ('<filename>', 'File containing SQL to execute.'),
+            ],
+        )
+    ]
+    assert opened_paths == []
+    assert client.sqlexecute.runs == []
+    assert sleep_calls == []
+
+
 def test_execute_from_file_throttles_between_executed_statements(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     client = DummyClient()
     sql_file = tmp_path / 'query.sql'
@@ -775,7 +806,7 @@ def test_execute_from_file_parses_special_option_and_preserves_filename(
 def test_execute_from_file_reports_missing_filename_after_options(options: str) -> None:
     client = DummyClient()
 
-    expected = [SQLResult(status='Missing required argument: filename.', is_error=True)]
+    expected = [SQLResult(status='Missing required argument: filename.  See /source --help.', is_error=True)]
     if '--page' in options:
         expected.insert(0, SQLResult(command={'name': 'source_page'}))
     assert list(client.execute_from_file(options)) == expected
@@ -802,7 +833,9 @@ def test_execute_from_file_pages_invalid_filename_error() -> None:
 def test_execute_from_file_treats_empty_quotes_as_missing_filename() -> None:
     client = DummyClient()
 
-    assert list(client.execute_from_file('""')) == [SQLResult(status='Missing required argument: filename.', is_error=True)]
+    assert list(client.execute_from_file('""')) == [
+        SQLResult(status='Missing required argument: filename.  See /source --help.', is_error=True)
+    ]
 
 
 def test_execute_from_file_runs_permitted_special_commands(capsys: pytest.CaptureFixture[str], tmp_path: Path) -> None:
