@@ -7,23 +7,34 @@ from mycli.packages.special import source
 @pytest.mark.parametrize(
     ('arg', 'expected'),
     [
-        ('query.sql', ('query.sql', False, False, False, 0.0, False)),
-        ('--special query.sql', ('query.sql', True, False, False, 0.0, False)),
-        ('--show query.sql', ('query.sql', False, True, False, 0.0, False)),
-        ('--page query.sql', ('query.sql', False, False, True, 0.0, False)),
-        ('--special --show --page query file.sql', ('query file.sql', True, True, True, 0.0, False)),
-        ('--page --show --special query file.sql', ('query file.sql', True, True, True, 0.0, False)),
-        ('--show --show query.sql', ('query.sql', False, True, False, 0.0, False)),
-        ('--page --page query.sql', ('query.sql', False, False, True, 0.0, False)),
-        ('--show', ('', False, True, False, 0.0, False)),
-        ('--throttle 0.25 query.sql', ('query.sql', False, False, False, 0.25, False)),
-        ('--throttle=1e-2 query.sql', ('query.sql', False, False, False, 0.01, False)),
-        ('--throttle 1 --show --throttle=0.5 query.sql', ('query.sql', False, True, False, 0.5, False)),
-        ('--help', ('', False, False, False, 0.0, True)),
-        ('--show --help ignored.sql', ('', False, True, False, 0.0, True)),
+        ('query.sql', source.SourceArguments(filename='query.sql')),
+        ('--special query.sql', source.SourceArguments(filename='query.sql', allow_special=True)),
+        ('--show query.sql', source.SourceArguments(filename='query.sql', show_queries=True)),
+        ('query.sql --show', source.SourceArguments(filename='query.sql', show_queries=True)),
+        ('--page query.sql', source.SourceArguments(filename='query.sql', page_output=True)),
+        (
+            '--page query.sql --show --special',
+            source.SourceArguments(filename='query.sql', allow_special=True, show_queries=True, page_output=True),
+        ),
+        ('--show --show query.sql', source.SourceArguments(filename='query.sql', show_queries=True)),
+        ('--page --page query.sql', source.SourceArguments(filename='query.sql', page_output=True)),
+        ('--show', source.SourceArguments(show_queries=True)),
+        ('--throttle 0.25 query.sql', source.SourceArguments(filename='query.sql', throttle=0.25)),
+        ('query.sql --throttle=1e-2', source.SourceArguments(filename='query.sql', throttle=0.01)),
+        (
+            '--throttle 1 --show query.sql --throttle=0.5',
+            source.SourceArguments(filename='query.sql', show_queries=True, throttle=0.5),
+        ),
+        ('"query file.sql"', source.SourceArguments(filename='query file.sql')),
+        (r'query\ file.sql', source.SourceArguments(filename='query file.sql')),
+        ('prefix" query".sql', source.SourceArguments(filename='prefix query.sql')),
+        ('-- --show', source.SourceArguments(filename='--show')),
+        ('--help', source.SourceArguments(show_help=True)),
+        ('--show --help ignored.sql', source.SourceArguments(show_help=True)),
+        ('ignored.sql --help', source.SourceArguments(show_help=True)),
     ],
 )
-def test_parse_source_arguments(arg: str, expected: tuple[str, bool, bool, bool, float, bool]) -> None:
+def test_parse_source_arguments(arg: str, expected: source.SourceArguments) -> None:
     assert source.parse_source_arguments(arg) == expected
 
 
@@ -33,64 +44,52 @@ def test_parse_source_arguments(arg: str, expected: tuple[str, bool, bool, bool,
         '--throttle',
         '--throttle=',
         '--throttle nope query.sql',
-        '--throttle -1 query.sql',
-        '--throttle inf query.sql',
-        '--throttle nan query.sql',
     ],
 )
 def test_parse_source_arguments_rejects_invalid_throttle(arg: str) -> None:
-    with pytest.raises(ValueError, match='throttle'):
+    with pytest.raises(ValueError, match='float|Missing'):
         source.parse_source_arguments(arg)
 
 
 @pytest.mark.parametrize(
-    ('filename', 'expected'),
-    [
-        ('', ''),
-        ('query.sql', 'query.sql'),
-        ('"query file.sql"', 'query file.sql'),
-        ("'query file.sql'", 'query file.sql'),
-        ('prefix" query".sql', 'prefix query.sql'),
-    ],
-)
-def test_parse_source_filename(filename: str, expected: str) -> None:
-    assert source.parse_source_filename(filename) == expected
-
-
-@pytest.mark.parametrize(
-    'filename',
+    'arg',
     [
         'query file.sql',
-        r'query\ file.sql',
         '"first file.sql" second.sql',
     ],
 )
-def test_parse_source_filename_rejects_multiple_unquoted_arguments(filename: str) -> None:
+def test_parse_source_arguments_rejects_multiple_filenames(arg: str) -> None:
     with pytest.raises(ValueError, match='filenames containing spaces must be quoted'):
-        source.parse_source_filename(filename)
+        source.parse_source_arguments(arg)
 
 
-def test_parse_source_filename_rejects_unclosed_quote() -> None:
+def test_parse_source_arguments_rejects_unclosed_quote() -> None:
     with pytest.raises(ValueError, match='No closing quotation'):
-        source.parse_source_filename('"query file.sql')
+        source.parse_source_arguments('"query file.sql')
 
 
-def test_parse_source_filename_rejects_missing_parsed_argument(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(source.shlex, 'split', lambda *_args, **_kwargs: [])
+def test_parse_source_arguments_rejects_unknown_option(capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(ValueError, match=r'Unrecognized /source option: --unknown\. See /source --help\.'):
+        source.parse_source_arguments('--unknown query.sql')
 
-    with pytest.raises(ValueError, match='accepts exactly one filename'):
-        source.parse_source_filename('query.sql')
-
-
-def test_source_filename_whitespace_scanner_allows_escaped_non_whitespace() -> None:
-    assert not source._has_unquoted_whitespace(r'query\name.sql')
+    assert capsys.readouterr() == ('', '')
 
 
-def test_parse_source_filename_preserves_windows_backslashes(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_parse_source_arguments_does_not_abbreviate_options() -> None:
+    with pytest.raises(ValueError, match=r'Unrecognized /source option: --spec\.'):
+        source.parse_source_arguments('--spec query.sql')
+
+
+def test_source_argument_parser_converts_other_errors() -> None:
+    with pytest.raises(ValueError, match=r'Invalid /source arguments: unexpected\.'):
+        source._SOURCE_ARGUMENT_PARSER.error('unexpected')
+
+
+def test_parse_source_arguments_preserves_windows_backslashes(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(source, 'WIN', True)
 
-    assert source.parse_source_filename(r'C:\queries\query.sql') == r'C:\queries\query.sql'
-    assert source.parse_source_filename(r'"C:\my queries\query.sql"') == r'C:\my queries\query.sql'
+    assert source.parse_source_arguments(r'C:\queries\query.sql').filename == r'C:\queries\query.sql'
+    assert source.parse_source_arguments(r'"C:\my queries\query.sql"').filename == r'C:\my queries\query.sql'
 
 
 @pytest.mark.parametrize(

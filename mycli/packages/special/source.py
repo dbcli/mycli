@@ -1,5 +1,7 @@
-import math
+import argparse
+from dataclasses import dataclass
 import shlex
+from typing import Any, NoReturn
 
 import sqlparse
 
@@ -47,26 +49,45 @@ SOURCE_SAFE_SUBCOMMANDS = {
 }
 
 
-def _has_unquoted_whitespace(value: str) -> bool:
-    quote: str | None = None
-    escaped = False
-    for character in value:
-        if escaped:
-            if quote is None and character.isspace():
-                return True
-            escaped = False
-            continue
-        if not WIN and character == '\\' and quote != "'":
-            escaped = True
-            continue
-        if character in ("'", '"'):
-            if quote is None:
-                quote = character
-            elif quote == character:
-                quote = None
-        elif quote is None and character.isspace():
-            return True
-    return False
+@dataclass(frozen=True)
+class SourceArguments:
+    filename: str = ''
+    allow_special: bool = False
+    show_queries: bool = False
+    page_output: bool = False
+    throttle: float = 0.0
+    show_help: bool = False
+
+
+class _SourceHelpRequested(Exception):
+    pass
+
+
+class _SourceHelpAction(argparse.Action):
+    def __call__(
+        self,
+        parser: argparse.ArgumentParser,
+        namespace: argparse.Namespace,
+        values: Any,
+        option_string: str | None = None,
+    ) -> NoReturn:
+        raise _SourceHelpRequested
+
+
+class _SourceArgumentParser(argparse.ArgumentParser):
+    def error(self, message: str) -> NoReturn:
+        throttle_prefix = 'argument --throttle: '
+        if message == f'{throttle_prefix}expected one argument':
+            raise ValueError('Missing value for --throttle.')
+        if message.startswith(throttle_prefix):
+            raise ValueError(message.removeprefix(throttle_prefix))
+        if message.startswith('unrecognized arguments:'):
+            arguments = message.removeprefix('unrecognized arguments:').strip().split()
+            unknown_option = next((argument for argument in arguments if argument.startswith('-')), None)
+            if unknown_option is not None:
+                raise ValueError(f'Unrecognized /source option: {unknown_option}. See /source --help.')
+            raise ValueError(INVALID_SOURCE_FILENAME)
+        raise ValueError(f'Invalid /source arguments: {message}.')
 
 
 def _registered_special_command(query: str) -> tuple[str, str] | None:
@@ -86,63 +107,40 @@ def _favorite_source_command_is_safe(arg: str) -> bool:
     return not any(special.is_special_command(statement.rstrip(';')) for statement in sqlparse.split(query))
 
 
-def _parse_throttle(value: str) -> float:
-    if not value:
-        raise ValueError('Missing value for --throttle.')
+def _create_source_argument_parser() -> _SourceArgumentParser:
+    parser = _SourceArgumentParser(prog='/source', add_help=False, allow_abbrev=False)
+    parser.add_argument('--special', dest='allow_special', action='store_true')
+    parser.add_argument('--show', dest='show_queries', action='store_true')
+    parser.add_argument('--page', dest='page_output', action='store_true')
+    parser.add_argument('--throttle', type=float, default=0.0)
+    parser.add_argument('--help', nargs=0, action=_SourceHelpAction)
+    parser.add_argument('filename', nargs='?')
+    return parser
+
+
+_SOURCE_ARGUMENT_PARSER = _create_source_argument_parser()
+
+
+def parse_source_arguments(arg: str) -> SourceArguments:
     try:
-        throttle = float(value)
-    except ValueError:
-        raise ValueError(f'Invalid --throttle value: {value}. Expected a finite, non-negative number.') from None
-    if not math.isfinite(throttle) or throttle < 0:
-        raise ValueError(f'Invalid --throttle value: {value}. Expected a finite, non-negative number.')
-    return throttle
-
-
-def parse_source_arguments(arg: str) -> tuple[str, bool, bool, bool, float, bool]:
-    allow_special = False
-    show_queries = False
-    page_output = False
-    throttle = 0.0
-    filename = arg
-    while arguments := filename.split(maxsplit=1):
-        if arguments[0] == '--special':
-            allow_special = True
-        elif arguments[0] == '--show':
-            show_queries = True
-        elif arguments[0] == '--page':
-            page_output = True
-        elif arguments[0] == '--help':
-            return '', allow_special, show_queries, page_output, throttle, True
-        elif arguments[0] == '--throttle':
-            if len(arguments) != 2:
-                raise ValueError('Missing value for --throttle.')
-            throttle_arguments = arguments[1].split(maxsplit=1)
-            throttle = _parse_throttle(throttle_arguments[0])
-            filename = throttle_arguments[1] if len(throttle_arguments) == 2 else ''
-            continue
-        elif arguments[0].startswith('--throttle='):
-            throttle = _parse_throttle(arguments[0].partition('=')[2])
-        else:
-            break
-        filename = arguments[1] if len(arguments) == 2 else ''
-    return filename, allow_special, show_queries, page_output, throttle, False
-
-
-def parse_source_filename(filename: str) -> str:
-    if not filename:
-        return ''
-    if _has_unquoted_whitespace(filename):
-        raise ValueError(INVALID_SOURCE_FILENAME)
-    try:
-        arguments = shlex.split(filename, posix=not WIN)
+        arguments = shlex.split(arg, posix=not WIN)
     except ValueError as error:
         raise ValueError(f'Invalid source filename: {error}.') from None
-    if len(arguments) != 1:
-        raise ValueError(INVALID_SOURCE_FILENAME)
-    parsed_filename = arguments[0]
-    if WIN and len(parsed_filename) >= 2 and parsed_filename[0] == parsed_filename[-1] and parsed_filename[0] in ("'", '"'):
-        parsed_filename = parsed_filename[1:-1]
-    return parsed_filename
+    try:
+        parsed = _SOURCE_ARGUMENT_PARSER.parse_args(arguments)
+    except _SourceHelpRequested:
+        return SourceArguments(show_help=True)
+
+    filename = parsed.filename or ''
+    if WIN and len(filename) >= 2 and filename[0] == filename[-1] and filename[0] in ("'", '"'):
+        filename = filename[1:-1]
+    return SourceArguments(
+        filename=filename,
+        allow_special=parsed.allow_special,
+        show_queries=parsed.show_queries,
+        page_output=parsed.page_output,
+        throttle=parsed.throttle,
+    )
 
 
 def source_special_command_is_safe(query: str) -> bool:

@@ -55,10 +55,7 @@ from mycli.packages.special.iocommands import (
     write_pipe_once,
     write_tee,
 )
-from mycli.packages.special.source import (
-    parse_source_arguments,
-    parse_source_filename,
-)
+from mycli.packages.special.source import parse_source_arguments
 
 if not os.environ.get('MYCLI_LLM_OFF'):
     from mycli.packages.special.llm import (
@@ -125,7 +122,6 @@ __all__: list[str] = [
     'list_tables',
     'open_external_editor',
     'parse_source_arguments',
-    'parse_source_filename',
     'parse_special_command',
     'ping',
     'register_special_command',

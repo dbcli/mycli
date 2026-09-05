@@ -25,6 +25,7 @@ Internal
 * Upgrade `coverage` dev dependency to v7.15.4.
 * Upgrade `pytest-cov` dev dependency to v7.1.0.
 * Upgrade `wcwidth` dependency to v0.8.3.
+* Use `argparse` to process arguments to `/source`.
 
 
 2.19.0 (2026/09/02)

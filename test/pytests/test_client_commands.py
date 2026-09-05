@@ -720,7 +720,7 @@ def test_execute_from_file_reports_invalid_throttle_without_opening_file(monkeyp
 
     assert list(client.execute_from_file('--throttle nope query.sql')) == [
         SQLResult(
-            status='Invalid --throttle value: nope. Expected a finite, non-negative number.',
+            status="invalid float value: 'nope'",
             is_error=True,
         )
     ]
@@ -825,7 +825,6 @@ def test_execute_from_file_pages_invalid_filename_error() -> None:
     client = DummyClient()
 
     assert list(client.execute_from_file('--page query file.sql')) == [
-        SQLResult(command={'name': 'source_page'}),
         SQLResult(status=source_commands.INVALID_SOURCE_FILENAME, is_error=True),
     ]
 
