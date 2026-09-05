@@ -17,8 +17,8 @@ from mycli.compat import WIN
 
 # This should be as small as possible and yet still
 # ward off SSL errors at connection time.  We know
-# that 0.1 is too small on at least one Mac.
-TUNNEL_STABILIZATION_PAUSE = 0.15
+# that 0.15 is too small on at least one Mac.
+TUNNEL_STABILIZATION_PAUSE = 0.20
 
 
 class BoundaryTunnelError(RuntimeError):
