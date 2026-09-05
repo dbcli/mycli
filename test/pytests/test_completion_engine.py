@@ -894,7 +894,7 @@ def test_suggest_type_handles_parser_results_shorter_than_cursor(monkeypatch):
             [
                 {
                     'type': 'special_subcommand',
-                    'subcommands': ['--special', '--show', '--page', '--throttle'],
+                    'subcommands': ['--special', '--show', '--page', '--throttle', '--help'],
                 },
                 SOURCE_FILE_SUGGESTION,
             ],
@@ -904,7 +904,7 @@ def test_suggest_type_handles_parser_results_shorter_than_cursor(monkeypatch):
             [
                 {
                     'type': 'special_subcommand',
-                    'subcommands': ['--special', '--show', '--page', '--throttle'],
+                    'subcommands': ['--special', '--show', '--page', '--throttle', '--help'],
                 },
                 SOURCE_FILE_SUGGESTION,
             ],
@@ -914,7 +914,7 @@ def test_suggest_type_handles_parser_results_shorter_than_cursor(monkeypatch):
             [
                 {
                     'type': 'special_subcommand',
-                    'subcommands': ['--special', '--show', '--page', '--throttle'],
+                    'subcommands': ['--special', '--show', '--page', '--throttle', '--help'],
                 }
             ],
         ),
@@ -922,40 +922,52 @@ def test_suggest_type_handles_parser_results_shorter_than_cursor(monkeypatch):
         (
             'source --special ',
             [
-                {'type': 'special_subcommand', 'subcommands': ['--show', '--page', '--throttle']},
+                {'type': 'special_subcommand', 'subcommands': ['--show', '--page', '--throttle', '--help']},
                 SOURCE_FILE_SUGGESTION,
             ],
         ),
         (
             'source --special --s',
-            [{'type': 'special_subcommand', 'subcommands': ['--show', '--page', '--throttle']}],
+            [{'type': 'special_subcommand', 'subcommands': ['--show', '--page', '--throttle', '--help']}],
         ),
         ('source --show', []),
         (
             'source --show ',
             [
-                {'type': 'special_subcommand', 'subcommands': ['--special', '--page', '--throttle']},
+                {'type': 'special_subcommand', 'subcommands': ['--special', '--page', '--throttle', '--help']},
                 SOURCE_FILE_SUGGESTION,
             ],
         ),
         (
             'source --show --special ',
             [
-                {'type': 'special_subcommand', 'subcommands': ['--page', '--throttle']},
+                {'type': 'special_subcommand', 'subcommands': ['--page', '--throttle', '--help']},
                 SOURCE_FILE_SUGGESTION,
             ],
         ),
         (
             'source --show --special --page ',
-            [{'type': 'special_subcommand', 'subcommands': ['--throttle']}, SOURCE_FILE_SUGGESTION],
+            [{'type': 'special_subcommand', 'subcommands': ['--throttle', '--help']}, SOURCE_FILE_SUGGESTION],
         ),
+        (
+            'source --h',
+            [
+                {
+                    'type': 'special_subcommand',
+                    'subcommands': ['--special', '--show', '--page', '--throttle', '--help'],
+                }
+            ],
+        ),
+        ('source --help', []),
+        ('source --help ', []),
+        ('source --show --help ignored.sql', []),
         ('source --throttle', []),
         ('source --throttle ', []),
         ('source --throttle 0.25', []),
         (
             'source --throttle 0.25 ',
             [
-                {'type': 'special_subcommand', 'subcommands': ['--special', '--show', '--page']},
+                {'type': 'special_subcommand', 'subcommands': ['--special', '--show', '--page', '--help']},
                 SOURCE_FILE_SUGGESTION,
             ],
         ),
@@ -963,7 +975,7 @@ def test_suggest_type_handles_parser_results_shorter_than_cursor(monkeypatch):
         (
             'source --throttle=0.25 ',
             [
-                {'type': 'special_subcommand', 'subcommands': ['--special', '--show', '--page']},
+                {'type': 'special_subcommand', 'subcommands': ['--special', '--show', '--page', '--help']},
                 SOURCE_FILE_SUGGESTION,
             ],
         ),
@@ -1926,7 +1938,7 @@ def test_source_is_file(expression):
     )
     suggestions = suggest_type(expression, expression)
     assert suggestions == [
-        {'type': 'special_subcommand', 'subcommands': ['--special', '--show', '--page', '--throttle']},
+        {'type': 'special_subcommand', 'subcommands': ['--special', '--show', '--page', '--throttle', '--help']},
         SOURCE_FILE_SUGGESTION,
     ]
 

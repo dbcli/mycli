@@ -18,6 +18,7 @@ from mycli.packages.interactive_utils import confirm_destructive_query
 from mycli.packages.ptoolkit.history import FileHistoryWithTimestamp
 from mycli.packages.special.main import ArgType, SpecialCommandAlias
 from mycli.packages.special.source import (
+    SOURCE_HELP_ROWS,
     parse_source_arguments,
     parse_source_filename,
     source_special_command_is_safe,
@@ -290,9 +291,12 @@ class ClientCommandsMixin:
 
     def execute_from_file(self, arg: str, **_) -> Generator[SQLResult, None, None]:
         try:
-            filename, allow_special, show_queries, page_output, throttle = parse_source_arguments(arg)
+            filename, allow_special, show_queries, page_output, throttle, show_help = parse_source_arguments(arg)
         except ValueError as error:
             yield SQLResult(status=str(error), is_error=True)
+            return
+        if show_help:
+            yield SQLResult(header=['Argument', 'Description'], rows=SOURCE_HELP_ROWS)
             return
         if page_output:
             yield SQLResult(command={'name': 'source_page'})
@@ -302,7 +306,7 @@ class ClientCommandsMixin:
             yield SQLResult(status=str(error), is_error=True)
             return
         if not filename:
-            yield SQLResult(status="Missing required argument: filename.", is_error=True)
+            yield SQLResult(status="Missing required argument: filename.  See /source --help.", is_error=True)
             return
 
         try:

@@ -11,6 +11,7 @@ from mycli.packages.special.dsn_aliases import DSN_SUBCOMMANDS
 from mycli.packages.special.favoritequeries import FAVORITE_SUBCOMMANDS
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
 from mycli.packages.special.main import parse_special_command
+from mycli.packages.special.source import SOURCE_BOOLEAN_OPTIONS, SOURCE_OPTIONS
 from mycli.packages.sql_utils import extract_tables, find_prev_keyword, last_word
 
 sqlparse.engine.grouping.MAX_GROUPING_DEPTH = None  # type: ignore[assignment]
@@ -816,8 +817,7 @@ def suggest_special(text: str) -> list[dict[str, Any]]:
         'source',
         '/source',
     ]:
-        source_options = ['--special', '--show', '--page', '--throttle']
-        source_boolean_options = source_options[:-1]
+        source_options = list(SOURCE_OPTIONS)
         source_arguments = _arg.split()
         if not source_arguments:
             return [
@@ -829,10 +829,12 @@ def suggest_special(text: str) -> list[dict[str, Any]]:
         argument_index = 0
         while argument_index < len(source_arguments):
             argument = source_arguments[argument_index]
-            if argument in source_boolean_options:
+            if argument in SOURCE_BOOLEAN_OPTIONS:
                 used_options.add(argument)
                 argument_index += 1
                 continue
+            if argument == '--help':
+                return []
             if argument == '--throttle':
                 used_options.add(argument)
                 argument_index += 1

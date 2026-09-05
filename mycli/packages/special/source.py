@@ -9,6 +9,19 @@ from mycli.packages.special import main as special_main
 from mycli.packages.special.iocommands import expand_favorite_query
 
 INVALID_SOURCE_FILENAME = 'Source accepts exactly one filename; filenames containing spaces must be quoted.'
+SOURCE_BOOLEAN_OPTIONS = ('--special', '--show', '--page')
+SOURCE_OPTIONS = (*SOURCE_BOOLEAN_OPTIONS, '--throttle', '--help')
+SOURCE_HELP_ROWS = [
+    ('--special', 'Allow supported special /commands in the source file.'),
+    ('--show', 'Show each statement before executing it.'),
+    ('--page', 'Display all source output using the pager.'),
+    (
+        '--throttle <float>, --throttle=<float>',
+        'Seconds to wait between executing statements.',
+    ),
+    ('--help', 'Show this help.'),
+    ('<filename>', 'File containing SQL to execute.'),
+]
 SOURCE_SAFE_SPECIAL_COMMANDS = frozenset({
     'connect',
     'fd',
@@ -85,7 +98,7 @@ def _parse_throttle(value: str) -> float:
     return throttle
 
 
-def parse_source_arguments(arg: str) -> tuple[str, bool, bool, bool, float]:
+def parse_source_arguments(arg: str) -> tuple[str, bool, bool, bool, float, bool]:
     allow_special = False
     show_queries = False
     page_output = False
@@ -98,6 +111,8 @@ def parse_source_arguments(arg: str) -> tuple[str, bool, bool, bool, float]:
             show_queries = True
         elif arguments[0] == '--page':
             page_output = True
+        elif arguments[0] == '--help':
+            return '', allow_special, show_queries, page_output, throttle, True
         elif arguments[0] == '--throttle':
             if len(arguments) != 2:
                 raise ValueError('Missing value for --throttle.')
@@ -110,7 +125,7 @@ def parse_source_arguments(arg: str) -> tuple[str, bool, bool, bool, float]:
         else:
             break
         filename = arguments[1] if len(arguments) == 2 else ''
-    return filename, allow_special, show_queries, page_output, throttle
+    return filename, allow_special, show_queries, page_output, throttle, False
 
 
 def parse_source_filename(filename: str) -> str:

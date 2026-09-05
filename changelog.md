@@ -14,6 +14,7 @@ Bug Fixes
 Documentation
 --------
 * Badge color nit in `README.md`.
+* Add a `/source --help` option.
 
 
 Internal
