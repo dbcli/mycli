@@ -961,6 +961,19 @@ def test_suggest_type_handles_parser_results_shorter_than_cursor(monkeypatch):
         ('source --help', []),
         ('source --help ', []),
         ('source --show --help ignored.sql', []),
+        (
+            'source --show "query',
+            [{'type': 'file_name', 'quote_spaces': True, 'source_filename': '"query'}],
+        ),
+        (
+            'source --throttle 0.25 "query',
+            [{'type': 'file_name', 'quote_spaces': True, 'source_filename': '"query'}],
+        ),
+        (
+            'source --throttle=0.25 "query',
+            [{'type': 'file_name', 'quote_spaces': True, 'source_filename': '"query'}],
+        ),
+        ('source --throttle "', [{'type': 'file_name', 'quote_spaces': True, 'source_filename': ''}]),
         ('source --throttle', []),
         ('source --throttle ', []),
         ('source --throttle 0.25', []),
@@ -984,6 +997,37 @@ def test_suggest_type_handles_parser_results_shorter_than_cursor(monkeypatch):
             [{'type': 'file_name', 'quote_spaces': True, 'source_filename': 'query.sql'}],
         ),
         ('source query.sql', [{'type': 'file_name', 'quote_spaces': True, 'source_filename': 'query.sql'}]),
+        (
+            'source query.sql ',
+            [
+                {
+                    'type': 'special_subcommand',
+                    'subcommands': ['--special', '--show', '--page', '--throttle', '--help'],
+                }
+            ],
+        ),
+        (
+            'source query.sql --show ',
+            [
+                {
+                    'type': 'special_subcommand',
+                    'subcommands': ['--special', '--page', '--throttle', '--help'],
+                }
+            ],
+        ),
+        ('source query.sql --throttle ', []),
+        (
+            'source query.sql --throttle 0.25 ',
+            [
+                {
+                    'type': 'special_subcommand',
+                    'subcommands': ['--special', '--show', '--page', '--help'],
+                }
+            ],
+        ),
+        ('source -- ', [SOURCE_FILE_SUGGESTION]),
+        ('source -- query.sql', [{'type': 'file_name', 'quote_spaces': True, 'source_filename': 'query.sql'}]),
+        ('source first.sql second.sql', []),
         ('\\o ', [{'type': 'file_name'}]),
         ('\\once ', [{'type': 'file_name'}]),
         ('tee ', [{'type': 'file_name'}]),

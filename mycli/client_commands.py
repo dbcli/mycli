@@ -20,7 +20,6 @@ from mycli.packages.special.main import ArgType, SpecialCommandAlias
 from mycli.packages.special.source import (
     SOURCE_HELP_ROWS,
     parse_source_arguments,
-    parse_source_filename,
     source_special_command_is_safe,
 )
 from mycli.packages.sqlresult import SQLResult
@@ -291,20 +290,16 @@ class ClientCommandsMixin:
 
     def execute_from_file(self, arg: str, **_) -> Generator[SQLResult, None, None]:
         try:
-            filename, allow_special, show_queries, page_output, throttle, show_help = parse_source_arguments(arg)
+            source_arguments = parse_source_arguments(arg)
         except ValueError as error:
             yield SQLResult(status=str(error), is_error=True)
             return
-        if show_help:
+        if source_arguments.show_help:
             yield SQLResult(header=['Argument', 'Description'], rows=SOURCE_HELP_ROWS)
             return
-        if page_output:
+        if source_arguments.page_output:
             yield SQLResult(command={'name': 'source_page'})
-        try:
-            filename = parse_source_filename(filename)
-        except ValueError as error:
-            yield SQLResult(status=str(error), is_error=True)
-            return
+        filename = source_arguments.filename
         if not filename:
             yield SQLResult(status="Missing required argument: filename.  See /source --help.", is_error=True)
             return
@@ -330,7 +325,7 @@ class ClientCommandsMixin:
 
                 special_query = query.rstrip(';')
                 if special.is_special_command(special_query):
-                    if not allow_special:
+                    if not source_arguments.allow_special:
                         yield SQLResult(
                             status='Special commands are not supported without /source --special.',
                             is_error=True,
@@ -343,10 +338,10 @@ class ClientCommandsMixin:
                             is_error=True,
                         )
                         return
-                    if executed_statement and throttle > 0:
-                        time.sleep(throttle)
-                    if show_queries:
-                        if page_output:
+                    if executed_statement and source_arguments.throttle > 0:
+                        time.sleep(source_arguments.throttle)
+                    if source_arguments.show_queries:
+                        if source_arguments.page_output:
                             yield SQLResult(command={'name': 'source_show', 'text': special_query})
                         else:
                             click.secho(f'> {special_query}')
@@ -356,10 +351,10 @@ class ClientCommandsMixin:
 
                 if self.destructive_warning and confirm_destructive_query(self.destructive_keywords, query) is False:
                     continue
-                if executed_statement and throttle > 0:
-                    time.sleep(throttle)
-                if show_queries:
-                    if page_output:
+                if executed_statement and source_arguments.throttle > 0:
+                    time.sleep(source_arguments.throttle)
+                if source_arguments.show_queries:
+                    if source_arguments.page_output:
                         yield SQLResult(command={'name': 'source_show', 'text': query})
                     else:
                         click.secho(f'> {query}')

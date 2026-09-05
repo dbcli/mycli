@@ -9,26 +9,26 @@ from mycli.compat import WIN
 from mycli.packages.special.delimitercommand import DelimiterCommand
 from mycli.packages.special.source import (
     parse_source_arguments,
-    parse_source_filename,
 )
 
 logger = logging.getLogger(__name__)
 delimiter_command = DelimiterCommand()
 SOURCE_COMMAND_PATTERN = re.compile(r'^([/]?source|[/\\]\.)\s+', re.IGNORECASE)
-SOURCE_OPTIONS_PATTERN = re.compile(
-    r'^([/]?source|[/\\]\.)\s+'
-    r'(?P<options>(?:(?:--special|--show|--page)\s+|--throttle(?:=[^\s]+|\s+[^\s]+)\s+)*)',
-    re.IGNORECASE,
-)
+SOURCE_OPTION_PATTERN = re.compile(r'(?<!\S)--(?:special|show|page|help|throttle)(?==|\s|$)', re.IGNORECASE)
+SOURCE_OPTION_TERMINATOR_PATTERN = re.compile(r'(?<!\S)--(?=\s|$)')
+HYBRID_OPERATOR_PATTERN = re.compile(r'\$(?:>>?|\|)')
 
 
 def tokenize_command(command: str) -> list[sqlglot.Token]:
     """Tokenize a command without treating source options as SQL comments."""
-    source_match = SOURCE_OPTIONS_PATTERN.match(command)
-    if source_match:
-        options_start, options_end = source_match.span('options')
-        options = command[options_start:options_end].replace('-', '_')
-        command = command[:options_start] + options + command[options_end:]
+    if SOURCE_COMMAND_PATTERN.match(command):
+        operator_match = HYBRID_OPERATOR_PATTERN.search(command)
+        source_end = operator_match.start() if operator_match is not None else len(command)
+        source_part = command[:source_end]
+        terminator_match = SOURCE_OPTION_TERMINATOR_PATTERN.search(source_part)
+        options_end = terminator_match.start() if terminator_match is not None else len(source_part)
+        masked_options = SOURCE_OPTION_PATTERN.sub(lambda match: match.group().replace('-', '_'), source_part[:options_end])
+        command = masked_options + source_part[options_end:] + command[source_end:]
     return sqlglot.tokenize(command)
 
 
@@ -68,8 +68,7 @@ def find_sql_part(
     if SOURCE_COMMAND_PATTERN.match(sql_part):
         source_arg_str = SOURCE_COMMAND_PATTERN.sub('', sql_part)
         try:
-            filename, _allow_special, _show_queries, _page_output, _throttle, _show_help = parse_source_arguments(source_arg_str)
-            filename = parse_source_filename(filename)
+            filename = parse_source_arguments(source_arg_str).filename
         except ValueError:
             return ''
         if not filename:

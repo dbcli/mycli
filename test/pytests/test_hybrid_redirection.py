@@ -177,6 +177,18 @@ def test_get_redirect_components_preserves_source_options(option: str) -> None:
     )
 
 
+@pytest.mark.parametrize('option', ['--special', '--show', '--page', '--throttle 0.25', '--throttle=0.25'])
+def test_get_redirect_components_preserves_source_options_after_filename(option: str) -> None:
+    command = f'/source query.sql {option} $> out.txt'
+
+    assert hybrid_redirection.get_redirect_components(command) == (
+        f'/source query.sql {option}',
+        None,
+        '>',
+        'out.txt',
+    )
+
+
 def test_get_redirect_components_handles_combined_source_options_and_redirects() -> None:
     command = '/source --page --show --special query.sql $| cat $>> out.txt'
 
