@@ -86,7 +86,7 @@ _path_files() {
 }
 
 typeset -a captured compset_calls path_file_calls
-typeset PREFIX IPREFIX used_unambiguous
+typeset PREFIX='' IPREFIX='' used_unambiguous=''
 compadd() {
     local array_name=''
     local candidate
