@@ -30,6 +30,7 @@ A command line client for MySQL with auto-completion and syntax highlighting.
 ├── mycli/main_modes/                     # main execution paths
 ├── mycli/main_modes/batch.py             # `--batch` mode
 ├── mycli/main_modes/checkup.py           # `--checkup` mode
+├── mycli/main_modes/completions.py       # `--completions` mode
 ├── mycli/main_modes/execute.py           # `--execute` mode
 ├── mycli/main_modes/list_dsn.py          # `--list-dsn` mode
 ├── mycli/main_modes/repl.py              # interactive REPL mode
@@ -43,9 +44,11 @@ A command line client for MySQL with auto-completion and syntax highlighting.
 ├── mycli/packages/hybrid_redirection.py  # implementation of shell-style redirects
 ├── mycli/packages/interactive_utils.py   # utilities for confirming on destructive statements
 ├── mycli/packages/key_binding_utils.py   # handlers for key bindings and related special commands
-├── mycli/packages/sql_utils.py           # utilities for parsing SQL statements
+├── mycli/packages/polars_completion.py   # completions for `.|` transforms
+├── mycli/packages/polars_transform.py    # implements `.|` transforms
 ├── mycli/packages/ptoolkit/              # extends prompt_toolkit
 ├── mycli/packages/special/               # implementation of mycli special commands
+├── mycli/packages/sql_utils.py           # utilities for parsing SQL statements
 ├── mycli/packages/sqlresult.py           # the `SQLResult` dataclass for holding responses
 ├── mycli/packages/string_utils.py        # generic string utilities
 ├── mycli/packages/tabular_output/        # extends cli_helper with additional output formats
