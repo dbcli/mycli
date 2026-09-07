@@ -4,6 +4,7 @@ Upcoming (TBD)
 Features
 --------
 * Allow `/tee` and `/once` to complete on any file extension.
+* Publish an image to ghcr.io on release.
 
 
 Bug Fixes
