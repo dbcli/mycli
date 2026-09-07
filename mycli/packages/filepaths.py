@@ -23,7 +23,7 @@ def list_path(root_dir: str) -> list[str]:
     for name in sorted(os.listdir(root_dir)):
         if name.startswith('.'):
             continue
-        elif os.path.isdir(name):
+        elif os.path.isdir(os.path.join(root_dir, name)):
             dirs.append(f'{name}/')
         # if .sql is too restrictive it can be made configurable with some effort
         elif name.lower().endswith('.sql'):
@@ -85,7 +85,7 @@ def suggest_path(root_dir: str) -> list[str]:
             *list_path(os.curdir),
         ]
 
-    if root_dir[0] not in ('/', '~') and root_dir[0:2] != './':
+    if root_dir[0] not in ('/', '~') and root_dir[0:2] != './' and not os.path.dirname(root_dir):
         return list_path(os.curdir)
 
     if "~" in root_dir:

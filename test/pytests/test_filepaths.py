@@ -42,8 +42,7 @@ def test_default_socket_dirs_import_variants(monkeypatch: pytest.MonkeyPatch) ->
     assert windows.DEFAULT_SOCKET_DIRS == []
 
 
-def test_list_path_lists_sql_files_and_directories(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.chdir(tmp_path)
+def test_list_path_lists_sql_files_and_directories(tmp_path: Path) -> None:
     (tmp_path / '.hidden.sql').write_text('select 1\n', encoding='utf-8')
     (tmp_path / 'visible.SQL').write_text('select 1\n', encoding='utf-8')
     (tmp_path / 'notes.txt').write_text('ignored\n', encoding='utf-8')
@@ -90,8 +89,10 @@ def test_suggest_path_branches(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     nested = tmp_path / 'nested'
     nested.mkdir()
     (nested / 'inside.sql').write_text('select 1\n', encoding='utf-8')
-    assert filepaths.suggest_path(str(nested / 'missing.sql')) == ['inside.sql']
-    assert filepaths.suggest_path('./nested/missing.sql') == ['inside.sql']
+    (nested / 'child').mkdir()
+    assert filepaths.suggest_path(str(nested / 'missing.sql')) == ['inside.sql', 'child/']
+    assert filepaths.suggest_path('./nested/missing.sql') == ['inside.sql', 'child/']
+    assert filepaths.suggest_path('nested/') == ['inside.sql', 'child/']
 
 
 def test_dir_path_exists(tmp_path: Path) -> None:

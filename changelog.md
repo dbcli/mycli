@@ -4,6 +4,8 @@ Upcoming (TBD)
 Bug Fixes
 --------
 * Raise Boundary tunnel stabilization pause to 0.2 sec.
+* Fix pathname completions not descending into directories.
+* Fix pathname completions ignoring `~/` and `/` initial directories.
 
 
 Internal
