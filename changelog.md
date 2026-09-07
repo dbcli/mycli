@@ -13,6 +13,11 @@ Bug Fixes
 * Fix pathname completions ignoring `~/` and `/` initial directories.
 
 
+Documentation
+--------
+* Add some links to `README.md` and format compatible servers with bullets.
+
+
 Internal
 ---------
 * Fix the zsh completion test harness when `PREFIX` is exported.
