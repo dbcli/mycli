@@ -1,5 +1,7 @@
 FROM python:3.14
 
+ENV DEBIAN_FRONTEND=noninteractive
+
 RUN apt-get update -qq && \
     apt-get install -y --no-install-recommends --no-install-suggests -qq \
     fzf \
@@ -10,6 +12,6 @@ RUN apt-get update -qq && \
 
 COPY . /app
 
-RUN cd /app && pip install -e .[llm,dataframe]
+RUN cd /app && pip install --root-user-action -e .[llm,dataframe]
 
 CMD ["mycli", "--help"]
