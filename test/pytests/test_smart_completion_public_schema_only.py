@@ -858,6 +858,28 @@ def test_source_eager_completion(completer, complete_event, tmp_path, monkeypatc
         raise AssertionError(error)
 
 
+def test_source_completion_advances_into_nested_directories(completer, complete_event, tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    nested = tmp_path / 'doc' / 'nested'
+    nested.mkdir(parents=True)
+    (nested / 'query.sql').touch()
+    special.register_special_command(
+        ...,
+        'source',
+        '\\. <file>',
+        'Execute commands from file.',
+        aliases=[special.SpecialCommandAlias('\\.', case_sensitive=False)],
+    )
+
+    text = 'source doc/'
+    result = list(completer.get_completions(Document(text=text, cursor_position=len(text)), complete_event))
+    assert result == [Completion(text='doc/nested/', start_position=-4)]
+
+    text = 'source doc/nested/'
+    result = list(completer.get_completions(Document(text=text, cursor_position=len(text)), complete_event))
+    assert result == [Completion(text='doc/nested/query.sql', start_position=-11)]
+
+
 @pytest.mark.skipif(os.name == 'nt', reason='POSIX quoting expectations')
 def test_source_completion_quotes_paths_with_spaces(completer, complete_event, tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
