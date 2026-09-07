@@ -142,7 +142,7 @@ def disable_show_warnings() -> Generator[SQLResult, None, None]:
 @special_command(
     "pager",
     "/pager [command]",
-    "Set pager to [command]. Print query results via pager.",
+    "Set pager to [command]; print results via pager.",
     arg_type=ArgType.PARSED_QUERY,
     case_sensitive=True,
     aliases=[SpecialCommandAlias("\\P", case_sensitive=True)],
@@ -181,7 +181,7 @@ def disable_pager() -> list[SQLResult]:
 @special_command(
     "\\timing",
     "/timing",
-    "Toggle timing of queries.",
+    "Toggle query timing.",
     arg_type=ArgType.NO_ARGUMENT,
     case_sensitive=True,
     aliases=[SpecialCommandAlias("\\t", case_sensitive=True)],
@@ -358,7 +358,7 @@ def set_redirect(command_part: str | None, file_operator_part: str | None, file_
 @special_command(
     r'\favorite',
     '/favorite <command>',
-    'Alternative favorite query interface. See /favorite help.',
+    'Manage favorite queries (/favorite help).',
     arg_type=ArgType.PARSED_QUERY,
     case_sensitive=False,
     completion_snippet='manage favorite queries',
@@ -413,8 +413,8 @@ def favorite(arg: str, cur: Cursor | None = None, **_) -> Iterable[SQLResult]:
 
 @special_command(
     "\\f",
-    "/f [name [args..] [--key=value]]",
-    "List or execute favorite queries.",
+    "/f [name [args] [--key=val]]",
+    "Run favorite query shortcut.",
     arg_type=ArgType.PARSED_QUERY,
     case_sensitive=True,
     completion_snippet='list or run favorite queries',
@@ -588,8 +588,8 @@ def subst_favorite_query_args(query: str, args: list[str]) -> list[str | None]:
 @special_command(
     "\\fs",
     "/fs <name> <query>",
-    "Save a favorite query.",
-    completion_snippet='save favorite queries',
+    "Save favorite query shortcut.",
+    completion_snippet='save favorite query',
 )
 def save_favorite_query(arg: str, **_) -> list[SQLResult]:
     """Save a new favorite query."""
@@ -643,8 +643,8 @@ def is_favorite_save_command(statement: str) -> bool:
 @special_command(
     "\\fd",
     "/fd <name>",
-    "Delete a favorite query.",
-    completion_snippet='delete favorite queries',
+    "Delete favorite query shortcut.",
+    completion_snippet='delete favorite query',
 )
 def delete_favorite_query(arg: str, **_) -> list[SQLResult]:
     """Delete an existing favorite query."""
@@ -663,8 +663,8 @@ def _delete_favorite_query(arg: str, usage: str) -> list[SQLResult]:
 
 @special_command(
     r'\dsn',
-    '/dsn <help|list|show|save|edit|delete>',
-    'Manage saved DSNs. See /dsn help.',
+    '/dsn <command>',
+    'Manage saved DSNs (/dsn help).',
     arg_type=ArgType.PARSED_QUERY,
     case_sensitive=False,
     completion_snippet='manage saved DSNs',
@@ -743,8 +743,8 @@ def _edit_dsn_alias(alias: str) -> list[SQLResult]:
 @special_command(
     "system",
     "/system [-r] <command>",
-    "Execute a system shell command (raw mode with -r).",
-    completion_snippet='execute system command',
+    "Execute shell command (-r for raw mode).",
+    completion_snippet='execute shell command',
 )
 def execute_system_command(arg: str, **_) -> list[SQLResult]:
     """Execute a system shell command."""
@@ -826,7 +826,7 @@ def parseargfile(arg: str) -> tuple[str, str]:
 @special_command(
     "tee",
     "/tee [-o] <file>",
-    "Append all results to an output file (overwrite using -o).",
+    "Append all results to file (-o to overwrite).",
     completion_snippet='append all results to file',
 )
 def set_tee(arg: str, **_) -> list[SQLResult]:
@@ -850,7 +850,7 @@ def close_tee() -> None:
 @special_command(
     "notee",
     "/notee",
-    "Stop writing results to an output file.",
+    "Stop writing all results to tee file.",
     completion_snippet='stop writing to tee file',
 )
 def no_tee(arg: str, **_) -> list[SQLResult]:
@@ -871,9 +871,9 @@ def write_tee(output: str | ANSI | FormattedText, nl: bool = True) -> None:
 @special_command(
     "\\once",
     "/once [-o] <file>",
-    "Append next result to an output file (overwrite using -o).",
+    "Append next result to a file (-o to overwrite).",
     aliases=[SpecialCommandAlias("\\o", case_sensitive=False)],
-    completion_snippet='append one result to file',
+    completion_snippet='append next result to file',
 )
 def set_once(arg: str, **_) -> list[SQLResult]:
     global once_file, written_to_once_file
@@ -935,9 +935,9 @@ def _run_post_redirect_hook(post_redirect_command: str, filename: str) -> None:
 @special_command(
     "\\pipe_once",
     "/pipe_once <command>",
-    "Send next result to a subprocess.",
+    "Send next result to subprocess.",
     aliases=[SpecialCommandAlias("\\|", case_sensitive=False)],
-    completion_snippet='send one result to subprocess',
+    completion_snippet='next result to subprocess',
 )
 def set_pipe_once(arg: str, **_) -> list[SQLResult]:
     if not arg:
@@ -999,14 +999,14 @@ def flush_pipe_once_if_written(post_redirect_command: str) -> None:
 
 @special_command(
     "watch",
-    "/watch [seconds] [-c] <query>",
-    "Execute query every [seconds] seconds (5 by default).",
+    "/watch [sec] [-c] <query>",
+    "Execute query every [sec] seconds (default 5).",
     completion_snippet='run query every N seconds',
 )
 def watch_query(arg: str, **kwargs) -> Generator[SQLResult, None, None]:
-    usage = """Syntax: watch [seconds] [-c] query.
-    * seconds: The interval at the query will be repeated, in seconds.
-               By default 5.
+    usage = """Syntax: watch [sec] [-c] query.
+    * sec: The interval at the query will be repeated, in seconds.
+           By default: 5.
     * -c: Clears the screen between every iteration.
 """
     if not arg:
@@ -1072,8 +1072,8 @@ def watch_query(arg: str, **kwargs) -> Generator[SQLResult, None, None]:
 @special_command(
     "delimiter",
     "/delimiter <string>",
-    "Change end-of-statement delimiter.",
-    completion_snippet='change end-of-statement delimiter',
+    "Set end-of-statement delimiter.",
+    completion_snippet='set end-of-statement delimiter',
 )
 def set_delimiter(arg: str, **_) -> list[SQLResult]:
     return delimiter_command.set(arg)

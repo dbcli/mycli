@@ -16,6 +16,7 @@ Bug Fixes
 Documentation
 --------
 * Add some links to `README.md` and format compatible servers with bullets.
+* Squeeze inline `/help` table width down to 110 characters.
 
 
 Internal

@@ -122,12 +122,12 @@ def test_register_special_commands_registers_expected_commands(monkeypatch: pyte
     assert calls[5][0] == client.execute_from_file
     assert calls[5][2:4] == (
         '/source [options] <file>',
-        'Execute queries from a file.',
+        'Execute queries from file.',
     )
     assert calls[6][0] == client.change_prompt_format
-    assert calls[6][2:4] == ('/prompt [string]', 'Show or change prompt format.')
+    assert calls[6][2:4] == ('/prompt [string]', 'Set or show prompt format.')
     assert calls[7][0] == client.config_command
-    assert calls[7][2:4] == ('/config <help|get|search|edit> [key]', 'Inspect settings from config files.')
+    assert calls[7][2:4] == ('/config <command> [key]', 'Inspect config file settings (/config help).')
 
 
 def test_rehash_refreshes_frecency_and_completions(monkeypatch: pytest.MonkeyPatch) -> None:
