@@ -38,8 +38,12 @@ Feature: manipulate tables:
       and we answer the destructive warning with "n"
       then we see text "Wise choice!"
 
-   # TODO (amjith). This scenario fails in GH actions but only in 3.12. Unable
-   # to reproduce locally.
+   # TODO (amjith). This scenario fails in GH actions but typically only in 3.12.
+   # Unable to reproduce locally.
+   # DRW: still failing occasionally with Python 3.14 in CI, possibly only on
+   # MacOS, possibly having to do with certain random seeds only, because the
+   # logs are showing init_command running.  Bad cleanup step in pytest leaking
+   # over into behave suite?
    @skip_py312
    Scenario: no destructive warning if disabled in config
      When we run dbcli with --no-warn
