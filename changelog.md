@@ -16,6 +16,7 @@ Bug Fixes
 Internal
 ---------
 * Fix the zsh completion test harness when `PREFIX` is exported.
+* Update `AGENTS.md` with latest files and descriptions.
 
 
 2.20.0 (2026/09/05)
