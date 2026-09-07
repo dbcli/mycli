@@ -902,7 +902,7 @@ def suggest_special(text: str) -> list[dict[str, Any]]:
         'tee',
         '/tee',
     ]:
-        return [{"type": "file_name"}]
+        return [{'type': 'file_name', 'all_files': True}]
 
     # todo: why is \edit case-sensitive?
     if cmd in [

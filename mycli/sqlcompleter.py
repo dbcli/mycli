@@ -1752,7 +1752,10 @@ class SQLCompleter(Completer):
             elif suggestion["type"] == "file_name":
                 source_filename = suggestion.get('source_filename')
                 if source_filename is None:
-                    file_names_m = self.find_files(word_before_cursor)
+                    if suggestion.get('all_files', False):
+                        file_names_m = self.find_files(word_before_cursor, sql_only=False)
+                    else:
+                        file_names_m = self.find_files(word_before_cursor)
                 else:
                     source_file_completion_length = len(source_filename)
                     quote = source_filename[0] if source_filename[:1] in ("'", '"') else None
@@ -1881,7 +1884,7 @@ class SQLCompleter(Completer):
                 for x in uniq_completions_str
             )
 
-    def find_files(self, word: str) -> Generator[tuple[str, int], None, None]:
+    def find_files(self, word: str, *, sql_only: bool = True) -> Generator[tuple[str, int], None, None]:
         """Yield matching directory or file names.
 
         :param word:
@@ -1891,7 +1894,7 @@ class SQLCompleter(Completer):
         # todo position is ignored, but may need to be used
         # todo fuzzy matches for filenames
         base_path, last_path, position = parse_path(word)
-        paths = suggest_path(word)
+        paths = suggest_path(word, sql_only=sql_only)
         for name in paths:
             suggestion = complete_path(name, last_path)
             if suggestion:
