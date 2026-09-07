@@ -160,6 +160,14 @@ Fedora has a package available for mycli; install it using dnf.  The `fzf` and
 sudo dnf install mycli fzf python-pygments
 ```
 
+### Docker
+
+The images on Dockerhub are out of date.  ghcr.io is preferred.  Example:
+
+```
+docker run -it ghcr.io/dbcli/mycli:latest mycli --help
+```
+
 ### Windows
 
 #### Option 1: Native Windows
