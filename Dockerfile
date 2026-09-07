@@ -12,6 +12,6 @@ RUN apt-get update -qq && \
 
 COPY . /app
 
-RUN cd /app && pip install --root-user-action -e .[llm,dataframe]
+RUN cd /app && pip install --root-user-action=ignore -e .[llm,dataframe]
 
 CMD ["mycli", "--help"]
