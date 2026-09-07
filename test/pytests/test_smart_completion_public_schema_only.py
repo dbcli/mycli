@@ -704,7 +704,7 @@ def test_numbers_no_completion(completer, complete_event):
     assert result == []  # ie not INT1
 
 
-def dummy_list_path(dir_name):
+def dummy_list_path(dir_name, *, sql_only=True):
     dirs = {
         "/": [
             "dir1",

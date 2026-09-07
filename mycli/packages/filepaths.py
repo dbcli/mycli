@@ -9,7 +9,7 @@ if os.name == "posix":
         DEFAULT_SOCKET_DIRS = ["/var/run", "/var/lib"]
 
 
-def list_path(root_dir: str) -> list[str]:
+def list_path(root_dir: str, *, sql_only: bool = True) -> list[str]:
     """List directory if exists.
 
     :param root_dir: str
@@ -25,8 +25,7 @@ def list_path(root_dir: str) -> list[str]:
             continue
         elif os.path.isdir(os.path.join(root_dir, name)):
             dirs.append(f'{name}/')
-        # if .sql is too restrictive it can be made configurable with some effort
-        elif name.lower().endswith('.sql'):
+        elif not sql_only or name.lower().endswith('.sql'):
             files.append(name)
     return files + dirs
 
@@ -66,7 +65,7 @@ def parse_path(root_dir: str) -> tuple[str, str, int]:
     return base_dir, last_dir, position
 
 
-def suggest_path(root_dir: str) -> list[str]:
+def suggest_path(root_dir: str, *, sql_only: bool = True) -> list[str]:
     """List all files and subdirectories in a directory.
 
     If the directory is not specified, suggest root directory,
@@ -82,11 +81,11 @@ def suggest_path(root_dir: str) -> list[str]:
             "~",
             os.curdir,
             os.pardir,
-            *list_path(os.curdir),
+            *list_path(os.curdir, sql_only=sql_only),
         ]
 
     if root_dir[0] not in ('/', '~') and root_dir[0:2] != './' and not os.path.dirname(root_dir):
-        return list_path(os.curdir)
+        return list_path(os.curdir, sql_only=sql_only)
 
     if "~" in root_dir:
         root_dir = os.path.expanduser(root_dir)
@@ -94,7 +93,7 @@ def suggest_path(root_dir: str) -> list[str]:
     if not os.path.exists(root_dir):
         root_dir, _ = os.path.split(root_dir)
 
-    return list_path(root_dir)
+    return list_path(root_dir, sql_only=sql_only)
 
 
 def dir_path_exists(path: str) -> bool:

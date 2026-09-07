@@ -2,6 +2,7 @@
 
 import re
 from types import SimpleNamespace
+from unittest.mock import Mock
 
 from prompt_toolkit.document import Document
 import pytest
@@ -466,6 +467,22 @@ def test_file_completions_preserve_rigid_ordering(monkeypatch) -> None:
     assert result == ['zeta', 'alpha']
 
 
+def test_output_file_completions_include_all_file_types(monkeypatch) -> None:
+    completer = make_completer()
+    monkeypatch.setattr(
+        mycli.sqlcompleter,
+        'suggest_type',
+        lambda text, before: [{'type': 'file_name', 'all_files': True}],
+    )
+    find_files = Mock(return_value=iter([('report.csv', 0)]))
+    monkeypatch.setattr(completer, 'find_files', find_files)
+
+    result = [completion.text for completion in completer.get_completions(Document(text='/tee rep'), None)]
+
+    assert result == ['report.csv']
+    find_files.assert_called_once_with('rep', sql_only=False)
+
+
 def test_extend_metadata_helpers_and_logging(caplog) -> None:
     completer = make_completer()
     completer.set_dbname('missing')
@@ -753,7 +770,11 @@ def test_find_files_populate_scoped_cols_and_enum_helpers(monkeypatch) -> None:
     completer.extend_enum_values([('orders', 'status', ['pending', 'shipped'])])
 
     monkeypatch.setattr(mycli.sqlcompleter, 'parse_path', lambda word: ('/tmp', 'fi', 0))
-    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_path', lambda word: ['file.sql', 'folder/'])
+    monkeypatch.setattr(
+        mycli.sqlcompleter,
+        'suggest_path',
+        lambda word, *, sql_only: ['file.sql', 'folder/'],
+    )
     monkeypatch.setattr(mycli.sqlcompleter, 'complete_path', lambda name, last_path: name if name == 'file.sql' else None)
 
     assert list(completer.find_files('./fi')) == [('file.sql', Fuzziness.PERFECT)]

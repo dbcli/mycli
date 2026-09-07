@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Features
+--------
+* Allow `/tee` and `/once` to complete on any file extension.
+
+
 Bug Fixes
 --------
 * Raise Boundary tunnel stabilization pause to 0.2 sec.
