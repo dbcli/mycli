@@ -1,3 +1,11 @@
+2.21.1 (2026/09/07)
+==============
+
+Documentation
+--------
+* Show `docker run` example for ghcr.io in `README.md`.
+
+
 2.21.0 (2026/09/07)
 ==============
 
