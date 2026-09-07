@@ -25,6 +25,7 @@ A command line client for MySQL with auto-completion and syntax highlighting.
 ├── mycli/config.py                       # configuration file readers and utilities
 ├── mycli/constants.py                    # shared constants
 ├── mycli/key_bindings.py                 # prompt_toolkit key binding utilities
+├── mycli/kubectl_tunnel.py               # connection over kubectl tunnel
 ├── mycli/lexer.py                        # extends `MySqlLexer` from Pygments
 ├── mycli/main.py                         # processes CLI arguments
 ├── mycli/main_modes/                     # main execution paths

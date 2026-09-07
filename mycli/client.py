@@ -34,6 +34,7 @@ from mycli.config import (
     write_default_config,
 )
 from mycli.constants import DEFAULT_PROMPT
+from mycli.kubectl_tunnel import KubectlTunnel
 from mycli.main_modes import repl as repl_package
 from mycli.output import OutputMixin
 from mycli.packages import special
@@ -80,6 +81,7 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
     ) -> None:
         self.sqlexecute = sqlexecute
         self.ssh_tunnel: SshTunnel | None = None
+        self.kubectl_tunnel: KubectlTunnel | None = None
         self.boundary_tunnel: BoundaryTunnel | None = None
         self.logfile = logfile
         self.login_path = login_path
@@ -258,6 +260,11 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
         if self.ssh_tunnel is not None:
             try:
                 self.ssh_tunnel.close()
+            except Exception:
+                pass
+        if self.kubectl_tunnel is not None:
+            try:
+                self.kubectl_tunnel.close()
             except Exception:
                 pass
         if self.boundary_tunnel:

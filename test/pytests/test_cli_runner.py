@@ -810,6 +810,28 @@ def test_run_from_cli_args_maps_dsn_ssh_jump_parameter(monkeypatch: pytest.Monke
     assert client.connect_calls[-1]['ssh_jump'] == 'bastion'
 
 
+def test_run_from_cli_args_maps_dsn_kubectl_resource_parameter(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli_args = make_cli_args()
+    cli_args.dsn = 'mysql://user@host:3307/db?kubectl_resource=service%2Fmysql'
+    client = DummyMyCli()
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    assert client.connect_calls[-1]['kubectl_resource'] == 'service/mysql'
+    assert client.connect_calls[-1]['port'] == 3307
+
+
+def test_run_from_cli_args_prefers_cli_kubectl_resource_over_dsn_parameter(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli_args = make_cli_args()
+    cli_args.dsn = 'mysql://user@host/db?kubectl_resource=service%2Fdsn'
+    cli_args.kubectl_resource = 'pod/cli'
+    client = DummyMyCli()
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    assert client.connect_calls[-1]['kubectl_resource'] == 'pod/cli'
+
+
 def test_run_from_cli_args_maps_known_dsn_boundary_id_parameter(monkeypatch: pytest.MonkeyPatch) -> None:
     cli_args = make_cli_args()
     cli_args.dsn = 'mysql://user@host/db?boundary_id=ttcp_dsn'
@@ -864,10 +886,60 @@ def test_run_from_cli_args_rejects_ssh_and_boundary_tunnels(
     assert client.connect_calls == []
     assert secho_calls == [
         (
-            'Error: --ssh-jump and --boundary-id are incompatible.',
+            'Error: --ssh-jump, --kubectl-resource, and --boundary-id are mutually exclusive.',
             {'err': True, 'fg': 'red'},
         )
     ]
+
+
+@pytest.mark.parametrize(
+    ('kubectl_resource', 'ssh_jump', 'boundary_id'),
+    [
+        ('service/mysql', 'bastion', None),
+        ('service/mysql', None, 'ttcp_123'),
+        ('service/mysql', 'bastion', 'ttcp_123'),
+    ],
+)
+def test_run_from_cli_args_rejects_kubectl_with_other_tunnels(
+    monkeypatch: pytest.MonkeyPatch,
+    kubectl_resource: str,
+    ssh_jump: str | None,
+    boundary_id: str | None,
+) -> None:
+    cli_args = make_cli_args()
+    cli_args.kubectl_resource = kubectl_resource
+    cli_args.ssh_jump = ssh_jump
+    cli_args.boundary_id = boundary_id
+    client = DummyMyCli()
+    secho_calls: list[tuple[str, dict[str, Any]]] = []
+    monkeypatch.setattr(cli_runner.click, 'secho', lambda text, **kwargs: secho_calls.append((text, kwargs)))
+
+    with pytest.raises(SystemExit) as excinfo:
+        run_with_client(monkeypatch, cli_args, client)
+
+    assert excinfo.value.code == 1
+    assert client.connect_calls == []
+    assert secho_calls == [
+        (
+            'Error: --ssh-jump, --kubectl-resource, and --boundary-id are mutually exclusive.',
+            {'err': True, 'fg': 'red'},
+        )
+    ]
+
+
+def test_run_from_cli_args_rejects_kubectl_options_without_jump(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli_args = make_cli_args()
+    cli_args.kubectl_options = '--namespace database'
+    client = DummyMyCli()
+    secho_calls: list[tuple[str, dict[str, Any]]] = []
+    monkeypatch.setattr(cli_runner.click, 'secho', lambda text, **kwargs: secho_calls.append((text, kwargs)))
+
+    with pytest.raises(SystemExit) as excinfo:
+        run_with_client(monkeypatch, cli_args, client)
+
+    assert excinfo.value.code == 1
+    assert client.connect_calls == []
+    assert secho_calls == [('Error: --kubectl-options requires --kubectl-resource.', {'err': True, 'fg': 'red'})]
 
 
 def test_run_from_cli_args_maps_percent_encoded_dsn_prompt(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1255,6 +1327,18 @@ def test_run_from_cli_args_passes_ssh_options_to_connect(monkeypatch: pytest.Mon
     run_with_client(monkeypatch, cli_args, client)
 
     assert client.connect_calls[-1]['ssh_cli_options'] == '-o Compression=yes'
+
+
+def test_run_from_cli_args_passes_kubectl_options_to_connect(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli_args = make_cli_args()
+    cli_args.kubectl_resource = 'service/mysql'
+    cli_args.kubectl_options = '--namespace database'
+    client = DummyMyCli()
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    assert client.connect_calls[-1]['kubectl_resource'] == 'service/mysql'
+    assert client.connect_calls[-1]['kubectl_cli_options'] == '--namespace database'
 
 
 @pytest.mark.parametrize(

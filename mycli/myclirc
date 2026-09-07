@@ -414,6 +414,14 @@ ssh_options = -a -o ServerAliveInterval=60 -o ExitOnForwardFailure=yes -o IPQoS=
 # auto means: port if on Windows, socket otherwise.
 tunnel_method = auto
 
+[kubectl]
+# Path to the kubectl executable used by --kubectl-resource.
+kubectl_executable = kubectl
+
+# Options to pass to "kubectl port-forward" before the resource name.
+# This can be used, for example, to set the context.
+kubectl_options =
+
 [vault]
 # Path to the vault executable used for Vault integration.
 vault_executable = vault
