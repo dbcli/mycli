@@ -355,7 +355,7 @@ def test_show_help_lists_only_visible_commands(restore_commands: None) -> None:
 
     result = special_main.show_help()[0]
 
-    assert result.header == ['Command', 'Shortcut', 'Usage', 'Description']
+    assert result.header == ['Command', 'Alias', 'Usage', 'Description']
     assert result.rows == [('/visible', '/v', '/visible', 'Visible command')]
     assert f'Docs index — {DOCS_URL}' in result.postamble
 
@@ -379,7 +379,7 @@ def test_show_keyword_help_for_case_sensitive_special_alias() -> None:
     assert result.rows == [
         (
             r'/e',
-            '/edit <file> | <query>\\edit\nEdit query with editor (uses $VISUAL or $EDITOR).',
+            '/edit <file> | <query>\\edit\nEdit query with editor (via $VISUAL/$EDITOR).',
             '',
         )
     ]

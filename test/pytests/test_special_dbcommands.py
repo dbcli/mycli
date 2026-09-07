@@ -225,7 +225,7 @@ def test_ping_command_registration() -> None:
 
     assert command.handler is ping
     assert command.usage == '/ping'
-    assert command.description == 'Check the connection.'
+    assert command.description == 'Check connection.'
     assert command.completion_snippet == 'check connection'
     assert special_main.COMMANDS['/ping'].handler is ping
 

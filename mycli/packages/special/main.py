@@ -231,13 +231,13 @@ def execute(cur: Cursor, sql: str) -> list[SQLResult]:
 @special_command(
     "help",
     "/help [term]",
-    "Show this table, or search for help on a term.",
+    "Show this table, or search for help on term.",
     arg_type=ArgType.NO_ARGUMENT,
     aliases=[SpecialCommandAlias("\\?", case_sensitive=False), SpecialCommandAlias("?", case_sensitive=False)],
     completion_snippet='show help or search',
 )
 def show_help(*_args) -> list[SQLResult]:
-    header = ["Command", "Shortcut", "Usage", "Description"]
+    header = ["Command", "Alias", "Usage", "Description"]
     result = []
 
     for _, value in sorted(COMMANDS.items(), key=lambda x: str.casefold(x[0].removeprefix('\\').removeprefix('/'))):
@@ -300,9 +300,9 @@ def show_keyword_help(cur: Cursor, arg: str) -> list[SQLResult]:
 @special_command(
     '\\bug',
     '/bug',
-    'File a bug on GitHub.',
+    'File bug on GitHub.',
     arg_type=ArgType.NO_ARGUMENT,
-    completion_snippet='file a bug on GitHub',
+    completion_snippet='file bug on GitHub',
 )
 def file_bug(*_args) -> list[SQLResult]:
     webbrowser.open_new_tab(ISSUES_URL)
@@ -332,7 +332,7 @@ def quit_(*_args):
 @special_command(
     "\\edit",
     "/edit <file> | <query>\\edit",
-    "Edit query with editor (uses $VISUAL or $EDITOR).",
+    "Edit query with editor (via $VISUAL/$EDITOR).",
     arg_type=ArgType.NO_ARGUMENT,
     case_sensitive=True,
     aliases=[SpecialCommandAlias("\\e", case_sensitive=True)],
@@ -341,7 +341,7 @@ def quit_(*_args):
 @special_command(
     "\\clip",
     "/clip | <query>\\clip",
-    "Copy query to the system clipboard.",
+    "Copy query to system clipboard.",
     arg_type=ArgType.NO_ARGUMENT,
     case_sensitive=True,
     completion_snippet='copy query to clipboard',
@@ -349,7 +349,7 @@ def quit_(*_args):
 @special_command(
     "\\G",
     "<query>\\G",
-    "Display query results vertically.",
+    "Display results vertically.",
     arg_type=ArgType.NO_ARGUMENT,
     case_sensitive=True,
     backslash_only=True,
@@ -357,7 +357,7 @@ def quit_(*_args):
 @special_command(
     "\\g",
     "<query>\\g",
-    "Display query results (mnemonic: go).",
+    "Display results (mnemonic: go).",
     arg_type=ArgType.NO_ARGUMENT,
     case_sensitive=True,
     backslash_only=True,
@@ -365,7 +365,7 @@ def quit_(*_args):
 @special_command(
     "\\x",
     "<query>\\x",
-    "Display query results in an explorer rather than a pager.",
+    "Display results in an interactive explorer.",
     arg_type=ArgType.NO_ARGUMENT,
     case_sensitive=True,
     backslash_only=True,
@@ -379,11 +379,11 @@ if LLM_IMPORTED:
     @special_command(
         "\\llm",
         "/llm [arguments]",
-        "Interrogate an LLM.  See \"/llm help\".",
+        "Interrogate LLM (/llm help).",
         arg_type=ArgType.RAW_QUERY,
         case_sensitive=True,
         aliases=[SpecialCommandAlias("\\ai", case_sensitive=True)],
-        completion_snippet='interrogate an LLM',
+        completion_snippet='interrogate LLM',
     )
     def llm_stub():
         raise NotImplementedError

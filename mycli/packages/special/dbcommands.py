@@ -83,7 +83,7 @@ def list_databases(cur: Cursor, **_) -> list[SQLResult]:
 @special_command(
     r'\ping',
     '/ping',
-    'Check the connection.',
+    'Check connection.',
     arg_type=ArgType.PARSED_QUERY,
     completion_snippet='check connection',
 )
@@ -101,7 +101,7 @@ def ping(cur: Cursor, arg: str | None = None, **_) -> list[SQLResult]:
 @special_command(
     "status",
     "/status",
-    "Get status information from the server.",
+    "Get status information from server.",
     arg_type=ArgType.RAW_QUERY,
     case_sensitive=True,
     aliases=[SpecialCommandAlias("\\s", case_sensitive=True)],
