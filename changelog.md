@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Features
+--------
+* Add completion on leading-abbreviated pathname elements.
+
+
 2.21.1 (2026/09/07)
 ==============
 

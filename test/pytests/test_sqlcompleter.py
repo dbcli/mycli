@@ -777,7 +777,7 @@ def test_find_files_populate_scoped_cols_and_enum_helpers(monkeypatch) -> None:
     )
     monkeypatch.setattr(mycli.sqlcompleter, 'complete_path', lambda name, last_path: name if name == 'file.sql' else None)
 
-    assert list(completer.find_files('./fi')) == [('file.sql', Fuzziness.PERFECT)]
+    assert list(completer.find_files('fi')) == [('file.sql', Fuzziness.PERFECT)]
     assert completer.populate_scoped_cols([(None, 'select', None), (None, 'orders_view', None), (None, 'missing', None)]) == [
         'id',
         'view_id',
