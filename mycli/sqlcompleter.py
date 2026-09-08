@@ -18,7 +18,7 @@ import rapidfuzz
 
 from mycli.compat import WIN
 from mycli.packages.completion_engine import is_inside_quotes, suggest_type
-from mycli.packages.filepaths import complete_path, parse_path, suggest_path
+from mycli.packages.filepaths import complete_path, parse_path, suggest_path, suggest_path_by_prefix
 from mycli.packages.polars_completion import complete_polars_transform
 from mycli.packages.ptoolkit.history import frecency_score
 from mycli.packages.special import llm
@@ -40,8 +40,9 @@ class Fuzziness(IntEnum):
     PERFECT = 0
     REGEX = 1
     UNDER_WORDS = 2
-    CAMEL_CASE = 3
-    RAPIDFUZZ = 4
+    SLASH_WORDS = 3
+    CAMEL_CASE = 4
+    RAPIDFUZZ = 5
 
 
 class SQLCompleter(Completer):
@@ -1455,7 +1456,7 @@ class SQLCompleter(Completer):
         word_before_cursor = document.get_word_before_cursor(WORD=True)
         last_for_len = last_word(word_before_cursor, include="most_punctuations")
         text_for_len = last_for_len.lower()
-        last_for_len_paths = last_word(word_before_cursor, include='alphanum_underscore')
+        path_for_len = word_before_cursor
         frecency = self.frecency_provider() if self.frecency_provider is not None else {}
 
         if smart_completion is None:
@@ -1762,13 +1763,9 @@ class SQLCompleter(Completer):
                     partial_path = source_filename[1:] if quote else source_filename
                     if quote and partial_path.endswith(quote):
                         partial_path = partial_path[:-1]
-                    base_path, _last_path, _position = parse_path(partial_path)
                     file_names_m = (
                         (
-                            self._quote_source_path(
-                                os.path.join(base_path, path) if base_path and not path.startswith('~') else path,
-                                quote,
-                            ),
+                            self._quote_source_path(path, quote),
                             fuzziness,
                         )
                         for path, fuzziness in self.find_files(partial_path)
@@ -1865,7 +1862,7 @@ class SQLCompleter(Completer):
             return (
                 Completion(
                     x,
-                    -len(last_for_len_paths),
+                    -len(path_for_len),
                     display=f'{x}{self.indexed_column_suffix}' if x in indexed_column_candidates else None,
                     display_meta=self.special_command_snippets.get(x) if x in special_command_candidates else None,
                     style=_INDEXED_COLUMN_STYLE if x in indexed_column_candidates else '',
@@ -1891,8 +1888,12 @@ class SQLCompleter(Completer):
         :return: iterable
 
         """
+        if '/' in word:
+            for path in suggest_path_by_prefix(word, sql_only=sql_only):
+                yield (path, Fuzziness.SLASH_WORDS)
+            return
+
         # todo position is ignored, but may need to be used
-        # todo fuzzy matches for filenames
         base_path, last_path, position = parse_path(word)
         paths = suggest_path(word, sql_only=sql_only)
         for name in paths:

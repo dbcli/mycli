@@ -707,12 +707,12 @@ def test_numbers_no_completion(completer, complete_event):
 def dummy_list_path(dir_name, *, sql_only=True):
     dirs = {
         "/": [
-            "dir1",
+            "dir1/",
             "file1.sql",
             "file2.sql",
         ],
         "/dir1": [
-            "subdir1",
+            "subdir1/",
             "subfile1.sql",
             "subfile2.sql",
         ],
@@ -769,9 +769,9 @@ def dummy_list_path(dir_name, *, sql_only=True):
             'source --throttle=0.25 ',
             [('--special', 0), ('--show', 0), ('--page', 0), ('--help', 0), ('/', 0), ('~', 0), ('.', 0), ('..', 0)],
         ),
-        ("source /", [("/dir1", -1), ("/file1.sql", -1), ("/file2.sql", -1)]),
-        ('source --special /', [('/dir1', -1), ('/file1.sql', -1), ('/file2.sql', -1)]),
-        ('source --show /', [('/dir1', -1), ('/file1.sql', -1), ('/file2.sql', -1)]),
+        ("source /", [("/file1.sql", -1), ("/file2.sql", -1), ("/dir1/", -1)]),
+        ('source --special /', [('/file1.sql', -1), ('/file2.sql', -1), ('/dir1/', -1)]),
+        ('source --show /', [('/file1.sql', -1), ('/file2.sql', -1), ('/dir1/', -1)]),
         (
             'source file.sql ',
             [('--special', 0), ('--show', 0), ('--page', 0), ('--throttle', 0), ('--help', 0)],
@@ -783,7 +783,7 @@ def dummy_list_path(dir_name, *, sql_only=True):
         ('source -- ', [('/', 0), ('~', 0), ('.', 0), ('..', 0)]),
         (
             "source /dir1/",
-            [("/dir1/subdir1", -6), ("/dir1/subfile1.sql", -6), ("/dir1/subfile2.sql", -6)],
+            [("/dir1/subfile1.sql", -6), ("/dir1/subfile2.sql", -6), ("/dir1/subdir1/", -6)],
         ),
         ("source /dir1/subdir1/", [("/dir1/subdir1/lastfile.sql", -14)]),
     ],
@@ -878,6 +878,45 @@ def test_source_completion_advances_into_nested_directories(completer, complete_
     text = 'source doc/nested/'
     result = list(completer.get_completions(Document(text=text, cursor_position=len(text)), complete_event))
     assert result == [Completion(text='doc/nested/query.sql', start_position=-11)]
+
+
+@pytest.mark.parametrize(
+    ('command', 'expected'),
+    [
+        ('source', ['./directory/subdirectory/example.sql']),
+        ('/edit', ['./directory/subdirectory/example.sql']),
+        ('/tee', ['./directory/subdirectory/example.csv', './directory/subdirectory/example.sql']),
+        ('/once', ['./directory/subdirectory/example.csv', './directory/subdirectory/example.sql']),
+        ('/o', ['./directory/subdirectory/example.csv', './directory/subdirectory/example.sql']),
+    ],
+)
+def test_file_commands_complete_slash_separated_prefixes(
+    completer,
+    complete_event,
+    tmp_path,
+    monkeypatch,
+    command,
+    expected,
+):
+    monkeypatch.chdir(tmp_path)
+    nested = tmp_path / 'directory' / 'subdirectory'
+    nested.mkdir(parents=True)
+    (nested / 'example.sql').touch()
+    (nested / 'example.csv').touch()
+    if command == 'source':
+        special.register_special_command(
+            ...,
+            'source',
+            '\\. <file>',
+            'Execute commands from file.',
+            aliases=[special.SpecialCommandAlias('\\.', case_sensitive=False)],
+        )
+
+    path_prefix = './dir/sub/exa'
+    text = f'{command} {path_prefix}'
+    result = list(completer.get_completions(Document(text=text, cursor_position=len(text)), complete_event))
+
+    assert result == [Completion(text=candidate, start_position=-len(path_prefix)) for candidate in expected]
 
 
 @pytest.mark.skipif(os.name == 'nt', reason='POSIX quoting expectations')

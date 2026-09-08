@@ -104,6 +104,72 @@ def test_suggest_path_branches(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     assert filepaths.suggest_path('nested/') == ['inside.sql', 'child/']
 
 
+def test_suggest_path_by_prefix_completes_each_component(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    nested = tmp_path / 'directory' / 'subdirectory'
+    nested.mkdir(parents=True)
+    (nested / 'example.sql').touch()
+    (nested / 'example.csv').touch()
+
+    assert filepaths.suggest_path_by_prefix('./dir/sub/exa') == [
+        './directory/subdirectory/example.sql',
+    ]
+    assert filepaths.suggest_path_by_prefix('./dir/sub/exa', sql_only=False) == [
+        './directory/subdirectory/example.csv',
+        './directory/subdirectory/example.sql',
+    ]
+    assert filepaths.suggest_path_by_prefix('./missing/sub/exa') == []
+
+
+def test_suggest_path_by_prefix_returns_ambiguous_directories(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / 'directory').mkdir()
+    (tmp_path / 'dirt').mkdir()
+
+    assert filepaths.suggest_path_by_prefix('./dir') == ['./directory/', './dirt/']
+
+
+def test_suggest_path_by_prefix_preserves_path_anchors(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    nested = tmp_path / 'directory' / 'subdirectory'
+    nested.mkdir(parents=True)
+    (nested / 'example.sql').touch()
+
+    absolute_prefix = f'{tmp_path}/dir/sub/exa'
+    assert filepaths.suggest_path_by_prefix(absolute_prefix) == [
+        f'{tmp_path}/directory/subdirectory/example.sql',
+    ]
+
+    home = tmp_path / 'home'
+    home_nested = home / 'directory' / 'subdirectory'
+    home_nested.mkdir(parents=True)
+    (home_nested / 'example.sql').touch()
+    monkeypatch.setattr(os.path, 'expanduser', lambda path: str(home) if path == '~' else path)
+    assert filepaths.suggest_path_by_prefix('~/dir/sub/exa') == [
+        '~/directory/subdirectory/example.sql',
+    ]
+
+    child = tmp_path / 'child'
+    child.mkdir()
+    monkeypatch.chdir(child)
+    assert filepaths.suggest_path_by_prefix('../dir/sub/exa') == [
+        '../directory/subdirectory/example.sql',
+    ]
+    assert filepaths.suggest_path_by_prefix('../dir//sub/exa') == [
+        '../directory/subdirectory/example.sql',
+    ]
+
+
+def test_suggest_path_by_prefix_preserves_windows_drive(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(os.path, 'splitdrive', lambda path: ('C:', '/dir'))
+    monkeypatch.setattr(
+        filepaths,
+        'list_path',
+        lambda root_dir, *, sql_only: ['directory/'] if root_dir == f'C:{os.sep}' else [],
+    )
+
+    assert filepaths.suggest_path_by_prefix('C:/dir') == ['C:/directory/']
+
+
 def test_dir_path_exists(tmp_path: Path) -> None:
     existing = tmp_path / 'logs' / 'mycli.log'
     existing.parent.mkdir()
