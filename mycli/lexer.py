@@ -1,6 +1,6 @@
 from pygments.lexer import inherit
 from pygments.lexers.sql import MySqlLexer
-from pygments.token import Keyword
+from pygments.token import Keyword, Name
 
 
 class MyCliLexer(MySqlLexer):
@@ -8,6 +8,7 @@ class MyCliLexer(MySqlLexer):
 
     tokens = {
         "root": [
+            (r'^[/\\]', Name),
             (r"\brepair\b", Keyword),
             (r"\boffset\b", Keyword),
             inherit,

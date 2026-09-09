@@ -6,6 +6,11 @@ Features
 * Include a MariaDB server and example data in the Docker image.
 
 
+Bug Fixes
+--------
+* Tokenize leading `/` and `\` as symbol names for better highlighting.
+
+
 Documentation
 --------
 * Add `--pull=always` to documented `docker run` command.
