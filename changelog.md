@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Features
+--------
+* Include a MariaDB server and example data in the Docker image.
+
+
 Documentation
 --------
 * Add `--pull=always` to documented `docker run` command.
