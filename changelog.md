@@ -4,6 +4,7 @@ Upcoming (TBD)
 Features
 --------
 * Add completion on leading-abbreviated pathname elements.
+* Add port-forwarding into a Kubernetes cluster with `--kubectl-resource`.
 
 
 2.21.1 (2026/09/07)

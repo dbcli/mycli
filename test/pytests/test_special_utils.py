@@ -327,6 +327,21 @@ def test_format_connection_dsn_includes_ssh_jump() -> None:
     )
 
 
+def test_format_connection_dsn_includes_encoded_kubectl_resource() -> None:
+    assert (
+        format_connection_dsn(
+            user='alice',
+            host='db.example.com',
+            port=3307,
+            database='prod',
+            socket=None,
+            character_set='utf8mb4',
+            kubectl_resource='service/my sql',
+        )
+        == 'mysql://alice@db.example.com:3307/prod?kubectl_resource=service%2Fmy+sql'
+    )
+
+
 def test_format_connection_dsn_includes_encoded_boundary_id() -> None:
     assert (
         format_connection_dsn(

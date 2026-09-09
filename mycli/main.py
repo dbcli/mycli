@@ -321,6 +321,14 @@ class CliArgs:
         type=str,
         help='Extra CLI arguments for SSH with --ssh-jump, placed after options from myclirc.',
     )
+    kubectl_resource: str | None = clickdc.option(
+        type=str,
+        help='Open a kubectl port-forward tunnel to RESOURCE and connect through it.',
+    )
+    kubectl_options: str | None = clickdc.option(
+        type=str,
+        help='Extra CLI arguments for kubectl with --kubectl-resource.',
+    )
     boundary_id: str | None = clickdc.option(
         type=str,
         help='Open a HashiCorp Boundary tunnel to TARGET_ID and connect through it.',

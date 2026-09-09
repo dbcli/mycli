@@ -359,6 +359,8 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
             mycli.prompt_format = cli_args.prompt or params[0] or mycli.prompt_format
         if params := dsn_params.get('ssh_jump'):
             cli_args.ssh_jump = cli_args.ssh_jump or params[0]
+        if params := dsn_params.get('kubectl_resource'):
+            cli_args.kubectl_resource = cli_args.kubectl_resource or params[0]
         if params := dsn_params.get('boundary_id'):
             cli_args.boundary_id = cli_args.boundary_id or params[0]
         if params := dsn_params.get('vault_address'):
@@ -372,8 +374,12 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
         if params := dsn_params.get('vault_username_field'):
             cli_args.vault_username_field = cli_args.vault_username_field or params[0]
 
-    if cli_args.ssh_jump and cli_args.boundary_id:
-        click.secho('Error: --ssh-jump and --boundary-id are incompatible.', err=True, fg='red')
+    tunnel_options = [cli_args.ssh_jump, cli_args.kubectl_resource, cli_args.boundary_id]
+    if sum(option is not None and bool(option) for option in tunnel_options) > 1:
+        click.secho('Error: --ssh-jump, --kubectl-resource, and --boundary-id are mutually exclusive.', err=True, fg='red')
+        sys.exit(1)
+    if cli_args.kubectl_options and not cli_args.kubectl_resource:
+        click.secho('Error: --kubectl-options requires --kubectl-resource.', err=True, fg='red')
         sys.exit(1)
 
     keepalive_ticks = cli_args.keepalive_ticks if cli_args.keepalive_ticks is not None else mycli.default_keepalive_ticks
@@ -521,6 +527,8 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
             keepalive_ticks=keepalive_ticks,
             ssh_jump=cli_args.ssh_jump,
             ssh_cli_options=cli_args.ssh_options,
+            kubectl_resource=cli_args.kubectl_resource,
+            kubectl_cli_options=cli_args.kubectl_options,
             vault_address=cli_args.vault_address,
             vault_mount=cli_args.vault_mount,
             vault_secret=cli_args.vault_secret,

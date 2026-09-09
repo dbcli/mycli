@@ -786,6 +786,30 @@ def test_help_strings_end_with_periods():
             assert param.help.endswith(".")
 
 
+def test_help_lists_kubectl_tunnel_options() -> None:
+    result = CliRunner().invoke(click_entrypoint, args=['--help'])
+
+    assert result.exit_code == 0
+    assert '--kubectl-resource TEXT' in result.output
+    assert '--kubectl-options TEXT' in result.output
+
+
+def test_click_entrypoint_parses_kubectl_tunnel_options(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[tuple[CliArgs, Any]] = []
+    monkeypatch.setattr(main, 'run_from_cli_args', lambda cli_args, client_factory: calls.append((cli_args, client_factory)))
+
+    result = CliRunner().invoke(
+        click_entrypoint,
+        args=['--kubectl-resource', 'service/mysql', '--kubectl-options', '--context prod', '--port', '3307'],
+    )
+
+    assert result.exit_code == 0
+    assert calls[0][0].kubectl_resource == 'service/mysql'
+    assert calls[0][0].kubectl_options == '--context prod'
+    assert calls[0][0].port == 3307
+    assert calls[0][1] is MyCli
+
+
 def test_command_descriptions_end_with_periods():
     """Make sure that mycli commands' descriptions end with a period."""
     MyCli()

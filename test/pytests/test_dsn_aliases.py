@@ -536,7 +536,7 @@ def test_dsn_more_adds_non_default_runtime_parameters_in_sorted_order() -> None:
     )
     aliases = DsnAliases(config, mycli)  # type: ignore[arg-type]
     dsn = (
-        'mysql://user@host/db?boundary_id=ttcp_123&socket=%2Fruntime.sock&ssh_jump=bastion'
+        'mysql://user@host/db?boundary_id=ttcp_123&kubectl_resource=service%2Fmysql&socket=%2Fruntime.sock&ssh_jump=bastion'
         '&vault_address=https%3A%2F%2Fruntime-vault&vault_mount=runtime-kv'
         '&vault_secret=database%2Fprod&vault_password_field=secret&vault_username_field=login'
     )
@@ -551,6 +551,7 @@ def test_dsn_more_adds_non_default_runtime_parameters_in_sorted_order() -> None:
         ('boundary_id', 'ttcp_123'),
         ('character_set', 'utf8'),
         ('keepalive_ticks', '45'),
+        ('kubectl_resource', 'service/mysql'),
         ('prompt', 'runtime> '),
         ('socket', '/runtime.sock'),
         ('ssh_jump', 'bastion'),

@@ -85,6 +85,7 @@ mycli --help
 * [Polars](https://pola.rs) dataframe [transforms and plots](https://github.com/dbcli/mycli/blob/main/doc/transforms.md) with `.|`, and Parquet saves with `.>`.
 * Support for [querying LLMs](https://www.mycli.net/llm) with context derived from your schema using `/llm`.
 * Support for storing passwords in the system keyring.
+* Integrations with: [SSH](https://www.openssh.org/), [Kubernetes](https://kubernetes.io/), [Vault](https://github.com/hashicorp/vault), and [Boundary](https://github.com/hashicorp/boundary).
 
 Mycli creates a config file `~/.myclirc` on the first run; you can use the
 options in that file to configure the above features, and more.

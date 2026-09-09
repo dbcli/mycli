@@ -461,6 +461,150 @@ def test_connect_uses_ssh_jump_with_local_port(monkeypatch: pytest.MonkeyPatch) 
     assert FakeSQLExecute.calls[-1]['display_dsn'] == 'mysql://alice@db.internal:3307?ssh_jump=bastion'
 
 
+def test_connect_uses_kubectl_tunnel_with_resolved_database_port(monkeypatch: pytest.MonkeyPatch) -> None:
+    tunnel_calls: list[dict[str, Any]] = []
+    keyring_calls: list[tuple[Any, ...]] = []
+
+    class FakeTunnel:
+        local_host = '127.0.0.1'
+        local_port = 4406
+
+        def __init__(self, **kwargs: Any) -> None:
+            tunnel_calls.append(kwargs)
+
+        def start(self) -> None:
+            pass
+
+        def close(self) -> None:
+            pass
+
+    monkeypatch.setattr(client_connection, 'KubectlTunnel', FakeTunnel)
+    monkeypatch.setattr(
+        client_connection.keyring,
+        'get_password',
+        lambda domain, identifier: keyring_calls.append(('get', domain, identifier)),
+    )
+    monkeypatch.setattr(
+        client_connection.keyring,
+        'set_password',
+        lambda domain, identifier, password: keyring_calls.append(('set', domain, identifier, password)),
+    )
+    password_candidates = PasswordCandidates()
+    password_candidates.add_value('literal', 'secret')
+    client = DummyClient(
+        config={
+            'main': {
+                'password_sources': ['literal'],
+                'keyring_sources': ['literal'],
+            },
+            'connection': {},
+            'kubectl': {
+                'kubectl_executable': '/opt/bin/kubectl',
+                'kubectl_options': '--context prod',
+            },
+        }
+    )
+
+    client.connect(
+        user='alice',
+        host='db.internal',
+        port=3307,
+        socket='/tmp/mysql.sock',
+        use_keyring=True,
+        password_candidates=password_candidates,
+        kubectl_resource='service/mysql',
+        kubectl_cli_options='--namespace database',
+    )
+
+    assert tunnel_calls == [
+        {
+            'resource': 'service/mysql',
+            'remote_port': 3307,
+            'kubectl_executable': '/opt/bin/kubectl',
+            'kubectl_config_options': '--context prod',
+            'kubectl_cli_options': '--namespace database',
+        }
+    ]
+    assert FakeSQLExecute.calls[-1]['host'] == '127.0.0.1'
+    assert FakeSQLExecute.calls[-1]['port'] == 4406
+    assert FakeSQLExecute.calls[-1]['socket'] is None
+    assert FakeSQLExecute.calls[-1]['password'] == 'secret'
+    assert FakeSQLExecute.calls[-1]['display_dsn'] == 'mysql://alice@db.internal:3307?kubectl_resource=service%2Fmysql'
+    assert keyring_calls == []
+
+
+def test_connect_kubectl_tunnel_uses_default_database_port(monkeypatch: pytest.MonkeyPatch) -> None:
+    remote_ports: list[int] = []
+
+    class FakeTunnel:
+        local_host = '127.0.0.1'
+        local_port = 4406
+
+        def __init__(self, *, remote_port: int, **_kwargs: Any) -> None:
+            remote_ports.append(remote_port)
+
+        def start(self) -> None:
+            pass
+
+        def close(self) -> None:
+            pass
+
+    monkeypatch.setattr(client_connection, 'KubectlTunnel', FakeTunnel)
+    client = DummyClient()
+
+    client.connect(user='alice', kubectl_resource='pod/mysql-0')
+
+    assert remote_ports == [3306]
+    assert FakeSQLExecute.calls[-1]['display_dsn'] == 'mysql://alice@localhost:3306?kubectl_resource=pod%2Fmysql-0'
+
+
+def test_connect_reports_kubectl_tunnel_start_error_and_closes_tunnel(monkeypatch: pytest.MonkeyPatch) -> None:
+    close_calls: list[bool] = []
+    secho_calls: list[tuple[str, dict[str, Any]]] = []
+
+    class FakeTunnel:
+        def __init__(self, **_kwargs: Any) -> None:
+            pass
+
+        def start(self) -> None:
+            raise client_connection.KubectlTunnelError('no resource')
+
+        def close(self) -> None:
+            close_calls.append(True)
+
+    monkeypatch.setattr(client_connection, 'KubectlTunnel', FakeTunnel)
+    monkeypatch.setattr(client_connection.click, 'secho', lambda message, **kwargs: secho_calls.append((message, kwargs)))
+    client = DummyClient()
+
+    with pytest.raises(SystemExit) as excinfo:
+        client.connect(host='db.internal', kubectl_resource='service/mysql')
+
+    assert excinfo.value.code == 1
+    assert close_calls == [True]
+    assert secho_calls == [('Error: Unable to start kubectl tunnel: no resource', {'err': True, 'fg': 'red'})]
+    assert FakeSQLExecute.calls == []
+
+
+def test_connect_swallows_kubectl_tunnel_cleanup_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    class FakeTunnel:
+        def __init__(self, **_kwargs: Any) -> None:
+            pass
+
+        def start(self) -> None:
+            raise OSError('no process')
+
+        def close(self) -> None:
+            raise RuntimeError('close failed')
+
+    monkeypatch.setattr(client_connection, 'KubectlTunnel', FakeTunnel)
+    client = DummyClient()
+
+    with pytest.raises(SystemExit) as excinfo:
+        client.connect(host='db.internal', kubectl_resource='service/mysql')
+
+    assert excinfo.value.code == 1
+
+
 def test_connect_with_vault_password_keeps_explicit_user_in_display_dsn() -> None:
     client = DummyClient()
 

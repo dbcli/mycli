@@ -22,6 +22,7 @@ from mycli.constants import (
     EMPTY_PASSWORD_FLAG_SENTINEL,
     ER_MUST_CHANGE_PASSWORD_LOGIN,
 )
+from mycli.kubectl_tunnel import KubectlTunnel, KubectlTunnelError
 from mycli.packages.filepaths import guess_socket_location
 from mycli.packages.special.utils import format_connection_dsn
 from mycli.password_sources import PasswordCandidates
@@ -45,6 +46,7 @@ class ClientConnectionMixin:
         sqlexecute: Any
         logger: Any
         boundary_tunnel: BoundaryTunnel | None
+        kubectl_tunnel: KubectlTunnel | None
 
         def read_mylogin_cnf(self, cnf: Any) -> dict[str, Any]: ...
         def echo(self, *args: Any, **kwargs: Any) -> None: ...
@@ -67,6 +69,8 @@ class ClientConnectionMixin:
         keepalive_ticks: int | None = None,
         ssh_jump: str | None = None,
         ssh_cli_options: str | None = None,
+        kubectl_resource: str | None = None,
+        kubectl_cli_options: str | None = None,
         vault_address: str | None = None,
         vault_mount: str | None = None,
         vault_secret: str | None = None,
@@ -84,6 +88,7 @@ class ClientConnectionMixin:
         user_connection_config = self.config_without_package_defaults.get('connection', {})
         self.keepalive_ticks = keepalive_ticks
         self.ssh_tunnel = None
+        self.kubectl_tunnel = None
         self.selected_password = None
         self.boundary_tunnel = None
 
@@ -127,6 +132,28 @@ class ClientConnectionMixin:
                 try:
                     if self.ssh_tunnel:
                         self.ssh_tunnel.close()
+                except Exception:
+                    pass
+                sys.exit(1)
+        elif kubectl_resource:
+            use_keyring = False
+            kubectl_executable = self.config.get('kubectl', {}).get('kubectl_executable', 'kubectl') or 'kubectl'
+            kubectl_config_options = self.config.get('kubectl', {}).get('kubectl_options') or None
+            try:
+                self.kubectl_tunnel = KubectlTunnel(
+                    resource=kubectl_resource,
+                    remote_port=int(int_port),
+                    kubectl_executable=kubectl_executable,
+                    kubectl_config_options=kubectl_config_options,
+                    kubectl_cli_options=kubectl_cli_options,
+                )
+                self.kubectl_tunnel.start()
+                socket = None
+            except (OSError, ValueError, KubectlTunnelError) as exc:
+                click.secho(f'Error: Unable to start kubectl tunnel: {exc}', err=True, fg='red')
+                try:
+                    if self.kubectl_tunnel:
+                        self.kubectl_tunnel.close()
                 except Exception:
                     pass
                 sys.exit(1)
@@ -267,6 +294,21 @@ class ClientConnectionMixin:
                 vault_password_field=vault_password_field,
                 vault_username_field=vault_username_field,
             )
+        elif self.kubectl_tunnel:
+            display_dsn = format_connection_dsn(
+                user=display_dsn_user,
+                host=host,
+                port=int_port,
+                socket=None,
+                database=database,
+                character_set=character_set,
+                kubectl_resource=kubectl_resource,
+                vault_address=vault_address,
+                vault_mount=vault_mount,
+                vault_secret=vault_secret,
+                vault_password_field=vault_password_field,
+                vault_username_field=vault_username_field,
+            )
         elif self.boundary_tunnel:
             display_dsn = format_connection_dsn(
                 user=None,
@@ -311,6 +353,10 @@ class ClientConnectionMixin:
         elif self.ssh_tunnel:
             connection_info['host'] = self.ssh_tunnel.local_host
             connection_info['port'] = self.ssh_tunnel.local_port
+            connection_info['socket'] = None
+        elif self.kubectl_tunnel:
+            connection_info['host'] = self.kubectl_tunnel.local_host
+            connection_info['port'] = self.kubectl_tunnel.local_port
             connection_info['socket'] = None
         elif self.boundary_tunnel:
             connection_info['user'] = self.boundary_tunnel.username
