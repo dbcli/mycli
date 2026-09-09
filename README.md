@@ -166,7 +166,7 @@ sudo dnf install mycli fzf python-pygments
 The images on Dockerhub are out of date.  ghcr.io is preferred.  Example:
 
 ```
-docker run -it ghcr.io/dbcli/mycli:latest mycli --help
+docker run --pull=always -it ghcr.io/dbcli/mycli:latest mycli --help
 ```
 
 ### Windows
