@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Documentation
+--------
+* Add `--pull=always` to documented `docker run` command.
+
+
 2.22.0 (2026/09/09)
 ==============
 
