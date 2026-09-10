@@ -17,6 +17,7 @@ from mycli.types import ImageProtocol, OutputMode
 
 delimiter_command = DelimiterCommand()
 PLOT_FORMATS = ('png', 'pdf', 'svg', 'html')
+PARQUET_QUERY_METADATA_KEY = 'mycli_query'
 
 
 class PolarsTransformError(RuntimeError):
@@ -151,7 +152,7 @@ def _pipeline_operator_indexes(
 
 
 def _parse_output_path(path: str) -> str:
-    if path[0] in ('\'', '"'):
+    if path[0] in ("'", '"'):
         if len(path) < 2 or path[-1] != path[0]:
             raise PolarsTransformError('File save paths must use matching quotes.')
         path = path[1:-1]
@@ -223,6 +224,7 @@ def run_polars_transform(
     results: Iterable[SQLResult],
     output_path: str | None = None,
     *,
+    original_query: str | None = None,
     image_protocol: ImageProtocol = 'none',
     plot_scale_factor: float = 1.0,
     plot_ppi: int = 200,
@@ -278,7 +280,7 @@ def run_polars_transform(
             if not output_path.lower().endswith('.parquet'):
                 raise PolarsTransformError('Polars DataFrame results can only be written to ".parquet" files.')
             try:
-                value.write_parquet(output_path)
+                _write_parquet(value, output_path, original_query or transform.sql)
             except Exception as exc:
                 raise PolarsTransformError(f'Unable to write Parquet file "{output_path}": {type(exc).__name__}: {exc}') from exc
             return SQLResult(status=f'Wrote {len(value)} rows to {output_path}.')
@@ -290,7 +292,7 @@ def run_polars_transform(
                 raise PolarsTransformError('Polars Series results can only be written to ".parquet" files.')
             try:
                 series_dataframe = value.rename(column_name).to_frame()
-                series_dataframe.write_parquet(output_path)
+                _write_parquet(series_dataframe, output_path, original_query or transform.sql)
             except Exception as exc:
                 raise PolarsTransformError(f'Unable to write Parquet file "{output_path}": {type(exc).__name__}: {exc}') from exc
             return SQLResult(status=f'Wrote {len(series_dataframe)} rows to {output_path}.')
@@ -339,3 +341,7 @@ def run_polars_transform(
         return SQLResult()
 
     return SQLResult(status=f'Nothing could be displayed for return type: {type(value)}')
+
+
+def _write_parquet(dataframe: Any, parquet_path: str, original_query: str) -> None:
+    dataframe.write_parquet(parquet_path, metadata={PARQUET_QUERY_METADATA_KEY: original_query})

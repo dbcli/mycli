@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Features
+--------
+* Preserve the query as metadata when saving to Parquet with `.>`.
+
+
 2.23.0 (2026/09/09)
 ==============
 
