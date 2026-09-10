@@ -940,6 +940,7 @@ def _one_iteration(
                     polars_transform,
                     results,
                     polars_pipeline.output_path,
+                    original_query=original_text,
                     image_protocol=mycli.image_protocol,
                     plot_scale_factor=mycli.plot_scale_factor,
                     plot_ppi=mycli.plot_ppi,

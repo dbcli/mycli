@@ -21,6 +21,7 @@ from mycli.types import ImageProtocol, OutputMode
 class FakeDataFrame:
     written_paths: list[str] = []
     written_dataframes: list['FakeDataFrame'] = []
+    written_metadata: list[dict[str, str]] = []
 
     def __init__(
         self,
@@ -42,10 +43,11 @@ class FakeDataFrame:
     def __len__(self) -> int:
         return len(self.rows)
 
-    def write_parquet(self, path: str) -> None:
+    def write_parquet(self, path: str, *, metadata: dict[str, str]) -> None:
         self.parquet_paths.append(path)
         self.written_paths.append(path)
         self.written_dataframes.append(self)
+        self.written_metadata.append(metadata)
 
 
 class FakeSeries:
@@ -80,7 +82,7 @@ class FakePolars:
 
 
 class FailingDataFrame(FakeDataFrame):
-    def write_parquet(self, path: str) -> None:
+    def write_parquet(self, path: str, *, metadata: dict[str, str]) -> None:
         raise OSError('disk full')
 
 
@@ -572,15 +574,42 @@ def test_run_polars_transform_writes_raw_dataframe_to_parquet() -> None:
     transform = make_transform('df')
     FakeDataFrame.written_paths = []
     FakeDataFrame.written_dataframes = []
+    FakeDataFrame.written_metadata = []
 
     result = run_polars_transform(
         transform,
         iter([SQLResult(header=['id'], rows=[(1,), (2,)])]),
         'orders.parquet',
+        original_query='SELECT * FROM orders .> orders.parquet',
     )
 
     assert result == SQLResult(status='Wrote 2 rows to orders.parquet.')
     assert FakeDataFrame.written_paths == ['orders.parquet']
+    assert FakeDataFrame.written_metadata == [{polars_transform.PARQUET_QUERY_METADATA_KEY: 'SELECT * FROM orders .> orders.parquet'}]
+
+
+def test_run_polars_transform_writes_query_to_parquet_file_metadata(tmp_path: Path) -> None:
+    import polars as pl
+
+    command = 'SELECT id FROM orders .| df.filter(pl.col(\'id\') > 0) .> orders.parquet'
+    path = tmp_path / 'orders.parquet'
+    transform = PolarsTransform(
+        sql='SELECT id FROM orders',
+        expression="df.filter(pl.col('id') > 0)",
+        code=compile("df.filter(pl.col('id') > 0)", '<test>', 'eval'),
+        polars=pl,
+        altair=None,
+    )
+
+    result = run_polars_transform(
+        transform,
+        iter([SQLResult(header=['id'], rows=[(1,), (2,)])]),
+        str(path),
+        original_query=command,
+    )
+
+    assert result == SQLResult(status=f'Wrote 2 rows to {path}.')
+    assert pl.read_parquet_metadata(path)[polars_transform.PARQUET_QUERY_METADATA_KEY] == command
 
 
 @pytest.mark.parametrize(
@@ -597,21 +626,26 @@ def test_run_polars_transform_writes_series_to_parquet(
 ) -> None:
     FakeDataFrame.written_paths = []
     FakeDataFrame.written_dataframes = []
+    FakeDataFrame.written_metadata = []
 
     result = run_polars_transform(
         make_transform(expression),
         iter([SQLResult(header=['id'], rows=[(1,)])]),
         'series.parquet',
+        original_query=f'SELECT id FROM orders .| {expression} .> series.parquet',
     )
 
     assert result == SQLResult(status=f'Wrote {len(rows)} rows to series.parquet.')
     assert FakeDataFrame.written_paths == ['series.parquet']
     assert FakeDataFrame.written_dataframes[-1].columns == [column_name]
     assert FakeDataFrame.written_dataframes[-1].rows == rows
+    assert FakeDataFrame.written_metadata == [
+        {polars_transform.PARQUET_QUERY_METADATA_KEY: (f'SELECT id FROM orders .| {expression} .> series.parquet')}
+    ]
 
 
 def test_run_polars_transform_reports_series_parquet_write_error(monkeypatch: pytest.MonkeyPatch) -> None:
-    def fail_write(self: FakeDataFrame, path: str) -> None:
+    def fail_write(self: FakeDataFrame, path: str, *, metadata: dict[str, str]) -> None:
         raise OSError('disk full')
 
     monkeypatch.setattr(FakeDataFrame, 'write_parquet', fail_write)

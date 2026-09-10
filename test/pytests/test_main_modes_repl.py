@@ -1731,7 +1731,7 @@ def test_one_iteration_writes_polars_parquet_without_rendering_rows(monkeypatch:
     cli.post_redirect_command = 'post {}'
     transform = object()
     prepare_calls: list[tuple[str, str | None]] = []
-    run_calls: list[tuple[object, str]] = []
+    run_calls: list[tuple[object, str, str]] = []
 
     def prepare(sql: str, expression: str | None) -> object:
         prepare_calls.append((sql, expression))
@@ -1742,6 +1742,7 @@ def test_one_iteration_writes_polars_parquet_without_rendering_rows(monkeypatch:
         results: Iterator[SQLResult],
         path: str,
         *,
+        original_query: str,
         image_protocol: str,
         plot_scale_factor: float,
         plot_ppi: int,
@@ -1752,7 +1753,7 @@ def test_one_iteration_writes_polars_parquet_without_rendering_rows(monkeypatch:
         assert plot_ppi == 200
         assert plot_theme == 'carbong90'
         assert list(results) == [SQLResult(header=['id'], rows=[(1,)])]
-        run_calls.append((received_transform, path))
+        run_calls.append((received_transform, path, original_query))
         return SQLResult(status=f'Wrote 1 rows to {path}.')
 
     monkeypatch.setattr(repl_mode, 'prepare_polars_transform', prepare)
@@ -1770,7 +1771,7 @@ def test_one_iteration_writes_polars_parquet_without_rendering_rows(monkeypatch:
 
     assert sqlexecute.calls == ['SELECT * FROM orders']
     assert prepare_calls == [('SELECT * FROM orders', None)]
-    assert run_calls == [(transform, 'orders.parquet')]
+    assert run_calls == [(transform, 'orders.parquet', command)]
     assert cli.output_calls[-1][1] == SQLResult(status='Wrote 1 rows to orders.parquet.')
     assert cli.output_calls[-1][1].rows is None
     assert hook_calls == [('post {}', 'orders.parquet')]
@@ -1794,7 +1795,7 @@ def test_one_iteration_writes_transformed_polars_parquet(monkeypatch: pytest.Mon
     cli.post_redirect_command = 'post {}'
     transform = object()
     prepare_calls: list[tuple[str, str | None]] = []
-    run_calls: list[str] = []
+    run_calls: list[tuple[str, str]] = []
 
     def prepare(sql: str, expression: str | None) -> object:
         prepare_calls.append((sql, expression))
@@ -1805,6 +1806,7 @@ def test_one_iteration_writes_transformed_polars_parquet(monkeypatch: pytest.Mon
         results: Iterator[SQLResult],
         path: str,
         *,
+        original_query: str,
         image_protocol: str,
         plot_scale_factor: float,
         plot_ppi: int,
@@ -1816,7 +1818,7 @@ def test_one_iteration_writes_transformed_polars_parquet(monkeypatch: pytest.Mon
         assert plot_theme == 'carbong90'
         assert received_transform is transform
         assert list(results) == [SQLResult(header=['id'], rows=[(1,)])]
-        run_calls.append(path)
+        run_calls.append((path, original_query))
         return SQLResult(status=f'Wrote 1 rows to {path}.')
 
     monkeypatch.setattr(repl_mode, 'prepare_polars_transform', prepare)
@@ -1828,14 +1830,15 @@ def test_one_iteration_writes_transformed_polars_parquet(monkeypatch: pytest.Mon
         lambda command, filename: hook_calls.append((command, filename)),
     )
 
+    command = 'SELECT * FROM orders .| df.filter(pl.col(\'id\') > 0) .> orders.parquet'
     repl_mode._one_iteration(
         cli,
         repl_mode.ReplState(),
-        'SELECT * FROM orders .| df.filter(pl.col(\'id\') > 0) .> orders.parquet',
+        command,
     )
 
     assert prepare_calls == [('SELECT * FROM orders', "df.filter(pl.col('id') > 0)")]
-    assert run_calls == ['orders.parquet']
+    assert run_calls == [('orders.parquet', command)]
     assert hook_calls == [('post {}', 'orders.parquet')]
 
 
@@ -1867,6 +1870,7 @@ def test_one_iteration_writes_polars_plot_and_runs_post_redirect_hook(
         results: Iterator[SQLResult],
         path: str,
         *,
+        original_query: str,
         image_protocol: str,
         plot_scale_factor: float,
         plot_ppi: int,
@@ -1874,6 +1878,7 @@ def test_one_iteration_writes_polars_plot_and_runs_post_redirect_hook(
     ) -> SQLResult:
         assert received_transform is transform
         assert list(results) == [SQLResult(header=['id'], rows=[(1,)])]
+        assert original_query == f'SELECT * FROM orders .| alt.Plot(df) .> {path}'
         assert image_protocol == 'none'
         assert plot_scale_factor == 1.0
         assert plot_ppi == 200
@@ -1917,7 +1922,7 @@ def test_one_iteration_reports_polars_post_redirect_hook_error(monkeypatch: pyte
     monkeypatch.setattr(
         repl_mode,
         'run_polars_transform',
-        lambda received_transform, results, path, *, image_protocol, plot_scale_factor, plot_ppi, plot_theme: SQLResult(
+        lambda received_transform, results, path, *, original_query, image_protocol, plot_scale_factor, plot_ppi, plot_theme: SQLResult(
             status=f'Wrote 1 rows to {path}.'
         ),
     )
@@ -1957,6 +1962,7 @@ def test_one_iteration_does_not_run_hook_after_failed_polars_parquet_write(monke
         results: Iterator[SQLResult],
         path: str,
         *,
+        original_query: str,
         image_protocol: str,
         plot_scale_factor: float,
         plot_ppi: int,
