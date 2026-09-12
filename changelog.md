@@ -1,3 +1,11 @@
+2.24.3 (2026/09/12)
+==============
+
+Bug Fixes
+--------
+* Remove explicit `subject-digest` from ghcr.io publish action.
+
+
 2.24.2 (2026/09/12)
 ==============
 
