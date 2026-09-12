@@ -1,9 +1,10 @@
-Upcoming (TBD)
+2.24.1 (2026/09/12)
 ==============
 
 Bug Fixes
 --------
 * Omitted completion-candidate methods are no longer applied at all.
+* Set `docker` output-type on ghcr.io images.
 
 
 2.24.0 (2026/09/12)
