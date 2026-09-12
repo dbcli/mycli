@@ -71,20 +71,26 @@ mycli --help
 * Fuzzy history search using [fzf](https://github.com/junegunn/fzf).
 * Output explorer using [fzf](https://github.com/junegunn/fzf) or other tools.
 * Syntax highlighting using [Pygments](https://pygments.org/).
-* Smart-completion (enabled by default) will suggest context-sensitive completion.
-    - `SELECT * FROM <tab>` will only show table names.
-    - `SELECT * FROM users WHERE <tab>` will only show column names.
-* Support for multiline queries.
+* Smart-completion suggests context-sensitive completion:
+    - `SELECT * FROM `<kbd>tab</kbd> will only show table names.
+    - `SELECT * FROM users WHERE `<kbd>tab</kbd> will only show column names.
+* Multiline queries.
 * Favorite queries with positional or named parameters using [Jinja](https://jinja.palletsprojects.com/en/stable/). Save a query using
-  `/fs <alias> <query>` and execute it with `/f <alias>` or `/f <alias> --key=value`.
-* Timing of sql statements and table rendering.
-* Log every query and its results to a file (disabled by default).
-* Pretty print tabular data with colors.
-* Support for SSL connections.
+    ```
+    /fs alias <query>
+    ```
+  and execute it with
+    ```
+    /f alias --key=value
+    ```
+* Timing of SQL statements and table rendering.
+* Logging of every query and its results to a file (off by default).
+* Pretty printing of tabular data.
 * Shell-style trailing redirects with `$>`, `$>>` and `$|` operators.
 * [Polars](https://pola.rs) dataframe [transforms and plots](https://github.com/dbcli/mycli/blob/main/doc/transforms.md) with `.|`, and Parquet saves with `.>`.
-* Support for [querying LLMs](https://www.mycli.net/llm) with context derived from your schema using `/llm`.
-* Support for storing passwords in the system keyring.
+* [Querying LLMs](https://www.mycli.net/llm) with context derived from your schema using `/llm`.
+* Storing passwords in the system keyring.
+* Modern defaults such as UTF-8 connection type and SSL.
 * Integrations with: [SSH](https://www.openssh.org/), [Kubernetes](https://kubernetes.io/), [Vault](https://github.com/hashicorp/vault), and [Boundary](https://github.com/hashicorp/boundary).
 
 Mycli creates a config file `~/.myclirc` on the first run; you can use the
