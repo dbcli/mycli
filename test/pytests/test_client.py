@@ -36,6 +36,17 @@ def test_init_configures_completion_ranking(monkeypatch: pytest.MonkeyPatch, tmp
     assert cli.completer.completion_match_order == ('camel_case', 'under_words', 'perfect', 'regex', 'slash_words', 'rapidfuzz')
 
 
+@pytest.mark.parametrize(('value', 'expected'), [(None, 3), ('', 3), ('5', 5), ('0', 0), ('-1', 0)])
+def test_init_configures_regex_match_distance(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, value: str | None, expected: int) -> None:
+    patch_constructor_side_effects(monkeypatch)
+    setting = f'regex_match_distance = {value}\n' if value is not None else ''
+    myclirc = write_myclirc(tmp_path, f'[main]\n{setting}')
+
+    cli = MyCli(myclirc=myclirc)
+
+    assert cli.completer.regex_match_distance == expected
+
+
 @pytest.mark.parametrize(('value', 'expected'), [(None, 4), ('', 4), ('2', 2), ('0', 0), ('-1', 0)])
 def test_init_configures_rapidfuzz_min_length(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, value: str | None, expected: int) -> None:
     patch_constructor_side_effects(monkeypatch)

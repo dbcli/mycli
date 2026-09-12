@@ -64,6 +64,7 @@ class ClientQueryMixin:
                 'rapidfuzz_min_length': self.completer.rapidfuzz_min_length,
                 'rapidfuzz_length_coverage': self.completer.rapidfuzz_length_coverage,
                 'rapidfuzz_score_cutoff': self.completer.rapidfuzz_score_cutoff,
+                'regex_match_distance': self.completer.regex_match_distance,
             },
         )
 

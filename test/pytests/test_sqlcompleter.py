@@ -134,6 +134,18 @@ def test_find_fuzzy_matches_collects_item_level_matches(monkeypatch) -> None:
     ]
 
 
+@pytest.mark.parametrize(
+    ('distance', 'candidate', 'accepted'),
+    [(0, 'zab', True), (0, 'axb', False), (1, 'axb', True), (1, 'axxb', False), (5, 'axxxxxb', True), (5, 'axxxxxxb', False)],
+)
+def test_find_fuzzy_matches_uses_regex_match_distance(distance: int, candidate: str, accepted: bool) -> None:
+    completer = SQLCompleter(regex_match_distance=distance)
+
+    matches = completer.find_fuzzy_matches('ab', 'ab', [candidate])
+
+    assert matches == ([(candidate, Fuzziness.REGEX)] if accepted else [])
+
+
 def test_find_fuzzy_matches_skips_rapidfuzz_for_short_text(monkeypatch) -> None:
     monkeypatch.setattr(SQLCompleter, 'find_fuzzy_match', lambda *args, **kwargs: None)
 

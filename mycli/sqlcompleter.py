@@ -959,6 +959,7 @@ class SQLCompleter(Completer):
         rapidfuzz_min_length: int = 4,
         rapidfuzz_length_coverage: float = 0.67,
         rapidfuzz_score_cutoff: float = 75.0,
+        regex_match_distance: int = 3,
     ) -> None:
         super(self.__class__, self).__init__()
         self.smart_completion = smart_completion
@@ -968,6 +969,7 @@ class SQLCompleter(Completer):
         self.rapidfuzz_min_length = max(0, rapidfuzz_min_length)
         self.rapidfuzz_length_coverage = max(0.0, rapidfuzz_length_coverage)
         self.rapidfuzz_score_cutoff = max(0.0, min(100.0, rapidfuzz_score_cutoff))
+        self.regex_match_distance = max(0, regex_match_distance)
         self.completion_config_errors: list[str] = []
         default_order = tuple(category.name.lower() for category in Fuzziness)
         order = tuple(name.strip().lower() for name in completion_match_order if name.strip())
@@ -1351,7 +1353,7 @@ class SQLCompleter(Completer):
         collection: Collection[Any],
     ) -> list[tuple[str, int]]:
         completions: list[tuple[str, int]] = []
-        regex = '.{0,3}?'.join(map(re.escape, text))
+        regex = f'.{{0,{self.regex_match_distance}}}?'.join(map(re.escape, text))
         pattern = re.compile(f'({regex})')
         under_words_text = [x for x in text.split('_') if x]
         case_words_text = re.split(_CASE_CHANGE_PAT, last)

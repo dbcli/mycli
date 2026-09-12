@@ -214,6 +214,7 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
             config_property_names=get_config_property_names(self.config),
             completion_match_order=c['main'].as_list('completion_match_order') if 'completion_match_order' in c['main'] else (),
             rapidfuzz_min_length=c['main'].as_int('rapidfuzz_min_length') if c['main'].get('rapidfuzz_min_length') else 4,
+            regex_match_distance=c['main'].as_int('regex_match_distance') if c['main'].get('regex_match_distance') else 3,
             rapidfuzz_score_cutoff=c['main'].as_float('rapidfuzz_score_cutoff') if c['main'].get('rapidfuzz_score_cutoff') else 75.0,
             rapidfuzz_length_coverage=c['main'].as_float('rapidfuzz_length_coverage')
             if c['main'].get('rapidfuzz_length_coverage')
