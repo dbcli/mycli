@@ -20,6 +20,12 @@ smart_completion = True
 # * rapidfuzz - true approximate matching, _ie_ autcorrect
 completion_match_order = perfect, regex, under_words, slash_words, camel_case, rapidfuzz
 
+# Break completion candiate sorting ties by
+# * frecency - history frequency combined with recency, the default
+# * length - shortest first
+# * lexicographic - alphabetical, ignoring case
+completion_tiebreaker = frecency
+
 # Maximum intervening span length between input characters for regex completion
 # candidate matches.  Empty uses the default of 3.  Higher is more liberal, but
 # carries a perforance penalty.

@@ -442,6 +442,47 @@ def test_init_configures_frecency_sorting() -> None:
     assert completer.frecency_provider is provider
 
 
+@pytest.mark.parametrize('smart', [True, False])
+@pytest.mark.parametrize('text', ['', 'a'])
+@pytest.mark.parametrize(
+    ('tiebreaker', 'expected'),
+    [('frecency', ['azure', 'a', 'Alpha']), ('length', ['a', 'azure', 'Alpha']), ('lexicographic', ['a', 'Alpha', 'azure'])],
+)
+def test_completion_tiebreaker_orders_candidates(
+    monkeypatch: pytest.MonkeyPatch, smart: bool, text: str, tiebreaker: str, expected: list[str]
+) -> None:
+    def history() -> dict[str, float]:
+        if tiebreaker != 'frecency':
+            pytest.fail('Alternative tie-breakers must not read history.')
+        return {'azure': 20.0}
+
+    completer = make_completer(smart_completion=smart, completion_tiebreaker=tiebreaker, frecency_provider=history)
+    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda *args: [{'type': 'keyword'}])
+    monkeypatch.setattr(
+        completer, 'find_matches', lambda *args, **kwargs: [('azure', Fuzziness.REGEX), ('a', Fuzziness.REGEX), ('Alpha', Fuzziness.REGEX)]
+    )
+
+    assert [c.text for c in completer.get_completions(Document(text), None)] == expected
+
+
+@pytest.mark.parametrize('smart', [True, False])
+@pytest.mark.parametrize('tiebreaker', ['length', 'lexicographic'])
+def test_equal_tiebreaker_keys_preserve_order(monkeypatch: pytest.MonkeyPatch, smart: bool, tiebreaker: str) -> None:
+    completer = make_completer(smart_completion=smart, completion_tiebreaker=tiebreaker)
+    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda *args: [{'type': 'keyword'}])
+    monkeypatch.setattr(completer, 'find_matches', lambda *args, **kwargs: [('foo', Fuzziness.REGEX), ('FOO', Fuzziness.REGEX)])
+
+    assert [c.text for c in completer.get_completions(Document('f'), None)] == ['foo', 'FOO']
+
+
+def test_frecency_without_history_preserves_shorter_prefix_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
+    completer = make_completer()
+    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda *args: [{'type': 'keyword'}])
+    monkeypatch.setattr(completer, 'find_matches', lambda *args, **kwargs: [('alphabet', Fuzziness.REGEX), ('ant', Fuzziness.REGEX)])
+
+    assert [c.text for c in completer.get_completions(Document('a'), None)] == ['ant', 'alphabet']
+
+
 @pytest.mark.parametrize('order', [(), ('',), ('invalid',), ('regex', 'REGEX')])
 def test_completion_match_order_defaults_and_validation(order: tuple[str, ...]) -> None:
     completer = SQLCompleter(completion_match_order=order)
@@ -476,8 +517,11 @@ def test_rapidfuzz_can_replace_an_overlapping_category(monkeypatch: pytest.Monke
     assert list(completer.find_matches('alph', ['alphabet'])) == [('alphabet', Fuzziness.RAPIDFUZZ)]
 
 
-def test_prefix_priority_precedes_frecency(monkeypatch: pytest.MonkeyPatch) -> None:
-    completer = make_completer(completion_match_order=('rapidfuzz',), frecency_provider=lambda: {'alpha': 100.0})
+@pytest.mark.parametrize('tiebreaker', ['frecency', 'length', 'lexicographic'])
+def test_prefix_priority_precedes_frecency(monkeypatch: pytest.MonkeyPatch, tiebreaker: str) -> None:
+    completer = make_completer(
+        completion_match_order=('rapidfuzz',), frecency_provider=lambda: {'alpha': 100.0}, completion_tiebreaker=tiebreaker
+    )
     monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda *args: [{'type': 'keyword'}])
     monkeypatch.setattr(completer, 'find_matches', lambda *args, **kwargs: [('alpha', Fuzziness.RAPIDFUZZ), ('prefix', Fuzziness.REGEX)])
 
@@ -492,8 +536,9 @@ def test_custom_match_priority_sorts_candidates(monkeypatch: pytest.MonkeyPatch)
     assert [c.text for c in completer.get_completions(Document('x'), None)] == ['bravo', 'alpha']
 
 
-def test_completion_type_precedes_frecency_for_empty_input(monkeypatch: pytest.MonkeyPatch) -> None:
-    completer = make_completer(frecency_provider=lambda: {'popular': 10.0})
+@pytest.mark.parametrize('tiebreaker', ['frecency', 'length', 'lexicographic'])
+def test_completion_type_precedes_frecency_for_empty_input(monkeypatch: pytest.MonkeyPatch, tiebreaker: str) -> None:
+    completer = make_completer(frecency_provider=lambda: {'popular': 10.0}, completion_tiebreaker=tiebreaker)
     completer.keywords = ['popular']
     completer.functions = ['other']
     monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda *args: [{'type': 'function', 'schema': None}, {'type': 'keyword'}])
@@ -539,8 +584,9 @@ def test_get_completions_uses_frecency_before_prefix_length(monkeypatch) -> None
     assert result == ['alphabet', 'ant']
 
 
-def test_get_completions_preserves_stronger_fuzzy_match(monkeypatch) -> None:
-    completer = make_completer(frecency_provider=lambda: {'far': 100.0})
+@pytest.mark.parametrize('tiebreaker', ['frecency', 'length', 'lexicographic'])
+def test_get_completions_preserves_stronger_fuzzy_match(monkeypatch, tiebreaker: str) -> None:
+    completer = make_completer(frecency_provider=lambda: {'far': 100.0}, completion_tiebreaker=tiebreaker)
     monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda text, before: [{'type': 'column', 'tables': []}])
     monkeypatch.setattr(completer, 'populate_scoped_cols', lambda tables: ['foo', 'far'])
     monkeypatch.setattr(completer, 'populate_scoped_indexed_columns', lambda tables: [])
@@ -568,8 +614,9 @@ def test_naive_completions_use_live_frecency_provider() -> None:
     assert second == ['alpha', 'bravo']
 
 
-def test_file_completions_preserve_rigid_ordering(monkeypatch) -> None:
-    completer = make_completer(frecency_provider=lambda: {'alpha': 100.0})
+@pytest.mark.parametrize('tiebreaker', ['frecency', 'length', 'lexicographic'])
+def test_file_completions_preserve_rigid_ordering(monkeypatch, tiebreaker: str) -> None:
+    completer = make_completer(frecency_provider=lambda: {'alpha': 100.0}, completion_tiebreaker=tiebreaker)
     monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda text, before: [{'type': 'file_name'}])
     monkeypatch.setattr(completer, 'find_files', lambda word: iter([('zeta', 0), ('alpha', 0)]))
 

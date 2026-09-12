@@ -61,6 +61,7 @@ class ClientQueryMixin:
                 "config_property_names": self.completer.config_property_names,
                 'frecency_provider': self.completer.frecency_provider,
                 'completion_match_order': self.completer.completion_match_order,
+                'completion_tiebreaker': self.completer.completion_tiebreaker,
                 'rapidfuzz_min_length': self.completer.rapidfuzz_min_length,
                 'rapidfuzz_length_coverage': self.completer.rapidfuzz_length_coverage,
                 'rapidfuzz_score_cutoff': self.completer.rapidfuzz_score_cutoff,
