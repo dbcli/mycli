@@ -960,6 +960,7 @@ class SQLCompleter(Completer):
         rapidfuzz_length_coverage: float = 0.67,
         rapidfuzz_score_cutoff: float = 75.0,
         regex_match_distance: int = 3,
+        completion_tiebreaker: str = 'frecency',
     ) -> None:
         super(self.__class__, self).__init__()
         self.smart_completion = smart_completion
@@ -971,6 +972,14 @@ class SQLCompleter(Completer):
         self.rapidfuzz_score_cutoff = max(0.0, min(100.0, rapidfuzz_score_cutoff))
         self.regex_match_distance = max(0, regex_match_distance)
         self.completion_config_errors: list[str] = []
+        self.completion_tiebreaker: Literal['frecency', 'length', 'lexicographic'] = 'frecency'
+        tiebreaker = completion_tiebreaker.strip().lower()
+        if tiebreaker == 'length':
+            self.completion_tiebreaker = 'length'
+        elif tiebreaker == 'lexicographic':
+            self.completion_tiebreaker = 'lexicographic'
+        elif tiebreaker not in ('', 'frecency'):
+            self.completion_config_errors.append('Invalid completion_tiebreaker; using frecency.')
         default_order = tuple(category.name.lower() for category in Fuzziness)
         order = tuple(name.strip().lower() for name in completion_match_order if name.strip())
         if len(set(order)) != len(order) or any(name not in default_order for name in order):
@@ -1483,7 +1492,14 @@ class SQLCompleter(Completer):
         last_for_len = last_word(word_before_cursor, include="most_punctuations")
         text_for_len = last_for_len.lower()
         path_for_len = word_before_cursor
-        frecency = self.frecency_provider() if self.frecency_provider is not None else {}
+        frecency = self.frecency_provider() if self.completion_tiebreaker == 'frecency' and self.frecency_provider is not None else {}
+
+        def tiebreaker_key(candidate: str) -> tuple[float, str]:
+            if self.completion_tiebreaker == 'length':
+                return (len(candidate), '')
+            if self.completion_tiebreaker == 'lexicographic':
+                return (0, candidate.casefold())
+            return (-frecency_score(candidate, frecency) if frecency else 0.0, '')
 
         if smart_completion is None:
             smart_completion = self.smart_completion
@@ -1498,8 +1514,8 @@ class SQLCompleter(Completer):
                 fuzzy=False,
                 text_before_cursor=document.text_before_cursor,
             )
-            if frecency:
-                matches = sorted(matches, key=lambda item: -frecency_score(item[0], frecency))
+            if frecency or self.completion_tiebreaker != 'frecency':
+                matches = sorted(matches, key=lambda item: tiebreaker_key(item[0]))
             return (Completion(x[0], -len(text_for_len)) for x in matches)
 
         completions: list[tuple[str, int, int]] = []
@@ -1861,18 +1877,16 @@ class SQLCompleter(Completer):
                     ]
                     break
 
-        def completion_sort_key(item: tuple[str, int, int], text_for_len: str) -> tuple[int, int, float, int]:
+        def completion_sort_key(item: tuple[str, int, int], text_for_len: str) -> tuple[int, int, tuple[float, str], int]:
             candidate, fuzziness, rank = item
-            candidate_frecency = frecency_score(candidate, frecency) if frecency else 0.0
+            tiebreaker = tiebreaker_key(candidate)
             if not text_for_len:
-                # Sort by the rank (the order of the completion type), then frecency.
-                return (0, rank, -candidate_frecency, 0)
+                return (0, rank, tiebreaker, 0)
             elif candidate.lower().startswith(text_for_len):
-                # Direct prefix matches are equally relevant; prefer frecency before length.
-                return (0, 0, -candidate_frecency, -1000 + len(candidate))
-            # Sort by fuzziness, rank, and frecency.
-            # todo add alpha here, or original order?
-            return (self._match_priorities[fuzziness], rank, -candidate_frecency, 0)
+                # Preserve the shorter-prefix fallback for equal frecency scores.
+                length = -1000 + len(candidate) if self.completion_tiebreaker == 'frecency' else 0
+                return (0, 0, tiebreaker, length)
+            return (self._match_priorities[fuzziness], rank, tiebreaker, 0)
 
         if rigid_sort:
             uniq_completions_str = dict.fromkeys(x[0] for x in completions)

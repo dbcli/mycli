@@ -7,6 +7,7 @@ Features
 * Make completion candidate match order configurable.
 * Make approximate-matching completion thresholds configurable.
 * Make regex matching completion thresholds configurable.
+* Make completion-candidate sorting tiebreaker configurable.
 
 
 2.23.0 (2026/09/09)

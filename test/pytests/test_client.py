@@ -36,6 +36,21 @@ def test_init_configures_completion_ranking(monkeypatch: pytest.MonkeyPatch, tmp
     assert cli.completer.completion_match_order == ('camel_case', 'under_words', 'perfect', 'regex', 'slash_words', 'rapidfuzz')
 
 
+@pytest.mark.parametrize(
+    ('value', 'expected'),
+    [(None, 'frecency'), ('', 'frecency'), ('length', 'length'), ('LEXICOGRAPHIC', 'lexicographic'), ('invalid', 'frecency')],
+)
+def test_init_configures_completion_tiebreaker(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, value: str | None, expected: str) -> None:
+    patch_constructor_side_effects(monkeypatch)
+    messages: list[str] = []
+    monkeypatch.setattr(MyCli, 'echo', lambda self, message, **kwargs: messages.append(message))
+    setting = f'completion_tiebreaker = {value}\n' if value is not None else ''
+    cli = MyCli(myclirc=write_myclirc(tmp_path, f'[main]\n{setting}'))
+
+    assert cli.completer.completion_tiebreaker == expected
+    assert messages == (['Invalid completion_tiebreaker; using frecency.'] if value == 'invalid' else [])
+
+
 @pytest.mark.parametrize(('value', 'expected'), [(None, 3), ('', 3), ('5', 5), ('0', 0), ('-1', 0)])
 def test_init_configures_regex_match_distance(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, value: str | None, expected: int) -> None:
     patch_constructor_side_effects(monkeypatch)
