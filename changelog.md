@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Documentation
+--------
+* Update features bullets in `README.md`.
+
+
 Internal
 --------
 * Naming and commentary in `publish.yml` workflow.
