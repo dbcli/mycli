@@ -8,6 +8,7 @@ Features
 * Make approximate-matching completion thresholds configurable.
 * Make regex matching completion thresholds configurable.
 * Make completion-candidate sorting tiebreaker configurable.
+* Add a `\b` prompt format string to show transaction status.
 
 
 2.23.0 (2026/09/09)

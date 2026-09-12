@@ -7,6 +7,7 @@ from io import StringIO
 import os
 from types import SimpleNamespace
 from typing import Any, Literal, cast
+from unittest.mock import Mock
 
 from prompt_toolkit.formatted_text import to_formatted_text, to_plain_text
 import pymysql
@@ -682,6 +683,97 @@ def test_prompt_and_title_helper_early_returns_and_remaining_prompt_branches(mon
 def test_maybe_html_escape() -> None:
     assert repl_mode.maybe_html_escape('plain', False) == 'plain'
     assert repl_mode.maybe_html_escape('a&b<1>', True) == 'a&amp;b&lt;1&gt;'
+
+
+def make_transaction_prompt_cli(connection: Any) -> Any:
+    return make_repl_cli(
+        SimpleNamespace(
+            user='alice',
+            host='db.example.com',
+            dbname='nameprod',
+            port=3306,
+            socket=None,
+            server_info=None,
+            conn=connection,
+        )
+    )
+
+
+@pytest.mark.parametrize(('status', 'expected'), [(0, ''), (1, '[TX]'), (2, ''), (3, '[TX]'), (9, '[TX]'), (None, '')])
+def test_transaction_prompt_reads_refreshed_flag(status: int | None, expected: str) -> None:
+    connection = SimpleNamespace(server_status=0 if expected else 1, cursor=pytest.fail)
+
+    def ping(*, reconnect: bool) -> None:
+        assert reconnect is False
+        connection.server_status = status
+
+    connection.ping = ping
+    cli = make_transaction_prompt_cli(connection)
+
+    assert to_plain_text(repl_mode.render_prompt_string(cli, r'\b', 0)) == expected
+
+
+@pytest.mark.parametrize('connection', [None, SimpleNamespace(ping=Mock())])
+def test_transaction_prompt_handles_unavailable_connection_status(connection: Any) -> None:
+    cli = make_transaction_prompt_cli(connection)
+
+    assert to_plain_text(repl_mode.render_prompt_string(cli, r'\b', 0)) == ''
+
+
+def test_transaction_prompt_handles_missing_connection_attribute() -> None:
+    cli = make_transaction_prompt_cli(None)
+    del cli.sqlexecute.conn
+
+    assert to_plain_text(repl_mode.render_prompt_string(cli, r'\b', 0)) == ''
+
+
+def test_transaction_prompt_updates_on_new_render() -> None:
+    connection = SimpleNamespace(server_status=0, ping=Mock())
+    cli = make_transaction_prompt_cli(connection)
+
+    assert to_plain_text(repl_mode.render_prompt_string(cli, r'\b', 0)) == ''
+    connection.server_status = 1
+    assert to_plain_text(repl_mode.render_prompt_string(cli, r'\b', 1)) == '[TX]'
+    connection.server_status = 0
+    assert to_plain_text(repl_mode.render_prompt_string(cli, r'\b', 2)) == ''
+
+
+@pytest.mark.parametrize('status', [0, 1])
+@pytest.mark.parametrize(
+    ('format_string', 'active', 'idle'),
+    [
+        (r'\b|\b', '[TX]|[TX]', '|'),
+        (r'\\b', r'\b', r'\b'),
+        (r'\x1b[31m\b\x1b[0m', '[TX]', ''),
+        (r'\<html><b>\b</b>\</html>', '[TX]', ''),
+    ],
+)
+def test_transaction_prompt_preserves_formatting(status: int, format_string: str, active: str, idle: str) -> None:
+    cli = make_transaction_prompt_cli(SimpleNamespace(server_status=status, ping=Mock()))
+
+    assert to_plain_text(repl_mode.render_prompt_string(cli, format_string, 0)) == (active if status else idle)
+
+
+@pytest.mark.parametrize(('format_string', 'expected_calls'), [(r'\b|\b', 1), (r'\\b', 0), ('plain', 0)])
+def test_transaction_prompt_pings_only_for_active_escape(format_string: str, expected_calls: int) -> None:
+    ping = Mock()
+    cli = make_transaction_prompt_cli(SimpleNamespace(server_status=0, ping=ping))
+
+    repl_mode.render_prompt_string(cli, format_string, 0)
+
+    assert ping.call_count == expected_calls
+    if expected_calls:
+        ping.assert_called_once_with(reconnect=False)
+
+
+def test_transaction_prompt_reuses_cached_render_without_ping() -> None:
+    ping = Mock()
+    cli = make_transaction_prompt_cli(SimpleNamespace(server_status=0, ping=ping))
+
+    repl_mode.render_prompt_string(cli, r'\b', 0)
+    repl_mode.render_prompt_string(cli, r'\b', 0)
+
+    ping.assert_called_once_with(reconnect=False)
 
 
 def test_render_prompt_string_includes_current_edit_mode() -> None:
