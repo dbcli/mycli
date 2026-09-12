@@ -4,6 +4,7 @@ Upcoming (TBD)
 Internal
 --------
 * Naming and commentary in `publish.yml` workflow.
+* Build Docker image as part of regular CI tests.
 
 
 2.24.4 (2026/09/12)
