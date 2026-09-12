@@ -390,6 +390,65 @@ def test_init_configures_frecency_sorting() -> None:
     assert completer.frecency_provider is provider
 
 
+@pytest.mark.parametrize('order', [(), ('',), ('invalid',), ('regex', 'REGEX')])
+def test_completion_match_order_defaults_and_validation(order: tuple[str, ...]) -> None:
+    completer = SQLCompleter(completion_match_order=order)
+
+    assert completer.completion_match_order == tuple(category.name.lower() for category in Fuzziness)
+    assert bool(completer.completion_config_errors) == (order in [('invalid',), ('regex', 'REGEX')])
+
+
+def test_completion_match_order_normalizes_partial_list() -> None:
+    completer = SQLCompleter(completion_match_order=(' CAMEL_CASE ', 'under_words'))
+
+    assert completer.completion_match_order == ('camel_case', 'under_words', 'perfect', 'regex', 'slash_words', 'rapidfuzz')
+
+
+@pytest.mark.parametrize('preferred', ['regex', 'under_words', 'camel_case'])
+def test_overlapping_matches_use_configured_priority(preferred: str) -> None:
+    completer = SQLCompleter(completion_match_order=(preferred,))
+
+    matches = list(completer.find_matches('al', ['alphabet']))
+
+    assert matches == [('alphabet', Fuzziness[preferred.upper()])]
+
+
+def test_rapidfuzz_can_replace_an_overlapping_category(monkeypatch: pytest.MonkeyPatch) -> None:
+    completer = SQLCompleter(completion_match_order=('rapidfuzz',))
+    monkeypatch.setattr(
+        mycli.sqlcompleter.rapidfuzz.process,
+        'extract',
+        lambda *args, **kwargs: [('alphabet', 100, 0)],
+    )
+
+    assert list(completer.find_matches('alph', ['alphabet'])) == [('alphabet', Fuzziness.RAPIDFUZZ)]
+
+
+def test_prefix_priority_precedes_frecency(monkeypatch: pytest.MonkeyPatch) -> None:
+    completer = make_completer(completion_match_order=('rapidfuzz',), frecency_provider=lambda: {'alpha': 100.0})
+    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda *args: [{'type': 'keyword'}])
+    monkeypatch.setattr(completer, 'find_matches', lambda *args, **kwargs: [('alpha', Fuzziness.RAPIDFUZZ), ('prefix', Fuzziness.REGEX)])
+
+    assert [c.text for c in completer.get_completions(Document('pre'), None)] == ['prefix', 'alpha']
+
+
+def test_custom_match_priority_sorts_candidates(monkeypatch: pytest.MonkeyPatch) -> None:
+    completer = make_completer(completion_match_order=('under_words',))
+    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda *args: [{'type': 'keyword'}])
+    monkeypatch.setattr(completer, 'find_matches', lambda *args, **kwargs: [('alpha', Fuzziness.REGEX), ('bravo', Fuzziness.UNDER_WORDS)])
+
+    assert [c.text for c in completer.get_completions(Document('x'), None)] == ['bravo', 'alpha']
+
+
+def test_completion_type_precedes_frecency_for_empty_input(monkeypatch: pytest.MonkeyPatch) -> None:
+    completer = make_completer(frecency_provider=lambda: {'popular': 10.0})
+    completer.keywords = ['popular']
+    completer.functions = ['other']
+    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda *args: [{'type': 'function', 'schema': None}, {'type': 'keyword'}])
+
+    assert [c.text for c in completer.get_completions(Document(''), None)] == ['OTHER', 'POPULAR']
+
+
 def test_special_command_completion_displays_snippet(monkeypatch) -> None:
     completer = make_completer()
     favorite = mycli.sqlcompleter.SPECIAL_COMMANDS['/favorite']

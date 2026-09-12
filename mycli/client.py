@@ -212,7 +212,10 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
             keyword_casing=keyword_casing,
             indexed_column_suffix=indexed_column_suffix,
             config_property_names=get_config_property_names(self.config),
+            completion_match_order=c['main'].as_list('completion_match_order') if 'completion_match_order' in c['main'] else (),
         )
+        for error in self.completer.completion_config_errors:
+            self.echo(error, err=True, fg='red')
         self._completer_lock = threading.Lock()
 
         self.min_completion_trigger = c["main"].as_int("min_completion_trigger")

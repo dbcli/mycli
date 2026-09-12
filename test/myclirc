@@ -9,6 +9,17 @@ show_warnings = False
 # possible completions will be listed.
 smart_completion = True
 
+# Methods to find completion candidates, highest priority first.  Omitted
+# methods follow in the default order; empty uses the default.  Filename
+# and Polars completions retain their own dedicated ordering.
+# * perfect - exact leading match
+# * regex - ordered charater match with limited intervening spans ("rgx" matches "regex")
+# * under_words - like regex but follows underscores ("uw" matches "under_words")
+# * slash_words - like regex but follows slahes ("sw" matches "slash/words")
+# * camel_case - like regex but follows capitalization ("cc" matches "CamelCase")
+# * rapidfuzz - true approximate matching, _ie_ autcorrect
+completion_match_order = perfect, regex, under_words, slash_words, camel_case, rapidfuzz
+
 # Text appended to indexed column names in the completion menu.  This text is
 # not inserted into the query. Leave empty to disable the marker.  Quote values
 # containing spaces, commas, or comment characters.

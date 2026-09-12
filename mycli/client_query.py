@@ -60,6 +60,7 @@ class ClientQueryMixin:
                 "indexed_column_suffix": self.completer.indexed_column_suffix,
                 "config_property_names": self.completer.config_property_names,
                 'frecency_provider': self.completer.frecency_provider,
+                'completion_match_order': self.completer.completion_match_order,
             },
         )
 
