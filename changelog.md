@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Internal
+--------
+* Remove `continue-on-error` from release tests.
+
+
 2.24.3 (2026/09/12)
 ==============
 
