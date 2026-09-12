@@ -1,3 +1,13 @@
+2.24.2 (2026/09/12)
+==============
+
+Bug Fixes
+--------
+* Revert `docker` output-type on ghcr.io images.
+* Set `artifact-metadata: write` in `publish.yml`.
+
+
+
 2.24.1 (2026/09/12)
 ==============
 
