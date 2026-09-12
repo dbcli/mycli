@@ -200,6 +200,7 @@ wider_completion_menu = False
 # * \W - number of warnings, or the empty string (requires frequent trips to the server)
 # * \y - uptime in seconds (requires frequent trips to the server)
 # * \Y - uptime in words (requires frequent trips to the server)
+# * \b - "[TX]" when in a transaction, otherwise empty (requires frequent trips to the server)
 # * \A - DSN alias
 # * \n - a newline
 # * \_ - a space

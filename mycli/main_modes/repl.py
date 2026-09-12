@@ -43,6 +43,7 @@ from prompt_toolkit.lexers import PygmentsLexer
 from prompt_toolkit.output import ColorDepth
 from prompt_toolkit.shortcuts import CompleteStyle, PromptSession
 import pymysql
+from pymysql.constants.SERVER_STATUS import SERVER_STATUS_IN_TRANS
 from pymysql.cursors import Cursor
 
 import mycli as mycli_package
@@ -343,6 +344,13 @@ def render_prompt_string(
     strings = [x.replace('\\_', ' ') for x in strings]
 
     checker_string = ' '.join(strings)
+    if r'\b' in checker_string:
+        connection = getattr(sqlexecute, 'conn', None)
+        if connection:
+            connection.ping(reconnect=False)
+        server_status = getattr(connection, 'server_status', 0) or 0
+        transaction_indicator = '[TX]' if server_status & SERVER_STATUS_IN_TRANS else ''
+        strings = [x.replace(r'\b', transaction_indicator) for x in strings]
     if r'\e' in checker_string:
         if mycli.prompt_session:
             edit_mode = mycli.prompt_session.editing_mode.value.lower()
