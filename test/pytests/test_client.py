@@ -33,7 +33,7 @@ def test_init_configures_completion_ranking(monkeypatch: pytest.MonkeyPatch, tmp
 
     cli = MyCli(myclirc=myclirc)
 
-    assert cli.completer.completion_match_order == ('camel_case', 'under_words', 'perfect', 'regex', 'slash_words', 'rapidfuzz')
+    assert cli.completer.completion_match_order == ('camel_case', 'under_words')
 
 
 @pytest.mark.parametrize(

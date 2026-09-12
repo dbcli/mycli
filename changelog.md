@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Bug Fixes
+--------
+* Omitted completion-candidate methods are no longer applied at all.
+
+
 2.24.0 (2026/09/12)
 ==============
 

@@ -1,5 +1,6 @@
 # type: ignore
 
+from pathlib import Path
 import re
 from types import SimpleNamespace
 from unittest.mock import Mock
@@ -153,7 +154,7 @@ def test_find_fuzzy_matches_skips_rapidfuzz_for_short_text(monkeypatch) -> None:
         raise AssertionError('rapidfuzz should not be called')
 
     monkeypatch.setattr(mycli.sqlcompleter.rapidfuzz.process, 'extract', fail_extract)
-    completer = SQLCompleter()
+    completer = SQLCompleter(completion_match_order=('rapidfuzz',))
     matches = completer.find_fuzzy_matches('sel', 'sel', ['SELECT'])
 
     assert matches == []
@@ -326,7 +327,7 @@ def test_find_matches_supports_substring_matching() -> None:
 def test_find_matches_quotes_identifiers_when_text_starts_with_backtick() -> None:
     matches = collect_matches('`us', ['users'])
 
-    assert matches == [('`users`', Fuzziness.REGEX)]
+    assert matches == [('`users`', Fuzziness.PERFECT)]
 
 
 def test_find_matches_quotes_identifiers_when_cursor_is_inside_backticks() -> None:
@@ -336,7 +337,7 @@ def test_find_matches_quotes_identifiers_when_cursor_is_inside_backticks() -> No
         text_before_cursor='select `uu',
     )
 
-    assert matches == [('`uuid`', Fuzziness.REGEX)]
+    assert matches == [('`uuid`', Fuzziness.PERFECT)]
 
 
 def test_find_matches_preserves_asterisk_inside_backticks() -> None:
@@ -346,14 +347,14 @@ def test_find_matches_preserves_asterisk_inside_backticks() -> None:
         text_before_cursor='select `*',
     )
 
-    assert matches == [('*', Fuzziness.REGEX)]
+    assert matches == [('*', Fuzziness.PERFECT)]
 
 
 def test_find_matches_finds_regex_matches() -> None:
     matches = collect_matches('sel', ['SELECT', 'foo_select_bar'])
 
     assert matches == [
-        ('SELECT', Fuzziness.REGEX),
+        ('SELECT', Fuzziness.PERFECT),
         ('foo_select_bar', Fuzziness.REGEX),
     ]
 
@@ -386,7 +387,7 @@ def test_find_matches_skips_rapidfuzz_for_short_text(monkeypatch) -> None:
 
     matches = collect_matches('sel', ['SELECT'])
 
-    assert matches == [('SELECT', Fuzziness.REGEX)]
+    assert matches == [('SELECT', Fuzziness.PERFECT)]
 
 
 def test_find_matches_filters_short_rapidfuzz_candidates(monkeypatch) -> None:
@@ -404,10 +405,10 @@ def test_find_matches_filters_short_rapidfuzz_candidates(monkeypatch) -> None:
 @pytest.mark.parametrize(
     ('orig_text', 'collection', 'casing', 'expected'),
     [
-        ('sel', ['SELECT'], 'auto', [('select', Fuzziness.REGEX)]),
-        ('SEL', ['select'], 'auto', [('SELECT', Fuzziness.REGEX)]),
-        ('sel', ['select'], 'upper', [('SELECT', Fuzziness.REGEX)]),
-        ('SEL', ['SELECT'], 'lower', [('select', Fuzziness.REGEX)]),
+        ('sel', ['SELECT'], 'auto', [('select', Fuzziness.PERFECT)]),
+        ('SEL', ['select'], 'auto', [('SELECT', Fuzziness.PERFECT)]),
+        ('sel', ['select'], 'upper', [('SELECT', Fuzziness.PERFECT)]),
+        ('SEL', ['SELECT'], 'lower', [('select', Fuzziness.PERFECT)]),
     ],
 )
 def test_find_matches_applies_casing(
@@ -494,12 +495,119 @@ def test_completion_match_order_defaults_and_validation(order: tuple[str, ...]) 
 def test_completion_match_order_normalizes_partial_list() -> None:
     completer = SQLCompleter(completion_match_order=(' CAMEL_CASE ', 'under_words'))
 
-    assert completer.completion_match_order == ('camel_case', 'under_words', 'perfect', 'regex', 'slash_words', 'rapidfuzz')
+    assert completer.completion_match_order == ('camel_case', 'under_words')
+
+
+@pytest.mark.parametrize(
+    ('method', 'text', 'candidate'),
+    [
+        ('perfect', 'sel', 'select'),
+        ('regex', 'slt', 'select'),
+        ('under_words', 'us_de_fu', 'user_defined_function'),
+        ('camel_case', 'TiZoTrTy', 'TimeZoneTransitionType'),
+        ('rapidfuzz', 'abcd', 'abce'),
+    ],
+)
+def test_only_enabled_method_contributes_candidates(method: str, text: str, candidate: str) -> None:
+    enabled = SQLCompleter(completion_match_order=(method,))
+    disabled = SQLCompleter(completion_match_order=('slash_words',))
+
+    assert enabled.find_fuzzy_matches(text, text.lower(), [candidate]) == [(candidate, Fuzziness[method.upper()])]
+    assert disabled.find_fuzzy_matches(text, text.lower(), [candidate]) == []
+
+
+def test_perfect_only_does_not_run_fuzzy_matchers(monkeypatch: pytest.MonkeyPatch) -> None:
+    completer = SQLCompleter(completion_match_order=('perfect',))
+    monkeypatch.setattr(mycli.sqlcompleter.re, 'compile', pytest.fail)
+    monkeypatch.setattr(mycli.sqlcompleter.re, 'split', pytest.fail)
+    monkeypatch.setattr(completer, 'word_parts_match', pytest.fail)
+    monkeypatch.setattr(mycli.sqlcompleter.rapidfuzz.process, 'extract', pytest.fail)
+
+    assert completer.find_fuzzy_matches('sele', 'sele', ['select', 'user_select']) == [('select', Fuzziness.PERFECT)]
+
+
+@pytest.mark.parametrize('order', [('perfect', 'regex'), ('regex', 'perfect')])
+def test_enabled_prefix_methods_follow_configured_priority(order: tuple[str, ...]) -> None:
+    completer = SQLCompleter(completion_match_order=order)
+
+    assert list(completer.find_matches('sel', ['select'])) == [('select', Fuzziness[order[0].upper()])]
+
+
+@pytest.mark.parametrize('smart', [True, False])
+@pytest.mark.parametrize(('order', 'expected'), [(('perfect',), ['select']), (('slash_words',), [])])
+def test_sql_completion_with_restricted_methods(
+    monkeypatch: pytest.MonkeyPatch, smart: bool, order: tuple[str, ...], expected: list[str]
+) -> None:
+    completer = make_completer(smart_completion=smart, completion_match_order=order)
+    completer.keywords = ['select', 'user_select']
+    completer.all_completions = {'select', 'user_select'}
+    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda *args: [{'type': 'keyword'}])
+
+    assert [c.text for c in completer.get_completions(Document('sel'), None)] == expected
+
+
+def test_nonfuzzy_completion_requires_perfect() -> None:
+    completer = SQLCompleter(completion_match_order=('regex',))
+
+    assert list(completer.find_matches('sel', ['select'], fuzzy=False)) == []
+
+
+@pytest.mark.parametrize('smart', [True, False])
+@pytest.mark.parametrize(('name', 'prefix'), [('order items', 'ord'), ('select', 'SEL')])
+@pytest.mark.parametrize('quote', ['', '`'])
+def test_perfect_only_completes_quoted_table_names(smart: bool, name: str, prefix: str, quote: str) -> None:
+    completer = SQLCompleter(smart_completion=smart, completion_match_order=('perfect',))
+    completer.extend_schemata('test')
+    completer.set_dbname('test')
+    completer.extend_relations([(name,)], kind='tables')
+    token = quote + prefix
+
+    matches = list(completer.get_completions(Document(f'SELECT * FROM {token}'), None))
+
+    assert any(c.text == f'`{name}`' and c.start_position == -len(token) for c in matches)
+
+
+@pytest.mark.parametrize(('name', 'prefix'), [('order total', 'ord'), ('from', 'fro')])
+def test_perfect_only_completes_quoted_column_names(name: str, prefix: str) -> None:
+    completer = SQLCompleter(completion_match_order=('perfect',))
+    completer.extend_schemata('test')
+    completer.set_dbname('test')
+    completer.extend_relations([('orders',)], kind='tables')
+    completer.extend_columns([('orders', name)], kind='tables')
+
+    matches = list(completer.get_completions(Document(f'SELECT * FROM orders WHERE {prefix}'), None))
+
+    assert any(c.text == f'`{name}`' and c.start_position == -len(prefix) for c in matches)
+
+
+@pytest.mark.parametrize('fuzzy', [True, False])
+def test_perfect_only_does_not_match_inside_quoted_names(fuzzy: bool) -> None:
+    completer = SQLCompleter(completion_match_order=('perfect',))
+
+    assert list(completer.find_matches('der', ['`order items`'], fuzzy=fuzzy, start_only=True)) == []
+
+
+@pytest.mark.parametrize(('word', 'order'), [('./fi', ('perfect',)), ('fi', ('slash_words',))])
+def test_disabled_file_methods_do_not_access_filesystem(monkeypatch: pytest.MonkeyPatch, word: str, order: tuple[str, ...]) -> None:
+    completer = SQLCompleter(completion_match_order=order)
+    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_path_by_prefix', pytest.fail)
+    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_path', pytest.fail)
+
+    assert list(completer.find_files(word)) == []
+
+
+@pytest.mark.parametrize(('word', 'method'), [('./fi', 'slash_words'), ('fi', 'perfect')])
+def test_enabled_file_method_completes_paths(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, word: str, method: str) -> None:
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / 'file.sql').touch()
+    completer = SQLCompleter(completion_match_order=(method,))
+
+    assert list(completer.find_files(word)) == [('./file.sql' if '/' in word else 'file.sql', Fuzziness[method.upper()])]
 
 
 @pytest.mark.parametrize('preferred', ['regex', 'under_words', 'camel_case'])
 def test_overlapping_matches_use_configured_priority(preferred: str) -> None:
-    completer = SQLCompleter(completion_match_order=(preferred,))
+    completer = SQLCompleter(completion_match_order=(preferred, 'perfect'))
 
     matches = list(completer.find_matches('al', ['alphabet']))
 
@@ -507,7 +615,7 @@ def test_overlapping_matches_use_configured_priority(preferred: str) -> None:
 
 
 def test_rapidfuzz_can_replace_an_overlapping_category(monkeypatch: pytest.MonkeyPatch) -> None:
-    completer = SQLCompleter(completion_match_order=('rapidfuzz',))
+    completer = SQLCompleter(completion_match_order=('rapidfuzz', 'regex'))
     monkeypatch.setattr(
         mycli.sqlcompleter.rapidfuzz.process,
         'extract',
@@ -520,7 +628,7 @@ def test_rapidfuzz_can_replace_an_overlapping_category(monkeypatch: pytest.Monke
 @pytest.mark.parametrize('tiebreaker', ['frecency', 'length', 'lexicographic'])
 def test_prefix_priority_precedes_frecency(monkeypatch: pytest.MonkeyPatch, tiebreaker: str) -> None:
     completer = make_completer(
-        completion_match_order=('rapidfuzz',), frecency_provider=lambda: {'alpha': 100.0}, completion_tiebreaker=tiebreaker
+        completion_match_order=('rapidfuzz', 'regex'), frecency_provider=lambda: {'alpha': 100.0}, completion_tiebreaker=tiebreaker
     )
     monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda *args: [{'type': 'keyword'}])
     monkeypatch.setattr(completer, 'find_matches', lambda *args, **kwargs: [('alpha', Fuzziness.RAPIDFUZZ), ('prefix', Fuzziness.REGEX)])
@@ -529,7 +637,7 @@ def test_prefix_priority_precedes_frecency(monkeypatch: pytest.MonkeyPatch, tieb
 
 
 def test_custom_match_priority_sorts_candidates(monkeypatch: pytest.MonkeyPatch) -> None:
-    completer = make_completer(completion_match_order=('under_words',))
+    completer = make_completer(completion_match_order=('under_words', 'regex'))
     monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda *args: [{'type': 'keyword'}])
     monkeypatch.setattr(completer, 'find_matches', lambda *args, **kwargs: [('alpha', Fuzziness.REGEX), ('bravo', Fuzziness.UNDER_WORDS)])
 
