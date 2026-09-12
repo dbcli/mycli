@@ -1,4 +1,4 @@
-name: Publish Python Package
+name: Publish Packages
 
 on:
   release:
@@ -252,7 +252,7 @@ jobs:
         path: dist/
 
   publish-pypi:
-    name: Publish to PyPI
+    name: Publish Wheel to PyPI
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     needs: [build]
@@ -269,9 +269,11 @@ jobs:
       uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
 
   publish-image:
-    name: Publish to ghcr.io
+    name: Publish Image to ghcr.io
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
+    # doesn't actually need the results of build, but it makes sense to run this
+    # concurrently with publish-pypi
     needs: [build]
     environment: release
 
