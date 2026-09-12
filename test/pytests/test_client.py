@@ -36,6 +36,43 @@ def test_init_configures_completion_ranking(monkeypatch: pytest.MonkeyPatch, tmp
     assert cli.completer.completion_match_order == ('camel_case', 'under_words', 'perfect', 'regex', 'slash_words', 'rapidfuzz')
 
 
+@pytest.mark.parametrize(('value', 'expected'), [(None, 4), ('', 4), ('2', 2), ('0', 0), ('-1', 0)])
+def test_init_configures_rapidfuzz_min_length(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, value: str | None, expected: int) -> None:
+    patch_constructor_side_effects(monkeypatch)
+    setting = f'rapidfuzz_min_length = {value}\n' if value is not None else ''
+    myclirc = write_myclirc(tmp_path, f'[main]\n{setting}')
+
+    cli = MyCli(myclirc=myclirc)
+
+    assert cli.completer.rapidfuzz_min_length == expected
+
+
+@pytest.mark.parametrize(('value', 'expected'), [(None, 0.67), ('', 0.67), ('0.5', 0.5), ('0', 0.0), ('-1', 0.0)])
+def test_init_configures_rapidfuzz_length_coverage(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, value: str | None, expected: float
+) -> None:
+    patch_constructor_side_effects(monkeypatch)
+    setting = f'rapidfuzz_length_coverage = {value}\n' if value is not None else ''
+    myclirc = write_myclirc(tmp_path, f'[main]\n{setting}')
+
+    cli = MyCli(myclirc=myclirc)
+
+    assert cli.completer.rapidfuzz_length_coverage == expected
+
+
+@pytest.mark.parametrize(('value', 'expected'), [(None, 75.0), ('', 75.0), ('82.5', 82.5), ('0', 0.0), ('-1', 0.0), ('101', 100.0)])
+def test_init_configures_rapidfuzz_score_cutoff(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, value: str | None, expected: float
+) -> None:
+    patch_constructor_side_effects(monkeypatch)
+    setting = f'rapidfuzz_score_cutoff = {value}\n' if value is not None else ''
+    myclirc = write_myclirc(tmp_path, f'[main]\n{setting}')
+
+    cli = MyCli(myclirc=myclirc)
+
+    assert cli.completer.rapidfuzz_score_cutoff == expected
+
+
 @pytest.mark.parametrize('value', ['', 'rapidfuzz'])
 def test_init_reads_empty_or_single_match_order(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, value: str) -> None:
     patch_constructor_side_effects(monkeypatch)
