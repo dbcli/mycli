@@ -985,7 +985,7 @@ class SQLCompleter(Completer):
         if len(set(order)) != len(order) or any(name not in default_order for name in order):
             self.completion_config_errors.append('Invalid completion_match_order; using the default order.')
             order = ()
-        self.completion_match_order = order + tuple(name for name in default_order if name not in order)
+        self.completion_match_order = order or default_order
         self._match_priorities: dict[int, int] = {
             Fuzziness[name.upper()]: priority for priority, name in enumerate(self.completion_match_order)
         }
@@ -1337,12 +1337,12 @@ class SQLCompleter(Completer):
     def find_fuzzy_match(
         self,
         item: str,
-        pattern: re.Pattern[str],
+        pattern: re.Pattern[str] | None,
         under_words_text: list[str],
         case_words_text: list[str],
     ) -> int | None:
         for name in self.completion_match_order:
-            if name == 'regex' and pattern.search(item.lower()):
+            if name == 'regex' and pattern is not None and pattern.search(item.lower()):
                 return Fuzziness.REGEX
             if name == 'under_words':
                 under_words_item = [x for x in item.lower().split('_') if x]
@@ -1362,17 +1362,22 @@ class SQLCompleter(Completer):
         collection: Collection[Any],
     ) -> list[tuple[str, int]]:
         completions: list[tuple[str, int]] = []
-        regex = f'.{{0,{self.regex_match_distance}}}?'.join(map(re.escape, text))
-        pattern = re.compile(f'({regex})')
-        under_words_text = [x for x in text.split('_') if x]
-        case_words_text = re.split(_CASE_CHANGE_PAT, last)
+        pattern = None
+        if 'regex' in self.completion_match_order:
+            regex = f'.{{0,{self.regex_match_distance}}}?'.join(map(re.escape, text))
+            pattern = re.compile(f'({regex})')
+        under_words_text = [x for x in text.split('_') if x] if 'under_words' in self.completion_match_order else []
+        case_words_text = re.split(_CASE_CHANGE_PAT, last) if 'camel_case' in self.completion_match_order else []
 
         for item in collection:
             fuzziness = self.find_fuzzy_match(item, pattern, under_words_text, case_words_text)
+            if 'perfect' in self.completion_match_order and self._matches_prefix(item, text):
+                if fuzziness is None or self._match_priorities[Fuzziness.PERFECT] < self._match_priorities[fuzziness]:
+                    fuzziness = Fuzziness.PERFECT
             if fuzziness is not None:
                 completions.append((item, fuzziness))
 
-        if len(text) >= self.rapidfuzz_min_length:
+        if 'rapidfuzz' in self.completion_match_order and len(text) >= self.rapidfuzz_min_length:
             rapidfuzz_matches = rapidfuzz.process.extract(
                 text,
                 collection,
@@ -1397,17 +1402,22 @@ class SQLCompleter(Completer):
 
         return completions
 
+    def _matches_prefix(self, candidate: str, text: str) -> bool:
+        if not text.startswith('`'):
+            candidate = self._strip_backticks(candidate)
+        return candidate.lower().startswith(text)
+
     def find_perfect_matches(
         self,
         text: str,
         collection: Collection[Any],
         start_only: bool,
     ) -> list[tuple[str, int]]:
+        if 'perfect' not in self.completion_match_order:
+            return []
         completions: list[tuple[str, int]] = []
-        match_end_limit = len(text) if start_only else None
         for item in collection:
-            match_point = item.lower().find(text, 0, match_end_limit)
-            if match_point >= 0:
+            if self._matches_prefix(item, text) if start_only else text in item.lower():
                 completions.append((item, Fuzziness.PERFECT))
         return completions
 
@@ -1882,7 +1892,7 @@ class SQLCompleter(Completer):
             tiebreaker = tiebreaker_key(candidate)
             if not text_for_len:
                 return (0, rank, tiebreaker, 0)
-            elif candidate.lower().startswith(text_for_len):
+            elif self._matches_prefix(candidate, text_for_len):
                 # Preserve the shorter-prefix fallback for equal frecency scores.
                 length = -1000 + len(candidate) if self.completion_tiebreaker == 'frecency' else 0
                 return (0, 0, tiebreaker, length)
@@ -1929,10 +1939,13 @@ class SQLCompleter(Completer):
 
         """
         if '/' in word:
-            for path in suggest_path_by_prefix(word, sql_only=sql_only):
-                yield (path, Fuzziness.SLASH_WORDS)
+            if 'slash_words' in self.completion_match_order:
+                for path in suggest_path_by_prefix(word, sql_only=sql_only):
+                    yield (path, Fuzziness.SLASH_WORDS)
             return
 
+        if 'perfect' not in self.completion_match_order:
+            return
         # todo position is ignored, but may need to be used
         base_path, last_path, position = parse_path(word)
         paths = suggest_path(word, sql_only=sql_only)

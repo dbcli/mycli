@@ -9,9 +9,9 @@ show_warnings = False
 # possible completions will be listed.
 smart_completion = True
 
-# Methods to find completion candidates, highest priority first.  Omitted
-# methods follow in the default order; empty uses the default.  Filename
-# and Polars completions retain their own dedicated ordering.
+# Methods to find completion candidates, in priority order.  Empty means the
+# default list.  Filename matching requires perfect and/or slash_words to be
+# listed.  Polars completions uses its own methods.
 # * perfect - exact leading match
 # * regex - ordered charater match with limited intervening spans ("rgx" matches "regex")
 # * under_words - like regex but follows underscores ("uw" matches "under_words")
