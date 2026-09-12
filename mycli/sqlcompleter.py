@@ -955,12 +955,23 @@ class SQLCompleter(Completer):
         indexed_column_suffix: str = '*',
         config_property_names: Collection[str] = (),
         frecency_provider: Callable[[], Mapping[str, float]] | None = None,
+        completion_match_order: Collection[str] = (),
     ) -> None:
         super(self.__class__, self).__init__()
         self.smart_completion = smart_completion
         self.indexed_column_suffix = indexed_column_suffix
         self.config_property_names = tuple(sorted(config_property_names))
         self.frecency_provider = frecency_provider
+        self.completion_config_errors: list[str] = []
+        default_order = tuple(category.name.lower() for category in Fuzziness)
+        order = tuple(name.strip().lower() for name in completion_match_order if name.strip())
+        if len(set(order)) != len(order) or any(name not in default_order for name in order):
+            self.completion_config_errors.append('Invalid completion_match_order; using the default order.')
+            order = ()
+        self.completion_match_order = order + tuple(name for name in default_order if name not in order)
+        self._match_priorities: dict[int, int] = {
+            Fuzziness[name.upper()]: priority for priority, name in enumerate(self.completion_match_order)
+        }
         self.reserved_words = set()
         for x in self.keywords:
             self.reserved_words.update(x.split())
@@ -1313,16 +1324,17 @@ class SQLCompleter(Completer):
         under_words_text: list[str],
         case_words_text: list[str],
     ) -> int | None:
-        if pattern.search(item.lower()):
-            return Fuzziness.REGEX
-
-        under_words_item = [x for x in item.lower().split('_') if x]
-        if self.word_parts_match(under_words_text, under_words_item):
-            return Fuzziness.UNDER_WORDS
-
-        case_words_item = re.split(_CASE_CHANGE_PAT, item)
-        if self.word_parts_match(case_words_text, case_words_item):
-            return Fuzziness.CAMEL_CASE
+        for name in self.completion_match_order:
+            if name == 'regex' and pattern.search(item.lower()):
+                return Fuzziness.REGEX
+            if name == 'under_words':
+                under_words_item = [x for x in item.lower().split('_') if x]
+                if self.word_parts_match(under_words_text, under_words_item):
+                    return Fuzziness.UNDER_WORDS
+            if name == 'camel_case':
+                case_words_item = re.split(_CASE_CHANGE_PAT, item)
+                if self.word_parts_match(case_words_text, case_words_item):
+                    return Fuzziness.CAMEL_CASE
 
         return None
 
@@ -1354,10 +1366,16 @@ class SQLCompleter(Completer):
                 limit=20,
                 score_cutoff=75,
             )
-            existing = {c[0] for c in completions}
+            existing = {c[0]: index for index, c in enumerate(completions)}
             for item, _score, _type in rapidfuzz_matches:
-                if len(item) < len(text) / 1.5 or item in existing:
+                if len(item) < len(text) / 1.5:
                     continue
+                if item in existing:
+                    index = existing[item]
+                    if self._match_priorities[Fuzziness.RAPIDFUZZ] < self._match_priorities[completions[index][1]]:
+                        completions[index] = (item, Fuzziness.RAPIDFUZZ)
+                    continue
+                existing[item] = len(completions)
                 completions.append((item, Fuzziness.RAPIDFUZZ))
 
         return completions
@@ -1835,7 +1853,7 @@ class SQLCompleter(Completer):
                     ]
                     break
 
-        def completion_sort_key(item: tuple[str, int, int], text_for_len: str):
+        def completion_sort_key(item: tuple[str, int, int], text_for_len: str) -> tuple[int, int, float, int]:
             candidate, fuzziness, rank = item
             candidate_frecency = frecency_score(candidate, frecency) if frecency else 0.0
             if not text_for_len:
@@ -1846,7 +1864,7 @@ class SQLCompleter(Completer):
                 return (0, 0, -candidate_frecency, -1000 + len(candidate))
             # Sort by fuzziness, rank, and frecency.
             # todo add alpha here, or original order?
-            return (fuzziness, rank, -candidate_frecency, 0)
+            return (self._match_priorities[fuzziness], rank, -candidate_frecency, 0)
 
         if rigid_sort:
             uniq_completions_str = dict.fromkeys(x[0] for x in completions)

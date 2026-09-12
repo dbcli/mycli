@@ -27,6 +27,37 @@ def patch_constructor_side_effects(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(client_module, 'get_mylogin_cnf_path', lambda: None)
 
 
+def test_init_configures_completion_ranking(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    patch_constructor_side_effects(monkeypatch)
+    myclirc = write_myclirc(tmp_path, '[main]\ncompletion_match_order = CAMEL_CASE, under_words\n')
+
+    cli = MyCli(myclirc=myclirc)
+
+    assert cli.completer.completion_match_order == ('camel_case', 'under_words', 'perfect', 'regex', 'slash_words', 'rapidfuzz')
+
+
+@pytest.mark.parametrize('value', ['', 'rapidfuzz'])
+def test_init_reads_empty_or_single_match_order(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, value: str) -> None:
+    patch_constructor_side_effects(monkeypatch)
+    myclirc = write_myclirc(tmp_path, f'[main]\ncompletion_match_order = {value}\n')
+
+    cli = MyCli(myclirc=myclirc)
+
+    assert cli.completer.completion_match_order[0] == (value or 'perfect')
+
+
+def test_init_reports_invalid_completion_match_order(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    patch_constructor_side_effects(monkeypatch)
+    messages: list[str] = []
+    monkeypatch.setattr(MyCli, 'echo', lambda self, message, **kwargs: messages.append(message))
+    myclirc = write_myclirc(tmp_path, '[main]\ncompletion_match_order = invalid\n')
+
+    cli = MyCli(myclirc=myclirc)
+
+    assert cli.completer.completion_match_order == ('perfect', 'regex', 'under_words', 'slash_words', 'camel_case', 'rapidfuzz')
+    assert messages == ['Invalid completion_match_order; using the default order.']
+
+
 def test_init_reports_invalid_ssl_mode(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     patch_constructor_side_effects(monkeypatch)
     echo_calls: list[tuple[str, dict[str, Any]]] = []

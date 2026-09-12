@@ -28,6 +28,7 @@ def make_refresh_cli() -> tuple[Any, dict[str, Any]]:
     cli.completer = SimpleNamespace(
         config_property_names=('main.show_warnings',),
         frecency_provider=lambda: {'select': 1.0},
+        completion_match_order=('under_words', 'regex'),
         keyword_casing='upper',
         indexed_column_suffix=' [indexed]',
         set_dbname=lambda dbname: state['set_dbname_calls'].append(dbname),
@@ -74,6 +75,7 @@ def test_refresh_completions_passes_options_to_refresher() -> None:
                 'indexed_column_suffix': ' [indexed]',
                 'config_property_names': ('main.show_warnings',),
                 'frecency_provider': cli.completer.frecency_provider,
+                'completion_match_order': ('under_words', 'regex'),
             },
         )
     ]
@@ -104,6 +106,7 @@ def test_refresh_completions_updates_dbname_when_reset() -> None:
     cli.completer = SimpleNamespace(
         config_property_names=(),
         frecency_provider=None,
+        completion_match_order=(),
         keyword_casing='lower',
         indexed_column_suffix='*',
         set_dbname=lambda dbname: set_dbname_calls.append(dbname),
@@ -125,6 +128,7 @@ def test_refresh_completions_uses_lock_when_reset() -> None:
     cli.completer = SimpleNamespace(
         config_property_names=(),
         frecency_provider=None,
+        completion_match_order=(),
         keyword_casing='lower',
         indexed_column_suffix='*',
         set_dbname=lambda dbname: None,
