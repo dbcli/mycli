@@ -20,6 +20,19 @@ smart_completion = True
 # * rapidfuzz - true approximate matching, _ie_ autcorrect
 completion_match_order = perfect, regex, under_words, slash_words, camel_case, rapidfuzz
 
+# Minimum input characters before using rapidfuzz approximate matching.
+# Empty uses the default of 4.  Set to 0 or less to remove the minimum.
+rapidfuzz_min_length = 4
+
+# Minimum rapidfuzz candidate length as a fraction of the input length.
+# Empty uses 0.67.  Lower is more liberal.  Set to 0 or less to suppress
+# the length filter.
+rapidfuzz_length_coverage = 0.67
+
+# Minimum rapidfuzz similarity score (0-100).  Lower is more liberal.
+# Empty uses the default of 75.
+rapidfuzz_score_cutoff = 75
+
 # Text appended to indexed column names in the completion menu.  This text is
 # not inserted into the query. Leave empty to disable the marker.  Quote values
 # containing spaces, commas, or comment characters.

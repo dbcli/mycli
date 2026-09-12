@@ -147,6 +147,46 @@ def test_find_fuzzy_matches_skips_rapidfuzz_for_short_text(monkeypatch) -> None:
     assert matches == []
 
 
+@pytest.mark.parametrize(
+    ('minimum', 'text', 'should_run'),
+    [(2, 's', False), (2, 'se', True), (6, 'selec', False), (6, 'select', True), (0, '', True)],
+)
+def test_find_fuzzy_matches_uses_configured_minimum(monkeypatch: pytest.MonkeyPatch, minimum: int, text: str, should_run: bool) -> None:
+    calls: list[str] = []
+
+    def extract(query: str, *args: object, **kwargs: object) -> list[tuple[str, int, int]]:
+        calls.append(query)
+        return [('SELECT', 100, 0)]
+
+    monkeypatch.setattr(mycli.sqlcompleter.rapidfuzz.process, 'extract', extract)
+    completer = SQLCompleter(rapidfuzz_min_length=minimum, completion_match_order=('rapidfuzz',))
+
+    matches = completer.find_fuzzy_matches(text, text, ['SELECT'])
+
+    assert calls == ([text] if should_run else [])
+    assert (('SELECT', Fuzziness.RAPIDFUZZ) in matches) == should_run
+
+
+@pytest.mark.parametrize(('coverage', 'accepted'), [(0.0, True), (0.5, True), (0.75, True), (0.76, False), (1.0, False)])
+def test_find_fuzzy_matches_filters_candidate_length(monkeypatch: pytest.MonkeyPatch, coverage: float, accepted: bool) -> None:
+    monkeypatch.setattr(SQLCompleter, 'find_fuzzy_match', lambda *args: None)
+    monkeypatch.setattr(mycli.sqlcompleter.rapidfuzz.process, 'extract', lambda *args, **kwargs: [('abc', 90, 0)])
+    completer = SQLCompleter(rapidfuzz_length_coverage=coverage)
+
+    matches = completer.find_fuzzy_matches('abcd', 'abcd', ['abc'])
+
+    assert matches == ([('abc', Fuzziness.RAPIDFUZZ)] if accepted else [])
+
+
+@pytest.mark.parametrize(('cutoff', 'accepted'), [(0.0, True), (75.0, True), (75.1, False), (100.0, False)])
+def test_find_fuzzy_matches_applies_score_cutoff(cutoff: float, accepted: bool) -> None:
+    completer = SQLCompleter(rapidfuzz_score_cutoff=cutoff)
+
+    matches = completer.find_fuzzy_matches('abcd', 'abcd', ['abce'])
+
+    assert matches == ([('abce', Fuzziness.RAPIDFUZZ)] if accepted else [])
+
+
 def test_find_fuzzy_matches_appends_rapidfuzz_results_and_skips_duplicates(monkeypatch) -> None:
     monkeypatch.setattr(
         SQLCompleter,

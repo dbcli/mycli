@@ -956,12 +956,18 @@ class SQLCompleter(Completer):
         config_property_names: Collection[str] = (),
         frecency_provider: Callable[[], Mapping[str, float]] | None = None,
         completion_match_order: Collection[str] = (),
+        rapidfuzz_min_length: int = 4,
+        rapidfuzz_length_coverage: float = 0.67,
+        rapidfuzz_score_cutoff: float = 75.0,
     ) -> None:
         super(self.__class__, self).__init__()
         self.smart_completion = smart_completion
         self.indexed_column_suffix = indexed_column_suffix
         self.config_property_names = tuple(sorted(config_property_names))
         self.frecency_provider = frecency_provider
+        self.rapidfuzz_min_length = max(0, rapidfuzz_min_length)
+        self.rapidfuzz_length_coverage = max(0.0, rapidfuzz_length_coverage)
+        self.rapidfuzz_score_cutoff = max(0.0, min(100.0, rapidfuzz_score_cutoff))
         self.completion_config_errors: list[str] = []
         default_order = tuple(category.name.lower() for category in Fuzziness)
         order = tuple(name.strip().lower() for name in completion_match_order if name.strip())
@@ -1355,7 +1361,7 @@ class SQLCompleter(Completer):
             if fuzziness is not None:
                 completions.append((item, fuzziness))
 
-        if len(text) >= 4:
+        if len(text) >= self.rapidfuzz_min_length:
             rapidfuzz_matches = rapidfuzz.process.extract(
                 text,
                 collection,
@@ -1364,11 +1370,11 @@ class SQLCompleter(Completer):
                 # because underscores are valuable info
                 processor=rapidfuzz.utils.default_process,
                 limit=20,
-                score_cutoff=75,
+                score_cutoff=self.rapidfuzz_score_cutoff,
             )
             existing = {c[0]: index for index, c in enumerate(completions)}
             for item, _score, _type in rapidfuzz_matches:
-                if len(item) < len(text) / 1.5:
+                if len(item) < len(text) * self.rapidfuzz_length_coverage:
                     continue
                 if item in existing:
                     index = existing[item]

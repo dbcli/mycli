@@ -213,6 +213,11 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
             indexed_column_suffix=indexed_column_suffix,
             config_property_names=get_config_property_names(self.config),
             completion_match_order=c['main'].as_list('completion_match_order') if 'completion_match_order' in c['main'] else (),
+            rapidfuzz_min_length=c['main'].as_int('rapidfuzz_min_length') if c['main'].get('rapidfuzz_min_length') else 4,
+            rapidfuzz_score_cutoff=c['main'].as_float('rapidfuzz_score_cutoff') if c['main'].get('rapidfuzz_score_cutoff') else 75.0,
+            rapidfuzz_length_coverage=c['main'].as_float('rapidfuzz_length_coverage')
+            if c['main'].get('rapidfuzz_length_coverage')
+            else 0.67,
         )
         for error in self.completer.completion_config_errors:
             self.echo(error, err=True, fg='red')

@@ -5,6 +5,7 @@ Features
 --------
 * Preserve the query as metadata when saving to Parquet with `.>`.
 * Make completion candidate match order configurable.
+* Make approximate-matching thresholds configurable.
 
 
 2.23.0 (2026/09/09)
