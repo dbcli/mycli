@@ -20,6 +20,11 @@ smart_completion = True
 # * rapidfuzz - true approximate matching, _ie_ autcorrect
 completion_match_order = perfect, regex, under_words, slash_words, camel_case, rapidfuzz
 
+# Maximum intervening span length between input characters for regex completion
+# candidate matches.  Empty uses the default of 3.  Higher is more liberal, but
+# carries a perforance penalty.
+regex_match_distance = 3
+
 # Minimum input characters before using rapidfuzz approximate matching.
 # Empty uses the default of 4.  Set to 0 or less to remove the minimum.
 rapidfuzz_min_length = 4
