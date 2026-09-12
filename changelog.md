@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Internal
+--------
+* Naming and commentary in `publish.yml` workflow.
+
+
 2.24.4 (2026/09/12)
 ==============
 
