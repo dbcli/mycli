@@ -305,6 +305,9 @@ jobs:
       with:
         context: .
         file: docker/Dockerfile
+        # avoids pull error: unsupported media type application/vnd.oci.empty.v1+json
+        # by publishing a v2 mediaType
+        load: true
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
