@@ -1,5 +1,10 @@
-Upcoming (TBD)
+2.24.4 (2026/09/12)
 ==============
+
+Bug Fixes
+--------
+* Remove artifact attestations from ghcr.io images, fixing package examples.
+
 
 Internal
 --------
@@ -21,7 +26,6 @@ Bug Fixes
 --------
 * Revert `docker` output-type on ghcr.io images.
 * Set `artifact-metadata: write` in `publish.yml`.
-
 
 
 2.24.1 (2026/09/12)
