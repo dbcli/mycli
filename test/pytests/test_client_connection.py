@@ -260,11 +260,14 @@ def test_connect_retrieves_password_from_keyring(monkeypatch: pytest.MonkeyPatch
         return 'from-keyring'
 
     monkeypatch.setattr(client_connection.keyring, 'get_password', fake_get_password)
+    writes: list[tuple[str, str, str]] = []
+    monkeypatch.setattr(client_connection, 'set_keyring_password', lambda *args: writes.append(args))
 
     client.connect(user='alice', host='db', port=3307, use_keyring=True)
 
     assert FakeSQLExecute.calls[-1]['password'] == 'from-keyring'
     assert get_password_calls == [('mycli.net', 'alice@db:3307:')]
+    assert writes == []
 
 
 def test_connect_uses_mylogin_password_before_keyring(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -275,7 +278,7 @@ def test_connect_uses_mylogin_password_before_keyring(monkeypatch: pytest.Monkey
         'get_password',
         lambda domain, identifier: get_password_calls.append((domain, identifier)) or 'from-mylogin',  # type: ignore[func-returns-value]
     )
-    monkeypatch.setattr(client_connection.keyring, 'set_password', lambda *_args: None)
+    monkeypatch.setattr(client_connection, 'set_keyring_password', lambda *_args: None)
 
     client.connect(user='alice', host='db', port=3307, use_keyring=True)
 
@@ -293,7 +296,7 @@ def test_connect_resolves_supplied_candidates_after_connection_details(monkeypat
         'get_password',
         lambda domain, identifier: keyring_calls.append((domain, identifier)) or 'from-dsn',  # type: ignore[func-returns-value]
     )
-    monkeypatch.setattr(client_connection.keyring, 'set_password', lambda *_args: None)
+    monkeypatch.setattr(client_connection, 'set_keyring_password', lambda *_args: None)
 
     client.connect(user='alice', host='db', port=3307, password_candidates=candidates, use_keyring=True)
 
@@ -326,8 +329,8 @@ def test_connect_saves_selected_password_to_keyring(monkeypatch: pytest.MonkeyPa
     secho_calls: list[tuple[str, dict[str, Any]]] = []
     monkeypatch.setattr(client_connection.keyring, 'get_password', lambda *_args: 'old-secret')
     monkeypatch.setattr(
-        client_connection.keyring,
-        'set_password',
+        client_connection,
+        'set_keyring_password',
         lambda domain, identifier, password: set_password_calls.append((domain, identifier, password)),
     )
     monkeypatch.setattr(client_connection.click, 'secho', lambda message, **kwargs: secho_calls.append((message, kwargs)))
@@ -348,12 +351,52 @@ def test_connect_reports_keyring_save_error(monkeypatch: pytest.MonkeyPatch) -> 
     def fail_set_password(*_args: Any) -> None:
         raise RuntimeError('locked')
 
-    monkeypatch.setattr(client_connection.keyring, 'set_password', fail_set_password)
+    monkeypatch.setattr(client_connection, 'set_keyring_password', fail_set_password)
     monkeypatch.setattr(client_connection.click, 'secho', lambda message, **kwargs: secho_calls.append((message, kwargs)))
 
     client.connect(user='alice', host='db', port=3307, password_candidates=candidates, use_keyring=True)
 
     assert secho_calls == [('Password not saved to the system keyring: locked', {'err': True, 'fg': 'red'})]
+
+
+def test_connect_saves_fallback_password_when_keyring_is_empty(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = DummyClient()
+    FakeSQLExecute.effects = [op_error(1045), None]
+    writes: list[tuple[str, str, str]] = []
+    monkeypatch.setattr(client_connection.keyring, 'get_password', lambda *_args: None)
+    monkeypatch.setattr(client_connection.click, 'prompt', lambda *_args, **_kwargs: 'new-secret')
+    monkeypatch.setattr(client_connection, 'set_keyring_password', lambda *args: writes.append(args))
+
+    client.connect(user='alice', host='db', port=3307, use_keyring=True)
+
+    assert writes == [('mycli.net', 'alice@db:3307:', 'new-secret')]
+
+
+def test_connect_does_not_rewrite_rejected_keyring_password(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = DummyClient()
+    FakeSQLExecute.effects = [op_error(1045)]
+    writes: list[tuple[str, str, str]] = []
+    monkeypatch.setattr(client_connection.keyring, 'get_password', lambda *_args: 'old-secret')
+    monkeypatch.setattr(client_connection, 'set_keyring_password', lambda *args: writes.append(args))
+
+    with pytest.raises(SystemExit):
+        client.connect(user='alice', host='db', port=3307, use_keyring=True)
+
+    assert writes == []
+
+
+@pytest.mark.parametrize('reset', [False, True])
+def test_connect_only_rewrites_unchanged_password_for_reset(monkeypatch: pytest.MonkeyPatch, reset: bool) -> None:
+    client = DummyClient()
+    candidates = PasswordCandidates()
+    candidates.add_value('literal', 'secret')
+    writes: list[tuple[str, str, str]] = []
+    monkeypatch.setattr(client_connection.keyring, 'get_password', lambda *_args: 'secret')
+    monkeypatch.setattr(client_connection, 'set_keyring_password', lambda *args: writes.append(args))
+
+    client.connect(user='alice', host='db', port=3307, password_candidates=candidates, use_keyring=True, reset_keyring=reset)
+
+    assert writes == ([('mycli.net', 'alice@db:3307:', 'secret')] if reset else [])
 
 
 def test_connect_uses_ssh_jump_with_remote_socket(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -485,8 +528,8 @@ def test_connect_uses_kubectl_tunnel_with_resolved_database_port(monkeypatch: py
         lambda domain, identifier: keyring_calls.append(('get', domain, identifier)),
     )
     monkeypatch.setattr(
-        client_connection.keyring,
-        'set_password',
+        client_connection,
+        'set_keyring_password',
         lambda domain, identifier, password: keyring_calls.append(('set', domain, identifier, password)),
     )
     password_candidates = PasswordCandidates()

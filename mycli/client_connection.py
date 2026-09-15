@@ -22,6 +22,7 @@ from mycli.constants import (
     EMPTY_PASSWORD_FLAG_SENTINEL,
     ER_MUST_CHANGE_PASSWORD_LOGIN,
 )
+from mycli.keyring_utils import set_keyring_password
 from mycli.kubectl_tunnel import KubectlTunnel, KubectlTunnelError
 from mycli.packages.filepaths import guess_socket_location
 from mycli.packages.special.utils import format_connection_dsn
@@ -381,7 +382,7 @@ class ClientConnectionMixin:
                 try:
                     saved_pw = keyring.get_password(keyring_domain, keyring_identifier)
                     if password != saved_pw or reset_keyring:
-                        keyring.set_password(keyring_domain, keyring_identifier, password)
+                        set_keyring_password(keyring_domain, keyring_identifier, password)
                         click.secho(
                             f'Password from source: "{password_source}" '
                             f'saved to the system keyring at {keyring_domain}/{keyring_identifier}',
