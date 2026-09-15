@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Bug Fixes
+--------
+* New macOS keyring entries no longer automatically trust Python.
+
+
 Documentation
 --------
 * Update features bullets in `README.md`.
