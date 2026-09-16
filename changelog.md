@@ -1,3 +1,11 @@
+2.25.0 (2026/09/16)
+==============
+
+Features
+--------
+* Publish multi-architecture Docker images.
+
+
 2.24.5 (2026/09/16)
 ==============
 
