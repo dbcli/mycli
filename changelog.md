@@ -1,3 +1,11 @@
+2.25.2 (2026/09/16)
+==============
+
+Internal
+--------
+* Remove provenance/sbom from Docker image action.
+
+
 2.25.1 (2026/09/16)
 ==============
 
