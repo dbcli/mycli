@@ -304,6 +304,8 @@ jobs:
       uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
       with:
         images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+      env:
+        DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
 
     - name: Build and push Docker image
       id: push
@@ -315,3 +317,4 @@ jobs:
         platforms: linux/amd64,linux/arm64
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
+        annotations: ${{ steps.meta.outputs.annotations }}
