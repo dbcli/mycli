@@ -4,6 +4,7 @@ Upcoming (TBD)
 Internal
 --------
 * Naming and commentary in GitHub Actions.
+* Build ARM Docker image in CI.
 
 
 2.25.2 (2026/09/16)
