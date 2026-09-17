@@ -144,7 +144,7 @@ jobs:
           uv run -- coverage report -m --sort=Miss --skip-covered --skip-empty
 
   tests-wsl:
-    name: Tests WSL
+    name: Tests WSL (3.14)
     runs-on: windows-latest
 
     steps:
@@ -214,7 +214,7 @@ jobs:
           uv run --python 3.14 -- coverage report -m --sort=Miss --skip-covered --skip-empty
 
   test-no-extras:
-    name: Tests Without Extras
+    name: Tests Without Extras (3.14)
     runs-on: ubuntu-latest
 
     steps:
@@ -251,12 +251,13 @@ jobs:
           uv run tox -e py3.14
 
   docker-build:
-    name: Build Docker Image
+    name: Build x86 Docker Image
     runs-on: ubuntu-latest
 
     permissions:
       contents: read
 
+    # simpler than the steps in publish.yml, because we skip the slow ARM image build
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

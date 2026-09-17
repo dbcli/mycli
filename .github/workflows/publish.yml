@@ -277,6 +277,8 @@ jobs:
     needs: [build]
     environment: release
 
+    # some of these permissions are probably not needed since attestations
+    # were removed
     permissions:
       contents: read
       packages: write
@@ -295,6 +297,7 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
+    # should be needed for multi-arch images
     - name: Set up Docker Buildx
       id: buildx
       uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
@@ -305,6 +308,8 @@ jobs:
       with:
         images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
       env:
+        # despite this setting, annotations only seem to appear at the index level
+        # on "docker buildx imagetools inspect"
         DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
 
     - name: Build and push Docker image
@@ -314,10 +319,13 @@ jobs:
         context: .
         file: docker/Dockerfile
         push: true
+        # the linux/arm64 arch will be very slow to build, so it is only made for
+        # publication, not testing
         platforms: linux/amd64,linux/arm64
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         annotations: ${{ steps.meta.outputs.annotations }}
-        # unclutter the GitHub interface
+        # these two unclutter the GitHub interface, removing the unknown/unknown
+        # architecture
         provenance: false
         sbom: false

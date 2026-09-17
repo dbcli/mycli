@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Internal
+--------
+* Naming and commentary in GitHub Actions.
+
+
 2.25.2 (2026/09/16)
 ==============
 
