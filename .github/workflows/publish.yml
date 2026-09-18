@@ -325,7 +325,3 @@ jobs:
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         annotations: ${{ steps.meta.outputs.annotations }}
-        # these two unclutter the GitHub interface, removing the unknown/unknown
-        # architecture
-        provenance: false
-        sbom: false
