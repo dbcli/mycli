@@ -6,6 +6,7 @@ Internal
 * Naming and commentary in GitHub Actions.
 * Build ARM Docker image in CI.
 * Remove Python 3.10 from CI test matrix.
+* Restore provenance/sbom to Docker image action.
 
 
 2.25.2 (2026/09/16)
