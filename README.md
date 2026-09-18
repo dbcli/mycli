@@ -45,35 +45,41 @@ You might need `sudo` on Linux.
 pip install --upgrade 'mycli[all]'
 ```
 
-or, on macOS (`pygments` is optional but recommended):
+or, on macOS (`pygments` is optional):
 
 ```bash
 brew update && brew install mycli pygments
 ```
 
-or, on Debian or Ubuntu (`fzf` and `pygments` are optional but recommended):
+or, on Debian or Ubuntu (`fzf` and `pygments` are optional):
 
 ```bash
 sudo apt-get install mycli fzf python3-pygments
 ```
 
-# Usage
+## Try Without Installing: Docker
 
-See
+The images on Dockerhub are out of date.  ghcr.io is preferred:
 
 ```bash
-mycli --help
+docker run --pull=always -it ghcr.io/dbcli/mycli:latest
+```
+
+## Try Without Installing: uv
+
+```bash
+uv tool run mycli
 ```
 
 # Features
 
 * Auto-completion as you type for SQL keywords as well as tables, views, columns, enums, and more!
-* Fuzzy history search using [fzf](https://github.com/junegunn/fzf).
-* Output explorer using [fzf](https://github.com/junegunn/fzf) or other tools.
-* Syntax highlighting using [Pygments](https://pygments.org/).
 * Smart-completion suggests context-sensitive completion:
     - `SELECT * FROM `<kbd>tab</kbd> will only show table names.
     - `SELECT * FROM users WHERE `<kbd>tab</kbd> will only show column names.
+* Fuzzy history search using [fzf](https://github.com/junegunn/fzf).
+* Output explorer using [fzf](https://github.com/junegunn/fzf) or other tools.
+* Syntax highlighting using [Pygments](https://pygments.org/).
 * Multiline queries.
 * Favorite queries with positional or named parameters using [Jinja](https://jinja.palletsprojects.com/en/stable/). Save a query using
     ```
@@ -99,13 +105,23 @@ options in that file to configure the above features, and more.
 Some features are only exposed as [key bindings](https://github.com/dbcli/mycli/blob/main/doc/key_bindings.rst).
 
 
-# Contributions
+# Usage
+
+See
+
+```bash
+mycli --help
+```
+
+
+# Contributing
 
 If you're interested in contributing to this project, first of all we would like
 to extend our heartfelt gratitude. We've written a small doc to describe how to
 get mycli running in a development setup.
 
 https://github.com/dbcli/mycli/blob/main/CONTRIBUTING.md
+
 
 # Additional Install Instructions
 
@@ -165,14 +181,6 @@ Fedora has a package available for mycli; install it using dnf.  The `fzf` and
 
 ```bash
 sudo dnf install mycli fzf python-pygments
-```
-
-### Docker
-
-The images on Dockerhub are out of date.  ghcr.io is preferred.  Example:
-
-```
-docker run --pull=always -it ghcr.io/dbcli/mycli:latest
 ```
 
 ### Windows

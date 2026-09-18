@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Documentation
+--------
+* Add "try without installing" instructions to `README.md`.
+
+
 Internal
 --------
 * Naming and commentary in GitHub Actions.
