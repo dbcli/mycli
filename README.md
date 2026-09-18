@@ -68,7 +68,7 @@ docker run --pull=always -it ghcr.io/dbcli/mycli:latest
 ## Try Without Installing: uv
 
 ```bash
-uv tool run mycli
+uv tool run 'mycli[all]'
 ```
 
 # Features
