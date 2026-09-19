@@ -1,44 +1,30 @@
-*************
-Key Bindings:
-*************
+# Key Bindings
 
-Most key bindings are simply inherited from `prompt-toolkit <https://python-prompt-toolkit.readthedocs.io/en/master/index.html>`_ .
+Most key bindings are simply inherited from [prompt-toolkit](https://python-prompt-toolkit.readthedocs.io/en/master/index.html).
 
 The following key bindings are special to mycli:
 
-###
-F1
-###
+## <kbd>F1</kbd>
 
 Open documentation index in a browser tab.
 
-###
-F2
-###
+## <kbd>F2</kbd>
 
 Enable/Disable SmartCompletion Mode.
 
-###
-F3
-###
+## <kbd>F3</kbd>
 
 Enable/Disable Multiline Mode.
 
-###
-F4
-###
+## <kbd>F4</kbd>
 
 Toggle between Vi and Emacs mode.
 
-###
-Tab
-###
+## <kbd>Tab</kbd>
 
 Force autocompletion at cursor.
 
-#######
-C-space
-#######
+## <kbd>C-space</kbd>
 
 Initialize autocompletion at cursor.
 
@@ -46,50 +32,36 @@ If the autocompletion menu is not showing, display it with the appropriate compl
 
 If the menu is showing, select the next completion.
 
-#########
-ESC Enter
-#########
+## <kbd>ESC</kbd> <kbd>Enter</kbd>
 
 Introduce a line break in multi-line mode, or dispatch the command in single-line mode.
 
 The sequence ESC-Enter is often sent by Alt-Enter.
 
-##################
-C-x p (Emacs-mode)
-##################
+## <kbd>C-x</kbd> <kbd>p</kbd> _(Emacs-mode)_
 
 Prettify and indent current statement, usually into multiple lines.
 
 Only accepts buffers containing single SQL statements.
 
-##################
-C-x u (Emacs-mode)
-##################
+## <kbd>C-x</kbd> <kbd>u</kbd> _(Emacs-mode)_
 
 Unprettify and dedent current statement, usually into one line.
 
 Only accepts buffers containing single SQL statements.
 
-##################
-C-o d (Emacs-mode)
-##################
+## <kbd>C-o</kbd> <kbd>d</kbd> _(Emacs-mode)_
 
-Insert the current date at cursor, defined by NOW() on the server.
+Insert the current date at cursor, defined by `NOW()` on the server.
 
-####################
-C-o C-d (Emacs-mode)
-####################
+## <kbd>C-o</kbd> <kbd>C-d</kbd> _(Emacs-mode)_
 
 Insert the quoted current date at cursor.
 
-##################
-C-o t (Emacs-mode)
-##################
+## <kbd>C-o</kbd> <kbd>t</kbd> _(Emacs-mode)_
 
 Insert the current datetime at cursor.
 
-####################
-C-o C-t (Emacs-mode)
-####################
+## <kbd>C-o</kbd> <kbd>C-t</kbd> _(Emacs-mode)_
 
 Insert the quoted current datetime at cursor.

@@ -1,0 +1,1 @@
+See [SPONSORS](mycli/SPONSORS)
