@@ -4,6 +4,7 @@ Upcoming (TBD)
 Documentation
 --------
 * Add "try without installing" instructions to `README.md`.
+* General `README.md` refinements.
 
 
 Internal

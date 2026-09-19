@@ -39,8 +39,6 @@ Release 2.0.0 has [breaking changes](https://github.com/dbcli/mycli/blob/v2.0.0/
 If you already know how to install Python packages, then you can install mycli
 via `pip`.  This package is always up to date.
 
-You might need `sudo` on Linux.
-
 ```bash
 pip install --upgrade 'mycli[all]'
 ```
@@ -54,7 +52,7 @@ brew update && brew install mycli pygments
 or, on Debian or Ubuntu (`fzf` and `pygments` are optional):
 
 ```bash
-sudo apt-get install mycli fzf python3-pygments
+apt-get install mycli fzf python3-pygments
 ```
 
 ## Try Without Installing: uv
@@ -65,7 +63,7 @@ uv tool run 'mycli[all]' --help
 
 ## Try Without Installing: Docker
 
-The images on Dockerhub are out of date!  ghcr.io is preferred.  A sample database
+The images on Dockerhub are out of date!  [ghcr.io](https://github.com/dbcli/mycli/pkgs/container/mycli) images are preferred.  A sample database
 is included:
 
 ```bash
@@ -97,8 +95,7 @@ container run -it ghcr.io/dbcli/mycli:latest
     /f alias --key=value
     ```
 * Timing of SQL statements and table rendering.
-* Logging of every query and its results to a file (off by default).
-* Pretty printing of tabular data.
+* Many output formats for tabular results.
 * Shell-style trailing redirects with `$>`, `$>>` and `$|` operators.
 * [Polars](https://pola.rs) dataframe [transforms and plots](https://github.com/dbcli/mycli/blob/main/doc/transforms.md) with `.|`, and Parquet saves with `.>`.
 * [Querying LLMs](https://www.mycli.net/llm) with context derived from your schema using `/llm`.
@@ -154,8 +151,9 @@ loaded with `source`.
 ## Alternative Install Methods
 
 These are some alternative ways to install mycli that are not managed by our
-team but provided by OS package maintainers.  OS packages could be considerably
-out of date.
+team but provided by OS package maintainers.
+
+**NOTE: OS packages could be considerably out of date.**
 
 If present, the `fzf` package can be used for fuzzy history search, and as an
 output "explorer" with the `\x` special command. `pygmentize` can be used for
@@ -178,7 +176,7 @@ using apt.  The `fzf` and `python3-pygments` packages are optional but
 recommended:
 
 ```bash
-sudo apt-get install mycli fzf python3-pygments
+apt-get install mycli fzf python3-pygments
 ```
 
 ### Fedora
@@ -187,7 +185,7 @@ Fedora has a package available for mycli; install it using dnf.  The `fzf` and
 `python-pygments` packages are optional but recommended:
 
 ```bash
-sudo dnf install mycli fzf python-pygments
+dnf install mycli fzf python-pygments
 ```
 
 ### Windows
@@ -215,7 +213,7 @@ With WSL, you are probably using an Ubuntu distribution, in which case
 recommended dependencies can be installed by
 
 ```bash
-sudo apt-get install fzf python3-pygments
+apt-get install fzf python3-pygments
 ```
 
 and mycli can be installed by `apt-get` or by `pip` (recommended):
