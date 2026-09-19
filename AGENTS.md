@@ -1,74 +1,74 @@
-# MyCli
+# Mycli
 
 A command line client for MySQL with auto-completion and syntax highlighting.
 
 ## Project Structure
 
-/                                         # repository root
-├── .github/                              # GitHub Actions and configuration
-├── pyproject.toml                        # project configuration
-├── doc/                                  # documentation
-├── mycli/                                # application source
-├── mycli/__init__.py                     # provides version number
-├── mycli/app_state.py                    # `AppStateMixin` application state mixin and related functions
-├── mycli/boundary_tunnel.py              # connection over Boundary tunnel
-├── mycli/cli_runner.py                   # connects and dispatches main modes based on CLI arguments
-├── mycli/clibuffer.py                    # prompt_toolkit buffer utilities
-├── mycli/client_commands.py              # special commands which must be registered separately
-├── mycli/client_connection.py            # `ClientConnectionMixin` mixin for establishing the database connection
-├── mycli/client_query.py                 # `ClientQueryMixin` mixin for running queries and refreshing completions
-├── mycli/client.py                       # the `MyCli` "god class"
-├── mycli/clistyle.py                     # prompt_toolkit style utilities
-├── mycli/clitoolbar.py                   # prompt_toolkit toolbar utilities
-├── mycli/compat.py                       # OS compatibility helpers
-├── mycli/completion_refresher.py         # populates a `SQLCompleter` object in a background thread
-├── mycli/config.py                       # configuration file readers and utilities
-├── mycli/constants.py                    # shared constants
-├── mycli/key_bindings.py                 # prompt_toolkit key binding utilities
-├── mycli/keyring_utils.py                # saved credential utilities
-├── mycli/kubectl_tunnel.py               # connection over kubectl tunnel
-├── mycli/lexer.py                        # extends `MySqlLexer` from Pygments
-├── mycli/macos_keychain.py               # macOS Keychain credentials preserving access controls
-├── mycli/main.py                         # processes CLI arguments
-├── mycli/main_modes/                     # main execution paths
-├── mycli/main_modes/batch.py             # `--batch` mode
-├── mycli/main_modes/checkup.py           # `--checkup` mode
-├── mycli/main_modes/completions.py       # `--completions` mode
-├── mycli/main_modes/execute.py           # `--execute` mode
-├── mycli/main_modes/list_dsn.py          # `--list-dsn` mode
-├── mycli/main_modes/repl.py              # interactive REPL mode
-├── mycli/myclirc                         # project-level configuration file
-├── mycli/output.py                       # `OutputMixin` mixin for feedback and output of query results
-├── mycli/packages/                       # application packages
-├── mycli/packages/batch_utils.py         # utilities for `--batch` mode
-├── mycli/packages/cli_utils.py           # utilities for parsing CLI arguments
-├── mycli/packages/completion_engine.py   # implementation of completion suggestions
-├── mycli/packages/filepaths.py           # utilities for files, including completion suggestions
-├── mycli/packages/hybrid_redirection.py  # implementation of shell-style redirects
-├── mycli/packages/interactive_utils.py   # utilities for confirming on destructive statements
-├── mycli/packages/key_binding_utils.py   # handlers for key bindings and related special commands
-├── mycli/packages/polars_completion.py   # completions for `.|` transforms
-├── mycli/packages/polars_transform.py    # implements `.|` transforms
-├── mycli/packages/ptoolkit/              # extends prompt_toolkit
-├── mycli/packages/special/               # implementation of mycli special commands
-├── mycli/packages/sql_utils.py           # utilities for parsing SQL statements
-├── mycli/packages/sqlresult.py           # the `SQLResult` dataclass for holding responses
-├── mycli/packages/string_utils.py        # generic string utilities
-├── mycli/packages/tabular_output/        # extends cli_helper with additional output formats
-├── mycli/password_sources.py             # password sources and precedence
-├── mycli/resources/completions/          # shell completions for CLI interface
-├── mycli/ssh_tunnel.py                   # connecting over a tunnel with `--ssh-jump`
-├── mycli/schema_prefetcher.py            # background prefetcher for multi-schema auto-completion
-├── mycli/sqlcompleter.py                 # offers SQL completions
-├── mycli/sqlexecute.py                   # runs SQL queries
-├── mycli/types.py                        # shared types
-├── mycli/vault.py                        # Vault integration
-├── test/features/                        # behave tests
-├── test/myclirc                          # mycli configuration used for tests
-├── test/mylogin.cnf                      # `mylogin.cnf` example used for tests
-├── test/pytests/                         # pytest tests
-├── test/pytests/conftest.py              # pytest configuration
-└── test/utils.py                         # shared utilities for tests
+    /                                         # repository root
+    ├── .github/                              # GitHub Actions and configuration
+    ├── pyproject.toml                        # project configuration
+    ├── doc/                                  # documentation
+    ├── mycli/                                # application source
+    ├── mycli/__init__.py                     # provides version number
+    ├── mycli/app_state.py                    # `AppStateMixin` application state mixin and related functions
+    ├── mycli/boundary_tunnel.py              # connection over Boundary tunnel
+    ├── mycli/cli_runner.py                   # connects and dispatches main modes based on CLI arguments
+    ├── mycli/clibuffer.py                    # prompt_toolkit buffer utilities
+    ├── mycli/client_commands.py              # special commands which must be registered separately
+    ├── mycli/client_connection.py            # `ClientConnectionMixin` mixin for establishing the database connection
+    ├── mycli/client_query.py                 # `ClientQueryMixin` mixin for running queries and refreshing completions
+    ├── mycli/client.py                       # the `MyCli` "god class"
+    ├── mycli/clistyle.py                     # prompt_toolkit style utilities
+    ├── mycli/clitoolbar.py                   # prompt_toolkit toolbar utilities
+    ├── mycli/compat.py                       # OS compatibility helpers
+    ├── mycli/completion_refresher.py         # populates a `SQLCompleter` object in a background thread
+    ├── mycli/config.py                       # configuration file readers and utilities
+    ├── mycli/constants.py                    # shared constants
+    ├── mycli/key_bindings.py                 # prompt_toolkit key binding utilities
+    ├── mycli/keyring_utils.py                # saved credential utilities
+    ├── mycli/kubectl_tunnel.py               # connection over kubectl tunnel
+    ├── mycli/lexer.py                        # extends `MySqlLexer` from Pygments
+    ├── mycli/macos_keychain.py               # macOS Keychain credentials preserving access controls
+    ├── mycli/main.py                         # processes CLI arguments
+    ├── mycli/main_modes/                     # main execution paths
+    ├── mycli/main_modes/batch.py             # `--batch` mode
+    ├── mycli/main_modes/checkup.py           # `--checkup` mode
+    ├── mycli/main_modes/completions.py       # `--completions` mode
+    ├── mycli/main_modes/execute.py           # `--execute` mode
+    ├── mycli/main_modes/list_dsn.py          # `--list-dsn` mode
+    ├── mycli/main_modes/repl.py              # interactive REPL mode
+    ├── mycli/myclirc                         # project-level configuration file
+    ├── mycli/output.py                       # `OutputMixin` mixin for feedback and output of query results
+    ├── mycli/packages/                       # application packages
+    ├── mycli/packages/batch_utils.py         # utilities for `--batch` mode
+    ├── mycli/packages/cli_utils.py           # utilities for parsing CLI arguments
+    ├── mycli/packages/completion_engine.py   # implementation of completion suggestions
+    ├── mycli/packages/filepaths.py           # utilities for files, including completion suggestions
+    ├── mycli/packages/hybrid_redirection.py  # implementation of shell-style redirects
+    ├── mycli/packages/interactive_utils.py   # utilities for confirming on destructive statements
+    ├── mycli/packages/key_binding_utils.py   # handlers for key bindings and related special commands
+    ├── mycli/packages/polars_completion.py   # completions for `.|` transforms
+    ├── mycli/packages/polars_transform.py    # implements `.|` transforms
+    ├── mycli/packages/ptoolkit/              # extends prompt_toolkit
+    ├── mycli/packages/special/               # implementation of mycli special commands
+    ├── mycli/packages/sql_utils.py           # utilities for parsing SQL statements
+    ├── mycli/packages/sqlresult.py           # the `SQLResult` dataclass for holding responses
+    ├── mycli/packages/string_utils.py        # generic string utilities
+    ├── mycli/packages/tabular_output/        # extends cli_helper with additional output formats
+    ├── mycli/password_sources.py             # password sources and precedence
+    ├── mycli/resources/completions/          # shell completions for CLI interface
+    ├── mycli/ssh_tunnel.py                   # connecting over a tunnel with `--ssh-jump`
+    ├── mycli/schema_prefetcher.py            # background prefetcher for multi-schema auto-completion
+    ├── mycli/sqlcompleter.py                 # offers SQL completions
+    ├── mycli/sqlexecute.py                   # runs SQL queries
+    ├── mycli/types.py                        # shared types
+    ├── mycli/vault.py                        # Vault integration
+    ├── test/features/                        # behave tests
+    ├── test/myclirc                          # mycli configuration used for tests
+    ├── test/mylogin.cnf                      # `mylogin.cnf` example used for tests
+    ├── test/pytests/                         # pytest tests
+    ├── test/pytests/conftest.py              # pytest configuration
+    └── test/utils.py                         # shared utilities for tests
 
 ## Development
 

@@ -6,6 +6,7 @@ Documentation
 * Add "try without installing" instructions to `README.md`.
 * General `README.md` refinements.
 * Convert remaining RST files to Markdown.
+* Formatting in `AGENTS.md`.
 
 
 Internal
