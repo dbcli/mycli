@@ -57,18 +57,25 @@ or, on Debian or Ubuntu (`fzf` and `pygments` are optional):
 sudo apt-get install mycli fzf python3-pygments
 ```
 
+## Try Without Installing: uv
+
+```bash
+uv tool run 'mycli[all]' --help
+```
+
 ## Try Without Installing: Docker
 
-The images on Dockerhub are out of date.  ghcr.io is preferred:
+The images on Dockerhub are out of date!  ghcr.io is preferred.  A sample database
+is included:
 
 ```bash
 docker run --pull=always -it ghcr.io/dbcli/mycli:latest
 ```
 
-## Try Without Installing: uv
+The same image works with macOS [container](https://github.com/apple/container):
 
 ```bash
-uv tool run 'mycli[all]'
+container run -it ghcr.io/dbcli/mycli:latest
 ```
 
 # Features
