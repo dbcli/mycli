@@ -106,7 +106,7 @@ container run -it ghcr.io/dbcli/mycli:latest
 Mycli creates a config file `~/.myclirc` on the first run; you can use the
 options in that file to configure the above features, and more.
 
-Some features are only exposed as [key bindings](https://github.com/dbcli/mycli/blob/main/doc/key_bindings.rst).
+Some features are only exposed as [key bindings](https://github.com/dbcli/mycli/blob/main/doc/key_bindings.md).
 
 
 # Usage
