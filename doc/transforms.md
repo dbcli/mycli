@@ -126,7 +126,7 @@ operator `.>` must be the last operator.
 Combined transform and save examples:
 
 ```sql
-SELECT * FROM salaries LIMIT 10000 .| df.group_by('emp_no').len(name='raises').with_columns(pl.col('raises') - 1) .> raises_counts.parquet;
+SELECT * FROM salaries .| df.group_by('emp_no').len(name='raises').with_columns(pl.col('raises') - 1) .> raises_counts.parquet;
 ```
 
 ```sql
