@@ -1,4 +1,4 @@
-Upcoming (TBD)
+2.25.3 (2026/09/19)
 ==============
 
 Documentation
