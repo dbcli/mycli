@@ -7,6 +7,7 @@ Documentation
 * General `README.md` refinements.
 * Convert remaining RST files to Markdown.
 * Formatting in `AGENTS.md`.
+* Revise transforms document to use employee sample database.
 
 
 Internal

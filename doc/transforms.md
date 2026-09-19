@@ -42,13 +42,15 @@ Spaces may be required around the `.|` operator.
 Transform example:
 
 ```sql
-SELECT * FROM orders .| df.group_by('customer_id').len();
+SELECT * FROM employees .| df.group_by('gender').len();
 ```
+
+<img src="https://raw.githubusercontent.com/dbcli/mycli/main/doc/screenshots/polars_group_by.png">
 
 which is equivalent to this native SQL:
 
 ```sql
-SELECT customer_id, COUNT(1) AS len FROM orders GROUP BY customer_id;
+SELECT gender, COUNT(1) AS count FROM employees GROUP BY gender;
 ```
 
 Transform expressions run with normal Python privileges, and expressions
@@ -59,12 +61,20 @@ Python type which can be rendered as a table, the result is rendered by mycli
 as tabular output.  `None` return values will be silently ignored, and other
 return types will result in a warning message.
 
-Transform expressions are useful for operations such as medians which
-cannot be done (or are awkward) in SQL.  Example:
+Transform expressions are useful for operations such as median or pivots which
+cannot be done (or are awkward) in MySQL.  Examples:
 
 ```sql
-SELECT * FROM orders .| df.describe();
+SELECT * FROM salaries LIMIT 10000 .| df.describe();
 ```
+
+<img src="https://raw.githubusercontent.com/dbcli/mycli/main/doc/screenshots/polars_describe.png">
+
+```sql
+SELECT emp_no, salary, from_date FROM salaries ORDER BY from_date, emp_no LIMIT 40 .| df.pivot('from_date', values='salary');
+```
+
+<img src="https://raw.githubusercontent.com/dbcli/mycli/main/doc/screenshots/polars_pivot.png">
 
 ## Plotting
 
@@ -74,10 +84,10 @@ be rendered as an inline PNG in many terminals.
 Example:
 
 ```sql
-SELECT * FROM orders .| df['total'].plot.hist();
+SELECT salary FROM salaries LIMIT 10000 .| df['salary'].plot.hist();
 ```
 
-<img src="https://raw.githubusercontent.com/dbcli/mycli/main/doc/screenshots/total_histogram.png" height=400>
+<img src="https://raw.githubusercontent.com/dbcli/mycli/main/doc/screenshots/polars_histogram.png" height=400>
 
 Image size, display protocol, and other properties can be configured in
 the `[dataframe]` section of `~/.myclirc`.
@@ -91,7 +101,7 @@ also be written to a file with the same operator.
 Save example:
 
 ```sql
-SELECT * FROM orders .> orders.parquet;
+SELECT * FROM employees WHERE last_name LIKE 'A%'.> employees_a.parquet;
 ```
 
 The `.>` operator must be last, requires a `.parquet`, `.png`, `.pdf`, `.svg`,
@@ -116,13 +126,22 @@ operator `.>` must be the last operator.
 Combined transform and save examples:
 
 ```sql
-SELECT * FROM orders .| df.group_by('customer_id').len() .> customer_counts.parquet;
+SELECT * FROM salaries LIMIT 10000 .| df.group_by('emp_no').len(name='raises').with_columns(pl.col('raises') - 1) .> raises_counts.parquet;
 ```
 
 ```sql
-SELECT * FROM orders .| df['order_id'] .> order_ids.parquet;
+SELECT emp_no, MAX(salary) AS current_salary FROM salaries GROUP BY emp_no .| df['current_salary'] .> current_salaries.parquet;
 ```
 
 ```sql
-SELECT * FROM orders .| df['total'].plot.hist() .> total_histogram.png;
+SELECT emp_no, MIN(salary) AS starting_salary FROM salaries GROUP BY emp_no .| df['starting_salary'].plot.hist() .> starting_salaries_histogram.png;
+```
+
+## Examples Note
+
+All examples in this document are written using the [employees](https://dev.mysql.com/doc/employee/en/) sample database,
+which is provided in the mycli Dockerfile:
+
+```bash
+docker run --pull=always -it ghcr.io/dbcli/mycli:latest
 ```
