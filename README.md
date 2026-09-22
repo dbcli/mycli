@@ -264,3 +264,11 @@ Common topics include:
 - [Configuring mycli](https://mycli.net/config)
 - [Using/Disabling the pager](https://mycli.net/pager)
 - [Syntax colors](https://mycli.net/syntax)
+
+
+# License
+
+Mycli is Open Source Software provided under the [BSD 3-Clause License](LICENSE.txt).
+
+The Mycli Docker image and git repository include a copy of the [employees sample database](https://dev.mysql.com/doc/employee/en/)
+provided by Oracle under the [Creative Commons Attribution-Share Alike 3.0 Unported License](https://dev.mysql.com/doc/employee/en/employees-license.html).
