@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Documentation
+--------
+* Clarify the license of the test database.
+
+
 2.25.3 (2026/09/19)
 ==============
 
