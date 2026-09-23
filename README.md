@@ -1,7 +1,8 @@
 # mycli
 
-[![Build Status](https://github.com/dbcli/mycli/workflows/mycli/badge.svg)](https://github.com/dbcli/mycli/actions?query=workflow%3Amycli)
-[![License](https://img.shields.io/github/license/dbcli/mycli.svg?color=2FC745)](https://github.com/dbcli/mycli/blob/main/LICENSE.txt)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/dbcli/mycli/ci.yml?style=for-the-badge&color=2E9356)](https://github.com/dbcli/mycli/actions/workflows/ci.yml)
+[![PyPI - Version](https://img.shields.io/pypi/v/mycli?style=for-the-badge&logo=pypi&logoColor=white)](https://pypi.org/project/mycli/)
+[![License](https://img.shields.io/github/license/dbcli/mycli.svg?style=for-the-badge&color=2E9356)](https://github.com/dbcli/mycli/blob/main/LICENSE.txt)
 
 Rich MySQL terminal client with auto-completion, syntax highlighting, and dataframes.
 
