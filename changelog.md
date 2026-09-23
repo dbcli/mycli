@@ -5,6 +5,7 @@ Documentation
 --------
 * Clarify the license of the test database.
 * Add PyPi badge to `README.md`.
+* Update `CONTRIBUTING.md` with release flow.
 
 
 2.25.3 (2026/09/19)
