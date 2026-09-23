@@ -100,8 +100,9 @@ To run the full test suite, execute `uv run -- tox`.
 
 #### Python Compatibility
 
-Use Python features available from Python 3.10 through Python 3.14.
-Compatibility with Python 3.9 is not needed.
+Use Python features available from Python 3.11 through Python 3.14.
+Compatibility with Python 3.9 is not needed.  Compatibility with Python
+3.10 is not needed.
 
 #### Python Style
 

@@ -301,7 +301,7 @@ def test_status_uses_global_queries_decodes_bytes_and_formats_stats(monkeypatch)
 def test_status_falls_back_to_show_status_and_handles_empty_selects(monkeypatch) -> None:
     monkeypatch.setattr(dbcommands, '__version__', '1.0.0')
     monkeypatch.setattr(dbcommands.platform, 'python_implementation', lambda: 'CPython')
-    monkeypatch.setattr(dbcommands.platform, 'python_version', lambda: '3.10.0')
+    monkeypatch.setattr(dbcommands.platform, 'python_version', lambda: '3.11.0')
     monkeypatch.setattr(dbcommands.iocommands, 'is_pager_enabled', lambda: False)
     monkeypatch.setattr(dbcommands, 'get_ssl_version', lambda cur: 'none')
     monkeypatch.setattr(dbcommands, 'format_uptime', lambda uptime: f'{uptime} seconds')

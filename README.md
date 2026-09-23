@@ -244,7 +244,7 @@ Thanks to [PyMysql](https://github.com/PyMySQL/PyMySQL) for a pure Python adapte
 # Compatibility
 
 Mycli is tested on macOS (full), Linux (full), Windows (partial), and WSL
-(partial), and requires Python 3.10 or better.
+(partial), and requires Python 3.11 or better.
 
 To connect to MySQL versions earlier than 5.5, you may need to set the
 following in `~/.myclirc`:

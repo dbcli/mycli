@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Features
+--------
+* Remove support for Python 3.10.
+
+
 Documentation
 --------
 * Clarify the license of the test database.
