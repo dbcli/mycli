@@ -3,7 +3,7 @@ name = "mycli"
 dynamic = ["version"]
 description = "Rich MySQL terminal client with autocompletion, syntax highlighting, and dataframes"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = "BSD-3-Clause"
 authors = [{ name = "Mycli Core Team" }]
 classifiers = [
@@ -13,7 +13,6 @@ classifiers = [
     'Operating System :: OS Independent',
     'Programming Language :: Python',
     'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
     'Programming Language :: Python :: 3.13',
@@ -101,7 +100,7 @@ exclude-newer = '1 week'
 exclude-newer-package = { cli_helpers = false }
 
 [tool.ruff]
-target-version = 'py310'
+target-version = 'py311'
 line-length = 140
 
 [tool.ruff.lint]
