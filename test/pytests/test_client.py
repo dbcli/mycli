@@ -493,7 +493,11 @@ def test_close_stops_refreshers_before_closing_connection_and_tunnels() -> None:
     cli.sqlexecute = SimpleNamespace(close=lambda: calls.append('connection'))  # type: ignore[assignment]
     cast(Any, cli).ssh_tunnel = SimpleNamespace(close=lambda: calls.append('ssh'))
     cast(Any, cli).kubectl_tunnel = SimpleNamespace(close=lambda: calls.append('kubectl'))
-    cli.boundary_tunnel = SimpleNamespace(close=lambda: calls.append('boundary'))  # type: ignore[assignment]
+
+    def close_boundary() -> None:
+        calls.append('boundary')
+
+    cli.boundary_tunnel = SimpleNamespace(close=close_boundary)  # type: ignore[assignment]
 
     MyCli.close(cli)
 
@@ -511,7 +515,7 @@ def test_close_swallows_cleanup_errors() -> None:
     cli.sqlexecute = SimpleNamespace(close=fail)  # type: ignore[assignment]
     cast(Any, cli).ssh_tunnel = SimpleNamespace(close=fail)
     cast(Any, cli).kubectl_tunnel = SimpleNamespace(close=fail)
-    cli.boundary_tunnel = SimpleNamespace(close=lambda: (_ for _ in ()).throw(RuntimeError('close failed')))  # type: ignore[assignment]
+    cli.boundary_tunnel = SimpleNamespace(close=lambda **kwargs: fail())  # type: ignore[assignment]
     MyCli.close(cli)
 
 
@@ -523,8 +527,16 @@ def test_close_swallows_boundary_tunnel_close_error() -> None:
     tunnel_closed: list[bool] = []
     cast(Any, cli).ssh_tunnel = SimpleNamespace(close=lambda: tunnel_closed.append(True))
     cast(Any, cli).kubectl_tunnel = None
-    cli.boundary_tunnel = SimpleNamespace(close=lambda: (_ for _ in ()).throw(RuntimeError('close failed')))  # type: ignore[assignment]
+    boundary_close_calls: list[bool] = []
+
+    def close_boundary() -> None:
+        boundary_close_calls.append(True)
+        raise RuntimeError('close failed')
+
+    cli.boundary_tunnel = SimpleNamespace(close=close_boundary)  # type: ignore[assignment]
     MyCli.close(cli)
+
+    assert boundary_close_calls == [True]
 
 
 def test_invalidate_prompt_session_invalidates_prompt_app() -> None:
