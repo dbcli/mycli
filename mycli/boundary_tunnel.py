@@ -246,14 +246,10 @@ class BoundaryTunnel:
     def close(self) -> None:
         process = self.process
         if process is not None and process.poll() is None:
-            process.terminate()
             try:
-                process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                process.kill()
-                process.wait()
-        if self._thread is not None and self._thread.is_alive():
-            self._thread.join(timeout=5)
+                process.terminate()
+            except ProcessLookupError:
+                pass
 
     def _run(self) -> None:
         try:

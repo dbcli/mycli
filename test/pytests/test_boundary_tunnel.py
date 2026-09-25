@@ -8,6 +8,7 @@ import subprocess
 import threading
 from types import SimpleNamespace
 from typing import Any, cast
+from unittest.mock import Mock
 
 import pytest
 
@@ -666,38 +667,47 @@ def test_boundary_tunnel_start_reports_process_start_timeout(monkeypatch: pytest
         tunnel.start()
 
 
+def test_boundary_tunnel_start_waits_for_process_output(monkeypatch: pytest.MonkeyPatch) -> None:
+    tunnel = BoundaryTunnel(target_id='ttcp_123', local_port=4406)
+    worker = Mock(spec=threading.Thread)
+    worker.start.side_effect = tunnel._started.set
+    monkeypatch.setattr(boundary_tunnel.threading, 'Thread', Mock(return_value=worker))
+    monkeypatch.setattr(tunnel, '_is_listening', lambda: True)
+    sleeps: list[float] = []
+
+    def release_output(seconds: float) -> None:
+        sleeps.append(seconds)
+        tunnel.stdout = CONNECTION_DETAILS
+        tunnel._output_ready.set()
+
+    monkeypatch.setattr(boundary_tunnel.time, 'sleep', release_output)
+
+    tunnel.start()
+
+    assert sleeps == [0.05, TUNNEL_STABILIZATION_PAUSE]
+    assert tunnel._ready.is_set()
+    assert tunnel.username == '1234'
+    assert tunnel.password == '5678'
+
+
 def test_boundary_tunnel_start_reports_process_output_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
-    calls: list[str] = []
-    output_released = threading.Event()
-
-    class BlockingStdout:
-        def readline(self) -> bytes:
-            calls.append('read')
-            output_released.wait()
-            return b''
-
-    class FakeProcess:
-        stdout = BlockingStdout()
-
-        def poll(self) -> None:
-            return None
-
-        def terminate(self) -> None:
-            calls.append('terminate')
-            output_released.set()
-
-        def wait(self, timeout: float | None = None) -> int:
-            calls.append(f'wait:{timeout}')
-            return 0
-
-    monkeypatch.setattr(boundary_tunnel.subprocess, 'Popen', lambda *_args, **_kwargs: FakeProcess())
-    tunnel = BoundaryTunnel(target_id='ttcp_123', local_port=4406, ready_timeout=0.1)
+    tunnel = BoundaryTunnel(target_id='ttcp_123', local_port=4406)
+    process = Mock(spec=subprocess.Popen)
+    process.poll.return_value = None
+    tunnel.process = process
+    worker = Mock(spec=threading.Thread)
+    worker.start.side_effect = tunnel._started.set
+    monkeypatch.setattr(boundary_tunnel.threading, 'Thread', Mock(return_value=worker))
+    monkeypatch.setattr(boundary_tunnel.time, 'monotonic', Mock(side_effect=[0.0, 0.0, 0.0, 31.0]))
+    sleep = Mock()
+    monkeypatch.setattr(boundary_tunnel.time, 'sleep', sleep)
 
     with pytest.raises(BoundaryTunnelError, match='Timed out waiting for tunnel process output'):
         tunnel.start()
 
-    assert calls[:2] == ['read', 'terminate']
-    assert sorted(calls[2:]) == ['wait:5', 'wait:None']
+    sleep.assert_called_once_with(0.05)
+    process.terminate.assert_called_once_with()
+    assert not tunnel._ready.is_set()
 
 
 def test_boundary_tunnel_start_reports_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -792,76 +802,69 @@ def test_boundary_tunnel_run_tracks_process_status(
     ]
 
 
-def test_boundary_tunnel_close_terminates_running_process() -> None:
-    calls: list[str] = []
-
-    class FakeProcess:
-        def poll(self) -> None:
-            return None
-
-        def terminate(self) -> None:
-            calls.append('terminate')
-
-        def wait(self, timeout: float | None = None) -> int:
-            calls.append(f'wait:{timeout}')
-            return 0
-
+def test_boundary_tunnel_close_terminates_without_waiting() -> None:
     tunnel = BoundaryTunnel(target_id='ttcp_123', local_port=4406)
-    tunnel.process = cast(Any, FakeProcess())
+    process = Mock(spec=subprocess.Popen)
+    process.poll.return_value = None
+    tunnel.process = process
+    worker = Mock(spec=threading.Thread)
+    tunnel._thread = worker
 
     tunnel.close()
 
-    assert calls == ['terminate', 'wait:5']
+    process.terminate.assert_called_once_with()
+    process.wait.assert_not_called()
+    process.kill.assert_not_called()
+    worker.join.assert_not_called()
 
 
-def test_boundary_tunnel_close_kills_process_after_terminate_timeout() -> None:
-    calls: list[str] = []
-
-    class FakeProcess:
-        def __init__(self) -> None:
-            self.wait_calls = 0
-
-        def poll(self) -> None:
-            return None
-
-        def terminate(self) -> None:
-            calls.append('terminate')
-
-        def wait(self, timeout: float | None = None) -> int:
-            calls.append(f'wait:{timeout}')
-            self.wait_calls += 1
-            if self.wait_calls == 1:
-                assert timeout is not None
-                raise subprocess.TimeoutExpired('boundary', timeout)
-            return 0
-
-        def kill(self) -> None:
-            calls.append('kill')
-
+def test_boundary_tunnel_close_without_process_does_not_join_worker() -> None:
     tunnel = BoundaryTunnel(target_id='ttcp_123', local_port=4406)
-    tunnel.process = cast(Any, FakeProcess())
+    worker = Mock(spec=threading.Thread)
+    tunnel._thread = worker
 
     tunnel.close()
 
-    assert calls == ['terminate', 'wait:5', 'kill', 'wait:None']
+    worker.join.assert_not_called()
 
 
-def test_boundary_tunnel_close_joins_running_thread() -> None:
-    calls: list[str] = []
-
-    class FakeThread:
-        def is_alive(self) -> bool:
-            return True
-
-        def join(self, timeout: float | None = None) -> None:
-            calls.append(f'join:{timeout}')
-
+@pytest.mark.parametrize('return_code', [0, 1])
+def test_boundary_tunnel_close_ignores_exited_process(return_code: int) -> None:
     tunnel = BoundaryTunnel(target_id='ttcp_123', local_port=4406)
-    tunnel._thread = cast(Any, FakeThread())
+    process = Mock(spec=subprocess.Popen)
+    process.poll.return_value = return_code
+    tunnel.process = process
 
     tunnel.close()
 
-    assert calls == ['join:5']
+    process.terminate.assert_not_called()
+    process.wait.assert_not_called()
+    process.kill.assert_not_called()
+
+
+def test_boundary_tunnel_close_handles_process_exiting_before_terminate() -> None:
+    tunnel = BoundaryTunnel(target_id='ttcp_123', local_port=4406)
+    process = Mock(spec=subprocess.Popen)
+    process.poll.return_value = None
+    process.terminate.side_effect = ProcessLookupError
+    tunnel.process = process
+
+    tunnel.close()
+
+    process.terminate.assert_called_once_with()
+    process.wait.assert_not_called()
+    process.kill.assert_not_called()
+
+
+def test_boundary_tunnel_close_propagates_other_termination_errors() -> None:
+    tunnel = BoundaryTunnel(target_id='ttcp_123', local_port=4406)
+    process = Mock(spec=subprocess.Popen)
+    process.poll.return_value = None
+    process.terminate.side_effect = PermissionError('access denied')
+    tunnel.process = process
+
+    with pytest.raises(PermissionError, match='access denied'):
+        tunnel.close()
 
 
 def test_boundary_tunnel_is_listening_returns_true(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -4,6 +4,7 @@ Upcoming (TBD)
 Features
 --------
 * Remove support for Python 3.10.
+* Exit faster when using a Boundary tunnel.
 
 
 Documentation
