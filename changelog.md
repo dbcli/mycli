@@ -13,7 +13,7 @@ Documentation
 * Update `CONTRIBUTING.md` with release flow.
 
 
-2.25.3 (2026/09/19)
+v2.25.3 (2026/09/19)
 ==============
 
 Documentation
@@ -33,7 +33,7 @@ Internal
 * Restore provenance/sbom to Docker image action.
 
 
-2.25.2 (2026/09/16)
+v2.25.2 (2026/09/16)
 ==============
 
 Internal
@@ -41,7 +41,7 @@ Internal
 * Remove provenance/sbom from Docker image action.
 
 
-2.25.1 (2026/09/16)
+v2.25.1 (2026/09/16)
 ==============
 
 Internal
@@ -49,7 +49,7 @@ Internal
 * Add Docker image annotations.
 
 
-2.25.0 (2026/09/16)
+v2.25.0 (2026/09/16)
 ==============
 
 Features
@@ -57,7 +57,7 @@ Features
 * Publish multi-architecture Docker images.
 
 
-2.24.5 (2026/09/16)
+v2.24.5 (2026/09/16)
 ==============
 
 Bug Fixes
@@ -77,7 +77,7 @@ Internal
 * One week cooldown for dependabot.
 
 
-2.24.4 (2026/09/12)
+v2.24.4 (2026/09/12)
 ==============
 
 Bug Fixes
@@ -90,7 +90,7 @@ Internal
 * Remove `continue-on-error` from release tests.
 
 
-2.24.3 (2026/09/12)
+v2.24.3 (2026/09/12)
 ==============
 
 Bug Fixes
@@ -98,7 +98,7 @@ Bug Fixes
 * Remove explicit `subject-digest` from ghcr.io publish action.
 
 
-2.24.2 (2026/09/12)
+v2.24.2 (2026/09/12)
 ==============
 
 Bug Fixes
@@ -107,7 +107,7 @@ Bug Fixes
 * Set `artifact-metadata: write` in `publish.yml`.
 
 
-2.24.1 (2026/09/12)
+v2.24.1 (2026/09/12)
 ==============
 
 Bug Fixes
@@ -116,7 +116,7 @@ Bug Fixes
 * Set `docker` output-type on ghcr.io images.
 
 
-2.24.0 (2026/09/12)
+v2.24.0 (2026/09/12)
 ==============
 
 Features
@@ -129,7 +129,7 @@ Features
 * Add a `\b` prompt format string to show transaction status.
 
 
-2.23.0 (2026/09/09)
+v2.23.0 (2026/09/09)
 ==============
 
 Features
@@ -147,7 +147,7 @@ Documentation
 * Add `--pull=always` to documented `docker run` command.
 
 
-2.22.0 (2026/09/09)
+v2.22.0 (2026/09/09)
 ==============
 
 Features
@@ -156,7 +156,7 @@ Features
 * Add port-forwarding into a Kubernetes cluster with `--kubectl-resource`.
 
 
-2.21.1 (2026/09/07)
+v2.21.1 (2026/09/07)
 ==============
 
 Documentation
@@ -164,7 +164,7 @@ Documentation
 * Show `docker run` example for ghcr.io in `README.md`.
 
 
-2.21.0 (2026/09/07)
+v2.21.0 (2026/09/07)
 ==============
 
 Features
@@ -192,7 +192,7 @@ Internal
 * Update `AGENTS.md` with latest files and descriptions.
 
 
-2.20.0 (2026/09/05)
+v2.20.0 (2026/09/05)
 ==============
 
 Features
@@ -222,7 +222,7 @@ Internal
 * Use `argparse` to process arguments to `/source`.
 
 
-2.19.0 (2026/09/02)
+v2.19.0 (2026/09/02)
 ==============
 
 Features
@@ -246,7 +246,7 @@ Internal
 * Upgrade `click` dependency to v8.5.0.
 
 
-2.18.5 (2026/08/31)
+v2.18.5 (2026/08/31)
 ==============
 
 Bug Fixes
@@ -261,7 +261,7 @@ Internal
 * Upgrade `polars` to v1.43.2.
 
 
-2.18.4 (2026/08/29)
+v2.18.4 (2026/08/29)
 ==============
 
 Documentation
@@ -269,7 +269,7 @@ Documentation
 * Add 10px rounded corners to animated `main.gif`.
 
 
-2.18.3 (2026/08/29)
+v2.18.3 (2026/08/29)
 ==============
 
 Documentation
@@ -277,7 +277,7 @@ Documentation
 * Iterate on `README.md` appearance on PyPi.
 
 
-2.18.2 (2026/08/29)
+v2.18.2 (2026/08/29)
 ==============
 
 Documentation
@@ -285,7 +285,7 @@ Documentation
 * Iterate on `README.md` appearance on PyPi.
 
 
-2.18.1 (2026/08/29)
+v2.18.1 (2026/08/29)
 ==============
 
 Documentation
@@ -293,7 +293,7 @@ Documentation
 * Add line break between `README.md` screenshots.
 
 
-2.18.0 (2026/08/29)
+v2.18.0 (2026/08/29)
 ==============
 
 Features
@@ -311,7 +311,7 @@ Documentation
 * Modernize `README.md` screenshots.
 
 
-2.17.0 (2026/08/25)
+v2.17.0 (2026/08/25)
 ==============
 
 Features
@@ -330,7 +330,7 @@ Internal
 * Upgrade `ruff` dev dependency to v0.16.3.
 
 
-2.16.0 (2026/08/22)
+v2.16.0 (2026/08/22)
 ==============
 
 Features
@@ -347,7 +347,7 @@ Bug Fixes
 * Require `/source` filenames containing spaces to be quoted.
 
 
-2.15.0 (2026/08/20)
+v2.15.0 (2026/08/20)
 ==============
 
 Features
@@ -366,7 +366,7 @@ Documentation
 * TIPS: `/favorite run` composes with the `\G` and `\x` terminators.
 
 
-2.14.0 (2026/08/15)
+v2.14.0 (2026/08/15)
 ==============
 
 Features
@@ -374,7 +374,7 @@ Features
 * Revert modal cursor shapes in vi edit mode.
 
 
-2.13.2 (2026/08/12)
+v2.13.2 (2026/08/12)
 ==============
 
 Bugfixes
@@ -393,7 +393,7 @@ Internal
 * Fix CI by pinning the `openai` library to v2.48.0.
 
 
-2.13.1 (2026/08/11)
+v2.13.1 (2026/08/11)
 ==============
 
 Bugfixes
@@ -401,7 +401,7 @@ Bugfixes
 * Pause before connecting over Boundary tunnels, to avoid SSL errors.
 
 
-2.13.0 (2026/08/11)
+v2.13.0 (2026/08/11)
 ==============
 
 Features
@@ -419,7 +419,7 @@ Internal
 * Remove CRLF line endings from fixture data.
 
 
-2.12.0 (2026/08/08)
+v2.12.0 (2026/08/08)
 ==============
 
 Breaking Changes
@@ -450,7 +450,7 @@ Internal
 * Tiny change to quoting in `client_commands.py`.
 
 
-2.11.0 (2026/08/07)
+v2.11.0 (2026/08/07)
 ==============
 
 Features
@@ -476,7 +476,7 @@ Internal
 * Fix flaky `watch` test for CI.
 
 
-2.10.0 (2026/08/05)
+v2.10.0 (2026/08/05)
 ==============
 
 Features
@@ -505,7 +505,7 @@ Internal
 * Update `cryptography` to v50.0.0.
 
 
-2.9.0 (2026/08/01)
+v2.9.0 (2026/08/01)
 ==============
 
 Features
@@ -534,7 +534,7 @@ Documentation
 * Center images in `README.md`.
 
 
-2.8.0 (2026/07/31)
+v2.8.0 (2026/07/31)
 ==============
 
 Features
@@ -550,7 +550,7 @@ Internal
 * Don't let behave tests refer to real home-directory resources.
 
 
-2.7.0 (2026/07/25)
+v2.7.0 (2026/07/25)
 ==============
 
 Features
@@ -589,7 +589,7 @@ Internal
 * Update `mypy` to v2.3.0.
 
 
-2.6.1 (2026/07/24)
+v2.6.1 (2026/07/24)
 ==============
 
 Features
@@ -618,7 +618,7 @@ Internal
 * Sync test myclirc file closer to package myclirc file.
 
 
-2.5.1 (2026/07/22)
+v2.5.1 (2026/07/22)
 ==============
 
 Documentation
@@ -626,7 +626,7 @@ Documentation
 * Attempt to make `README.md` images display on PyPi.
 
 
-2.5.0 (2026/07/22)
+v2.5.0 (2026/07/22)
 ==============
 
 Features
@@ -641,7 +641,7 @@ Internal
 * Don't modify checked-in `test/myclirc` in the behave test suite.
 
 
-2.4.0 (2026/07/18)
+v2.4.0 (2026/07/18)
 ==============
 
 Features
@@ -662,7 +662,7 @@ Internal
 * Add missing file to `AGENTS.md` project layout.
 
 
-2.3.0 (2026/07/16)
+v2.3.0 (2026/07/16)
 ==============
 
 Features
@@ -679,7 +679,7 @@ Documentation
 * Better ordering for `/help` table.
 
 
-2.2.0 (2026/07/11)
+v2.2.0 (2026/07/11)
 ==============
 
 Breaking Changes
@@ -714,7 +714,7 @@ Internal
 * Tweak `AGENTS.md` project structure.
 
 
-2.1.1 (2026/07/08)
+v2.1.1 (2026/07/08)
 ==============
 
 Breaking Changes
@@ -735,7 +735,7 @@ Documentation
 * Advertise forward-slash command forms in more places.
 
 
-2.0.0 (2026/07/03)
+v2.0.0 (2026/07/03)
 ==============
 
 Breaking Changes
@@ -786,7 +786,7 @@ Internal
 * Prefer `os.path.samefile()` for checkpoint distinctness test.
 
 
-1.76.0 (2026/06/20)
+v1.76.0 (2026/06/20)
 ==============
 
 Features
@@ -794,7 +794,7 @@ Features
 * Optionally expand whole `${VAR}` values in DSN aliases.
 
 
-1.75.0 (2026/06/20)
+v1.75.0 (2026/06/20)
 ==============
 
 Features
@@ -811,7 +811,7 @@ Internal
 * Remove Codex PR Review action, which stopped working.
 
 
-1.74.1 (2026/06/18)
+v1.74.1 (2026/06/18)
 ==============
 
 Bug Fixes
@@ -831,7 +831,7 @@ Internal
 * Add test coverage for `client.py`.
 
 
-1.74.0 (2026/06/06)
+v1.74.0 (2026/06/06)
 ==============
 
 Features
@@ -859,7 +859,7 @@ Internal
 * Skip flaky external-editor test in CI.
 
 
-1.73.1 (2026/05/29)
+v1.73.1 (2026/05/29)
 ==============
 
 Bug Fixes
@@ -867,7 +867,7 @@ Bug Fixes
 * Update `sqlglot` to v30.8.0 to fix `build_formatted_string` error.
 
 
-1.73.0 (2026/05/27)
+v1.73.0 (2026/05/27)
 ==============
 
 Features
@@ -892,7 +892,7 @@ Internal
 * Factor `app_state.py`, `cli_args.py`, and `output.py` out of `main.py`.
 
 
-1.72.1 (2026/05/11)
+v1.72.1 (2026/05/11)
 ==============
 
 Bug Fixes
@@ -900,7 +900,7 @@ Bug Fixes
 * Update `sqlglot` to v30.7.0 to fix has_bit_strings error.
 
 
-1.72.0 (2026/05/08)
+v1.72.0 (2026/05/08)
 ==============
 
 Features
@@ -923,7 +923,7 @@ Internal
 * Independent case-sensitivity for special-command aliases.
 
 
-1.71.0 (2026/05/01)
+v1.71.0 (2026/05/01)
 ==============
 
 Features
@@ -948,7 +948,7 @@ Internal
 * Require `prompt_toolkit>=3.0.41`.
 
 
-1.70.0 (2026/04/24)
+v1.70.0 (2026/04/24)
 ==============
 
 Features
@@ -957,7 +957,7 @@ Features
 * Save fetched completion metadata when switching schemas.
 
 
-1.69.0 (2026/04/20)
+v1.69.0 (2026/04/20)
 ==============
 
 Features
@@ -977,7 +977,7 @@ Internal
 * Commentary and organization in default/package myclirc file.
 
 
-1.68.1 (2026/04/16)
+v1.68.1 (2026/04/16)
 ==============
 
 Bug Fixes
@@ -985,7 +985,7 @@ Bug Fixes
 * Upgrade `sqlglot` to v30.4.3, which may fix a build problem.
 
 
-1.68.0 (2026/04/13)
+v1.68.0 (2026/04/13)
 ==============
 
 Features
@@ -1044,7 +1044,7 @@ Internal
 * Remove unused method `get_completions()`.
 
 
-1.67.1 (2026/03/28)
+v1.67.1 (2026/03/28)
 ==============
 
 Features
@@ -1072,7 +1072,7 @@ Internal
 * Refactor: better naming for `prompt_toolkit` utilities.
 
 
-1.66.0 (2026/03/21)
+v1.66.0 (2026/03/21)
 ==============
 
 Features
@@ -1095,7 +1095,7 @@ Internal
 * Connect toolbar tests to the test database.
 
 
-1.65.1 (2026/03/18)
+v1.65.1 (2026/03/18)
 ==============
 
 Bug Fixes
@@ -1103,7 +1103,7 @@ Bug Fixes
 * Require `sqlglot` 30.x.
 
 
-1.65.0 (2026/03/16)
+v1.65.0 (2026/03/16)
 ==============
 
 Features
@@ -1118,7 +1118,7 @@ Bug Fixes
 * Improve completions after operators, by recognizing more operators.
 
 
-1.64.0 (2026/03/13)
+v1.64.0 (2026/03/13)
 ==============
 
 Features
@@ -1133,7 +1133,7 @@ Bug Fixes
 * Require `sqlglot` 29.x, suppressing a deprecation warning.
 
 
-1.63.0 (2026/03/12)
+v1.63.0 (2026/03/12)
 ==============
 
 Features
@@ -1147,7 +1147,7 @@ Internal
 * Support `sqlglot` 28 and 29.
 
 
-1.62.0 (2026/03/07)
+v1.62.0 (2026/03/07)
 ==============
 
 Features
@@ -1172,7 +1172,7 @@ Internal
 * Make `safe_invalidate_display` function safer.
 
 
-1.61.0 (2026/03/07)
+v1.61.0 (2026/03/07)
 ==============
 
 Features
@@ -1182,7 +1182,7 @@ Features
 * Add short hostname prompt format string.
 
 
-1.60.0 (2026/03/05)
+v1.60.0 (2026/03/05)
 ==============
 
 Features
@@ -1198,7 +1198,7 @@ Bug Fixes
 * Update to a `cli_helpers` version with a `tabulate` bugfix.
 
 
-1.59.0 (2026/03/03)
+v1.59.0 (2026/03/03)
 ==============
 
 Features
@@ -1230,7 +1230,7 @@ Internal
 * Avoid refreshing the prompt unless needed.
 
 
-1.58.0 (2026/02/28)
+v1.58.0 (2026/02/28)
 ==============
 
 Features
@@ -1267,7 +1267,7 @@ Internal
 * Make prettify/unprettify logic more robust.
 
 
-1.57.0 (2026/02/25)
+v1.57.0 (2026/02/25)
 ==============
 
 Features
@@ -1302,7 +1302,7 @@ Internal
 * Set well-known URL values in `pyproject.toml`.
 
 
-1.56.0 (2026/02/23)
+v1.56.0 (2026/02/23)
 ==============
 
 Features
@@ -1331,7 +1331,7 @@ Bug Fixes
 * Fix extraneous prompt refresh on every keystroke.
 
 
-1.55.0 (2026/02/20)
+v1.55.0 (2026/02/20)
 ==============
 
 Features
@@ -1352,7 +1352,7 @@ Internal
 * Bump `cli_helpers` to non-yanked version.
 
 
-1.54.1 (2026/02/17)
+v1.54.1 (2026/02/17)
 ==============
 
 Bug Fixes
@@ -1367,7 +1367,7 @@ Internal
 * Refactor `is_inside_quotes()` detection.
 
 
-1.54.0 (2026/02/16)
+v1.54.0 (2026/02/16)
 ==============
 
 Features
@@ -1403,7 +1403,7 @@ Internal
 * Exclude more documentation files from CI.
 
 
-1.53.0 (2026/02/12)
+v1.53.0 (2026/02/12)
 ==============
 
 Features
@@ -1422,7 +1422,7 @@ Internal
 * Add GitHub Issue templates.
 
 
-1.52.0 (2026/02/11)
+v1.52.0 (2026/02/11)
 ==============
 
 Features
@@ -1444,7 +1444,7 @@ Internal
 * Organize startup tips.
 
 
-1.51.1 (2026/02/09)
+v1.51.1 (2026/02/09)
 ==============
 
 Features
@@ -1461,7 +1461,7 @@ Bug Fixes
 * Give destructive warning on multi-table `UPDATE`s.
 
 
-1.50.0 (2026/02/07)
+v1.50.0 (2026/02/07)
 ==============
 
 Features
@@ -1478,7 +1478,7 @@ Bug Fixes
 * Include port and socket in keyring identifier.
 
 
-1.49.0 (2026/02/02)
+v1.49.0 (2026/02/02)
 ==============
 
 Features
@@ -1504,7 +1504,7 @@ Internal
 * Update Pull Request template.
 
 
-1.48.0 (2026/01/27)
+v1.48.0 (2026/01/27)
 ==============
 
 Features
@@ -1525,7 +1525,7 @@ Bug Fixes
 * Offer format completions on special command `\Tr`/`redirectformat`.
 
 
-1.47.0 (2026/01/24)
+v1.47.0 (2026/01/24)
 ==============
 
 Features
@@ -1540,7 +1540,7 @@ Bug Fixes
 * Don't offer completions for numeric text.
 
 
-1.46.0 (2026/01/22)
+v1.46.0 (2026/01/22)
 ==============
 
 Features
@@ -1560,7 +1560,7 @@ Bug Fixes
 * Place special commands first in the list of completion candidates, and remove duplicates.
 
 
-1.45.0 (2026/01/20)
+v1.45.0 (2026/01/20)
 ==============
 
 Features
@@ -1581,7 +1581,7 @@ Bug Fixes
 * Offer schema name completions in `GRANT ... ON` forms.
 
 
-1.44.2 (2026/01/13)
+v1.44.2 (2026/01/13)
 ==============
 
 Bug Fixes
@@ -1594,7 +1594,7 @@ Internal
 * Create new data class to handle SQL/command results to make further code improvements easier.
 
 
-1.44.1 (2026/01/10)
+v1.44.1 (2026/01/10)
 ==============
 
 Bug Fixes
@@ -1602,7 +1602,7 @@ Bug Fixes
 * Let `sqlparse` accept arbitrarily-large queries.
 
 
-1.44.0 (2026/01/08)
+v1.44.0 (2026/01/08)
 ==============
 
 Features
@@ -1611,7 +1611,7 @@ Features
 * Add `show_favorite_query` config option to control query printing when running favorite queries. (#1118)
 
 
-1.43.1 (2026/01/03)
+v1.43.1 (2026/01/03)
 ==============
 
 Bug Fixes
@@ -1619,7 +1619,7 @@ Bug Fixes
 * Prompt for password within SSL-auto retry flow.
 
 
-1.43.0 (2026/01/02)
+v1.43.0 (2026/01/02)
 ==============
 
 Features
@@ -1644,7 +1644,7 @@ Internal
 * Use fully-qualified pymysql exception classes.
 
 
-1.42.0 (2025/12/20)
+v1.42.0 (2025/12/20)
 ==============
 
 Features
@@ -1661,7 +1661,7 @@ Internal
 * Set mypy version more strictly.
 
 
-1.41.2 (2025/11/24)
+v1.41.2 (2025/11/24)
 ==============
 
 Bug Fixes
@@ -1674,7 +1674,7 @@ Internal
 * Update contributing guidelines to match GitHub pull request checklist.
 
 
-1.41.1 (2025/11/15)
+v1.41.1 (2025/11/15)
 ==============
 
 Bug Fixes
@@ -1687,7 +1687,7 @@ Internal
 * Include LLM dependencies in tox configuration.
 
 
-1.41.0 (2025/11/01)
+v1.41.0 (2025/11/01)
 ==============
 
 Features
@@ -1709,7 +1709,7 @@ Internal
 * Improve type annotations on LLM driver.
 
 
-1.40.0 (2025/10/14)
+v1.40.0 (2025/10/14)
 ==============
 
 Features
@@ -1723,7 +1723,7 @@ Internal
 * Switch from pyaes to pycryptodomex as it seems to be more actively maintained.
 
 
-1.39.1 (2025/10/06)
+v1.39.1 (2025/10/06)
 ==============
 
 Bug Fixes
@@ -1731,7 +1731,7 @@ Bug Fixes
 * Don't require `--ssl` argument when other SSL arguments are given.
 
 
-1.39.0 (2025/09/30)
+v1.39.0 (2025/09/30)
 ==============
 
 Features
@@ -1750,7 +1750,7 @@ Internal
 Typing fix for `pymysql.connect()`.
 
 
-1.38.4 (2025/09/06)
+v1.38.4 (2025/09/06)
 ==============
 
 Bug Fixes
@@ -1764,7 +1764,7 @@ Internal
 * Only read "my" configuration files once, rather than once per call to read_my_cnf_files.
 
 
-1.38.3 (2025/08/21)
+v1.38.3 (2025/08/21)
 ==============
 
 Bug Fixes
@@ -1772,7 +1772,7 @@ Bug Fixes
 * Fix the infinite looping when `\llm` is called without args.
 
 
-1.38.2 (2025/08/19)
+v1.38.2 (2025/08/19)
 ======================
 
 Bug Fixes
@@ -1780,7 +1780,7 @@ Bug Fixes
 * Fix failure to save Favorite Queries.
 
 
-1.38.1 (2025/08/19)
+v1.38.1 (2025/08/19)
 ======================
 
 Bug Fixes
@@ -1793,7 +1793,7 @@ Internal
 * Improve CI workflow naming.
 
 
-1.38.0 (2025/08/16)
+v1.38.0 (2025/08/16)
 ======================
 
 Features
@@ -1821,7 +1821,7 @@ Internal
 * Modernization: remove more Python 2 compatibility logic.
 
 
-1.37.1 (2025/07/28)
+v1.37.1 (2025/07/28)
 ======================
 
 Internal
@@ -1831,7 +1831,7 @@ Internal
 * Fix deprecated `license` specification format in `pyproject.toml`.
 
 
-1.37.0 (2025/07/28)
+v1.37.0 (2025/07/28)
 ======================
 
 Features
@@ -1858,7 +1858,7 @@ Internal
 * Update `cli_helpers` dependency, and list of table formats.
 
 
-1.36.0 (2025/07/19)
+v1.36.0 (2025/07/19)
 ======================
 
 Features
@@ -1879,7 +1879,7 @@ Internal
 * Add limited typechecking to CI.
 
 
-1.35.0 (2025/07/18)
+v1.35.0 (2025/07/18)
 ======================
 
 Features
@@ -1889,7 +1889,7 @@ Features
 * Support trailing file redirects after pipe operators, such as `select 10 $| tail -1 $> ten.txt`.
 
 
-1.34.4 (2025/07/15)
+v1.34.4 (2025/07/15)
 ======================
 
 Bug Fixes
@@ -1898,7 +1898,7 @@ Bug Fixes
 * Fix old-style `\pipe_once`.
 
 
-1.34.3 (2025/07/14)
+v1.34.3 (2025/07/14)
 ======================
 
 Bug Fixes
@@ -1907,7 +1907,7 @@ Bug Fixes
 * Use only `communicate()` to communicate with subprocess.
 
 
-1.34.2 (2025/07/12)
+v1.34.2 (2025/07/12)
 ======================
 
 Bug Fixes
@@ -1916,7 +1916,7 @@ Bug Fixes
 * Use plain `print()` to communicate with subprocess.
 
 
-1.34.1 (2025/07/12)
+v1.34.1 (2025/07/12)
 ======================
 
 Internal
@@ -1925,7 +1925,7 @@ Internal
 * Bump cli_helpers dependency for corrected output formats.
 
 
-1.34.0 (2025/07/11)
+v1.34.0 (2025/07/11)
 ======================
 
 Features
@@ -1940,7 +1940,7 @@ Internal
 * Bump cli_helpers dependency for more output formats.
 
 
-1.33.0 (2025/07/07)
+v1.33.0 (2025/07/07)
 ======================
 
 Features
@@ -1958,7 +1958,7 @@ Internal
 * Remove `requirements-dev.txt` in favor of uv/`pyproject.toml`.
 
 
-1.32.0 (2025/07/04)
+v1.32.0 (2025/07/04)
 ======================
 
 Features
@@ -1975,7 +1975,7 @@ Internal
 * Bump sqlglot version to v26 and add rs extras.
 
 
-1.31.2 (2025/05/01)
+v1.31.2 (2025/05/01)
 ===================
 
 Bug Fixes
@@ -1993,7 +1993,7 @@ Internal
 * Enable xpassing test.
 
 
-1.31.1 (2025/04/25)
+v1.31.1 (2025/04/25)
 ===================
 
 Internal
@@ -2002,7 +2002,7 @@ Internal
 * skip style checks on Publish action
 
 
-1.31.0 (NEVER RELEASED)
+v1.31.0 (NEVER RELEASED)
 ===================
 
 Features
@@ -2020,7 +2020,7 @@ Internal
 * Typing/lint fixes.
 
 
-1.30.0 (2025/04/19)
+v1.30.0 (2025/04/19)
 ===================
 
 Features
@@ -2030,7 +2030,7 @@ Features
 * Add `\\g` to force the horizontal output.
 
 
-1.29.2 (2024/12/11)
+v1.29.2 (2024/12/11)
 ===================
 
 Internal
@@ -2038,7 +2038,7 @@ Internal
 
 * Exclude tests from the python package.
 
-1.29.1 (2024/12/11)
+v1.29.1 (2024/12/11)
 ===================
 
 Internal
@@ -2046,7 +2046,7 @@ Internal
 
 * Fix the GH actions to publish a new version.
 
-1.29.0 (NEVER RELEASED)
+v1.29.0 (NEVER RELEASED)
 =======================
 
 Bug Fixes
@@ -2061,7 +2061,7 @@ Internal
 * Modernize to use PEP-621. Use `uv` instead of `pip` in GH actions.
 * Remove Python 3.8 and add Python 3.13 in test matrix.
 
-1.28.0 (2024/11/10)
+v1.28.0 (2024/11/10)
 ======================
 
 Features
@@ -2076,7 +2076,7 @@ Bug Fixes
 * Only show keyword completions after *
 * Enable fuzzy matching for keywords
 
-1.27.2 (2024/04/03)
+v1.27.2 (2024/04/03)
 ===================
 
 Bug Fixes
@@ -2084,7 +2084,7 @@ Bug Fixes
 
 * Don't use default prompt when one is not supplied to the --prompt option.
 
-1.27.1 (2024/03/28)
+v1.27.1 (2024/03/28)
 ===================
 
 Bug Fixes
@@ -2101,7 +2101,7 @@ Internal
 * paramiko is newer than 2.11.0 now, remove version pinning `cryptography`.
 * Drop support for Python 3.7
 
-1.27.0 (2023/08/11)
+v1.27.0 (2023/08/11)
 ===================
 
 Features
@@ -2119,7 +2119,7 @@ Bug Fixes
 * Correctly report the version of TiDB.
 * Revised `botton` spelling mistakes with `bottom` in `mycli/clitoolbar.py`
 
-1.26.1 (2022/09/01)
+v1.26.1 (2022/09/01)
 ===================
 
 Bug Fixes
@@ -2127,7 +2127,7 @@ Bug Fixes
 
 * Require Python 3.7 in `setup.py`
 
-1.26.0 (2022/09/01)
+v1.26.0 (2022/09/01)
 ===================
 
 Features
@@ -2156,7 +2156,7 @@ Bug Fixes
 * Fix the status command to work with missing 'Flush_commands' (mariadb)
 * Ignore the user of the system [myslqd] config.
 
-1.25.0 (2022/04/02)
+v1.25.0 (2022/04/02)
 ===================
 
 Features
@@ -2164,7 +2164,7 @@ Features
 
 * Add `beep_after_seconds` option to `~/.myclirc`, to ring the terminal bell after long queries.
 
-1.24.4 (2022/03/30)
+v1.24.4 (2022/03/30)
 ===================
 
 Internal
@@ -2177,7 +2177,7 @@ Bug Fixes
 
 * Change in main.py - Replace the `click.get_terminal_size()` with `shutil.get_terminal_size()`
 
-1.24.3 (2022/01/20)
+v1.24.3 (2022/01/20)
 ===================
 
 Bug Fixes
@@ -2185,7 +2185,7 @@ Bug Fixes
 
 * Upgrade cli_helpers to workaround Pygments regression.
 
-1.24.2 (2022/01/11)
+v1.24.2 (2022/01/11)
 ===================
 
 Bug Fixes
@@ -2195,7 +2195,7 @@ Bug Fixes
 * Fix the status command when connected to TiDB or other servers that don't implement 'Threads\_connected'
 * Pin pygments version to avoid a breaking change
 
-1.24.1
+v1.24.1
 =======
 
 Bug Fixes
@@ -2208,7 +2208,7 @@ Internal
 
 * Deprecate Python mock
 
-1.24.0
+v1.24.0
 ======
 
 Bug Fixes
@@ -2234,7 +2234,7 @@ Internal
 * Test various host-port combinations in command line arguments
 * Switched from Cryptography to pyaes for decrypting mylogin.cnf
 
-1.23.2
+v1.23.2
 ======
 
 Bug Fixes
@@ -2242,7 +2242,7 @@ Bug Fixes
 
 * Ensure `--port` is always an int.
 
-1.23.1
+v1.23.1
 ======
 
 Bug Fixes
@@ -2250,7 +2250,7 @@ Bug Fixes
 
 * Allow `--host` without `--port` to make a TCP connection.
 
-1.23.0
+v1.23.0
 ======
 
 Bug Fixes
@@ -2283,7 +2283,7 @@ Bug Fixes
 * Avoid opening `/dev/tty` when `--no-warn` is given.
 * Fixed some typo errors in `README.md`.
 
-1.22.2
+v1.22.2
 ======
 
 Bug Fixes
@@ -2291,7 +2291,7 @@ Bug Fixes
 
 * Make the `pwd` module optional.
 
-1.22.1
+v1.22.1
 ======
 
 Bug Fixes
@@ -2311,7 +2311,7 @@ Bug Fixes
 
 * Fix specifying empty password with `--password=''` when config file has a password set (Thanks: [Zach DeCook]).
 
-1.21.1
+v1.21.1
 ======
 
 Bug Fixes
@@ -2321,7 +2321,7 @@ Bug Fixes
 * Fix undefined variable exception when running with --no-warn (Thanks: [Georgy Frolov])
 * Support setting color for null value (Thanks: [laixintao])
 
-1.21.0
+v1.21.0
 ======
 
 Features
@@ -2345,7 +2345,7 @@ Internal
 
 * deprecate python versions 2.7, 3.4, 3.5; support python 3.8
 
-1.20.1
+v1.20.1
 ======
 
 Bug Fixes
@@ -2353,7 +2353,7 @@ Bug Fixes
 
 * Fix an error when using login paths with an explicit database name (Thanks: [Thomas Roten]).
 
-1.20.0
+v1.20.0
 ======
 
 Features
@@ -2379,7 +2379,7 @@ Internal
 
 * fix unhashable FormattedText from prompt toolkit in unit tests (Thanks: [Dick Marinus]).
 
-1.19.0
+v1.19.0
 ======
 
 Internal
@@ -2401,7 +2401,7 @@ Bug Fixes
 
 * Enable Ctrl-Z to suspend the app (Thanks: [Amjith Ramanujam]).
 
-1.18.2
+v1.18.2
 ======
 
 Bug Fixes
@@ -2416,7 +2416,7 @@ Internal
 * Fix warnings for running tests on Python 3.7 (Thanks: [Dick Marinus]).
 * Clean up and add behave logging (Thanks: [Dick Marinus]).
 
-1.18.1
+v1.18.1
 ======
 
 Features
@@ -2429,7 +2429,7 @@ Internal
 
 * Update prompt toolkit (Thanks: [Jonathan Slenders], [Irina Truong], [Dick Marinus]).
 
-1.18.0
+v1.18.0
 ======
 
 Features
@@ -2463,7 +2463,7 @@ Internal
 * Enable tests for Python 3.7 (Thanks: [Thomas Roten]).
 * Remove `*.swp` from gitignore (Thanks: [Dick Marinus]).
 
-1.17.0
+v1.17.0
 =======
 
 Features
@@ -2491,7 +2491,7 @@ Internal
 
 * Refactor Destructive Warning behave tests (Thanks: [Dick Marinus]).
 
-1.16.0
+v1.16.0
 =======
 
 Features
@@ -2504,7 +2504,7 @@ Bug Fixes
 
 * Do not try to connect to a unix socket on Windows (Thanks: [Thomas Roten]).
 
-1.15.0
+v1.15.0
 =======
 
 Features
@@ -2513,7 +2513,7 @@ Features
 * Add sql-update/insert output format. (Thanks: [Dick Marinus]).
 * Also complete aliases in WHERE. (Thanks: [Dick Marinus]).
 
-1.14.0
+v1.14.0
 =======
 
 Features
@@ -2537,7 +2537,7 @@ Internal Changes
 * Make tests more compatible between different build environments. (Thanks: [David Caro])
 * Merge `_on_completions_refreshed` and `_swap_completer_objects` functions (Thanks: [Dick Marinus]).
 
-1.13.1
+v1.13.1
 =======
 
 Bug Fixes
@@ -2551,7 +2551,7 @@ Internal Changes
 
 * Make tests ignore user config files (Thanks: [Thomas Roten]).
 
-1.13.0
+v1.13.0
 =======
 
 Features
@@ -2566,7 +2566,7 @@ Bug Fixes
 * Fix MySQL4 version comment retrieval (Thanks: [François Pietka])
 * Fix error that occurred when outputting JSON and NULL data (Thanks: [Thomas Roten]).
 
-1.12.1
+v1.12.1
 =======
 
 Bug Fixes
@@ -2582,7 +2582,7 @@ Internal Changes
 * Use less memory when formatting results for display (Thanks: [Dick Marinus]).
 * Preliminary work for a future change in outputting results that uses less memory (Thanks: [Dick Marinus]).
 
-1.12.0
+v1.12.0
 =======
 
 Features
@@ -2590,7 +2590,7 @@ Features
 
 * Add fish-style auto-suggestion from history. (Thanks: [Amjith Ramanujam])
 
-1.11.0
+v1.11.0
 =======
 
 Features
@@ -2637,7 +2637,7 @@ Internal Changes
 * Add missing @dbtest to tests (Thanks: [Dick Marinus]).
 * Standardizes punctuation/grammar for help strings (Thanks: [Thomas Roten]).
 
-1.10.0
+v1.10.0
 =======
 
 Features
@@ -2668,7 +2668,7 @@ Internal Changes
 * Run pep8 checks in travis (Thanks: [Irina Truong]).
 * Remove temporary hack for sqlparse (Thanks: [Dick Marinus]).
 
-1.9.0
+v1.9.0
 ======
 
 Features
@@ -2703,7 +2703,7 @@ Internal Changes
 * Swap pycrypto dependency for pycryptodome. (Thanks: [Michał Górny]).
 * Bump sqlparse version so pgcli and mycli can be installed together. (Thanks: [darikg]).
 
-1.8.1
+v1.8.1
 ======
 
 Bug Fixes
@@ -2720,7 +2720,7 @@ Internal Changes
 
 * Make the dependency of sqlparse slightly more liberal. (Thanks: [Amjith Ramanujam]).
 
-1.8.0
+v1.8.0
 ======
 
 Features
@@ -2739,7 +2739,7 @@ Bug Fixes
 * Remove unsupported keywords. (Thanks: [Matheus Rosa]).
 * Fix completion suggestion inside functions with operands. (Thanks: [Irina Truong]).
 
-1.7.0
+v1.7.0
 ======
 
 Features
@@ -2761,7 +2761,7 @@ Internal Changes
 
 * Upgrade `prompt_toolkit` to 1.0.0. (Thanks: [Jonathan Slenders])
 
-1.6.0
+v1.6.0
 ======
 
 Features
@@ -2795,7 +2795,7 @@ Internal Changes
 * Capture warnings to log file. (Thanks: [Mikhail Borisov]).
 * Make `syntax_style` a tiny bit more intuitive. (Thanks: [Phil Cohen]).
 
-1.5.2
+v1.5.2
 ======
 
 Bug Fixes
@@ -2803,7 +2803,7 @@ Bug Fixes
 
 * Protect against port number being None when no port is specified in command line.
 
-1.5.1
+v1.5.1
 ======
 
 Bug Fixes
@@ -2811,7 +2811,7 @@ Bug Fixes
 
 * Cast the value of port read from my.cnf to int.
 
-1.5.0
+v1.5.0
 ======
 
 Features
@@ -2868,7 +2868,7 @@ Internal Changes
 * Adds support for PyMySQL 0.6.2 and above. This is useful for debian package builders. (Thanks: [Thomas Roten]).
 * Disable click warning.
 
-1.4.0
+v1.4.0
 ======
 
 Features
@@ -2903,7 +2903,7 @@ Bug Fixes
 * Add `\g` and `\G` as valid query terminators. Previously in multi-line mode
   ending a query with a `\G` wouldn't run the query. This is now fixed.
 
-1.3.0
+v1.3.0
 ======
 
 Features
@@ -2944,7 +2944,7 @@ Features
 * Make `-p` and `--password` take the password in commandline. This makes mycli
   a drop in replacement for mysql.
 
-1.2.0
+v1.2.0
 ======
 
 Features
@@ -2966,7 +2966,7 @@ Internal Changes
 * Upgrade `prompt_toolkit` dependency version to 0.45.
 * Added Travis CI to run the tests automatically.
 
-1.1.1
+v1.1.1
 ======
 
 Bug Fixes
@@ -2974,7 +2974,7 @@ Bug Fixes
 
 * Change dictonary comprehension used in mycnf reader to list comprehension to make it compatible with Python 2.6.
 
-1.1.0
+v1.1.0
 ======
 
 Features
