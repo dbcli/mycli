@@ -5,8 +5,9 @@ import shlex
 from typing import Any, Callable, Literal
 
 import sqlparse
-from sqlparse.sql import Comparison, Identifier, Token, Where
+from sqlparse.sql import Comparison, Having, Identifier, Token, Where
 
+from mycli.constants import MYSQL_ESCAPES
 from mycli.packages.special.dsn_aliases import DSN_SUBCOMMANDS
 from mycli.packages.special.favoritequeries import FAVORITE_SUBCOMMANDS
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
@@ -21,6 +22,7 @@ _ENUM_VALUE_RE = re.compile(
     r"(?P<lhs>(?:`[^`]+`|[\w$]+)(?:\.(?:`[^`]+`|[\w$]+))?)\s*=\s*$",
     re.IGNORECASE,
 )
+_QUOTED_ENUM_TOKENS = re.compile(r"""--(?=\s|$)[^\n]*|\#[^\n]*|/\*[\s\S]*?(?:\*/|$)|`(?:``|[^`])*`|['"]""")
 
 # missing because not binary
 #   BETWEEN
@@ -391,6 +393,54 @@ def _emit_binary_or_comma(ctx: SuggestContext) -> list[Suggestion]:
     return fallback
 
 
+def _emit_quoted_enum_value_or_nothing(ctx: SuggestContext) -> list[Suggestion]:
+    # Skip comments and identifiers before looking for an unfinished string.
+    offset = 0
+    while match := _QUOTED_ENUM_TOKENS.search(ctx.text_before_cursor, offset):
+        quote = match.group()
+        offset = match.end()
+        if quote not in ("'", '"'):
+            continue
+        start = match.start()
+        value: list[str] = []
+        closed = False
+        while offset < len(ctx.text_before_cursor):
+            char = ctx.text_before_cursor[offset]
+            offset += 1
+            if char == '\\' and offset < len(ctx.text_before_cursor):
+                escaped = ctx.text_before_cursor[offset]
+                value.append(MYSQL_ESCAPES.get(escaped, escaped))
+                offset += 1
+            elif char == quote:
+                if ctx.text_before_cursor[offset : offset + 1] == quote:
+                    value.append(quote)
+                    offset += 1
+                else:
+                    closed = True
+                    break
+            else:
+                value.append(char)
+        if closed:
+            continue
+        prefix = ctx.text_before_cursor[:start]
+        if not _enum_value_suggestion(prefix, ctx.full_text):
+            return []
+        # Reuse the normal clause and table resolution with the value removed.
+        context_text = prefix + ' ' + ctx.full_text[start:]
+        for suggestion in suggest_type(context_text, prefix + ' '):
+            if suggestion['type'] == 'enum_value':
+                return [
+                    {
+                        **suggestion,
+                        'value_prefix': ''.join(value),
+                        'quote': quote,
+                        'replacement_length': len(ctx.text_before_cursor) - start,
+                    }
+                ]
+        return []
+    return []
+
+
 def _word_starts_with_digit_or_dot(ctx: SuggestContext) -> bool:
     return bool(ctx.word_before_cursor and re.match(r'^[\d\.]', ctx.word_before_cursor[0]))
 
@@ -401,6 +451,18 @@ def _word_starts_with_quote(ctx: SuggestContext) -> bool:
 
 def _word_inside_single_or_double_quotes(ctx: SuggestContext) -> bool:
     return bool(ctx.word_before_cursor and _is_single_or_double_quoted(ctx))
+
+
+def _word_inside_or_starts_with_quote(ctx: SuggestContext) -> bool:
+    return _word_starts_with_quote(ctx) or _word_inside_single_or_double_quotes(ctx)
+
+
+def _word_could_be_enum_value(ctx: SuggestContext) -> bool:
+    # the check for the "=" or "having" values seem to be needed in case of failing to see a Having
+    # token, which seems to be a sqlparse bug
+    return _word_inside_or_starts_with_quote(ctx) and (
+        isinstance(ctx.token, (Having, Where)) or (isinstance(ctx.token, Token) and ctx.token.value.lower() in ['=', 'having'])
+    )
 
 
 def _token_is_none(ctx: SuggestContext) -> bool:
@@ -432,6 +494,11 @@ def _token_is_binary_or_comma(ctx: SuggestContext) -> bool:
 
 
 SUGGEST_BASED_ON_LAST_TOKEN_RULES = [
+    SuggestRule(
+        'quoted_enum_value',
+        _word_could_be_enum_value,
+        _emit_quoted_enum_value_or_nothing,
+    ),
     SuggestRule(
         'guard_number_or_dot',
         _word_starts_with_digit_or_dot,

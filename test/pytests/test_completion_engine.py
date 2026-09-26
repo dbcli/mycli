@@ -25,6 +25,7 @@ from mycli.packages.completion_engine import (
     _emit_nothing,
     _emit_on,
     _emit_procedure,
+    _emit_quoted_enum_value_or_nothing,
     _emit_relation_like,
     _emit_relation_name,
     _emit_select_like,
@@ -138,6 +139,94 @@ def test_where_equals_suggests_enum_values_first():
         {"type": "function", "schema": []},
         {"type": "introducer"},
     ])
+
+
+@pytest.mark.parametrize('quote', ["'", '"'])
+@pytest.mark.parametrize('clause', ['WHERE', 'HAVING'])
+@pytest.mark.parametrize('separator', ['=', ' = '])
+def test_quoted_enum_prefix_context(quote: str, clause: str, separator: str) -> None:
+    expression = f'SELECT * FROM tabl t {clause} `t`.`foo`{separator}{quote}in_pro'
+    assert suggest_type(expression, expression) == [
+        {
+            'type': 'enum_value',
+            'tables': [(None, 'tabl', 't')],
+            'column': '`foo`',
+            'parent': '`t`',
+            'value_prefix': 'in_pro',
+            'quote': quote,
+            'replacement_length': 7,
+        }
+    ]
+
+
+@pytest.mark.parametrize(
+    'expression',
+    [
+        "SELECT * FROM tabl WHERE foo > 'pen",
+        "SELECT * FROM tabl WHERE foo = 'pending'",
+        "SELECT * FROM tabl WHERE 'foo = pen",
+        "SELECT * FROM tabl -- foo = 'pen",
+        "SELECT * FROM tabl # foo = 'pen",
+        "SELECT * FROM tabl /* foo = 'pen",
+    ],
+)
+def test_quoted_enum_context_excludes_other_strings_and_comments(expression: str) -> None:
+    assert not any(item['type'] == 'enum_value' for item in suggest_type(expression, expression))
+
+
+@pytest.mark.parametrize(
+    ('quote', 'prefix', 'decoded'),
+    [
+        ("'", "O''Br", "O'Br"),
+        ('"', 'say ""he', 'say "he'),
+        ("'", r"O\'Br", "O'Br"),
+        ('"', r'say \"he', 'say "he'),
+        ("'", r'a\\b', 'a\\b'),
+        ("'", r'a\nb', 'a\nb'),
+        ("'", r'a\tb', 'a\tb'),
+        ("'", r'a\0b', 'a\0b'),
+        ("'", r'a\qb', 'aqb'),
+        ("'", 'unfinished\\', 'unfinished\\'),
+    ],
+)
+def test_quoted_enum_prefix_decodes_sql_escapes(quote: str, prefix: str, decoded: str) -> None:
+    expression = f'SELECT * FROM tabl WHERE foo = {quote}{prefix}'
+
+    assert suggest_type(expression, expression) == [
+        {
+            'type': 'enum_value',
+            'tables': [(None, 'tabl', None)],
+            'column': 'foo',
+            'parent': None,
+            'value_prefix': decoded,
+            'quote': quote,
+            'replacement_length': len(prefix) + 1,
+        }
+    ]
+
+
+@pytest.mark.parametrize('has_enum', [False, True])
+def test_quoted_enum_emitter_selects_only_enum_suggestions(monkeypatch: pytest.MonkeyPatch, has_enum: bool) -> None:
+    expression = "SELECT * FROM tabl WHERE foo = 'pen"
+    context = _build_suggest_context(None, expression, "'pen", expression, empty_identifier())
+    enum_suggestion = {'type': 'enum_value', 'tables': [(None, 'tabl', None)], 'column': 'foo', 'parent': None}
+    suggestions = [{'type': 'keyword'}]
+    if has_enum:
+        suggestions.append(enum_suggestion)
+    monkeypatch.setattr(completion_engine, 'suggest_type', lambda *_args: suggestions)
+
+    result = _emit_quoted_enum_value_or_nothing(context)
+
+    expected = [{**enum_suggestion, 'value_prefix': 'pen', 'quote': "'", 'replacement_length': 4}] if has_enum else []
+    assert result == expected
+
+
+def test_quoted_enum_emitter_returns_nothing_when_context_has_no_suggestions(monkeypatch: pytest.MonkeyPatch) -> None:
+    expression = "SELECT * FROM tabl WHERE foo = 'pen"
+    context = _build_suggest_context(None, expression, "'pen", expression, empty_identifier())
+    monkeypatch.setattr(completion_engine, 'suggest_type', lambda *_args: [])
+
+    assert _emit_quoted_enum_value_or_nothing(context) == []
 
 
 def test_enum_value_suggestion_returns_none_without_equals_context():

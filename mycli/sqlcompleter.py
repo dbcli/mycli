@@ -1536,6 +1536,8 @@ class SQLCompleter(Completer):
         length_based_on_path = False
         source_file_completion_length: int | None = None
         config_property_length: int | None = None
+        enum_value_length: int | None = None
+        enum_quote: str | None = None
         completion_filter_text = text_for_len
 
         rank = 0
@@ -1875,6 +1877,18 @@ class SQLCompleter(Completer):
                     suggestion["column"],
                     suggestion.get("parent"),
                 )
+                if 'value_prefix' in suggestion:
+                    prefix = suggestion['value_prefix']
+                    enum_quote = suggestion['quote']
+                    suffix = document.text_after_cursor
+                    if not suffix.startswith(enum_quote) and enum_quote in suffix:
+                        return []
+                    if suffix and not (suffix.startswith(enum_quote) or suffix[0].isspace() or suffix[0] in ';,)'):
+                        return []
+                    enum_value_length = suggestion['replacement_length']
+                    completion_filter_text = prefix.lower()
+                    completions = [(*item, rank) for item in self.find_fuzzy_matches(prefix, prefix.lower(), enum_values)]
+                    break
                 if enum_values:
                     quoted_values = [self._quote_sql_string(value) for value in enum_values]
                     completions = [
@@ -1904,7 +1918,16 @@ class SQLCompleter(Completer):
             sorted_completions = sorted(completions, key=lambda item: completion_sort_key(item, completion_filter_text))
             uniq_completions_str = dict.fromkeys(x[0] for x in sorted_completions)
 
-        if config_property_length is not None:
+        if enum_value_length is not None and enum_quote is not None:
+            closing_quote = '' if document.text_after_cursor.startswith(enum_quote) else enum_quote
+            return (
+                Completion(
+                    enum_quote + x.replace('\\', '\\\\').replace(enum_quote, enum_quote * 2) + closing_quote,
+                    -enum_value_length,
+                )
+                for x in uniq_completions_str
+            )
+        elif config_property_length is not None:
             return (Completion(x, -config_property_length) for x in uniq_completions_str)
         elif source_file_completion_length is not None:
             return (Completion(x, -source_file_completion_length) for x in uniq_completions_str)

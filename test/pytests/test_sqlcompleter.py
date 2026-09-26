@@ -8,6 +8,7 @@ from unittest.mock import Mock
 from prompt_toolkit.document import Document
 import pytest
 
+from mycli.packages.polars_completion import PolarsCompletion
 import mycli.sqlcompleter
 from mycli.sqlcompleter import Fuzziness, SQLCompleter
 
@@ -39,6 +40,102 @@ def make_completer(**kwargs) -> SQLCompleter:
     comp.keywords = list(comp.keywords)
     comp.functions = list(comp.functions)
     return comp
+
+
+def test_invalid_completion_tiebreaker_falls_back_to_frecency() -> None:
+    completer = make_completer(completion_tiebreaker='unknown')
+
+    assert completer.completion_tiebreaker == 'frecency'
+    assert completer.completion_config_errors == ['Invalid completion_tiebreaker; using frecency.']
+
+
+def test_extend_builtin_functions_ignores_generator() -> None:
+    completer = make_completer()
+    original_functions = completer.functions.copy()
+
+    completer.extend_functions((item for item in [('test', 'custom_function')]), builtin=True)
+
+    assert completer.functions == original_functions
+
+
+def test_polars_completions_preserve_display_and_replacement(monkeypatch: pytest.MonkeyPatch) -> None:
+    candidate = PolarsCompletion(text='select(', display='select', display_meta='DataFrame method', start_position=-3)
+    transform = Mock(return_value=[candidate])
+    monkeypatch.setattr(mycli.sqlcompleter, 'complete_polars_transform', transform)
+    completer = make_completer()
+    text = 'SELECT 1 .| df.sel'
+
+    result = list(completer.get_completions(Document(text), None))
+
+    transform.assert_called_once_with(text)
+    assert len(result) == 1
+    assert result[0].text == 'select('
+    assert result[0].start_position == -3
+    assert result[0].display_text == 'select'
+    assert result[0].display_meta_text == 'DataFrame method'
+
+
+def test_get_completions_can_override_smart_mode(monkeypatch: pytest.MonkeyPatch) -> None:
+    completer = make_completer(smart_completion=True)
+    matches = Mock(return_value=[('select', Fuzziness.PERFECT)])
+    monkeypatch.setattr(completer, 'find_matches', matches)
+    suggestions = Mock(side_effect=AssertionError('smart completion must not run'))
+    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', suggestions)
+
+    result = list(completer.get_completions(Document('sel'), None, smart_completion=False))
+
+    assert [(item.text, item.start_position) for item in result] == [('select', -3)]
+    assert matches.call_args.kwargs['start_only'] is True
+    assert matches.call_args.kwargs['fuzzy'] is False
+    suggestions.assert_not_called()
+    assert completer.smart_completion is True
+
+
+@pytest.mark.parametrize('suggestion_type', ['favoritequery', 'favoritequery_template_key'])
+@pytest.mark.parametrize('instance_exists', [False, True])
+def test_favorite_completions_without_registry_methods(
+    monkeypatch: pytest.MonkeyPatch, suggestion_type: str, instance_exists: bool
+) -> None:
+    if instance_exists:
+        monkeypatch.setattr(mycli.sqlcompleter.FavoriteQueries, 'instance', SimpleNamespace(), raising=False)
+    else:
+        monkeypatch.delattr(mycli.sqlcompleter.FavoriteQueries, 'instance', raising=False)
+    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda *args: [{'type': suggestion_type}])
+
+    assert list(make_completer().get_completions(Document('/f '), None)) == []
+
+
+def test_dsn_completions_without_registry(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delattr(mycli.sqlcompleter.DsnAliases, 'instance', raising=False)
+    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda *args: [{'type': 'dsn_alias'}])
+
+    assert list(make_completer().get_completions(Document('/dsn delete '), None)) == []
+
+
+def test_unknown_suggestion_type_is_ignored(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda *args: [{'type': 'unknown'}])
+
+    assert list(make_completer().get_completions(Document(''), None)) == []
+
+
+def test_enum_without_metadata_preserves_other_suggestions(monkeypatch: pytest.MonkeyPatch) -> None:
+    completer = make_completer()
+    completer.keywords = ['select']
+    monkeypatch.setattr(
+        mycli.sqlcompleter,
+        'suggest_type',
+        lambda *args: [{'type': 'enum_value', 'tables': [], 'column': 'status'}, {'type': 'keyword'}],
+    )
+
+    assert [item.text for item in completer.get_completions(Document(''), None)] == ['SELECT']
+
+
+def test_quoted_enum_completion_rejects_nonempty_unclosed_suffix() -> None:
+    completer = make_completer()
+    prefix = "SELECT * FROM orders WHERE status = 'pen"
+    document = Document(prefix + 'ding', cursor_position=len(prefix))
+
+    assert list(completer.get_completions(document, None)) == []
 
 
 @pytest.mark.parametrize(
