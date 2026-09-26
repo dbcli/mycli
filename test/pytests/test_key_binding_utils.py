@@ -60,6 +60,39 @@ def test_server_datetime_returns_quoted_and_unquoted_values() -> None:
     assert key_binding_utils.server_datetime(cast(Any, sqlexecute), quoted=True) == "'2026-04-03 14:05:06'"
 
 
+@pytest.mark.parametrize(
+    ('timestamp', 'expected'),
+    [(0.0, '0'), (1700000000.875, '1700000000'), (-0.125, '-1')],
+)
+def test_unix_timestamp_returns_seconds(
+    monkeypatch: pytest.MonkeyPatch,
+    timestamp: float,
+    expected: str,
+) -> None:
+    monkeypatch.setattr(key_binding_utils.time, 'time', lambda: timestamp)
+
+    assert key_binding_utils.unix_timestamp() == expected
+
+
+@pytest.mark.parametrize(
+    ('timestamp', 'expected'),
+    [
+        (0.0, '0'),
+        (1700000000.875, '1700000000875000'),
+        (0.00000175, '1'),
+        (-0.00000175, '-2'),
+    ],
+)
+def test_unix_timestamp_returns_microseconds(
+    monkeypatch: pytest.MonkeyPatch,
+    timestamp: float,
+    expected: str,
+) -> None:
+    monkeypatch.setattr(key_binding_utils.time, 'time', lambda: timestamp)
+
+    assert key_binding_utils.unix_timestamp(microseconds=True) == expected
+
+
 def test_prettify_statement():
     statement = 'SELECT 1'
     mycli = FakeMyCli()

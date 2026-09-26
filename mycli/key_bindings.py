@@ -269,6 +269,24 @@ def mycli_bindings(mycli) -> KeyBindings:
 
         event.app.current_buffer.insert_text(key_binding_utils.server_datetime(mycli.sqlexecute, quoted=True))
 
+    @kb.add('c-o', 'u', filter=emacs_mode)
+    def _(event: KeyPressEvent) -> None:
+        """
+        Insert the current unix timestamp in seconds.
+        """
+        _logger.debug('Detected <C-o u> key.')
+
+        event.app.current_buffer.insert_text(key_binding_utils.unix_timestamp())
+
+    @kb.add('c-o', 'c-u', filter=emacs_mode)
+    def _(event: KeyPressEvent) -> None:
+        """
+        Insert the current unix timestamp in microseconds.
+        """
+        _logger.debug('Detected <C-o C-u> key.')
+
+        event.app.current_buffer.insert_text(key_binding_utils.unix_timestamp(microseconds=True))
+
     @kb.add("c-r", filter=control_is_searchable)
     def _(event: KeyPressEvent) -> None:
         """Search history using fzf or reverse incremental search."""

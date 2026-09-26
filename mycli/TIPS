@@ -194,6 +194,8 @@ insert the current datetime using keystrokes control-o + t!
 
 insert the quoted current date using keystrokes control-o + control-t!
 
+insert the literal UNIX_TIMESTAMP() with keystroke control-o + u!
+
 search query history using keystroke control-r!
 
 use keystroke control-g to cancel completion popups!
