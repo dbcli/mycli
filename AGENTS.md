@@ -80,13 +80,13 @@ This repo uses `uv` for dependency management. **Always** prefix Python
 commands with `uv run`.  Example:
 
 ```bash
-uv run -- python script.py
+env -u PYTHONPATH uv run -- python script.py
 ```
 
 #### Python Typing
 
 This repo uses type annotations which are checked by `mypy`.  **Always** add
-type annotations, and always check new code with `uv run -- mypy --install-types --non-interactive script.py`.
+type annotations, and always check new code with `env -u PYTHONPATH uv run -- mypy --install-types --non-interactive script.py`.
 
 Use lower-case type annotations such as `tuple`, not upper-case type
 annotations such as `Tuple`.
@@ -96,7 +96,7 @@ Use `Type | None` instead of `Optional[Type]`.
 #### Python Testing
 
 Tests are coordinated by `tox`, and include both `pytest` and `behave` tests.
-To run the full test suite, execute `uv run -- tox`.
+To run the full test suite, execute `env -u PYTHONPATH uv run -- tox`.
 
 #### Python Compatibility
 
@@ -114,9 +114,9 @@ from existing code.
 #### Python Environment
 
  * Package manager: `uv` (not pip)
- * Formatter: `uv run -- ruff format`
- * Linter: `uv run -- ruff check`
- * Type checker: `uv run -- mypy --install-types --non-interactive`
+ * Formatter: `env -u PYTHONPATH uv run -- ruff format`
+ * Linter: `env -u PYTHONPATH uv run -- ruff check`
+ * Type checker: `env -u PYTHONPATH uv run -- mypy --install-types --non-interactive`
 
 ### Git Workflows
 

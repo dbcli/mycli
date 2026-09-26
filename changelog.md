@@ -13,6 +13,7 @@ Documentation
 * Clarify the license of the test database.
 * Add PyPi badge to `README.md`.
 * Update `CONTRIBUTING.md` with release flow.
+* Unset `PYTHONPATH` in `AGENTS.md` command suggestions.
 
 
 v2.25.3 (2026/09/19)
