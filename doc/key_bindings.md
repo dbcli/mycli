@@ -65,3 +65,11 @@ Insert the current datetime at cursor.
 ## <kbd>C-o</kbd> <kbd>C-t</kbd> _(Emacs-mode)_
 
 Insert the quoted current datetime at cursor.
+
+## <kbd>C-o</kbd> <kbd>u</kbd> _(Emacs-mode)_
+
+Insert the current literal `UNIX_TIMESTAMP()` at cursor, in seconds.
+
+## <kbd>C-o</kbd> <kbd>C-u</kbd> _(Emacs-mode)_
+
+Insert the current literal `UNIX_TIMESTAMP()` at cursor, in microseconds.

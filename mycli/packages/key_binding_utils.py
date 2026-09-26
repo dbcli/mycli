@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import math
+import time
 from typing import TYPE_CHECKING, Callable
 
 from prompt_toolkit.shortcuts import PromptSession
@@ -26,6 +28,13 @@ def server_datetime(sqlexecute: SQLExecute, quoted: bool = False) -> str:
         return f"'{server_datetime_str}'"
     else:
         return server_datetime_str
+
+
+def unix_timestamp(microseconds: bool = False) -> str:
+    if microseconds:
+        return str(math.floor(time.time() * 1e6))
+    else:
+        return str(math.floor(time.time()))
 
 
 # todo: maybe these handlers belong in a repl_handlers.py (which does not exist yet)

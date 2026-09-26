@@ -5,6 +5,7 @@ Features
 --------
 * Remove support for Python 3.10.
 * Exit faster when using a Boundary tunnel.
+* Add <kbd>C-o</kbd> <kbd>u</kbd> keybindings to insert literal Unix timestamps.
 
 
 Documentation

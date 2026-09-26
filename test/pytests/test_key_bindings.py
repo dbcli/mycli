@@ -365,6 +365,29 @@ def test_escape_binding_cancels_completion_menu(
     assert event.app.current_buffer.complete_state is None
 
 
+@pytest.mark.parametrize('key, config_name', [(Keys.ControlI, 'tab'), (Keys.ControlAt, 'control_space')])
+@pytest.mark.parametrize('completion_active', [False, True])
+def test_completion_binding_without_configured_behaviors_is_noop(
+    key: Keys,
+    config_name: str,
+    completion_active: bool,
+) -> None:
+    mycli = DummyMyCli(DummyKeysConfig(behaviors={config_name: []}))
+    kb = key_bindings.mycli_bindings(mycli)
+    complete_state = object() if completion_active else None
+    buffer = DummyBuffer(text='sel', complete_state=complete_state)
+    event = make_event(buffer)
+
+    binding_handler(kb, key)(event)
+
+    assert buffer.complete_state is complete_state
+    assert buffer.start_completion_calls == []
+    assert buffer.complete_next_calls == 0
+    assert buffer.cancel_completion_calls == 0
+    assert buffer.start_selection_calls == []
+    assert buffer.inserted_text == []
+
+
 def test_control_space_toolkit_default_starts_selection_for_non_empty_text() -> None:
     mycli = DummyMyCli(DummyKeysConfig(behaviors={'control_space': ['toolkit_default']}))
     kb = key_bindings.mycli_bindings(mycli)
@@ -499,6 +522,44 @@ def test_date_and_datetime_bindings_insert_shortcuts(
     binding_handler(kb, *keys)(event)
 
     assert event.app.current_buffer.inserted_text == [expected_text]
+
+
+@pytest.mark.parametrize(
+    ('keys', 'expected_text'),
+    [
+        ((Keys.ControlO, 'u'), '1700000000'),
+        ((Keys.ControlO, Keys.ControlU), '1700000000875000'),
+    ],
+)
+def test_unix_timestamp_bindings_insert_numeric_literals(
+    monkeypatch: pytest.MonkeyPatch,
+    keys: tuple[str | Keys, ...],
+    expected_text: str,
+) -> None:
+    mycli = DummyMyCli(DummyKeysConfig(), key_bindings_mode='emacs')
+    kb = key_bindings.mycli_bindings(mycli)
+    event = make_event()
+    monkeypatch.setattr(key_bindings.key_binding_utils.time, 'time', lambda: 1700000000.875)
+
+    binding_handler(kb, *keys)(event)
+
+    assert event.app.current_buffer.inserted_text == [expected_text]
+
+
+@pytest.mark.parametrize('keys', [(Keys.ControlO, 'u'), (Keys.ControlO, Keys.ControlU)])
+@pytest.mark.parametrize('editing_mode, enabled', [(EditingMode.EMACS, True), (EditingMode.VI, False)])
+def test_unix_timestamp_bindings_are_emacs_only(
+    monkeypatch: pytest.MonkeyPatch,
+    keys: tuple[str | Keys, ...],
+    editing_mode: EditingMode,
+    enabled: bool,
+) -> None:
+    mycli = DummyMyCli(DummyKeysConfig())
+    kb = key_bindings.mycli_bindings(mycli)
+    app = DummyApp(current_buffer=DummyBuffer(), editing_mode=editing_mode)
+    patch_filter_app(monkeypatch, app)
+
+    assert binding_filter(kb, *keys)() is enabled
 
 
 def test_control_r_uses_reverse_isearch_mode_when_configured(monkeypatch) -> None:
