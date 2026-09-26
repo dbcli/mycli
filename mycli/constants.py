@@ -42,3 +42,12 @@ ER_MUST_CHANGE_PASSWORD = 1820
 
 EMPTY_PASSWORD_FLAG_SENTINEL = -1
 DEFAULT_PROMPT = "\\t \\u@\\h:\\d> "
+
+MYSQL_ESCAPES = {
+    '0': '\0',
+    'b': '\b',
+    'n': '\n',
+    'r': '\r',
+    't': '\t',
+    'Z': '\x1a',
+}

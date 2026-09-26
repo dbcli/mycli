@@ -355,6 +355,91 @@ def test_enum_value_completion(completer, complete_event):
     ]
 
 
+@pytest.mark.parametrize('quote', ["'", '"'])
+@pytest.mark.parametrize('prefix', ['', 'pen'])
+def test_quoted_enum_completion(completer, complete_event, quote: str, prefix: str) -> None:
+    completer.completion_match_order = ('perfect',)
+    text = 'SELECT * FROM orders WHERE status = ' + quote + prefix
+    result = list(completer.get_completions(Document(text), complete_event))
+    expected = ['pending', 'shipped'] if not prefix else ['pending']
+    assert [(item.text, item.start_position) for item in result] == [(quote + value + quote, -len(prefix) - 1) for value in expected]
+
+
+@pytest.mark.parametrize('quote', ["'", '"'])
+@pytest.mark.parametrize('clause', ['WHERE', 'HAVING'])
+def test_quoted_enum_completion_preserves_closing_quote(completer, complete_event, quote: str, clause: str) -> None:
+    text = f'SELECT * FROM orders o {clause} `o`.`status` = {quote}pen'
+    document = Document(text + quote + ';', cursor_position=len(text))
+    result = list(completer.get_completions(document, complete_event))
+    pending = next(item for item in result if item.text == quote + 'pending')
+    updated = text[: len(text) + pending.start_position] + pending.text + document.text_after_cursor
+    assert updated == f'SELECT * FROM orders o {clause} `o`.`status` = {quote}pending{quote};'
+
+
+@pytest.mark.parametrize(
+    ('prefix', 'value'),
+    [('in pro', 'in progress'), ('a.b', 'a.b-c'), ("O''B", "O'Brien"), (r"O\'B", "O'Brien"), (r'a\\b', r'a\bc')],
+)
+def test_quoted_enum_completion_replaces_entire_prefix(completer, complete_event, prefix: str, value: str) -> None:
+    completer.extend_enum_values([('orders', 'status', [value])])
+    text = "SELECT * FROM orders WHERE status = '" + prefix
+    result = list(completer.get_completions(Document(text), complete_event))
+    assert len(result) == 1
+    completion = result[0]
+    updated = text[: len(text) + completion.start_position] + completion.text
+    assert updated == "SELECT * FROM orders WHERE status = '" + value.replace('\\', '\\\\').replace("'", "''") + "'"
+
+
+@pytest.mark.parametrize(
+    'text',
+    [
+        'SELECT * FROM orders WHERE status = pen',
+        "SELECT * FROM orders WHERE status = 'zzzzzzzzzz",
+        "SELECT * FROM orders WHERE ordered_date = 'pen",
+        "SELECT 'status = pen",
+        "SELECT * FROM orders WHERE status = 'pending'",
+        "SELECT * FROM orders -- status = 'pen",
+        "SELECT * FROM orders /* status = 'pen",
+    ],
+)
+def test_quoted_enum_completion_does_not_leak_values(completer, complete_event, text: str) -> None:
+    result = list(completer.get_completions(Document(text), complete_event))
+    assert not any(item.text in ("'pending'", "'shipped'") for item in result)
+
+
+@pytest.mark.parametrize('suffix', ["ding'", " ding'"])
+def test_quoted_enum_completion_skips_existing_value_suffix(completer, complete_event, suffix: str) -> None:
+    text = "SELECT * FROM orders WHERE status = 'pen"
+    document = Document(text + suffix, cursor_position=len(text))
+    assert list(completer.get_completions(document, complete_event)) == []
+
+
+@pytest.mark.parametrize('method, expected', [('perfect', []), ('regex', ["'pending'"])])
+def test_quoted_enum_completion_uses_configured_matching(completer, complete_event, method: str, expected: list[str]) -> None:
+    completer.completion_match_order = (method,)
+    text = "SELECT * FROM orders WHERE status = 'pnd"
+    assert [item.text for item in completer.get_completions(Document(text), complete_event)] == expected
+
+
+@pytest.mark.parametrize('column, prefix', [('ordered_date', 'pen'), ('status', 'zzzzzzzzzz')])
+def test_quoted_enum_completion_has_no_sql_fallback(completer, complete_event, column: str, prefix: str) -> None:
+    text = f"SELECT * FROM orders WHERE {column} = '{prefix}"
+    assert list(completer.get_completions(Document(text), complete_event)) == []
+
+
+def test_quoted_enum_completion_after_previous_statement_and_literal(completer, complete_event) -> None:
+    text = "SELECT 'other'; SELECT * FROM orders WHERE status = 'shipped' OR status='pen"
+    result = list(completer.get_completions(Document(text), complete_event))
+    assert [(item.text, item.start_position) for item in result] == [("'pending'", -4)]
+
+
+def test_double_quoted_enum_completion_escapes_embedded_quotes(completer, complete_event) -> None:
+    completer.extend_enum_values([('orders', 'status', ['say "hello"'])])
+    text = 'SELECT * FROM orders WHERE status = "say ""he'
+    result = list(completer.get_completions(Document(text), complete_event))
+    assert [(item.text, item.start_position) for item in result] == [('"say ""hello"""', -9)]
+
+
 def test_function_name_completion(completer, complete_event):
     text = "SELECT MA"
     position = len("SELECT MA")
