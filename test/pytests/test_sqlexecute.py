@@ -3,6 +3,7 @@
 from datetime import time
 import os
 from types import SimpleNamespace
+from unittest.mock import Mock
 
 from prompt_toolkit.formatted_text import FormattedText
 import pymysql
@@ -802,6 +803,98 @@ def test_connect_falls_back_to_sandbox_on_1820(monkeypatch) -> None:
     assert executor.sandbox_mode is True
     assert executor.server_info is None
     assert executor.connection_id is None
+
+
+def test_connect_enters_sandbox_after_ssl_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
+    executor = make_executor_for_connect_tests()
+    executor.ssl = {'mode': 'auto'}
+    new_conn = DummyConnection(server_version='8.0.36')
+    connect = Mock(
+        side_effect=[
+            pymysql.OperationalError(sqlexecute.CR_SSL_CONNECTION_ERROR, 'SSL unsupported'),
+            pymysql.OperationalError(sqlexecute.ER_MUST_CHANGE_PASSWORD, 'must change password'),
+            new_conn,
+        ]
+    )
+    sandbox = Mock()
+    monkeypatch.setattr(sqlexecute.pymysql, 'connect', connect)
+    monkeypatch.setattr(executor, '_connect_sandbox', sandbox)
+
+    executor.connect()
+
+    assert connect.call_count == 3
+    initial, plaintext, raw_handshake = [call.kwargs for call in connect.call_args_list]
+    assert 'ssl' in initial
+    for kwargs in (plaintext, raw_handshake):
+        assert 'ssl' not in kwargs
+        assert kwargs['ssl_disabled'] is True
+    assert plaintext['defer_connect'] is False
+    assert raw_handshake['defer_connect'] is True
+    assert raw_handshake['autocommit'] is None
+    assert raw_handshake['init_command'] is None
+    sandbox.assert_called_once_with(new_conn)
+    assert executor.conn is new_conn
+    assert executor.sandbox_mode is True
+    assert executor.server_info is None
+    assert executor.connection_id is None
+
+
+def test_connect_ssl_fallback_succeeds_without_sandbox(monkeypatch: pytest.MonkeyPatch) -> None:
+    executor = make_executor_for_connect_tests()
+    executor.ssl = {'mode': 'auto'}
+    new_conn = DummyConnection(server_version='8.0.36')
+    connect = Mock(
+        side_effect=[
+            pymysql.OperationalError(sqlexecute.CR_SSL_CONNECTION_ERROR, 'SSL unsupported'),
+            new_conn,
+        ]
+    )
+    monkeypatch.setattr(sqlexecute.pymysql, 'connect', connect)
+    monkeypatch.setattr(executor, 'reset_connection_id', lambda: None)
+    monkeypatch.setattr(executor, '_probe_doris_version', lambda: None)
+
+    executor.connect()
+
+    assert connect.call_count == 2
+    assert connect.call_args.kwargs['ssl_disabled'] is True
+    assert 'ssl' not in connect.call_args.kwargs
+    assert executor.conn is new_conn
+    assert executor.sandbox_mode is False
+
+
+@pytest.mark.parametrize('error_code', [1045, sqlexecute.CR_SSL_CONNECTION_ERROR])
+def test_connect_ssl_fallback_propagates_other_errors(monkeypatch: pytest.MonkeyPatch, error_code: int) -> None:
+    executor = make_executor_for_connect_tests()
+    executor.ssl = {'mode': 'auto'}
+    retry_error = pymysql.OperationalError(error_code, 'retry failed')
+    connect = Mock(
+        side_effect=[
+            pymysql.OperationalError(sqlexecute.CR_SSL_CONNECTION_ERROR, 'SSL unsupported'),
+            retry_error,
+        ]
+    )
+    monkeypatch.setattr(sqlexecute.pymysql, 'connect', connect)
+
+    with pytest.raises(pymysql.OperationalError) as exc_info:
+        executor.connect()
+
+    assert exc_info.value is retry_error
+    assert connect.call_count == 2
+    assert executor.conn is None
+
+
+def test_connect_required_ssl_does_not_fall_back(monkeypatch: pytest.MonkeyPatch) -> None:
+    executor = make_executor_for_connect_tests()
+    executor.ssl = {'mode': 'on'}
+    error = pymysql.OperationalError(sqlexecute.CR_SSL_CONNECTION_ERROR, 'SSL unsupported')
+    connect = Mock(side_effect=error)
+    monkeypatch.setattr(sqlexecute.pymysql, 'connect', connect)
+
+    with pytest.raises(pymysql.OperationalError) as exc_info:
+        executor.connect()
+
+    assert exc_info.value is error
+    assert connect.call_count == 1
 
 
 def test_connect_reraises_non_sandbox_operational_error(monkeypatch) -> None:
@@ -1605,15 +1698,15 @@ def test_create_ssl_ctx_without_ca_disables_hostname_check_and_verification(monk
         create_default_context_calls.append((cafile, capath))
         return ctx
 
-    monkeypatch.setattr(sqlexecute.ssl, 'create_default_context', fake_create_default_context)
+    monkeypatch.setattr(sqlexecute.ssllib, 'create_default_context', fake_create_default_context)
 
     result = executor._create_ssl_ctx({})
 
     assert result is ctx
     assert create_default_context_calls == [(None, None)]
     assert ctx.check_hostname is False
-    assert ctx.verify_mode == sqlexecute.ssl.CERT_NONE
-    assert ctx.minimum_version == sqlexecute.ssl.TLSVersion.TLSv1_2
+    assert ctx.verify_mode == sqlexecute.ssllib.CERT_NONE
+    assert ctx.minimum_version == sqlexecute.ssllib.TLSVersion.TLSv1_2
     assert ctx.maximum_version is None
     assert ctx.loaded_cert_chain is None
     assert ctx.cipher_string is None
@@ -1629,7 +1722,7 @@ def test_create_ssl_ctx_applies_cert_cipher_and_tls_version(monkeypatch) -> None
         return ctx
 
     monkeypatch.setattr(
-        sqlexecute.ssl,
+        sqlexecute.ssllib,
         'create_default_context',
         fake_create_default_context,
     )
@@ -1646,26 +1739,26 @@ def test_create_ssl_ctx_applies_cert_cipher_and_tls_version(monkeypatch) -> None
     assert result is ctx
     assert create_default_context_calls == [('/tmp/ca.pem', None)]
     assert ctx.check_hostname is False
-    assert ctx.verify_mode == sqlexecute.ssl.CERT_REQUIRED
+    assert ctx.verify_mode == sqlexecute.ssllib.CERT_REQUIRED
     assert ctx.loaded_cert_chain == ('/tmp/client-cert.pem', '/tmp/client-key.pem')
     assert ctx.cipher_string == 'ECDHE-RSA-AES256-GCM-SHA384'
-    assert ctx.minimum_version == sqlexecute.ssl.TLSVersion.TLSv1_3
-    assert ctx.maximum_version == sqlexecute.ssl.TLSVersion.TLSv1_3
+    assert ctx.minimum_version == sqlexecute.ssllib.TLSVersion.TLSv1_3
+    assert ctx.maximum_version == sqlexecute.ssllib.TLSVersion.TLSv1_3
 
 
 @pytest.mark.parametrize(
     ('tls_version', 'expected_version'),
     (
-        ('TLSv1', sqlexecute.ssl.TLSVersion.TLSv1),
-        ('TLSv1.1', sqlexecute.ssl.TLSVersion.TLSv1_1),
-        ('TLSv1.2', sqlexecute.ssl.TLSVersion.TLSv1_2),
+        ('TLSv1', sqlexecute.ssllib.TLSVersion.TLSv1),
+        ('TLSv1.1', sqlexecute.ssllib.TLSVersion.TLSv1_1),
+        ('TLSv1.2', sqlexecute.ssllib.TLSVersion.TLSv1_2),
     ),
 )
 def test_create_ssl_ctx_supports_legacy_tls_version_overrides(monkeypatch, tls_version: str, expected_version) -> None:
     executor = make_executor_for_run_tests()
     ctx = FakeSSLContext()
 
-    monkeypatch.setattr(sqlexecute.ssl, 'create_default_context', lambda **_kwargs: ctx)
+    monkeypatch.setattr(sqlexecute.ssllib, 'create_default_context', lambda **_kwargs: ctx)
 
     result = executor._create_ssl_ctx({'tls_version': tls_version})
 
@@ -1678,13 +1771,13 @@ def test_create_ssl_ctx_logs_invalid_tls_version_and_keeps_default_minimum(monke
     executor = make_executor_for_run_tests()
     ctx = FakeSSLContext()
 
-    monkeypatch.setattr(sqlexecute.ssl, 'create_default_context', lambda **_kwargs: ctx)
+    monkeypatch.setattr(sqlexecute.ssllib, 'create_default_context', lambda **_kwargs: ctx)
 
     with caplog.at_level('ERROR', logger='mycli.sqlexecute'):
         result = executor._create_ssl_ctx({'tls_version': 'SSLv3'})
 
     assert result is ctx
-    assert ctx.minimum_version == sqlexecute.ssl.TLSVersion.TLSv1_2
+    assert ctx.minimum_version == sqlexecute.ssllib.TLSVersion.TLSv1_2
     assert ctx.maximum_version is None
     assert 'Invalid tls version: SSLv3' in caplog.text
 

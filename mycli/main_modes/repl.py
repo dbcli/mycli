@@ -347,7 +347,7 @@ def render_prompt_string(
     if r'\b' in checker_string:
         connection = getattr(sqlexecute, 'conn', None)
         if connection:
-            connection.ping(reconnect=False)
+            connection.ping()
         server_status = getattr(connection, 'server_status', 0) or 0
         transaction_indicator = '[TX]' if server_status & SERVER_STATUS_IN_TRANS else ''
         strings = [x.replace(r'\b', transaction_indicator) for x in strings]
@@ -709,7 +709,7 @@ def _keepalive_hook(
         try:
             assert mycli.sqlexecute is not None
             assert mycli.sqlexecute.conn is not None
-            mycli.sqlexecute.conn.ping(reconnect=False)
+            mycli.sqlexecute.conn.ping()
         except Exception as e:
             mycli.logger.debug('keepalive ping error %r', e)
 
