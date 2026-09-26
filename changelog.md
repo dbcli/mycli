@@ -16,6 +16,11 @@ Documentation
 * Unset `PYTHONPATH` in `AGENTS.md` command suggestions.
 
 
+Internal
+--------
+* Major dependency update to `PyMySQL` v1.2.3, changing SSL and ping defaults.
+
+
 v2.25.3 (2026/09/19)
 ==============
 

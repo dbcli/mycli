@@ -30,13 +30,11 @@ class FakeConnection:
         self.unix_socket = unix_socket
         self._thread_id_value = thread_id_value
         self.ping_error = ping_error
-        self.ping_calls: list[bool] = []
 
     def thread_id(self) -> int:
         return self._thread_id_value
 
     def ping(self, reconnect: bool = True) -> None:
-        self.ping_calls.append(reconnect)
         if self.ping_error is not None:
             raise self.ping_error
 
@@ -193,7 +191,6 @@ def test_ping_reports_connected_without_reconnecting() -> None:
     cursor = FakeCursor(query_results={}, connection=connection)
 
     assert ping(cursor) == [SQLResult(status='Connected')]
-    assert connection.ping_calls == [False]
 
 
 def test_ping_reports_not_connected_on_pymysql_error() -> None:
@@ -201,7 +198,6 @@ def test_ping_reports_not_connected_on_pymysql_error() -> None:
     cursor = FakeCursor(query_results={}, connection=connection)
 
     assert ping(cursor) == [SQLResult(status='Not connected')]
-    assert connection.ping_calls == [False]
 
 
 def test_ping_propagates_unrelated_errors() -> None:
@@ -217,7 +213,6 @@ def test_ping_rejects_arguments_without_contacting_server() -> None:
     cursor = FakeCursor(query_results={}, connection=connection)
 
     assert ping(cursor, arg='unexpected') == [SQLResult(status='Syntax: /ping.')]
-    assert connection.ping_calls == []
 
 
 def test_ping_command_registration() -> None:

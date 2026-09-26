@@ -4,13 +4,14 @@ import datetime
 import enum
 import logging
 import re
-import ssl
+import ssl as ssllib
 from typing import Any, Generator, Iterable
 
 from prompt_toolkit.formatted_text import FormattedText
 import pymysql
 from pymysql.connections import Connection
 from pymysql.constants import FIELD_TYPE
+from pymysql.constants.CR import CR_SSL_CONNECTION_ERROR
 from pymysql.converters import conversions, convert_date, convert_datetime, convert_time, decoders
 from pymysql.cursors import Cursor
 
@@ -257,9 +258,10 @@ class SQLExecute:
             client_flag |= pymysql.constants.CLIENT.MULTI_STATEMENTS
         client_flag |= pymysql.constants.CLIENT.HANDLE_EXPIRED_PASSWORDS
 
-        ssl_context = None
         if ssl:
-            ssl_context = self._create_ssl_ctx(ssl)
+            ssl_kwargs: dict[str, Any] = {'ssl': self._create_ssl_ctx(ssl)}
+        else:
+            ssl_kwargs = {'ssl_disabled': True}
 
         connect_kwargs: dict[str, Any] = {
             "database": db,
@@ -274,16 +276,23 @@ class SQLExecute:
             "client_flag": client_flag,
             "local_infile": local_infile or False,
             "conv": conv,
-            "ssl": ssl_context,  # type: ignore[arg-type]
             "program_name": "mycli",
             "defer_connect": defer_connect,
             "init_command": init_command or None,
             "cursorclass": pymysql.cursors.SSCursor if unbuffered else pymysql.cursors.Cursor,
+            **ssl_kwargs,
         }
 
         self.sandbox_mode = False
         try:
-            conn = pymysql.connect(**connect_kwargs)  # type: ignore[misc]
+            try:
+                conn = pymysql.connect(**connect_kwargs)  # type: ignore[misc]
+            except pymysql.OperationalError as e:
+                if e.args[0] != CR_SSL_CONNECTION_ERROR or not ssl or ssl.get('mode') != 'auto':
+                    raise
+                del connect_kwargs['ssl']
+                connect_kwargs['ssl_disabled'] = True
+                conn = pymysql.connect(**connect_kwargs)  # type: ignore[misc]
         except pymysql.OperationalError as e:
             if e.args[0] == ER_MUST_CHANGE_PASSWORD:
                 # Post-handshake queries (SET NAMES, SET AUTOCOMMIT, init_command)
@@ -624,35 +633,35 @@ class SQLExecute:
         finally:
             conn.set_character_set = original_set_charset  # type: ignore[assignment]
 
-    def _create_ssl_ctx(self, sslp: dict) -> ssl.SSLContext:
+    def _create_ssl_ctx(self, sslp: dict) -> ssllib.SSLContext:
         ca = sslp.get("ca")
         capath = sslp.get("capath")
         hasnoca = ca is None and capath is None
-        ctx = ssl.create_default_context(cafile=ca, capath=capath)
+        ctx = ssllib.create_default_context(cafile=ca, capath=capath)
         ctx.check_hostname = not hasnoca and sslp.get("check_hostname", True)
-        ctx.verify_mode = ssl.CERT_NONE if hasnoca else ssl.CERT_REQUIRED
+        ctx.verify_mode = ssllib.CERT_NONE if hasnoca else ssllib.CERT_REQUIRED
         if "cert" in sslp:
             ctx.load_cert_chain(sslp["cert"], keyfile=sslp.get("key"))
         if "cipher" in sslp:
             ctx.set_ciphers(sslp["cipher"])
 
-        ctx.minimum_version = ssl.TLSVersion.TLSv1_2
+        ctx.minimum_version = ssllib.TLSVersion.TLSv1_2
 
         if "tls_version" in sslp:
             tls_version = sslp["tls_version"]
 
             if tls_version == "TLSv1":
-                ctx.minimum_version = ssl.TLSVersion.TLSv1
-                ctx.maximum_version = ssl.TLSVersion.TLSv1
+                ctx.minimum_version = ssllib.TLSVersion.TLSv1
+                ctx.maximum_version = ssllib.TLSVersion.TLSv1
             elif tls_version == "TLSv1.1":
-                ctx.minimum_version = ssl.TLSVersion.TLSv1_1
-                ctx.maximum_version = ssl.TLSVersion.TLSv1_1
+                ctx.minimum_version = ssllib.TLSVersion.TLSv1_1
+                ctx.maximum_version = ssllib.TLSVersion.TLSv1_1
             elif tls_version == "TLSv1.2":
-                ctx.minimum_version = ssl.TLSVersion.TLSv1_2
-                ctx.maximum_version = ssl.TLSVersion.TLSv1_2
+                ctx.minimum_version = ssllib.TLSVersion.TLSv1_2
+                ctx.maximum_version = ssllib.TLSVersion.TLSv1_2
             elif tls_version == "TLSv1.3":
-                ctx.minimum_version = ssl.TLSVersion.TLSv1_3
-                ctx.maximum_version = ssl.TLSVersion.TLSv1_3
+                ctx.minimum_version = ssllib.TLSVersion.TLSv1_3
+                ctx.maximum_version = ssllib.TLSVersion.TLSv1_3
             else:
                 _logger.error("Invalid tls version: %s", tls_version)
 

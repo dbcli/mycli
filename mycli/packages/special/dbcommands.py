@@ -92,7 +92,7 @@ def ping(cur: Cursor, arg: str | None = None, **_) -> list[SQLResult]:
         return [SQLResult(status='Syntax: /ping.')]
 
     try:
-        cur.connection.ping(reconnect=False)
+        cur.connection.ping()
     except Error:
         return [SQLResult(status='Not connected')]
     return [SQLResult(status='Connected')]

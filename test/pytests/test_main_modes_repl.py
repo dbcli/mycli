@@ -94,10 +94,8 @@ class FakeConnection:
     def __init__(self, ping_exc: Exception | None = None, cursor_value: Any = 'cursor') -> None:
         self.ping_exc = ping_exc
         self.cursor_value = cursor_value
-        self.ping_calls: list[bool] = []
 
-    def ping(self, reconnect: bool = False) -> None:
-        self.ping_calls.append(reconnect)
+    def ping(self) -> None:
         if self.ping_exc is not None:
             raise self.ping_exc
 
@@ -703,8 +701,7 @@ def make_transaction_prompt_cli(connection: Any) -> Any:
 def test_transaction_prompt_reads_refreshed_flag(status: int | None, expected: str) -> None:
     connection = SimpleNamespace(server_status=0 if expected else 1, cursor=pytest.fail)
 
-    def ping(*, reconnect: bool) -> None:
-        assert reconnect is False
+    def ping() -> None:
         connection.server_status = status
 
     connection.ping = ping
@@ -762,8 +759,6 @@ def test_transaction_prompt_pings_only_for_active_escape(format_string: str, exp
     repl_mode.render_prompt_string(cli, format_string, 0)
 
     assert ping.call_count == expected_calls
-    if expected_calls:
-        ping.assert_called_once_with(reconnect=False)
 
 
 def test_transaction_prompt_reuses_cached_render_without_ping() -> None:
@@ -773,7 +768,7 @@ def test_transaction_prompt_reuses_cached_render_without_ping() -> None:
     repl_mode.render_prompt_string(cli, r'\b', 0)
     repl_mode.render_prompt_string(cli, r'\b', 0)
 
-    ping.assert_called_once_with(reconnect=False)
+    ping.assert_called_once_with()
 
 
 def test_render_prompt_string_includes_current_edit_mode() -> None:
@@ -1330,7 +1325,6 @@ def test_keepalive_hook_covers_threshold_and_errors() -> None:
     assert cli._keepalive_counter == 1
     repl_mode._keepalive_hook(cli, None)
     assert cli._keepalive_counter == 0
-    assert cli.sqlexecute.conn.ping_calls == [False]
 
     cli.sqlexecute.conn = FakeConnection(ping_exc=RuntimeError('boom'))
     repl_mode._keepalive_hook(cli, None)

@@ -520,38 +520,20 @@ class ClientConnectionMixin:
         assert self.sqlexecute is not None
         assert self.sqlexecute.conn is not None
 
-        # First pass with ping(reconnect=False) and minimal feedback levels.  This definitely
-        # works as expected, and is a good idea especially when "connect" was used as a
-        # synonym for "use".
+        # First pass with ping() and minimal feedback levels.  This definitely works as
+        # expected, and is a good idea especially when "connect" was used as a synonym
+        # for "use".  Note that the default behavior of ping() changed in PyMySQL 1.2.x:
+        # it no longer reconnects.
         try:
-            self.sqlexecute.conn.ping(reconnect=False)
+            self.sqlexecute.conn.ping()
             if not database:
                 self.echo("Already connected.", fg="yellow")
             return True
         except pymysql.err.Error:
             pass
 
-        # Second pass with ping(reconnect=True).  It is not demonstrated that this pass ever
-        # gives the benefit it is looking for, _ie_ preserves session state.  We need to test
-        # this with connection pooling.
-        try:
-            old_connection_id = self.sqlexecute.connection_id
-            self.logger.debug("Attempting to reconnect.")
-            self.echo("Reconnecting...", fg="yellow")
-            self.sqlexecute.conn.ping(reconnect=True)
-            # if a database is currently selected, set it on the conn again
-            if self.sqlexecute.dbname:
-                self.sqlexecute.conn.select_db(self.sqlexecute.dbname)
-            self.logger.debug("Reconnected successfully.")
-            self.echo("Reconnected successfully.", fg="yellow")
-            self.sqlexecute.reset_connection_id()
-            if old_connection_id != self.sqlexecute.connection_id:
-                self.echo("Any session state was reset.", fg="red")
-            return True
-        except pymysql.err.Error:
-            pass
-
-        # Third pass with sqlexecute.connect() should always work, but always resets session state.
+        # Second pass with sqlexecute.connect() should always work, and always resets
+        # session state.
         try:
             self.logger.debug("Creating new connection")
             self.echo("Creating new connection...", fg="yellow")

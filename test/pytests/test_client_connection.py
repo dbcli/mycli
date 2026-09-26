@@ -1471,16 +1471,6 @@ def test_reconnect_returns_true_when_ping_succeeds() -> None:
     assert client.echo_calls == [(('Already connected.',), {'fg': 'yellow'})]
 
 
-def test_reconnect_uses_ping_reconnect_and_selects_current_database() -> None:
-    client = DummyClient()
-    conn = FakeConn([pymysql.err.Error('stale'), None])
-    client.sqlexecute = FakeReconnectSQLExecute(conn, connection_id=10, dbname='selected')
-    client.sqlexecute.next_connection_id = 10
-
-    assert client.reconnect(database='newdb') is True
-    assert conn.select_db_calls == ['selected']
-
-
 def test_reconnect_reports_session_reset_when_connection_id_changes() -> None:
     client = DummyClient()
     conn = FakeConn([pymysql.err.Error('stale'), None])
