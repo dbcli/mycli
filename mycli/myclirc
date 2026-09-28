@@ -111,6 +111,12 @@ log_level = INFO
 # Timing of SQL statements and table rendering, or LLM commands.
 timing = True
 
+# Seconds between query state and elapsed time updates, off if zero.  Disabling
+# this saves a second connection to the server.  If set to a very low positive
+# value, would lead to excessive SHOW PROCESSLIST queries.  0.5 is probably a
+# good lower bound.
+show_query_state_interval = 0.5
+
 # Show the full SQL when running a favorite query. Set to False to hide.
 show_favorite_query = True
 

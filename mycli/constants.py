@@ -1,3 +1,5 @@
+import enum
+
 HOME_URL = 'https://mycli.net'
 REPO_URL = 'https://github.com/dbcli/mycli'
 DOCS_URL = f'{HOME_URL}/docs'
@@ -51,3 +53,12 @@ MYSQL_ESCAPES = {
     't': '\t',
     'Z': '\x1a',
 }
+
+TTY_ERASE_LINE = '\r\x1b[2K'
+
+
+class QueryState(enum.StrEnum):
+    RENDERING = 'rendering'
+    TRANSFORMING = 'transforming'
+    UNKNOWN = 'unknown'
+    INITIAL = 'finding state'

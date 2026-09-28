@@ -3,6 +3,8 @@ from __future__ import annotations
 import itertools
 import shutil
 import sys
+from threading import Event
+from time import monotonic
 from types import ModuleType, SimpleNamespace
 from typing import Any, cast
 
@@ -16,6 +18,7 @@ from mycli import compat
 from mycli import output as output_module
 from mycli.output import OutputMixin
 from mycli.packages.sqlresult import SQLResult
+from mycli.query_runner import QueryRunner
 from mycli.types import ImageProtocol
 from test.utils import DummyFormatter, FakeCursorBase, make_bare_mycli  # type: ignore[attr-defined]
 
@@ -252,6 +255,41 @@ def test_output_uses_prompt_session_size(monkeypatch: pytest.MonkeyPatch) -> Non
     OutputMixin.output(cli, itertools.chain(['row']), SQLResult())
 
     assert printed_lines == ['row']
+
+
+@pytest.mark.parametrize('paged', [False, True])
+def test_rendering_stops_before_terminal_output(monkeypatch: pytest.MonkeyPatch, paged: bool) -> None:
+    cli = make_bare_mycli()
+    runner = QueryRunner(0)
+    runner.show_state = True
+    runner.started = monotonic() - 1
+    cli.sqlexecute = cast(Any, SimpleNamespace(query_runner=runner))
+    cli.prompt_session = None
+    cli.explicit_pager = paged
+    cli.get_output_margin = lambda status=None: 1  # type: ignore[assignment]
+    rendered = Event()
+    printed: list[str] = []
+    monkeypatch.setattr(runner, '_display', lambda *args: rendered.set())
+    monkeypatch.setattr(output_module.special, 'is_redirected', lambda: False)
+    monkeypatch.setattr(output_module.special, 'is_explorer_output', lambda: False)
+    monkeypatch.setattr(output_module.special, 'is_pager_enabled', lambda: paged)
+
+    def rows() -> Any:
+        assert rendered.wait(2)
+        yield 'row'
+
+    def print_line(line: str, **kwargs: Any) -> None:
+        assert runner._render_thread is None
+        assert not runner.visible
+        printed.append(line)
+
+    monkeypatch.setattr(click, 'secho', print_line)
+    monkeypatch.setattr(click, 'echo_via_pager', lambda lines: print_line(''.join(lines)))
+    try:
+        OutputMixin.output(cli, itertools.chain(rows()), SQLResult())
+        assert printed == ['row\n' if paged else 'row']
+    finally:
+        runner.close()
 
 
 def test_output_flushes_buffer_when_content_does_not_fit(monkeypatch: pytest.MonkeyPatch) -> None:

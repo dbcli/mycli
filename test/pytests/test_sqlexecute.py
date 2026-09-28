@@ -1,5 +1,6 @@
 # type: ignore
 
+from collections.abc import Callable
 from datetime import time
 import os
 from types import SimpleNamespace
@@ -656,6 +657,106 @@ def make_executor_for_run_tests(conn: object | None = None) -> SQLExecute:
     executor = SQLExecute.__new__(SQLExecute)
     executor.conn = conn
     return executor
+
+
+def test_connect_reattaches_existing_query_runner(monkeypatch: pytest.MonkeyPatch) -> None:
+    executor = make_executor_for_connect_tests()
+    executor.ssl = None
+    executor.query_runner = Mock()
+    executor.conn = DummyConnection('5.7.0')
+    conn = DummyConnection('5.7.0')
+    monkeypatch.setattr(sqlexecute.pymysql, 'connect', Mock(return_value=conn))
+    monkeypatch.setattr(executor, 'reset_connection_id', Mock())
+    monkeypatch.setattr(executor, '_probe_doris_version', Mock(return_value=None))
+
+    executor.connect()
+
+    executor.query_runner.attach.assert_called_once_with(conn, executor.connect_query_monitor)
+
+
+def test_connect_query_monitor_uses_isolated_connection_options(monkeypatch: pytest.MonkeyPatch) -> None:
+    executor = make_executor_for_connect_tests()
+    executor.ssl = None
+    executor.unbuffered = True
+    conn = DummyConnection('5.7.0')
+    monitor = DummyConnection('5.7.0')
+    connect = Mock(side_effect=[conn, monitor])
+    monkeypatch.setattr(sqlexecute.pymysql, 'connect', connect)
+    monkeypatch.setattr(executor, 'reset_connection_id', Mock())
+    monkeypatch.setattr(executor, '_probe_doris_version', Mock(return_value=None))
+    executor.connect()
+    session_options = connect.call_args.kwargs.copy()
+
+    assert executor.connect_query_monitor() is monitor
+
+    expected = dict(session_options)
+    expected.update(
+        database=None,
+        init_command=None,
+        cursorclass=sqlexecute.Cursor,
+        defer_connect=False,
+        autocommit=True,
+        connect_timeout=2,
+        read_timeout=2,
+        write_timeout=2,
+    )
+    assert connect.call_args.kwargs == expected
+    assert session_options['database'] == 'stored_db'
+    assert session_options['init_command'] == 'select 1'
+    assert session_options['cursorclass'] is pymysql.cursors.SSCursor
+    assert executor.conn is conn
+
+
+def test_set_query_runner_attaches_to_connection() -> None:
+    conn = DummyConnection('5.7.0')
+    executor = make_executor_for_run_tests(conn)
+    runner = Mock()
+
+    executor.set_query_runner(runner)
+
+    assert executor.query_runner is runner
+    runner.attach.assert_called_once_with(conn, executor.connect_query_monitor)
+
+
+def test_set_query_runner_detaches_previous_before_attaching_replacement() -> None:
+    conn = DummyConnection('5.7.0')
+    executor = make_executor_for_run_tests(conn)
+    previous = Mock()
+    executor.query_runner = previous
+    runner = Mock()
+
+    def attach(connection: object, factory: Callable[[], object]) -> None:
+        previous.detach.assert_called_once_with()
+        assert connection is conn
+        assert factory == executor.connect_query_monitor
+
+    runner.attach.side_effect = attach
+
+    executor.set_query_runner(runner)
+
+    assert executor.query_runner is runner
+    runner.attach.assert_called_once_with(conn, executor.connect_query_monitor)
+
+
+def test_set_query_runner_none_detaches_previous() -> None:
+    executor = make_executor_for_run_tests(DummyConnection('5.7.0'))
+    previous = Mock()
+    executor.query_runner = previous
+
+    executor.set_query_runner(None)
+
+    previous.detach.assert_called_once_with()
+    assert executor.query_runner is None
+
+
+def test_set_query_runner_without_connection_defers_attachment() -> None:
+    executor = make_executor_for_run_tests()
+    runner = Mock()
+
+    executor.set_query_runner(runner)
+
+    assert executor.query_runner is runner
+    runner.attach.assert_not_called()
 
 
 def test_connect_updates_connection_state_and_merges_overrides(monkeypatch) -> None:
@@ -1687,6 +1788,48 @@ def test_change_db_selects_database_and_updates_dbname(monkeypatch) -> None:
 
     assert conn.selected_databases == ['new_db']
     assert executor.dbname == 'new_db'
+
+
+def test_change_db_runs_selection_through_query_runner(monkeypatch: pytest.MonkeyPatch) -> None:
+    conn = FakeSelectableConnection()
+    executor = make_executor_for_run_tests(conn)
+    executor.dbname = 'old_db'
+    monkeypatch.setattr(sqlexecute, 'Connection', FakeSelectableConnection)
+
+    def call(operation: Callable[[], None]) -> None:
+        assert conn.selected_databases == []
+        assert executor.dbname == 'old_db'
+        operation()
+        assert executor.dbname == 'old_db'
+
+    executor.query_runner = Mock(call=Mock(side_effect=call))
+
+    executor.change_db('new_db')
+
+    executor.query_runner.call.assert_called_once()
+    assert conn.selected_databases == ['new_db']
+    assert executor.dbname == 'new_db'
+
+
+@pytest.mark.parametrize('background', [False, True])
+def test_change_db_preserves_database_on_selection_error(background: bool) -> None:
+    conn = Mock(spec=sqlexecute.Connection)
+    error = pymysql.err.OperationalError(1049, 'Unknown database')
+    conn.select_db.side_effect = error
+    executor = make_executor_for_run_tests(conn)
+    executor.dbname = 'old_db'
+
+    def call(operation: Callable[[], None]) -> None:
+        operation()
+
+    executor.query_runner = Mock(call=Mock(side_effect=call)) if background else None
+
+    with pytest.raises(pymysql.err.OperationalError) as exc_info:
+        executor.change_db('missing_db')
+
+    assert exc_info.value is error
+    conn.select_db.assert_called_once_with('missing_db')
+    assert executor.dbname == 'old_db'
 
 
 def test_create_ssl_ctx_without_ca_disables_hostname_check_and_verification(monkeypatch) -> None:

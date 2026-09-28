@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Features
+--------
+* Show query state and timings while waiting.
+
+
 v2.26.0 (2026/09/26)
 ==============
 

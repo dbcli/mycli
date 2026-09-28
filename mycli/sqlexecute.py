@@ -19,6 +19,7 @@ from mycli.constants import ER_MUST_CHANGE_PASSWORD
 from mycli.packages.special import iocommands
 from mycli.packages.special.main import CommandNotFound, execute
 from mycli.packages.sqlresult import SQLResult
+from mycli.query_runner import QueryRunner
 
 _logger = logging.getLogger(__name__)
 
@@ -192,6 +193,7 @@ class SQLExecute:
         self.init_command = init_command
         self.unbuffered = unbuffered
         self.conn: Connection | None = None
+        self.query_runner: QueryRunner | None = None
         self.connect()
 
     def connect(
@@ -335,6 +337,32 @@ class SQLExecute:
                 if (doris_version := self._probe_doris_version()) is not None:
                     server_info = ServerInfo(ServerSpecies.Doris, doris_version)
             self.server_info = server_info
+
+        # The control connection uses the effective transport, never session initialization.
+        control_kwargs = dict(connect_kwargs)
+        control_kwargs.update(
+            database=None,
+            init_command=None,
+            cursorclass=Cursor,
+            defer_connect=False,
+            autocommit=True,
+            connect_timeout=2,
+            read_timeout=2,
+            write_timeout=2,
+        )
+        self._control_kwargs = control_kwargs
+        if runner := getattr(self, 'query_runner', None):
+            runner.attach(conn, self.connect_query_monitor)
+
+    def connect_query_monitor(self) -> Connection:
+        return pymysql.connect(**self._control_kwargs)  # type: ignore[misc]
+
+    def set_query_runner(self, runner: QueryRunner | None) -> None:
+        if previous := getattr(self, 'query_runner', None):
+            previous.detach()
+        self.query_runner = runner
+        if runner is not None and self.conn is not None:
+            runner.attach(self.conn, self.connect_query_monitor)
 
     def _probe_doris_version(self) -> str | None:
         """Query the server to check if it is Doris. Returns the Doris version string
@@ -612,7 +640,10 @@ class SQLExecute:
 
     def change_db(self, db: str) -> None:
         assert isinstance(self.conn, Connection)
-        self.conn.select_db(db)
+        if runner := getattr(self, 'query_runner', None):
+            runner.call(lambda: self.conn.select_db(db))
+        else:
+            self.conn.select_db(db)
         self.dbname = db
 
     @staticmethod
