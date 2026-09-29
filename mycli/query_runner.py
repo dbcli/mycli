@@ -88,6 +88,8 @@ class QueryRunner:
         self.visible = False
         self.previous_state = QueryState.INITIAL.value
         self.started: float | None = None
+        self._next_update = 0.0
+        self._state_requested = False
         self._display_lock = RLock()
         self._busy = False
         self._output_started = False
@@ -127,7 +129,7 @@ class QueryRunner:
                     elapsed = monotonic() - self.started
                     if elapsed >= self.interval:
                         try:
-                            self._display(elapsed, self._render_state.value)
+                            self._display_if_due(elapsed, self._render_state.value)
                         except (OSError, ValueError):
                             logger.debug('Rendering status display failed', exc_info=True)
                             return
@@ -136,6 +138,8 @@ class QueryRunner:
         self.stop_rendering()
         with self._display_lock:
             self.started = None
+            self._next_update = 0.0
+            self._state_requested = False
             self.previous_state = QueryState.INITIAL.value
 
     def stop_rendering(self) -> None:
@@ -241,7 +245,15 @@ class QueryRunner:
                 self.visible = False
 
     def _handoff_to_rendering(self, elapsed: float) -> None:
-        self._display(elapsed, self._render_state.value)
+        self._display_if_due(elapsed, self._render_state.value)
+
+    def _display_if_due(self, elapsed: float, state: str) -> None:
+        """Share one update deadline across fetches, handoffs, and rendering ticks."""
+        with self._display_lock:
+            now = (self.started or 0.0) + elapsed
+            if now >= self._next_update:
+                self._display(elapsed, state)
+                self._next_update = now + self.interval
 
     def call(self, operation: Callable[[], T], *, new_statement: bool = True) -> T:
         if get_ident() == self.worker_id:
@@ -250,6 +262,8 @@ class QueryRunner:
             self._busy = True
             if new_statement or self.started is None:
                 self.started = monotonic()
+                self._next_update = self.started + self.interval
+                self._state_requested = False
                 self._output_started = False
                 self.previous_state = QueryState.INITIAL.value
         interrupts = 0
@@ -290,8 +304,7 @@ class QueryRunner:
         connection_id = connection.thread_id() if connection is not None else 0
         future = self.worker.submit(execute)
         started = self.started if self.started is not None else monotonic()
-        next_update = started + self.interval
-        state = QueryState.INITIAL.value
+        state = self.previous_state
         polling: Future[str] | None = None
         cancellation: Future[str] | None = None
         cancelled = disconnected = False
@@ -312,20 +325,17 @@ class QueryRunner:
                         break
                     now = monotonic()
                     display_enabled = self.show_state and not self._suppressed and not self._output_started
-                    if display_enabled and state == QueryState.INITIAL.value:
+                    if display_enabled:
                         if polling is not None and polling.done():
                             state = polling.result()
                             polling = None
+                        if not self._state_requested:
+                            polling = self.monitor.submit(self._control, connection_id, done)
+                            self._state_requested = True
+                    if display_enabled and now >= self._next_update:
                         if polling is None:
                             polling = self.monitor.submit(self._control, connection_id, done)
-                    if display_enabled and now >= next_update:
-                        if polling is not None and polling.done():
-                            state = polling.result()
-                            polling = None
-                        if polling is None:
-                            polling = self.monitor.submit(self._control, connection_id, done)
-                        self._display(now - started, 'Cancelling' if cancelled else state)
-                        next_update = now + self.interval
+                        self._display_if_due(now - started, 'Cancelling' if cancelled else state)
                 except KeyboardInterrupt:
                     if not cancelled:
                         cancelled = True

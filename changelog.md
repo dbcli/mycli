@@ -4,6 +4,7 @@ Upcoming (TBD)
 Bug Fixes
 --------
 * Correct row counts when `--unbuffered` is in effect.
+* Don't let `--unbuffered` override the state-update interval.
 
 
 v2.27.0 (2026/09/29)
