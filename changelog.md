@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Features
+--------
+* Add "streaming" query state when `--unbuffered` is in effect.
+
+
 Bug Fixes
 --------
 * Correct row counts when `--unbuffered` is in effect.

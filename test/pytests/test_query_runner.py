@@ -274,6 +274,59 @@ def test_attach_selects_background_cursor(runner: QueryRunner, cursorclass: type
     assert connection.cursorclass is expected
 
 
+@pytest.mark.parametrize('cursorclass', [Cursor, SSCursor, BackgroundSSCursor])
+@pytest.mark.parametrize('state', [QueryState.RENDERING, QueryState.TRANSFORMING])
+@pytest.mark.parametrize('periodic', [False, True])
+def test_local_state_label_matches_cursor_mode(
+    runner: QueryRunner,
+    monkeypatch: pytest.MonkeyPatch,
+    cursorclass: type[Cursor],
+    state: QueryState,
+    periodic: bool,
+) -> None:
+    runner.attach(Connection(defer_connect=True, cursorclass=cursorclass), Mock())
+    runner.started = 10.0
+    runner._output_started = False
+    runner._render_state = state
+    display = Mock()
+    monkeypatch.setattr(runner, '_display', display)
+    monkeypatch.setattr(query_runner, 'monotonic', lambda: 12.0)
+
+    if periodic:
+        monkeypatch.setattr(runner._render_stop, 'wait', Mock(side_effect=[False, True]))
+        runner._render_ticks()
+    else:
+        runner._handoff_to_rendering(2.0)
+
+    expected = QueryState.STREAMING if state == QueryState.RENDERING and issubclass(cursorclass, SSCursor) else state
+    display.assert_called_once_with(2.0, expected.value)
+
+
+@pytest.mark.parametrize('first, second', [(Cursor, SSCursor), (SSCursor, Cursor)])
+def test_local_state_tracks_replacement_connection(runner: QueryRunner, first: type[Cursor], second: type[Cursor]) -> None:
+    runner.attach(Connection(defer_connect=True, cursorclass=first), Mock())
+    runner.attach(Connection(defer_connect=True, cursorclass=second), Mock())
+    expected = QueryState.STREAMING if second is SSCursor else QueryState.RENDERING
+    assert runner._local_state() == expected
+
+
+def test_detaching_unbuffered_connection_restores_rendering_label(runner: QueryRunner) -> None:
+    runner.attach(Connection(defer_connect=True, cursorclass=SSCursor), Mock())
+    runner.detach()
+    assert runner._local_state() == QueryState.RENDERING
+
+
+def test_unbuffered_connection_preserves_server_state_label(runner: QueryRunner, monkeypatch: pytest.MonkeyPatch) -> None:
+    runner.attach(Connection(defer_connect=True, cursorclass=SSCursor), Mock())
+    runner.started = 0.0
+    display = Mock()
+    monkeypatch.setattr(runner, '_display', display)
+
+    runner._display_if_due(1.0, 'Sending data')
+
+    display.assert_called_once_with(1.0, 'Sending data')
+
+
 @pytest.mark.parametrize('cursorclass', [Cursor, SSCursor])
 def test_detach_restores_original_cursor(runner: QueryRunner, cursorclass: type[Cursor]) -> None:
     connection = Connection(defer_connect=True, cursorclass=cursorclass)
