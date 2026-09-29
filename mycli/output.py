@@ -35,6 +35,7 @@ import mycli.main_modes.repl as repl_mode
 from mycli.packages import special
 from mycli.packages.sqlresult import SQLResult
 from mycli.packages.tabular_output import sql_format
+from mycli.query_runner import rendering_output, runner_for
 from mycli.sqlexecute import FIELD_TYPES
 
 
@@ -109,6 +110,7 @@ class OutputMixin(MyCliState):
 
         return margin
 
+    @rendering_output
     def output(
         self,
         output: itertools.chain[str],
@@ -116,8 +118,15 @@ class OutputMixin(MyCliState):
         is_warnings_style: bool = False,
     ) -> None:
         """Output text to stdout or a pager command."""
+        runner = runner_for(self)
+
+        def before_output() -> None:
+            if runner:
+                runner.stop_rendering()
+
         prompt_output = self.prompt_session.output if self.prompt_session is not None else None
         if result.image is not None and not is_windows_console(prompt_output):
+            before_output()
             if result.image_protocol == 'iterm2':
                 click.secho('')
                 self.output_iterm2_image(result.image)
@@ -156,13 +165,16 @@ class OutputMixin(MyCliState):
                             output_via_pager = True
 
                         if not output_via_pager:
+                            before_output()
                             for buf_line in buf:
                                 click.secho(buf_line)
                             buf = []
                 else:
+                    before_output()
                     click.secho(line)
 
             if buf:
+                before_output()
 
                 def newlinewrapper(text: list[str]) -> Generator[str, None, None]:
                     for line in text:
@@ -186,6 +198,7 @@ class OutputMixin(MyCliState):
                         click.secho(line)
 
         if result.status:
+            before_output()
             self.log_output(result.status_plain)
             add_style = 'class:warnings.status' if is_warnings_style else 'class:output.status'
             if isinstance(result.status, FormattedText):
@@ -234,6 +247,7 @@ class OutputMixin(MyCliState):
             return bool(shutil.which(cmd[0]))
         return False
 
+    @rendering_output
     def format_sqlresult(
         self,
         result,
