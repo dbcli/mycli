@@ -856,6 +856,123 @@ def test_render_prompt_string_ansi() -> None:
     assert to_plain_text(ansi_prompt) == 'red'
 
 
+@pytest.mark.parametrize('paged', [False, True])
+def test_output_results_keeps_state_visible_between_formatting_and_output(monkeypatch: pytest.MonkeyPatch, paged: bool) -> None:
+    patch_repl_runtime_defaults(monkeypatch)
+    runner = QueryRunner(0)
+    runner.show_state = True
+    runner.interval = 60
+    runner.started = 0.0
+    runner.visible = True
+    cli = make_repl_cli(SimpleNamespace(query_runner=runner))
+    cli.main_formatter = TabularOutputFormatter(format_name='csv')
+    cli.helpers_style = cli.helpers_warnings_style = None
+    cli.explicit_pager = paged
+    cli.get_output_margin = lambda status: 0
+    monkeypatch.setattr(repl_mode.special, 'is_explorer_output', lambda: False)
+    monkeypatch.setattr(repl_mode.special, 'is_pager_enabled', lambda: paged)
+    monkeypatch.setattr(repl_mode.special, 'is_show_warnings_enabled', lambda: False)
+    printed: list[str] = []
+
+    def format_result(result: SQLResult, **kwargs: Any) -> Iterator[str]:
+        thread = runner._render_thread
+        assert thread is not None
+        formatted = OutputMixin.format_sqlresult(cli, result, **kwargs)
+        assert runner.visible
+        assert runner._render_thread is thread
+
+        def consume() -> Iterator[str]:
+            assert runner.visible
+            assert runner._render_thread is thread
+            yield from formatted
+
+        return consume()
+
+    def print_line(line: str, **kwargs: Any) -> None:
+        assert not runner.visible
+        assert runner._render_thread is None
+        printed.append(line)
+
+    cli.format_sqlresult = format_result
+    cli.output = lambda *args, **kwargs: OutputMixin.output(cli, *args, **kwargs)
+    monkeypatch.setattr(repl_mode.click, 'secho', print_line)
+    monkeypatch.setattr(repl_mode.click, 'echo_via_pager', lambda lines: print_line(''.join(lines)))
+    try:
+        repl_mode._output_results(cli, repl_mode.ReplState(), [SQLResult(header=['id'], rows=[(1,)])], 0.0)
+        assert printed == (['"id"\n"1"\n'] if paged else ['"id"', '"1"'])
+        assert runner._render_depth == 0
+    finally:
+        runner.close()
+
+
+@pytest.mark.parametrize('phase', ['format_sqlresult', 'output'])
+@pytest.mark.parametrize('error', [RuntimeError('failed'), KeyboardInterrupt()])
+def test_output_results_cleans_up_shared_rendering_scope_on_error(
+    monkeypatch: pytest.MonkeyPatch, phase: str, error: BaseException
+) -> None:
+    patch_repl_runtime_defaults(monkeypatch)
+    runner = QueryRunner(0)
+    runner.show_state = True
+    runner.interval = 60
+    runner.visible = True
+    cli = make_repl_cli(SimpleNamespace(query_runner=runner))
+    setattr(cli, phase, Mock(side_effect=error))
+    try:
+        with pytest.raises(type(error)):
+            repl_mode._output_results(cli, repl_mode.ReplState(), [SQLResult(header=['id'], rows=[(1,)])], 0.0, raise_interrupts=True)
+        assert not runner.visible
+        assert runner._render_thread is None
+        assert runner._render_depth == 0
+    finally:
+        runner.close()
+
+
+def test_output_results_stops_rendering_before_result_separator(monkeypatch: pytest.MonkeyPatch) -> None:
+    patch_repl_runtime_defaults(monkeypatch)
+    runner = QueryRunner(0)
+    runner.show_state = True
+    runner.interval = 60
+    cli = make_repl_cli(SimpleNamespace(query_runner=runner))
+    separators: list[str] = []
+
+    def format_result(result: SQLResult, **kwargs: Any) -> Iterator[str]:
+        assert runner._render_thread is not None
+        runner.visible = True
+        return iter(['row'])
+
+    def echo(message: str, **kwargs: Any) -> None:
+        assert not runner.visible
+        assert runner._render_thread is None
+        assert runner._render_stop.is_set()
+        separators.append(message)
+
+    cli.format_sqlresult = format_result
+    cli.echo = echo
+    try:
+        repl_mode._output_results(cli, repl_mode.ReplState(), [SQLResult(), SQLResult()], 0.0)
+        assert separators == ['']
+    finally:
+        runner.close()
+
+
+def test_output_results_stops_rendering_before_timing(monkeypatch: pytest.MonkeyPatch) -> None:
+    patch_repl_runtime_defaults(monkeypatch)
+    monkeypatch.setattr(repl_mode.special, 'is_timing_enabled', lambda: True)
+    runner = QueryRunner(0)
+    runner.visible = True
+    cli = make_repl_cli(SimpleNamespace(query_runner=runner))
+
+    def timing(message: str) -> None:
+        assert not runner.visible
+        assert runner._render_stop.is_set()
+
+    cli.output_timing = timing
+    try:
+        repl_mode._output_results(cli, repl_mode.ReplState(), [SQLResult()], 0.0)
+    finally:
+        runner.close()
+
+
 def test_output_results_covers_watch_warning_timing_beep_and_interrupts(monkeypatch: pytest.MonkeyPatch) -> None:
     class FakeSQLExecute:
         def run(self, text: str) -> list[SQLResult]:
