@@ -129,7 +129,7 @@ class QueryRunner:
                     elapsed = monotonic() - self.started
                     if elapsed >= self.interval:
                         try:
-                            self._display_if_due(elapsed, self._render_state.value)
+                            self._display_if_due(elapsed, self._local_state().value)
                         except (OSError, ValueError):
                             logger.debug('Rendering status display failed', exc_info=True)
                             return
@@ -245,7 +245,12 @@ class QueryRunner:
                 self.visible = False
 
     def _handoff_to_rendering(self, elapsed: float) -> None:
-        self._display_if_due(elapsed, self._render_state.value)
+        self._display_if_due(elapsed, self._local_state().value)
+
+    def _local_state(self) -> QueryState:
+        if self._render_state == QueryState.RENDERING and self.connection is not None and issubclass(self.cursorclass, SSCursor):
+            return QueryState.STREAMING
+        return self._render_state
 
     def _display_if_due(self, elapsed: float, state: str) -> None:
         """Share one update deadline across fetches, handoffs, and rendering ticks."""
