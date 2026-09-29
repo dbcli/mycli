@@ -11,6 +11,7 @@ from typing import Any, Iterable, Sequence
 
 import sqlglot
 
+from mycli.packages.hybrid_redirection import ShellRedirect, find_token_indices, parse_shell_redirect, tokenize_shell_suffix
 from mycli.packages.special.delimitercommand import DelimiterCommand
 from mycli.packages.sqlresult import SQLResult
 from mycli.types import ImageProtocol, OutputMode
@@ -30,6 +31,7 @@ class PolarsPipeline:
     expression: str | None
     output_path: str | None
     output_mode: OutputMode
+    shell_redirect: ShellRedirect | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -69,8 +71,29 @@ def parse_polars_transform(command: str) -> PolarsPipeline | None:
 
     pipe_index, parquet_index = _pipeline_operator_indexes(command, tokens)
 
+    shell_indexes = find_token_indices(tokens)['true_dollar']
+    if shell_indexes:
+        suffix = command[tokens[shell_indexes[0]].start :]
+        try:
+            shell_tokens = tokenize_shell_suffix(suffix)
+        except sqlglot.errors.TokenError as exc:
+            raise PolarsTransformError(f'Unable to parse shell redirection: {exc}') from exc
+        shell_operators = _pipeline_operator_indexes(suffix, shell_tokens)
+        if any(index is not None for index in shell_operators):
+            raise PolarsTransformError('Shell redirections must follow all transform stages.')
     if pipe_index is None and parquet_index is None:
         return None
+    shell_redirect = None
+    if shell_indexes:
+        shell_index = shell_indexes[0]
+        if parquet_index is not None:
+            raise PolarsTransformError('The ".>" operator cannot be combined with shell redirection.')
+        shell_start = tokens[shell_index].start
+        try:
+            shell_redirect = parse_shell_redirect(command[shell_start:])
+        except (ValueError, sqlglot.errors.TokenError) as exc:
+            raise PolarsTransformError(str(exc)) from exc
+        command = command[:shell_start].rstrip()
     if parquet_index is not None and pipe_index is not None and parquet_index < pipe_index:
         raise PolarsTransformError('The ".>" operator must follow the ".|" operator.')
 
@@ -99,6 +122,9 @@ def parse_polars_transform(command: str) -> PolarsPipeline | None:
     else:
         output_mode = 'tabular'
 
+    if shell_redirect is not None and output_mode == 'explorer':
+        raise PolarsTransformError('Explorer output cannot be combined with shell redirection.')
+
     for delimiter in (delimiter_command.current, r'\G', r'\g', r'\x'):
         sql = sql.removesuffix(delimiter).rstrip()
         if expression is not None:
@@ -113,7 +139,13 @@ def parse_polars_transform(command: str) -> PolarsPipeline | None:
             raise PolarsTransformError('File saves require a destination path.')
         output_path = _parse_output_path(output_path)
     _validate_sql(sql)
-    return PolarsPipeline(sql=sql, expression=expression, output_path=output_path, output_mode=output_mode)
+    return PolarsPipeline(
+        sql=sql,
+        expression=expression,
+        output_path=output_path,
+        output_mode=output_mode,
+        shell_redirect=shell_redirect,
+    )
 
 
 def _pipeline_operator_indexes(
@@ -229,6 +261,7 @@ def run_polars_transform(
     plot_scale_factor: float = 1.0,
     plot_ppi: int = 200,
     plot_theme: str = 'carbong90',
+    allow_plots: bool = True,
 ) -> SQLResult:
     iterator = iter(results)
     try:
@@ -298,6 +331,8 @@ def run_polars_transform(
             return SQLResult(status=f'Wrote {len(series_dataframe)} rows to {output_path}.')
         return SQLResult(header=[column_name], rows=[(item,) for item in value])
     elif transform.altair is not None and isinstance(value, transform.altair.TopLevelMixin):
+        if not allow_plots:
+            raise PolarsTransformError('Altair plots cannot use shell redirection. Use ".>" to save a plot file.')
         plot_format = _plot_format_for_path(output_path) if output_path is not None else None
         if output_path is not None and plot_format is None:
             raise PolarsTransformError('Altair plots can only be written to ".png", ".pdf", ".svg", or ".html" files.')

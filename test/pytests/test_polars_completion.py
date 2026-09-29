@@ -24,6 +24,11 @@ def test_completion_returns_none_outside_polars_transform() -> None:
     assert complete_polars_transform("SELECT '.| df.fi'") is None
 
 
+@pytest.mark.parametrize('suffix', ['$| cat df.fi', '$> df.fi', '$>> df.fi'])
+def test_completion_stops_at_shell_suffix(suffix: str) -> None:
+    assert complete_polars_transform(f'SELECT 1 .| df {suffix}') == []
+
+
 def test_completion_offers_dataframe_methods() -> None:
     candidate = completion('SELECT * FROM orders .| df.fi', 'filter(')
 

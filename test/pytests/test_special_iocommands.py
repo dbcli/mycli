@@ -5,13 +5,15 @@ import os
 from pathlib import Path
 import platform
 import re
+import shlex
+import signal
 import stat
 import subprocess
 import tempfile
-from time import time
+from time import monotonic, sleep, time
 from types import SimpleNamespace
 from typing import Any, Generator
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from jinja2 import TemplateError
 from pymysql import ProgrammingError
@@ -614,11 +616,234 @@ def test_clip_helpers_and_clipboard(monkeypatch) -> None:
     assert iocommands.copy_query_to_clipboard() == 'Error clipping query: no clipboard.'
 
 
+@pytest.mark.parametrize('pipe', [False, True])
+def test_temporary_redirect_finalizes_empty_output(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, pipe: bool) -> None:
+    process = Mock(returncode=0)
+    process.communicate.return_value = ('', '')
+    monkeypatch.setattr(iocommands.subprocess, 'Popen', Mock(return_value=process))
+    destination = tmp_path / 'empty.csv'
+    hook = Mock()
+    monkeypatch.setattr(iocommands, '_run_post_redirect_hook', hook)
+    previous_pipe = dict(iocommands.PIPE_ONCE)
+
+    with iocommands.temporary_redirect('cat' if pipe else None, '>', str(destination), 'post {}'):
+        assert iocommands.is_redirected()
+
+    assert destination.read_text() == ''
+    hook.assert_called_once_with('post {}', str(destination))
+    assert iocommands.PIPE_ONCE == previous_pipe
+    if pipe:
+        process.communicate.assert_called_once_with(input='', timeout=60)
+
+
+@pytest.mark.parametrize('stdout', ['', 'partial output'])
+@pytest.mark.parametrize('operator', ['>', '>>'])
+def test_failed_temporary_pipe_preserves_file_and_skips_hook(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    stdout: str,
+    operator: str,
+) -> None:
+    process = Mock(returncode=1)
+    process.communicate.return_value = (stdout, 'command failed\n')
+    monkeypatch.setattr(iocommands.subprocess, 'Popen', Mock(return_value=process))
+    hook = Mock()
+    monkeypatch.setattr(iocommands, '_run_post_redirect_hook', hook)
+    secho = Mock()
+    monkeypatch.setattr(iocommands.click, 'secho', secho)
+    destination = tmp_path / 'output.csv'
+    destination.write_text('existing data\n')
+    previous_pipe = dict(iocommands.PIPE_ONCE)
+
+    with pytest.raises(OSError, match='process exited with nonzero code 1'):
+        with iocommands.temporary_redirect('failing-command', operator, str(destination), 'post {}'):
+            iocommands.write_pipe_once('row')
+
+    assert destination.read_text() == 'existing data\n'
+    hook.assert_not_called()
+    secho.assert_called_once_with('command failed', err=True, fg='red')
+    assert iocommands.PIPE_ONCE == previous_pipe
+
+
+def test_failed_pipe_without_file_preserves_diagnostic_output(monkeypatch: pytest.MonkeyPatch) -> None:
+    process = Mock(returncode=1)
+    process.communicate.return_value = ('partial output\n', 'command failed\n')
+    monkeypatch.setattr(iocommands.subprocess, 'Popen', Mock(return_value=process))
+    output: list[str] = []
+    monkeypatch.setattr(iocommands.click, 'secho', lambda text, **kwargs: output.append(text))
+
+    with pytest.raises(OSError, match='process exited with nonzero code 1'):
+        with iocommands.temporary_redirect('failing-command', None, None, None):
+            iocommands.write_pipe_once('row')
+
+    assert output == ['partial output', 'command failed']
+
+
+@pytest.mark.parametrize('error', [ValueError('format failed'), KeyboardInterrupt()])
+@pytest.mark.parametrize('windows', [False, True])
+def test_temporary_redirect_kills_process_on_output_error(
+    monkeypatch: pytest.MonkeyPatch,
+    error: BaseException,
+    windows: bool,
+) -> None:
+    if os.name == 'nt' and not windows:
+        pytest.skip('POSIX shell process groups')
+    monkeypatch.setattr(iocommands, 'WIN', windows)
+    killpg = Mock()
+    monkeypatch.setattr(iocommands.os, 'killpg', killpg, raising=False)
+    process = Mock(pid=12345)
+    process.poll.return_value = None
+    monkeypatch.setattr(iocommands.subprocess, 'Popen', Mock(return_value=process))
+    previous_pipe = dict(iocommands.PIPE_ONCE)
+    with pytest.raises(type(error)) as raised:
+        with iocommands.temporary_redirect('cat', None, None, None):
+            raise error
+    assert raised.value is error
+    if windows:
+        process.kill.assert_called_once_with()
+        killpg.assert_not_called()
+    else:
+        killpg.assert_called_once_with(process.pid, signal.SIGKILL)
+        process.kill.assert_not_called()
+    process.communicate.assert_called_once_with(timeout=2)
+    assert iocommands.PIPE_ONCE == previous_pipe
+
+
+@pytest.mark.skipif(os.name == 'nt', reason='POSIX shell process groups')
+@pytest.mark.parametrize('shell_exits_first', [False, True])
+@pytest.mark.parametrize('error', [ValueError('format failed'), KeyboardInterrupt()])
+def test_temporary_redirect_abort_stops_pipeline_children(
+    tmp_path: Path,
+    shell_exits_first: bool,
+    error: BaseException,
+) -> None:
+    started = tmp_path / 'started'
+    finished = tmp_path / 'finished'
+    child = f'printf ready > {shlex.quote(str(started))}; sleep 2; printf late > {shlex.quote(str(finished))}'
+    command = f'({child}) &' if shell_exits_first else f'({child}) | cat'
+    process = None
+    try:
+        with pytest.raises(type(error)) as raised:
+            with iocommands.temporary_redirect(command, None, None, None):
+                process = iocommands.PIPE_ONCE['process']
+                deadline = monotonic() + 5
+                while not started.exists() and monotonic() < deadline:
+                    sleep(0.01)
+                assert started.exists(), 'Child did not start'
+                if shell_exits_first:
+                    assert process.wait(timeout=5) == 0
+                raise error
+        assert raised.value is error
+        assert process.poll() is not None
+        sleep(2.1)
+        assert not finished.exists(), 'Child continued executing after abort'
+        assert not iocommands.is_redirected()
+    finally:
+        if process is not None:
+            process.communicate(timeout=5)
+
+
+@pytest.mark.skipif(os.name == 'nt', reason='POSIX shell process groups')
+def test_kill_pipe_process_tolerates_already_exited_group(monkeypatch: pytest.MonkeyPatch) -> None:
+    killpg = Mock(side_effect=ProcessLookupError())
+    monkeypatch.setattr(iocommands.os, 'killpg', killpg, raising=False)
+    process = Mock(pid=12345)
+    iocommands._kill_pipe_process(process, process_group=True)
+    killpg.assert_called_once_with(12345, signal.SIGKILL)
+    process.kill.assert_not_called()
+
+
+@pytest.mark.skipif(os.name == 'nt', reason='POSIX shell process groups')
+def test_temporary_redirect_timeout_kills_group(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(iocommands, 'WIN', False)
+    process = Mock(pid=12345, returncode=-9)
+    process.communicate.side_effect = [subprocess.TimeoutExpired('pipeline', 60), ('', '')]
+    popen = Mock(return_value=process)
+    monkeypatch.setattr(iocommands.subprocess, 'Popen', popen)
+    killpg = Mock()
+    monkeypatch.setattr(iocommands.os, 'killpg', killpg, raising=False)
+
+    with pytest.raises(OSError, match='process exited with nonzero code -9'):
+        with iocommands.temporary_redirect('cat | cat', None, None, None):
+            iocommands.write_pipe_once('row')
+
+    assert popen.call_args.kwargs['start_new_session'] is True
+    killpg.assert_called_once_with(process.pid, signal.SIGKILL)
+    process.communicate.assert_called_with(timeout=2)
+    process.kill.assert_not_called()
+    assert not iocommands.is_redirected()
+
+
+def test_temporary_redirect_closes_streams_after_cleanup_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(iocommands, 'WIN', True)
+    process = Mock()
+    process.poll.return_value = None
+    process.communicate.side_effect = subprocess.TimeoutExpired('cat', 2)
+    monkeypatch.setattr(iocommands.subprocess, 'Popen', Mock(return_value=process))
+    with pytest.raises(ValueError, match='format failed'):
+        with iocommands.temporary_redirect('cat', None, None, None):
+            raise ValueError('format failed')
+    for stream in (process.stdin, process.stdout, process.stderr):
+        stream.close.assert_called_once_with()
+    process.wait.assert_called_once_with(timeout=2)
+
+
+def test_temporary_redirect_preserves_output_error_when_cleanup_fails(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(iocommands, 'WIN', True)
+    process = Mock()
+    process.kill.side_effect = OSError('cleanup failed')
+    monkeypatch.setattr(iocommands.subprocess, 'Popen', Mock(return_value=process))
+    with pytest.raises(ValueError, match='format failed'):
+        with iocommands.temporary_redirect('cat', None, None, None):
+            raise ValueError('format failed')
+    assert iocommands.PIPE_ONCE['process'] is None
+
+
+def test_temporary_redirect_restores_pending_redirects(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    previous_once = Mock()
+    monkeypatch.setattr(iocommands, 'once_file', previous_once)
+    monkeypatch.setattr(iocommands, 'written_to_once_file', True)
+    previous_process = Mock()
+    monkeypatch.setitem(iocommands.PIPE_ONCE, 'process', previous_process)
+    previous = dict(iocommands.PIPE_ONCE)
+    with iocommands.temporary_redirect(None, '>', str(tmp_path / 'out.csv'), None):
+        assert iocommands.once_file is not previous_once
+    assert iocommands.once_file is previous_once
+    assert iocommands.written_to_once_file is True
+    assert iocommands.PIPE_ONCE == previous
+    previous_once.close.assert_not_called()
+    previous_process.kill.assert_not_called()
+
+
+@pytest.mark.parametrize('pipe', [False, True])
+def test_temporary_redirect_cleans_up_after_post_hook_failure(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, pipe: bool) -> None:
+    monkeypatch.setattr(iocommands, '_kill_pipe_process', Mock())
+    process = Mock(returncode=0)
+    process.poll.return_value = 0
+    process.communicate.return_value = ('row', '')
+    monkeypatch.setattr(iocommands.subprocess, 'Popen', Mock(return_value=process))
+    monkeypatch.setattr(iocommands, '_run_post_redirect_hook', Mock(side_effect=OSError('hook failed')))
+    with pytest.raises(OSError, match='hook failed'):
+        with iocommands.temporary_redirect('cat' if pipe else None, '>', str(tmp_path / 'out.csv'), 'post {}'):
+            pass
+    assert not iocommands.is_redirected()
+
+
+def test_temporary_redirect_restores_state_on_process_start_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(iocommands.subprocess, 'Popen', Mock(side_effect=OSError('cannot start')))
+    previous = dict(iocommands.PIPE_ONCE)
+    with pytest.raises(OSError, match='cannot start'):
+        with iocommands.temporary_redirect('cat', '>', 'out.csv', None):
+            pytest.fail('Must not enter context')
+    assert iocommands.PIPE_ONCE == previous
+
+
 def test_set_redirect_routes_to_pipe_once_and_once(monkeypatch) -> None:
     pipe_calls: list[str] = []
     once_calls: list[str] = []
 
-    def fake_set_pipe_once(arg: str) -> list[tuple[str]]:
+    def fake_set_pipe_once(arg: str, *, start_new_session: bool = False) -> list[tuple[str]]:
+        assert not start_new_session
         pipe_calls.append(arg)
         return [('pipe',)]
 
@@ -1664,6 +1889,7 @@ def test_set_pipe_once_and_flush_short_circuits(monkeypatch) -> None:
                 'stderr': iocommands.subprocess.PIPE,
                 'encoding': 'UTF-8',
                 'universal_newlines': True,
+                'start_new_session': False,
             },
         )
     ]
@@ -1695,8 +1921,8 @@ def test_flush_pipe_once_timeout_and_nonzero_exit(monkeypatch, tmp_path: Path) -
         iocommands.flush_pipe_once_if_written('post {}')
 
     assert process.killed is True
-    assert output_file.read_text(encoding='utf-8') == 'stdout data\n'
-    assert hook_calls == [('post {}', str(output_file))]
+    assert not output_file.exists()
+    assert hook_calls == []
     assert secho_calls == [('stderr data', {'err': True, 'fg': 'red'})]
     assert iocommands.PIPE_ONCE == {
         'process': None,
