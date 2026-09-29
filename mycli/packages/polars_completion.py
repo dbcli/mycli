@@ -14,6 +14,7 @@ from typing import Any, Union, cast, get_args, get_origin
 
 import sqlglot
 
+from mycli.packages.hybrid_redirection import find_token_indices
 from mycli.packages.polars_transform import _pipeline_operator_indexes
 
 _ATTRIBUTE_PATTERN = re.compile(r'(?s)(.*)\.([A-Za-z_][A-Za-z0-9_]*)?\s*$')
@@ -40,6 +41,8 @@ def complete_polars_transform(command: str) -> list[PolarsCompletion] | None:
         return None
     if pipe_index is None:
         return None
+    if find_token_indices(tokens)['true_dollar']:
+        return []
     if output_index is not None:
         return []
 

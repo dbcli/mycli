@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import functools
 import logging
 import re
@@ -17,6 +18,76 @@ SOURCE_COMMAND_PATTERN = re.compile(r'^([/]?source|[/\\]\.)\s+', re.IGNORECASE)
 SOURCE_OPTION_PATTERN = re.compile(r'(?<!\S)--(?:special|show|page|help|throttle)(?==|\s|$)', re.IGNORECASE)
 SOURCE_OPTION_TERMINATOR_PATTERN = re.compile(r'(?<!\S)--(?=\s|$)')
 HYBRID_OPERATOR_PATTERN = re.compile(r'\$(?:>>?|\|)')
+
+
+@dataclass(frozen=True, slots=True)
+class ShellRedirect:
+    command: str | None
+    file_operator: str | None
+    filename: str | None
+
+
+def tokenize_shell_suffix(suffix: str) -> list[sqlglot.Token]:
+    # Shell long options are not SQL comments; preserve offsets into the original text.
+    for match in re.finditer(r'\$\s*>', suffix):
+        prefix = re.sub(r'--(?=\S)', '__', suffix[: match.end()])
+        try:
+            tokens = sqlglot.tokenize(prefix)
+        except sqlglot.errors.TokenError:
+            continue
+        files = find_token_indices(tokens)['angle_bracket']
+        if files and tokens[files[-1]].end == match.end() - 1:
+            # Only an unquoted file operator switches back to SQL comment handling.
+            operand = re.sub(r'(?<=\S)--', '__', suffix[match.end() :])
+            return sqlglot.tokenize(prefix + operand)
+    return sqlglot.tokenize(re.sub(r'--(?=\S)', '__', suffix))
+
+
+def parse_shell_redirect(suffix: str) -> ShellRedirect:
+    """Parse a final shell suffix independently of the SQL or transform preceding it."""
+    suffix = suffix.strip().removesuffix(delimiter_command.current).rstrip()
+    tokens = tokenize_shell_suffix(suffix)
+    indices = find_token_indices(tokens)
+    dollars = indices['true_dollar']
+    pipes = indices['pipe']
+    files = indices['angle_bracket']
+    if not dollars or tokens[dollars[0]].start != 0:
+        raise ValueError('Shell redirection requires an operator.')
+    if len(files) > 1 or (files and pipes and pipes[-1] > files[0]):
+        raise ValueError('Shell file redirection must be last and occur only once.')
+    if WIN and len(pipes) > 1:
+        raise ValueError('Multiple shell pipes are not supported on Windows.')
+
+    command_parts: list[str] = []
+    for position, dollar in enumerate(dollars):
+        operator = tokens[dollar + 1]
+        next_dollar = dollars[position + 1] if position + 1 < len(dollars) else len(tokens)
+        if operator.token_type == sqlglot.TokenType.PIPE:
+            end = len(suffix[: tokens[next_dollar - 1].end + 1].removesuffix(delimiter_command.current).rstrip())
+            last_token = next(token for token in reversed(tokens[:next_dollar]) if token.start < end)
+            part = suffix[operator.end + 1 : min(last_token.end + 1, end)].strip()
+            if not part:
+                raise ValueError('Shell pipes require a command.')
+            command_parts.append(part)
+
+    filename = None
+    file_operator = None
+    if files:
+        operator = tokens[files[0]]
+        end = len(suffix[: tokens[-1].end + 1].removesuffix(delimiter_command.current).rstrip())
+        last_token = next(token for token in reversed(tokens) if token.start < end)
+        operand = suffix[operator.end + 1 : min(last_token.end + 1, end)].strip()
+        file_operator = '>'
+        if operand.startswith('>'):
+            file_operator = '>>'
+            operand = operand[1:].strip()
+        filename = parse_redirect_filename(operand)
+        if not filename:
+            raise ValueError('Shell file redirection requires one filename; quote filenames containing spaces.')
+    command = ' | '.join(command_parts) or None
+    if invalid_shell_part(filename, command):
+        raise ValueError('Invalid shell redirection.')
+    return ShellRedirect(command, file_operator, filename)
 
 
 def tokenize_command(command: str) -> list[sqlglot.Token]:
@@ -200,34 +271,11 @@ def get_redirect_components(command: str) -> tuple[str | None, str | None, str |
     if not sql_part:
         return None, None, None, None
 
-    (
-        file_part_tokens,
-        file_part_index,
-        file_operator_part,
-    ) = find_file_tokens(
-        tokens,
-        token_indices['angle_bracket'],
-    )
-
-    command_part_tokens = find_command_tokens(
-        tokens[0:file_part_index],
-        token_indices['true_dollar'],
-    )
-
-    if file_part_tokens:
-        file_part = parse_redirect_filename(assemble_tokens(file_part_tokens))
-        if file_part is None:
-            return None, None, None, None
-    else:
-        file_part = None
-
-    if command_part_tokens:
-        command_part = assemble_tokens(command_part_tokens)
-    else:
-        command_part = None
-
-    if invalid_shell_part(file_part, command_part):
+    try:
+        redirect = parse_shell_redirect(command[tokens[token_indices['true_dollar'][0]].start :])
+    except (ValueError, sqlglot.errors.TokenError):
         return None, None, None, None
+    command_part, file_operator_part, file_part = redirect.command, redirect.file_operator, redirect.filename
 
     logger.debug('redirect parse sql_part: "{}"'.format(sql_part))
     logger.debug('redirect parse command_part: "{}"'.format(command_part))

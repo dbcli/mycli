@@ -4,6 +4,7 @@ Upcoming (TBD)
 Features
 --------
 * Show query state and timings while waiting.
+* Allow composing trailing shell redirections with `.|` transforms.
 
 
 v2.26.0 (2026/09/26)

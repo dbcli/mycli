@@ -132,6 +132,69 @@ def test_invalid_shell_part(file_part: str | None, command_part: str | None, exp
     assert hybrid_redirection.invalid_shell_part(file_part, command_part) is expected
 
 
+@pytest.mark.parametrize('operator', ['$>', '$>>'])
+@pytest.mark.parametrize('filename', ['out.csv', 'out--backup.csv', '"two words.csv"', "'two words.csv'"])
+@pytest.mark.parametrize(
+    'ending',
+    [
+        ' -- comment',
+        ' /* comment */',
+        '; -- comment',
+        '; /* comment */',
+        ' /* comment */;',
+        " -- user's export",
+        ' -- ignore $| cat .| df',
+        ' /* first */ /* second */',
+    ],
+)
+def test_file_redirect_ignores_trailing_sql_comments(operator: str, filename: str, ending: str) -> None:
+    command = f'SELECT 1 {operator} {filename}{ending}'
+    assert hybrid_redirection.get_redirect_components(command) == (
+        'SELECT 1',
+        None,
+        operator[1:],
+        filename.strip('\'"'),
+    )
+
+
+@pytest.mark.parametrize('ending', [' -- comment', '; -- comment', ' /* comment */', '; /* comment */', ' /* comment */;'])
+def test_shell_redirect_ignores_trailing_sql_comments(ending: str) -> None:
+    assert hybrid_redirection.get_redirect_components(f'SELECT 1 $| cat{ending}') == ('SELECT 1', 'cat', None, None)
+
+
+@pytest.mark.parametrize('ending', ['$$ -- comment', '$$ /* comment */', ' /* comment */$$'])
+def test_shell_redirect_comments_respect_custom_delimiter(monkeypatch: pytest.MonkeyPatch, ending: str) -> None:
+    monkeypatch.setattr(hybrid_redirection.delimiter_command, '_delimiter', '$$')
+    assert hybrid_redirection.parse_shell_redirect(f'$| cat{ending}') == hybrid_redirection.ShellRedirect('cat', None, None)
+
+
+def test_shell_redirect_preserves_options_and_quoted_comments() -> None:
+    suffix = '''$| printf '%s' '-- literal /* comment */' $| cat --number; -- user's export'''
+    assert hybrid_redirection.parse_shell_redirect(suffix) == hybrid_redirection.ShellRedirect(
+        "printf '%s' '-- literal /* comment */' | cat --number", None, None
+    )
+
+
+def test_shell_options_and_quoted_comment_markers_survive_file_comment_parsing() -> None:
+    command = '''SELECT 1 $| printf '%s' '$> -- literal' $| cat --number $> "file -- name.csv"; -- user's export'''
+    assert hybrid_redirection.get_redirect_components(command) == (
+        'SELECT 1',
+        "printf '%s' '$> -- literal' | cat --number",
+        '>',
+        'file -- name.csv',
+    )
+
+
+def test_file_redirect_comment_without_filename_is_rejected() -> None:
+    assert hybrid_redirection.get_redirect_components('SELECT 1 $> -- comment') == (None, None, None, None)
+
+
+@pytest.mark.parametrize('ending', ['$$ -- comment', '$$ /* comment */', ' /* comment */$$'])
+def test_file_redirect_comments_respect_custom_delimiter(monkeypatch: pytest.MonkeyPatch, ending: str) -> None:
+    monkeypatch.setattr(hybrid_redirection.delimiter_command, '_delimiter', '$$')
+    assert hybrid_redirection.parse_shell_redirect(f'$> out.csv{ending}') == hybrid_redirection.ShellRedirect(None, '>', 'out.csv')
+
+
 def test_get_redirect_components_valid_paths_and_logging() -> None:
     assert hybrid_redirection.get_redirect_components('select 1 $>> out.txt') == (
         'select 1',
@@ -232,3 +295,14 @@ def test_get_redirect_components_rejects_multiple_pipes_on_windows(monkeypatch) 
 def test_is_redirect_command_reflects_component_parsing() -> None:
     assert hybrid_redirection.is_redirect_command('select 1 $| cat') is True
     assert hybrid_redirection.is_redirect_command('select 1') is False
+
+
+def test_parse_shell_redirect_requires_leading_operator() -> None:
+    with pytest.raises(ValueError, match='requires an operator'):
+        hybrid_redirection.parse_shell_redirect('cat')
+
+
+def test_parse_shell_redirect_rejects_multiple_windows_pipes(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(hybrid_redirection, 'WIN', True)
+    with pytest.raises(ValueError, match='not supported on Windows'):
+        hybrid_redirection.parse_shell_redirect('$| cat $| more')

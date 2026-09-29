@@ -5,17 +5,21 @@ from collections.abc import Generator, Iterator
 from dataclasses import dataclass
 from io import StringIO
 import os
+from pathlib import Path
 from threading import Event
 from types import SimpleNamespace
 from typing import Any, Literal, cast
 from unittest.mock import Mock, call
 
+from cli_helpers.tabular_output import TabularOutputFormatter
 from configobj import ConfigObj
 from prompt_toolkit.formatted_text import to_formatted_text, to_plain_text
 import pymysql
 import pytest
 
 import mycli.main_modes.repl as repl_mode
+from mycli.output import OutputMixin
+from mycli.packages.special import iocommands
 from mycli.packages.sqlresult import SQLResult
 from mycli.query_runner import QueryRunner
 
@@ -1784,7 +1788,9 @@ def test_one_iteration_runs_polars_transform_and_preserves_full_command(
         plot_scale_factor: float,
         plot_ppi: int,
         plot_theme: str,
+        allow_plots: bool,
     ) -> SQLResult:
+        assert allow_plots
         run_calls.append((received_transform, image_protocol, plot_scale_factor, plot_ppi, plot_theme))
         assert list(results) == [SQLResult(header=['id'], rows=[(1,)])]
         return SQLResult(header=['count'], rows=[(1,)])
@@ -1850,6 +1856,106 @@ def test_polars_pipeline_shows_transforming_state(monkeypatch: pytest.MonkeyPatc
         assert runner._render_state == repl_mode.QueryState.RENDERING
     finally:
         runner.close()
+
+
+@pytest.mark.skipif(os.name == 'nt', reason='Uses a POSIX shell pipeline')
+@pytest.mark.parametrize('suffix', ['$| cat $>', '$>', '$>>', '$| cat $>>'])
+def test_transform_shell_redirect_writes_formatted_transformed_rows(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    suffix: str,
+) -> None:
+    patch_repl_runtime_defaults(monkeypatch)
+    monkeypatch.setattr(repl_mode.special, 'is_redirected', iocommands.is_redirected)
+    monkeypatch.setattr(repl_mode.special, 'is_explorer_output', lambda: False)
+    sql = SimpleNamespace(dbname='db', connection_id=0, run=Mock(return_value=iter([SQLResult(header=['id'], rows=[(1,), (2,)])])))
+    cli = make_repl_cli(sql)
+    cli.redirect_formatter = TabularOutputFormatter(format_name='csv')
+    cli.helpers_style = None
+    cli.helpers_warnings_style = None
+    cli.ptoolkit_style = None
+    cli.explicit_pager = False
+    cli.get_output_margin = lambda status: 0
+    cli.format_sqlresult = lambda *args, **kwargs: OutputMixin.format_sqlresult(cli, *args, **kwargs)
+    cli.output = lambda *args, **kwargs: OutputMixin.output(cli, *args, **kwargs)
+    destination = tmp_path / 'result rows.csv'
+    destination.write_text('old\n')
+    hook = Mock()
+    monkeypatch.setattr(iocommands, '_run_post_redirect_hook', hook)
+    command = f'SELECT id FROM orders .| df.head(1) {suffix} "{destination}"'
+
+    repl_mode._one_iteration(cli, repl_mode.ReplState(), command)
+
+    assert cli.query_history[-1].successful, cli.echo_calls
+    sql.run.assert_called_once_with('SELECT id FROM orders')
+    assert cli.log_queries == [command]
+    assert cli.query_history[-1].query == command
+    assert destination.read_text().splitlines() == (['old'] if suffix.endswith('>>') else []) + ['"id"', '"1"'] + (
+        [''] if suffix.startswith('$|') else []
+    )
+    hook.assert_called_once_with(None, str(destination))
+    assert not iocommands.is_redirected()
+
+
+@pytest.mark.parametrize('error', [pymysql.err.InterfaceError(0, ''), pymysql.err.OperationalError(2006, 'lost')])
+def test_transform_redirect_survives_database_reconnect(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    error: Exception,
+) -> None:
+    patch_repl_runtime_defaults(monkeypatch)
+    sql = SimpleNamespace(dbname='db', run=Mock(side_effect=[error, iter([SQLResult(header=['id'], rows=[(1,)])])]))
+    cli = make_repl_cli(sql)
+    cli.reconnect = Mock(return_value=True)
+    output = tmp_path / 'out.csv'
+    command = f'SELECT 1 .| df $> "{output}"'
+
+    repl_mode._one_iteration(cli, repl_mode.ReplState(), command)
+
+    assert cli.query_history[-1].successful, cli.echo_calls
+    assert cli.query_history[-1].query == command
+    assert cli.log_queries == [command, command]
+    assert output.exists()
+    cli.reconnect.assert_called_once_with()
+
+
+@pytest.mark.parametrize('expression', ['1 / 0', 'alt.Chart(df).mark_point()'])
+def test_transform_failure_does_not_start_shell_or_open_file(
+    monkeypatch: pytest.MonkeyPatch,
+    expression: str,
+) -> None:
+    patch_repl_runtime_defaults(monkeypatch)
+    cli = make_repl_cli(SimpleNamespace(dbname='db', run=lambda text: iter([SQLResult(header=['id'], rows=[(1,)])])))
+    redirect = Mock()
+    monkeypatch.setattr(repl_mode, 'temporary_redirect', redirect)
+
+    repl_mode._one_iteration(cli, repl_mode.ReplState(), f'SELECT 1 .| {expression} $| cat $> output.csv')
+
+    redirect.assert_not_called()
+    assert not cli.query_history[-1].successful
+    assert cli.echo_calls
+
+
+@pytest.mark.parametrize('error', [ValueError('format failed'), KeyboardInterrupt()])
+def test_transform_redirect_output_failure_does_not_leak_to_next_query(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    error: BaseException,
+) -> None:
+    patch_repl_runtime_defaults(monkeypatch)
+    cli = make_repl_cli(SimpleNamespace(dbname='db', connection_id=0, run=lambda text: iter([SQLResult(header=['id'], rows=[(1,)])])))
+    cli.output = Mock(side_effect=error)
+    destination = tmp_path / 'output.csv'
+
+    repl_mode._one_iteration(cli, repl_mode.ReplState(), f'SELECT 1 .| df $> "{destination}"')
+
+    assert not cli.query_history[-1].successful
+    assert not iocommands.is_redirected()
+    assert destination.read_text() == ''
+    cli.output = Mock()
+    repl_mode._one_iteration(cli, repl_mode.ReplState(), 'SELECT 2')
+    assert cli.query_history[-1].successful
+    assert destination.read_text() == ''
 
 
 def test_one_iteration_reports_polars_parse_error(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -2155,7 +2261,7 @@ def test_one_iteration_reports_polars_expression_error_without_output(monkeypatc
     monkeypatch.setattr(
         repl_mode,
         'run_polars_transform',
-        lambda transform, results, *, image_protocol, plot_scale_factor, plot_ppi, plot_theme: (_ for _ in ()).throw(
+        lambda transform, results, *, image_protocol, plot_scale_factor, plot_ppi, plot_theme, allow_plots: (_ for _ in ()).throw(
             repl_mode.PolarsTransformError('Polars expression failed')
         ),
     )

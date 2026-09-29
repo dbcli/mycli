@@ -78,6 +78,7 @@ from mycli.packages.polars_transform import (
     run_polars_transform,
 )
 from mycli.packages.ptoolkit.history import FRECENCY_HISTORY_ENTRIES, FRECENCY_REFRESH_INTERVAL, FileHistoryWithTimestamp
+from mycli.packages.special.iocommands import temporary_redirect
 from mycli.packages.special.utils import format_uptime, get_ssl_version, get_uptime, get_warning_count
 from mycli.packages.sql_utils import (
     extract_new_password,
@@ -455,6 +456,8 @@ def _output_results(
     state: ReplState,
     results: Iterable[SQLResult],
     start: float,
+    *,
+    raise_interrupts: bool = False,
 ) -> None:
     sqlexecute = mycli.sqlexecute
     assert sqlexecute is not None
@@ -544,14 +547,16 @@ def _output_results(
             try:
                 mycli.output(formatted, result)
             except KeyboardInterrupt:
-                pass
+                if raise_interrupts:
+                    raise
             if mycli.beep_after_seconds > 0 and duration >= mycli.beep_after_seconds:
                 assert mycli.prompt_session is not None
                 mycli.prompt_session.output.bell()
             if special.is_timing_enabled():
                 mycli.output_timing(f'Time: {duration:0.03f}s')
         except KeyboardInterrupt:
-            pass
+            if raise_interrupts:
+                raise
 
         start = time.time()
         result_count += 1
@@ -953,6 +958,7 @@ def _one_iteration(
                         plot_scale_factor=mycli.plot_scale_factor,
                         plot_ppi=mycli.plot_ppi,
                         plot_theme=mycli.plot_theme,
+                        allow_plots=polars_pipeline.shell_redirect is None,
                     )
                 else:
                     polars_result = run_polars_transform(
@@ -970,7 +976,16 @@ def _one_iteration(
                     special.set_explorer_output(True)
                 elif polars_pipeline.output_mode == 'expanded':
                     special.set_expanded_output(True)
-            _output_results(mycli, state, iter([polars_result]), start)
+            redirect = polars_pipeline.shell_redirect
+            try:
+                with (
+                    temporary_redirect(redirect.command, redirect.file_operator, redirect.filename, mycli.post_redirect_command)
+                    if redirect is not None
+                    else nullcontext()
+                ):
+                    _output_results(mycli, state, iter([polars_result]), start, raise_interrupts=redirect is not None)
+            except KeyboardInterrupt:
+                raise QueryCancelled(False) from None
             if polars_pipeline.output_path is not None:
                 special.run_post_redirect_hook(
                     mycli.post_redirect_command,
@@ -989,7 +1004,7 @@ def _one_iteration(
     except pymysql.err.InterfaceError:
         if not mycli.reconnect():
             return
-        _one_iteration(mycli, state, text)
+        _one_iteration(mycli, state, original_text if polars_pipeline is not None else text)
         return
     except EOFError as e:
         raise e
@@ -1033,7 +1048,7 @@ def _one_iteration(
         elif e1.args[0] in (2003, 2006, 2013):
             if not mycli.reconnect():
                 return
-            _one_iteration(mycli, state, text)
+            _one_iteration(mycli, state, original_text if polars_pipeline is not None else text)
             return
         else:
             mycli.logger.error('sql: %r, error: %r', text, e1)

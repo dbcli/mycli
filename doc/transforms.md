@@ -21,7 +21,6 @@ functionality may still change.
 
 Here are some known limitations:
 
- * transforms can't be composed with `$|` shell redirection
  * composing multiple transform operations is not supported
  * results from `UNION`s may be unable to be transformed
 

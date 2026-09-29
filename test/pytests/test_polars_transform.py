@@ -5,6 +5,7 @@ from typing import Any, Iterator, Sequence
 
 import pytest
 
+from mycli.packages.hybrid_redirection import ShellRedirect
 import mycli.packages.polars_transform as polars_transform
 from mycli.packages.polars_transform import (
     PolarsPipeline,
@@ -199,6 +200,85 @@ def test_parse_polars_transform_splits_sql_and_preserves_expression() -> None:
         output_path=None,
         output_mode='tabular',
     )
+
+
+@pytest.mark.parametrize(
+    ('suffix', 'redirect'),
+    [
+        ('$| sort', ShellRedirect('sort', None, None)),
+        ('$| sort $| head -n 2', ShellRedirect('sort | head -n 2', None, None)),
+        ('$> "two words.csv";', ShellRedirect(None, '>', 'two words.csv')),
+        ('$>> result.csv', ShellRedirect(None, '>>', 'result.csv')),
+        ('$| sort $> result.csv', ShellRedirect('sort', '>', 'result.csv')),
+        ('$| cat --number', ShellRedirect('cat --number', None, None)),
+        ('$| cat --number $> out.csv', ShellRedirect('cat --number', '>', 'out.csv')),
+        ('''$| printf '%s' '.| $|' ''', ShellRedirect("printf '%s' '.| $|'", None, None)),
+    ],
+)
+def test_parse_transform_with_shell_suffix(suffix: str, redirect: ShellRedirect) -> None:
+    pipeline = parse_polars_transform(f'SELECT 1 .| df.head(2) {suffix}')
+    assert pipeline == PolarsPipeline('SELECT 1', 'df.head(2)', None, 'tabular', redirect)
+
+
+@pytest.mark.parametrize('ending', [' -- comment', '; /* comment */', " -- user's $| cat .| df"])
+def test_transform_shell_redirect_ignores_trailing_sql_comments(ending: str) -> None:
+    pipeline = parse_polars_transform(f'SELECT 1 .| df $| cat{ending}')
+    assert pipeline == PolarsPipeline('SELECT 1', 'df', None, 'tabular', ShellRedirect('cat', None, None))
+
+
+@pytest.mark.parametrize('ending', [' -- comment', '; /* comment */', " -- user's $| cat .| df"])
+def test_transform_file_redirect_ignores_trailing_sql_comments(ending: str) -> None:
+    pipeline = parse_polars_transform(f'SELECT 1 .| df $| cat --number $> "out file.csv"{ending}')
+    assert pipeline == PolarsPipeline('SELECT 1', 'df', None, 'tabular', ShellRedirect('cat --number', '>', 'out file.csv'))
+
+
+def test_parse_transform_ignores_quoted_shell_operators() -> None:
+    pipeline = parse_polars_transform("SELECT '$|' .| df.select(pl.lit('$>')) $| cat")
+    assert pipeline == PolarsPipeline("SELECT '$|'", "df.select(pl.lit('$>'))", None, 'tabular', ShellRedirect('cat', None, None))
+
+
+def test_parse_transform_shell_suffix_preserves_expanded_mode() -> None:
+    pipeline = parse_polars_transform(r'SELECT 1 .| df \G $| cat;')
+    assert pipeline == PolarsPipeline('SELECT 1', 'df', None, 'expanded', ShellRedirect('cat', None, None))
+
+
+@pytest.mark.parametrize(
+    'command',
+    [
+        'SELECT 1 $| cat .| df',
+        'SELECT 1 $| cat --number .| df',
+        'SELECT 1 .| df $| cat --number .> out.parquet',
+        'SELECT 1 .| df $| cat --number .| df',
+        "SELECT 1 .| df $| cat --number 'unterminated",
+        'SELECT 1 .| df $| cat .> result.parquet',
+        'SELECT 1 .| df .> result.parquet $| cat',
+        'SELECT 1 .> result.parquet $> result.csv',
+        'SELECT 1 .| df $|',
+        'SELECT 1 .| df $>',
+        'SELECT 1 .| df $| cat $>',
+        'SELECT 1 .| df $| $| cat',
+        'SELECT 1 .| df $> a.csv $| cat',
+        r'SELECT 1 .| df \x $| cat',
+    ],
+)
+def test_parse_transform_rejects_invalid_shell_combinations(command: str) -> None:
+    with pytest.raises(PolarsTransformError):
+        parse_polars_transform(command)
+
+
+@pytest.mark.parametrize('image_protocol', ['none', 'iterm2', 'kitty'])
+def test_transform_rejects_shell_plots_before_rendering(monkeypatch: pytest.MonkeyPatch, image_protocol: ImageProtocol) -> None:
+    def unexpected_renderer() -> None:
+        pytest.fail('Plot rendering must not start for shell redirection')
+
+    monkeypatch.setattr(polars_transform, '_load_vl_convert', unexpected_renderer)
+    with pytest.raises(PolarsTransformError, match='Altair plots cannot use shell redirection'):
+        run_polars_transform(
+            make_transform('alt.Plot(df)'),
+            iter([SQLResult(header=['id'], rows=[(1,)])]),
+            image_protocol=image_protocol,
+            allow_plots=False,
+        )
 
 
 @pytest.mark.parametrize(
