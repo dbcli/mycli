@@ -1048,15 +1048,17 @@ def flush_pipe_once_if_written(
         return
     if not PIPE_ONCE['stdin'] and not force:
         return
+    timed_out = False
     try:
         content = '\n'.join(PIPE_ONCE['stdin']) + '\n' if PIPE_ONCE['stdin'] else ''
         (stdout_data, stderr_data) = PIPE_ONCE['process'].communicate(input=content, timeout=60)
     except subprocess.TimeoutExpired:
+        timed_out = True
         _kill_pipe_process(PIPE_ONCE['process'], process_group=process_group)
         (stdout_data, stderr_data) = PIPE_ONCE['process'].communicate(timeout=2 if process_group else None)
     returncode = PIPE_ONCE['process'].returncode
     if PIPE_ONCE['stdout_file']:
-        if not returncode and (stdout_data or force):
+        if not timed_out and not returncode and (stdout_data or force):
             with open(PIPE_ONCE['stdout_file'], PIPE_ONCE['stdout_mode']) as f:
                 if stdout_data:
                     print(stdout_data, file=f)
@@ -1065,11 +1067,13 @@ def flush_pipe_once_if_written(
         click.secho(stdout_data.rstrip('\n'))
     if stderr_data:
         click.secho(stderr_data.rstrip('\n'), err=True, fg='red')
-    if returncode:
+    if timed_out or returncode:
         PIPE_ONCE['process'] = None
         PIPE_ONCE['stdin'] = []
         PIPE_ONCE['stdout_file'] = None
         PIPE_ONCE['stdout_mode'] = None
+        if timed_out:
+            raise OSError('process timed out after 60 seconds')
         raise OSError(f'process exited with nonzero code {returncode}')
     PIPE_ONCE['process'] = None
     PIPE_ONCE['stdin'] = []

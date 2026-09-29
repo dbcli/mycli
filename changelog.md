@@ -10,6 +10,7 @@ Features
 Bug Fixes
 --------
 * Don't treat `-o` as a flag after `$>` redirects.
+* Timed-out shell pipelines no longer report success.
 
 
 v2.26.0 (2026/09/26)

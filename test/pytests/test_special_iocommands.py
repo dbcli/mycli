@@ -755,16 +755,17 @@ def test_kill_pipe_process_tolerates_already_exited_group(monkeypatch: pytest.Mo
 
 
 @pytest.mark.skipif(os.name == 'nt', reason='POSIX shell process groups')
-def test_temporary_redirect_timeout_kills_group(monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize('returncode', [0, -9])
+def test_temporary_redirect_timeout_kills_group(monkeypatch: pytest.MonkeyPatch, returncode: int) -> None:
     monkeypatch.setattr(iocommands, 'WIN', False)
-    process = Mock(pid=12345, returncode=-9)
+    process = Mock(pid=12345, returncode=returncode)
     process.communicate.side_effect = [subprocess.TimeoutExpired('pipeline', 60), ('', '')]
     popen = Mock(return_value=process)
     monkeypatch.setattr(iocommands.subprocess, 'Popen', popen)
     killpg = Mock()
     monkeypatch.setattr(iocommands.os, 'killpg', killpg, raising=False)
 
-    with pytest.raises(OSError, match='process exited with nonzero code -9'):
+    with pytest.raises(OSError, match='process timed out after 60 seconds'):
         with iocommands.temporary_redirect('cat | cat', None, None, None):
             iocommands.write_pipe_once('row')
 
@@ -773,6 +774,36 @@ def test_temporary_redirect_timeout_kills_group(monkeypatch: pytest.MonkeyPatch)
     process.communicate.assert_called_with(timeout=2)
     process.kill.assert_not_called()
     assert not iocommands.is_redirected()
+
+
+@pytest.mark.parametrize('stdout', ['', 'partial output'])
+@pytest.mark.parametrize('mode', ['w', 'a'])
+@pytest.mark.parametrize('existing', [False, True])
+@pytest.mark.parametrize('force', [False, True])
+def test_timed_out_pipe_does_not_publish_output(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, stdout: str, mode: str, existing: bool, force: bool
+) -> None:
+    process = FakeProcess(stdout=stdout, stderr='diagnostic\n', returncode=0, raise_timeout=True)
+    destination = tmp_path / 'output.csv'
+    if existing:
+        destination.write_text('existing data\n')
+    hook = Mock()
+    monkeypatch.setattr(iocommands, '_run_post_redirect_hook', hook)
+    secho = Mock()
+    monkeypatch.setattr(iocommands.click, 'secho', secho)
+    iocommands.PIPE_ONCE.update(process=process, stdin=['row'], stdout_file=str(destination), stdout_mode=mode)
+
+    with pytest.raises(OSError, match='process timed out after 60 seconds'):
+        iocommands.flush_pipe_once_if_written('post {}', force=force)
+
+    assert process.killed
+    if existing:
+        assert destination.read_text() == 'existing data\n'
+    else:
+        assert not destination.exists()
+    hook.assert_not_called()
+    secho.assert_called_once_with('diagnostic', err=True, fg='red')
+    assert iocommands.PIPE_ONCE == {'process': None, 'stdin': [], 'stdout_file': None, 'stdout_mode': None}
 
 
 def test_temporary_redirect_closes_streams_after_cleanup_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1943,7 +1974,7 @@ def test_flush_pipe_once_timeout_and_nonzero_exit(monkeypatch, tmp_path: Path) -
     iocommands.PIPE_ONCE['stdout_file'] = str(output_file)
     iocommands.PIPE_ONCE['stdout_mode'] = 'w'
 
-    with pytest.raises(OSError, match='process exited with nonzero code 9'):
+    with pytest.raises(OSError, match='process timed out after 60 seconds'):
         iocommands.flush_pipe_once_if_written('post {}')
 
     assert process.killed is True
