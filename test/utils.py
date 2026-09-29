@@ -12,6 +12,7 @@ from prompt_toolkit.formatted_text import (
 )
 import pygments
 import pymysql
+from pymysql.cursors import SSCursor
 import pytest
 
 from mycli import main
@@ -39,6 +40,17 @@ PYGMENTS_VERSION = Version(pygments.__version__)
 
 def pygments_below(version: str) -> bool:
     return PYGMENTS_VERSION < Version(version)
+
+
+def make_streaming_cursor(rows: list[tuple], warning_count: int = 0, cursor_class: type[SSCursor] = SSCursor) -> SSCursor:
+    cursor = cursor_class(None)
+    cursor._executed = 'SELECT id'
+    cursor.description = [('id', 3, None, None, None, None, None)]
+    cursor.rowcount = 2**64 - 1
+    cursor._result = SimpleNamespace(warning_count=warning_count)
+    iterator = iter(rows)
+    cursor.read_next = lambda: next(iterator, None)
+    return cursor
 
 
 class DummyLogger:

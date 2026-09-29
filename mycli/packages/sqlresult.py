@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+from collections.abc import Callable
+from dataclasses import dataclass, field
 from functools import cached_property
 
 from prompt_toolkit.formatted_text import FormattedText, to_plain_text
@@ -18,6 +19,13 @@ class SQLResult:
     image: bytes | None = None
     image_protocol: ImageProtocol = 'none'
     is_error: bool = False
+    _status_finalizer: Callable[[], FormattedText] | None = field(default=None, repr=False, compare=False)
+
+    def finalize_status(self) -> None:
+        if self._status_finalizer is not None:
+            self.status = self._status_finalizer()
+            self.__dict__.pop('status_plain', None)
+            self._status_finalizer = None
 
     def __str__(self):
         image = f'<{len(self.image)} bytes>' if self.image is not None else None

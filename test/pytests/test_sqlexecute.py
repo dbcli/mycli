@@ -14,8 +14,9 @@ from mycli import sqlexecute
 from mycli.constants import TEST_DATABASE
 from mycli.packages.special import iocommands
 from mycli.packages.sqlresult import SQLResult
+from mycli.query_runner import BackgroundSSCursor
 from mycli.sqlexecute import ServerInfo, ServerSpecies, SQLExecute
-from test.utils import dbtest, is_expanded_output, run, set_expanded_output
+from test.utils import dbtest, is_expanded_output, make_streaming_cursor, run, set_expanded_output
 
 
 def assert_result_equal(
@@ -1311,6 +1312,43 @@ def test_get_result_appends_warning_count_to_status() -> None:
     assert result.header == ['name']
     assert result.rows is cursor
     assert result.status_plain == '3 rows in set, 2 warnings'
+
+
+@pytest.mark.parametrize('count', [0, 1, 3])
+@pytest.mark.parametrize('cursor_class', [pymysql.cursors.SSCursor, BackgroundSSCursor])
+def test_streaming_row_count_is_finalized_after_consumption(count: int, cursor_class: type[pymysql.cursors.SSCursor]) -> None:
+    rows = [(index,) for index in range(count)]
+    cursor = make_streaming_cursor(rows, cursor_class=cursor_class)
+    result = make_executor_for_run_tests().get_result(cursor)
+    assert result.status_plain is None
+    assert cursor.rownumber == 0
+
+    assert list(result.rows) == rows
+    result.finalize_status()
+
+    assert result.status_plain == f'{count} row{"" if count == 1 else "s"} in set'
+
+
+@pytest.mark.parametrize('warnings', [1, 2])
+def test_streaming_status_uses_final_warning_count(warnings: int) -> None:
+    cursor = make_streaming_cursor([(1,)], warning_count=warnings)
+    result = make_executor_for_run_tests().get_result(cursor)
+    assert cursor.warning_count == 0
+    list(result.rows)
+    result.finalize_status()
+    assert result.status == FormattedText([
+        ('', '1 row in set'),
+        ('', ', '),
+        ('class:output.status.warning-count', f'{warnings} warning{"" if warnings == 1 else "s"}'),
+    ])
+
+
+def test_streaming_statement_without_result_set_retains_affected_row_count() -> None:
+    cursor = make_streaming_cursor([])
+    cursor.description = None
+    cursor.rowcount = 2
+    result = make_executor_for_run_tests().get_result(cursor)
+    assert result.status_plain == 'Query OK, 2 rows affected'
 
 
 def test_tables_executes_show_tables_query_and_yields_rows(monkeypatch) -> None:

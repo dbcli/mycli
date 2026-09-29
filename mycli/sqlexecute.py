@@ -13,7 +13,7 @@ from pymysql.connections import Connection
 from pymysql.constants import FIELD_TYPE
 from pymysql.constants.CR import CR_SSL_CONNECTION_ERROR
 from pymysql.converters import conversions, convert_date, convert_datetime, convert_time, decoders
-from pymysql.cursors import Cursor
+from pymysql.cursors import Cursor, SSCursor
 
 from mycli.constants import ER_MUST_CHANGE_PASSWORD
 from mycli.packages.special import iocommands
@@ -444,17 +444,25 @@ class SQLExecute:
 
     def get_result(self, cursor: Cursor) -> SQLResult:
         """Get the current result's data from the cursor."""
-        preamble = header = None
+        header = [x[0] for x in cursor.description] if cursor.description else None
+        if header and isinstance(cursor, SSCursor):
+            return SQLResult(
+                header=header,
+                rows=cursor,
+                _status_finalizer=lambda: self._result_status(cursor, cursor.rownumber),
+            )
+        return SQLResult(header=header, rows=cursor, status=self._result_status(cursor, cursor.rowcount))
 
+    @staticmethod
+    def _result_status(cursor: Cursor, rowcount: int) -> FormattedText:
         # cursor.description is not None for queries that return result sets,
         # e.g. SELECT or SHOW.
-        plural = '' if cursor.rowcount == 1 else 's'
+        plural = '' if rowcount == 1 else 's'
         if cursor.description:
-            header = [x[0] for x in cursor.description]
-            status = FormattedText([('', f'{cursor.rowcount} row{plural} in set')])
+            status = FormattedText([('', f'{rowcount} row{plural} in set')])
         else:
             _logger.debug("No rows in result.")
-            status = FormattedText([('', f'Query OK, {cursor.rowcount} row{plural} affected')])
+            status = FormattedText([('', f'Query OK, {rowcount} row{plural} affected')])
 
         if cursor.warning_count > 0:
             plural = '' if cursor.warning_count == 1 else 's'
@@ -463,7 +471,7 @@ class SQLExecute:
             status.extend(comma)
             status.extend(warning_count)
 
-        return SQLResult(preamble=preamble, header=header, rows=cursor, status=status)
+        return status
 
     def tables(self) -> Generator[tuple[str], None, None]:
         """Yields table names"""

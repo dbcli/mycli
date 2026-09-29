@@ -8,6 +8,7 @@ from time import monotonic
 from types import ModuleType, SimpleNamespace
 from typing import Any, cast
 
+from cli_helpers.tabular_output import TabularOutputFormatter
 import click
 from configobj import ConfigObj
 import prompt_toolkit
@@ -19,8 +20,9 @@ from mycli import output as output_module
 from mycli.output import OutputMixin
 from mycli.packages.sqlresult import SQLResult
 from mycli.query_runner import QueryRunner
+from mycli.sqlexecute import SQLExecute
 from mycli.types import ImageProtocol
-from test.utils import DummyFormatter, FakeCursorBase, make_bare_mycli  # type: ignore[attr-defined]
+from test.utils import DummyFormatter, FakeCursorBase, make_bare_mycli, make_streaming_cursor  # type: ignore[attr-defined]
 
 
 def test_output_timing_logs_and_prints_with_default_style(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -524,6 +526,86 @@ def test_explorer_exists_returns_false_without_command() -> None:
     cli.explorer_command = ''
 
     assert OutputMixin.explorer_exists(cli) is False
+
+
+@pytest.fixture
+def streaming_output_cli(monkeypatch: pytest.MonkeyPatch) -> Any:
+    cli = make_bare_mycli()
+    cli.main_formatter = TabularOutputFormatter(format_name='csv')
+    cli.redirect_formatter = TabularOutputFormatter(format_name='csv')
+    cli.helpers_style = cli.helpers_warnings_style = cli.ptoolkit_style = None
+    monkeypatch.setattr(output_module.special, 'is_explorer_output', lambda: False)
+    return cli
+
+
+@pytest.mark.parametrize('count', [0, 1, 3])
+@pytest.mark.parametrize('redirected', [False, True])
+def test_format_sqlresult_finalizes_streaming_count(
+    streaming_output_cli: Any, monkeypatch: pytest.MonkeyPatch, count: int, redirected: bool
+) -> None:
+    cursor = make_streaming_cursor([(index,) for index in range(count)])
+    monkeypatch.setattr(cursor, 'fetchall', lambda: pytest.fail('Must iterate without fetchall'))
+    result = SQLExecute.__new__(SQLExecute).get_result(cursor)
+    assert cursor.rownumber == 0
+    formatted = OutputMixin.format_sqlresult(streaming_output_cli, result, is_redirected=redirected)
+    assert result.status_plain is None
+
+    list(formatted)
+
+    assert result.status_plain == f'{count} row{"" if count == 1 else "s"} in set'
+
+
+def test_partial_streaming_output_does_not_finalize_status(streaming_output_cli: Any) -> None:
+    cursor = make_streaming_cursor([(1,), (2,)])
+    result = SQLExecute.__new__(SQLExecute).get_result(cursor)
+    formatted = OutputMixin.format_sqlresult(streaming_output_cli, result)
+    next(formatted)
+    assert result.status is None
+
+
+@pytest.mark.parametrize('error', [RuntimeError('fetch failed'), KeyboardInterrupt()])
+def test_failed_streaming_output_does_not_finalize_status(
+    streaming_output_cli: Any, monkeypatch: pytest.MonkeyPatch, error: BaseException
+) -> None:
+    cursor = make_streaming_cursor([])
+
+    def fail() -> None:
+        raise error
+
+    monkeypatch.setattr(cursor, 'read_next', fail)
+    result = SQLExecute.__new__(SQLExecute).get_result(cursor)
+    with pytest.raises(type(error)):
+        list(OutputMixin.format_sqlresult(streaming_output_cli, result))
+    assert result.status is None
+
+
+def test_streaming_status_is_stable_after_cursor_reuse(streaming_output_cli: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    cursor = make_streaming_cursor([(1,)])
+    executor = SQLExecute.__new__(SQLExecute)
+    first = executor.get_result(cursor)
+    list(OutputMixin.format_sqlresult(streaming_output_cli, first))
+
+    cursor.rownumber = 0
+    rows = iter([(2,), (3,)])
+    monkeypatch.setattr(cursor, 'read_next', lambda: next(rows, None))
+    second = executor.get_result(cursor)
+    list(OutputMixin.format_sqlresult(streaming_output_cli, second))
+
+    assert first.status_plain == '1 row in set'
+    assert second.status_plain == '2 rows in set'
+
+
+def test_output_displays_final_streaming_count(streaming_output_cli: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    cli = streaming_output_cli
+    cli.get_output_margin = lambda status=None: 0
+    monkeypatch.setattr(output_module.special, 'is_redirected', lambda: False)
+    printed: list[str] = []
+    monkeypatch.setattr(prompt_toolkit, 'print_formatted_text', lambda text, **kwargs: printed.append(to_plain_text(text)))
+    result = SQLExecute.__new__(SQLExecute).get_result(make_streaming_cursor([(1,), (2,)]))
+
+    OutputMixin.output(cli, OutputMixin.format_sqlresult(cli, result), result)
+
+    assert printed == ['2 rows in set']
 
 
 def test_format_sqlresult_uses_redirect_formatter_and_appends_preamble_postamble() -> None:
