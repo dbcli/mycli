@@ -517,6 +517,76 @@ def test_fetch_does_not_reset_statement_start(runner: QueryRunner, monkeypatch: 
     assert runner.started == 20.0
 
 
+def test_fetch_handoffs_share_query_update_deadline(runner: QueryRunner, monkeypatch: pytest.MonkeyPatch) -> None:
+    runner.show_state = runner.visible = True
+    runner.started = 0.0
+    runner._next_update = 0.5
+    display = Mock()
+    monkeypatch.setattr(runner, '_display', display)
+
+    for now in (0.5, 0.6, 0.9, 1.0, 1.1, 1.5):
+        monkeypatch.setattr(query_runner, 'monotonic', Mock(return_value=now))
+        runner.call(lambda: None, new_statement=False)
+
+    assert [call.args[0] for call in display.call_args_list] == [0.5, 1.0, 1.5]
+
+
+def test_fetch_polling_shares_query_update_deadline(runner: QueryRunner, monkeypatch: pytest.MonkeyPatch) -> None:
+    class PollOnceEvent(Event):
+        def __init__(self) -> None:
+            super().__init__()
+            self.polled = False
+
+        def wait(self, timeout: float | None = None) -> bool:
+            if not self.polled:
+                self.polled = True
+                return False
+            return super().wait(timeout)
+
+    runner.show_state = True
+    runner.started = 0.0
+    runner._next_update = 1.0
+    runner._state_requested = True
+    control = Mock(return_value='Executing')
+    display = Mock()
+    monkeypatch.setattr(query_runner, 'Event', PollOnceEvent)
+    monkeypatch.setattr(runner, '_control', control)
+    monkeypatch.setattr(runner, '_display', display)
+
+    for now in (0.6, 0.7, 0.8):
+        monkeypatch.setattr(query_runner, 'monotonic', Mock(return_value=now))
+        runner.call(lambda: None, new_statement=False)
+    display.assert_not_called()
+    control.assert_not_called()
+
+    monkeypatch.setattr(query_runner, 'monotonic', lambda: 1.0)
+    runner.call(lambda: None, new_statement=False)
+    display.assert_called_once()
+    control.assert_called_once()
+
+
+def test_render_ticks_share_handoff_deadline(runner: QueryRunner, monkeypatch: pytest.MonkeyPatch) -> None:
+    runner.started = 0.0
+    display = Mock()
+    monkeypatch.setattr(runner, '_display', display)
+    runner._handoff_to_rendering(1.0)
+    monkeypatch.setattr(query_runner, 'monotonic', lambda: 1.1)
+    monkeypatch.setattr(runner._render_stop, 'wait', Mock(side_effect=[False, True]))
+
+    runner._render_ticks()
+
+    display.assert_called_once_with(1.0, QueryState.RENDERING.value)
+
+
+def test_new_statement_resets_update_deadline(runner: QueryRunner, monkeypatch: pytest.MonkeyPatch) -> None:
+    runner._next_update = 999.0
+    runner._state_requested = True
+    monkeypatch.setattr(query_runner, 'monotonic', lambda: 10.0)
+    runner.call(lambda: None)
+    assert runner._next_update == 10.5
+    assert not runner._state_requested
+
+
 @pytest.mark.parametrize('error', [ValueError('formatting'), KeyboardInterrupt()])
 @pytest.mark.parametrize('state', [QueryState.RENDERING, QueryState.TRANSFORMING])
 def test_rendering_error_stops_ticker(runner: QueryRunner, error: BaseException, state: QueryState) -> None:
@@ -582,6 +652,8 @@ def test_successful_visible_query_hands_off_to_rendering(runner: QueryRunner, mo
     output = StringIO()
     monkeypatch.setattr(query_runner.sys, 'stderr', output)
     runner.show_state = True
+    times = iter([0.0, 1.0])
+    monkeypatch.setattr(query_runner, 'monotonic', lambda: next(times))
     runner._display(1, 'Executing')
     runner.call(lambda: None)
     assert output.getvalue().endswith(QueryState.RENDERING)
@@ -634,6 +706,8 @@ def test_database_handoff_uses_active_transform_state(runner: QueryRunner, monke
     monkeypatch.setattr(query_runner.sys, 'stderr', output)
     runner.show_state = True
     runner.interval = 60
+    times = iter([0.0, 60.0])
+    monkeypatch.setattr(query_runner, 'monotonic', lambda: next(times))
     with runner.rendering(QueryState.TRANSFORMING):
         runner._display(1, 'Executing')
         runner.call(lambda: None)
@@ -644,16 +718,17 @@ def test_database_handoff_uses_active_transform_state(runner: QueryRunner, monke
 def test_transform_to_rendering_preserves_elapsed_time(runner: QueryRunner, monkeypatch: pytest.MonkeyPatch) -> None:
     runner.started = 10.0
     runner.show_state = False
-    monkeypatch.setattr(query_runner, 'monotonic', lambda: 12.0)
+    times = iter([12.0, 12.5])
+    monkeypatch.setattr(query_runner, 'monotonic', lambda: next(times))
     display = Mock()
     monkeypatch.setattr(runner, '_display', display)
 
-    for state in (QueryState.TRANSFORMING, QueryState.RENDERING):
+    for elapsed, state in ((2.0, QueryState.TRANSFORMING), (2.5, QueryState.RENDERING)):
         with runner.rendering(state):
             with monkeypatch.context() as patch:
                 patch.setattr(runner._render_stop, 'wait', Mock(side_effect=[False, True]))
                 runner._render_ticks()
-            display.assert_called_with(2.0, state.value)
+            display.assert_called_with(elapsed, state.value)
             assert runner.started == 10.0
     assert display.call_count == 2
 
