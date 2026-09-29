@@ -22,6 +22,8 @@ from mycli.output import OutputMixin
 from mycli.packages.special import iocommands
 from mycli.packages.sqlresult import SQLResult
 from mycli.query_runner import QueryRunner
+from mycli.sqlexecute import SQLExecute
+from test.utils import make_streaming_cursor  # type: ignore[attr-defined]
 
 
 class DummyLogger:
@@ -1137,6 +1139,20 @@ def patch_single_paged_output_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(repl_mode.special, 'write_once', lambda line: None)
     monkeypatch.setattr(repl_mode.special, 'write_pipe_once', lambda line: None)
     monkeypatch.setattr(repl_mode, 'is_mutating', lambda status: False)
+
+
+def test_single_paged_output_reports_final_streaming_count(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli = make_repl_cli(SimpleNamespace())
+    patch_single_paged_output_runtime(monkeypatch)
+    monkeypatch.setattr(repl_mode.special, 'is_explorer_output', lambda: False)
+    cli.main_formatter = TabularOutputFormatter(format_name='csv')
+    cli.helpers_style = cli.helpers_warnings_style = None
+    cli.format_sqlresult = lambda *args, **kwargs: OutputMixin.format_sqlresult(cli, *args, **kwargs)
+    result = SQLExecute.__new__(SQLExecute).get_result(make_streaming_cursor([(1,), (2,)]))
+
+    output = list(repl_mode._single_paged_output_results(cli, repl_mode.ReplState(), iter([result]), 0))
+
+    assert output[-1] == '2 rows in set\n'
 
 
 def test_single_paged_output_handles_set_buffer_command() -> None:

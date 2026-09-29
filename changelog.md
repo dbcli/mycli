@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Bug Fixes
+--------
+* Correct row counts when `--unbuffered` is in effect.
+
+
 v2.27.0 (2026/09/29)
 ==============
 

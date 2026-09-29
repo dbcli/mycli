@@ -344,7 +344,11 @@ class OutputMixin(MyCliState):
         if result.postamble:
             output = itertools.chain(output, [result.postamble])
 
-        return output
+        def finalized_output() -> Generator[str, None, None]:
+            yield from output
+            result.finalize_status()
+
+        return itertools.chain(finalized_output())
 
     def get_reserved_space(self) -> int:
         """Get the number of lines to reserve for the completion menu."""
