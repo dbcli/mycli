@@ -10,6 +10,7 @@ Bug Fixes
 --------
 * Correct row counts when `--unbuffered` is in effect.
 * Don't let `--unbuffered` override the state-update interval.
+* Fix a brief blankout of query state feedback on large results.
 
 
 v2.27.0 (2026/09/29)

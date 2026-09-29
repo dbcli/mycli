@@ -530,33 +530,40 @@ def _output_results(
         else:
             max_width = None
 
-        formatted = mycli.format_sqlresult(
-            result,
-            is_expanded=special.is_expanded_output(),
-            is_redirected=special.is_redirected(),
-            null_string=mycli.null_string,
-            numeric_alignment=mycli.numeric_alignment,
-            binary_display=mycli.binary_display,
-            max_width=max_width,
-        )
+        runner = runner_for(mycli)
+        with runner.rendering() if runner else nullcontext():
+            formatted = mycli.format_sqlresult(
+                result,
+                is_expanded=special.is_expanded_output(),
+                is_redirected=special.is_redirected(),
+                null_string=mycli.null_string,
+                numeric_alignment=mycli.numeric_alignment,
+                binary_display=mycli.binary_display,
+                max_width=max_width,
+            )
 
-        duration = time.time() - start
-        try:
-            if result_count > 0:
-                mycli.echo('')
+            duration = time.time() - start
             try:
-                mycli.output(formatted, result)
+                if result_count > 0:
+                    if runner:
+                        runner.stop_rendering()
+                    mycli.echo('')
+                try:
+                    mycli.output(formatted, result)
+                except KeyboardInterrupt:
+                    if raise_interrupts:
+                        raise
+                finally:
+                    if runner:
+                        runner.stop_rendering()
+                if mycli.beep_after_seconds > 0 and duration >= mycli.beep_after_seconds:
+                    assert mycli.prompt_session is not None
+                    mycli.prompt_session.output.bell()
+                if special.is_timing_enabled():
+                    mycli.output_timing(f'Time: {duration:0.03f}s')
             except KeyboardInterrupt:
                 if raise_interrupts:
                     raise
-            if mycli.beep_after_seconds > 0 and duration >= mycli.beep_after_seconds:
-                assert mycli.prompt_session is not None
-                mycli.prompt_session.output.bell()
-            if special.is_timing_enabled():
-                mycli.output_timing(f'Time: {duration:0.03f}s')
-        except KeyboardInterrupt:
-            if raise_interrupts:
-                raise
 
         start = time.time()
         result_count += 1
