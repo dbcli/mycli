@@ -351,16 +351,15 @@ def set_redirect(
     file_part: str | None,
     *,
     start_new_session: bool = False,
-) -> list[tuple]:
+) -> list[SQLResult]:
     if command_part:
         if file_part:
             PIPE_ONCE['stdout_file'] = file_part
             PIPE_ONCE['stdout_mode'] = 'w' if file_operator_part == '>' else 'a'
         return set_pipe_once(command_part, start_new_session=start_new_session)
-    elif file_operator_part == '>':
-        return set_once(f'-o {file_part}')
-    else:
-        return set_once(file_part)
+    if not file_part:
+        raise TypeError('You must provide a filename.')
+    return _set_once_file(file_part, 'w' if file_operator_part == '>' else 'a')
 
 
 @contextmanager
@@ -933,10 +932,14 @@ def write_tee(output: str | ANSI | FormattedText, nl: bool = True) -> None:
     completion_snippet='append next result to file',
 )
 def set_once(arg: str, **_) -> list[SQLResult]:
+    return _set_once_file(*parseargfile(arg))
+
+
+def _set_once_file(filename: str, mode: str) -> list[SQLResult]:
     global once_file, written_to_once_file
 
     try:
-        once_file = open(*parseargfile(arg))
+        once_file = open(os.path.expanduser(filename), mode)
     except (IOError, OSError) as e:
         raise OSError(f"Cannot write to file '{e.filename}': {e.strerror}") from e
     written_to_once_file = False

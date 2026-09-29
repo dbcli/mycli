@@ -7,6 +7,11 @@ Features
 * Allow composing trailing shell redirections with `.|` transforms.
 
 
+Bug Fixes
+--------
+* Don't treat `-o` as a flag after `$>` redirects.
+
+
 v2.26.0 (2026/09/26)
 ==============
 
