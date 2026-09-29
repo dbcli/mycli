@@ -19,6 +19,7 @@ from jinja2 import TemplateError
 from pymysql import ProgrammingError
 import pytest
 
+from mycli.packages.hybrid_redirection import parse_shell_redirect
 import mycli.packages.special
 from mycli.packages.special import iocommands
 from mycli.packages.special.favoritequeries import (
@@ -840,19 +841,19 @@ def test_temporary_redirect_restores_state_on_process_start_failure(monkeypatch:
 
 def test_set_redirect_routes_to_pipe_once_and_once(monkeypatch) -> None:
     pipe_calls: list[str] = []
-    once_calls: list[str] = []
+    once_calls: list[tuple[str, str]] = []
 
     def fake_set_pipe_once(arg: str, *, start_new_session: bool = False) -> list[tuple[str]]:
         assert not start_new_session
         pipe_calls.append(arg)
         return [('pipe',)]
 
-    def fake_set_once(arg: str) -> list[tuple[str]]:
-        once_calls.append(arg)
+    def fake_set_once(filename: str, mode: str) -> list[tuple[str]]:
+        once_calls.append((filename, mode))
         return [('once',)]
 
     monkeypatch.setattr(iocommands, 'set_pipe_once', fake_set_pipe_once)
-    monkeypatch.setattr(iocommands, 'set_once', fake_set_once)
+    monkeypatch.setattr(iocommands, '_set_once_file', fake_set_once)
 
     iocommands.PIPE_ONCE['stdout_file'] = None
     iocommands.PIPE_ONCE['stdout_mode'] = None
@@ -864,7 +865,32 @@ def test_set_redirect_routes_to_pipe_once_and_once(monkeypatch) -> None:
 
     assert iocommands.set_redirect(None, '>', 'other.txt') == [('once',)]
     assert iocommands.set_redirect(None, None, 'append.txt') == [('once',)]
-    assert once_calls == ['-o other.txt', 'append.txt']
+    assert once_calls == [('other.txt', 'w'), ('append.txt', 'a')]
+
+
+@pytest.mark.parametrize('quote', ['"', "'"])
+@pytest.mark.parametrize(('operator', 'expected'), [('>>', 'existing\nnew\n'), ('>', 'new\n')])
+def test_file_redirect_treats_option_like_filename_literally(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, quote: str, operator: str, expected: str
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    intended = tmp_path / '-o out.csv'
+    intended.write_text('existing\n')
+    unrelated = tmp_path / 'out.csv'
+    unrelated.write_text('untouched\n')
+    redirect = parse_shell_redirect(f'${operator} {quote}-o out.csv{quote}')
+
+    with iocommands.temporary_redirect(redirect.command, redirect.file_operator, redirect.filename, None):
+        iocommands.write_once('new')
+
+    assert intended.read_text() == expected
+    assert unrelated.read_text() == 'untouched\n'
+
+
+@pytest.mark.parametrize('filename', [None, ''])
+def test_file_redirect_requires_filename(filename: str | None) -> None:
+    with pytest.raises(TypeError, match='You must provide a filename'):
+        iocommands.set_redirect(None, '>', filename)
 
 
 def test_execute_favorite_query_list_missing_and_bad_args(monkeypatch) -> None:
