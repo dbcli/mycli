@@ -50,6 +50,7 @@ A command line client for MySQL with auto-completion and syntax highlighting.
     ├── mycli/packages/cli_utils.py           # utilities for parsing CLI arguments
     ├── mycli/packages/completion_engine.py   # implementation of completion suggestions
     ├── mycli/packages/filepaths.py           # utilities for files, including completion suggestions
+    ├── mycli/packages/fzf.py                 # general interface to fzf chooser
     ├── mycli/packages/hybrid_redirection.py  # implementation of shell-style redirects
     ├── mycli/packages/interactive_utils.py   # utilities for confirming on destructive statements
     ├── mycli/packages/key_binding_utils.py   # handlers for key bindings and related special commands

@@ -4,20 +4,10 @@ from shutil import which
 
 from prompt_toolkit import search
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
-from pyfzf import FzfPrompt
 
+from mycli.packages.fzf import Fzf
 from mycli.packages.ptoolkit.history import FileHistoryWithTimestamp
 from mycli.packages.ptoolkit.utils import safe_invalidate_display
-
-
-class Fzf(FzfPrompt):
-    def __init__(self):
-        self.executable = which("fzf")
-        if self.executable:
-            super().__init__()
-
-    def is_available(self) -> bool:
-        return self.executable is not None
 
 
 def search_history(
@@ -60,17 +50,17 @@ def search_history(
     ]
 
     if highlight_preview and which('pygmentize'):
-        options.append(f'--preview="printf \'%s\' {{}} | pygmentize -l mysql -P style={shlex.quote(highlight_style)}"')
+        options.append(f'--preview=printf \'%s\' {{}} | pygmentize -l mysql -P style={shlex.quote(highlight_style)}')
     else:
-        options.append('--preview="printf \'%s\' {}"')
+        options.append('--preview=printf \'%s\' {}')
 
     result = fzf.prompt(
         formatted_history_items,
-        fzf_options=' '.join(options),
+        options=options,
     )
     safe_invalidate_display(event.app)
 
     if result:
-        selected_index = formatted_history_items.index(result[0])
+        selected_index = formatted_history_items.index(result)
         buffer.text = original_history_items[selected_index]
         buffer.cursor_position = len(buffer.text)

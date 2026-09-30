@@ -19,7 +19,7 @@ from prompt_toolkit.selection import SelectionType
 
 from mycli.constants import DOCS_URL
 from mycli.packages import key_binding_utils
-from mycli.packages.ptoolkit.fzf import search_history
+from mycli.packages.ptoolkit.fzf_history import search_history
 from mycli.packages.ptoolkit.utils import safe_invalidate_display
 
 _logger = logging.getLogger(__name__)
