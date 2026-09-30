@@ -3,7 +3,8 @@ from typing import Any, cast
 
 import pytest
 
-from mycli.packages.ptoolkit import fzf as fzf_module
+from mycli.packages import fzf as fzf_wrapper
+from mycli.packages.ptoolkit import fzf_history as fzf_module
 from mycli.packages.ptoolkit.history import FileHistoryWithTimestamp
 
 
@@ -23,33 +24,17 @@ def make_event(history: Any) -> SimpleNamespace:
     )
 
 
-def test_fzf_init_and_is_available(monkeypatch) -> None:
-    init_calls: list[bool] = []
-
-    monkeypatch.setattr(fzf_module, 'which', lambda executable: '/usr/bin/fzf' if executable == 'fzf' else None)
-    monkeypatch.setattr(fzf_module.FzfPrompt, '__init__', lambda self: init_calls.append(True))
+@pytest.mark.parametrize('available', [True, False])
+def test_fzf_init_and_is_available(monkeypatch: pytest.MonkeyPatch, available: bool) -> None:
+    monkeypatch.setattr(fzf_wrapper, 'which', lambda executable: '/usr/bin/fzf' if available and executable == 'fzf' else None)
 
     fzf = fzf_module.Fzf()
 
-    assert fzf.executable == '/usr/bin/fzf'
-    assert fzf.is_available() is True
-    assert init_calls == [True]
+    assert fzf.executable == ('fzf' if available else None)
+    assert fzf.is_available() is available
 
 
-def test_fzf_init_without_executable_skips_super(monkeypatch) -> None:
-    init_calls: list[bool] = []
-
-    monkeypatch.setattr(fzf_module, 'which', lambda executable: None)
-    monkeypatch.setattr(fzf_module.FzfPrompt, '__init__', lambda self: init_calls.append(True))
-
-    fzf = fzf_module.Fzf()
-
-    assert fzf.executable is None
-    assert fzf.is_available() is False
-    assert init_calls == []
-
-
-def test_search_history_falls_back_to_prompt_toolkit_search(monkeypatch) -> None:
+def test_search_history_falls_back_to_prompt_toolkit_search(monkeypatch: pytest.MonkeyPatch) -> None:
     calls: list[dict[str, Any]] = []
     event = make_event(history=object())
 
@@ -64,7 +49,7 @@ def test_search_history_falls_back_to_prompt_toolkit_search(monkeypatch) -> None
     assert calls == [{'direction': fzf_module.search.SearchDirection.BACKWARD}]
 
 
-def test_search_history_falls_back_when_fzf_unavailable_or_history_type_is_wrong(monkeypatch) -> None:
+def test_search_history_falls_back_when_fzf_unavailable_or_history_type_is_wrong(monkeypatch: pytest.MonkeyPatch) -> None:
     calls: list[dict[str, Any]] = []
     unavailable_event = make_event(history=DummyHistory([]))
     wrong_history_event = make_event(history=[])
@@ -95,7 +80,7 @@ def test_search_history_falls_back_when_fzf_unavailable_or_history_type_is_wrong
     ]
 
 
-def test_search_history_formats_preview_updates_buffer_and_deduplicates(monkeypatch) -> None:
+def test_search_history_formats_preview_updates_buffer_and_deduplicates(monkeypatch: pytest.MonkeyPatch) -> None:
     prompt_calls: list[dict[str, Any]] = []
     invalidated_apps: list[Any] = []
 
@@ -110,9 +95,9 @@ def test_search_history_formats_preview_updates_buffer_and_deduplicates(monkeypa
         def is_available(self) -> bool:
             return True
 
-        def prompt(self, items: list[str], fzf_options: str) -> list[str]:
-            prompt_calls.append({'items': items, 'options': fzf_options})
-            return [items[0]]
+        def prompt(self, items: list[str], options: list[str]) -> str:
+            prompt_calls.append({'items': items, 'options': options})
+            return items[0]
 
     monkeypatch.setattr(fzf_module, 'Fzf', PromptingFzf)
     monkeypatch.setattr(
@@ -134,9 +119,15 @@ def test_search_history_formats_preview_updates_buffer_and_deduplicates(monkeypa
                 '2026-01-02 03:04:05  SELECT 1 FROM dual',
                 '2026-01-03 12:00:00  SELECT 2',
             ],
-            'options': '--info=hidden --scheme=history --tiebreak=index --bind=ctrl-r:up,alt-r:up '
-            '--preview-window=down:wrap:nohidden --no-height '
-            "--preview=\"printf '%s' {} | pygmentize -l mysql -P style='monokai style'\"",
+            'options': [
+                '--info=hidden',
+                '--scheme=history',
+                '--tiebreak=index',
+                '--bind=ctrl-r:up,alt-r:up',
+                '--preview-window=down:wrap:nohidden',
+                '--no-height',
+                "--preview=printf '%s' {} | pygmentize -l mysql -P style='monokai style'",
+            ],
         }
     ]
     assert invalidated_apps == [event.app]
@@ -153,7 +144,7 @@ def test_search_history_formats_preview_updates_buffer_and_deduplicates(monkeypa
     ],
 )
 def test_search_history_without_result_keeps_buffer_and_uses_plain_preview(
-    monkeypatch,
+    monkeypatch: pytest.MonkeyPatch,
     highlight_preview: bool,
     pygmentize_available: bool,
 ) -> None:
@@ -166,9 +157,9 @@ def test_search_history_without_result_keeps_buffer_and_uses_plain_preview(
         def is_available(self) -> bool:
             return True
 
-        def prompt(self, items: list[str], fzf_options: str) -> list[str]:
-            prompt_calls.append({'items': items, 'options': fzf_options})
-            return []
+        def prompt(self, items: list[str], options: list[str]) -> None:
+            prompt_calls.append({'items': items, 'options': options})
+            return None
 
     monkeypatch.setattr(fzf_module, 'Fzf', PromptingFzf)
     monkeypatch.setattr(
@@ -183,8 +174,15 @@ def test_search_history_without_result_keeps_buffer_and_uses_plain_preview(
     assert prompt_calls == [
         {
             'items': ['2026-01-01 00:00:00  SELECT 1'],
-            'options': '--info=hidden --scheme=history --tiebreak=index --bind=ctrl-r:up,alt-r:up '
-            "--preview-window=down:wrap:nohidden --no-height --preview=\"printf '%s' {}\"",
+            'options': [
+                '--info=hidden',
+                '--scheme=history',
+                '--tiebreak=index',
+                '--bind=ctrl-r:up,alt-r:up',
+                '--preview-window=down:wrap:nohidden',
+                '--no-height',
+                "--preview=printf '%s' {}",
+            ],
         }
     ]
     assert invalidated_apps == [event.app]

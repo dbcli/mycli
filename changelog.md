@@ -19,6 +19,11 @@ Documentation
 * Add `doc/cookbook.md` for recipes on how to use mycli.
 
 
+Internal
+--------
+* Replace `pyfzf` dependency with internal implementation.
+
+
 v2.27.0 (2026/09/29)
 ==============
 
