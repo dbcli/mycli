@@ -13,6 +13,11 @@ Bug Fixes
 * Fix a brief blankout of query state feedback on large results.
 
 
+Documentation
+--------
+* Add `doc/known_bugs.md` for known bugs and limitations.
+
+
 v2.27.0 (2026/09/29)
 ==============
 
