@@ -16,6 +16,7 @@ Bug Fixes
 Documentation
 --------
 * Add `doc/known_bugs.md` for known bugs and limitations.
+* Add `doc/cookbook.md` for recipes on how to use mycli.
 
 
 v2.27.0 (2026/09/29)
