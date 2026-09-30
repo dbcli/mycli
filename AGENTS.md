@@ -8,6 +8,7 @@ A command line client for MySQL with auto-completion and syntax highlighting.
     ├── .github/                              # GitHub Actions and configuration
     ├── pyproject.toml                        # project configuration
     ├── doc/                                  # documentation
+    ├── doc/cookbook.md                       # recipes for how to configure and use mycli
     ├── doc/key_bindings.md                   # documentation of key binding behaviors
     ├── doc/known_bugs.md                     # documentation of known bugs and limitations
     ├── doc/llm.md                            # documentation on how to use LLM features
