@@ -1,11 +1,3 @@
-__lazy_modules__ = [
-    'mycli.packages.special.dbcommands',
-    'mycli.packages.special.iocommands',
-    'mycli.packages.special.llm',
-    'mycli.packages.special.main',
-    'mycli.packages.special.source',
-]
-
 import os
 
 from mycli.packages.special.dbcommands import (
