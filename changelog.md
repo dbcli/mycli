@@ -23,6 +23,7 @@ Documentation
 Internal
 --------
 * Replace `pyfzf` dependency with internal implementation.
+* Use the `uv` outside of the `tox` environment when testing.
 
 
 v2.27.0 (2026/09/29)

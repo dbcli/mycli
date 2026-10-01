@@ -46,7 +46,7 @@ jobs:
         sudo /etc/init.d/mysql start
 
     - name: Install dependencies
-      run: uv sync --all-extras -p ${{ matrix.python-version }}
+      run: uv sync --extra dev,llm,dataframe -p ${{ matrix.python-version }}
 
     - name: Wait for MySQL connection
       run: |
@@ -59,11 +59,11 @@ jobs:
         PYTEST_PASSWORD: root
         PYTEST_HOST: 127.0.0.1
       run: |
-        uv run tox -e py${{ matrix.python-version }}
+        ./.venv/bin/tox -e py${{ matrix.python-version }}
 
       # arguably this should be made identical to CI for PRs
     - name: Run Style Checks
-      run: uv run tox -e style
+      run: ./.venv/bin/tox -e style
 
   tests-macos:
     name: Tests macOS
@@ -95,7 +95,7 @@ jobs:
         brew services start mysql
 
     - name: Install dependencies
-      run: uv sync --all-extras -p ${{ matrix.python-version }}
+      run: uv sync --extra dev,llm,dataframe -p ${{ matrix.python-version }}
 
     - name: Wait for MySQL connection
       run: |
@@ -113,7 +113,7 @@ jobs:
         PYTEST_HOST: 127.0.0.1
         TERM: xterm
       run: |
-        uv run tox -e py${{ matrix.python-version }}
+        ./.venv/bin/tox -e py${{ matrix.python-version }}
 
   tests-windows:
     name: Tests Windows
@@ -138,7 +138,7 @@ jobs:
 
     - name: Install dependencies
       shell: cmd
-      run: uv sync --all-extras -p ${{ matrix.python-version }}
+      run: uv sync --extra dev,llm,dataframe -p ${{ matrix.python-version }}
 
     - name: Set up MySQL
       uses: shogo82148/actions-setup-mysql@083ec148d28e62f2b24b8f4541693dfe1d50488d # v1.54.0
@@ -193,7 +193,7 @@ jobs:
       run: |
         export PATH="$HOME/.local/bin:$PATH"
         cd /root/mycli
-        uv sync --all-extras --python 3.14
+        uv sync --extra dev,llm,dataframe --python 3.14
 
     - name: Start MySQL in WSL
       shell: wsl-bash {0}
@@ -240,7 +240,7 @@ jobs:
         python-version: '3.14'
 
     - name: Install dependencies
-      run: uv sync --all-extras -p 3.14
+      run: uv sync --extra llm,dataframe -p 3.14
 
     - name: Build
       run: uv build
