@@ -28,10 +28,29 @@ SELECT <tab>
 Mycli is only partially tested on Windows, and several features such as
 filename completion after `/source` may not work as expected.
 
-
 ## double-dash with shell redirections
 
 The interpretation of `--` may not be consistent with `$|`.  The double-dahs
 is inherently ambiguous, being either a SQL comment initiator, or a common
 part of a shell command.  The rules for resolving the ambiguity should be
 simple, and better documented.
+
+## enum completions
+
+Completions on enum values may fail if the values contain spaces.
+
+## keyring support
+
+If "Always Allow" is chosen on Mac, then all Python applications will have
+access to the credential.
+
+When making connections via a kubectl tunnel, the keyring is disabled, because
+the Kubernetes context is not known.
+
+## explorer
+
+There is a trailing blank line in the explorer choices.
+
+## prompt efficiently
+
+The prompt and toolbar are updated more often than needed, even with caching.
