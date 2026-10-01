@@ -11,6 +11,7 @@ Bug Fixes
 * Correct row counts when `--unbuffered` is in effect.
 * Don't let `--unbuffered` override the state-update interval.
 * Fix a brief blankout of query state feedback on large results.
+* Note that `sqlglotc` is optional for performance in `--checkup`.
 
 
 Documentation
