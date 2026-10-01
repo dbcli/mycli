@@ -145,7 +145,6 @@ requires = ['tox>=4.20']
 
 [tool.tox.env_run_base]
 skip_install = true
-deps = ['uv']
 passenv = ['PYTEST_HOST',
            'PYTEST_USER',
            'PYTEST_PASSWORD',
@@ -157,7 +156,7 @@ commands = [['uv', 'pip', 'install', '-e', '.[dev,llm,dataframe]'],
             ['coverage', 'report', '-m', '--sort=Miss'],
             ['behave', 'test/features']]
 commands_post = [['rm', '-f', '--', './.myclirc']]
-allowlist_externals = ['rm']
+allowlist_externals = ['rm', 'uv']
 
 [tool.tox.env.style]
 skip_install = true
