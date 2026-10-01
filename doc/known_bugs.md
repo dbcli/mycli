@@ -51,6 +51,11 @@ the Kubernetes context is not known.
 
 There is a trailing blank line in the explorer choices.
 
-## prompt efficiently
+## prompt efficiency
 
 The prompt and toolbar are updated more often than needed, even with caching.
+
+## history search preview highlighting
+
+When syntax highlighting with `pygmentize` is enabled for history search previews,
+the colors do not match the user's preferences in `~/.myclirc`.
