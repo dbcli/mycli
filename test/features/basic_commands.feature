@@ -4,8 +4,8 @@ Feature: run the cli,
   insert the date,
   exit the cli
 
-  Scenario: run "\?" command
-     When we send "\?" command
+  Scenario: run "/help" command
+     When we send "/help" command
       then we see help output
 
   Scenario: run source command

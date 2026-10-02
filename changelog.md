@@ -25,6 +25,7 @@ Internal
 --------
 * Replace `pyfzf` dependency with internal implementation.
 * Use the `uv` outside of the `tox` environment when testing.
+* Use forward-slash forms of special commands in the behave test suite.
 
 
 v2.27.0 (2026/09/29)
