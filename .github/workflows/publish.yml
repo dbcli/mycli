@@ -54,16 +54,22 @@ jobs:
           sleep 5
         done
 
+      # arguably this should be made identical to CI for PRs
+      # better would be a composite GH action
+    - name: Run Style Checks
+      run: ./.venv/bin/tox -e style
+
+      # arguably this should be made identical to CI for PRs
+      # better would be a composite GH action
+    - name: Run Typechecker
+      run: ./.venv/bin/tox -e typecheck
+
     - name: Pytest / behave
       env:
         PYTEST_PASSWORD: root
         PYTEST_HOST: 127.0.0.1
       run: |
         ./.venv/bin/tox -e py${{ matrix.python-version }}
-
-      # arguably this should be made identical to CI for PRs
-    - name: Run Style Checks
-      run: ./.venv/bin/tox -e style
 
   tests-macos:
     name: Tests macOS
