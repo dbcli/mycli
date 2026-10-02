@@ -164,6 +164,11 @@ deps = ['ruff']
 commands = [['ruff', 'check'],
             ['ruff', 'format', '--diff']]
 
+[tool.tox.env.typecheck]
+skip_install = true
+commands = [['uv', 'run', '--no-sync', '--frozen', '--', 'python', '-m', 'ensurepip'],
+            ['uv', 'run', '--no-sync', '--frozen', '--', 'python', '-m', 'mypy', '--no-pretty', '--install-types', '--non-interactive', '.']]
+
 [tool.pytest]
 addopts = ['--random-order']
 
