@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Internal
+--------
+* Add Python 3.15 trove classifier.
+
+
 v2.28.0 (2026/10/02)
 ==============
 
