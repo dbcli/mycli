@@ -85,7 +85,7 @@ def test_special_init_uses_llm_implementation_when_enabled(load_special: Callabl
 def test_special_init_uses_llm_stubs_when_disabled(load_special: Callable[[bool], ModuleType]) -> None:
     special = load_special(True)
 
-    assert special.is_llm_command(r'\llm prompt') is False
+    assert special.is_llm_command(r'/llm prompt') is False
     with pytest.raises(special.FinishIteration) as handle_exc:
         special.handle_llm(cast_args := object())
     with pytest.raises(special.FinishIteration) as sql_exc:

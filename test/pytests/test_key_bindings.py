@@ -189,9 +189,9 @@ def test_print_f1_help_prints_inline_help_and_docs_url(monkeypatch) -> None:
         '\n',
         [
             ('', 'Inline help — type "'),
-            ('bold', 'help'),
+            ('bold', '/help'),
             ('', '" or "'),
-            ('bold', r'\?'),
+            ('bold', r'/?'),
             ('', '"\n'),
         ],
         [

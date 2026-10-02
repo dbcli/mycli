@@ -290,10 +290,10 @@ def test_complete_while_typing_filter_covers_threshold_and_word_rules(monkeypatc
     monkeypatch.setattr(repl_mode, 'get_app', lambda: SimpleNamespace(current_buffer=SimpleNamespace(text='source x/')))
     assert repl_mode.complete_while_typing_filter() is False
 
-    monkeypatch.setattr(repl_mode, 'get_app', lambda: SimpleNamespace(current_buffer=SimpleNamespace(text='\\. abc')))
+    monkeypatch.setattr(repl_mode, 'get_app', lambda: SimpleNamespace(current_buffer=SimpleNamespace(text='/. abc')))
     assert repl_mode.complete_while_typing_filter() is True
 
-    monkeypatch.setattr(repl_mode, 'get_app', lambda: SimpleNamespace(current_buffer=SimpleNamespace(text='\\. a/')))
+    monkeypatch.setattr(repl_mode, 'get_app', lambda: SimpleNamespace(current_buffer=SimpleNamespace(text='/. a/')))
     assert repl_mode.complete_while_typing_filter() is False
 
     monkeypatch.setattr(repl_mode, 'get_app', lambda: SimpleNamespace(current_buffer=SimpleNamespace(text='select abc')))
@@ -425,7 +425,7 @@ def test_repl_picker_helpers_cover_present_and_missing_resources(monkeypatch: py
     monkeypatch.setattr(repl_mode.resources, 'files', lambda package: FakeResourceTree({}))
     assert repl_mode._contributors_picker() == 'our contributors'
     assert repl_mode._sponsors_picker() == 'our sponsors'
-    assert repl_mode._tips_picker() == r'\? or "help" for help!'
+    assert repl_mode._tips_picker() == r'/? or /help for help!'
 
 
 def test_configure_editor_uses_configured_editor(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1583,7 +1583,7 @@ def test_one_iteration_covers_llm_paths(monkeypatch: pytest.MonkeyPatch) -> None
     click_output: list[str] = []
     monkeypatch.setattr(repl_mode.click, 'echo', lambda message='', **kwargs: click_output.append(str(message)))
     monkeypatch.setattr(repl_mode.special, 'is_timing_enabled', lambda: True)
-    monkeypatch.setattr(repl_mode.special, 'is_llm_command', lambda text: text.startswith('\\llm'))
+    monkeypatch.setattr(repl_mode.special, 'is_llm_command', lambda text: text.startswith('/llm'))
 
     class FakeSQLExecute:
         def __init__(self) -> None:
@@ -1599,7 +1599,7 @@ def test_one_iteration_covers_llm_paths(monkeypatch: pytest.MonkeyPatch) -> None
         lambda text, cur, dbname, field_truncate, section_truncate: ('context', 'select 1', 1.25),
     )
     cli = make_repl_cli(FakeSQLExecute())
-    cli.prompt_session = FakePromptSession(['\\llm ask', 'select 1'])
+    cli.prompt_session = FakePromptSession(['/llm ask', 'select 1'])
     repl_mode._one_iteration(
         cli,
         repl_mode.ReplState(),
@@ -1608,7 +1608,7 @@ def test_one_iteration_covers_llm_paths(monkeypatch: pytest.MonkeyPatch) -> None
     assert cli.output_calls[0][0] == ['None', 'ran:select 1']
 
     cli_finish = make_repl_cli(FakeSQLExecute())
-    cli_finish.prompt_session = FakePromptSession(['\\llm finish'])
+    cli_finish.prompt_session = FakePromptSession(['/llm finish'])
     cli_finish.format_sqlresult = lambda result, **kwargs: iter([result.status_plain or 'row'])
     monkeypatch.setattr(
         repl_mode.special,
@@ -1619,7 +1619,7 @@ def test_one_iteration_covers_llm_paths(monkeypatch: pytest.MonkeyPatch) -> None
     assert cli_finish.output_calls[0][0] == ['done']
 
     cli_empty = make_repl_cli(FakeSQLExecute())
-    cli_empty.prompt_session = FakePromptSession(['\\llm empty'])
+    cli_empty.prompt_session = FakePromptSession(['/llm empty'])
     monkeypatch.setattr(
         repl_mode.special,
         'handle_llm',
@@ -1629,7 +1629,7 @@ def test_one_iteration_covers_llm_paths(monkeypatch: pytest.MonkeyPatch) -> None
     assert cli_empty.output_calls == []
 
     cli_err = make_repl_cli(FakeSQLExecute())
-    cli_err.prompt_session = FakePromptSession(['\\llm err'])
+    cli_err.prompt_session = FakePromptSession(['/llm err'])
     monkeypatch.setattr(
         repl_mode.special,
         'handle_llm',
@@ -1639,7 +1639,7 @@ def test_one_iteration_covers_llm_paths(monkeypatch: pytest.MonkeyPatch) -> None
     assert 'llm boom' in cli_err.echo_calls[-1]
 
     cli_interrupt = make_repl_cli(FakeSQLExecute())
-    cli_interrupt.prompt_session = FakePromptSession(['\\llm stop'])
+    cli_interrupt.prompt_session = FakePromptSession(['/llm stop'])
     monkeypatch.setattr(
         repl_mode.special,
         'handle_llm',
@@ -1649,7 +1649,7 @@ def test_one_iteration_covers_llm_paths(monkeypatch: pytest.MonkeyPatch) -> None
     assert cli_interrupt.output_calls == []
 
     cli_quiet = make_repl_cli(FakeSQLExecute())
-    cli_quiet.prompt_session = FakePromptSession(['\\llm quiet', 'select 2'])
+    cli_quiet.prompt_session = FakePromptSession(['/llm quiet', 'select 2'])
     monkeypatch.setattr(repl_mode.special, 'is_timing_enabled', lambda: False)
     monkeypatch.setattr(
         repl_mode.special,
@@ -1671,7 +1671,7 @@ def test_one_iteration_covers_llm_paths(monkeypatch: pytest.MonkeyPatch) -> None
         ("set password = 'newpass'", True),
         ('quit', True),
         ('exit', True),
-        ('\\q', True),
+        ('/q', True),
         ('SELECT 1', False),
         ('DROP TABLE t', False),
         ('USE mydb', False),

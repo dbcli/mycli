@@ -156,7 +156,7 @@ def test_extract_tables_from_complete_statements_cte():
 
 # this would confuse plain extract_tables() per #1122
 def test_extract_tables_from_multiple_complete_statements():
-    tables = extract_tables_from_complete_statements(r'\T sql-insert; SELECT * FROM my_table AS m WHERE m.a > 5')
+    tables = extract_tables_from_complete_statements(r'/tableformat sql-insert; SELECT * FROM my_table AS m WHERE m.a > 5')
     assert tables == [(None, 'my_table', 'm')]
 
 
@@ -518,8 +518,8 @@ def test_is_dropping_database_skips_statements_without_enough_keywords():
         ('alter table foo add column bar int;', True),
         ('create table foo (id int);', True),
         ('use foo;', True),
-        ('\\r foo localhost root', True),
-        ('\\u foo', True),
+        ('/connect foo localhost root', True),
+        ('/use foo', True),
         ('connect foo localhost root', True),
         ('drop table foo;', True),
         ('rename table foo to bar;', True),
@@ -544,9 +544,9 @@ def test_need_completion_refresh_ignores_queries_that_fail_to_split(monkeypatch)
     [
         ('select 1;', False),
         ('use foo;', True),
-        ('\\u foo', True),
-        ('\\r', False),
-        ('\\r foo localhost root', True),
+        ('/use foo', True),
+        ('/connect', False),
+        ('/connect foo localhost root', True),
         ('connect', False),
         ('connect foo localhost root', True),
     ],
@@ -597,7 +597,7 @@ def test_find_password_after_eq_returns_none_for_non_string_token() -> None:
         ('  ', ('quit', None)),
         ('quit', ('quit', None)),
         ('exit', ('quit', None)),
-        ('\\q', ('quit', None)),
+        ('/quit', ('quit', None)),
         ("ALTER USER 'root'@'localhost' IDENTIFIED BY 'new'", ('alter_user', 'new')),
         ('ALTER USER root IDENTIFIED WITH mysql_native_password', ('alter_user', None)),
         ("SET PASSWORD = 'newpass'", ('set_password', 'newpass')),
@@ -619,7 +619,7 @@ def test_classify_sandbox_statement(text: str, expected: tuple[str | None, str |
         ("set password = 'newpass'", True),
         ('quit', True),
         ('exit', True),
-        ('\\q', True),
+        ('/quit', True),
         ('SELECT 1', False),
         ('DROP TABLE t', False),
         ('USE mydb', False),

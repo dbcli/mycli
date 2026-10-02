@@ -939,21 +939,21 @@ def test_suggest_type_handles_parser_results_shorter_than_cursor(monkeypatch):
 @pytest.mark.parametrize(
     ('text', 'expected'),
     [
-        ('\\', [{'type': 'special'}]),
+        ('/', [{'type': 'special'}]),
         ('use ', [{'type': 'database'}]),
         ('connect ', [{'type': 'database'}]),
-        ('\\u ', [{'type': 'database'}]),
-        ('\\r ', [{'type': 'database'}]),
+        ('/use ', [{'type': 'database'}]),
+        ('/connect ', [{'type': 'database'}]),
         ('tableformat ', [{'type': 'table_format'}]),
         ('redirectformat ', [{'type': 'table_format'}]),
-        ('\\T ', [{'type': 'table_format'}]),
-        ('\\Tr ', [{'type': 'table_format'}]),
-        ('\\f ', [{'type': 'favoritequery'}]),
-        ('\\fs ', [{'type': 'favoritequery'}]),
-        ('\\fd ', [{'type': 'favoritequery'}]),
+        ('/tableformat ', [{'type': 'table_format'}]),
+        ('/redirectformat ', [{'type': 'table_format'}]),
+        ('/f ', [{'type': 'favoritequery'}]),
+        ('/fs ', [{'type': 'favoritequery'}]),
+        ('/fd ', [{'type': 'favoritequery'}]),
         ('/f report', [{'type': 'favoritequery'}]),
         ('/f report ', [{'type': 'favoritequery_template_key', 'name': 'report', 'used_keys': set()}]),
-        ('\\f report --u', [{'type': 'favoritequery_template_key', 'name': 'report', 'used_keys': set()}]),
+        ('/f report --u', [{'type': 'favoritequery_template_key', 'name': 'report', 'used_keys': set()}]),
         ('/f report -', [{'type': 'favoritequery_template_key', 'name': 'report', 'used_keys': set()}]),
         ('/f report --', [{'type': 'favoritequery_template_key', 'name': 'report', 'used_keys': set()}]),
         ('/f report -- ', []),
@@ -976,10 +976,10 @@ def test_suggest_type_handles_parser_results_shorter_than_cursor(monkeypatch):
         ),
         ('/f report -- --user', []),
         ('/f report --user="henry', []),
-        ('\\dt ', [{'type': 'table', 'schema': []}, {'type': 'view', 'schema': []}, {'type': 'schema'}]),
-        ('\\dt+ ', [{'type': 'table', 'schema': []}, {'type': 'view', 'schema': []}, {'type': 'schema'}]),
+        ('/dt ', [{'type': 'table', 'schema': []}, {'type': 'view', 'schema': []}, {'type': 'schema'}]),
+        ('/dt+ ', [{'type': 'table', 'schema': []}, {'type': 'view', 'schema': []}, {'type': 'schema'}]),
         (
-            '\\. ',
+            '/. ',
             [
                 {
                     'type': 'special_subcommand',
@@ -1123,10 +1123,10 @@ def test_suggest_type_handles_parser_results_shorter_than_cursor(monkeypatch):
         ('/once ', [{'type': 'file_name', 'all_files': True}]),
         ('tee ', [{'type': 'file_name', 'all_files': True}]),
         ('/tee ', [{'type': 'file_name', 'all_files': True}]),
-        ('\\e ', [{'type': 'file_name'}]),
-        ('\\edit ', [{'type': 'file_name'}]),
-        ('\\llm ', [{'type': 'llm'}]),
-        ('\\ai ', [{'type': 'llm'}]),
+        ('/e ', [{'type': 'file_name'}]),
+        ('/edit ', [{'type': 'file_name'}]),
+        ('/llm ', [{'type': 'llm'}]),
+        ('/ai ', [{'type': 'llm'}]),
         ('/config ', [{'type': 'special_subcommand', 'subcommands': ['help', 'get', 'search', 'edit']}]),
         ('/config g', [{'type': 'special_subcommand', 'subcommands': ['help', 'get', 'search', 'edit']}]),
         ('/config s', [{'type': 'special_subcommand', 'subcommands': ['help', 'get', 'search', 'edit']}]),
@@ -1218,6 +1218,22 @@ def test_suggest_type_handles_parser_results_shorter_than_cursor(monkeypatch):
 )
 def test_suggest_special(text, expected):
     assert suggest_special(text) == expected
+
+
+@pytest.mark.parametrize('command', [r'\u', '/u', r'\r', '/r'])
+@pytest.mark.parametrize('argument', ['', 'my'])
+def test_short_connection_commands_suggest_databases(command: str, argument: str) -> None:
+    text = f'{command} {argument}'
+
+    assert suggest_type(text, text) == [{'type': 'database'}]
+
+
+@pytest.mark.parametrize('command', [r'\T', '/T', r'\Tr', '/Tr'])
+@pytest.mark.parametrize('argument', ['', 'cs'])
+def test_short_format_commands_suggest_table_formats(command: str, argument: str) -> None:
+    text = f'{command} {argument}'
+
+    assert suggest_type(text, text) == [{'type': 'table_format'}]
 
 
 @pytest.mark.parametrize(
@@ -2053,10 +2069,10 @@ def test_after_as(expression):
 @pytest.mark.parametrize(
     "expression",
     [
-        "\\. ",
-        "select 1; \\. ",
-        "select 1;\\. ",
-        "select 1 ; \\. ",
+        "/. ",
+        "select 1; /. ",
+        "select 1;/. ",
+        "select 1 ; /. ",
         "source ",
         "truncate table test; source ",
         "truncate table test ; source ",
@@ -2068,9 +2084,9 @@ def test_source_is_file(expression):
     special.register_special_command(
         ...,
         'source',
-        '\\. <file>',
+        '/. <file>',
         'Execute commands from file.',
-        aliases=[special.SpecialCommandAlias('\\.', case_sensitive=False)],
+        aliases=[special.SpecialCommandAlias('/.', case_sensitive=False)],
     )
     suggestions = suggest_type(expression, expression)
     assert suggestions == [
@@ -2082,7 +2098,7 @@ def test_source_is_file(expression):
 @pytest.mark.parametrize(
     "expression",
     [
-        "\\f ",
+        "/f ",
     ],
 )
 def test_favorite_name_suggestion(expression):

@@ -71,8 +71,8 @@ def _environment_checkup() -> None:
     print('\n### Environment variables:\n')
     table = []
     for variable, purpose in [
-        ('EDITOR', r'optional for \edit and C-x C-e'),
-        ('VISUAL', r'optional for \edit and C-x C-e'),
+        ('EDITOR', r'optional for /edit and C-x C-e'),
+        ('VISUAL', r'optional for /edit and C-x C-e'),
     ]:
         if value := os.environ.get(variable):
             table.append([f'${variable}', value, purpose])

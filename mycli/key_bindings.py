@@ -43,9 +43,9 @@ def print_f1_help():
     app.print_text('\n')
     app.print_text([
         ('', 'Inline help — type "'),
-        ('bold', 'help'),
+        ('bold', '/help'),
         ('', '" or "'),
-        ('bold', r'\?'),
+        ('bold', r'/?'),
         ('', '"\n'),
     ])
     app.print_text([

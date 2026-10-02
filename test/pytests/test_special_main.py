@@ -62,8 +62,8 @@ def load_isolated_special_main(module_name: str) -> ModuleType:
     ('sql', 'expected'),
     [
         ('help select', ('help', special_main.CommandVerbosity.NORMAL, 'select')),
-        (r'\llm+ prompt', (r'\llm', special_main.CommandVerbosity.VERBOSE, 'prompt')),
-        (r'\llm- prompt', (r'\llm', special_main.CommandVerbosity.SUCCINCT, 'prompt')),
+        (r'/llm+ prompt', (r'/llm', special_main.CommandVerbosity.VERBOSE, 'prompt')),
+        (r'/llm- prompt', (r'/llm', special_main.CommandVerbosity.SUCCINCT, 'prompt')),
         ('help   spaced   ', ('help', special_main.CommandVerbosity.NORMAL, 'spaced')),
     ],
 )
@@ -87,7 +87,7 @@ def test_register_special_command_adds_primary_and_alias_entries(restore_command
         'Demo',
         'demo',
         'Description',
-        aliases=[special_main.SpecialCommandAlias('\\d', case_sensitive=False)],
+        aliases=[special_main.SpecialCommandAlias(r'\d', case_sensitive=False)],
         completion_snippet='Manage demos.',
     )
 
@@ -99,11 +99,11 @@ def test_register_special_command_adds_primary_and_alias_entries(restore_command
         arg_type=special_main.ArgType.PARSED_QUERY,
         hidden=False,
         case_sensitive=False,
-        aliases=[special_main.SpecialCommandAlias('\\d', case_sensitive=False)],
+        aliases=[special_main.SpecialCommandAlias(r'\d', case_sensitive=False)],
         backslash_only=False,
         completion_snippet='Manage demos.',
     )
-    assert special_main.COMMANDS['\\d'] == special_main.SpecialCommand(
+    assert special_main.COMMANDS['/d'] == special_main.SpecialCommand(
         handler,
         'Demo',
         'demo',
@@ -129,11 +129,11 @@ def test_register_special_command_tracks_case_insensitive_commands(restore_comma
         'Demo',
         'demo',
         'Description',
-        aliases=[special_main.SpecialCommandAlias('\\d', case_sensitive=False)],
+        aliases=[special_main.SpecialCommandAlias(r'\d', case_sensitive=False)],
     )
 
     assert special_main.CASE_SENSITIVE_COMMANDS == set()
-    assert special_main.CASE_INSENSITIVE_COMMANDS == {'demo', '/demo', '\\d', '/d'}
+    assert special_main.CASE_INSENSITIVE_COMMANDS == {'demo', '/demo', r'\d', '/d'}
 
 
 def test_special_command_decorator_registers_case_sensitive_command(restore_commands: None) -> None:
@@ -348,7 +348,7 @@ def test_show_help_lists_only_visible_commands(restore_commands: None) -> None:
         'visible',
         '/visible',
         'Visible command',
-        aliases=[special_main.SpecialCommandAlias('\\v', case_sensitive=False)],
+        aliases=[special_main.SpecialCommandAlias(r'\v', case_sensitive=False)],
         completion_snippet='Complete visible.',
     )
     special_main.register_special_command(lambda: None, 'hidden', 'hidden', 'Hidden command', hidden=True)
@@ -454,8 +454,8 @@ def test_reload_special_main_without_llm_support(monkeypatch) -> None:
         isolated_main = load_isolated_special_main('test_special_main_without_llm')
         try:
             assert isolated_main.LLM_IMPORTED is False
-            assert r'\llm' not in isolated_main.COMMANDS
-            assert r'\ai' not in isolated_main.COMMANDS
+            assert r'/llm' not in isolated_main.COMMANDS
+            assert r'/ai' not in isolated_main.COMMANDS
         finally:
             sys.modules.pop('test_special_main_without_llm', None)
 
@@ -474,7 +474,7 @@ def test_reload_special_main_handles_llm_import_error(monkeypatch) -> None:
         isolated_main = load_isolated_special_main('test_special_main_import_error')
         try:
             assert isolated_main.LLM_IMPORTED is False
-            assert r'\llm' not in isolated_main.COMMANDS
-            assert r'\ai' not in isolated_main.COMMANDS
+            assert r'/llm' not in isolated_main.COMMANDS
+            assert r'/ai' not in isolated_main.COMMANDS
         finally:
             sys.modules.pop('test_special_main_import_error', None)
