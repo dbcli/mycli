@@ -219,17 +219,17 @@ def test_editor_command(monkeypatch):
 
     assert mycli.packages.special.editor_command(r"hello\e")
     assert mycli.packages.special.editor_command(r"hello\edit")
-    assert mycli.packages.special.editor_command(r"\e hello")
-    assert mycli.packages.special.editor_command(r"\edit hello")
+    assert mycli.packages.special.editor_command(r"/e hello")
+    assert mycli.packages.special.editor_command(r"/edit hello")
     assert mycli.packages.special.editor_command('/edit')
 
     assert not mycli.packages.special.editor_command(r"HELP \e")
     assert not mycli.packages.special.editor_command(r"help \edit\g")
     assert not mycli.packages.special.editor_command(r"hello")
-    assert not mycli.packages.special.editor_command(r"\ehello")
-    assert not mycli.packages.special.editor_command(r"\edithello")
+    assert not mycli.packages.special.editor_command(r"/ehello")
+    assert not mycli.packages.special.editor_command(r"/edithello")
 
-    assert mycli.packages.special.get_filename(r"\e filename") == "filename"
+    assert mycli.packages.special.get_filename(r"/e filename") == "filename"
     assert mycli.packages.special.get_editor_query('/edit') == ''
 
     if os.name != "nt":
@@ -290,37 +290,37 @@ def test_tee_command_error():
 def test_favorite_query(favorite_queries_instance) -> None:
     with db_connection().cursor() as cur:
         query = 'select "✔"'
-        mycli.packages.special.execute(cur, f"\\fs check {query}")
-        assert next(mycli.packages.special.execute(cur, "\\f check")).preamble == "> " + query
+        mycli.packages.special.execute(cur, f"/fs check {query}")
+        assert next(mycli.packages.special.execute(cur, "/f check")).preamble == "> " + query
 
 
 @dbtest
 @pytest.mark.skipif(os.name == "nt", reason="Bug: fails on Windows, needs fixing, singleton of FQ not working right")
 def test_special_favorite_query(favorite_queries_instance) -> None:
     with db_connection().cursor() as cur:
-        query = r'\?'
-        mycli.packages.special.execute(cur, rf"\fs special {query}")
-        assert (r'\G', None, r'<query>\G', 'Display results vertically.') in next(mycli.packages.special.execute(cur, r'\f special')).rows
+        query = '/help'
+        mycli.packages.special.execute(cur, f"/fs special {query}")
+        assert (r'\G', None, r'<query>\G', 'Display results vertically.') in next(mycli.packages.special.execute(cur, r'/f special')).rows
 
 
 def test_once_command():
     with pytest.raises(TypeError):
-        mycli.packages.special.execute(None, "\\once")
+        mycli.packages.special.execute(None, "/once")
 
     with pytest.raises(OSError):
-        mycli.packages.special.execute(None, "\\once /proc/access-denied")
+        mycli.packages.special.execute(None, "/once /proc/access-denied")
 
     mycli.packages.special.write_once("hello world")  # write without file set
     # keep Windows from locking the file with delete=False
     with tempfile.NamedTemporaryFile(prefix=TEMPFILE_PREFIX, delete=False) as f:
-        mycli.packages.special.execute(None, "\\once " + f.name)
+        mycli.packages.special.execute(None, "/once " + f.name)
         mycli.packages.special.write_once("hello world")
         if os.name == "nt":
             assert f.read() == b"hello world\r\n"
         else:
             assert f.read() == b"hello world\n"
 
-        mycli.packages.special.execute(None, "\\once -o " + f.name)
+        mycli.packages.special.execute(None, "/once -o " + f.name)
         mycli.packages.special.write_once("hello world line 1")
         mycli.packages.special.write_once("hello world line 2")
         f.seek(0)
@@ -338,20 +338,20 @@ def test_once_command():
 
 def test_pipe_once_command():
     with pytest.raises(IOError):
-        mycli.packages.special.execute(None, "\\pipe_once")
+        mycli.packages.special.execute(None, "/pipe_once")
 
     with pytest.raises(OSError):
-        mycli.packages.special.execute(None, "\\pipe_once /proc/access-denied")
+        mycli.packages.special.execute(None, "/pipe_once /proc/access-denied")
         mycli.packages.special.write_pipe_once("select 1")
         mycli.packages.special.flush_pipe_once_if_written(None)
 
     if os.name == "nt":
-        mycli.packages.special.execute(None, '\\pipe_once python -c "import sys; print(len(sys.stdin.read().strip()))"')
+        mycli.packages.special.execute(None, '/pipe_once python -c "import sys; print(len(sys.stdin.read().strip()))"')
         mycli.packages.special.write_once("hello world")
         mycli.packages.special.flush_pipe_once_if_written(None)
     else:
         with tempfile.NamedTemporaryFile(prefix=TEMPFILE_PREFIX) as f:
-            mycli.packages.special.execute(None, "\\pipe_once tee " + f.name)
+            mycli.packages.special.execute(None, "/pipe_once tee " + f.name)
             mycli.packages.special.write_pipe_once("hello world")
             mycli.packages.special.flush_pipe_once_if_written(None)
             f.seek(0)
@@ -548,7 +548,7 @@ def test_disable_show_warnings_updates_special_state() -> None:
 
 
 def test_editor_helpers_strip_commands() -> None:
-    assert iocommands.get_filename(r'\edit  ') is None
+    assert iocommands.get_filename(r'/edit  ') is None
     assert iocommands.get_filename('select 1') is None
     assert iocommands.get_editor_query(r' select * from style\edit\e ') == 'select * from style'
 
@@ -600,10 +600,10 @@ def test_open_external_editor_without_filename(monkeypatch) -> None:
 
 
 def test_clip_helpers_and_clipboard(monkeypatch) -> None:
-    assert iocommands.clip_command(r'\clip select 1')
+    assert iocommands.clip_command(r'/clip select 1')
     assert iocommands.clip_command(r'select 1 \clip')
     assert not iocommands.clip_command(r'select 1')
-    assert iocommands.get_clip_query(r'\clip select 1\clip') == ' select 1'
+    assert iocommands.get_clip_query(r'/clip select 1\clip') == ' select 1'
 
     copied: list[str] = []
     monkeypatch.setattr(iocommands.pyperclip, 'copy', lambda text: copied.append(text))
@@ -1507,14 +1507,14 @@ def test_list_substitute_save_delete_and_redirect_state(tmp_path: Path, monkeypa
     assert iocommands.subst_favorite_query_args('select 1', ['x']) == [None, 'query does not have substitution parameter $1:\n  select 1']
     assert iocommands.subst_favorite_query_args('select $1, $2', ['x']) == [None, 'missing substitution for $2 in query:\n  select x, $2']
 
-    assert iocommands.save_favorite_query('', cur=None)[0].status == 'Syntax: \\fs name query.\n\n' + populated_favorites.usage
+    assert iocommands.save_favorite_query('', cur=None)[0].status == 'Syntax: /fs name query.\n\n' + populated_favorites.usage
     assert iocommands.save_favorite_query('onlyname', cur=None)[0].status == (
-        'Syntax: \\fs name query.\n\n' + populated_favorites.usage + ' Err: Both name and query are required.'
+        'Syntax: /fs name query.\n\n' + populated_favorites.usage + ' Err: Both name and query are required.'
     )
     assert iocommands.save_favorite_query('saved select 2', cur=None)[0].status == 'Saved.'
     assert populated_favorites.saved == [('saved', 'select 2')]
 
-    assert iocommands.delete_favorite_query('', cur=None)[0].status == 'Syntax: \\fd name.\n\n' + populated_favorites.usage
+    assert iocommands.delete_favorite_query('', cur=None)[0].status == 'Syntax: /fd name.\n\n' + populated_favorites.usage
     assert iocommands.delete_favorite_query('saved', cur=None)[0].status == 'saved: Deleted.'
     assert populated_favorites.deleted == ['saved']
 
@@ -1746,7 +1746,7 @@ def test_dsn_command_shows_usage_for_help_and_unknown_subcommands(monkeypatch) -
 
 
 def test_execute_system_command_usage_parse_and_cd(monkeypatch) -> None:
-    usage = 'Syntax: system [-r] [command].\n-r denotes "raw" mode, in which output is passed through without formatting.'
+    usage = 'Syntax: /system [-r] [command].\n-r denotes "raw" mode, in which output is passed through without formatting.'
     assert iocommands.execute_system_command('')[0].status == usage
     assert iocommands.execute_system_command('-r')[0].status == usage
 
@@ -1991,10 +1991,10 @@ def test_flush_pipe_once_timeout_and_nonzero_exit(monkeypatch, tmp_path: Path) -
 
 def test_watch_query_usage_and_destructive_cancel(monkeypatch) -> None:
     usage_results = list(iocommands.watch_query('', cur=SequenceCursor([None])))
-    assert usage_results[0].status and usage_results[0].status.startswith('Syntax: watch')
+    assert usage_results[0].status and usage_results[0].status.startswith('Syntax: /watch')
 
     usage_missing_statement = list(iocommands.watch_query('5 -c', cur=SequenceCursor([None])))
-    assert usage_missing_statement[0].status and usage_missing_statement[0].status.startswith('Syntax: watch')
+    assert usage_missing_statement[0].status and usage_missing_statement[0].status.startswith('Syntax: /watch')
 
     secho_calls: list[str] = []
     monkeypatch.setattr(iocommands, 'confirm_destructive_query', lambda keywords, statement: False)

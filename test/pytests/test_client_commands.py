@@ -237,7 +237,7 @@ def test_config_command_returns_unquoted_configobj_value(monkeypatch: pytest.Mon
     assert special.execute(None, '/config search SHOW_WARNINGS') == config_result
     assert special.execute(None, r'\config search SHOW_WARNINGS') == config_result
     with pytest.raises(special.CommandNotFound, match='Command not found: select'):
-        special.execute(None, r'select 1 \config get main.show_warnings')
+        special.execute(None, r'select 1 /config get main.show_warnings')
 
 
 def test_config_edit_opens_user_config_for_slash_and_backslash_commands(

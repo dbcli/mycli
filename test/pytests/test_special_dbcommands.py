@@ -70,7 +70,7 @@ class FakeCursor:
 
 
 def test_list_tables_verbose_preserves_field_results():
-    """Test that \\dt+ table_name returns SHOW FIELDS results, not SHOW CREATE TABLE results.
+    """Test that /dt+ table_name returns SHOW FIELDS results, not SHOW CREATE TABLE results.
 
     This is a regression test for a bug where the cursor was reused for SHOW CREATE TABLE,
     which overwrote the SHOW FIELDS results.
@@ -111,7 +111,7 @@ def test_list_tables_verbose_preserves_field_results():
     cur.fetchall.side_effect = fetchall_side_effect
     cur.fetchone.side_effect = fetchone_side_effect
 
-    # Call list_tables with command_verbosity=True (simulating \dt+ table_name)
+    # Call list_tables with command_verbosity=True (simulating /dt+ table_name)
     results = list_tables(cur, arg='test_table', command_verbosity=True)
 
     assert len(results) == 1
@@ -132,17 +132,17 @@ def test_list_tables_verbose_preserves_field_results():
 
 
 def test_u_suggests_databases():
-    suggestions = suggest_type("\\u ", "\\u ")
+    suggestions = suggest_type("/use ", "/use ")
     assert sorted_dicts(suggestions) == sorted_dicts([{"type": "database"}])
 
 
 def test_describe_table():
-    suggestions = suggest_type("\\dt", "\\dt ")
+    suggestions = suggest_type("/dt", "/dt ")
     assert sorted_dicts(suggestions) == sorted_dicts([{"type": "table", "schema": []}, {"type": "view", "schema": []}, {"type": "schema"}])
 
 
 def test_list_or_show_create_tables():
-    suggestions = suggest_type("\\dt+", "\\dt+ ")
+    suggestions = suggest_type("/dt+", "/dt+ ")
     assert sorted_dicts(suggestions) == sorted_dicts([{"type": "table", "schema": []}, {"type": "view", "schema": []}, {"type": "schema"}])
 
 
@@ -216,7 +216,7 @@ def test_ping_rejects_arguments_without_contacting_server() -> None:
 
 
 def test_ping_command_registration() -> None:
-    command = special_main.COMMANDS[r'\ping']
+    command = special_main.COMMANDS[r'/ping']
 
     assert command.handler is ping
     assert command.usage == '/ping'

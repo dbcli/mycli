@@ -391,7 +391,7 @@ def test_reconnect_no_database(executor, capsys):
         None,
         None,
     )
-    sql = "\\r"
+    sql = "/connect"
     result = next(mycli.packages.special.execute(executor, sql))
     stdout, _stderr = capsys.readouterr()
     assert result.status is None
@@ -417,7 +417,7 @@ def test_reconnect_with_different_database(executor):
     database_1 = TEST_DATABASE
     database_2 = DEFAULT_DATABASE
     sql_1 = f"use {database_1}"
-    sql_2 = f"\\r {database_2}"
+    sql_2 = f"/connect {database_2}"
     _result_1 = next(mycli.packages.special.execute(executor, sql_1))
     result_2 = next(mycli.packages.special.execute(executor, sql_2))
     expected = f'You are now connected to database "{database_2}" as user "{USER}"'
@@ -441,9 +441,9 @@ def test_reconnect_with_same_database(executor):
         None,
     )
     database = DEFAULT_DATABASE
-    sql = f"\\u {database}"
+    sql = f"/use {database}"
     result = next(mycli.packages.special.execute(executor, sql))
-    sql = f"\\r {database}"
+    sql = f"/connect {database}"
     result = next(mycli.packages.special.execute(executor, sql))
     expected = f'You are already connected to database "{database}" as user "{USER}"'
     assert expected in result.status
@@ -501,7 +501,7 @@ def test_prompt_socket_short_host(executor):
 def test_enable_show_warnings(executor):
     mycli = MyCli()
     mycli.register_special_commands()
-    sql = "\\W"
+    sql = "/warnings"
     result = run(executor, sql)
     assert result[0]["status"] == "Show warnings enabled."
 
@@ -510,7 +510,7 @@ def test_enable_show_warnings(executor):
 def test_disable_show_warnings(executor):
     mycli = MyCli()
     mycli.register_special_commands()
-    sql = "\\w"
+    sql = "/nowarnings"
     result = run(executor, sql)
     assert result[0]["status"] == "Show warnings disabled."
 

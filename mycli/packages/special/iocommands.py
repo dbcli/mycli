@@ -650,7 +650,7 @@ def subst_favorite_query_args(query: str, args: list[str]) -> list[str | None]:
 def save_favorite_query(arg: str, **_) -> list[SQLResult]:
     """Save a new favorite query."""
 
-    usage = "Syntax: \\fs name query.\n\n" + FavoriteQueries.instance.usage
+    usage = "Syntax: /fs name query.\n\n" + FavoriteQueries.instance.usage
     return _save_favorite_query(arg, usage)
 
 
@@ -704,7 +704,7 @@ def is_favorite_save_command(statement: str) -> bool:
 )
 def delete_favorite_query(arg: str, **_) -> list[SQLResult]:
     """Delete an existing favorite query."""
-    usage = "Syntax: \\fd name.\n\n" + FavoriteQueries.instance.usage
+    usage = "Syntax: /fd name.\n\n" + FavoriteQueries.instance.usage
     return _delete_favorite_query(arg, usage)
 
 
@@ -804,7 +804,7 @@ def _edit_dsn_alias(alias: str) -> list[SQLResult]:
 )
 def execute_system_command(arg: str, **_) -> list[SQLResult]:
     """Execute a system shell command."""
-    usage = "Syntax: system [-r] [command].\n-r denotes \"raw\" mode, in which output is passed through without formatting."
+    usage = "Syntax: /system [-r] [command].\n-r denotes \"raw\" mode, in which output is passed through without formatting."
 
     IMPLICIT_RAW_MODE_COMMANDS = {
         'clear',
@@ -1088,7 +1088,7 @@ def flush_pipe_once_if_written(
     completion_snippet='run query every N seconds',
 )
 def watch_query(arg: str, **kwargs) -> Generator[SQLResult, None, None]:
-    usage = """Syntax: watch [sec] [-c] query.
+    usage = """Syntax: /watch [sec] [-c] query.
     * sec: The interval at the query will be repeated, in seconds.
            By default: 5.
     * -c: Clears the screen between every iteration.

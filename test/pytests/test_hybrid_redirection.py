@@ -153,7 +153,7 @@ def test_file_redirect_ignores_trailing_sql_comments(operator: str, filename: st
         'SELECT 1',
         None,
         operator[1:],
-        filename.strip('\'"'),
+        filename.strip('"').strip("'"),
     )
 
 

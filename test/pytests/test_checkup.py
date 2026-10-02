@@ -107,8 +107,8 @@ def test_environment_checkup(monkeypatch, capsys) -> None:
 
     assert '### Environment variables:' in output
     rows = [line.split() for line in output.splitlines()]
-    assert ['$EDITOR', 'vim', 'optional', 'for', r'\edit', 'and', 'C-x', 'C-e'] in rows
-    assert ['$VISUAL', 'UNSET', 'optional', 'for', r'\edit', 'and', 'C-x', 'C-e'] in rows
+    assert ['$EDITOR', 'vim', 'optional', 'for', r'/edit', 'and', 'C-x', 'C-e'] in rows
+    assert ['$VISUAL', 'UNSET', 'optional', 'for', r'/edit', 'and', 'C-x', 'C-e'] in rows
 
 
 def test_configuration_checkup_missing_file(capsys) -> None:

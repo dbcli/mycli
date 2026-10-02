@@ -89,9 +89,9 @@ def test_use_database_completion(completer, complete_event):
     special.register_special_command(
         ...,
         'use',
-        '\\u [database]',
+        '/use [database]',
         'Change to a new database.',
-        aliases=[special.SpecialCommandAlias('\\u', case_sensitive=False)],
+        aliases=[special.SpecialCommandAlias('/use', case_sensitive=False)],
     )
     result = completer.get_completions(Document(text=text, cursor_position=position), complete_event)
     assert list(result) == [
@@ -101,12 +101,13 @@ def test_use_database_completion(completer, complete_event):
 
 
 def test_special_name_completion(completer, complete_event):
-    text = "\\d"
-    position = len("\\d")
+    text = "/d"
+    position = len("/d")
     result = completer.get_completions(Document(text=text, cursor_position=position), complete_event)
     assert list(result) == [
-        Completion(text="\\dt", start_position=-2, display_meta='list or describe tables'),
-        Completion(text="\\dsn", start_position=-2, display_meta='manage saved DSNs'),
+        Completion(text="/dt", start_position=-2, display_meta='list or describe tables'),
+        Completion(text="/dsn", start_position=-2, display_meta='manage saved DSNs'),
+        Completion(text="/delimiter", start_position=-2, display_meta='set end-of-statement delimiter'),
     ]
 
 
@@ -879,9 +880,9 @@ def test_file_name_completion(completer, complete_event, text, expected):
     special.register_special_command(
         ...,
         'source',
-        '\\. <file>',
+        '/. <file>',
         'Execute commands from file.',
-        aliases=[special.SpecialCommandAlias('\\.', case_sensitive=False)],
+        aliases=[special.SpecialCommandAlias('/.', case_sensitive=False)],
     )
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
     expected = [Completion(txt, pos) for txt, pos in expected]
@@ -922,9 +923,9 @@ def test_source_eager_completion(completer, complete_event, tmp_path, monkeypatc
     special.register_special_command(
         ...,
         'source',
-        '\\. <file>',
+        '/. <file>',
         'Execute commands from file.',
-        aliases=[special.SpecialCommandAlias('\\.', case_sensitive=False)],
+        aliases=[special.SpecialCommandAlias('/.', case_sensitive=False)],
     )
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
     success = True
@@ -951,9 +952,9 @@ def test_source_completion_advances_into_nested_directories(completer, complete_
     special.register_special_command(
         ...,
         'source',
-        '\\. <file>',
+        '/. <file>',
         'Execute commands from file.',
-        aliases=[special.SpecialCommandAlias('\\.', case_sensitive=False)],
+        aliases=[special.SpecialCommandAlias('/.', case_sensitive=False)],
     )
 
     text = 'source doc/'
@@ -992,9 +993,9 @@ def test_file_commands_complete_slash_separated_prefixes(
         special.register_special_command(
             ...,
             'source',
-            '\\. <file>',
+            '/. <file>',
             'Execute commands from file.',
-            aliases=[special.SpecialCommandAlias('\\.', case_sensitive=False)],
+            aliases=[special.SpecialCommandAlias('/.', case_sensitive=False)],
         )
 
     path_prefix = './dir/sub/exa'
@@ -1013,9 +1014,9 @@ def test_source_completion_quotes_paths_with_spaces(completer, complete_event, t
     special.register_special_command(
         ...,
         'source',
-        '\\. <file>',
+        '/. <file>',
         'Execute commands from file.',
-        aliases=[special.SpecialCommandAlias('\\.', case_sensitive=False)],
+        aliases=[special.SpecialCommandAlias('/.', case_sensitive=False)],
     )
 
     text = 'source spaced'
@@ -1072,9 +1073,9 @@ def test_source_leading_dot_suggestions_completion(completer, complete_event, tm
     special.register_special_command(
         ...,
         'source',
-        '\\. <file>',
+        '/. <file>',
         'Execute commands from file.',
-        aliases=[special.SpecialCommandAlias('\\.', case_sensitive=False)],
+        aliases=[special.SpecialCommandAlias('/.', case_sensitive=False)],
     )
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
     success = True

@@ -1144,7 +1144,7 @@ def _tips_picker() -> str:
     except FileNotFoundError:
         pass
 
-    return random.choice(tips) if tips else r'\? or "help" for help!'
+    return random.choice(tips) if tips else r'/? or /help for help!'
 
 
 def _configure_editor(mycli: 'MyCli') -> None:
