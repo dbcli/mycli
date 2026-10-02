@@ -28,6 +28,7 @@ Internal
 * Use forward-slash forms of special commands in the behave test suite.
 * Use forward-slash forms of special commands in the pytest test suite.
 * Add a `tox` typecheck command.
+* Add a typecheck step to the `publish.yml` workflow.
 
 
 v2.27.0 (2026/09/29)
