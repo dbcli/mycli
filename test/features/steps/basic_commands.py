@@ -44,14 +44,14 @@ def step_ctrl_o_ctrl_d(context):
     context.cli.sendline("")
 
 
-@when(r'we send "\?" command')
+@when('we send "/help" command')
 def step_send_help(context):
-    r"""Send \?
+    """Send /help
 
     to see help.
 
     """
-    context.cli.sendline("\\?")
+    context.cli.sendline("/help")
     wrappers.expect_exact(context, context.conf["pager_boundary"] + "\r\n", timeout=5)
 
 
@@ -60,7 +60,7 @@ def step_send_source_command(context):
     with tempfile.NamedTemporaryFile(prefix=TEMPFILE_PREFIX) as f:
         f.write(b"SELECT 1")
         f.flush()
-        context.cli.sendline(f"\\. {f.name}")
+        context.cli.sendline(f"/source {f.name}")
         wrappers.expect_exact(context, context.conf["pager_boundary"] + "\r\n", timeout=5)
 
 

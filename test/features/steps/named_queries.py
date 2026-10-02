@@ -13,20 +13,20 @@ import wrappers
 
 @when("we save a named query")
 def step_save_named_query(context):
-    """Send \fs command."""
-    context.cli.sendline("\\fs foo SELECT 12345")
+    """Send '/favorite save' command."""
+    context.cli.sendline("/favorite save foo SELECT 12345")
 
 
 @when("we use a named query")
 def step_use_named_query(context):
-    """Send \f command."""
-    context.cli.sendline("\\f foo")
+    """Send '/favorite run' command."""
+    context.cli.sendline("/favorite run foo")
 
 
 @when("we delete a named query")
 def step_delete_named_query(context):
-    """Send \fd command."""
-    context.cli.sendline("\\fd foo")
+    """Send '/favorite delete' command."""
+    context.cli.sendline("/favorite delete foo")
 
 
 @then("we see the named query saved")
@@ -49,14 +49,14 @@ def step_see_named_query_deleted(context):
 
 @when("we save a named query with parameters")
 def step_save_named_query_with_parameters(context):
-    """Send \fs command for query with parameters."""
-    context.cli.sendline('\\fs foo_args SELECT $1, "$2", "$3"')
+    """Send '/favorite save' command for query with parameters."""
+    context.cli.sendline('/favorite save foo_args SELECT $1, "$2", "$3"')
 
 
 @when("we use named query with parameters")
 def step_use_named_query_with_parameters(context):
-    """Send \f command with parameters."""
-    context.cli.sendline('\\f foo_args 101 second "third value"')
+    """Send '/favorite run' command with parameters."""
+    context.cli.sendline('/favorite run foo_args 101 second "third value"')
 
 
 @then("we see the named query with parameters executed")
@@ -67,8 +67,8 @@ def step_see_named_query_with_parameters_executed(context):
 
 @when("we use named query with too few parameters")
 def step_use_named_query_with_too_few_parameters(context):
-    """Send \f command with missing parameters."""
-    context.cli.sendline("\\f foo_args 101")
+    """Send '/favorite run' command with missing parameters."""
+    context.cli.sendline("/favorite run foo_args 101")
 
 
 @then("we see the named query with parameters fail with missing parameters")
@@ -79,8 +79,8 @@ def step_see_named_query_with_parameters_fail_with_missing_parameters(context):
 
 @when("we use named query with too many parameters")
 def step_use_named_query_with_too_many_parameters(context):
-    """Send \f command with extra parameters."""
-    context.cli.sendline("\\f foo_args 101 102 103 104")
+    """Send '/favorite run' command with extra parameters."""
+    context.cli.sendline("/favorite run foo_args 101 102 103 104")
 
 
 @then("we see the named query with parameters fail with extra parameters")
@@ -91,12 +91,12 @@ def step_see_named_query_with_parameters_fail_with_extra_parameters(context):
 
 @when("we save a templated named query")
 def step_save_templated_named_query(context):
-    context.cli.sendline("\\fs template SELECT '{{ kv.user }}', '$1'")
+    context.cli.sendline("/favorite save template SELECT '{{ kv.user }}', '$1'")
 
 
 @when("we use a templated named query with attached values")
 def step_use_templated_named_query_with_attached_values(context):
-    context.cli.sendline("\\f template positional --user=henry")
+    context.cli.sendline("/favorite run template positional --user=henry")
 
 
 @then("we see the attached template values rendered")
@@ -106,7 +106,7 @@ def step_see_attached_template_values_rendered(context):
 
 @when("we use a templated named query with split values")
 def step_use_templated_named_query_with_split_values(context):
-    context.cli.sendline('\\f template second --user "Henry Ford"')
+    context.cli.sendline('/favorite run template second --user "Henry Ford"')
 
 
 @then("we see the split template values rendered")
