@@ -7,7 +7,7 @@ from prompt_toolkit.enums import EditingMode
 from prompt_toolkit.key_binding.vi_state import InputMode
 import pytest
 
-from mycli.packages.prompt_toolkit import toolbar as clitoolbar
+from mycli.packages.prompt_toolkit import toolbar as toolbar_module
 
 
 def make_mycli(
@@ -33,7 +33,7 @@ def make_mycli(
 def test_create_toolbar_tokens_func_shows_initial_help() -> None:
     mycli = make_mycli()
 
-    toolbar = clitoolbar.create_toolbar_tokens_func(mycli, lambda: True, None, mycli.get_custom_toolbar)
+    toolbar = toolbar_module.create_toolbar_tokens_func(mycli, lambda: True, None, mycli.get_custom_toolbar)
     result = toolbar()
 
     assert ("class:bottom-toolbar", "right-arrow accepts full-line suggestion") in result
@@ -46,7 +46,7 @@ def test_create_toolbar_tokens_func_shows_initial_help() -> None:
 def test_create_toolbar_tokens_func_clears_toolbar_error_message() -> None:
     mycli = make_mycli(toolbar_error_message="boom")
 
-    toolbar = clitoolbar.create_toolbar_tokens_func(mycli, lambda: False, None, mycli.get_custom_toolbar)
+    toolbar = toolbar_module.create_toolbar_tokens_func(mycli, lambda: False, None, mycli.get_custom_toolbar)
     first = toolbar()
     second = toolbar()
 
@@ -59,7 +59,7 @@ def test_create_toolbar_tokens_func_clears_toolbar_error_message() -> None:
 def test_create_toolbar_tokens_func_shows_prefetching() -> None:
     mycli = make_mycli(prefetching=True)
 
-    toolbar = clitoolbar.create_toolbar_tokens_func(mycli, lambda: False, None, mycli.get_custom_toolbar)
+    toolbar = toolbar_module.create_toolbar_tokens_func(mycli, lambda: False, None, mycli.get_custom_toolbar)
     result = toolbar()
 
     assert ("class:bottom-toolbar", "Prefetching schemas…") in result
@@ -72,10 +72,10 @@ def test_create_toolbar_tokens_func_shows_multiline_vi_and_refreshing(monkeypatc
         editing_mode=EditingMode.VI,
         refreshing=True,
     )
-    monkeypatch.setattr(clitoolbar.special_commands, 'get_current_delimiter', lambda: '$$')
-    monkeypatch.setattr(clitoolbar, 'get_vi_mode', lambda: 'N')
+    monkeypatch.setattr(toolbar_module.special_commands, 'get_current_delimiter', lambda: '$$')
+    monkeypatch.setattr(toolbar_module, 'get_vi_mode', lambda: 'N')
 
-    toolbar = clitoolbar.create_toolbar_tokens_func(mycli, lambda: False, None, mycli.get_custom_toolbar)
+    toolbar = toolbar_module.create_toolbar_tokens_func(mycli, lambda: False, None, mycli.get_custom_toolbar)
     result = toolbar()
 
     assert ("class:bottom-toolbar.off", "OFF") in result
@@ -89,13 +89,13 @@ def test_create_toolbar_tokens_func_shows_multiline_vi_and_refreshing(monkeypatc
 
 def test_create_toolbar_tokens_func_applies_custom_format(monkeypatch) -> None:
     mycli = make_mycli(multi_line=True, refreshing=True)
-    monkeypatch.setattr(clitoolbar.special_commands, 'get_current_delimiter', lambda: '$$')
+    monkeypatch.setattr(toolbar_module.special_commands, 'get_current_delimiter', lambda: '$$')
 
     formatted = [("class:bottom-toolbar", "CUSTOM")]
     to_formatted_text = MagicMock(return_value=formatted)
-    monkeypatch.setattr(clitoolbar, 'to_formatted_text', to_formatted_text)
+    monkeypatch.setattr(toolbar_module, 'to_formatted_text', to_formatted_text)
 
-    toolbar = clitoolbar.create_toolbar_tokens_func(mycli, lambda: True, r'\Bfmt', mycli.get_custom_toolbar)
+    toolbar = toolbar_module.create_toolbar_tokens_func(mycli, lambda: True, r'\Bfmt', mycli.get_custom_toolbar)
     result = toolbar()
 
     mycli.get_custom_toolbar.assert_called_once_with('fmt')
@@ -108,13 +108,13 @@ def test_create_toolbar_tokens_func_applies_custom_format(monkeypatch) -> None:
 
 def test_create_toolbar_tokens_func_replaces_default_toolbar_for_plain_custom_format(monkeypatch) -> None:
     mycli = make_mycli(multi_line=True, toolbar_error_message='boom', refreshing=True)
-    monkeypatch.setattr(clitoolbar.special_commands, 'get_current_delimiter', lambda: '$$')
+    monkeypatch.setattr(toolbar_module.special_commands, 'get_current_delimiter', lambda: '$$')
 
     formatted = [('class:bottom-toolbar', 'PLAIN CUSTOM')]
     to_formatted_text = MagicMock(return_value=formatted)
-    monkeypatch.setattr(clitoolbar, 'to_formatted_text', to_formatted_text)
+    monkeypatch.setattr(toolbar_module, 'to_formatted_text', to_formatted_text)
 
-    toolbar = clitoolbar.create_toolbar_tokens_func(mycli, lambda: True, 'fmt', mycli.get_custom_toolbar)
+    toolbar = toolbar_module.create_toolbar_tokens_func(mycli, lambda: True, 'fmt', mycli.get_custom_toolbar)
     result = toolbar()
 
     mycli.get_custom_toolbar.assert_called_once_with('fmt')
@@ -138,6 +138,6 @@ def test_create_toolbar_tokens_func_replaces_default_toolbar_for_plain_custom_fo
 )
 def test_get_vi_mode(monkeypatch, input_mode: InputMode, expected: str) -> None:
     app = SimpleNamespace(vi_state=SimpleNamespace(input_mode=input_mode))
-    monkeypatch.setattr(clitoolbar, 'get_app', lambda: app)
+    monkeypatch.setattr(toolbar_module, 'get_app', lambda: app)
 
-    assert clitoolbar.get_vi_mode() == expected
+    assert toolbar_module.get_vi_mode() == expected

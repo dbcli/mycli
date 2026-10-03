@@ -6,12 +6,12 @@ from typing import Any
 
 import pytest
 
-from mycli.packages.integrations.vault import vault_credentials as vault
+from mycli.packages.integrations.vault import vault_credentials
 
 
 @pytest.fixture(autouse=True)
 def clear_vault_login_cache() -> None:
-    vault._ensure_vault_user_logged_in.cache_clear()
+    vault_credentials._ensure_vault_user_logged_in.cache_clear()
 
 
 def test_get_field_from_vault_runs_kv_get_with_field_mount_and_address(
@@ -23,9 +23,9 @@ def test_get_field_from_vault_runs_kv_get_with_field_mount_and_address(
         run_calls.append({'command': command, **kwargs})
         return SimpleNamespace(returncode=0, stdout='secret\n', stderr='')
 
-    monkeypatch.setattr(vault.subprocess, 'run', fake_run)
+    monkeypatch.setattr(vault_credentials.subprocess, 'run', fake_run)
 
-    password = vault.get_field_from_vault(
+    password = vault_credentials.get_field_from_vault(
         'mysql_password',
         'database/prod',
         executable='/opt/bin/vault',
@@ -72,20 +72,20 @@ def test_get_field_from_vault_reports_missing_executable(monkeypatch: pytest.Mon
     def fake_run(*_args: Any, **_kwargs: Any) -> SimpleNamespace:
         raise FileNotFoundError()
 
-    monkeypatch.setattr(vault.subprocess, 'run', fake_run)
+    monkeypatch.setattr(vault_credentials.subprocess, 'run', fake_run)
 
-    with pytest.raises(vault.VaultError, match='Vault executable not found: missing-vault'):
-        vault.get_field_from_vault('password', 'database/prod', executable='missing-vault')
+    with pytest.raises(vault_credentials.VaultError, match='Vault executable not found: missing-vault'):
+        vault_credentials.get_field_from_vault('password', 'database/prod', executable='missing-vault')
 
 
 def test_get_field_from_vault_reports_oserror(monkeypatch: pytest.MonkeyPatch) -> None:
     def fake_run(*_args: Any, **_kwargs: Any) -> SimpleNamespace:
         raise OSError('boom')
 
-    monkeypatch.setattr(vault.subprocess, 'run', fake_run)
+    monkeypatch.setattr(vault_credentials.subprocess, 'run', fake_run)
 
-    with pytest.raises(vault.VaultError, match='Unable to run Vault executable vault: boom'):
-        vault.get_field_from_vault('password', 'database/prod')
+    with pytest.raises(vault_credentials.VaultError, match='Unable to run Vault executable vault: boom'):
+        vault_credentials.get_field_from_vault('password', 'database/prod')
 
 
 def test_get_field_from_vault_reports_nonzero_exit_without_stdout(
@@ -96,10 +96,10 @@ def test_get_field_from_vault_reports_nonzero_exit_without_stdout(
             return SimpleNamespace(returncode=0, stdout='token metadata\n', stderr='')
         return SimpleNamespace(returncode=2, stdout='secret\n', stderr='permission denied\n')
 
-    monkeypatch.setattr(vault.subprocess, 'run', fake_run)
+    monkeypatch.setattr(vault_credentials.subprocess, 'run', fake_run)
 
-    with pytest.raises(vault.VaultError) as excinfo:
-        vault.get_field_from_vault('password', 'database/prod')
+    with pytest.raises(vault_credentials.VaultError) as excinfo:
+        vault_credentials.get_field_from_vault('password', 'database/prod')
 
     assert 'permission denied' in str(excinfo.value)
     assert 'secret' not in str(excinfo.value)
@@ -122,10 +122,10 @@ def test_get_field_from_vault_reports_kv_get_start_error(
             return SimpleNamespace(returncode=0, stdout='token metadata\n', stderr='')
         raise error
 
-    monkeypatch.setattr(vault.subprocess, 'run', fake_run)
+    monkeypatch.setattr(vault_credentials.subprocess, 'run', fake_run)
 
-    with pytest.raises(vault.VaultError, match=message):
-        vault.get_field_from_vault('password', 'database/prod', executable='custom-vault')
+    with pytest.raises(vault_credentials.VaultError, match=message):
+        vault_credentials.get_field_from_vault('password', 'database/prod', executable='custom-vault')
 
 
 def test_get_field_from_vault_reports_kv_get_nonzero_exit_without_stderr(
@@ -136,10 +136,10 @@ def test_get_field_from_vault_reports_kv_get_nonzero_exit_without_stderr(
             return SimpleNamespace(returncode=0, stdout='token metadata\n', stderr='')
         return SimpleNamespace(returncode=2, stdout='', stderr='')
 
-    monkeypatch.setattr(vault.subprocess, 'run', fake_run)
+    monkeypatch.setattr(vault_credentials.subprocess, 'run', fake_run)
 
-    with pytest.raises(vault.VaultError, match='Vault command failed.*Exit code 2'):
-        vault.get_field_from_vault('password', 'database/prod')
+    with pytest.raises(vault_credentials.VaultError, match='Vault command failed.*Exit code 2'):
+        vault_credentials.get_field_from_vault('password', 'database/prod')
 
 
 def test_get_field_from_vault_reports_nonzero_exit_without_stderr(
@@ -148,7 +148,7 @@ def test_get_field_from_vault_reports_nonzero_exit_without_stderr(
     def fake_run(*_args: Any, **_kwargs: Any) -> SimpleNamespace:
         return SimpleNamespace(returncode=2, stdout='', stderr='')
 
-    monkeypatch.setattr(vault.subprocess, 'run', fake_run)
+    monkeypatch.setattr(vault_credentials.subprocess, 'run', fake_run)
 
-    with pytest.raises(vault.VaultError, match='Not logged in to Vault. You may need to run "vault login".'):
-        vault.get_field_from_vault('password', 'database/prod')
+    with pytest.raises(vault_credentials.VaultError, match='Not logged in to Vault. You may need to run "vault login".'):
+        vault_credentials.get_field_from_vault('password', 'database/prod')

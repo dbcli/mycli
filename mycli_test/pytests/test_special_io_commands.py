@@ -21,7 +21,7 @@ import pytest
 
 from mycli.packages.redirection.hybrid_redirection import parse_shell_redirect
 import mycli.packages.special_commands
-from mycli.packages.special_commands import io_commands as iocommands
+from mycli.packages.special_commands import io_commands
 from mycli.packages.special_commands.favorite_queries import (
     FavoriteQueryReloadError,
     analyze_favorite_query_template,
@@ -138,49 +138,49 @@ class FakeProcess:
 
 
 @pytest.fixture(autouse=True)
-def reset_iocommands_state(monkeypatch) -> Generator[None, None, None]:
-    original_timing = iocommands.TIMING_ENABLED
-    original_pager = iocommands.PAGER_ENABLED
-    original_show_favorite = iocommands.SHOW_FAVORITE_QUERY
-    original_force_horizontal = iocommands.force_horizontal_output
-    original_destructive_keywords = list(iocommands.DESTRUCTIVE_KEYWORDS)
-    original_once_file = iocommands.once_file
-    original_tee_file = iocommands.tee_file
-    original_written = iocommands.written_to_once_file
-    original_pipe_once = dict(iocommands.PIPE_ONCE)
-    original_favoritequeries = iocommands.favoritequeries
-    had_instance = hasattr(iocommands.FavoriteQueries, 'instance')
-    original_instance = getattr(iocommands.FavoriteQueries, 'instance', None)
-    had_dsn_instance = hasattr(iocommands.DsnAliases, 'instance')
-    original_dsn_instance = getattr(iocommands.DsnAliases, 'instance', None)
+def reset_io_commands_state(monkeypatch) -> Generator[None, None, None]:
+    original_timing = io_commands.TIMING_ENABLED
+    original_pager = io_commands.PAGER_ENABLED
+    original_show_favorite = io_commands.SHOW_FAVORITE_QUERY
+    original_force_horizontal = io_commands.force_horizontal_output
+    original_destructive_keywords = list(io_commands.DESTRUCTIVE_KEYWORDS)
+    original_once_file = io_commands.once_file
+    original_tee_file = io_commands.tee_file
+    original_written = io_commands.written_to_once_file
+    original_pipe_once = dict(io_commands.PIPE_ONCE)
+    original_favorite_queries = io_commands.favorite_queries
+    had_instance = hasattr(io_commands.FavoriteQueries, 'instance')
+    original_instance = getattr(io_commands.FavoriteQueries, 'instance', None)
+    had_dsn_instance = hasattr(io_commands.DsnAliases, 'instance')
+    original_dsn_instance = getattr(io_commands.DsnAliases, 'instance', None)
 
     yield
 
-    if iocommands.once_file and iocommands.once_file is not original_once_file:
-        iocommands.once_file.close()
-    if iocommands.tee_file and iocommands.tee_file is not original_tee_file:
-        iocommands.tee_file.close()
+    if io_commands.once_file and io_commands.once_file is not original_once_file:
+        io_commands.once_file.close()
+    if io_commands.tee_file and io_commands.tee_file is not original_tee_file:
+        io_commands.tee_file.close()
 
-    iocommands.TIMING_ENABLED = original_timing
-    iocommands.PAGER_ENABLED = original_pager
-    iocommands.SHOW_FAVORITE_QUERY = original_show_favorite
-    iocommands.force_horizontal_output = original_force_horizontal
-    iocommands.DESTRUCTIVE_KEYWORDS = original_destructive_keywords
-    iocommands.once_file = original_once_file
-    iocommands.tee_file = original_tee_file
-    iocommands.written_to_once_file = original_written
-    iocommands.PIPE_ONCE.clear()
-    iocommands.PIPE_ONCE.update(original_pipe_once)
-    iocommands.favoritequeries = original_favoritequeries
+    io_commands.TIMING_ENABLED = original_timing
+    io_commands.PAGER_ENABLED = original_pager
+    io_commands.SHOW_FAVORITE_QUERY = original_show_favorite
+    io_commands.force_horizontal_output = original_force_horizontal
+    io_commands.DESTRUCTIVE_KEYWORDS = original_destructive_keywords
+    io_commands.once_file = original_once_file
+    io_commands.tee_file = original_tee_file
+    io_commands.written_to_once_file = original_written
+    io_commands.PIPE_ONCE.clear()
+    io_commands.PIPE_ONCE.update(original_pipe_once)
+    io_commands.favorite_queries = original_favorite_queries
     if had_instance:
-        iocommands.FavoriteQueries.instance = original_instance
+        io_commands.FavoriteQueries.instance = original_instance
     if had_dsn_instance:
-        iocommands.DsnAliases.instance = original_dsn_instance
+        io_commands.DsnAliases.instance = original_dsn_instance
 
 
 @pytest.fixture
 def favorite_queries_instance(monkeypatch) -> None:
-    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', iocommands.favoritequeries, raising=False)
+    monkeypatch.setattr(io_commands.FavoriteQueries, 'instance', io_commands.favorite_queries, raising=False)
 
 
 def test_set_get_pager(monkeypatch):
@@ -418,7 +418,7 @@ def test_watch_query_full(monkeypatch: pytest.MonkeyPatch) -> None:
         if len(sleep_calls) == 4:
             raise KeyboardInterrupt
 
-    monkeypatch.setattr(iocommands, 'sleep', interrupt_after_four_calls)
+    monkeypatch.setattr(io_commands, 'sleep', interrupt_after_four_calls)
 
     with db_connection().cursor() as cur:
         results = list(mycli.packages.special_commands.io_commands.watch_query(arg=f"{watch_seconds} {query}", cur=cur))
@@ -513,46 +513,46 @@ def teardown_function():
 def test_simple_setters_and_toggle_timing() -> None:
     config = {'favorite_queries': {'demo': 'select 1'}}
 
-    iocommands.set_favorite_queries(config)
-    assert iocommands.favoritequeries.config is config
+    io_commands.set_favorite_queries(config)
+    assert io_commands.favorite_queries.config is config
 
-    iocommands.set_show_favorite_query(False)
-    assert iocommands.is_show_favorite_query() is False
+    io_commands.set_show_favorite_query(False)
+    assert io_commands.is_show_favorite_query() is False
 
-    iocommands.set_show_warnings_enabled(True)
-    assert iocommands.is_show_warnings_enabled() is True
-    iocommands.set_show_warnings_enabled(False)
-    assert iocommands.is_show_warnings_enabled() is False
+    io_commands.set_show_warnings_enabled(True)
+    assert io_commands.is_show_warnings_enabled() is True
+    io_commands.set_show_warnings_enabled(False)
+    assert io_commands.is_show_warnings_enabled() is False
 
-    iocommands.set_destructive_keywords(['drop'])
-    assert iocommands.DESTRUCTIVE_KEYWORDS == ['drop']
+    io_commands.set_destructive_keywords(['drop'])
+    assert io_commands.DESTRUCTIVE_KEYWORDS == ['drop']
 
-    iocommands.set_forced_horizontal_output(True)
-    assert iocommands.forced_horizontal() is True
+    io_commands.set_forced_horizontal_output(True)
+    assert io_commands.forced_horizontal() is True
 
-    iocommands.set_timing_enabled(False)
-    assert iocommands.toggle_timing()[0].status == 'Timing is on.'
-    assert iocommands.toggle_timing()[0].status == 'Timing is off.'
+    io_commands.set_timing_enabled(False)
+    assert io_commands.toggle_timing()[0].status == 'Timing is on.'
+    assert io_commands.toggle_timing()[0].status == 'Timing is off.'
 
 
 def test_enable_show_warnings_updates_special_state() -> None:
-    result = next(iocommands.enable_show_warnings())
+    result = next(io_commands.enable_show_warnings())
 
     assert result.status == 'Show warnings enabled.'
-    assert iocommands.is_show_warnings_enabled() is True
+    assert io_commands.is_show_warnings_enabled() is True
 
 
 def test_disable_show_warnings_updates_special_state() -> None:
-    result = next(iocommands.disable_show_warnings())
+    result = next(io_commands.disable_show_warnings())
 
     assert result.status == 'Show warnings disabled.'
-    assert iocommands.is_show_warnings_enabled() is False
+    assert io_commands.is_show_warnings_enabled() is False
 
 
 def test_editor_helpers_strip_commands() -> None:
-    assert iocommands.get_filename(r'/edit  ') is None
-    assert iocommands.get_filename('select 1') is None
-    assert iocommands.get_editor_query(r' select * from style\edit\e ') == 'select * from style'
+    assert io_commands.get_filename(r'/edit  ') is None
+    assert io_commands.get_filename('select 1') is None
+    assert io_commands.get_editor_query(r' select * from style\edit\e ') == 'select * from style'
 
 
 def test_open_external_editor_filename_paths(monkeypatch, tmp_path: Path) -> None:
@@ -560,8 +560,8 @@ def test_open_external_editor_filename_paths(monkeypatch, tmp_path: Path) -> Non
     filename.write_text('select 1\n', encoding='utf-8')
     edit_calls: list[str] = []
 
-    monkeypatch.setattr(iocommands.click, 'edit', lambda filename: edit_calls.append(filename))
-    query, message = iocommands.open_external_editor(filename=f'{filename} ignored', sql='unused')
+    monkeypatch.setattr(io_commands.click, 'edit', lambda filename: edit_calls.append(filename))
+    query, message = io_commands.open_external_editor(filename=f'{filename} ignored', sql='unused')
 
     assert query == 'select 1'
     assert message is None
@@ -570,10 +570,10 @@ def test_open_external_editor_filename_paths(monkeypatch, tmp_path: Path) -> Non
     def raise_ioerror(*_args, **_kwargs):
         raise IOError('boom')
 
-    monkeypatch.setattr(iocommands.click, 'edit', lambda filename: None)
+    monkeypatch.setattr(io_commands.click, 'edit', lambda filename: None)
     monkeypatch.setattr(builtins, 'open', raise_ioerror)
 
-    query, message = iocommands.open_external_editor(filename=str(filename))
+    query, message = io_commands.open_external_editor(filename=str(filename))
 
     assert query == ''
     assert message == f'Error reading file: {filename}'
@@ -587,54 +587,54 @@ def test_open_external_editor_without_filename(monkeypatch) -> None:
         calls.append((text, extension))
         return f'select 1\n\n{marker}ignored'
 
-    monkeypatch.setattr(iocommands.click, 'edit', fake_edit)
-    query, message = iocommands.open_external_editor(sql='select 1')
+    monkeypatch.setattr(io_commands.click, 'edit', fake_edit)
+    query, message = io_commands.open_external_editor(sql='select 1')
 
     assert query == 'select 1'
     assert message is None
     assert calls == [(f'select 1\n\n{marker}', '.sql')]
 
-    monkeypatch.setattr(iocommands.click, 'edit', lambda text, extension: None)
-    query, message = iocommands.open_external_editor(sql='select fallback')
+    monkeypatch.setattr(io_commands.click, 'edit', lambda text, extension: None)
+    query, message = io_commands.open_external_editor(sql='select fallback')
 
     assert query == 'select fallback'
     assert message is None
 
 
 def test_clip_helpers_and_clipboard(monkeypatch) -> None:
-    assert iocommands.clip_command(r'/clip select 1')
-    assert iocommands.clip_command(r'select 1 \clip')
-    assert not iocommands.clip_command(r'select 1')
-    assert iocommands.get_clip_query(r'/clip select 1\clip') == ' select 1'
+    assert io_commands.clip_command(r'/clip select 1')
+    assert io_commands.clip_command(r'select 1 \clip')
+    assert not io_commands.clip_command(r'select 1')
+    assert io_commands.get_clip_query(r'/clip select 1\clip') == ' select 1'
 
     copied: list[str] = []
-    monkeypatch.setattr(iocommands.pyperclip, 'copy', lambda text: copied.append(text))
-    assert iocommands.copy_query_to_clipboard('select 1') is None
+    monkeypatch.setattr(io_commands.pyperclip, 'copy', lambda text: copied.append(text))
+    assert io_commands.copy_query_to_clipboard('select 1') is None
     assert copied == ['select 1']
 
     def raise_runtime_error(_text: str) -> None:
         raise RuntimeError('no clipboard')
 
-    monkeypatch.setattr(iocommands.pyperclip, 'copy', raise_runtime_error)
-    assert iocommands.copy_query_to_clipboard() == 'Error clipping query: no clipboard.'
+    monkeypatch.setattr(io_commands.pyperclip, 'copy', raise_runtime_error)
+    assert io_commands.copy_query_to_clipboard() == 'Error clipping query: no clipboard.'
 
 
 @pytest.mark.parametrize('pipe', [False, True])
 def test_temporary_redirect_finalizes_empty_output(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, pipe: bool) -> None:
     process = Mock(returncode=0)
     process.communicate.return_value = ('', '')
-    monkeypatch.setattr(iocommands.subprocess, 'Popen', Mock(return_value=process))
+    monkeypatch.setattr(io_commands.subprocess, 'Popen', Mock(return_value=process))
     destination = tmp_path / 'empty.csv'
     hook = Mock()
-    monkeypatch.setattr(iocommands, '_run_post_redirect_hook', hook)
-    previous_pipe = dict(iocommands.PIPE_ONCE)
+    monkeypatch.setattr(io_commands, '_run_post_redirect_hook', hook)
+    previous_pipe = dict(io_commands.PIPE_ONCE)
 
-    with iocommands.temporary_redirect('cat' if pipe else None, '>', str(destination), 'post {}'):
-        assert iocommands.is_redirected()
+    with io_commands.temporary_redirect('cat' if pipe else None, '>', str(destination), 'post {}'):
+        assert io_commands.is_redirected()
 
     assert destination.read_text() == ''
     hook.assert_called_once_with('post {}', str(destination))
-    assert iocommands.PIPE_ONCE == previous_pipe
+    assert io_commands.PIPE_ONCE == previous_pipe
     if pipe:
         process.communicate.assert_called_once_with(input='', timeout=60)
 
@@ -649,35 +649,35 @@ def test_failed_temporary_pipe_preserves_file_and_skips_hook(
 ) -> None:
     process = Mock(returncode=1)
     process.communicate.return_value = (stdout, 'command failed\n')
-    monkeypatch.setattr(iocommands.subprocess, 'Popen', Mock(return_value=process))
+    monkeypatch.setattr(io_commands.subprocess, 'Popen', Mock(return_value=process))
     hook = Mock()
-    monkeypatch.setattr(iocommands, '_run_post_redirect_hook', hook)
+    monkeypatch.setattr(io_commands, '_run_post_redirect_hook', hook)
     secho = Mock()
-    monkeypatch.setattr(iocommands.click, 'secho', secho)
+    monkeypatch.setattr(io_commands.click, 'secho', secho)
     destination = tmp_path / 'output.csv'
     destination.write_text('existing data\n')
-    previous_pipe = dict(iocommands.PIPE_ONCE)
+    previous_pipe = dict(io_commands.PIPE_ONCE)
 
     with pytest.raises(OSError, match='process exited with nonzero code 1'):
-        with iocommands.temporary_redirect('failing-command', operator, str(destination), 'post {}'):
-            iocommands.write_pipe_once('row')
+        with io_commands.temporary_redirect('failing-command', operator, str(destination), 'post {}'):
+            io_commands.write_pipe_once('row')
 
     assert destination.read_text() == 'existing data\n'
     hook.assert_not_called()
     secho.assert_called_once_with('command failed', err=True, fg='red')
-    assert iocommands.PIPE_ONCE == previous_pipe
+    assert io_commands.PIPE_ONCE == previous_pipe
 
 
 def test_failed_pipe_without_file_preserves_diagnostic_output(monkeypatch: pytest.MonkeyPatch) -> None:
     process = Mock(returncode=1)
     process.communicate.return_value = ('partial output\n', 'command failed\n')
-    monkeypatch.setattr(iocommands.subprocess, 'Popen', Mock(return_value=process))
+    monkeypatch.setattr(io_commands.subprocess, 'Popen', Mock(return_value=process))
     output: list[str] = []
-    monkeypatch.setattr(iocommands.click, 'secho', lambda text, **kwargs: output.append(text))
+    monkeypatch.setattr(io_commands.click, 'secho', lambda text, **kwargs: output.append(text))
 
     with pytest.raises(OSError, match='process exited with nonzero code 1'):
-        with iocommands.temporary_redirect('failing-command', None, None, None):
-            iocommands.write_pipe_once('row')
+        with io_commands.temporary_redirect('failing-command', None, None, None):
+            io_commands.write_pipe_once('row')
 
     assert output == ['partial output', 'command failed']
 
@@ -691,15 +691,15 @@ def test_temporary_redirect_kills_process_on_output_error(
 ) -> None:
     if os.name == 'nt' and not windows:
         pytest.skip('POSIX shell process groups')
-    monkeypatch.setattr(iocommands, 'WIN', windows)
+    monkeypatch.setattr(io_commands, 'WIN', windows)
     killpg = Mock()
-    monkeypatch.setattr(iocommands.os, 'killpg', killpg, raising=False)
+    monkeypatch.setattr(io_commands.os, 'killpg', killpg, raising=False)
     process = Mock(pid=12345)
     process.poll.return_value = None
-    monkeypatch.setattr(iocommands.subprocess, 'Popen', Mock(return_value=process))
-    previous_pipe = dict(iocommands.PIPE_ONCE)
+    monkeypatch.setattr(io_commands.subprocess, 'Popen', Mock(return_value=process))
+    previous_pipe = dict(io_commands.PIPE_ONCE)
     with pytest.raises(type(error)) as raised:
-        with iocommands.temporary_redirect('cat', None, None, None):
+        with io_commands.temporary_redirect('cat', None, None, None):
             raise error
     assert raised.value is error
     if windows:
@@ -709,7 +709,7 @@ def test_temporary_redirect_kills_process_on_output_error(
         killpg.assert_called_once_with(process.pid, signal.SIGKILL)
         process.kill.assert_not_called()
     process.communicate.assert_called_once_with(timeout=2)
-    assert iocommands.PIPE_ONCE == previous_pipe
+    assert io_commands.PIPE_ONCE == previous_pipe
 
 
 @pytest.mark.skipif(os.name == 'nt', reason='POSIX shell process groups')
@@ -727,8 +727,8 @@ def test_temporary_redirect_abort_stops_pipeline_children(
     process = None
     try:
         with pytest.raises(type(error)) as raised:
-            with iocommands.temporary_redirect(command, None, None, None):
-                process = iocommands.PIPE_ONCE['process']
+            with io_commands.temporary_redirect(command, None, None, None):
+                process = io_commands.PIPE_ONCE['process']
                 deadline = monotonic() + 5
                 while not started.exists() and monotonic() < deadline:
                     sleep(0.01)
@@ -740,7 +740,7 @@ def test_temporary_redirect_abort_stops_pipeline_children(
         assert process.poll() is not None
         sleep(2.1)
         assert not finished.exists(), 'Child continued executing after abort'
-        assert not iocommands.is_redirected()
+        assert not io_commands.is_redirected()
     finally:
         if process is not None:
             process.communicate(timeout=5)
@@ -749,9 +749,9 @@ def test_temporary_redirect_abort_stops_pipeline_children(
 @pytest.mark.skipif(os.name == 'nt', reason='POSIX shell process groups')
 def test_kill_pipe_process_tolerates_already_exited_group(monkeypatch: pytest.MonkeyPatch) -> None:
     killpg = Mock(side_effect=ProcessLookupError())
-    monkeypatch.setattr(iocommands.os, 'killpg', killpg, raising=False)
+    monkeypatch.setattr(io_commands.os, 'killpg', killpg, raising=False)
     process = Mock(pid=12345)
-    iocommands._kill_pipe_process(process, process_group=True)
+    io_commands._kill_pipe_process(process, process_group=True)
     killpg.assert_called_once_with(12345, signal.SIGKILL)
     process.kill.assert_not_called()
 
@@ -759,23 +759,23 @@ def test_kill_pipe_process_tolerates_already_exited_group(monkeypatch: pytest.Mo
 @pytest.mark.skipif(os.name == 'nt', reason='POSIX shell process groups')
 @pytest.mark.parametrize('returncode', [0, -9])
 def test_temporary_redirect_timeout_kills_group(monkeypatch: pytest.MonkeyPatch, returncode: int) -> None:
-    monkeypatch.setattr(iocommands, 'WIN', False)
+    monkeypatch.setattr(io_commands, 'WIN', False)
     process = Mock(pid=12345, returncode=returncode)
     process.communicate.side_effect = [subprocess.TimeoutExpired('pipeline', 60), ('', '')]
     popen = Mock(return_value=process)
-    monkeypatch.setattr(iocommands.subprocess, 'Popen', popen)
+    monkeypatch.setattr(io_commands.subprocess, 'Popen', popen)
     killpg = Mock()
-    monkeypatch.setattr(iocommands.os, 'killpg', killpg, raising=False)
+    monkeypatch.setattr(io_commands.os, 'killpg', killpg, raising=False)
 
     with pytest.raises(OSError, match='process timed out after 60 seconds'):
-        with iocommands.temporary_redirect('cat | cat', None, None, None):
-            iocommands.write_pipe_once('row')
+        with io_commands.temporary_redirect('cat | cat', None, None, None):
+            io_commands.write_pipe_once('row')
 
     assert popen.call_args.kwargs['start_new_session'] is True
     killpg.assert_called_once_with(process.pid, signal.SIGKILL)
     process.communicate.assert_called_with(timeout=2)
     process.kill.assert_not_called()
-    assert not iocommands.is_redirected()
+    assert not io_commands.is_redirected()
 
 
 @pytest.mark.parametrize('stdout', ['', 'partial output'])
@@ -790,13 +790,13 @@ def test_timed_out_pipe_does_not_publish_output(
     if existing:
         destination.write_text('existing data\n')
     hook = Mock()
-    monkeypatch.setattr(iocommands, '_run_post_redirect_hook', hook)
+    monkeypatch.setattr(io_commands, '_run_post_redirect_hook', hook)
     secho = Mock()
-    monkeypatch.setattr(iocommands.click, 'secho', secho)
-    iocommands.PIPE_ONCE.update(process=process, stdin=['row'], stdout_file=str(destination), stdout_mode=mode)
+    monkeypatch.setattr(io_commands.click, 'secho', secho)
+    io_commands.PIPE_ONCE.update(process=process, stdin=['row'], stdout_file=str(destination), stdout_mode=mode)
 
     with pytest.raises(OSError, match='process timed out after 60 seconds'):
-        iocommands.flush_pipe_once_if_written('post {}', force=force)
+        io_commands.flush_pipe_once_if_written('post {}', force=force)
 
     assert process.killed
     if existing:
@@ -805,17 +805,17 @@ def test_timed_out_pipe_does_not_publish_output(
         assert not destination.exists()
     hook.assert_not_called()
     secho.assert_called_once_with('diagnostic', err=True, fg='red')
-    assert iocommands.PIPE_ONCE == {'process': None, 'stdin': [], 'stdout_file': None, 'stdout_mode': None}
+    assert io_commands.PIPE_ONCE == {'process': None, 'stdin': [], 'stdout_file': None, 'stdout_mode': None}
 
 
 def test_temporary_redirect_closes_streams_after_cleanup_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(iocommands, 'WIN', True)
+    monkeypatch.setattr(io_commands, 'WIN', True)
     process = Mock()
     process.poll.return_value = None
     process.communicate.side_effect = subprocess.TimeoutExpired('cat', 2)
-    monkeypatch.setattr(iocommands.subprocess, 'Popen', Mock(return_value=process))
+    monkeypatch.setattr(io_commands.subprocess, 'Popen', Mock(return_value=process))
     with pytest.raises(ValueError, match='format failed'):
-        with iocommands.temporary_redirect('cat', None, None, None):
+        with io_commands.temporary_redirect('cat', None, None, None):
             raise ValueError('format failed')
     for stream in (process.stdin, process.stdout, process.stderr):
         stream.close.assert_called_once_with()
@@ -823,53 +823,53 @@ def test_temporary_redirect_closes_streams_after_cleanup_timeout(monkeypatch: py
 
 
 def test_temporary_redirect_preserves_output_error_when_cleanup_fails(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(iocommands, 'WIN', True)
+    monkeypatch.setattr(io_commands, 'WIN', True)
     process = Mock()
     process.kill.side_effect = OSError('cleanup failed')
-    monkeypatch.setattr(iocommands.subprocess, 'Popen', Mock(return_value=process))
+    monkeypatch.setattr(io_commands.subprocess, 'Popen', Mock(return_value=process))
     with pytest.raises(ValueError, match='format failed'):
-        with iocommands.temporary_redirect('cat', None, None, None):
+        with io_commands.temporary_redirect('cat', None, None, None):
             raise ValueError('format failed')
-    assert iocommands.PIPE_ONCE['process'] is None
+    assert io_commands.PIPE_ONCE['process'] is None
 
 
 def test_temporary_redirect_restores_pending_redirects(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     previous_once = Mock()
-    monkeypatch.setattr(iocommands, 'once_file', previous_once)
-    monkeypatch.setattr(iocommands, 'written_to_once_file', True)
+    monkeypatch.setattr(io_commands, 'once_file', previous_once)
+    monkeypatch.setattr(io_commands, 'written_to_once_file', True)
     previous_process = Mock()
-    monkeypatch.setitem(iocommands.PIPE_ONCE, 'process', previous_process)
-    previous = dict(iocommands.PIPE_ONCE)
-    with iocommands.temporary_redirect(None, '>', str(tmp_path / 'out.csv'), None):
-        assert iocommands.once_file is not previous_once
-    assert iocommands.once_file is previous_once
-    assert iocommands.written_to_once_file is True
-    assert iocommands.PIPE_ONCE == previous
+    monkeypatch.setitem(io_commands.PIPE_ONCE, 'process', previous_process)
+    previous = dict(io_commands.PIPE_ONCE)
+    with io_commands.temporary_redirect(None, '>', str(tmp_path / 'out.csv'), None):
+        assert io_commands.once_file is not previous_once
+    assert io_commands.once_file is previous_once
+    assert io_commands.written_to_once_file is True
+    assert io_commands.PIPE_ONCE == previous
     previous_once.close.assert_not_called()
     previous_process.kill.assert_not_called()
 
 
 @pytest.mark.parametrize('pipe', [False, True])
 def test_temporary_redirect_cleans_up_after_post_hook_failure(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, pipe: bool) -> None:
-    monkeypatch.setattr(iocommands, '_kill_pipe_process', Mock())
+    monkeypatch.setattr(io_commands, '_kill_pipe_process', Mock())
     process = Mock(returncode=0)
     process.poll.return_value = 0
     process.communicate.return_value = ('row', '')
-    monkeypatch.setattr(iocommands.subprocess, 'Popen', Mock(return_value=process))
-    monkeypatch.setattr(iocommands, '_run_post_redirect_hook', Mock(side_effect=OSError('hook failed')))
+    monkeypatch.setattr(io_commands.subprocess, 'Popen', Mock(return_value=process))
+    monkeypatch.setattr(io_commands, '_run_post_redirect_hook', Mock(side_effect=OSError('hook failed')))
     with pytest.raises(OSError, match='hook failed'):
-        with iocommands.temporary_redirect('cat' if pipe else None, '>', str(tmp_path / 'out.csv'), 'post {}'):
+        with io_commands.temporary_redirect('cat' if pipe else None, '>', str(tmp_path / 'out.csv'), 'post {}'):
             pass
-    assert not iocommands.is_redirected()
+    assert not io_commands.is_redirected()
 
 
 def test_temporary_redirect_restores_state_on_process_start_failure(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(iocommands.subprocess, 'Popen', Mock(side_effect=OSError('cannot start')))
-    previous = dict(iocommands.PIPE_ONCE)
+    monkeypatch.setattr(io_commands.subprocess, 'Popen', Mock(side_effect=OSError('cannot start')))
+    previous = dict(io_commands.PIPE_ONCE)
     with pytest.raises(OSError, match='cannot start'):
-        with iocommands.temporary_redirect('cat', '>', 'out.csv', None):
+        with io_commands.temporary_redirect('cat', '>', 'out.csv', None):
             pytest.fail('Must not enter context')
-    assert iocommands.PIPE_ONCE == previous
+    assert io_commands.PIPE_ONCE == previous
 
 
 def test_set_redirect_routes_to_pipe_once_and_once(monkeypatch) -> None:
@@ -885,19 +885,19 @@ def test_set_redirect_routes_to_pipe_once_and_once(monkeypatch) -> None:
         once_calls.append((filename, mode))
         return [('once',)]
 
-    monkeypatch.setattr(iocommands, 'set_pipe_once', fake_set_pipe_once)
-    monkeypatch.setattr(iocommands, '_set_once_file', fake_set_once)
+    monkeypatch.setattr(io_commands, 'set_pipe_once', fake_set_pipe_once)
+    monkeypatch.setattr(io_commands, '_set_once_file', fake_set_once)
 
-    iocommands.PIPE_ONCE['stdout_file'] = None
-    iocommands.PIPE_ONCE['stdout_mode'] = None
-    result = iocommands.set_redirect('cat', '>', 'out.txt')
+    io_commands.PIPE_ONCE['stdout_file'] = None
+    io_commands.PIPE_ONCE['stdout_mode'] = None
+    result = io_commands.set_redirect('cat', '>', 'out.txt')
     assert result == [('pipe',)]
     assert pipe_calls == ['cat']
-    assert iocommands.PIPE_ONCE['stdout_file'] == 'out.txt'
-    assert iocommands.PIPE_ONCE['stdout_mode'] == 'w'
+    assert io_commands.PIPE_ONCE['stdout_file'] == 'out.txt'
+    assert io_commands.PIPE_ONCE['stdout_mode'] == 'w'
 
-    assert iocommands.set_redirect(None, '>', 'other.txt') == [('once',)]
-    assert iocommands.set_redirect(None, None, 'append.txt') == [('once',)]
+    assert io_commands.set_redirect(None, '>', 'other.txt') == [('once',)]
+    assert io_commands.set_redirect(None, None, 'append.txt') == [('once',)]
     assert once_calls == [('other.txt', 'w'), ('append.txt', 'a')]
 
 
@@ -913,8 +913,8 @@ def test_file_redirect_treats_option_like_filename_literally(
     unrelated.write_text('untouched\n')
     redirect = parse_shell_redirect(f'${operator} {quote}-o out.csv{quote}')
 
-    with iocommands.temporary_redirect(redirect.command, redirect.file_operator, redirect.filename, None):
-        iocommands.write_once('new')
+    with io_commands.temporary_redirect(redirect.command, redirect.file_operator, redirect.filename, None):
+        io_commands.write_once('new')
 
     assert intended.read_text() == expected
     assert unrelated.read_text() == 'untouched\n'
@@ -923,31 +923,31 @@ def test_file_redirect_treats_option_like_filename_literally(
 @pytest.mark.parametrize('filename', [None, ''])
 def test_file_redirect_requires_filename(filename: str | None) -> None:
     with pytest.raises(TypeError, match='You must provide a filename'):
-        iocommands.set_redirect(None, '>', filename)
+        io_commands.set_redirect(None, '>', filename)
 
 
 def test_execute_favorite_query_list_missing_and_bad_args(monkeypatch) -> None:
     favorite_queries = FakeFavoriteQueries({'demo': 'select $1'})
-    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+    monkeypatch.setattr(io_commands.FavoriteQueries, 'instance', favorite_queries, raising=False)
 
     listed = SQLResult(status='listed')
-    monkeypatch.setattr(iocommands, 'list_favorite_queries', lambda: [listed])
-    assert list(iocommands.execute_favorite_query(FakeCursor(), '')) == [listed]
+    monkeypatch.setattr(io_commands, 'list_favorite_queries', lambda: [listed])
+    assert list(io_commands.execute_favorite_query(FakeCursor(), '')) == [listed]
 
-    missing = list(iocommands.execute_favorite_query(FakeCursor(), 'unknown'))
+    missing = list(io_commands.execute_favorite_query(FakeCursor(), 'unknown'))
     assert missing[0].status == 'No favorite query: unknown'
 
-    bad_args = list(iocommands.execute_favorite_query(FakeCursor(), 'demo'))
+    bad_args = list(io_commands.execute_favorite_query(FakeCursor(), 'demo'))
     assert bad_args[0].status == 'missing substitution for $1 in query:\n  select $1'
 
 
 @pytest.mark.parametrize('arg', ['', 'help', 'HELP', 'unknown', 'list extra'])
 def test_favorite_command_shows_help_for_non_list_forms(monkeypatch, arg: str) -> None:
     favorite_queries = FakeFavoriteQueries({'demo': 'select 1'})
-    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+    monkeypatch.setattr(io_commands.FavoriteQueries, 'instance', favorite_queries, raising=False)
 
-    assert iocommands.favorite(arg=arg) == [SQLResult(preamble=iocommands.FAVORITE_COMMAND_HELP)]
-    assert iocommands.FAVORITE_COMMAND_HELP != favorite_queries.usage
+    assert io_commands.favorite(arg=arg) == [SQLResult(preamble=io_commands.FAVORITE_COMMAND_HELP)]
+    assert io_commands.FAVORITE_COMMAND_HELP != favorite_queries.usage
 
 
 @pytest.mark.parametrize('arg', ['list', 'LIST'])
@@ -959,17 +959,17 @@ def test_favorite_command_delegates_list(monkeypatch, arg: str) -> None:
         include_usage_values.append(include_usage)
         return [listed]
 
-    monkeypatch.setattr(iocommands, 'list_favorite_queries', list_favorite_queries)
+    monkeypatch.setattr(io_commands, 'list_favorite_queries', list_favorite_queries)
 
-    assert iocommands.favorite(arg=arg) == [listed]
+    assert io_commands.favorite(arg=arg) == [listed]
     assert include_usage_values == [False]
 
 
 def test_favorite_list_empty_does_not_show_legacy_help(monkeypatch) -> None:
     favorite_queries = FakeFavoriteQueries()
-    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+    monkeypatch.setattr(io_commands.FavoriteQueries, 'instance', favorite_queries, raising=False)
 
-    result = iocommands.favorite(arg='list')[0]
+    result = io_commands.favorite(arg='list')[0]
 
     assert result.status == '\nNo favorite queries found.'
     assert favorite_queries.usage not in result.status
@@ -978,7 +978,7 @@ def test_favorite_list_empty_does_not_show_legacy_help(monkeypatch) -> None:
 @pytest.mark.parametrize('command', ['/favorite reload', r'\favorite RELOAD'])
 def test_favorite_reload_command(monkeypatch, command: str) -> None:
     favorite_queries = FakeFavoriteQueries()
-    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+    monkeypatch.setattr(io_commands.FavoriteQueries, 'instance', favorite_queries, raising=False)
 
     assert mycli.packages.special_commands.execute(FakeCursor(), command) == [SQLResult(status='Favorite queries reloaded.')]
     assert favorite_queries.reload_calls == 1
@@ -991,19 +991,19 @@ def test_favorite_reload_command_reports_errors(monkeypatch) -> None:
         raise FavoriteQueryReloadError('unable to read user configuration file')
 
     favorite_queries.reload = fail_reload
-    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+    monkeypatch.setattr(io_commands.FavoriteQueries, 'instance', favorite_queries, raising=False)
 
-    assert iocommands.favorite(arg='reload') == [
+    assert io_commands.favorite(arg='reload') == [
         SQLResult(status='Error: Unable to reload favorite queries: unable to read user configuration file.')
     ]
 
 
 def test_favorite_reload_command_rejects_arguments() -> None:
-    assert iocommands.favorite(arg='reload extra') == [SQLResult(status='Syntax: /favorite reload.')]
+    assert io_commands.favorite(arg='reload extra') == [SQLResult(status='Syntax: /favorite reload.')]
 
 
 def test_favorite_help_documents_reload() -> None:
-    assert '> /favorite reload' in iocommands.FAVORITE_COMMAND_HELP
+    assert '> /favorite reload' in io_commands.FAVORITE_COMMAND_HELP
 
 
 @pytest.mark.parametrize(
@@ -1015,7 +1015,7 @@ def test_favorite_help_documents_reload() -> None:
 )
 def test_favorite_run_command_executes_with_arguments(monkeypatch, command: str) -> None:
     favorite_queries = FakeFavoriteQueries({'report': 'select $1; select {{ kv.user }}'})
-    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+    monkeypatch.setattr(io_commands.FavoriteQueries, 'instance', favorite_queries, raising=False)
     cursor = FakeCursor()
 
     results = list(mycli.packages.special_commands.execute(cursor, command))
@@ -1032,9 +1032,9 @@ def test_favorite_command_delegates_run_lazily(monkeypatch) -> None:
         calls.append((cur, arg))
         yield SQLResult(status='ran')
 
-    monkeypatch.setattr(iocommands, 'execute_favorite_query', execute)
+    monkeypatch.setattr(io_commands, 'execute_favorite_query', execute)
 
-    results = iocommands.favorite(cur=cursor, arg='run report positional --user=henry')
+    results = io_commands.favorite(cur=cursor, arg='run report positional --user=henry')
 
     assert calls == []
     assert list(results) == [SQLResult(status='ran')]
@@ -1042,7 +1042,7 @@ def test_favorite_command_delegates_run_lazily(monkeypatch) -> None:
 
 
 def test_favorite_command_reports_run_usage() -> None:
-    assert iocommands.favorite(arg='run') == [SQLResult(status='Syntax: /favorite run <name> [args..] [--key=value].')]
+    assert io_commands.favorite(arg='run') == [SQLResult(status='Syntax: /favorite run <name> [args..] [--key=value].')]
 
 
 @pytest.mark.parametrize(
@@ -1054,7 +1054,7 @@ def test_favorite_command_reports_run_usage() -> None:
 )
 def test_favorite_eval_command_expands_without_execution(monkeypatch, command: str) -> None:
     favorite_queries = FakeFavoriteQueries({'report': 'select $1; select {{ kv.user }}'})
-    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+    monkeypatch.setattr(io_commands.FavoriteQueries, 'instance', favorite_queries, raising=False)
     cursor = FakeCursor()
 
     assert mycli.packages.special_commands.execute(cursor, command) == [
@@ -1067,7 +1067,7 @@ def test_favorite_eval_command_expands_without_execution(monkeypatch, command: s
 
 
 def test_favorite_command_reports_eval_usage() -> None:
-    assert iocommands.favorite(arg='eval') == [SQLResult(status='Syntax: /favorite eval <name> [args..] [--key=value].')]
+    assert io_commands.favorite(arg='eval') == [SQLResult(status='Syntax: /favorite eval <name> [args..] [--key=value].')]
 
 
 @pytest.mark.parametrize(
@@ -1085,36 +1085,36 @@ def test_favorite_command_reports_eval_usage() -> None:
     ],
 )
 def test_favorite_eval_uses_active_terminator(monkeypatch, query: str, delimiter: str, expected: str) -> None:
-    monkeypatch.setattr(iocommands, 'get_current_delimiter', lambda: delimiter)
+    monkeypatch.setattr(io_commands, 'get_current_delimiter', lambda: delimiter)
 
-    assert iocommands._terminate_favorite_eval_query(query) == expected
+    assert io_commands._terminate_favorite_eval_query(query) == expected
 
 
 def test_favorite_eval_termination_does_not_change_shared_expansion(monkeypatch) -> None:
     monkeypatch.setattr(
-        iocommands.FavoriteQueries,
+        io_commands.FavoriteQueries,
         'instance',
         FakeFavoriteQueries({'report': 'select 1'}),
         raising=False,
     )
 
-    assert iocommands.expand_favorite_query('report') == ('select 1', None)
-    assert iocommands.favorite(arg='eval report')[0].command == {'name': 'set_buffer', 'text': 'select 1;'}
+    assert io_commands.expand_favorite_query('report') == ('select 1', None)
+    assert io_commands.favorite(arg='eval report')[0].command == {'name': 'set_buffer', 'text': 'select 1;'}
 
 
 @pytest.mark.parametrize('arg', ['save report select 1; select 2', 'SAVE report select 1; select 2'])
 def test_favorite_command_saves_query(monkeypatch, arg: str) -> None:
     favorite_queries = FakeFavoriteQueries()
-    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+    monkeypatch.setattr(io_commands.FavoriteQueries, 'instance', favorite_queries, raising=False)
 
-    assert iocommands.favorite(arg=arg) == [SQLResult(status='Saved.')]
+    assert io_commands.favorite(arg=arg) == [SQLResult(status='Saved.')]
     assert favorite_queries.saved == [('report', 'select 1; select 2')]
 
 
 @pytest.mark.parametrize('command', ['/favorite save report select 1', r'\favorite SAVE report select 1'])
 def test_favorite_save_command_is_registered(monkeypatch, command: str) -> None:
     favorite_queries = FakeFavoriteQueries()
-    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+    monkeypatch.setattr(io_commands.FavoriteQueries, 'instance', favorite_queries, raising=False)
 
     assert mycli.packages.special_commands.execute(None, command) == [SQLResult(status='Saved.')]
     assert favorite_queries.saved == [('report', 'select 1')]
@@ -1123,10 +1123,10 @@ def test_favorite_save_command_is_registered(monkeypatch, command: str) -> None:
 @pytest.mark.parametrize('arg', ['save', 'save report'])
 def test_favorite_command_reports_save_usage(monkeypatch, arg: str) -> None:
     favorite_queries = FakeFavoriteQueries()
-    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+    monkeypatch.setattr(io_commands.FavoriteQueries, 'instance', favorite_queries, raising=False)
     usage = 'Syntax: /favorite save <name> <query>.'
 
-    result = iocommands.favorite(arg=arg)[0]
+    result = io_commands.favorite(arg=arg)[0]
 
     if arg == 'save':
         assert result.status == usage
@@ -1137,14 +1137,14 @@ def test_favorite_command_reports_save_usage(monkeypatch, arg: str) -> None:
 @pytest.mark.parametrize('command', ['/favorite edit report', r'\favorite EDIT report'])
 def test_favorite_edit_command_edits_and_saves_query(monkeypatch, command: str) -> None:
     favorite_queries = FakeFavoriteQueries({'report': 'select 1'})
-    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+    monkeypatch.setattr(io_commands.FavoriteQueries, 'instance', favorite_queries, raising=False)
     edit_calls: list[tuple[str, str]] = []
 
     def edit(query: str, extension: str) -> str:
         edit_calls.append((query, extension))
         return 'select 2\n'
 
-    monkeypatch.setattr(iocommands.click, 'edit', edit)
+    monkeypatch.setattr(io_commands.click, 'edit', edit)
 
     assert mycli.packages.special_commands.execute(None, command) == [SQLResult(status='report: Edited.')]
     assert edit_calls == [('select 1', '.sql')]
@@ -1153,12 +1153,12 @@ def test_favorite_edit_command_edits_and_saves_query(monkeypatch, command: str) 
 
 def test_favorite_edit_command_reports_missing_and_unknown_names(monkeypatch) -> None:
     favorite_queries = FakeFavoriteQueries()
-    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+    monkeypatch.setattr(io_commands.FavoriteQueries, 'instance', favorite_queries, raising=False)
     edit_calls: list[str] = []
-    monkeypatch.setattr(iocommands.click, 'edit', lambda query, extension: edit_calls.append(query))
+    monkeypatch.setattr(io_commands.click, 'edit', lambda query, extension: edit_calls.append(query))
 
-    assert iocommands.favorite(arg='edit') == [SQLResult(status='Syntax: /favorite edit <name>.')]
-    assert iocommands.favorite(arg='edit unknown') == [SQLResult(status='No favorite query: unknown')]
+    assert io_commands.favorite(arg='edit') == [SQLResult(status='Syntax: /favorite edit <name>.')]
+    assert io_commands.favorite(arg='edit unknown') == [SQLResult(status='No favorite query: unknown')]
     assert edit_calls == []
     assert favorite_queries.saved == []
 
@@ -1176,10 +1176,10 @@ def test_favorite_edit_command_handles_unchanged_and_empty_queries(
     expected_status: str,
 ) -> None:
     favorite_queries = FakeFavoriteQueries({'report': 'select 1'})
-    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
-    monkeypatch.setattr(iocommands.click, 'edit', lambda query, extension: edited_query)
+    monkeypatch.setattr(io_commands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+    monkeypatch.setattr(io_commands.click, 'edit', lambda query, extension: edited_query)
 
-    assert iocommands.favorite(arg='edit report') == [SQLResult(status=expected_status)]
+    assert io_commands.favorite(arg='edit report') == [SQLResult(status=expected_status)]
     assert favorite_queries.saved == ([] if edited_query is None else [('report', '')])
 
 
@@ -1187,34 +1187,34 @@ def test_favorite_edit_command_handles_unchanged_and_empty_queries(
     ('error', 'expected_status'),
     [
         (KeyboardInterrupt(), 'report: Edit Cancelled.'),
-        (iocommands.click.ClickException('editor failed'), 'Unable to edit favorite "report": editor failed'),
+        (io_commands.click.ClickException('editor failed'), 'Unable to edit favorite "report": editor failed'),
         (OSError('editor unavailable'), 'Unable to edit favorite "report": editor unavailable'),
     ],
 )
 def test_favorite_edit_command_reports_editor_errors(monkeypatch, error: BaseException, expected_status: str) -> None:
     favorite_queries = FakeFavoriteQueries({'report': 'select 1'})
-    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+    monkeypatch.setattr(io_commands.FavoriteQueries, 'instance', favorite_queries, raising=False)
 
     def edit(query: str, extension: str) -> str:
         raise error
 
-    monkeypatch.setattr(iocommands.click, 'edit', edit)
+    monkeypatch.setattr(io_commands.click, 'edit', edit)
 
-    assert iocommands.favorite(arg='edit report') == [SQLResult(status=expected_status)]
+    assert io_commands.favorite(arg='edit report') == [SQLResult(status=expected_status)]
     assert favorite_queries.saved == []
 
 
 def test_favorite_edit_command_reports_save_error(monkeypatch) -> None:
     favorite_queries = FakeFavoriteQueries({'report': 'select 1'})
-    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
-    monkeypatch.setattr(iocommands.click, 'edit', lambda query, extension: 'select 2\n')
+    monkeypatch.setattr(io_commands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+    monkeypatch.setattr(io_commands.click, 'edit', lambda query, extension: 'select 2\n')
 
     def save(name: str, query: str) -> None:
         raise OSError('write failed')
 
     monkeypatch.setattr(favorite_queries, 'save', save)
 
-    assert iocommands.favorite(arg='edit report') == [SQLResult(status='Unable to edit favorite "report": write failed')]
+    assert io_commands.favorite(arg='edit report') == [SQLResult(status='Unable to edit favorite "report": write failed')]
 
 
 def test_favorite_edit_command_creates_local_override_for_shared_query(monkeypatch, tmp_path: Path) -> None:
@@ -1223,15 +1223,15 @@ def test_favorite_edit_command_creates_local_override_for_shared_query(monkeypat
     shared_file.write_text(shared_contents, encoding='utf-8')
     config_file = tmp_path / 'myclirc'
     config_file.write_text('# User config.\n', encoding='utf-8')
-    favorite_queries = iocommands.FavoriteQueries.from_config(
-        iocommands.ConfigObj(),
+    favorite_queries = io_commands.FavoriteQueries.from_config(
+        io_commands.ConfigObj(),
         str(config_file),
         str(shared_file),
     )
-    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
-    monkeypatch.setattr(iocommands.click, 'edit', lambda query, extension: 'select 2\n')
+    monkeypatch.setattr(io_commands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+    monkeypatch.setattr(io_commands.click, 'edit', lambda query, extension: 'select 2\n')
 
-    assert iocommands.favorite(arg='edit report') == [SQLResult(status='report: Edited.')]
+    assert io_commands.favorite(arg='edit report') == [SQLResult(status='report: Edited.')]
     assert shared_file.read_text(encoding='utf-8') == shared_contents
     assert 'report = select 2' in config_file.read_text(encoding='utf-8')
     assert favorite_queries.get('report') == 'select 2'
@@ -1240,16 +1240,16 @@ def test_favorite_edit_command_creates_local_override_for_shared_query(monkeypat
 @pytest.mark.parametrize('arg', ['delete report', 'DELETE report'])
 def test_favorite_command_deletes_query(monkeypatch, arg: str) -> None:
     favorite_queries = FakeFavoriteQueries({'report': 'select 1'})
-    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+    monkeypatch.setattr(io_commands.FavoriteQueries, 'instance', favorite_queries, raising=False)
 
-    assert iocommands.favorite(arg=arg) == [SQLResult(status='report: Deleted.')]
+    assert io_commands.favorite(arg=arg) == [SQLResult(status='report: Deleted.')]
     assert favorite_queries.deleted == ['report']
 
 
 @pytest.mark.parametrize('command', ['/favorite delete report', r'\favorite DELETE report'])
 def test_favorite_delete_command_is_registered(monkeypatch, command: str) -> None:
     favorite_queries = FakeFavoriteQueries({'report': 'select 1'})
-    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+    monkeypatch.setattr(io_commands.FavoriteQueries, 'instance', favorite_queries, raising=False)
 
     assert mycli.packages.special_commands.execute(None, command) == [SQLResult(status='report: Deleted.')]
     assert favorite_queries.deleted == ['report']
@@ -1257,21 +1257,21 @@ def test_favorite_delete_command_is_registered(monkeypatch, command: str) -> Non
 
 def test_favorite_command_reports_delete_usage(monkeypatch) -> None:
     favorite_queries = FakeFavoriteQueries()
-    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+    monkeypatch.setattr(io_commands.FavoriteQueries, 'instance', favorite_queries, raising=False)
     usage = 'Syntax: /favorite delete <name>.'
 
-    assert iocommands.favorite(arg='delete') == [SQLResult(status=usage)]
+    assert io_commands.favorite(arg='delete') == [SQLResult(status=usage)]
     assert favorite_queries.deleted == []
 
 
 def test_execute_favorite_query_special_and_plain_sql(monkeypatch) -> None:
     favorite_queries = FakeFavoriteQueries({'combo': 'help demo; select 1'})
-    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
-    monkeypatch.setattr(iocommands, 'SPECIAL_COMMANDS', {'help': object()})
-    monkeypatch.setattr(iocommands, 'special_execute', lambda cur, sql: [SQLResult(status=f'ran {sql}')])
+    monkeypatch.setattr(io_commands.FavoriteQueries, 'instance', favorite_queries, raising=False)
+    monkeypatch.setattr(io_commands, 'SPECIAL_COMMANDS', {'help': object()})
+    monkeypatch.setattr(io_commands, 'special_execute', lambda cur, sql: [SQLResult(status=f'ran {sql}')])
 
     cursor = FakeCursor({'select 1': None})
-    results = list(iocommands.execute_favorite_query(cursor, 'combo'))
+    results = list(io_commands.execute_favorite_query(cursor, 'combo'))
 
     assert results[0].status == 'ran help demo'
     assert results[0].preamble == '> help demo'
@@ -1281,10 +1281,10 @@ def test_execute_favorite_query_special_and_plain_sql(monkeypatch) -> None:
 
 
 def test_execute_favorite_query_returns_header_for_result_sets(monkeypatch) -> None:
-    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', FakeFavoriteQueries({'rows': 'select 2'}), raising=False)
+    monkeypatch.setattr(io_commands.FavoriteQueries, 'instance', FakeFavoriteQueries({'rows': 'select 2'}), raising=False)
 
     cursor = FakeCursor({'select 2': [('col',)]})
-    results = list(iocommands.execute_favorite_query(cursor, 'rows'))
+    results = list(io_commands.execute_favorite_query(cursor, 'rows'))
 
     assert results[0].preamble == '> select 2'
     assert results[0].header == ['col']
@@ -1317,7 +1317,7 @@ def test_parse_favorite_query_args(
     expected_positional: list[str],
     expected_template_values: dict[str, str],
 ) -> None:
-    assert iocommands.parse_favorite_query_args(arg_str) == (expected_positional, expected_template_values)
+    assert io_commands.parse_favorite_query_args(arg_str) == (expected_positional, expected_template_values)
 
 
 @pytest.mark.parametrize(
@@ -1332,18 +1332,18 @@ def test_parse_favorite_query_args(
 )
 def test_parse_favorite_query_args_rejects_invalid_options(arg_str: str, message: str) -> None:
     with pytest.raises(ValueError, match=re.escape(message)):
-        iocommands.parse_favorite_query_args(arg_str)
+        io_commands.parse_favorite_query_args(arg_str)
 
 
 def test_parse_favorite_query_args_rejects_malformed_quoting() -> None:
     with pytest.raises(ValueError, match='No closing quotation'):
-        iocommands.parse_favorite_query_args('--user="henry')
+        io_commands.parse_favorite_query_args('--user="henry')
 
 
 def test_render_favorite_query_supports_jinja_features_and_missing_values() -> None:
     query = '{% for item in kv.item_list.split(",") %}{{ item|upper }} {% endfor %}{% if kv.enabled %}enabled{% endif %} {{ kv.missing }}'
 
-    assert iocommands.render_favorite_query(query, {'item_list': 'one,two', 'enabled': 'yes'}) == 'ONE TWO enabled '
+    assert io_commands.render_favorite_query(query, {'item_list': 'one,two', 'enabled': 'yes'}) == 'ONE TWO enabled '
 
 
 def test_find_favorite_query_template_keys_excludes_jinja_locals_and_globals() -> None:
@@ -1357,7 +1357,7 @@ def test_find_favorite_query_template_keys_supports_dictionary_access_forms() ->
 
     assert find_favorite_query_template_keys(query) == {'range', 'dict', 'namespace'}
     assert (
-        iocommands.render_favorite_query(
+        io_commands.render_favorite_query(
             "{{ kv.range }} {{ kv['dict'] }} {{ kv.get('namespace') }}",
             {'range': 'one', 'dict': 'two', 'namespace': 'three'},
         )
@@ -1380,8 +1380,8 @@ def test_analyze_favorite_query_template_detects_dynamic_access(query: str, expe
 
 
 def test_render_favorite_query_rejects_unused_values() -> None:
-    with pytest.raises(iocommands.FavoriteQueryArgumentError, match='unused template variable: extra, unused'):
-        iocommands.render_favorite_query('select {{ kv.used }}', {'used': '1', 'unused': '2', 'extra': '3'})
+    with pytest.raises(io_commands.FavoriteQueryArgumentError, match='unused template variable: extra, unused'):
+        io_commands.render_favorite_query('select {{ kv.used }}', {'used': '1', 'unused': '2', 'extra': '3'})
 
 
 @pytest.mark.parametrize(
@@ -1403,21 +1403,21 @@ def test_render_favorite_query_allows_dynamic_template_values(
     template_values: dict[str, str],
     expected: str,
 ) -> None:
-    assert iocommands.render_favorite_query(query, template_values) == expected
+    assert io_commands.render_favorite_query(query, template_values) == expected
 
 
 def test_render_favorite_query_uses_sandbox() -> None:
     with pytest.raises(TemplateError, match='unsafe'):
-        iocommands.render_favorite_query("{{ ''.__class__.__mro__ }}", {})
+        io_commands.render_favorite_query("{{ ''.__class__.__mro__ }}", {})
 
 
 def test_execute_favorite_query_renders_named_and_positional_values(monkeypatch) -> None:
     query = """select '$1', '{{ kv.user }}', '{{ kv["start-date"] }}', '{{ kv.literal }}'"""
-    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', FakeFavoriteQueries({'report': query}), raising=False)
+    monkeypatch.setattr(io_commands.FavoriteQueries, 'instance', FakeFavoriteQueries({'report': query}), raising=False)
     cursor = FakeCursor()
 
     results = list(
-        iocommands.execute_favorite_query(
+        io_commands.execute_favorite_query(
             cursor,
             "report positional --user=henry --start-date 2026-08-01 --literal='$1'",
         )
@@ -1430,10 +1430,10 @@ def test_execute_favorite_query_renders_named_and_positional_values(monkeypatch)
 
 def test_execute_favorite_query_does_not_render_runtime_values_as_jinja(monkeypatch) -> None:
     query = "select '$1', '{{ kv.literal }}'"
-    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', FakeFavoriteQueries({'report': query}), raising=False)
+    monkeypatch.setattr(io_commands.FavoriteQueries, 'instance', FakeFavoriteQueries({'report': query}), raising=False)
     cursor = FakeCursor()
 
-    results = list(iocommands.execute_favorite_query(cursor, "report '{{ 2 * 3 }}' --literal='$1'"))
+    results = list(io_commands.execute_favorite_query(cursor, "report '{{ 2 * 3 }}' --literal='$1'"))
 
     expected_query = "select '{{ 2 * 3 }}', '$1'"
     assert cursor.executed == [expected_query]
@@ -1458,11 +1458,11 @@ def test_execute_favorite_query_reports_template_argument_errors_without_executi
     arg: str,
     status_prefix: str,
 ) -> None:
-    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', FakeFavoriteQueries({'report': query}), raising=False)
+    monkeypatch.setattr(io_commands.FavoriteQueries, 'instance', FakeFavoriteQueries({'report': query}), raising=False)
     cursor = FakeCursor()
 
-    results = list(iocommands.execute_favorite_query(cursor, arg))
-    expanded_query, expansion_error = iocommands.expand_favorite_query(arg)
+    results = list(io_commands.execute_favorite_query(cursor, arg))
+    expanded_query, expansion_error = io_commands.expand_favorite_query(arg)
 
     assert results[0].status is not None
     assert results[0].status.startswith(status_prefix)
@@ -1481,10 +1481,10 @@ def test_execute_favorite_query_reports_template_argument_errors_without_executi
 )
 def test_favorite_eval_errors_match_execution(monkeypatch, query: str | None, arg: str) -> None:
     queries = {} if query is None else {'report': query}
-    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', FakeFavoriteQueries(queries), raising=False)
+    monkeypatch.setattr(io_commands.FavoriteQueries, 'instance', FakeFavoriteQueries(queries), raising=False)
 
-    execution_result = next(iocommands.execute_favorite_query(FakeCursor(), arg))
-    eval_result = iocommands.favorite(arg=f'eval {arg}')[0]
+    execution_result = next(io_commands.execute_favorite_query(FakeCursor(), arg))
+    eval_result = io_commands.favorite(arg=f'eval {arg}')[0]
 
     assert eval_result.status == execution_result.status
     assert eval_result.command is None
@@ -1492,51 +1492,51 @@ def test_favorite_eval_errors_match_execution(monkeypatch, query: str | None, ar
 
 def test_list_substitute_save_delete_and_redirect_state(tmp_path: Path, monkeypatch) -> None:
     empty_favorites = FakeFavoriteQueries()
-    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', empty_favorites, raising=False)
-    empty_result = iocommands.list_favorite_queries()[0]
+    monkeypatch.setattr(io_commands.FavoriteQueries, 'instance', empty_favorites, raising=False)
+    empty_result = io_commands.list_favorite_queries()[0]
     assert empty_result.header == ['Name', 'Query']
     assert empty_result.rows == []
     assert empty_result.status == '\nNo favorite queries found.' + empty_favorites.usage
 
     populated_favorites = FakeFavoriteQueries({'demo': 'select 1'})
-    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', populated_favorites, raising=False)
-    rows_result = iocommands.list_favorite_queries()[0]
+    monkeypatch.setattr(io_commands.FavoriteQueries, 'instance', populated_favorites, raising=False)
+    rows_result = io_commands.list_favorite_queries()[0]
     assert rows_result.rows == [('demo', 'select 1')]
     assert rows_result.status == ''
 
-    assert iocommands.subst_favorite_query_args('select $1', ['x']) == ['select x', None]
-    assert iocommands.subst_favorite_query_args('select $1, $2', ['$2', 'second']) == ['select $2, second', None]
-    assert iocommands.subst_favorite_query_args('select 1', ['x']) == [None, 'query does not have substitution parameter $1:\n  select 1']
-    assert iocommands.subst_favorite_query_args('select $1, $2', ['x']) == [None, 'missing substitution for $2 in query:\n  select x, $2']
+    assert io_commands.subst_favorite_query_args('select $1', ['x']) == ['select x', None]
+    assert io_commands.subst_favorite_query_args('select $1, $2', ['$2', 'second']) == ['select $2, second', None]
+    assert io_commands.subst_favorite_query_args('select 1', ['x']) == [None, 'query does not have substitution parameter $1:\n  select 1']
+    assert io_commands.subst_favorite_query_args('select $1, $2', ['x']) == [None, 'missing substitution for $2 in query:\n  select x, $2']
 
-    assert iocommands.save_favorite_query('', cur=None)[0].status == 'Syntax: /fs name query.\n\n' + populated_favorites.usage
-    assert iocommands.save_favorite_query('onlyname', cur=None)[0].status == (
+    assert io_commands.save_favorite_query('', cur=None)[0].status == 'Syntax: /fs name query.\n\n' + populated_favorites.usage
+    assert io_commands.save_favorite_query('onlyname', cur=None)[0].status == (
         'Syntax: /fs name query.\n\n' + populated_favorites.usage + ' Err: Both name and query are required.'
     )
-    assert iocommands.save_favorite_query('saved select 2', cur=None)[0].status == 'Saved.'
+    assert io_commands.save_favorite_query('saved select 2', cur=None)[0].status == 'Saved.'
     assert populated_favorites.saved == [('saved', 'select 2')]
 
-    assert iocommands.delete_favorite_query('', cur=None)[0].status == 'Syntax: /fd name.\n\n' + populated_favorites.usage
-    assert iocommands.delete_favorite_query('saved', cur=None)[0].status == 'saved: Deleted.'
+    assert io_commands.delete_favorite_query('', cur=None)[0].status == 'Syntax: /fd name.\n\n' + populated_favorites.usage
+    assert io_commands.delete_favorite_query('saved', cur=None)[0].status == 'saved: Deleted.'
     assert populated_favorites.deleted == ['saved']
 
-    iocommands.once_file = None
-    iocommands.PIPE_ONCE['process'] = None
-    assert iocommands.is_redirected() is False
+    io_commands.once_file = None
+    io_commands.PIPE_ONCE['process'] = None
+    assert io_commands.is_redirected() is False
     redirect_file = (tmp_path / 'redirect.txt').open('w', encoding='utf-8')
-    iocommands.once_file = redirect_file
-    assert iocommands.is_redirected() is True
+    io_commands.once_file = redirect_file
+    assert io_commands.is_redirected() is True
     redirect_file.close()
-    iocommands.once_file = None
-    iocommands.PIPE_ONCE['process'] = SimpleNamespace()
-    assert iocommands.is_redirected() is True
+    io_commands.once_file = None
+    io_commands.PIPE_ONCE['process'] = SimpleNamespace()
+    assert io_commands.is_redirected() is True
 
 
 def test_dsn_command_shows_current_connection(monkeypatch) -> None:
-    monkeypatch.setattr(iocommands, 'compute_current_dsn', lambda cur: 'mysql://user@host/db')
-    monkeypatch.setattr(iocommands.DsnAliases, 'instance', FakeDsnAliases(), raising=False)
+    monkeypatch.setattr(io_commands, 'compute_current_dsn', lambda cur: 'mysql://user@host/db')
+    monkeypatch.setattr(io_commands.DsnAliases, 'instance', FakeDsnAliases(), raising=False)
 
-    result = iocommands.dsn(cur=FakeCursor(), arg='show')[0]
+    result = io_commands.dsn(cur=FakeCursor(), arg='show')[0]
 
     assert result.header == ['Current Connection']
     assert result.rows == [('mysql://user@host/db',)]
@@ -1544,10 +1544,10 @@ def test_dsn_command_shows_current_connection(monkeypatch) -> None:
 
 def test_dsn_command_shows_more_current_connection_settings(monkeypatch) -> None:
     aliases = FakeDsnAliases()
-    monkeypatch.setattr(iocommands, 'compute_current_dsn', lambda cur: 'mysql://user@host/db')
-    monkeypatch.setattr(iocommands.DsnAliases, 'instance', aliases, raising=False)
+    monkeypatch.setattr(io_commands, 'compute_current_dsn', lambda cur: 'mysql://user@host/db')
+    monkeypatch.setattr(io_commands.DsnAliases, 'instance', aliases, raising=False)
 
-    result = iocommands.dsn(cur=FakeCursor(), arg='show --more')[0]
+    result = io_commands.dsn(cur=FakeCursor(), arg='show --more')[0]
 
     assert result.header == ['Current Connection']
     assert result.rows == [('mysql://user@host/db?prompt=prod%3E+',)]
@@ -1556,9 +1556,9 @@ def test_dsn_command_shows_more_current_connection_settings(monkeypatch) -> None
 
 def test_dsn_command_lists_aliases(monkeypatch) -> None:
     aliases = FakeDsnAliases({'prod': 'mysql://prod/db'})
-    monkeypatch.setattr(iocommands.DsnAliases, 'instance', aliases, raising=False)
+    monkeypatch.setattr(io_commands.DsnAliases, 'instance', aliases, raising=False)
 
-    result = iocommands.dsn(cur=FakeCursor(), arg='list')[0]
+    result = io_commands.dsn(cur=FakeCursor(), arg='list')[0]
 
     assert result.status is None
     assert result.header == ['Alias', 'DSN']
@@ -1566,9 +1566,9 @@ def test_dsn_command_lists_aliases(monkeypatch) -> None:
 
 
 def test_dsn_command_reports_empty_alias_list(monkeypatch) -> None:
-    monkeypatch.setattr(iocommands.DsnAliases, 'instance', FakeDsnAliases(), raising=False)
+    monkeypatch.setattr(io_commands.DsnAliases, 'instance', FakeDsnAliases(), raising=False)
 
-    result = iocommands.dsn(cur=FakeCursor(), arg='list')[0]
+    result = io_commands.dsn(cur=FakeCursor(), arg='list')[0]
 
     assert result.status == 'No DSN Aliases found.'
     assert result.header == ['Alias', 'DSN']
@@ -1577,10 +1577,10 @@ def test_dsn_command_reports_empty_alias_list(monkeypatch) -> None:
 
 def test_dsn_command_saves_current_connection(monkeypatch) -> None:
     aliases = FakeDsnAliases()
-    monkeypatch.setattr(iocommands, 'compute_current_dsn', lambda cur: 'mysql://user@host/db')
-    monkeypatch.setattr(iocommands.DsnAliases, 'instance', aliases, raising=False)
+    monkeypatch.setattr(io_commands, 'compute_current_dsn', lambda cur: 'mysql://user@host/db')
+    monkeypatch.setattr(io_commands.DsnAliases, 'instance', aliases, raising=False)
 
-    result = iocommands.dsn(cur=FakeCursor(), arg='save prod')[0]
+    result = io_commands.dsn(cur=FakeCursor(), arg='save prod')[0]
 
     assert result.status == 'Saved: prod'
     assert aliases.saved == [('prod', 'mysql://user@host/db')]
@@ -1588,10 +1588,10 @@ def test_dsn_command_saves_current_connection(monkeypatch) -> None:
 
 def test_dsn_command_saves_more_current_connection_settings(monkeypatch) -> None:
     aliases = FakeDsnAliases()
-    monkeypatch.setattr(iocommands, 'compute_current_dsn', lambda cur: 'mysql://user@host/db')
-    monkeypatch.setattr(iocommands.DsnAliases, 'instance', aliases, raising=False)
+    monkeypatch.setattr(io_commands, 'compute_current_dsn', lambda cur: 'mysql://user@host/db')
+    monkeypatch.setattr(io_commands.DsnAliases, 'instance', aliases, raising=False)
 
-    result = iocommands.dsn(cur=FakeCursor(), arg='save --more prod')[0]
+    result = io_commands.dsn(cur=FakeCursor(), arg='save --more prod')[0]
 
     assert result.status == 'Saved: prod'
     assert aliases.completed == ['mysql://user@host/db']
@@ -1602,13 +1602,13 @@ def test_dsn_command_saves_more_current_connection_settings(monkeypatch) -> None
 def test_dsn_command_rejects_dash_prefixed_alias_before_computing_dsn(monkeypatch, arg: str) -> None:
     aliases = FakeDsnAliases()
     monkeypatch.setattr(
-        iocommands,
+        io_commands,
         'compute_current_dsn',
         lambda cur: pytest.fail('The DSN should not be computed for an invalid alias.'),
     )
-    monkeypatch.setattr(iocommands.DsnAliases, 'instance', aliases, raising=False)
+    monkeypatch.setattr(io_commands.DsnAliases, 'instance', aliases, raising=False)
 
-    result = iocommands.dsn(cur=FakeCursor(), arg=arg)[0]
+    result = io_commands.dsn(cur=FakeCursor(), arg=arg)[0]
 
     assert result.status == 'Error: DSN aliases cannot start with a dash.'
     assert aliases.saved == []
@@ -1616,19 +1616,19 @@ def test_dsn_command_rejects_dash_prefixed_alias_before_computing_dsn(monkeypatc
 
 
 def test_dsn_command_rejects_save_without_single_alias(monkeypatch) -> None:
-    monkeypatch.setattr(iocommands.DsnAliases, 'instance', FakeDsnAliases(), raising=False)
+    monkeypatch.setattr(io_commands.DsnAliases, 'instance', FakeDsnAliases(), raising=False)
 
     error = 'Error: a single alias-name argument is required to save.'
     for arg in ['save', 'save --more', 'save one two', 'save one --more', 'save --unknown one', 'save --more one two']:
-        assert iocommands.dsn(cur=FakeCursor(), arg=arg)[0].status == error
+        assert io_commands.dsn(cur=FakeCursor(), arg=arg)[0].status == error
 
 
 def test_dsn_command_edits_alias(monkeypatch) -> None:
     aliases = FakeDsnAliases({'prod': 'mysql://prod/db'})
-    monkeypatch.setattr(iocommands.DsnAliases, 'instance', aliases, raising=False)
-    monkeypatch.setattr(iocommands.click, 'edit', lambda dsn: '  mysql://new/db\n')
+    monkeypatch.setattr(io_commands.DsnAliases, 'instance', aliases, raising=False)
+    monkeypatch.setattr(io_commands.click, 'edit', lambda dsn: '  mysql://new/db\n')
 
-    result = iocommands.dsn(cur=FakeCursor(), arg='edit prod')[0]
+    result = io_commands.dsn(cur=FakeCursor(), arg='edit prod')[0]
 
     assert result.status == 'prod: Edited.'
     assert aliases.saved == [('prod', 'mysql://new/db')]
@@ -1636,9 +1636,9 @@ def test_dsn_command_edits_alias(monkeypatch) -> None:
 
 def test_dsn_command_reports_missing_edit_alias(monkeypatch) -> None:
     aliases = FakeDsnAliases()
-    monkeypatch.setattr(iocommands.DsnAliases, 'instance', aliases, raising=False)
+    monkeypatch.setattr(io_commands.DsnAliases, 'instance', aliases, raising=False)
 
-    assert iocommands.dsn(cur=FakeCursor(), arg='edit unknown')[0].status == 'No DSN alias: unknown'
+    assert io_commands.dsn(cur=FakeCursor(), arg='edit unknown')[0].status == 'No DSN alias: unknown'
 
 
 @pytest.mark.parametrize(
@@ -1655,10 +1655,10 @@ def test_dsn_command_handles_unchanged_and_empty_edits(
     expected_saved: list[tuple[str, str]],
 ) -> None:
     aliases = FakeDsnAliases({'prod': 'mysql://prod/db'})
-    monkeypatch.setattr(iocommands.DsnAliases, 'instance', aliases, raising=False)
-    monkeypatch.setattr(iocommands.click, 'edit', lambda dsn: editor_result)
+    monkeypatch.setattr(io_commands.DsnAliases, 'instance', aliases, raising=False)
+    monkeypatch.setattr(io_commands.click, 'edit', lambda dsn: editor_result)
 
-    result = iocommands.dsn(cur=FakeCursor(), arg='edit prod')[0]
+    result = io_commands.dsn(cur=FakeCursor(), arg='edit prod')[0]
 
     assert result.status == expected_status
     assert aliases.saved == expected_saved
@@ -1669,19 +1669,19 @@ def test_dsn_command_handles_unchanged_and_empty_edits(
     [
         (KeyboardInterrupt(), 'prod: Edit Cancelled.'),
         (OSError('editor failed'), 'Unable to edit DSN alias "prod": editor failed'),
-        (iocommands.click.ClickException('editor failed'), 'Unable to edit DSN alias "prod": editor failed'),
+        (io_commands.click.ClickException('editor failed'), 'Unable to edit DSN alias "prod": editor failed'),
     ],
 )
 def test_dsn_command_reports_edit_errors(monkeypatch, error: BaseException, expected_status: str) -> None:
     aliases = FakeDsnAliases({'prod': 'mysql://prod/db'})
-    monkeypatch.setattr(iocommands.DsnAliases, 'instance', aliases, raising=False)
+    monkeypatch.setattr(io_commands.DsnAliases, 'instance', aliases, raising=False)
 
     def fail_edit(dsn: str) -> None:
         raise error
 
-    monkeypatch.setattr(iocommands.click, 'edit', fail_edit)
+    monkeypatch.setattr(io_commands.click, 'edit', fail_edit)
 
-    assert iocommands.dsn(cur=FakeCursor(), arg='edit prod')[0].status == expected_status
+    assert io_commands.dsn(cur=FakeCursor(), arg='edit prod')[0].status == expected_status
     assert aliases.saved == []
 
 
@@ -1692,26 +1692,26 @@ def test_dsn_command_reports_edit_save_error(monkeypatch) -> None:
         raise OSError('write failed')
 
     aliases.save = fail_save
-    monkeypatch.setattr(iocommands.DsnAliases, 'instance', aliases, raising=False)
-    monkeypatch.setattr(iocommands.click, 'edit', lambda dsn: 'mysql://new/db')
+    monkeypatch.setattr(io_commands.DsnAliases, 'instance', aliases, raising=False)
+    monkeypatch.setattr(io_commands.click, 'edit', lambda dsn: 'mysql://new/db')
 
-    assert iocommands.dsn(cur=FakeCursor(), arg='edit prod')[0].status == 'Unable to edit DSN alias "prod": write failed'
+    assert io_commands.dsn(cur=FakeCursor(), arg='edit prod')[0].status == 'Unable to edit DSN alias "prod": write failed'
 
 
 def test_dsn_command_rejects_edit_without_single_valid_alias(monkeypatch) -> None:
-    monkeypatch.setattr(iocommands.DsnAliases, 'instance', FakeDsnAliases(), raising=False)
+    monkeypatch.setattr(io_commands.DsnAliases, 'instance', FakeDsnAliases(), raising=False)
 
     error = 'Error: a single alias-name argument is required to edit.'
-    assert iocommands.dsn(cur=FakeCursor(), arg='edit')[0].status == error
-    assert iocommands.dsn(cur=FakeCursor(), arg='edit one two')[0].status == error
-    assert iocommands.dsn(cur=FakeCursor(), arg='edit -legacy')[0].status == iocommands.INVALID_DSN_ALIAS_ERROR
+    assert io_commands.dsn(cur=FakeCursor(), arg='edit')[0].status == error
+    assert io_commands.dsn(cur=FakeCursor(), arg='edit one two')[0].status == error
+    assert io_commands.dsn(cur=FakeCursor(), arg='edit -legacy')[0].status == io_commands.INVALID_DSN_ALIAS_ERROR
 
 
 def test_dsn_command_deletes_alias(monkeypatch) -> None:
     aliases = FakeDsnAliases({'prod': 'mysql://prod/db'})
-    monkeypatch.setattr(iocommands.DsnAliases, 'instance', aliases, raising=False)
+    monkeypatch.setattr(io_commands.DsnAliases, 'instance', aliases, raising=False)
 
-    result = iocommands.dsn(cur=FakeCursor(), arg='delete prod')[0]
+    result = io_commands.dsn(cur=FakeCursor(), arg='delete prod')[0]
 
     assert result.status == 'Deleted: prod'
     assert aliases.deleted == ['prod']
@@ -1719,51 +1719,51 @@ def test_dsn_command_deletes_alias(monkeypatch) -> None:
 
 def test_dsn_command_rejects_legacy_dash_prefixed_alias(monkeypatch) -> None:
     aliases = FakeDsnAliases({'-legacy': 'mysql://legacy/db'})
-    monkeypatch.setattr(iocommands.DsnAliases, 'instance', aliases, raising=False)
+    monkeypatch.setattr(io_commands.DsnAliases, 'instance', aliases, raising=False)
 
-    result = iocommands.dsn(cur=FakeCursor(), arg='delete -legacy')[0]
+    result = io_commands.dsn(cur=FakeCursor(), arg='delete -legacy')[0]
 
     assert result.status == 'Error: DSN aliases cannot start with a dash.'
     assert aliases.deleted == []
 
 
 def test_dsn_command_rejects_delete_without_single_alias(monkeypatch) -> None:
-    monkeypatch.setattr(iocommands.DsnAliases, 'instance', FakeDsnAliases(), raising=False)
+    monkeypatch.setattr(io_commands.DsnAliases, 'instance', FakeDsnAliases(), raising=False)
 
-    assert iocommands.dsn(cur=FakeCursor(), arg='delete')[0].status == ('Error: a single alias-name argument is required to delete.')
-    assert iocommands.dsn(cur=FakeCursor(), arg='delete one two')[0].status == (
+    assert io_commands.dsn(cur=FakeCursor(), arg='delete')[0].status == ('Error: a single alias-name argument is required to delete.')
+    assert io_commands.dsn(cur=FakeCursor(), arg='delete one two')[0].status == (
         'Error: a single alias-name argument is required to delete.'
     )
 
 
 def test_dsn_command_shows_usage_for_help_and_unknown_subcommands(monkeypatch) -> None:
     aliases = FakeDsnAliases()
-    monkeypatch.setattr(iocommands.DsnAliases, 'instance', aliases, raising=False)
+    monkeypatch.setattr(io_commands.DsnAliases, 'instance', aliases, raising=False)
 
-    assert iocommands.dsn(cur=FakeCursor(), arg='help')[0].preamble == aliases.usage
-    assert iocommands.dsn(cur=FakeCursor(), arg='unknown')[0].preamble == aliases.usage
-    assert iocommands.dsn(cur=FakeCursor(), arg='show --unknown')[0].preamble == aliases.usage
-    assert iocommands.dsn(cur=FakeCursor(), arg='list --unknown')[0].preamble == aliases.usage
-    assert iocommands.dsn(cur=FakeCursor(), arg='list --more')[0].preamble == aliases.usage
+    assert io_commands.dsn(cur=FakeCursor(), arg='help')[0].preamble == aliases.usage
+    assert io_commands.dsn(cur=FakeCursor(), arg='unknown')[0].preamble == aliases.usage
+    assert io_commands.dsn(cur=FakeCursor(), arg='show --unknown')[0].preamble == aliases.usage
+    assert io_commands.dsn(cur=FakeCursor(), arg='list --unknown')[0].preamble == aliases.usage
+    assert io_commands.dsn(cur=FakeCursor(), arg='list --more')[0].preamble == aliases.usage
 
 
 def test_execute_system_command_usage_parse_and_cd(monkeypatch) -> None:
     usage = 'Syntax: /system [-r] [command].\n-r denotes "raw" mode, in which output is passed through without formatting.'
-    assert iocommands.execute_system_command('')[0].status == usage
-    assert iocommands.execute_system_command('-r')[0].status == usage
+    assert io_commands.execute_system_command('')[0].status == usage
+    assert io_commands.execute_system_command('-r')[0].status == usage
 
     def raise_value_error(*_args, **_kwargs):
         raise ValueError('bad quoting')
 
-    monkeypatch.setattr(iocommands.shlex, 'split', raise_value_error)
-    assert iocommands.execute_system_command('broken')[0].status == 'Cannot parse system command: bad quoting'
+    monkeypatch.setattr(io_commands.shlex, 'split', raise_value_error)
+    assert io_commands.execute_system_command('broken')[0].status == 'Cannot parse system command: bad quoting'
 
-    monkeypatch.setattr(iocommands.shlex, 'split', lambda arg, posix: ['cd', '/tmp'])
-    monkeypatch.setattr(iocommands, 'handle_cd_command', lambda command: (False, 'cd failed'))
-    assert iocommands.execute_system_command('cd /tmp')[0].status == 'cd failed'
+    monkeypatch.setattr(io_commands.shlex, 'split', lambda arg, posix: ['cd', '/tmp'])
+    monkeypatch.setattr(io_commands, 'handle_cd_command', lambda command: (False, 'cd failed'))
+    assert io_commands.execute_system_command('cd /tmp')[0].status == 'cd failed'
 
-    monkeypatch.setattr(iocommands, 'handle_cd_command', lambda command: (True, None))
-    success_result = iocommands.execute_system_command('cd /tmp')[0]
+    monkeypatch.setattr(io_commands, 'handle_cd_command', lambda command: (True, None))
+    success_result = io_commands.execute_system_command('cd /tmp')[0]
     assert success_result.status is None
     assert success_result.preamble is None
 
@@ -1788,8 +1788,8 @@ def test_execute_system_command_raw_modes(
         calls.append(cmd)
         return SimpleNamespace(returncode=returncode)
 
-    monkeypatch.setattr(iocommands.subprocess, 'run', fake_run)
-    result = iocommands.execute_system_command(command)[0]
+    monkeypatch.setattr(io_commands.subprocess, 'run', fake_run)
+    result = io_commands.execute_system_command(command)[0]
 
     assert calls
     assert result.status == expected_status
@@ -1803,14 +1803,14 @@ def test_execute_system_clear_returns_no_result(monkeypatch, command: str) -> No
         calls.append(cmd)
         return SimpleNamespace(returncode=0)
 
-    monkeypatch.setattr(iocommands.subprocess, 'run', fake_run)
+    monkeypatch.setattr(io_commands.subprocess, 'run', fake_run)
 
-    assert iocommands.execute_system_command(command) == []
+    assert io_commands.execute_system_command(command) == []
     assert calls == [[part for part in command.split() if part != '-r']]
 
 
 def test_execute_system_command_nonraw_paths(monkeypatch) -> None:
-    monkeypatch.setattr(iocommands.locale, 'getpreferredencoding', lambda do_setlocale: 'utf-8')
+    monkeypatch.setattr(io_commands.locale, 'getpreferredencoding', lambda do_setlocale: 'utf-8')
 
     timeout_process = FakeProcess(stdout=b'timed out output', stderr=b'', returncode=0, raise_timeout=True)
     timeout_popen_calls: list[tuple[list[str], int, int]] = []
@@ -1820,18 +1820,18 @@ def test_execute_system_command_nonraw_paths(monkeypatch) -> None:
         return timeout_process
 
     monkeypatch.setattr(
-        iocommands.subprocess,
+        io_commands.subprocess,
         'Popen',
         fake_timeout_popen,
     )
-    result = iocommands.execute_system_command('echo slow')[0]
+    result = io_commands.execute_system_command('echo slow')[0]
     assert result.preamble == 'timed out output'
     assert result.status is None
     assert timeout_popen_calls == [
         (
             ['echo', 'slow'],
-            iocommands.subprocess.PIPE,
-            iocommands.subprocess.PIPE,
+            io_commands.subprocess.PIPE,
+            io_commands.subprocess.PIPE,
         )
     ]
     assert timeout_process.communicate_timeouts == [60, None]
@@ -1845,18 +1845,18 @@ def test_execute_system_command_nonraw_paths(monkeypatch) -> None:
         return error_process
 
     monkeypatch.setattr(
-        iocommands.subprocess,
+        io_commands.subprocess,
         'Popen',
         fake_error_popen,
     )
-    error_result = iocommands.execute_system_command('echo fail')[0]
+    error_result = io_commands.execute_system_command('echo fail')[0]
     assert error_result.preamble == 'boom'
     assert error_result.status == 'Command exited with return code 7'
     assert error_popen_calls == [
         (
             ['echo', 'fail'],
-            iocommands.subprocess.PIPE,
-            iocommands.subprocess.PIPE,
+            io_commands.subprocess.PIPE,
+            io_commands.subprocess.PIPE,
         )
     ]
     assert error_process.communicate_timeouts == [60]
@@ -1864,27 +1864,27 @@ def test_execute_system_command_nonraw_paths(monkeypatch) -> None:
     def raise_oserror(command, stdout, stderr):
         raise OSError(0, 'bad command')
 
-    monkeypatch.setattr(iocommands.subprocess, 'Popen', raise_oserror)
-    assert iocommands.execute_system_command('echo nope')[0].status == 'OSError: bad command'
+    monkeypatch.setattr(io_commands.subprocess, 'Popen', raise_oserror)
+    assert io_commands.execute_system_command('echo nope')[0].status == 'OSError: bad command'
 
 
 def test_unset_once_and_post_redirect_hook(monkeypatch, tmp_path: Path) -> None:
     target = tmp_path / 'once.txt'
-    iocommands.once_file = target.open('w', encoding='utf-8')
-    iocommands.written_to_once_file = True
+    io_commands.once_file = target.open('w', encoding='utf-8')
+    io_commands.written_to_once_file = True
     hook_calls: list[tuple[str, str]] = []
-    original_run_post_redirect_hook = iocommands._run_post_redirect_hook
+    original_run_post_redirect_hook = io_commands._run_post_redirect_hook
 
     def fake_run_post_redirect_hook(command: str, filename: str) -> None:
         hook_calls.append((command, filename))
 
-    monkeypatch.setattr(iocommands, '_run_post_redirect_hook', fake_run_post_redirect_hook)
+    monkeypatch.setattr(io_commands, '_run_post_redirect_hook', fake_run_post_redirect_hook)
 
-    iocommands.unset_once_if_written('post {}')
+    io_commands.unset_once_if_written('post {}')
 
-    assert iocommands.once_file is None
+    assert io_commands.once_file is None
     assert hook_calls == [('post {}', str(target))]  # type: ignore[unreachable]
-    monkeypatch.setattr(iocommands, '_run_post_redirect_hook', original_run_post_redirect_hook)
+    monkeypatch.setattr(io_commands, '_run_post_redirect_hook', original_run_post_redirect_hook)
 
     run_calls: list[tuple[tuple[Any, ...], dict[str, Any]]] = []
 
@@ -1892,60 +1892,60 @@ def test_unset_once_and_post_redirect_hook(monkeypatch, tmp_path: Path) -> None:
         run_calls.append((args, kwargs))
         return SimpleNamespace(returncode=0)
 
-    monkeypatch.setattr(iocommands.subprocess, 'run', fake_run)
-    iocommands._run_post_redirect_hook('', str(target))
+    monkeypatch.setattr(io_commands.subprocess, 'run', fake_run)
+    io_commands._run_post_redirect_hook('', str(target))
     assert run_calls == []
 
-    iocommands._run_post_redirect_hook('cat {}', str(target))
-    assert run_calls[0][0] == ('cat ' + iocommands.shlex.quote(str(target)),)
+    io_commands._run_post_redirect_hook('cat {}', str(target))
+    assert run_calls[0][0] == ('cat ' + io_commands.shlex.quote(str(target)),)
     assert run_calls[0][1] == {
         'shell': True,
         'check': True,
-        'stdin': iocommands.subprocess.DEVNULL,
-        'stdout': iocommands.subprocess.DEVNULL,
-        'stderr': iocommands.subprocess.DEVNULL,
+        'stdin': io_commands.subprocess.DEVNULL,
+        'stdout': io_commands.subprocess.DEVNULL,
+        'stderr': io_commands.subprocess.DEVNULL,
     }
 
     def raise_run(*_args, **_kwargs):
         raise RuntimeError('hook failed')
 
-    monkeypatch.setattr(iocommands.subprocess, 'run', raise_run)
+    monkeypatch.setattr(io_commands.subprocess, 'run', raise_run)
     with pytest.raises(OSError, match='Redirect post hook failed: hook failed'):
-        iocommands._run_post_redirect_hook('cat {}', str(target))
+        io_commands._run_post_redirect_hook('cat {}', str(target))
 
 
 def test_run_post_redirect_hook_delegates_to_private_helper(monkeypatch) -> None:
     hook_calls: list[tuple[str, str]] = []
     monkeypatch.setattr(
-        iocommands,
+        io_commands,
         '_run_post_redirect_hook',
         lambda command, filename: hook_calls.append((command, filename)),
     )
 
-    iocommands.run_post_redirect_hook('post {}', 'output.parquet')
+    io_commands.run_post_redirect_hook('post {}', 'output.parquet')
 
     assert hook_calls == [('post {}', 'output.parquet')]
 
 
 def test_set_pipe_once_and_flush_short_circuits(monkeypatch) -> None:
     popen_calls: list[tuple[tuple[Any, ...], dict[str, Any]]] = []
-    monkeypatch.setattr(iocommands, 'WIN', True)
-    monkeypatch.setattr(iocommands.shlex, 'split', lambda arg: ['cmd', '/c', arg])
+    monkeypatch.setattr(io_commands, 'WIN', True)
+    monkeypatch.setattr(io_commands.shlex, 'split', lambda arg: ['cmd', '/c', arg])
 
     def fake_popen(*args, **kwargs) -> SimpleNamespace:
         popen_calls.append((args, kwargs))
         return SimpleNamespace()
 
-    monkeypatch.setattr(iocommands.subprocess, 'Popen', fake_popen)
+    monkeypatch.setattr(io_commands.subprocess, 'Popen', fake_popen)
 
-    assert iocommands.set_pipe_once('echo test')[0].status == ''
+    assert io_commands.set_pipe_once('echo test')[0].status == ''
     assert popen_calls == [
         (
             (['cmd', '/c', 'echo test'],),
             {
-                'stdin': iocommands.subprocess.PIPE,
-                'stdout': iocommands.subprocess.PIPE,
-                'stderr': iocommands.subprocess.PIPE,
+                'stdin': io_commands.subprocess.PIPE,
+                'stdout': io_commands.subprocess.PIPE,
+                'stderr': io_commands.subprocess.PIPE,
                 'encoding': 'UTF-8',
                 'universal_newlines': True,
                 'start_new_session': False,
@@ -1953,13 +1953,13 @@ def test_set_pipe_once_and_flush_short_circuits(monkeypatch) -> None:
         )
     ]
 
-    iocommands.PIPE_ONCE['process'] = None
-    iocommands.PIPE_ONCE['stdin'] = ['line']
-    iocommands.flush_pipe_once_if_written('post {}')
+    io_commands.PIPE_ONCE['process'] = None
+    io_commands.PIPE_ONCE['stdin'] = ['line']
+    io_commands.flush_pipe_once_if_written('post {}')
 
-    iocommands.PIPE_ONCE['process'] = SimpleNamespace()
-    iocommands.PIPE_ONCE['stdin'] = []
-    iocommands.flush_pipe_once_if_written('post {}')
+    io_commands.PIPE_ONCE['process'] = SimpleNamespace()
+    io_commands.PIPE_ONCE['stdin'] = []
+    io_commands.flush_pipe_once_if_written('post {}')
 
 
 def test_flush_pipe_once_timeout_and_nonzero_exit(monkeypatch, tmp_path: Path) -> None:
@@ -1968,22 +1968,22 @@ def test_flush_pipe_once_timeout_and_nonzero_exit(monkeypatch, tmp_path: Path) -
     hook_calls: list[tuple[str, str]] = []
     secho_calls: list[tuple[str, dict[str, Any]]] = []
 
-    monkeypatch.setattr(iocommands, '_run_post_redirect_hook', lambda command, filename: hook_calls.append((command, filename)))
-    monkeypatch.setattr(iocommands.click, 'secho', lambda message, **kwargs: secho_calls.append((message, kwargs)))
+    monkeypatch.setattr(io_commands, '_run_post_redirect_hook', lambda command, filename: hook_calls.append((command, filename)))
+    monkeypatch.setattr(io_commands.click, 'secho', lambda message, **kwargs: secho_calls.append((message, kwargs)))
 
-    iocommands.PIPE_ONCE['process'] = process
-    iocommands.PIPE_ONCE['stdin'] = ['select 1']
-    iocommands.PIPE_ONCE['stdout_file'] = str(output_file)
-    iocommands.PIPE_ONCE['stdout_mode'] = 'w'
+    io_commands.PIPE_ONCE['process'] = process
+    io_commands.PIPE_ONCE['stdin'] = ['select 1']
+    io_commands.PIPE_ONCE['stdout_file'] = str(output_file)
+    io_commands.PIPE_ONCE['stdout_mode'] = 'w'
 
     with pytest.raises(OSError, match='process timed out after 60 seconds'):
-        iocommands.flush_pipe_once_if_written('post {}')
+        io_commands.flush_pipe_once_if_written('post {}')
 
     assert process.killed is True
     assert not output_file.exists()
     assert hook_calls == []
     assert secho_calls == [('stderr data', {'err': True, 'fg': 'red'})]
-    assert iocommands.PIPE_ONCE == {
+    assert io_commands.PIPE_ONCE == {
         'process': None,
         'stdin': [],
         'stdout_file': None,
@@ -1992,17 +1992,17 @@ def test_flush_pipe_once_timeout_and_nonzero_exit(monkeypatch, tmp_path: Path) -
 
 
 def test_watch_query_usage_and_destructive_cancel(monkeypatch) -> None:
-    usage_results = list(iocommands.watch_query('', cur=SequenceCursor([None])))
+    usage_results = list(io_commands.watch_query('', cur=SequenceCursor([None])))
     assert usage_results[0].status and usage_results[0].status.startswith('Syntax: /watch')
 
-    usage_missing_statement = list(iocommands.watch_query('5 -c', cur=SequenceCursor([None])))
+    usage_missing_statement = list(io_commands.watch_query('5 -c', cur=SequenceCursor([None])))
     assert usage_missing_statement[0].status and usage_missing_statement[0].status.startswith('Syntax: /watch')
 
     secho_calls: list[str] = []
-    monkeypatch.setattr(iocommands, 'confirm_destructive_query', lambda keywords, statement: False)
-    monkeypatch.setattr(iocommands.click, 'secho', lambda message, **kwargs: secho_calls.append(message))
+    monkeypatch.setattr(io_commands, 'confirm_destructive_query', lambda keywords, statement: False)
+    monkeypatch.setattr(io_commands.click, 'secho', lambda message, **kwargs: secho_calls.append(message))
 
-    assert list(iocommands.watch_query('drop table t', cur=SequenceCursor([None]))) == []
+    assert list(io_commands.watch_query('drop table t', cur=SequenceCursor([None]))) == []
     assert secho_calls == ['Wise choice!']
 
 
@@ -2010,21 +2010,21 @@ def test_watch_query_confirmed_without_description_and_keyboard_interrupt(monkey
     cursor = SequenceCursor([None])
     secho_calls: list[str] = []
 
-    monkeypatch.setattr(iocommands, 'confirm_destructive_query', lambda keywords, statement: True)
-    monkeypatch.setattr(iocommands.click, 'secho', lambda message, **kwargs: secho_calls.append(message))
-    monkeypatch.setattr(iocommands, 'sleep', lambda seconds: (_ for _ in ()).throw(KeyboardInterrupt()))
+    monkeypatch.setattr(io_commands, 'confirm_destructive_query', lambda keywords, statement: True)
+    monkeypatch.setattr(io_commands.click, 'secho', lambda message, **kwargs: secho_calls.append(message))
+    monkeypatch.setattr(io_commands, 'sleep', lambda seconds: (_ for _ in ()).throw(KeyboardInterrupt()))
 
-    iocommands.set_pager_enabled(True)
-    generator = iocommands.watch_query('0.1 select 1;', cur=cursor)
+    io_commands.set_pager_enabled(True)
+    generator = io_commands.watch_query('0.1 select 1;', cur=cursor)
     result = next(generator)
 
     assert result.preamble == '> select 1;'
     assert result.header is None
     assert result.command == {'name': 'watch', 'seconds': 0.1}
-    assert iocommands.is_pager_enabled() is False
+    assert io_commands.is_pager_enabled() is False
 
     with pytest.raises(StopIteration):
         next(generator)
 
     assert secho_calls == ['Your call!', '']
-    assert iocommands.is_pager_enabled() is True
+    assert io_commands.is_pager_enabled() is True

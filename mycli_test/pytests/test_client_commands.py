@@ -13,8 +13,8 @@ import pytest
 from mycli import client_commands
 from mycli.client_commands import ClientCommandsMixin
 from mycli.packages import special_commands
-from mycli.packages.special_commands import main as special_main
-from mycli.packages.special_commands import source as source_commands
+from mycli.packages.special_commands import main as special_commands_main
+from mycli.packages.special_commands import source as source_command
 from mycli.packages.sql_result.sql_result import SQLResult
 
 
@@ -221,9 +221,9 @@ def test_change_redirect_format_reports_supported_formats_on_error() -> None:
 
 
 def test_config_command_returns_unquoted_configobj_value(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(special_main, 'COMMANDS', {})
-    monkeypatch.setattr(special_main, 'CASE_SENSITIVE_COMMANDS', set())
-    monkeypatch.setattr(special_main, 'CASE_INSENSITIVE_COMMANDS', set())
+    monkeypatch.setattr(special_commands_main, 'COMMANDS', {})
+    monkeypatch.setattr(special_commands_main, 'CASE_SENSITIVE_COMMANDS', set())
+    monkeypatch.setattr(special_commands_main, 'CASE_INSENSITIVE_COMMANDS', set())
     client = DummyClient()
     client.config = ConfigObj(
         StringIO('[main]\nshow_warnings = "False"\n'),
@@ -244,9 +244,9 @@ def test_config_edit_opens_user_config_for_slash_and_backslash_commands(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    monkeypatch.setattr(special_main, 'COMMANDS', {})
-    monkeypatch.setattr(special_main, 'CASE_SENSITIVE_COMMANDS', set())
-    monkeypatch.setattr(special_main, 'CASE_INSENSITIVE_COMMANDS', set())
+    monkeypatch.setattr(special_commands_main, 'COMMANDS', {})
+    monkeypatch.setattr(special_commands_main, 'CASE_SENSITIVE_COMMANDS', set())
+    monkeypatch.setattr(special_commands_main, 'CASE_INSENSITIVE_COMMANDS', set())
     client = DummyClient()
     client.myclirc_path = str(tmp_path / 'myclirc')
     write_calls: list[tuple[str, bool]] = []
@@ -817,7 +817,7 @@ def test_execute_from_file_rejects_unquoted_filename_with_spaces(monkeypatch: py
     opened_paths: list[str] = []
     monkeypatch.setattr(client_commands, 'open', lambda path: opened_paths.append(path), raising=False)
 
-    assert list(client.execute_from_file('query file.sql')) == [SQLResult(status=source_commands.INVALID_SOURCE_FILENAME, is_error=True)]
+    assert list(client.execute_from_file('query file.sql')) == [SQLResult(status=source_command.INVALID_SOURCE_FILENAME, is_error=True)]
     assert opened_paths == []
 
 
@@ -825,7 +825,7 @@ def test_execute_from_file_pages_invalid_filename_error() -> None:
     client = DummyClient()
 
     assert list(client.execute_from_file('--page query file.sql')) == [
-        SQLResult(status=source_commands.INVALID_SOURCE_FILENAME, is_error=True),
+        SQLResult(status=source_command.INVALID_SOURCE_FILENAME, is_error=True),
     ]
 
 
@@ -967,9 +967,9 @@ def test_change_prompt_format_accepts_quoted_value(
     command: str,
     quote: str,
 ) -> None:
-    monkeypatch.setattr(special_main, 'COMMANDS', {})
-    monkeypatch.setattr(special_main, 'CASE_SENSITIVE_COMMANDS', set())
-    monkeypatch.setattr(special_main, 'CASE_INSENSITIVE_COMMANDS', set())
+    monkeypatch.setattr(special_commands_main, 'COMMANDS', {})
+    monkeypatch.setattr(special_commands_main, 'CASE_SENSITIVE_COMMANDS', set())
+    monkeypatch.setattr(special_commands_main, 'CASE_INSENSITIVE_COMMANDS', set())
     client = DummyClient()
     client.prompt_format = 'old> '
     client.register_special_commands()

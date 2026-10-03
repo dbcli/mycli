@@ -21,7 +21,7 @@ import mycli.main_modes.repl as repl_mode
 from mycli.output import OutputMixin
 from mycli.packages.execution.background_runner import QueryRunner
 from mycli.packages.execution.sql_execute import SQLExecute
-from mycli.packages.special_commands import io_commands as iocommands
+from mycli.packages.special_commands import io_commands
 from mycli.packages.sql_result.sql_result import SQLResult
 from mycli_test.utils import make_streaming_cursor  # type: ignore[attr-defined]
 
@@ -1999,7 +1999,7 @@ def test_transform_shell_redirect_writes_formatted_transformed_rows(
     suffix: str,
 ) -> None:
     patch_repl_runtime_defaults(monkeypatch)
-    monkeypatch.setattr(repl_mode.special_commands, 'is_redirected', iocommands.is_redirected)
+    monkeypatch.setattr(repl_mode.special_commands, 'is_redirected', io_commands.is_redirected)
     monkeypatch.setattr(repl_mode.special_commands, 'is_explorer_output', lambda: False)
     sql = SimpleNamespace(dbname='db', connection_id=0, run=Mock(return_value=iter([SQLResult(header=['id'], rows=[(1,), (2,)])])))
     cli = make_repl_cli(sql)
@@ -2014,7 +2014,7 @@ def test_transform_shell_redirect_writes_formatted_transformed_rows(
     destination = tmp_path / 'result rows.csv'
     destination.write_text('old\n')
     hook = Mock()
-    monkeypatch.setattr(iocommands, '_run_post_redirect_hook', hook)
+    monkeypatch.setattr(io_commands, '_run_post_redirect_hook', hook)
     command = f'SELECT id FROM orders .| df.head(1) {suffix} "{destination}"'
 
     repl_mode._one_iteration(cli, repl_mode.ReplState(), command)
@@ -2027,7 +2027,7 @@ def test_transform_shell_redirect_writes_formatted_transformed_rows(
         [''] if suffix.startswith('$|') else []
     )
     hook.assert_called_once_with(None, str(destination))
-    assert not iocommands.is_redirected()
+    assert not io_commands.is_redirected()
 
 
 @pytest.mark.parametrize('error', [pymysql.err.InterfaceError(0, ''), pymysql.err.OperationalError(2006, 'lost')])
@@ -2083,7 +2083,7 @@ def test_transform_redirect_output_failure_does_not_leak_to_next_query(
     repl_mode._one_iteration(cli, repl_mode.ReplState(), f'SELECT 1 .| df $> "{destination}"')
 
     assert not cli.query_history[-1].successful
-    assert not iocommands.is_redirected()
+    assert not io_commands.is_redirected()
     assert destination.read_text() == ''
     cli.output = Mock()
     repl_mode._one_iteration(cli, repl_mode.ReplState(), 'SELECT 2')

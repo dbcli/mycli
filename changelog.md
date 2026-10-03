@@ -21,6 +21,7 @@ Internal
 * Move `test` directory to `mycli_test`.
 * Ignore recent refactoring move commits in `git-blame`.
 * Recast `cli_is_multiline()` as `repl_is_multiline()`.
+* Align some imports and variable names to match filename moves.
 
 
 v2.28.0 (2026/10/02)

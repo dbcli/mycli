@@ -17,7 +17,7 @@ from pymysql.cursors import Cursor, SSCursor
 
 from mycli.constants import ER_MUST_CHANGE_PASSWORD
 from mycli.packages.execution.background_runner import QueryRunner
-from mycli.packages.special_commands import io_commands as iocommands
+from mycli.packages.special_commands import io_commands
 from mycli.packages.special_commands.main import CommandNotFound, execute
 from mycli.packages.sql_result.sql_result import SQLResult
 
@@ -256,7 +256,7 @@ class SQLExecute:
         defer_connect = False
 
         client_flag = pymysql.constants.CLIENT.INTERACTIVE
-        if init_command and len(list(iocommands.split_queries(init_command))) > 1:
+        if init_command and len(list(io_commands.split_queries(init_command))) > 1:
             client_flag |= pymysql.constants.CLIENT.MULTI_STATEMENTS
         client_flag |= pymysql.constants.CLIENT.HANDLE_EXPIRED_PASSWORDS
 
@@ -402,27 +402,27 @@ class SQLExecute:
         # Split the sql into separate queries and run each one.
         # Unless it's saving a favorite query, in which case we
         # want to save them all together.
-        if iocommands.is_favorite_save_command(statement):
+        if io_commands.is_favorite_save_command(statement):
             components: Iterable[str] = [statement]
         else:
-            components = iocommands.split_queries(statement)
+            components = io_commands.split_queries(statement)
 
         # todo: split_queries should probably split on \G and friends, and
         # settings such as expanded output should be reset between queries.
         for sql in components:
             # \x is treated specially since we have to set the explorer output.
             if sql.endswith("\\x"):
-                iocommands.set_explorer_output(True)
+                io_commands.set_explorer_output(True)
                 sql = sql[:-2].strip()
             # \G is treated specially since we have to set the expanded output.
             if sql.endswith("\\G"):
-                iocommands.set_expanded_output(True)
+                io_commands.set_expanded_output(True)
                 sql = sql[:-2].strip()
             # \g is treated specially since we might want collapsed output when
             # auto vertical output is enabled
             elif sql.endswith('\\g'):
-                iocommands.set_expanded_output(False)
-                iocommands.set_forced_horizontal_output(True)
+                io_commands.set_expanded_output(False)
+                io_commands.set_forced_horizontal_output(True)
                 sql = sql[:-2].strip()
 
             assert isinstance(self.conn, Connection)

@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Any, cast
 
-from mycli.packages.prompt_toolkit import utils as ptoolkit_utils
+from mycli.packages.prompt_toolkit import utils as prompt_toolkit_utils
 
 
 @dataclass
@@ -20,9 +20,9 @@ def test_safe_invalidate_display_runs_empty_terminal_print(monkeypatch) -> None:
         callbacks.append(callback)
         callback()
 
-    monkeypatch.setattr(ptoolkit_utils, 'run_in_terminal', fake_run_in_terminal)
+    monkeypatch.setattr(prompt_toolkit_utils, 'run_in_terminal', fake_run_in_terminal)
 
-    ptoolkit_utils.safe_invalidate_display(cast(Any, app))
+    prompt_toolkit_utils.safe_invalidate_display(cast(Any, app))
 
     assert len(callbacks) == 1
     assert app.print_calls == ['']
@@ -34,8 +34,8 @@ def test_safe_invalidate_display_swallows_runtime_error(monkeypatch) -> None:
     def fail_run_in_terminal(_callback) -> None:
         raise RuntimeError('application is exiting')
 
-    monkeypatch.setattr(ptoolkit_utils, 'run_in_terminal', fail_run_in_terminal)
+    monkeypatch.setattr(prompt_toolkit_utils, 'run_in_terminal', fail_run_in_terminal)
 
-    ptoolkit_utils.safe_invalidate_display(cast(Any, app))
+    prompt_toolkit_utils.safe_invalidate_display(cast(Any, app))
 
     assert app.print_calls == []

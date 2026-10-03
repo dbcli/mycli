@@ -57,7 +57,7 @@ PIPE_ONCE: dict[str, Any] = {
     'stdout_mode': None,
 }
 delimiter_command = DelimiterCommand()
-favoritequeries = FavoriteQueries(ConfigObj())
+favorite_queries = FavoriteQueries(ConfigObj())
 dsn_aliases = DsnAliases(ConfigObj())
 DESTRUCTIVE_KEYWORDS: list[str] = []
 SHOW_WARNINGS_ENABLED: bool = False
@@ -68,8 +68,8 @@ class FavoriteQueryArgumentError(ValueError):
 
 
 def set_favorite_queries(config):
-    global favoritequeries
-    favoritequeries = FavoriteQueries(config)
+    global favorite_queries
+    favorite_queries = FavoriteQueries(config)
 
 
 def set_timing_enabled(val: bool) -> None:

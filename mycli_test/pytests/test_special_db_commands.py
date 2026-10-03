@@ -6,8 +6,8 @@ from pymysql import Error, ProgrammingError
 import pytest
 
 from mycli.packages.completion.completion_engine import suggest_type
-from mycli.packages.special_commands import db_commands as dbcommands
-from mycli.packages.special_commands import main as special_main
+from mycli.packages.special_commands import db_commands
+from mycli.packages.special_commands import main as special_commands_main
 from mycli.packages.special_commands.db_commands import list_databases, list_tables, ping, status
 from mycli.packages.sql_result.sql_result import SQLResult
 from mycli_test.pytests.test_completion_engine import sorted_dicts
@@ -216,23 +216,23 @@ def test_ping_rejects_arguments_without_contacting_server() -> None:
 
 
 def test_ping_command_registration() -> None:
-    command = special_main.COMMANDS[r'/ping']
+    command = special_commands_main.COMMANDS[r'/ping']
 
     assert command.handler is ping
     assert command.usage == '/ping'
     assert command.description == 'Check connection.'
     assert command.completion_snippet == 'check connection'
-    assert special_main.COMMANDS['/ping'].handler is ping
+    assert special_commands_main.COMMANDS['/ping'].handler is ping
 
 
 def test_status_uses_global_queries_decodes_bytes_and_formats_stats(monkeypatch) -> None:
-    monkeypatch.setattr(dbcommands, '__version__', '9.9.9')
-    monkeypatch.setattr(dbcommands.platform, 'python_implementation', lambda: 'CPython')
-    monkeypatch.setattr(dbcommands.platform, 'python_version', lambda: '3.14.0')
-    monkeypatch.setattr(dbcommands.iocommands, 'is_pager_enabled', lambda: True)
-    monkeypatch.setattr(dbcommands, 'get_ssl_cipher', lambda cur: 'TLS_AES_256_GCM_SHA384')
-    monkeypatch.setattr(dbcommands, 'get_ssl_version', lambda cur: 'TLSv1.3')
-    monkeypatch.setattr(dbcommands, 'format_uptime', lambda uptime: f'{uptime} seconds')
+    monkeypatch.setattr(db_commands, '__version__', '9.9.9')
+    monkeypatch.setattr(db_commands.platform, 'python_implementation', lambda: 'CPython')
+    monkeypatch.setattr(db_commands.platform, 'python_version', lambda: '3.14.0')
+    monkeypatch.setattr(db_commands.io_commands, 'is_pager_enabled', lambda: True)
+    monkeypatch.setattr(db_commands, 'get_ssl_cipher', lambda cur: 'TLS_AES_256_GCM_SHA384')
+    monkeypatch.setattr(db_commands, 'get_ssl_version', lambda cur: 'TLSv1.3')
+    monkeypatch.setattr(db_commands, 'format_uptime', lambda uptime: f'{uptime} seconds')
     monkeypatch.setenv('PAGER', 'less -SR')
 
     cursor = FakeCursor(
@@ -294,12 +294,12 @@ def test_status_uses_global_queries_decodes_bytes_and_formats_stats(monkeypatch)
 
 
 def test_status_falls_back_to_show_status_and_handles_empty_selects(monkeypatch) -> None:
-    monkeypatch.setattr(dbcommands, '__version__', '1.0.0')
-    monkeypatch.setattr(dbcommands.platform, 'python_implementation', lambda: 'CPython')
-    monkeypatch.setattr(dbcommands.platform, 'python_version', lambda: '3.11.0')
-    monkeypatch.setattr(dbcommands.iocommands, 'is_pager_enabled', lambda: False)
-    monkeypatch.setattr(dbcommands, 'get_ssl_version', lambda cur: 'none')
-    monkeypatch.setattr(dbcommands, 'format_uptime', lambda uptime: f'{uptime} seconds')
+    monkeypatch.setattr(db_commands, '__version__', '1.0.0')
+    monkeypatch.setattr(db_commands.platform, 'python_implementation', lambda: 'CPython')
+    monkeypatch.setattr(db_commands.platform, 'python_version', lambda: '3.11.0')
+    monkeypatch.setattr(db_commands.io_commands, 'is_pager_enabled', lambda: False)
+    monkeypatch.setattr(db_commands, 'get_ssl_version', lambda cur: 'none')
+    monkeypatch.setattr(db_commands, 'format_uptime', lambda uptime: f'{uptime} seconds')
 
     cursor = FakeCursor(
         connection=FakeConnection(unix_socket='/tmp/mysql.sock'),
@@ -346,10 +346,10 @@ def test_status_falls_back_to_show_status_and_handles_empty_selects(monkeypatch)
 
 
 def test_status_uses_system_default_pager_when_enabled_without_env(monkeypatch) -> None:
-    monkeypatch.setattr(dbcommands.iocommands, 'is_pager_enabled', lambda: True)
-    monkeypatch.setattr(dbcommands, 'get_ssl_version', lambda cur: 'TLS')
-    monkeypatch.setattr(dbcommands.platform, 'python_implementation', lambda: 'CPython')
-    monkeypatch.setattr(dbcommands.platform, 'python_version', lambda: '3.14.0')
+    monkeypatch.setattr(db_commands.io_commands, 'is_pager_enabled', lambda: True)
+    monkeypatch.setattr(db_commands, 'get_ssl_version', lambda cur: 'TLS')
+    monkeypatch.setattr(db_commands.platform, 'python_implementation', lambda: 'CPython')
+    monkeypatch.setattr(db_commands.platform, 'python_version', lambda: '3.14.0')
     monkeypatch.delenv('PAGER', raising=False)
 
     cursor = FakeCursor(

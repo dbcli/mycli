@@ -5,8 +5,8 @@ import shutil
 import sys
 import tempfile
 
-import db_utils as dbutils
-import fixture_utils as fixutils
+import db_utils
+import fixture_utils
 import pexpect
 
 from mycli.constants import DEFAULT_HOST, DEFAULT_PORT, DEFAULT_USER
@@ -67,17 +67,17 @@ def before_all(context):
     shutil.copyfile(source_myclirc, context.myclirc_copy)
     context.conf['myclirc'] = context.myclirc_copy
 
-    context.cn = dbutils.create_db(
+    context.cn = db_utils.create_db(
         context.conf["host"], context.conf["port"], context.conf["user"], context.conf["pass"], context.conf["dbname"]
     )
 
-    context.fixture_data = fixutils.read_fixture_files()
+    context.fixture_data = fixture_utils.read_fixture_files()
 
 
 def after_all(context):
     """Unset env parameters."""
-    dbutils.close_cn(context.cn)
-    dbutils.drop_db(context.conf["host"], context.conf["port"], context.conf["user"], context.conf["pass"], context.conf["dbname"])
+    db_utils.close_cn(context.cn)
+    db_utils.drop_db(context.conf["host"], context.conf["port"], context.conf["user"], context.conf["pass"], context.conf["dbname"])
     try:
         if os.path.exists(context.conf["defaults-file"]):
             os.remove(context.conf["defaults-file"])

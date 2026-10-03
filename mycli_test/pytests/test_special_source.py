@@ -1,6 +1,6 @@
 import pytest
 
-from mycli.packages.special_commands import main as special_main
+from mycli.packages.special_commands import main as special_commands_main
 from mycli.packages.special_commands import source
 
 
@@ -123,24 +123,24 @@ def test_source_special_command_policy(
 def test_registered_source_special_command_uses_case_insensitive_registry_lookup(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    registered = special_main.SpecialCommand(
+    registered = special_commands_main.SpecialCommand(
         handler=lambda: None,
         command='status',
         usage='/status',
         description='Show status.',
-        arg_type=special_main.ArgType.NO_ARGUMENT,
+        arg_type=special_commands_main.ArgType.NO_ARGUMENT,
         hidden=False,
         case_sensitive=False,
         aliases=None,
         backslash_only=False,
     )
-    monkeypatch.setattr(special_main, 'COMMANDS', {'/status': registered})
+    monkeypatch.setattr(special_commands_main, 'COMMANDS', {'/status': registered})
 
     assert source._registered_special_command('/STATUS verbose') == ('status', 'verbose')
 
 
 def test_registered_source_special_command_rejects_unknown_command(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(special_main, 'COMMANDS', {})
+    monkeypatch.setattr(special_commands_main, 'COMMANDS', {})
 
     assert source._registered_special_command('/unknown') is None
     assert source.source_special_command_is_safe('/unknown') is False
