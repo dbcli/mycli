@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from mycli.packages.prompt_toolkit import multiline as clibuffer
+from mycli.packages.prompt_toolkit import multiline
 
 
 @dataclass
@@ -38,8 +38,8 @@ def make_app_for_text(text: str) -> tuple[SimpleNamespace, DummyLayout]:
 def test_multiline_exception_handles_favorite_queries_only_after_blank_line(command: str) -> None:
     text = f'{command} demo select 1; select 2'
 
-    assert clibuffer._multiline_exception(text) is False
-    assert clibuffer._multiline_exception(f'{text}\n') is True
+    assert multiline._multiline_exception(text) is False
+    assert multiline._multiline_exception(f'{text}\n') is True
 
 
 @pytest.mark.parametrize(
@@ -63,22 +63,22 @@ def test_multiline_exception_detects_commands_terminators_and_plain_sql(
     text: str,
     expected: bool,
 ) -> None:
-    monkeypatch.setattr(clibuffer.iocommands, 'get_current_delimiter', lambda: '//')
-    monkeypatch.setattr(clibuffer, 'CASE_SENSITIVE_COMMANDS', {'Camel'})
-    monkeypatch.setattr(clibuffer, 'CASE_INSENSITIVE_COMMANDS', {'help', 'exit'})
+    monkeypatch.setattr(multiline.iocommands, 'get_current_delimiter', lambda: '//')
+    monkeypatch.setattr(multiline, 'CASE_SENSITIVE_COMMANDS', {'Camel'})
+    monkeypatch.setattr(multiline, 'CASE_INSENSITIVE_COMMANDS', {'help', 'exit'})
 
-    assert clibuffer._multiline_exception(text) is expected
+    assert multiline._multiline_exception(text) is expected
 
 
-def test_cli_is_multiline_returns_false_when_multiline_mode_is_disabled(monkeypatch) -> None:
+def test_repl_is_multiline_returns_false_when_multiline_mode_is_disabled(monkeypatch) -> None:
     mycli = SimpleNamespace(multi_line=False)
 
     def fail_get_app() -> None:
         raise AssertionError('get_app() should not be called when multiline mode is disabled')
 
-    monkeypatch.setattr(clibuffer, 'get_app', fail_get_app)
+    monkeypatch.setattr(multiline, 'get_app', fail_get_app)
 
-    multiline_filter = clibuffer.cli_is_multiline(mycli)
+    multiline_filter = multiline.repl_is_multiline(mycli)
 
     assert multiline_filter() is False
 
@@ -88,11 +88,11 @@ def test_multiline_exception_recognizes_non_backslashed_special_commands_with_ge
     monkeypatch,
     text: str,
 ) -> None:
-    monkeypatch.setattr(clibuffer.iocommands, 'get_current_delimiter', lambda: ';')
-    monkeypatch.setattr(clibuffer, 'CASE_SENSITIVE_COMMANDS', {'Camel'})
-    monkeypatch.setattr(clibuffer, 'CASE_INSENSITIVE_COMMANDS', {'help', 'exit'})
+    monkeypatch.setattr(multiline.iocommands, 'get_current_delimiter', lambda: ';')
+    monkeypatch.setattr(multiline, 'CASE_SENSITIVE_COMMANDS', {'Camel'})
+    monkeypatch.setattr(multiline, 'CASE_INSENSITIVE_COMMANDS', {'help', 'exit'})
 
-    assert clibuffer._multiline_exception(text) is True
+    assert multiline._multiline_exception(text) is True
 
 
 @pytest.mark.parametrize(
@@ -102,7 +102,7 @@ def test_multiline_exception_recognizes_non_backslashed_special_commands_with_ge
         ('help select', False),
     ),
 )
-def test_cli_is_multiline_uses_buffer_text_when_multiline_mode_is_enabled(
+def test_repl_is_multiline_uses_buffer_text_when_multiline_mode_is_enabled(
     monkeypatch,
     text: str,
     expected: bool,
@@ -110,12 +110,12 @@ def test_cli_is_multiline_uses_buffer_text_when_multiline_mode_is_enabled(
     app, layout = make_app_for_text(text)
     mycli = SimpleNamespace(multi_line=True)
 
-    monkeypatch.setattr(clibuffer, 'get_app', lambda: app)
-    monkeypatch.setattr(clibuffer.iocommands, 'get_current_delimiter', lambda: ';')
-    monkeypatch.setattr(clibuffer, 'CASE_SENSITIVE_COMMANDS', {'Camel'})
-    monkeypatch.setattr(clibuffer, 'CASE_INSENSITIVE_COMMANDS', {'help'})
+    monkeypatch.setattr(multiline, 'get_app', lambda: app)
+    monkeypatch.setattr(multiline.iocommands, 'get_current_delimiter', lambda: ';')
+    monkeypatch.setattr(multiline, 'CASE_SENSITIVE_COMMANDS', {'Camel'})
+    monkeypatch.setattr(multiline, 'CASE_INSENSITIVE_COMMANDS', {'help'})
 
-    multiline_filter = clibuffer.cli_is_multiline(mycli)
+    multiline_filter = multiline.repl_is_multiline(mycli)
 
     assert multiline_filter() is expected
-    assert layout.requested_names == [clibuffer.DEFAULT_BUFFER]
+    assert layout.requested_names == [multiline.DEFAULT_BUFFER]

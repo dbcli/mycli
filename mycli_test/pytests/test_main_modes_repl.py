@@ -1514,7 +1514,7 @@ def test_build_prompt_session_covers_toolbar_modes_and_editing_modes(monkeypatch
 
     monkeypatch.setattr(repl_mode, 'PromptSession', fake_prompt_session)
     monkeypatch.setattr(repl_mode, 'style_factory_ptoolkit', lambda *args, **kwargs: 'style')
-    monkeypatch.setattr(repl_mode, 'cli_is_multiline', lambda mycli: False)
+    monkeypatch.setattr(repl_mode, 'repl_is_multiline', lambda mycli: False)
 
     def fake_toolbar_tokens(mycli: Any, show_help: Any, fmt: str, custom_toolbar: Any) -> str:
         toolbar_help.append(show_help())
