@@ -1,4 +1,4 @@
-Upcoming (TBD)
+v2.28.1 (2026/10/03)
 ==============
 
 Documentation
