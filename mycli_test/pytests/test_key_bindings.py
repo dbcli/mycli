@@ -12,7 +12,7 @@ from prompt_toolkit.layout.controls import BufferControl, SearchBufferControl
 from prompt_toolkit.selection import SelectionType
 import pytest
 
-from mycli.packages.ptoolkit import key_bindings
+from mycli.packages.prompt_toolkit import key_bindings
 
 
 @dataclass

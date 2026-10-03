@@ -13,7 +13,7 @@ from mycli.config import write_default_config
 from mycli.main_modes.repl import set_all_external_titles
 from mycli.packages import special_commands
 from mycli.packages.execution.sql_execute import SQLExecute
-from mycli.packages.ptoolkit.history import FileHistoryWithTimestamp
+from mycli.packages.prompt_toolkit.history import FileHistoryWithTimestamp
 from mycli.packages.special_commands.main import ArgType, SpecialCommandAlias
 from mycli.packages.special_commands.source import (
     SOURCE_HELP_ROWS,

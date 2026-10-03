@@ -48,10 +48,13 @@ A command line client for MySQL with auto-completion and syntax highlighting.
     ├── mycli/packages/fzf/fzf.py                         # general interface to fzf chooser
     ├── mycli/packages/hybrid_redirection/                # implementation of shell-style redirects
     ├── mycli/packages/integrations/                      # integrations with Boundary, Kubernetes, macOS, OpenSSH, and Vault
-    ├── mycli/packages/ptoolkit/key_bindings.py           # prompt_toolkit key bindings
-    ├── mycli/packages/ptoolkit/multiline.py              # prompt_toolkit multiline input
-    ├── mycli/packages/ptoolkit/style.py                  # prompt_toolkit (and Pygments) styles
-    ├── mycli/packages/ptoolkit/toolbar.py                # prompt_toolkit toolbars
+    ├── mycli/packages/prompt_toolkit/fzf_history.py      # uses fzf integration to serach the prompt_toolkit history
+    ├── mycli/packages/prompt_toolkit/history.py          # extends the prompt_toolkit history class
+    ├── mycli/packages/prompt_toolkit/key_bindings.py     # prompt_toolkit key bindings
+    ├── mycli/packages/prompt_toolkit/multiline.py        # prompt_toolkit multiline input
+    ├── mycli/packages/prompt_toolkit/style.py            # prompt_toolkit (and Pygments) styles
+    ├── mycli/packages/prompt_toolkit/toolbar.py          # prompt_toolkit bottom toolbar
+    ├── mycli/packages/prompt_toolkit/utils.py            # general utility functions for prompt_toolkit
     ├── mycli/packages/pygments/mycli_lexer.py            # extends `MySqlLexer` from Pygments
     ├── mycli/packages/special_commands/                  # implementation of mycli special commands
     ├── mycli/packages/sql_result/sql_result.py           # the `SQLResult` dataclass for holding responses
