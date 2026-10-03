@@ -51,11 +51,11 @@ from mycli.main import (
 import mycli.main_modes.batch
 import mycli.main_modes.repl as repl_mode
 import mycli.output as output_module
+from mycli.packages.credentials.password_sources import KNOWN_PASSWORD_SOURCES
 import mycli.packages.special_commands
 from mycli.packages.special_commands.main import COMMANDS as SPECIAL_COMMANDS
 from mycli.packages.sql_result.sql_result import SQLResult
 from mycli.packages.utils import cli_utils
-from mycli.password_sources import KNOWN_PASSWORD_SOURCES
 from mycli.sqlexecute import ServerInfo, SQLExecute
 from mycli.types import Query
 from test.utils import (

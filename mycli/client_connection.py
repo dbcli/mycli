@@ -21,13 +21,13 @@ from mycli.constants import (
     EMPTY_PASSWORD_FLAG_SENTINEL,
     ER_MUST_CHANGE_PASSWORD_LOGIN,
 )
+from mycli.packages.credentials.password_sources import PasswordCandidates
 from mycli.packages.integrations.boundary.boundary_tunnel import BoundaryTunnel, BoundaryTunnelError
 from mycli.packages.integrations.kubernetes.kubectl_tunnel import KubectlTunnel, KubectlTunnelError
 from mycli.packages.integrations.openssh.ssh_tunnel import SshTunnel, SshTunnelError
 from mycli.packages.special_commands.special_command_utils import format_connection_dsn
 from mycli.packages.utils.keyring_utils import set_keyring_password
 from mycli.packages.utils.path_utils import guess_socket_location
-from mycli.password_sources import PasswordCandidates
 from mycli.sqlexecute import SQLExecute
 
 try:

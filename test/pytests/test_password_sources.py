@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from mycli.password_sources import (
+from mycli.packages.credentials.password_sources import (
     KNOWN_PASSWORD_SOURCES,
     PasswordCandidates,
 )
