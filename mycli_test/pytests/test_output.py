@@ -37,7 +37,7 @@ def test_output_timing_logs_and_prints_with_default_style(monkeypatch: pytest.Mo
     assert logged == ['0.12 sec']
     assert to_plain_text(printed[0][0]) == '0.12 sec'
     assert list(printed[0][0])[0][0].strip() == 'class:output.timing'
-    assert printed[0][1] == cli.ptoolkit_style
+    assert printed[0][1] == cli.prompt_toolkit_style
 
 
 def test_output_timing_uses_warning_style(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -533,7 +533,7 @@ def streaming_output_cli(monkeypatch: pytest.MonkeyPatch) -> Any:
     cli = make_bare_mycli()
     cli.main_formatter = TabularOutputFormatter(format_name='csv')
     cli.redirect_formatter = TabularOutputFormatter(format_name='csv')
-    cli.helpers_style = cli.helpers_warnings_style = cli.ptoolkit_style = None
+    cli.helpers_style = cli.helpers_warnings_style = cli.prompt_toolkit_style = None
     monkeypatch.setattr(output_module.special_commands, 'is_explorer_output', lambda: False)
     return cli
 

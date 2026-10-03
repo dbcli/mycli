@@ -1513,7 +1513,7 @@ def test_build_prompt_session_covers_toolbar_modes_and_editing_modes(monkeypatch
         return FakePromptSession()
 
     monkeypatch.setattr(repl_mode, 'PromptSession', fake_prompt_session)
-    monkeypatch.setattr(repl_mode, 'style_factory_ptoolkit', lambda *args, **kwargs: 'style')
+    monkeypatch.setattr(repl_mode, 'style_factory_prompt_toolkit', lambda *args, **kwargs: 'style')
     monkeypatch.setattr(repl_mode, 'repl_is_multiline', lambda mycli: False)
 
     def fake_toolbar_tokens(mycli: Any, show_help: Any, fmt: str, custom_toolbar: Any) -> str:
@@ -2006,7 +2006,7 @@ def test_transform_shell_redirect_writes_formatted_transformed_rows(
     cli.redirect_formatter = TabularOutputFormatter(format_name='csv')
     cli.helpers_style = None
     cli.helpers_warnings_style = None
-    cli.ptoolkit_style = None
+    cli.prompt_toolkit_style = None
     cli.explicit_pager = False
     cli.get_output_margin = lambda status: 0
     cli.format_sqlresult = lambda *args, **kwargs: OutputMixin.format_sqlresult(cli, *args, **kwargs)

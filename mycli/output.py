@@ -63,7 +63,7 @@ class OutputMixin(MyCliState):
     prompt_session: PromptSession | None
     prompt_format: str
     explicit_pager: bool
-    ptoolkit_style: _MergedStyle
+    prompt_toolkit_style: _MergedStyle
     helpers_style: PygmentsStyle
     helpers_warnings_style: PygmentsStyle
     main_formatter: TabularOutputFormatter
@@ -73,7 +73,7 @@ class OutputMixin(MyCliState):
         add_style = 'class:warnings.timing' if is_warnings_style else 'class:output.timing'
         formatted_timing = FormattedText([('', timing)])
         styled_timing = to_formatted_text(formatted_timing, style=add_style)
-        prompt_toolkit.print_formatted_text(styled_timing, style=self.ptoolkit_style)
+        prompt_toolkit.print_formatted_text(styled_timing, style=self.prompt_toolkit_style)
 
     def log_query(self, query: str) -> None:
         if isinstance(self.logfile, TextIOWrapper):
@@ -206,7 +206,7 @@ class OutputMixin(MyCliState):
             else:
                 status = FormattedText([('', result.status_plain)])
             styled_status = to_formatted_text(status, style=add_style)
-            prompt_toolkit.print_formatted_text(styled_status, style=self.ptoolkit_style)
+            prompt_toolkit.print_formatted_text(styled_status, style=self.prompt_toolkit_style)
 
     def output_iterm2_image(self, image: bytes) -> None:
         """Emit a PNG using the iTerm2 inline image protocol."""

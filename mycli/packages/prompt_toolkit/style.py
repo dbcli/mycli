@@ -125,20 +125,20 @@ def is_valid_pygments(name: str) -> bool:
 
         return True
     except AssertionError:
-        # can't emit error because some styles are valid pygments and not valid ptoolkit
+        # can't emit error because some styles are valid pygments and not valid prompt_toolkit
         return False
 
 
-def is_valid_ptoolkit(name: str) -> bool:
+def is_valid_prompt_toolkit(name: str) -> bool:
     try:
         _s = Style([("default", name)])
         return True
     except ValueError:
-        # can't emit error because some styles are valid pygments and not valid ptoolkit
+        # can't emit error because some styles are valid pygments and not valid prompt_toolkit
         return False
 
 
-def style_factory_ptoolkit(name: str, cli_style: dict[str, str]) -> _MergedStyle:
+def style_factory_prompt_toolkit(name: str, cli_style: dict[str, str]) -> _MergedStyle:
     try:
         style: PygmentsStyle = pygments.styles.get_style_by_name(name)
     except ClassNotFound:
@@ -153,7 +153,7 @@ def style_factory_ptoolkit(name: str, cli_style: dict[str, str]) -> _MergedStyle
             token_type, style_value = parse_pygments_style(token, style, cli_style)
             if token_type in TOKEN_TO_PROMPT_STYLE:
                 prompt_style = TOKEN_TO_PROMPT_STYLE[token_type]
-                if is_valid_ptoolkit(style_value):
+                if is_valid_prompt_toolkit(style_value):
                     prompt_styles.append((prompt_style, style_value))
             else:
                 # we don't want to support tokens anymore
@@ -161,7 +161,7 @@ def style_factory_ptoolkit(name: str, cli_style: dict[str, str]) -> _MergedStyle
         else:
             # treat as prompt style name (2.0). See default style names here:
             # https://github.com/jonathanslenders/python-prompt-toolkit/blob/master/prompt_toolkit/styles/defaults.py
-            if is_valid_ptoolkit(cli_style[token]):
+            if is_valid_prompt_toolkit(cli_style[token]):
                 prompt_styles.append((token, cli_style[token]))
 
     override_style: Style = Style([("bottom-toolbar", "noreverse")])

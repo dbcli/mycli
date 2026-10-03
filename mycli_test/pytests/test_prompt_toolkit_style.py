@@ -57,8 +57,8 @@ def test_is_valid_pygments_returns_true_and_false(monkeypatch) -> None:
     assert style_module.is_valid_pygments('invalid') is False
 
 
-def test_is_valid_ptoolkit_returns_true_and_false(monkeypatch) -> None:
-    assert style_module.is_valid_ptoolkit('bold') is True
+def test_is_valid_prompt_toolkit_returns_true_and_false(monkeypatch) -> None:
+    assert style_module.is_valid_prompt_toolkit('bold') is True
 
     class FailingPromptStyle:
         def __init__(self, _rules) -> None:
@@ -66,10 +66,10 @@ def test_is_valid_ptoolkit_returns_true_and_false(monkeypatch) -> None:
 
     monkeypatch.setattr(style_module, 'Style', FailingPromptStyle)
 
-    assert style_module.is_valid_ptoolkit('invalid') is False
+    assert style_module.is_valid_prompt_toolkit('invalid') is False
 
 
-def test_style_factory_ptoolkit_builds_styles_and_falls_back(monkeypatch, caplog) -> None:
+def test_style_factory_prompt_toolkit_builds_styles_and_falls_back(monkeypatch, caplog) -> None:
     calls: list[str] = []
     native_style = object()
 
@@ -95,7 +95,7 @@ def test_style_factory_ptoolkit_builds_styles_and_falls_back(monkeypatch, caplog
             'Token.Name': (Token.Name, 'token-invalid'),
         }[token],
     )
-    monkeypatch.setattr(style_module, 'is_valid_ptoolkit', lambda value: value in {'token-valid', 'prompt-valid'})
+    monkeypatch.setattr(style_module, 'is_valid_prompt_toolkit', lambda value: value in {'token-valid', 'prompt-valid'})
     monkeypatch.setattr(style_module, 'Style', FakeStyle)
     monkeypatch.setattr(style_module, 'style_from_pygments_cls', lambda style: ('pygments-style', style))
     monkeypatch.setattr(style_module, 'merge_styles', lambda styles: styles)
@@ -109,7 +109,7 @@ def test_style_factory_ptoolkit_builds_styles_and_falls_back(monkeypatch, caplog
     }
 
     with caplog.at_level('ERROR', logger='mycli.packages.prompt_toolkit.style'):
-        styles = style_module.style_factory_ptoolkit('missing', cli_style)
+        styles = style_module.style_factory_prompt_toolkit('missing', cli_style)
 
     assert calls == ['missing', 'native']
     assert styles[0] == ('pygments-style', native_style)
@@ -187,8 +187,8 @@ def test_style_factory_helpers_falls_back_and_copies_warning_styles(monkeypatch)
     assert output_style.styles[Token.Output.Status] == 'ansicyan'
 
 
-def test_style_factory_ptoolkit_returns_merged_style_object() -> None:
-    style = style_module.style_factory_ptoolkit(
+def test_style_factory_prompt_toolkit_returns_merged_style_object() -> None:
+    style = style_module.style_factory_prompt_toolkit(
         'native',
         {
             'prompt': 'bold',
