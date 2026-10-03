@@ -48,9 +48,6 @@ from pymysql.constants.SERVER_STATUS import SERVER_STATUS_IN_TRANS
 from pymysql.cursors import Cursor
 
 import mycli as mycli_package
-from mycli.clibuffer import cli_is_multiline
-from mycli.clistyle import style_factory_ptoolkit
-from mycli.clitoolbar import create_toolbar_tokens_func, get_vi_mode
 from mycli.compat import WIN
 from mycli.constants import (
     DEFAULT_HOST,
@@ -60,7 +57,6 @@ from mycli.constants import (
     ISSUES_URL,
     QueryState,
 )
-from mycli.key_bindings import mycli_bindings
 from mycli.lexer import MyCliLexer
 from mycli.packages import special_commands
 from mycli.packages.hybrid_redirection.hybrid_redirection import get_redirect_components, is_redirect_command
@@ -72,6 +68,10 @@ from mycli.packages.polars.transform import (
     run_polars_transform,
 )
 from mycli.packages.ptoolkit.history import FRECENCY_HISTORY_ENTRIES, FRECENCY_REFRESH_INTERVAL, FileHistoryWithTimestamp
+from mycli.packages.ptoolkit.key_bindings import mycli_bindings
+from mycli.packages.ptoolkit.multiline import cli_is_multiline
+from mycli.packages.ptoolkit.style import style_factory_ptoolkit
+from mycli.packages.ptoolkit.toolbar import create_toolbar_tokens_func, get_vi_mode
 from mycli.packages.special_commands.io_commands import temporary_redirect
 from mycli.packages.special_commands.special_command_utils import format_uptime, get_ssl_version, get_uptime, get_warning_count
 from mycli.packages.sql_result.sql_result import SQLResult

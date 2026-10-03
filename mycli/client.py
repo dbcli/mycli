@@ -23,7 +23,6 @@ from mycli.app_state import (
 from mycli.client_commands import ClientCommandsMixin, get_config_property_names
 from mycli.client_connection import ClientConnectionMixin
 from mycli.client_query import ClientQueryMixin
-from mycli.clistyle import style_factory_helpers, style_factory_ptoolkit
 from mycli.config import (
     get_mylogin_cnf_path,
     open_mylogin_cnf,
@@ -41,6 +40,7 @@ from mycli.packages.completion.sql_completer import SQLCompleter
 from mycli.packages.integrations.boundary.boundary_tunnel import BoundaryTunnel
 from mycli.packages.integrations.kubernetes.kubectl_tunnel import KubectlTunnel
 from mycli.packages.integrations.openssh.ssh_tunnel import SshTunnel
+from mycli.packages.ptoolkit.style import style_factory_helpers, style_factory_ptoolkit
 from mycli.packages.special_commands.dsn_aliases import DsnAliases
 from mycli.packages.special_commands.favorite_queries import FavoriteQueries
 from mycli.packages.tabular_output import sql_format

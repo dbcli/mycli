@@ -18,17 +18,13 @@ A command line client for MySQL with auto-completion and syntax highlighting.
     ├── mycli/__init__.py                                 # provides version number
     ├── mycli/app_state.py                                # `AppStateMixin` application state mixin and related functions
     ├── mycli/cli_runner.py                               # connects and dispatches main modes based on CLI arguments
-    ├── mycli/clibuffer.py                                # prompt_toolkit buffer utilities
     ├── mycli/client_commands.py                          # special commands which must be registered separately
     ├── mycli/client_connection.py                        # `ClientConnectionMixin` mixin for establishing the database connection
     ├── mycli/client_query.py                             # `ClientQueryMixin` mixin for running queries and refreshing completions
     ├── mycli/client.py                                   # the `MyCli` "god class"
-    ├── mycli/clistyle.py                                 # prompt_toolkit style utilities
-    ├── mycli/clitoolbar.py                               # prompt_toolkit toolbar utilities
     ├── mycli/compat.py                                   # OS compatibility helpers
     ├── mycli/config.py                                   # configuration file readers and utilities
     ├── mycli/constants.py                                # shared constants
-    ├── mycli/key_bindings.py                             # prompt_toolkit key binding utilities
     ├── mycli/lexer.py                                    # extends `MySqlLexer` from Pygments
     ├── mycli/main.py                                     # processes CLI arguments
     ├── mycli/main_modes/                                 # main execution paths
@@ -50,7 +46,10 @@ A command line client for MySQL with auto-completion and syntax highlighting.
     ├── mycli/packages/integrations/                      # integrations with Boundary, Kubernetes, macOS, OpenSSH, and Vault
     ├── mycli/packages/polars/completion.py               # completions for `.|` transforms
     ├── mycli/packages/polars/transform.py                # implements `.|` transforms
-    ├── mycli/packages/ptoolkit/                          # extends prompt_toolkit
+    ├── mycli/packages/ptoolkit/key_bindings.py           # prompt_toolkit key bindings
+    ├── mycli/packages/ptoolkit/multiline.py              # prompt_toolkit multiline input
+    ├── mycli/packages/ptoolkit/style.py                  # prompt_toolkit (and Pygments) styles
+    ├── mycli/packages/ptoolkit/toolbar.py                # prompt_toolkit toolbars
     ├── mycli/packages/special_commands/                  # implementation of mycli special commands
     ├── mycli/packages/sql_result/sql_result.py           # the `SQLResult` dataclass for holding responses
     ├── mycli/packages/tabular_output/                    # extends cli_helper with additional output formats
