@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 
 from mycli import cli_runner, main
-from mycli.password_sources import (
+from mycli.packages.credentials.password_sources import (
     KNOWN_PASSWORD_SOURCES,
 )
 

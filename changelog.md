@@ -14,6 +14,7 @@ Internal
 * Move various integrations to an `integrations` directory.
 * Move various `prompt_toolkit` extensions to the `ptoolkit` directory.
 * Move `mycli_lexer.py` to a `pygments` package directory.
+* Move `password_sources.py` to a `credentials` package directory.
 
 
 v2.28.0 (2026/10/02)

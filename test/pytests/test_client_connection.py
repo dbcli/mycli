@@ -13,7 +13,7 @@ import pytest
 from mycli import client_connection
 from mycli.client_connection import ClientConnectionMixin
 from mycli.constants import DEFAULT_CHARSET, EMPTY_PASSWORD_FLAG_SENTINEL, ER_MUST_CHANGE_PASSWORD_LOGIN
-from mycli.password_sources import KNOWN_PASSWORD_SOURCES, PasswordCandidates
+from mycli.packages.credentials.password_sources import KNOWN_PASSWORD_SOURCES, PasswordCandidates
 
 
 class DummyLogger:
