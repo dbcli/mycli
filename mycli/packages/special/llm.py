@@ -37,7 +37,7 @@ except ImportError:
 from pymysql.cursors import Cursor
 
 from mycli.packages.special.main import CommandVerbosity, parse_special_command
-from mycli.packages.sqlresult import SQLResult
+from mycli.packages.sql_result.sql_result import SQLResult
 
 log = logging.getLogger(__name__)
 

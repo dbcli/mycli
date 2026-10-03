@@ -15,7 +15,7 @@ from mycli.client_commands import ClientCommandsMixin
 from mycli.packages import special
 from mycli.packages.special import main as special_main
 from mycli.packages.special import source as source_commands
-from mycli.packages.sqlresult import SQLResult
+from mycli.packages.sql_result.sql_result import SQLResult
 
 
 class DummyClient(ClientCommandsMixin):

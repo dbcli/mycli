@@ -15,7 +15,7 @@ import pytest
 from mycli import query_runner
 from mycli import sqlexecute as sqlexecute_module
 from mycli.constants import DEFAULT_WIDTH, TTY_ERASE_LINE, QueryState
-from mycli.packages.sqlresult import SQLResult
+from mycli.packages.sql_result.sql_result import SQLResult
 from mycli.query_runner import BackgroundCursor, BackgroundSSCursor, QueryCancelled, QueryRunner
 from mycli.sqlexecute import SQLExecute
 from test.utils import dbtest  # type: ignore[attr-defined]

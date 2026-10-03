@@ -25,7 +25,7 @@ from mycli.packages.special.llm import (
     truncate_table_lines,
 )
 from mycli.packages.special.main import COMMANDS
-from mycli.packages.sqlresult import SQLResult
+from mycli.packages.sql_result.sql_result import SQLResult
 
 
 # Override executor fixture to avoid real DB connections during llm tests

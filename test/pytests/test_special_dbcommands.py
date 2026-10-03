@@ -9,7 +9,7 @@ from mycli.packages.completion.completion_engine import suggest_type
 from mycli.packages.special import dbcommands
 from mycli.packages.special import main as special_main
 from mycli.packages.special.dbcommands import list_databases, list_tables, ping, status
-from mycli.packages.sqlresult import SQLResult
+from mycli.packages.sql_result.sql_result import SQLResult
 from test.pytests.test_completion_engine import sorted_dicts
 
 

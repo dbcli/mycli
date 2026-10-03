@@ -35,7 +35,7 @@ from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
 from mycli.packages.special.main import ArgType, SpecialCommandAlias, special_command
 from mycli.packages.special.main import execute as special_execute
 from mycli.packages.special.utils import compute_current_dsn, handle_cd_command
-from mycli.packages.sqlresult import SQLResult
+from mycli.packages.sql_result.sql_result import SQLResult
 from mycli.packages.utils.interactive_utils import confirm_destructive_query
 
 sqlparse.engine.grouping.MAX_GROUPING_DEPTH = None  # type: ignore[assignment]

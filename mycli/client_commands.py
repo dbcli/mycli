@@ -19,7 +19,7 @@ from mycli.packages.special.source import (
     parse_source_arguments,
     source_special_command_is_safe,
 )
-from mycli.packages.sqlresult import SQLResult
+from mycli.packages.sql_result.sql_result import SQLResult
 from mycli.packages.utils.batch_utils import statements_from_filehandle
 from mycli.packages.utils.interactive_utils import confirm_destructive_query
 from mycli.packages.utils.path_utils import dir_path_exists

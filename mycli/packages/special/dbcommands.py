@@ -15,7 +15,7 @@ from mycli.packages.special.utils import (
     get_ssl_cipher,
     get_ssl_version,
 )
-from mycli.packages.sqlresult import SQLResult
+from mycli.packages.sql_result.sql_result import SQLResult
 
 logger = logging.getLogger(__name__)
 

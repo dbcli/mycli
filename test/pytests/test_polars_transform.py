@@ -15,7 +15,7 @@ from mycli.packages.polars.transform import (
     prepare_polars_transform,
     run_polars_transform,
 )
-from mycli.packages.sqlresult import SQLResult
+from mycli.packages.sql_result.sql_result import SQLResult
 from mycli.types import ImageProtocol, OutputMode
 
 

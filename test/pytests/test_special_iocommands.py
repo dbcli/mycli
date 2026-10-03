@@ -27,7 +27,7 @@ from mycli.packages.special.favoritequeries import (
     analyze_favorite_query_template,
     find_favorite_query_template_keys,
 )
-from mycli.packages.sqlresult import SQLResult
+from mycli.packages.sql_result.sql_result import SQLResult
 from test.utils import TEMPFILE_PREFIX, db_connection, dbtest
 
 

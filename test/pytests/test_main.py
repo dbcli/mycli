@@ -53,7 +53,7 @@ import mycli.main_modes.repl as repl_mode
 import mycli.output as output_module
 import mycli.packages.special
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
-from mycli.packages.sqlresult import SQLResult
+from mycli.packages.sql_result.sql_result import SQLResult
 from mycli.packages.utils import cli_utils
 from mycli.password_sources import KNOWN_PASSWORD_SOURCES
 from mycli.sqlexecute import ServerInfo, SQLExecute

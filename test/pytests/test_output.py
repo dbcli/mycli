@@ -18,7 +18,7 @@ import pytest
 from mycli import compat
 from mycli import output as output_module
 from mycli.output import OutputMixin
-from mycli.packages.sqlresult import SQLResult
+from mycli.packages.sql_result.sql_result import SQLResult
 from mycli.query_runner import QueryRunner
 from mycli.sqlexecute import SQLExecute
 from mycli.types import ImageProtocol
