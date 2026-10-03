@@ -4,9 +4,9 @@ import threading
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
-from mycli import schema_prefetcher as schema_prefetcher_module
-from mycli.schema_prefetcher import SchemaPrefetcher, parse_prefetch_config
-from mycli.sqlcompleter import SQLCompleter
+from mycli.packages.completion import schema_prefetcher as schema_prefetcher_module
+from mycli.packages.completion.schema_prefetcher import SchemaPrefetcher, parse_prefetch_config
+from mycli.packages.completion.sql_completer import SQLCompleter
 
 
 def test_parse_prefetch_config_never() -> None:

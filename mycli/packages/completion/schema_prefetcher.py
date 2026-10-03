@@ -19,7 +19,7 @@ from mycli.sqlexecute import SQLExecute
 
 if TYPE_CHECKING:  # pragma: no cover - typing only
     from mycli.client import MyCli
-    from mycli.sqlcompleter import SQLCompleter
+    from mycli.packages.completion.sql_completer import SQLCompleter
 
 _logger = logging.getLogger(__name__)
 MIN_PREFETCH_MESSAGE_SECONDS = 1.0

@@ -6,8 +6,8 @@ import click
 from pymysql.cursors import Cursor
 
 from mycli.packages import special
+from mycli.packages.completion.sql_completer import SQLCompleter
 from mycli.packages.sqlresult import SQLResult
-from mycli.sqlcompleter import SQLCompleter
 
 
 class QueryError(Exception):

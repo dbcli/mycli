@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 from pymysql import Error, ProgrammingError
 import pytest
 
-from mycli.packages.completion_engine import suggest_type
+from mycli.packages.completion.completion_engine import suggest_type
 from mycli.packages.special import dbcommands
 from mycli.packages.special import main as special_main
 from mycli.packages.special.dbcommands import list_databases, list_tables, ping, status

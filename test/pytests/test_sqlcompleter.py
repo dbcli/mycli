@@ -8,9 +8,9 @@ from unittest.mock import Mock
 from prompt_toolkit.document import Document
 import pytest
 
+from mycli.packages.completion import sql_completer
+from mycli.packages.completion.sql_completer import Fuzziness, SQLCompleter
 from mycli.packages.polars.completion import PolarsCompletion
-import mycli.sqlcompleter
-from mycli.sqlcompleter import Fuzziness, SQLCompleter
 
 
 def collect_matches(
@@ -61,7 +61,7 @@ def test_extend_builtin_functions_ignores_generator() -> None:
 def test_polars_completions_preserve_display_and_replacement(monkeypatch: pytest.MonkeyPatch) -> None:
     candidate = PolarsCompletion(text='select(', display='select', display_meta='DataFrame method', start_position=-3)
     transform = Mock(return_value=[candidate])
-    monkeypatch.setattr(mycli.sqlcompleter, 'complete_polars_transform', transform)
+    monkeypatch.setattr(sql_completer, 'complete_polars_transform', transform)
     completer = make_completer()
     text = 'SELECT 1 .| df.sel'
 
@@ -80,7 +80,7 @@ def test_get_completions_can_override_smart_mode(monkeypatch: pytest.MonkeyPatch
     matches = Mock(return_value=[('select', Fuzziness.PERFECT)])
     monkeypatch.setattr(completer, 'find_matches', matches)
     suggestions = Mock(side_effect=AssertionError('smart completion must not run'))
-    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', suggestions)
+    monkeypatch.setattr(sql_completer, 'suggest_type', suggestions)
 
     result = list(completer.get_completions(Document('sel'), None, smart_completion=False))
 
@@ -97,23 +97,23 @@ def test_favorite_completions_without_registry_methods(
     monkeypatch: pytest.MonkeyPatch, suggestion_type: str, instance_exists: bool
 ) -> None:
     if instance_exists:
-        monkeypatch.setattr(mycli.sqlcompleter.FavoriteQueries, 'instance', SimpleNamespace(), raising=False)
+        monkeypatch.setattr(sql_completer.FavoriteQueries, 'instance', SimpleNamespace(), raising=False)
     else:
-        monkeypatch.delattr(mycli.sqlcompleter.FavoriteQueries, 'instance', raising=False)
-    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda *args: [{'type': suggestion_type}])
+        monkeypatch.delattr(sql_completer.FavoriteQueries, 'instance', raising=False)
+    monkeypatch.setattr(sql_completer, 'suggest_type', lambda *args: [{'type': suggestion_type}])
 
     assert list(make_completer().get_completions(Document('/f '), None)) == []
 
 
 def test_dsn_completions_without_registry(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delattr(mycli.sqlcompleter.DsnAliases, 'instance', raising=False)
-    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda *args: [{'type': 'dsn_alias'}])
+    monkeypatch.delattr(sql_completer.DsnAliases, 'instance', raising=False)
+    monkeypatch.setattr(sql_completer, 'suggest_type', lambda *args: [{'type': 'dsn_alias'}])
 
     assert list(make_completer().get_completions(Document('/dsn delete '), None)) == []
 
 
 def test_unknown_suggestion_type_is_ignored(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda *args: [{'type': 'unknown'}])
+    monkeypatch.setattr(sql_completer, 'suggest_type', lambda *args: [{'type': 'unknown'}])
 
     assert list(make_completer().get_completions(Document(''), None)) == []
 
@@ -122,7 +122,7 @@ def test_enum_without_metadata_preserves_other_suggestions(monkeypatch: pytest.M
     completer = make_completer()
     completer.keywords = ['select']
     monkeypatch.setattr(
-        mycli.sqlcompleter,
+        sql_completer,
         'suggest_type',
         lambda *args: [{'type': 'enum_value', 'tables': [], 'column': 'status'}, {'type': 'keyword'}],
     )
@@ -222,7 +222,7 @@ def test_find_fuzzy_matches_collects_item_level_matches(monkeypatch) -> None:
             'other': None,
         }[item],
     )
-    monkeypatch.setattr(mycli.sqlcompleter.rapidfuzz.process, 'extract', lambda *args, **kwargs: [])
+    monkeypatch.setattr(sql_completer.rapidfuzz.process, 'extract', lambda *args, **kwargs: [])
     completer = SQLCompleter()
     matches = completer.find_fuzzy_matches('OrIt', 'orit', ['orders', 'order_items', 'other'])
 
@@ -250,7 +250,7 @@ def test_find_fuzzy_matches_skips_rapidfuzz_for_short_text(monkeypatch) -> None:
     def fail_extract(*args, **kwargs):
         raise AssertionError('rapidfuzz should not be called')
 
-    monkeypatch.setattr(mycli.sqlcompleter.rapidfuzz.process, 'extract', fail_extract)
+    monkeypatch.setattr(sql_completer.rapidfuzz.process, 'extract', fail_extract)
     completer = SQLCompleter(completion_match_order=('rapidfuzz',))
     matches = completer.find_fuzzy_matches('sel', 'sel', ['SELECT'])
 
@@ -268,7 +268,7 @@ def test_find_fuzzy_matches_uses_configured_minimum(monkeypatch: pytest.MonkeyPa
         calls.append(query)
         return [('SELECT', 100, 0)]
 
-    monkeypatch.setattr(mycli.sqlcompleter.rapidfuzz.process, 'extract', extract)
+    monkeypatch.setattr(sql_completer.rapidfuzz.process, 'extract', extract)
     completer = SQLCompleter(rapidfuzz_min_length=minimum, completion_match_order=('rapidfuzz',))
 
     matches = completer.find_fuzzy_matches(text, text, ['SELECT'])
@@ -280,7 +280,7 @@ def test_find_fuzzy_matches_uses_configured_minimum(monkeypatch: pytest.MonkeyPa
 @pytest.mark.parametrize(('coverage', 'accepted'), [(0.0, True), (0.5, True), (0.75, True), (0.76, False), (1.0, False)])
 def test_find_fuzzy_matches_filters_candidate_length(monkeypatch: pytest.MonkeyPatch, coverage: float, accepted: bool) -> None:
     monkeypatch.setattr(SQLCompleter, 'find_fuzzy_match', lambda *args: None)
-    monkeypatch.setattr(mycli.sqlcompleter.rapidfuzz.process, 'extract', lambda *args, **kwargs: [('abc', 90, 0)])
+    monkeypatch.setattr(sql_completer.rapidfuzz.process, 'extract', lambda *args, **kwargs: [('abc', 90, 0)])
     completer = SQLCompleter(rapidfuzz_length_coverage=coverage)
 
     matches = completer.find_fuzzy_matches('abcd', 'abcd', ['abc'])
@@ -304,7 +304,7 @@ def test_find_fuzzy_matches_appends_rapidfuzz_results_and_skips_duplicates(monke
         lambda self, item, pattern, under_words_text, case_words_text: Fuzziness.REGEX if item == 'alphabet' else None,
     )
     monkeypatch.setattr(
-        mycli.sqlcompleter.rapidfuzz.process,
+        sql_completer.rapidfuzz.process,
         'extract',
         lambda *args, **kwargs: [('abc', 99, 0), ('alphabet', 95, 1), ('alphanumeric', 90, 2)],
     )
@@ -328,7 +328,7 @@ def test_find_fuzzy_matches_skips_rapidfuzz_duplicates_for_remaining_fuzziness_t
         lambda self, item, pattern, under_words_text, case_words_text: existing_fuzziness if item == 'alphabet' else None,
     )
     monkeypatch.setattr(
-        mycli.sqlcompleter.rapidfuzz.process,
+        sql_completer.rapidfuzz.process,
         'extract',
         lambda *args, **kwargs: [('alphabet', 95, 0)],
     )
@@ -463,7 +463,7 @@ def test_find_matches_finds_under_word_matches() -> None:
 
 
 def test_find_matches_finds_camel_case_matches(monkeypatch) -> None:
-    monkeypatch.setattr(mycli.sqlcompleter.rapidfuzz.process, 'extract', lambda *args, **kwargs: [])
+    monkeypatch.setattr(sql_completer.rapidfuzz.process, 'extract', lambda *args, **kwargs: [])
 
     matches = collect_matches('TiZoTrTy', ['TimeZoneTransitionType'])
 
@@ -480,7 +480,7 @@ def test_find_matches_skips_rapidfuzz_for_short_text(monkeypatch) -> None:
     def fail_extract(*args, **kwargs):
         raise AssertionError('rapidfuzz should not be called')
 
-    monkeypatch.setattr(mycli.sqlcompleter.rapidfuzz.process, 'extract', fail_extract)
+    monkeypatch.setattr(sql_completer.rapidfuzz.process, 'extract', fail_extract)
 
     matches = collect_matches('sel', ['SELECT'])
 
@@ -489,7 +489,7 @@ def test_find_matches_skips_rapidfuzz_for_short_text(monkeypatch) -> None:
 
 def test_find_matches_filters_short_rapidfuzz_candidates(monkeypatch) -> None:
     monkeypatch.setattr(
-        mycli.sqlcompleter.rapidfuzz.process,
+        sql_completer.rapidfuzz.process,
         'extract',
         lambda *args, **kwargs: [('abc', 99, 0), ('alphabet', 95, 1)],
     )
@@ -555,7 +555,7 @@ def test_completion_tiebreaker_orders_candidates(
         return {'azure': 20.0}
 
     completer = make_completer(smart_completion=smart, completion_tiebreaker=tiebreaker, frecency_provider=history)
-    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda *args: [{'type': 'keyword'}])
+    monkeypatch.setattr(sql_completer, 'suggest_type', lambda *args: [{'type': 'keyword'}])
     monkeypatch.setattr(
         completer, 'find_matches', lambda *args, **kwargs: [('azure', Fuzziness.REGEX), ('a', Fuzziness.REGEX), ('Alpha', Fuzziness.REGEX)]
     )
@@ -567,7 +567,7 @@ def test_completion_tiebreaker_orders_candidates(
 @pytest.mark.parametrize('tiebreaker', ['length', 'lexicographic'])
 def test_equal_tiebreaker_keys_preserve_order(monkeypatch: pytest.MonkeyPatch, smart: bool, tiebreaker: str) -> None:
     completer = make_completer(smart_completion=smart, completion_tiebreaker=tiebreaker)
-    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda *args: [{'type': 'keyword'}])
+    monkeypatch.setattr(sql_completer, 'suggest_type', lambda *args: [{'type': 'keyword'}])
     monkeypatch.setattr(completer, 'find_matches', lambda *args, **kwargs: [('foo', Fuzziness.REGEX), ('FOO', Fuzziness.REGEX)])
 
     assert [c.text for c in completer.get_completions(Document('f'), None)] == ['foo', 'FOO']
@@ -575,7 +575,7 @@ def test_equal_tiebreaker_keys_preserve_order(monkeypatch: pytest.MonkeyPatch, s
 
 def test_frecency_without_history_preserves_shorter_prefix_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
     completer = make_completer()
-    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda *args: [{'type': 'keyword'}])
+    monkeypatch.setattr(sql_completer, 'suggest_type', lambda *args: [{'type': 'keyword'}])
     monkeypatch.setattr(completer, 'find_matches', lambda *args, **kwargs: [('alphabet', Fuzziness.REGEX), ('ant', Fuzziness.REGEX)])
 
     assert [c.text for c in completer.get_completions(Document('a'), None)] == ['ant', 'alphabet']
@@ -615,10 +615,10 @@ def test_only_enabled_method_contributes_candidates(method: str, text: str, cand
 
 def test_perfect_only_does_not_run_fuzzy_matchers(monkeypatch: pytest.MonkeyPatch) -> None:
     completer = SQLCompleter(completion_match_order=('perfect',))
-    monkeypatch.setattr(mycli.sqlcompleter.re, 'compile', pytest.fail)
-    monkeypatch.setattr(mycli.sqlcompleter.re, 'split', pytest.fail)
+    monkeypatch.setattr(sql_completer.re, 'compile', pytest.fail)
+    monkeypatch.setattr(sql_completer.re, 'split', pytest.fail)
     monkeypatch.setattr(completer, 'word_parts_match', pytest.fail)
-    monkeypatch.setattr(mycli.sqlcompleter.rapidfuzz.process, 'extract', pytest.fail)
+    monkeypatch.setattr(sql_completer.rapidfuzz.process, 'extract', pytest.fail)
 
     assert completer.find_fuzzy_matches('sele', 'sele', ['select', 'user_select']) == [('select', Fuzziness.PERFECT)]
 
@@ -638,7 +638,7 @@ def test_sql_completion_with_restricted_methods(
     completer = make_completer(smart_completion=smart, completion_match_order=order)
     completer.keywords = ['select', 'user_select']
     completer.all_completions = {'select', 'user_select'}
-    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda *args: [{'type': 'keyword'}])
+    monkeypatch.setattr(sql_completer, 'suggest_type', lambda *args: [{'type': 'keyword'}])
 
     assert [c.text for c in completer.get_completions(Document('sel'), None)] == expected
 
@@ -687,8 +687,8 @@ def test_perfect_only_does_not_match_inside_quoted_names(fuzzy: bool) -> None:
 @pytest.mark.parametrize(('word', 'order'), [('./fi', ('perfect',)), ('fi', ('slash_words',))])
 def test_disabled_file_methods_do_not_access_filesystem(monkeypatch: pytest.MonkeyPatch, word: str, order: tuple[str, ...]) -> None:
     completer = SQLCompleter(completion_match_order=order)
-    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_path_by_prefix', pytest.fail)
-    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_path', pytest.fail)
+    monkeypatch.setattr(sql_completer, 'suggest_path_by_prefix', pytest.fail)
+    monkeypatch.setattr(sql_completer, 'suggest_path', pytest.fail)
 
     assert list(completer.find_files(word)) == []
 
@@ -714,7 +714,7 @@ def test_overlapping_matches_use_configured_priority(preferred: str) -> None:
 def test_rapidfuzz_can_replace_an_overlapping_category(monkeypatch: pytest.MonkeyPatch) -> None:
     completer = SQLCompleter(completion_match_order=('rapidfuzz', 'regex'))
     monkeypatch.setattr(
-        mycli.sqlcompleter.rapidfuzz.process,
+        sql_completer.rapidfuzz.process,
         'extract',
         lambda *args, **kwargs: [('alphabet', 100, 0)],
     )
@@ -727,7 +727,7 @@ def test_prefix_priority_precedes_frecency(monkeypatch: pytest.MonkeyPatch, tieb
     completer = make_completer(
         completion_match_order=('rapidfuzz', 'regex'), frecency_provider=lambda: {'alpha': 100.0}, completion_tiebreaker=tiebreaker
     )
-    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda *args: [{'type': 'keyword'}])
+    monkeypatch.setattr(sql_completer, 'suggest_type', lambda *args: [{'type': 'keyword'}])
     monkeypatch.setattr(completer, 'find_matches', lambda *args, **kwargs: [('alpha', Fuzziness.RAPIDFUZZ), ('prefix', Fuzziness.REGEX)])
 
     assert [c.text for c in completer.get_completions(Document('pre'), None)] == ['prefix', 'alpha']
@@ -735,7 +735,7 @@ def test_prefix_priority_precedes_frecency(monkeypatch: pytest.MonkeyPatch, tieb
 
 def test_custom_match_priority_sorts_candidates(monkeypatch: pytest.MonkeyPatch) -> None:
     completer = make_completer(completion_match_order=('under_words', 'regex'))
-    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda *args: [{'type': 'keyword'}])
+    monkeypatch.setattr(sql_completer, 'suggest_type', lambda *args: [{'type': 'keyword'}])
     monkeypatch.setattr(completer, 'find_matches', lambda *args, **kwargs: [('alpha', Fuzziness.REGEX), ('bravo', Fuzziness.UNDER_WORDS)])
 
     assert [c.text for c in completer.get_completions(Document('x'), None)] == ['bravo', 'alpha']
@@ -746,17 +746,17 @@ def test_completion_type_precedes_frecency_for_empty_input(monkeypatch: pytest.M
     completer = make_completer(frecency_provider=lambda: {'popular': 10.0}, completion_tiebreaker=tiebreaker)
     completer.keywords = ['popular']
     completer.functions = ['other']
-    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda *args: [{'type': 'function', 'schema': None}, {'type': 'keyword'}])
+    monkeypatch.setattr(sql_completer, 'suggest_type', lambda *args: [{'type': 'function', 'schema': None}, {'type': 'keyword'}])
 
     assert [c.text for c in completer.get_completions(Document(''), None)] == ['OTHER', 'POPULAR']
 
 
 def test_special_command_completion_displays_snippet(monkeypatch) -> None:
     completer = make_completer()
-    favorite = mycli.sqlcompleter.SPECIAL_COMMANDS['/favorite']
+    favorite = sql_completer.SPECIAL_COMMANDS['/favorite']
     assert favorite.completion_snippet == 'manage favorite queries'
     completer.extend_special_commands({'/favorite': favorite.completion_snippet})
-    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda text, before: [{'type': 'special'}])
+    monkeypatch.setattr(sql_completer, 'suggest_type', lambda text, before: [{'type': 'special'}])
 
     result = list(completer.get_completions(Document(text='/fav'), None))
 
@@ -769,7 +769,7 @@ def test_sql_keyword_completion_does_not_display_special_command_snippet(monkeyp
     completer = make_completer()
     completer.keywords = ['exit']
     completer.extend_special_commands({'exit': 'Exit.'})
-    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda text, before: [{'type': 'keyword'}])
+    monkeypatch.setattr(sql_completer, 'suggest_type', lambda text, before: [{'type': 'keyword'}])
 
     result = list(completer.get_completions(Document(text='SELECT exi'), None))
 
@@ -780,7 +780,7 @@ def test_sql_keyword_completion_does_not_display_special_command_snippet(monkeyp
 
 def test_get_completions_uses_frecency_before_prefix_length(monkeypatch) -> None:
     completer = make_completer(frecency_provider=lambda: {'alphabet': 10.0})
-    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda text, before: [{'type': 'column', 'tables': []}])
+    monkeypatch.setattr(sql_completer, 'suggest_type', lambda text, before: [{'type': 'column', 'tables': []}])
     monkeypatch.setattr(completer, 'populate_scoped_cols', lambda tables: ['ant', 'alphabet'])
     monkeypatch.setattr(completer, 'populate_scoped_indexed_columns', lambda tables: [])
 
@@ -792,7 +792,7 @@ def test_get_completions_uses_frecency_before_prefix_length(monkeypatch) -> None
 @pytest.mark.parametrize('tiebreaker', ['frecency', 'length', 'lexicographic'])
 def test_get_completions_preserves_stronger_fuzzy_match(monkeypatch, tiebreaker: str) -> None:
     completer = make_completer(frecency_provider=lambda: {'far': 100.0}, completion_tiebreaker=tiebreaker)
-    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda text, before: [{'type': 'column', 'tables': []}])
+    monkeypatch.setattr(sql_completer, 'suggest_type', lambda text, before: [{'type': 'column', 'tables': []}])
     monkeypatch.setattr(completer, 'populate_scoped_cols', lambda tables: ['foo', 'far'])
     monkeypatch.setattr(completer, 'populate_scoped_indexed_columns', lambda tables: [])
     monkeypatch.setattr(
@@ -822,7 +822,7 @@ def test_naive_completions_use_live_frecency_provider() -> None:
 @pytest.mark.parametrize('tiebreaker', ['frecency', 'length', 'lexicographic'])
 def test_file_completions_preserve_rigid_ordering(monkeypatch, tiebreaker: str) -> None:
     completer = make_completer(frecency_provider=lambda: {'alpha': 100.0}, completion_tiebreaker=tiebreaker)
-    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda text, before: [{'type': 'file_name'}])
+    monkeypatch.setattr(sql_completer, 'suggest_type', lambda text, before: [{'type': 'file_name'}])
     monkeypatch.setattr(completer, 'find_files', lambda word: iter([('zeta', 0), ('alpha', 0)]))
 
     result = [completion.text for completion in completer.get_completions(Document(text='/source '), None)]
@@ -833,7 +833,7 @@ def test_file_completions_preserve_rigid_ordering(monkeypatch, tiebreaker: str) 
 def test_output_file_completions_include_all_file_types(monkeypatch) -> None:
     completer = make_completer()
     monkeypatch.setattr(
-        mycli.sqlcompleter,
+        sql_completer,
         'suggest_type',
         lambda text, before: [{'type': 'file_name', 'all_files': True}],
     )
@@ -868,7 +868,7 @@ def test_extend_metadata_helpers_and_logging(caplog) -> None:
     completer.extend_schemata(None)
     assert '' not in completer.dbmetadata['tables']
 
-    with caplog.at_level('ERROR', logger='mycli.sqlcompleter'):
+    with caplog.at_level('ERROR', logger='mycli.packages.completion.sql_completer'):
         completer.extend_relations([('orders',)], kind='tables')
     assert "listed in unrecognized schema 'missing'" in caplog.text
 
@@ -877,7 +877,7 @@ def test_extend_metadata_helpers_and_logging(caplog) -> None:
     completer.extend_relations([('select',)], kind='tables')
 
     caplog.clear()
-    with caplog.at_level('ERROR', logger='mycli.sqlcompleter'):
+    with caplog.at_level('ERROR', logger='mycli.packages.completion.sql_completer'):
         completer.extend_columns([('missing', 'id'), ('select', 'from')], kind='tables')
     assert "relname 'missing' was not found in db 'test'" in caplog.text
     assert completer.dbmetadata['tables']['test']['`select`'] == ['*', '`from`']
@@ -937,7 +937,7 @@ def test_get_completions_drop_unique_columns(monkeypatch) -> None:
     }
 
     monkeypatch.setattr(
-        mycli.sqlcompleter,
+        sql_completer,
         'suggest_type',
         lambda text, before: [{'type': 'column', 'tables': [(None, 't1', None), (None, 't2', None)], 'drop_unique': True}],
     )
@@ -957,7 +957,7 @@ def test_get_completions_drop_unique_columns(monkeypatch) -> None:
         (
             {'type': 'favoritequery'},
             lambda c, m: m.setattr(
-                mycli.sqlcompleter.FavoriteQueries, 'instance', SimpleNamespace(list=lambda: ['daily_report']), raising=False
+                sql_completer.FavoriteQueries, 'instance', SimpleNamespace(list=lambda: ['daily_report']), raising=False
             ),
             '\\f dai',
             'daily_report',
@@ -970,7 +970,7 @@ def test_get_completions_branch_specific_suggestions(monkeypatch, suggestion, se
     completer.extend_schemata('test')
     completer.set_dbname('test')
     setup(completer, monkeypatch)
-    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda full_text, before: [suggestion])
+    monkeypatch.setattr(sql_completer, 'suggest_type', lambda full_text, before: [suggestion])
 
     result = [c.text for c in completer.get_completions(Document(text=text, cursor_position=len(text)), None)]
 
@@ -982,7 +982,7 @@ def test_get_completions_favorite_query_template_keys(monkeypatch) -> None:
         'report': "select {{ kv.user }}, {{ kv.start_date }}, {{ kv['start-date'] }}, {{ range(2) }}, {{ kv.range }}",
     }
     monkeypatch.setattr(
-        mycli.sqlcompleter.FavoriteQueries,
+        sql_completer.FavoriteQueries,
         'instance',
         SimpleNamespace(list=lambda: list(queries), get=queries.get),
         raising=False,
@@ -1014,7 +1014,7 @@ def test_get_completions_favorite_query_template_keys(monkeypatch) -> None:
 @pytest.mark.parametrize('query', [None, '{{ invalid'])
 def test_get_completions_favorite_query_template_keys_fail_quietly(monkeypatch, query) -> None:
     monkeypatch.setattr(
-        mycli.sqlcompleter.FavoriteQueries,
+        sql_completer.FavoriteQueries,
         'instance',
         SimpleNamespace(list=lambda: ['report'], get=lambda name: query),
         raising=False,
@@ -1032,8 +1032,8 @@ def test_get_completions_llm_branch_with_and_without_current_word(monkeypatch) -
         tokens_seen.append(tokens)
         return ['chat', 'explain']
 
-    monkeypatch.setattr(mycli.sqlcompleter, 'suggest_type', lambda full_text, before: [{'type': 'llm'}])
-    monkeypatch.setattr(mycli.sqlcompleter.llm, 'get_completions', fake_get_completions)
+    monkeypatch.setattr(sql_completer, 'suggest_type', lambda full_text, before: [{'type': 'llm'}])
+    monkeypatch.setattr(sql_completer.llm, 'get_completions', fake_get_completions)
 
     completer = make_completer()
 
@@ -1050,7 +1050,7 @@ def test_get_completions_llm_branch_with_and_without_current_word(monkeypatch) -
 
 def test_get_completions_special_subcommand_branch(monkeypatch) -> None:
     monkeypatch.setattr(
-        mycli.sqlcompleter,
+        sql_completer,
         'suggest_type',
         lambda full_text, before: [{'type': 'special_subcommand', 'subcommands': ['help', 'list', 'show', 'save', 'delete']}],
     )
@@ -1071,7 +1071,7 @@ def test_get_completions_special_subcommand_branch(monkeypatch) -> None:
 )
 def test_get_completions_config_property_branch(monkeypatch, prefix: str, expected: list[str]) -> None:
     monkeypatch.setattr(
-        mycli.sqlcompleter,
+        sql_completer,
         'suggest_type',
         lambda full_text, before: [{'type': 'config_property', 'prefix': prefix}],
     )
@@ -1088,12 +1088,12 @@ def test_get_completions_config_property_branch(monkeypatch, prefix: str, expect
 
 def test_get_completions_dsn_alias_branch(monkeypatch) -> None:
     monkeypatch.setattr(
-        mycli.sqlcompleter,
+        sql_completer,
         'suggest_type',
         lambda full_text, before: [{'type': 'dsn_alias'}],
     )
     monkeypatch.setattr(
-        mycli.sqlcompleter.DsnAliases,
+        sql_completer.DsnAliases,
         'instance',
         SimpleNamespace(list=lambda: ['prod', 'staging']),
         raising=False,
@@ -1107,12 +1107,12 @@ def test_get_completions_dsn_alias_branch(monkeypatch) -> None:
 
 def test_get_completions_dsn_alias_branch_without_aliases(monkeypatch) -> None:
     monkeypatch.setattr(
-        mycli.sqlcompleter,
+        sql_completer,
         'suggest_type',
         lambda full_text, before: [{'type': 'dsn_alias'}],
     )
     monkeypatch.setattr(
-        mycli.sqlcompleter.DsnAliases,
+        sql_completer.DsnAliases,
         'instance',
         SimpleNamespace(list=list),
         raising=False,
@@ -1132,13 +1132,13 @@ def test_find_files_populate_scoped_cols_and_enum_helpers(monkeypatch) -> None:
     completer.dbmetadata['views']['test']['orders_view'] = ['view_id']
     completer.extend_enum_values([('orders', 'status', ['pending', 'shipped'])])
 
-    monkeypatch.setattr(mycli.sqlcompleter, 'parse_path', lambda word: ('/tmp', 'fi', 0))
+    monkeypatch.setattr(sql_completer, 'parse_path', lambda word: ('/tmp', 'fi', 0))
     monkeypatch.setattr(
-        mycli.sqlcompleter,
+        sql_completer,
         'suggest_path',
         lambda word, *, sql_only: ['file.sql', 'folder/'],
     )
-    monkeypatch.setattr(mycli.sqlcompleter, 'complete_path', lambda name, last_path: name if name == 'file.sql' else None)
+    monkeypatch.setattr(sql_completer, 'complete_path', lambda name, last_path: name if name == 'file.sql' else None)
 
     assert list(completer.find_files('fi')) == [('file.sql', Fuzziness.PERFECT)]
     assert completer.populate_scoped_cols([(None, 'select', None), (None, 'orders_view', None), (None, 'missing', None)]) == [

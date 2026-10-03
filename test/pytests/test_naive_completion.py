@@ -9,7 +9,7 @@ from test.utils import pygments_below
 
 @pytest.fixture
 def completer():
-    import mycli.sqlcompleter as sqlcompleter
+    from mycli.packages.completion import sql_completer as sqlcompleter
 
     return sqlcompleter.SQLCompleter(smart_completion=False)
 
