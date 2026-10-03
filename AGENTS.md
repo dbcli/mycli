@@ -1,6 +1,6 @@
 # Mycli
 
-A command line client for MySQL with auto-completion and syntax highlighting.
+Rich MySQL terminal client with auto-completion, syntax highlighting, and dataframes.
 
 ## Project Structure
 

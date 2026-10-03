@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Documentation
+--------
+* Align all uses of one-line app description with `README.md`.
+
+
 Internal
 --------
 * Add Python 3.15 trove classifier.

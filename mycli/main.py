@@ -471,12 +471,12 @@ def preprocess_cli_args(
 def click_entrypoint(
     cli_args: CliArgs,
 ) -> None:
-    """A MySQL terminal client with auto-completion and syntax highlighting.
+    """Rich MySQL terminal client with auto-completion, syntax highlighting, and dataframes.
 
     \b
     Examples:
       - mycli my_database
-      - mycli -u my_user -h my_host.com my_database
+      - mycli --user my_user --host my_host.com my_database
       - mycli mysql://my_user@my_host.com:3306/my_database
 
     """
