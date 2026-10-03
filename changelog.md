@@ -4,6 +4,7 @@ Upcoming (TBD)
 Internal
 --------
 * Add Python 3.15 trove classifier.
+* Move Polars files to package directory.
 
 
 v2.28.0 (2026/10/02)

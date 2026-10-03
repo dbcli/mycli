@@ -8,7 +8,7 @@ from unittest.mock import Mock
 from prompt_toolkit.document import Document
 import pytest
 
-from mycli.packages.polars_completion import PolarsCompletion
+from mycli.packages.polars.completion import PolarsCompletion
 import mycli.sqlcompleter
 from mycli.sqlcompleter import Fuzziness, SQLCompleter
 

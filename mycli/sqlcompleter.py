@@ -19,7 +19,7 @@ import rapidfuzz
 from mycli.compat import WIN
 from mycli.packages.completion_engine import is_inside_quotes, suggest_type
 from mycli.packages.filepaths import complete_path, parse_path, suggest_path, suggest_path_by_prefix
-from mycli.packages.polars_completion import complete_polars_transform
+from mycli.packages.polars.completion import complete_polars_transform
 from mycli.packages.ptoolkit.history import frecency_score
 from mycli.packages.special import llm
 from mycli.packages.special.dsn_aliases import DsnAliases
