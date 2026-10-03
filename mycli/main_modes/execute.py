@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING
 
 import click
 
-from mycli.packages.interactive_utils import confirm_destructive_query
-from mycli.packages.sql_utils import is_destructive
+from mycli.packages.utils.interactive_utils import confirm_destructive_query
+from mycli.packages.utils.sql_utils import is_destructive
 
 if TYPE_CHECKING:
     from mycli.client import MyCli

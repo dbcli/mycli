@@ -4,8 +4,8 @@ from io import StringIO
 
 import pytest
 
-import mycli.packages.batch_utils
-from mycli.packages.batch_utils import statements_from_filehandle
+from mycli.packages.utils import batch_utils
+from mycli.packages.utils.batch_utils import statements_from_filehandle
 
 
 def collect_statements(sql: str) -> list[tuple[str, int]]:
@@ -48,7 +48,7 @@ def test_statements_from_filehandle_yields_trailing_statement_without_newline_03
 
 
 def test_statements_from_filehandle_rejects_overlong_statement(monkeypatch) -> None:
-    monkeypatch.setattr(mycli.packages.batch_utils, 'MAX_MULTILINE_BATCH_STATEMENT', 2)
+    monkeypatch.setattr(batch_utils, 'MAX_MULTILINE_BATCH_STATEMENT', 2)
 
     with pytest.raises(ValueError, match='Saw single input statement greater than 2 lines'):
         list(statements_from_filehandle(StringIO('select 1,\n2\nwhere 1 = 1;')))
@@ -82,7 +82,7 @@ def test_statements_from_filehandle_yields_invalid_sql_02() -> None:
 
 def test_statements_from_filehandle_continues_when_tokenizer_returns_no_tokens(monkeypatch) -> None:
     tokenize_calls: list[str] = []
-    original_tokenize = mycli.packages.batch_utils.sqlglot.tokenize
+    original_tokenize = batch_utils.sqlglot.tokenize
 
     def fake_tokenize(sql: str, read: str):
         tokenize_calls.append(sql)
@@ -90,7 +90,7 @@ def test_statements_from_filehandle_continues_when_tokenizer_returns_no_tokens(m
             return []
         return original_tokenize(sql, read=read)
 
-    monkeypatch.setattr(mycli.packages.batch_utils.sqlglot, 'tokenize', fake_tokenize)
+    monkeypatch.setattr(batch_utils.sqlglot, 'tokenize', fake_tokenize)
 
     statements = list(statements_from_filehandle(StringIO('select 1;\nselect 2;')))
 

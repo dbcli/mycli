@@ -1679,7 +1679,7 @@ def test_one_iteration_covers_llm_paths(monkeypatch: pytest.MonkeyPatch) -> None
     ],
 )
 def test_is_sandbox_allowed(text: str, expected: bool) -> None:
-    from mycli.packages.sql_utils import is_sandbox_allowed
+    from mycli.packages.utils.sql_utils import is_sandbox_allowed
 
     assert is_sandbox_allowed(text) is expected
 
@@ -1694,7 +1694,7 @@ def test_is_sandbox_allowed(text: str, expected: bool) -> None:
     ],
 )
 def test_is_password_change(text: str, expected: bool) -> None:
-    from mycli.packages.sql_utils import is_password_change
+    from mycli.packages.utils.sql_utils import is_password_change
 
     assert is_password_change(text) is expected
 
@@ -1710,7 +1710,7 @@ def test_is_password_change(text: str, expected: bool) -> None:
     ],
 )
 def test_extract_new_password(text: str, expected: str | None) -> None:
-    from mycli.packages.sql_utils import extract_new_password
+    from mycli.packages.utils.sql_utils import extract_new_password
 
     assert extract_new_password(text) == expected
 

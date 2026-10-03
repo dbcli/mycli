@@ -11,7 +11,7 @@ from prompt_toolkit.history import FileHistory
 from sqlglot import Token, TokenType, tokenize
 from sqlglot.errors import TokenError
 
-from mycli.packages.sql_utils import is_password_change
+from mycli.packages.utils.sql_utils import is_password_change
 
 logger = logging.getLogger(__name__)
 

@@ -12,9 +12,6 @@ import click
 from mycli.config import write_default_config
 from mycli.main_modes.repl import set_all_external_titles
 from mycli.packages import special
-from mycli.packages.batch_utils import statements_from_filehandle
-from mycli.packages.filepaths import dir_path_exists
-from mycli.packages.interactive_utils import confirm_destructive_query
 from mycli.packages.ptoolkit.history import FileHistoryWithTimestamp
 from mycli.packages.special.main import ArgType, SpecialCommandAlias
 from mycli.packages.special.source import (
@@ -23,6 +20,9 @@ from mycli.packages.special.source import (
     source_special_command_is_safe,
 )
 from mycli.packages.sqlresult import SQLResult
+from mycli.packages.utils.batch_utils import statements_from_filehandle
+from mycli.packages.utils.interactive_utils import confirm_destructive_query
+from mycli.packages.utils.path_utils import dir_path_exists
 from mycli.sqlexecute import SQLExecute
 
 CONFIG_COMMAND_USAGE = '''Syntax:

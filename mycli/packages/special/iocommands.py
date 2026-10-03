@@ -21,7 +21,6 @@ import pyperclip
 import sqlparse
 
 from mycli.compat import WIN
-from mycli.packages.interactive_utils import confirm_destructive_query
 from mycli.packages.special.delimitercommand import DelimiterCommand
 from mycli.packages.special.dsn_aliases import INVALID_DSN_ALIAS_ERROR, DsnAliases, is_valid_dsn_alias
 from mycli.packages.special.favoritequeries import (
@@ -37,6 +36,7 @@ from mycli.packages.special.main import ArgType, SpecialCommandAlias, special_co
 from mycli.packages.special.main import execute as special_execute
 from mycli.packages.special.utils import compute_current_dsn, handle_cd_command
 from mycli.packages.sqlresult import SQLResult
+from mycli.packages.utils.interactive_utils import confirm_destructive_query
 
 sqlparse.engine.grouping.MAX_GROUPING_DEPTH = None  # type: ignore[assignment]
 sqlparse.engine.grouping.MAX_GROUPING_TOKENS = None  # type: ignore[assignment]

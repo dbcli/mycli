@@ -7,8 +7,8 @@ import sqlparse
 from sqlparse.sql import Identifier, IdentifierList, Token, TokenList
 from sqlparse.tokens import DML, Keyword, Punctuation
 
-from mycli.packages import sql_utils
-from mycli.packages.sql_utils import (
+from mycli.packages.utils import sql_utils
+from mycli.packages.utils.sql_utils import (
     extract_columns_from_select,
     extract_from_part,
     extract_table_identifiers,

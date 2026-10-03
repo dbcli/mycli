@@ -13,7 +13,7 @@ from mycli.packages.special.favoritequeries import FAVORITE_SUBCOMMANDS
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
 from mycli.packages.special.main import parse_special_command
 from mycli.packages.special.source import SOURCE_BOOLEAN_OPTIONS, SOURCE_OPTIONS
-from mycli.packages.sql_utils import extract_tables, find_prev_keyword, last_word
+from mycli.packages.utils.sql_utils import extract_tables, find_prev_keyword, last_word
 
 sqlparse.engine.grouping.MAX_GROUPING_DEPTH = None  # type: ignore[assignment]
 sqlparse.engine.grouping.MAX_GROUPING_TOKENS = None  # type: ignore[assignment]

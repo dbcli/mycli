@@ -12,7 +12,7 @@ __lazy_modules__ = [
     'mycli.cli_runner',
     'mycli.client',
     'mycli.constants',
-    'mycli.packages.cli_utils',
+    'mycli.packages.utils.cli_utils',
 ]
 
 from dataclasses import dataclass
@@ -32,7 +32,7 @@ from mycli.constants import (
     DEFAULT_PROMPT,
     EMPTY_PASSWORD_FLAG_SENTINEL,
 )
-from mycli.packages.cli_utils import filtered_sys_argv
+from mycli.packages.utils.cli_utils import filtered_sys_argv
 
 
 class IntOrStringClickParamType(click.ParamType):

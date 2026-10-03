@@ -63,13 +63,7 @@ from mycli.constants import (
 from mycli.key_bindings import mycli_bindings
 from mycli.lexer import MyCliLexer
 from mycli.packages import special
-from mycli.packages.filepaths import dir_path_exists
 from mycli.packages.hybrid_redirection import get_redirect_components, is_redirect_command
-from mycli.packages.interactive_utils import confirm, confirm_destructive_query
-from mycli.packages.key_binding_utils import (
-    handle_clip_command,
-    handle_editor_command,
-)
 from mycli.packages.polars.transform import (
     PolarsTransform,
     PolarsTransformError,
@@ -80,7 +74,14 @@ from mycli.packages.polars.transform import (
 from mycli.packages.ptoolkit.history import FRECENCY_HISTORY_ENTRIES, FRECENCY_REFRESH_INTERVAL, FileHistoryWithTimestamp
 from mycli.packages.special.iocommands import temporary_redirect
 from mycli.packages.special.utils import format_uptime, get_ssl_version, get_uptime, get_warning_count
-from mycli.packages.sql_utils import (
+from mycli.packages.sqlresult import SQLResult
+from mycli.packages.utils.interactive_utils import confirm, confirm_destructive_query
+from mycli.packages.utils.key_binding_utils import (
+    handle_clip_command,
+    handle_editor_command,
+)
+from mycli.packages.utils.path_utils import dir_path_exists
+from mycli.packages.utils.sql_utils import (
     extract_new_password,
     is_dropping_database,
     is_mutating,
@@ -90,8 +91,7 @@ from mycli.packages.sql_utils import (
     need_completion_refresh,
     need_completion_reset,
 )
-from mycli.packages.sqlresult import SQLResult
-from mycli.packages.string_utils import sanitize_terminal_title
+from mycli.packages.utils.string_utils import sanitize_terminal_title
 from mycli.query_runner import QueryCancelled, QueryRunner, runner_for
 from mycli.sqlexecute import SQLExecute
 from mycli.types import Query

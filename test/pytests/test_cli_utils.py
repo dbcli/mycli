@@ -3,8 +3,8 @@
 import pytest
 
 from mycli.constants import EMPTY_PASSWORD_FLAG_SENTINEL
-from mycli.packages import cli_utils
-from mycli.packages.cli_utils import (
+from mycli.packages.utils import cli_utils
+from mycli.packages.utils.cli_utils import (
     filtered_sys_argv,
     is_valid_connection_scheme,
 )

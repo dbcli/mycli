@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 
-from mycli.packages import filepaths
+from mycli.packages.utils import path_utils as filepaths
 
 
 def load_filepaths_variant(
