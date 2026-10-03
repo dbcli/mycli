@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from mycli.packages.ptoolkit import multiline as clibuffer
+from mycli.packages.prompt_toolkit import multiline as clibuffer
 
 
 @dataclass

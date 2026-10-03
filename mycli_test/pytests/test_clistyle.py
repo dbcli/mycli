@@ -1,6 +1,6 @@
 # type: ignore
 
-"""Tests for the mycli.packages.ptoolkit.style module."""
+"""Tests for the mycli.packages.prompt_toolkit.style module."""
 
 from types import SimpleNamespace
 
@@ -9,7 +9,7 @@ from pygments.style import Style as PygmentsStyle
 from pygments.token import Token
 from pygments.util import ClassNotFound
 
-from mycli.packages.ptoolkit import style as clistyle
+from mycli.packages.prompt_toolkit import style as clistyle
 
 
 def test_parse_pygments_style_handles_style_classes_instances_and_dict_values() -> None:
@@ -108,7 +108,7 @@ def test_style_factory_ptoolkit_builds_styles_and_falls_back(monkeypatch, caplog
         'search': 'prompt-invalid',
     }
 
-    with caplog.at_level('ERROR', logger='mycli.packages.ptoolkit.style'):
+    with caplog.at_level('ERROR', logger='mycli.packages.prompt_toolkit.style'):
         styles = clistyle.style_factory_ptoolkit('missing', cli_style)
 
     assert calls == ['missing', 'native']
@@ -149,7 +149,7 @@ def test_style_factory_helpers_updates_known_tokens(monkeypatch, caplog) -> None
         'unknown': 'skip-me',
     }
 
-    with caplog.at_level('ERROR', logger='mycli.packages.ptoolkit.style'):
+    with caplog.at_level('ERROR', logger='mycli.packages.prompt_toolkit.style'):
         output_style = clistyle.style_factory_helpers('native', cli_style)
 
     assert output_style.styles[Token.Prompt] == 'ansiblue'

@@ -13,6 +13,7 @@ Internal
 * Rename `special` package to `special_commands`.
 * Move various integrations to an `integrations` directory.
 * Move various `prompt_toolkit` extensions to the `ptoolkit` directory.
+* Rename the `ptoolkit` package to `prompt_toolkit`.
 * Move `mycli_lexer.py` to a `pygments` package directory.
 * Move `password_sources.py` to a `credentials` package directory.
 * Create an `execution` package directory for `sql_execute.py` and `background_runner.py`.

@@ -7,7 +7,7 @@ from prompt_toolkit.enums import EditingMode
 from prompt_toolkit.key_binding.vi_state import InputMode
 import pytest
 
-from mycli.packages.ptoolkit import toolbar as clitoolbar
+from mycli.packages.prompt_toolkit import toolbar as clitoolbar
 
 
 def make_mycli(

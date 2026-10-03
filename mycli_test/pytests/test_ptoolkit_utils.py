@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Any, cast
 
-from mycli.packages.ptoolkit import utils as ptoolkit_utils
+from mycli.packages.prompt_toolkit import utils as ptoolkit_utils
 
 
 @dataclass

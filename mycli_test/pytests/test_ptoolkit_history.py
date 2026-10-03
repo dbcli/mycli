@@ -5,8 +5,8 @@ import threading
 
 import pytest
 
-from mycli.packages.ptoolkit import history as history_module
-from mycli.packages.ptoolkit.history import FileHistoryWithTimestamp, frecency_score
+from mycli.packages.prompt_toolkit import history as history_module
+from mycli.packages.prompt_toolkit.history import FileHistoryWithTimestamp, frecency_score
 
 
 def wait_for_frecency_refresh(history: FileHistoryWithTimestamp) -> None:
