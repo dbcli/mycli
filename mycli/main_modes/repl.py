@@ -58,7 +58,7 @@ from mycli.constants import (
     QueryState,
 )
 from mycli.packages import special_commands
-from mycli.packages.datafrane.transform import (
+from mycli.packages.dataframes.transform import (
     PolarsTransform,
     PolarsTransformError,
     parse_polars_transform,

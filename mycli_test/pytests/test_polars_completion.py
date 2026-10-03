@@ -10,8 +10,8 @@ import pytest
 import sqlglot
 
 from mycli.packages.completion.sql_completer import SQLCompleter
-from mycli.packages.datafrane import completion as polars_completion
-from mycli.packages.datafrane.completion import PolarsCompletion, complete_polars_transform
+from mycli.packages.dataframes import completion as polars_completion
+from mycli.packages.dataframes.completion import PolarsCompletion, complete_polars_transform
 
 
 def completion(command: str, text: str) -> PolarsCompletion:

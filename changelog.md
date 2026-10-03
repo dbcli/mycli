@@ -4,7 +4,7 @@ Upcoming (TBD)
 Internal
 --------
 * Add Python 3.15 trove classifier.
-* Move Polars files to `dataframe` package directory.
+* Move Polars files to `dataframes` package directory.
 * Move various utility files to a `utils` directory.
 * Move various completion files to a `completion` directory.
 * Move `fzf.py` inside a package directory.

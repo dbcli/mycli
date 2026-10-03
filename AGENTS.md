@@ -41,8 +41,8 @@ A command line client for MySQL with auto-completion and syntax highlighting.
     ├── mycli/packages/completion/schema_prefetcher.py    # background prefetcher for multi-schema auto-completion
     ├── mycli/packages/completion/sql_completer.py        # finds SQL completion candidates
     ├── mycli/packages/credentials/password_sources.py    # password sources and precedence
-    ├── mycli/packages/datafrane/completion.py            # completions for `.|` transforms
-    ├── mycli/packages/datafrane/transform.py             # implements `.|` transforms
+    ├── mycli/packages/dataframes/completion.py           # completions for `.|` transforms
+    ├── mycli/packages/dataframes/transform.py            # implements `.|` transforms
     ├── mycli/packages/execution/background_runner.py     # run queries in the background, with query state and timing updates
     ├── mycli/packages/execution/sql_execute.py           # `SQLExecute` class and friends
     ├── mycli/packages/integrations/                      # integrations with fzf, Boundary, Kubernetes, macOS, OpenSSH, and Vault
