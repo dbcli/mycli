@@ -15,6 +15,7 @@ Internal
 * Move various `prompt_toolkit` extensions to the `ptoolkit` directory.
 * Move `mycli_lexer.py` to a `pygments` package directory.
 * Move `password_sources.py` to a `credentials` package directory.
+* Create an `execution` package directory for `sql_execute.py` and `background_runner.py`.
 
 
 v2.28.0 (2026/10/02)

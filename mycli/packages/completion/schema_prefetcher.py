@@ -15,7 +15,7 @@ import threading
 from time import monotonic
 from typing import TYPE_CHECKING, Any, Iterable
 
-from mycli.sqlexecute import SQLExecute
+from mycli.packages.execution.sql_execute import SQLExecute
 
 if TYPE_CHECKING:  # pragma: no cover - typing only
     from mycli.client import MyCli

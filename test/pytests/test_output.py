@@ -18,9 +18,9 @@ import pytest
 from mycli import compat
 from mycli import output as output_module
 from mycli.output import OutputMixin
+from mycli.packages.execution.background_runner import QueryRunner
+from mycli.packages.execution.sql_execute import SQLExecute
 from mycli.packages.sql_result.sql_result import SQLResult
-from mycli.query_runner import QueryRunner
-from mycli.sqlexecute import SQLExecute
 from mycli.types import ImageProtocol
 from test.utils import DummyFormatter, FakeCursorBase, make_bare_mycli, make_streaming_cursor  # type: ignore[attr-defined]
 

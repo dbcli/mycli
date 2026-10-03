@@ -12,6 +12,7 @@ import click
 from mycli.config import write_default_config
 from mycli.main_modes.repl import set_all_external_titles
 from mycli.packages import special_commands
+from mycli.packages.execution.sql_execute import SQLExecute
 from mycli.packages.ptoolkit.history import FileHistoryWithTimestamp
 from mycli.packages.special_commands.main import ArgType, SpecialCommandAlias
 from mycli.packages.special_commands.source import (
@@ -23,7 +24,6 @@ from mycli.packages.sql_result.sql_result import SQLResult
 from mycli.packages.utils.batch_utils import statements_from_filehandle
 from mycli.packages.utils.interactive_utils import confirm_destructive_query
 from mycli.packages.utils.path_utils import dir_path_exists
-from mycli.sqlexecute import SQLExecute
 
 CONFIG_COMMAND_USAGE = '''Syntax:
   /config get <key>

@@ -12,12 +12,12 @@ from pymysql.connections import Connection
 from pymysql.cursors import Cursor, SSCursor
 import pytest
 
-from mycli import query_runner
-from mycli import sqlexecute as sqlexecute_module
 from mycli.constants import DEFAULT_WIDTH, TTY_ERASE_LINE, QueryState
+from mycli.packages.execution import background_runner as query_runner
+from mycli.packages.execution import sql_execute as sqlexecute_module
+from mycli.packages.execution.background_runner import BackgroundCursor, BackgroundSSCursor, QueryCancelled, QueryRunner
+from mycli.packages.execution.sql_execute import SQLExecute
 from mycli.packages.sql_result.sql_result import SQLResult
-from mycli.query_runner import BackgroundCursor, BackgroundSSCursor, QueryCancelled, QueryRunner
-from mycli.sqlexecute import SQLExecute
 from test.utils import dbtest  # type: ignore[attr-defined]
 
 
@@ -89,7 +89,7 @@ def test_render_ticks_stops_after_display_failure(
     display = Mock(side_effect=error)
     monkeypatch.setattr(runner, '_display', display)
 
-    with caplog.at_level('DEBUG', logger='mycli.query_runner'):
+    with caplog.at_level('DEBUG', logger='mycli.packages.execution.background_runner'):
         runner._render_ticks()
 
     display.assert_called_once_with(2.0, QueryState.RENDERING.value)
@@ -105,7 +105,7 @@ def test_close_control_discards_connection_even_when_close_fails(
     control.close.side_effect = OSError('connection lost')
     runner.control = control
 
-    with caplog.at_level('DEBUG', logger='mycli.query_runner'):
+    with caplog.at_level('DEBUG', logger='mycli.packages.execution.background_runner'):
         runner._close_control()
 
     control.close.assert_called_once_with()
@@ -143,7 +143,7 @@ def test_clear_resets_visibility_when_terminal_fails(
     monkeypatch.setattr(query_runner.sys, 'stderr', output)
     runner.visible = True
 
-    with caplog.at_level('DEBUG', logger='mycli.query_runner'):
+    with caplog.at_level('DEBUG', logger='mycli.packages.execution.background_runner'):
         runner._clear()
 
     assert not runner.visible

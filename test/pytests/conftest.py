@@ -2,7 +2,7 @@
 
 import pytest
 
-import mycli.sqlexecute
+from mycli.packages.execution import sql_execute
 from test.utils import CHARACTER_SET, DATABASE, HOST, PASSWORD, PORT, USER, create_db, db_connection
 
 
@@ -23,7 +23,7 @@ def cursor(connection):
 
 @pytest.fixture
 def executor(connection):
-    return mycli.sqlexecute.SQLExecute(
+    return sql_execute.SQLExecute(
         database=DATABASE,
         user=USER,
         host=HOST,

@@ -19,10 +19,10 @@ import pytest
 
 import mycli.main_modes.repl as repl_mode
 from mycli.output import OutputMixin
+from mycli.packages.execution.background_runner import QueryRunner
+from mycli.packages.execution.sql_execute import SQLExecute
 from mycli.packages.special_commands import io_commands as iocommands
 from mycli.packages.sql_result.sql_result import SQLResult
-from mycli.query_runner import QueryRunner
-from mycli.sqlexecute import SQLExecute
 from test.utils import make_streaming_cursor  # type: ignore[attr-defined]
 
 
