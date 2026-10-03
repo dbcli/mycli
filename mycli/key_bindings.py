@@ -18,9 +18,9 @@ from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from prompt_toolkit.selection import SelectionType
 
 from mycli.constants import DOCS_URL
-from mycli.packages import key_binding_utils
 from mycli.packages.ptoolkit.fzf_history import search_history
 from mycli.packages.ptoolkit.utils import safe_invalidate_display
+from mycli.packages.utils import key_binding_utils
 
 _logger = logging.getLogger(__name__)
 

@@ -3,7 +3,7 @@ from typing import Any, cast
 
 import pytest
 
-from mycli.packages import key_binding_utils
+from mycli.packages.utils import key_binding_utils
 
 
 class FakeSQLExecute:

@@ -22,10 +22,10 @@ from mycli.constants import (
     EMPTY_PASSWORD_FLAG_SENTINEL,
     ER_MUST_CHANGE_PASSWORD_LOGIN,
 )
-from mycli.keyring_utils import set_keyring_password
 from mycli.kubectl_tunnel import KubectlTunnel, KubectlTunnelError
-from mycli.packages.filepaths import guess_socket_location
 from mycli.packages.special.utils import format_connection_dsn
+from mycli.packages.utils.keyring_utils import set_keyring_password
+from mycli.packages.utils.path_utils import guess_socket_location
 from mycli.password_sources import PasswordCandidates
 from mycli.sqlexecute import SQLExecute
 from mycli.ssh_tunnel import SshTunnel, SshTunnelError

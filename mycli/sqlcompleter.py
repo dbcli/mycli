@@ -18,7 +18,6 @@ import rapidfuzz
 
 from mycli.compat import WIN
 from mycli.packages.completion_engine import is_inside_quotes, suggest_type
-from mycli.packages.filepaths import complete_path, parse_path, suggest_path, suggest_path_by_prefix
 from mycli.packages.polars.completion import complete_polars_transform
 from mycli.packages.ptoolkit.history import frecency_score
 from mycli.packages.special import llm
@@ -29,7 +28,8 @@ from mycli.packages.special.favoritequeries import (
     find_favorite_query_template_keys,
 )
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
-from mycli.packages.sql_utils import extract_columns_from_select, extract_tables, last_word
+from mycli.packages.utils.path_utils import complete_path, parse_path, suggest_path, suggest_path_by_prefix
+from mycli.packages.utils.sql_utils import extract_columns_from_select, extract_tables, last_word
 
 _logger = logging.getLogger(__name__)
 _CASE_CHANGE_PAT = re.compile('(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])')

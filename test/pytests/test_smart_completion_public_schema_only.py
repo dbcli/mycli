@@ -809,7 +809,7 @@ def dummy_list_path(dir_name, *, sql_only=True):
     return dirs.get(dir_name, [])
 
 
-@patch("mycli.packages.filepaths.list_path", new=dummy_list_path)
+@patch("mycli.packages.utils.path_utils.list_path", new=dummy_list_path)
 @pytest.mark.parametrize(
     "text,expected",
     [

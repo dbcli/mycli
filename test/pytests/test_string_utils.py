@@ -1,6 +1,6 @@
 # type: ignore
 
-from mycli.packages.string_utils import sanitize_terminal_title
+from mycli.packages.utils.string_utils import sanitize_terminal_title
 
 
 def test_sanitize_terminal_title_strips_ansi_sequences() -> None:

@@ -4,7 +4,8 @@ from keyring.backends.chainer import ChainerBackend
 from keyring.backends.macOS import Keyring
 import pytest
 
-from mycli import keyring_utils, macos_keychain
+from mycli import macos_keychain
+from mycli.packages.utils import keyring_utils
 
 
 @pytest.fixture

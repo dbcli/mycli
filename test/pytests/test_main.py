@@ -51,10 +51,10 @@ from mycli.main import (
 import mycli.main_modes.batch
 import mycli.main_modes.repl as repl_mode
 import mycli.output as output_module
-import mycli.packages.cli_utils
 import mycli.packages.special
 from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
 from mycli.packages.sqlresult import SQLResult
+from mycli.packages.utils import cli_utils
 from mycli.password_sources import KNOWN_PASSWORD_SOURCES
 from mycli.sqlexecute import ServerInfo, SQLExecute
 from mycli.types import Query
@@ -190,19 +190,15 @@ def test_select_from_empty_table(executor):
 
 
 def test_filtered_sys_argv_maps_single_dash_h_to_help(monkeypatch):
-    import mycli.main
-
     monkeypatch.setattr(sys, 'argv', ['mycli', '-h'])
 
-    assert mycli.packages.cli_utils.filtered_sys_argv() == ['--help']
+    assert cli_utils.filtered_sys_argv() == ['--help']
 
 
 def test_filtered_sys_argv_preserves_host_option_usage(monkeypatch):
-    import mycli.main
-
     monkeypatch.setattr(sys, 'argv', ['mycli', '-h', 'example.com'])
 
-    assert mycli.packages.cli_utils.filtered_sys_argv() == ['-h', 'example.com']
+    assert cli_utils.filtered_sys_argv() == ['-h', 'example.com']
 
 
 def test_main_dash_h_and_help_have_equivalent_output(monkeypatch):

@@ -3,7 +3,7 @@ from types import SimpleNamespace
 import click
 import pytest
 
-from mycli.packages import interactive_utils
+from mycli.packages.utils import interactive_utils
 
 
 def test_confirm_bool_param_type_converts_bool_and_strings() -> None:
