@@ -5,7 +5,7 @@ from shutil import which
 from prompt_toolkit import search
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 
-from mycli.packages.fzf.fzf import Fzf
+from mycli.packages.integrations.fzf.fzf import Fzf
 from mycli.packages.prompt_toolkit.history import FileHistoryWithTimestamp
 from mycli.packages.prompt_toolkit.utils import safe_invalidate_display
 
