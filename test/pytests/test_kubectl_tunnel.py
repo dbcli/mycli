@@ -6,8 +6,8 @@ from typing import Any, cast
 
 import pytest
 
-from mycli import kubectl_tunnel
-from mycli.kubectl_tunnel import KubectlTunnel, KubectlTunnelError
+from mycli.packages.integrations.kubernetes import kubectl_tunnel
+from mycli.packages.integrations.kubernetes.kubectl_tunnel import KubectlTunnel, KubectlTunnelError
 
 
 def test_split_options_handles_windows_quotes(monkeypatch: pytest.MonkeyPatch) -> None:

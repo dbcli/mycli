@@ -7,7 +7,7 @@ from keyring.backends import macOS
 from keyring.errors import KeyringLocked, PasswordSetError
 import pytest
 
-from mycli import macos_keychain
+from mycli.packages.integrations.macos import macos_keychain
 
 
 class ApiError(Exception):

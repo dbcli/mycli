@@ -12,7 +12,6 @@ import pymysql
 from pymysql.constants.CR import CR_SERVER_LOST
 from pymysql.constants.ER import ACCESS_DENIED_ERROR, HANDSHAKE_ERROR
 
-from mycli.boundary_tunnel import BoundaryTunnel, BoundaryTunnelError
 from mycli.compat import WIN
 from mycli.config import str_to_bool
 from mycli.constants import (
@@ -22,13 +21,14 @@ from mycli.constants import (
     EMPTY_PASSWORD_FLAG_SENTINEL,
     ER_MUST_CHANGE_PASSWORD_LOGIN,
 )
-from mycli.kubectl_tunnel import KubectlTunnel, KubectlTunnelError
+from mycli.packages.integrations.boundary.boundary_tunnel import BoundaryTunnel, BoundaryTunnelError
+from mycli.packages.integrations.kubernetes.kubectl_tunnel import KubectlTunnel, KubectlTunnelError
+from mycli.packages.integrations.openssh.ssh_tunnel import SshTunnel, SshTunnelError
 from mycli.packages.special_commands.special_command_utils import format_connection_dsn
 from mycli.packages.utils.keyring_utils import set_keyring_password
 from mycli.packages.utils.path_utils import guess_socket_location
 from mycli.password_sources import PasswordCandidates
 from mycli.sqlexecute import SQLExecute
-from mycli.ssh_tunnel import SshTunnel, SshTunnelError
 
 try:
     from pwd import getpwuid

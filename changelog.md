@@ -11,6 +11,7 @@ Internal
 * Move `hybrid_redirection.py` inside a package directory.
 * Move `sql_result.py` inside a package directory.
 * Rename `special` package to `special_commands`.
+* Move various integrations to an `integrations` directory.
 
 
 v2.28.0 (2026/10/02)

@@ -17,7 +17,6 @@ A command line client for MySQL with auto-completion and syntax highlighting.
     ├── mycli/                                            # application source
     ├── mycli/__init__.py                                 # provides version number
     ├── mycli/app_state.py                                # `AppStateMixin` application state mixin and related functions
-    ├── mycli/boundary_tunnel.py                          # connection over Boundary tunnel
     ├── mycli/cli_runner.py                               # connects and dispatches main modes based on CLI arguments
     ├── mycli/clibuffer.py                                # prompt_toolkit buffer utilities
     ├── mycli/client_commands.py                          # special commands which must be registered separately
@@ -30,9 +29,7 @@ A command line client for MySQL with auto-completion and syntax highlighting.
     ├── mycli/config.py                                   # configuration file readers and utilities
     ├── mycli/constants.py                                # shared constants
     ├── mycli/key_bindings.py                             # prompt_toolkit key binding utilities
-    ├── mycli/kubectl_tunnel.py                           # connection over kubectl tunnel
     ├── mycli/lexer.py                                    # extends `MySqlLexer` from Pygments
-    ├── mycli/macos_keychain.py                           # macOS Keychain credentials preserving access controls
     ├── mycli/main.py                                     # processes CLI arguments
     ├── mycli/main_modes/                                 # main execution paths
     ├── mycli/main_modes/batch.py                         # `--batch` mode
@@ -50,6 +47,7 @@ A command line client for MySQL with auto-completion and syntax highlighting.
     ├── mycli/packages/completion/sql_completer.py        # finds SQL completion candidates
     ├── mycli/packages/fzf/fzf.py                         # general interface to fzf chooser
     ├── mycli/packages/hybrid_redirection/                # implementation of shell-style redirects
+    ├── mycli/packages/integrations/                      # integrations with Boundary, Kubernetes, macOS, OpenSSH, and Vault
     ├── mycli/packages/polars/completion.py               # completions for `.|` transforms
     ├── mycli/packages/polars/transform.py                # implements `.|` transforms
     ├── mycli/packages/ptoolkit/                          # extends prompt_toolkit
@@ -67,10 +65,8 @@ A command line client for MySQL with auto-completion and syntax highlighting.
     ├── mycli/password_sources.py                         # password sources and precedence
     ├── mycli/query_runner.py                             # run queries with query state and timing updates
     ├── mycli/resources/completions/                      # shell completions for CLI interface
-    ├── mycli/ssh_tunnel.py                               # connecting over a tunnel with `--ssh-jump`
     ├── mycli/sqlexecute.py                               # runs SQL queries
     ├── mycli/types.py                                    # shared types
-    ├── mycli/vault.py                                    # Vault integration
     ├── test/features/                                    # behave tests
     ├── test/myclirc                                      # mycli configuration used for tests
     ├── test/mylogin.cnf                                  # `mylogin.cnf` example used for tests

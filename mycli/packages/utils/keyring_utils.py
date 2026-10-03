@@ -8,7 +8,7 @@ def _set_password_with_backend(backend: KeyringBackend, service: str, account: s
     from keyring.backends.macOS import Keyring
 
     if type(backend) is Keyring:
-        from mycli import macos_keychain
+        from mycli.packages.integrations.macos import macos_keychain
 
         macos_keychain.set_password(service, account, password)
     else:
