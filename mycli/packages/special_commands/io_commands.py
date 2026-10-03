@@ -21,9 +21,9 @@ import pyperclip
 import sqlparse
 
 from mycli.compat import WIN
-from mycli.packages.special.delimitercommand import DelimiterCommand
-from mycli.packages.special.dsn_aliases import INVALID_DSN_ALIAS_ERROR, DsnAliases, is_valid_dsn_alias
-from mycli.packages.special.favoritequeries import (
+from mycli.packages.special_commands.delimiter_command import DelimiterCommand
+from mycli.packages.special_commands.dsn_aliases import INVALID_DSN_ALIAS_ERROR, DsnAliases, is_valid_dsn_alias
+from mycli.packages.special_commands.favorite_queries import (
     FAVORITE_COMMAND_HELP,
     FavoriteQueries,
     FavoriteQueryReloadError,
@@ -31,10 +31,10 @@ from mycli.packages.special.favoritequeries import (
     favorite_query_template_environment,
     favorite_query_variable_pattern,
 )
-from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
-from mycli.packages.special.main import ArgType, SpecialCommandAlias, special_command
-from mycli.packages.special.main import execute as special_execute
-from mycli.packages.special.utils import compute_current_dsn, handle_cd_command
+from mycli.packages.special_commands.main import COMMANDS as SPECIAL_COMMANDS
+from mycli.packages.special_commands.main import ArgType, SpecialCommandAlias, special_command
+from mycli.packages.special_commands.main import execute as special_execute
+from mycli.packages.special_commands.special_command_utils import compute_current_dsn, handle_cd_command
 from mycli.packages.sql_result.sql_result import SQLResult
 from mycli.packages.utils.interactive_utils import confirm_destructive_query
 

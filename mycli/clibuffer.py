@@ -2,8 +2,8 @@ from prompt_toolkit.application import get_app
 from prompt_toolkit.enums import DEFAULT_BUFFER
 from prompt_toolkit.filters import Condition, Filter
 
-from mycli.packages.special import iocommands
-from mycli.packages.special.main import (
+from mycli.packages.special_commands import io_commands as iocommands
+from mycli.packages.special_commands.main import (
     CASE_INSENSITIVE_COMMANDS,
     CASE_SENSITIVE_COMMANDS,
 )

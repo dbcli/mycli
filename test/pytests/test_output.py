@@ -180,7 +180,7 @@ def test_get_output_margin_renders_prompt_once_and_counts_status_lines(monkeypat
     cli.prompt_session = None
     cli.get_reserved_space = lambda: 2  # type: ignore[assignment]
     monkeypatch.setattr(output_module.repl_mode, 'render_prompt_string', lambda *_args: FormattedText([('', 'one\ntwo')]))
-    monkeypatch.setattr(output_module.special, 'is_timing_enabled', lambda: True)
+    monkeypatch.setattr(output_module.special_commands, 'is_timing_enabled', lambda: True)
 
     margin = OutputMixin.get_output_margin(cli, 'ok\nwarning')
 
@@ -200,7 +200,7 @@ def test_get_output_margin_uses_prompt_session_render_counter(monkeypatch: pytes
         return FormattedText([('', 'prompt')])
 
     monkeypatch.setattr(output_module.repl_mode, 'render_prompt_string', render_prompt_string)
-    monkeypatch.setattr(output_module.special, 'is_timing_enabled', lambda: False)
+    monkeypatch.setattr(output_module.special_commands, 'is_timing_enabled', lambda: False)
 
     assert OutputMixin.get_output_margin(cli) == 2
     assert render_counters == [9]
@@ -218,11 +218,11 @@ def test_output_writes_lines_sinks_and_status(monkeypatch: pytest.MonkeyPatch) -
     printed_lines: list[str] = []
     printed_status: list[Any] = []
     cli.log_output = lambda value: logged.append(value)  # type: ignore[assignment]
-    monkeypatch.setattr(output_module.special, 'write_tee', lambda value: tee.append(value))
-    monkeypatch.setattr(output_module.special, 'write_once', lambda value: once.append(value))
-    monkeypatch.setattr(output_module.special, 'write_pipe_once', lambda value: pipe_once.append(value))
-    monkeypatch.setattr(output_module.special, 'is_redirected', lambda: False)
-    monkeypatch.setattr(output_module.special, 'is_pager_enabled', lambda: False)
+    monkeypatch.setattr(output_module.special_commands, 'write_tee', lambda value: tee.append(value))
+    monkeypatch.setattr(output_module.special_commands, 'write_once', lambda value: once.append(value))
+    monkeypatch.setattr(output_module.special_commands, 'write_pipe_once', lambda value: pipe_once.append(value))
+    monkeypatch.setattr(output_module.special_commands, 'is_redirected', lambda: False)
+    monkeypatch.setattr(output_module.special_commands, 'is_pager_enabled', lambda: False)
     monkeypatch.setattr(click, 'secho', lambda value, **_kwargs: printed_lines.append(value))
     monkeypatch.setattr(prompt_toolkit, 'print_formatted_text', lambda text, style=None: printed_status.append(text))
 
@@ -247,11 +247,11 @@ def test_output_uses_prompt_session_size(monkeypatch: pytest.MonkeyPatch) -> Non
     cli.log_output = lambda value: None  # type: ignore[assignment]
     cli.get_output_margin = lambda status=None: 1  # type: ignore[assignment]
     printed_lines: list[str] = []
-    monkeypatch.setattr(output_module.special, 'write_tee', lambda value: None)
-    monkeypatch.setattr(output_module.special, 'write_once', lambda value: None)
-    monkeypatch.setattr(output_module.special, 'write_pipe_once', lambda value: None)
-    monkeypatch.setattr(output_module.special, 'is_redirected', lambda: False)
-    monkeypatch.setattr(output_module.special, 'is_pager_enabled', lambda: False)
+    monkeypatch.setattr(output_module.special_commands, 'write_tee', lambda value: None)
+    monkeypatch.setattr(output_module.special_commands, 'write_once', lambda value: None)
+    monkeypatch.setattr(output_module.special_commands, 'write_pipe_once', lambda value: None)
+    monkeypatch.setattr(output_module.special_commands, 'is_redirected', lambda: False)
+    monkeypatch.setattr(output_module.special_commands, 'is_pager_enabled', lambda: False)
     monkeypatch.setattr(click, 'secho', lambda value, **_kwargs: printed_lines.append(value))
 
     OutputMixin.output(cli, itertools.chain(['row']), SQLResult())
@@ -272,9 +272,9 @@ def test_rendering_stops_before_terminal_output(monkeypatch: pytest.MonkeyPatch,
     rendered = Event()
     printed: list[str] = []
     monkeypatch.setattr(runner, '_display', lambda *args: rendered.set())
-    monkeypatch.setattr(output_module.special, 'is_redirected', lambda: False)
-    monkeypatch.setattr(output_module.special, 'is_explorer_output', lambda: False)
-    monkeypatch.setattr(output_module.special, 'is_pager_enabled', lambda: paged)
+    monkeypatch.setattr(output_module.special_commands, 'is_redirected', lambda: False)
+    monkeypatch.setattr(output_module.special_commands, 'is_explorer_output', lambda: False)
+    monkeypatch.setattr(output_module.special_commands, 'is_pager_enabled', lambda: paged)
 
     def rows() -> Any:
         assert rendered.wait(2)
@@ -301,11 +301,11 @@ def test_output_flushes_buffer_when_content_does_not_fit(monkeypatch: pytest.Mon
     cli.log_output = lambda value: None  # type: ignore[assignment]
     cli.get_output_margin = lambda status=None: output_module.DEFAULT_HEIGHT  # type: ignore[assignment]
     printed_lines: list[str] = []
-    monkeypatch.setattr(output_module.special, 'write_tee', lambda value: None)
-    monkeypatch.setattr(output_module.special, 'write_once', lambda value: None)
-    monkeypatch.setattr(output_module.special, 'write_pipe_once', lambda value: None)
-    monkeypatch.setattr(output_module.special, 'is_redirected', lambda: False)
-    monkeypatch.setattr(output_module.special, 'is_pager_enabled', lambda: False)
+    monkeypatch.setattr(output_module.special_commands, 'write_tee', lambda value: None)
+    monkeypatch.setattr(output_module.special_commands, 'write_once', lambda value: None)
+    monkeypatch.setattr(output_module.special_commands, 'write_pipe_once', lambda value: None)
+    monkeypatch.setattr(output_module.special_commands, 'is_redirected', lambda: False)
+    monkeypatch.setattr(output_module.special_commands, 'is_pager_enabled', lambda: False)
     monkeypatch.setattr(click, 'secho', lambda value, **_kwargs: printed_lines.append(value))
 
     OutputMixin.output(cli, itertools.chain(['row 1', 'row 2']), SQLResult())
@@ -320,11 +320,11 @@ def test_output_switches_to_pager_when_content_does_not_fit(monkeypatch: pytest.
     cli.log_output = lambda value: None  # type: ignore[assignment]
     cli.get_output_margin = lambda status=None: output_module.DEFAULT_HEIGHT  # type: ignore[assignment]
     paged_lines: list[str] = []
-    monkeypatch.setattr(output_module.special, 'write_tee', lambda value: None)
-    monkeypatch.setattr(output_module.special, 'write_once', lambda value: None)
-    monkeypatch.setattr(output_module.special, 'write_pipe_once', lambda value: None)
-    monkeypatch.setattr(output_module.special, 'is_redirected', lambda: False)
-    monkeypatch.setattr(output_module.special, 'is_pager_enabled', lambda: True)
+    monkeypatch.setattr(output_module.special_commands, 'write_tee', lambda value: None)
+    monkeypatch.setattr(output_module.special_commands, 'write_once', lambda value: None)
+    monkeypatch.setattr(output_module.special_commands, 'write_pipe_once', lambda value: None)
+    monkeypatch.setattr(output_module.special_commands, 'is_redirected', lambda: False)
+    monkeypatch.setattr(output_module.special_commands, 'is_pager_enabled', lambda: True)
     monkeypatch.setattr(click, 'echo_via_pager', lambda values: paged_lines.extend(list(values)))
 
     OutputMixin.output(cli, itertools.chain(['row']), SQLResult())
@@ -338,11 +338,11 @@ def test_output_redirected_skips_screen_printing(monkeypatch: pytest.MonkeyPatch
     cli.log_output = lambda value: None  # type: ignore[assignment]
     cli.get_output_margin = lambda status=None: 1  # type: ignore[assignment]
     printed_lines: list[str] = []
-    monkeypatch.setattr(output_module.special, 'write_tee', lambda value: None)
-    monkeypatch.setattr(output_module.special, 'write_once', lambda value: None)
-    monkeypatch.setattr(output_module.special, 'write_pipe_once', lambda value: None)
-    monkeypatch.setattr(output_module.special, 'is_redirected', lambda: True)
-    monkeypatch.setattr(output_module.special, 'is_pager_enabled', lambda: False)
+    monkeypatch.setattr(output_module.special_commands, 'write_tee', lambda value: None)
+    monkeypatch.setattr(output_module.special_commands, 'write_once', lambda value: None)
+    monkeypatch.setattr(output_module.special_commands, 'write_pipe_once', lambda value: None)
+    monkeypatch.setattr(output_module.special_commands, 'is_redirected', lambda: True)
+    monkeypatch.setattr(output_module.special_commands, 'is_pager_enabled', lambda: False)
     monkeypatch.setattr(click, 'secho', lambda value, **_kwargs: printed_lines.append(value))
 
     OutputMixin.output(cli, itertools.chain(['row']), SQLResult())
@@ -382,11 +382,11 @@ def test_output_sends_buffer_to_pager_when_pager_is_explicit(monkeypatch: pytest
     cli.log_output = lambda value: None  # type: ignore[assignment]
     cli.get_output_margin = lambda status=None: 1  # type: ignore[assignment]
     paged_lines: list[str] = []
-    monkeypatch.setattr(output_module.special, 'write_tee', lambda value: None)
-    monkeypatch.setattr(output_module.special, 'write_once', lambda value: None)
-    monkeypatch.setattr(output_module.special, 'write_pipe_once', lambda value: None)
-    monkeypatch.setattr(output_module.special, 'is_redirected', lambda: False)
-    monkeypatch.setattr(output_module.special, 'is_pager_enabled', lambda: True)
+    monkeypatch.setattr(output_module.special_commands, 'write_tee', lambda value: None)
+    monkeypatch.setattr(output_module.special_commands, 'write_once', lambda value: None)
+    monkeypatch.setattr(output_module.special_commands, 'write_pipe_once', lambda value: None)
+    monkeypatch.setattr(output_module.special_commands, 'is_redirected', lambda: False)
+    monkeypatch.setattr(output_module.special_commands, 'is_pager_enabled', lambda: True)
     monkeypatch.setattr(click, 'echo_via_pager', lambda values: paged_lines.extend(list(values)))
     monkeypatch.setattr(prompt_toolkit, 'print_formatted_text', lambda text, style=None: None)
 
@@ -405,11 +405,11 @@ def test_output_sends_buffer_to_explorer_and_clears_temporary_pager(monkeypatch:
     cli.get_output_margin = lambda status=None: 1  # type: ignore[assignment]
     paged_lines: list[str] = []
     monkeypatch.delenv('PAGER', raising=False)
-    monkeypatch.setattr(output_module.special, 'write_tee', lambda value: None)
-    monkeypatch.setattr(output_module.special, 'write_once', lambda value: None)
-    monkeypatch.setattr(output_module.special, 'write_pipe_once', lambda value: None)
-    monkeypatch.setattr(output_module.special, 'is_redirected', lambda: False)
-    monkeypatch.setattr(output_module.special, 'is_explorer_output', lambda: True)
+    monkeypatch.setattr(output_module.special_commands, 'write_tee', lambda value: None)
+    monkeypatch.setattr(output_module.special_commands, 'write_once', lambda value: None)
+    monkeypatch.setattr(output_module.special_commands, 'write_pipe_once', lambda value: None)
+    monkeypatch.setattr(output_module.special_commands, 'is_redirected', lambda: False)
+    monkeypatch.setattr(output_module.special_commands, 'is_explorer_output', lambda: True)
     monkeypatch.setattr(click, 'echo_via_pager', lambda values: paged_lines.extend(list(values)))
     monkeypatch.setattr(prompt_toolkit, 'print_formatted_text', lambda text, style=None: None)
 
@@ -429,11 +429,11 @@ def test_output_sends_buffer_to_explorer_and_restores_existing_pager(monkeypatch
     cli.get_output_margin = lambda status=None: 1  # type: ignore[assignment]
     paged_lines: list[str] = []
     monkeypatch.setenv('PAGER', 'original-pager')
-    monkeypatch.setattr(output_module.special, 'write_tee', lambda value: None)
-    monkeypatch.setattr(output_module.special, 'write_once', lambda value: None)
-    monkeypatch.setattr(output_module.special, 'write_pipe_once', lambda value: None)
-    monkeypatch.setattr(output_module.special, 'is_redirected', lambda: False)
-    monkeypatch.setattr(output_module.special, 'is_explorer_output', lambda: True)
+    monkeypatch.setattr(output_module.special_commands, 'write_tee', lambda value: None)
+    monkeypatch.setattr(output_module.special_commands, 'write_once', lambda value: None)
+    monkeypatch.setattr(output_module.special_commands, 'write_pipe_once', lambda value: None)
+    monkeypatch.setattr(output_module.special_commands, 'is_redirected', lambda: False)
+    monkeypatch.setattr(output_module.special_commands, 'is_explorer_output', lambda: True)
     monkeypatch.setattr(click, 'echo_via_pager', lambda values: paged_lines.extend(list(values)))
     monkeypatch.setattr(prompt_toolkit, 'print_formatted_text', lambda text, style=None: None)
 
@@ -452,11 +452,11 @@ def test_output_reports_missing_configured_explorer(monkeypatch: pytest.MonkeyPa
     cli.log_output = lambda value: None  # type: ignore[assignment]
     cli.get_output_margin = lambda status=None: 1  # type: ignore[assignment]
     printed_lines: list[tuple[str, dict[str, Any]]] = []
-    monkeypatch.setattr(output_module.special, 'write_tee', lambda value: None)
-    monkeypatch.setattr(output_module.special, 'write_once', lambda value: None)
-    monkeypatch.setattr(output_module.special, 'write_pipe_once', lambda value: None)
-    monkeypatch.setattr(output_module.special, 'is_redirected', lambda: False)
-    monkeypatch.setattr(output_module.special, 'is_explorer_output', lambda: True)
+    monkeypatch.setattr(output_module.special_commands, 'write_tee', lambda value: None)
+    monkeypatch.setattr(output_module.special_commands, 'write_once', lambda value: None)
+    monkeypatch.setattr(output_module.special_commands, 'write_pipe_once', lambda value: None)
+    monkeypatch.setattr(output_module.special_commands, 'is_redirected', lambda: False)
+    monkeypatch.setattr(output_module.special_commands, 'is_explorer_output', lambda: True)
     monkeypatch.setattr(click, 'secho', lambda value, **kwargs: printed_lines.append((value, kwargs)))
     monkeypatch.setattr(prompt_toolkit, 'print_formatted_text', lambda text, style=None: None)
 
@@ -471,8 +471,8 @@ def test_configure_pager_uses_more_for_missing_less_on_windows(monkeypatch: pyte
     pager_calls: list[str] = []
     monkeypatch.setattr(output_module, 'WIN', True)
     monkeypatch.setattr(output_module.shutil, 'which', lambda value: None)
-    monkeypatch.setattr(output_module.special, 'set_pager', lambda value: pager_calls.append(value))
-    monkeypatch.setattr(output_module.special, 'disable_pager', lambda: None)
+    monkeypatch.setattr(output_module.special_commands, 'set_pager', lambda value: pager_calls.append(value))
+    monkeypatch.setattr(output_module.special_commands, 'disable_pager', lambda: None)
 
     OutputMixin.configure_pager(cli)
 
@@ -485,8 +485,8 @@ def test_configure_pager_uses_myclirc_pager_and_sets_less(monkeypatch: pytest.Mo
     pager_calls: list[str] = []
     disabled: list[bool] = []
     monkeypatch.delenv('LESS', raising=False)
-    monkeypatch.setattr(output_module.special, 'set_pager', lambda value: pager_calls.append(value))
-    monkeypatch.setattr(output_module.special, 'disable_pager', lambda: disabled.append(True))
+    monkeypatch.setattr(output_module.special_commands, 'set_pager', lambda value: pager_calls.append(value))
+    monkeypatch.setattr(output_module.special_commands, 'disable_pager', lambda: disabled.append(True))
 
     OutputMixin.configure_pager(cli)
 
@@ -501,8 +501,8 @@ def test_configure_pager_disables_pager_when_configured(monkeypatch: pytest.Monk
     cli.config = ConfigObj({'main': {'pager': '', 'enable_pager': 'False'}})
     pager_calls: list[str] = []
     disabled: list[bool] = []
-    monkeypatch.setattr(output_module.special, 'set_pager', lambda value: pager_calls.append(value))
-    monkeypatch.setattr(output_module.special, 'disable_pager', lambda: disabled.append(True))
+    monkeypatch.setattr(output_module.special_commands, 'set_pager', lambda value: pager_calls.append(value))
+    monkeypatch.setattr(output_module.special_commands, 'disable_pager', lambda: disabled.append(True))
 
     OutputMixin.configure_pager(cli)
 
@@ -534,7 +534,7 @@ def streaming_output_cli(monkeypatch: pytest.MonkeyPatch) -> Any:
     cli.main_formatter = TabularOutputFormatter(format_name='csv')
     cli.redirect_formatter = TabularOutputFormatter(format_name='csv')
     cli.helpers_style = cli.helpers_warnings_style = cli.ptoolkit_style = None
-    monkeypatch.setattr(output_module.special, 'is_explorer_output', lambda: False)
+    monkeypatch.setattr(output_module.special_commands, 'is_explorer_output', lambda: False)
     return cli
 
 
@@ -598,7 +598,7 @@ def test_streaming_status_is_stable_after_cursor_reuse(streaming_output_cli: Any
 def test_output_displays_final_streaming_count(streaming_output_cli: Any, monkeypatch: pytest.MonkeyPatch) -> None:
     cli = streaming_output_cli
     cli.get_output_margin = lambda status=None: 0
-    monkeypatch.setattr(output_module.special, 'is_redirected', lambda: False)
+    monkeypatch.setattr(output_module.special_commands, 'is_redirected', lambda: False)
     printed: list[str] = []
     monkeypatch.setattr(prompt_toolkit, 'print_formatted_text', lambda text, **kwargs: printed.append(to_plain_text(text)))
     result = SQLExecute.__new__(SQLExecute).get_result(make_streaming_cursor([(1,), (2,)]))
@@ -626,7 +626,7 @@ def test_format_sqlresult_uses_explorer_formatter_and_trims_footer(monkeypatch: 
     cli.main_formatter = DummyFormatter()
     cli.explorer_formatter = DummyFormatter()
     cli.explorer_trim_footer = True
-    monkeypatch.setattr(output_module.special, 'is_explorer_output', lambda: True)
+    monkeypatch.setattr(output_module.special_commands, 'is_explorer_output', lambda: True)
     cli.explorer_formatter.format_output = lambda *args, **kwargs: ['header', 'row', 'footer']  # type: ignore[method-assign]
     result = SQLResult(header=['id'], rows=[(1,)])
 

@@ -16,8 +16,8 @@ from pymysql.converters import conversions, convert_date, convert_datetime, conv
 from pymysql.cursors import Cursor, SSCursor
 
 from mycli.constants import ER_MUST_CHANGE_PASSWORD
-from mycli.packages.special import iocommands
-from mycli.packages.special.main import CommandNotFound, execute
+from mycli.packages.special_commands import io_commands as iocommands
+from mycli.packages.special_commands.main import CommandNotFound, execute
 from mycli.packages.sql_result.sql_result import SQLResult
 from mycli.query_runner import QueryRunner
 

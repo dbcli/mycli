@@ -9,8 +9,8 @@ from unittest.mock import MagicMock
 import pymysql
 import pytest
 
-import mycli.packages.special.utils
-from mycli.packages.special.utils import (
+from mycli.packages.special_commands import special_command_utils
+from mycli.packages.special_commands.special_command_utils import (
     CACHED_SSL_VERSION,
     compute_current_dsn,
     format_connection_dsn,
@@ -49,7 +49,7 @@ def test_handle_cd_command_requires_exactly_one_directory() -> None:
 def test_handle_cd_command_changes_directory_and_echoes_cwd(monkeypatch) -> None:
     echoed = []
 
-    monkeypatch.setattr(mycli.packages.special.utils.click, 'echo', lambda message, err=False: echoed.append((message, err)))
+    monkeypatch.setattr(special_command_utils.click, 'echo', lambda message, err=False: echoed.append((message, err)))
     monkeypatch.chdir(os.getcwd())
 
     # resolve() is needed for mac /private/var arrangement
@@ -66,7 +66,7 @@ def test_handle_cd_command_returns_oserror_message(monkeypatch) -> None:
     def raise_oserror(directory: str) -> None:
         raise OSError(2, 'No such file or directory')
 
-    monkeypatch.setattr(mycli.packages.special.utils.os, 'chdir', raise_oserror)
+    monkeypatch.setattr(special_command_utils.os, 'chdir', raise_oserror)
 
     handled, message = handle_cd_command(['cd', '/missing'])
 
@@ -260,7 +260,7 @@ def test_get_local_timezone_returns_tzname(monkeypatch) -> None:
         def astimezone(self) -> FakeAwareDatetime:
             return FakeAwareDatetime()
 
-    monkeypatch.setattr(mycli.packages.special.utils.datetime, 'datetime', FakeDatetime)
+    monkeypatch.setattr(special_command_utils.datetime, 'datetime', FakeDatetime)
 
     assert get_local_timezone() == 'EDT'
 
@@ -278,7 +278,7 @@ def test_get_local_timezone_returns_empty_string_when_tzname_is_none(monkeypatch
         def astimezone(self) -> FakeAwareDatetime:
             return FakeAwareDatetime()
 
-    monkeypatch.setattr(mycli.packages.special.utils.datetime, 'datetime', FakeDatetime)
+    monkeypatch.setattr(special_command_utils.datetime, 'datetime', FakeDatetime)
 
     assert get_local_timezone() == ''
 

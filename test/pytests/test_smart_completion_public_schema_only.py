@@ -8,7 +8,7 @@ from prompt_toolkit.completion import Completion
 from prompt_toolkit.document import Document
 import pytest
 
-import mycli.packages.special.main as special
+from mycli.packages.special_commands import main as special
 from test.utils import pygments_below
 
 metadata = {

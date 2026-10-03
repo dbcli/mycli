@@ -6,9 +6,9 @@ from typing import Any, NoReturn
 import sqlparse
 
 from mycli.compat import WIN
-from mycli.packages import special
-from mycli.packages.special import main as special_main
-from mycli.packages.special.iocommands import expand_favorite_query
+from mycli.packages import special_commands
+from mycli.packages.special_commands import main as special_main
+from mycli.packages.special_commands.io_commands import expand_favorite_query
 
 INVALID_SOURCE_FILENAME = 'Source accepts exactly one filename; filenames containing spaces must be quoted.'
 SOURCE_BOOLEAN_OPTIONS = ('--special', '--show', '--page')
@@ -91,7 +91,7 @@ class _SourceArgumentParser(argparse.ArgumentParser):
 
 
 def _registered_special_command(query: str) -> tuple[str, str] | None:
-    command, _verbosity, arg = special.parse_special_command(query)
+    command, _verbosity, arg = special_commands.parse_special_command(query)
     registered = special_main.COMMANDS.get(command)
     if registered is None:
         registered = special_main.COMMANDS.get(command.lower())
@@ -104,7 +104,7 @@ def _favorite_source_command_is_safe(arg: str) -> bool:
     query, _error = expand_favorite_query(arg)
     if query is None:
         return True
-    return not any(special.is_special_command(statement.rstrip(';')) for statement in sqlparse.split(query))
+    return not any(special_commands.is_special_command(statement.rstrip(';')) for statement in sqlparse.split(query))
 
 
 def _create_source_argument_parser() -> _SourceArgumentParser:

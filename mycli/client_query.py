@@ -5,7 +5,7 @@ from typing import IO, TYPE_CHECKING, Any
 import click
 from pymysql.cursors import Cursor
 
-from mycli.packages import special
+from mycli.packages import special_commands
 from mycli.packages.completion.sql_completer import SQLCompleter
 from mycli.packages.sql_result.sql_result import SQLResult
 
@@ -109,8 +109,8 @@ class ClientQueryMixin:
                 raise QueryError(message)
             output = self.format_sqlresult(
                 result,
-                is_expanded=special.is_expanded_output(),
-                is_redirected=special.is_redirected(),
+                is_expanded=special_commands.is_expanded_output(),
+                is_redirected=special_commands.is_redirected(),
                 null_string=self.null_string,
                 numeric_alignment=self.numeric_alignment,
                 binary_display=self.binary_display,
@@ -120,13 +120,13 @@ class ClientQueryMixin:
                 click.echo(line, nl=new_line)
 
             # get and display warnings if enabled
-            if special.is_show_warnings_enabled() and isinstance(result.rows, Cursor) and result.rows.warning_count > 0:
+            if special_commands.is_show_warnings_enabled() and isinstance(result.rows, Cursor) and result.rows.warning_count > 0:
                 warnings = self.sqlexecute.run("SHOW WARNINGS")
                 for warning in warnings:
                     output = self.format_sqlresult(
                         warning,
-                        is_expanded=special.is_expanded_output(),
-                        is_redirected=special.is_redirected(),
+                        is_expanded=special_commands.is_expanded_output(),
+                        is_redirected=special_commands.is_redirected(),
                         null_string=self.null_string,
                         numeric_alignment=self.numeric_alignment,
                         binary_display=self.binary_display,

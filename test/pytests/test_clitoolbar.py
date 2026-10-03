@@ -72,7 +72,7 @@ def test_create_toolbar_tokens_func_shows_multiline_vi_and_refreshing(monkeypatc
         editing_mode=EditingMode.VI,
         refreshing=True,
     )
-    monkeypatch.setattr(clitoolbar.special, 'get_current_delimiter', lambda: '$$')
+    monkeypatch.setattr(clitoolbar.special_commands, 'get_current_delimiter', lambda: '$$')
     monkeypatch.setattr(clitoolbar, 'get_vi_mode', lambda: 'N')
 
     toolbar = clitoolbar.create_toolbar_tokens_func(mycli, lambda: False, None, mycli.get_custom_toolbar)
@@ -89,7 +89,7 @@ def test_create_toolbar_tokens_func_shows_multiline_vi_and_refreshing(monkeypatc
 
 def test_create_toolbar_tokens_func_applies_custom_format(monkeypatch) -> None:
     mycli = make_mycli(multi_line=True, refreshing=True)
-    monkeypatch.setattr(clitoolbar.special, 'get_current_delimiter', lambda: '$$')
+    monkeypatch.setattr(clitoolbar.special_commands, 'get_current_delimiter', lambda: '$$')
 
     formatted = [("class:bottom-toolbar", "CUSTOM")]
     to_formatted_text = MagicMock(return_value=formatted)
@@ -108,7 +108,7 @@ def test_create_toolbar_tokens_func_applies_custom_format(monkeypatch) -> None:
 
 def test_create_toolbar_tokens_func_replaces_default_toolbar_for_plain_custom_format(monkeypatch) -> None:
     mycli = make_mycli(multi_line=True, toolbar_error_message='boom', refreshing=True)
-    monkeypatch.setattr(clitoolbar.special, 'get_current_delimiter', lambda: '$$')
+    monkeypatch.setattr(clitoolbar.special_commands, 'get_current_delimiter', lambda: '$$')
 
     formatted = [('class:bottom-toolbar', 'PLAIN CUSTOM')]
     to_formatted_text = MagicMock(return_value=formatted)

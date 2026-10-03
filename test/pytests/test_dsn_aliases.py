@@ -8,8 +8,8 @@ from urllib.parse import parse_qsl, urlsplit
 import pytest
 
 from mycli.constants import KNOWN_DSN_QUERY_PARAMS
-import mycli.packages.special.dsn_aliases as dsn_aliases_module
-from mycli.packages.special.dsn_aliases import INVALID_DSN_ALIAS_ERROR, DsnAliases, is_valid_dsn_alias
+from mycli.packages.special_commands import dsn_aliases as dsn_aliases_module
+from mycli.packages.special_commands.dsn_aliases import INVALID_DSN_ALIAS_ERROR, DsnAliases, is_valid_dsn_alias
 
 
 class DummyConfig(dict):
@@ -88,7 +88,7 @@ shared = set shared=1
 def test_from_config_rejects_relative_shared_file(caplog: pytest.LogCaptureFixture) -> None:
     config = DummyConfig({'alias_dsn': {'local': 'mysql://local/db'}})
 
-    with caplog.at_level(logging.WARNING, logger='mycli.packages.special.dsn_aliases'):
+    with caplog.at_level(logging.WARNING, logger='mycli.packages.special_commands.dsn_aliases'):
         aliases = DsnAliases.from_config(config, shared_dsns_file='shared-myclirc')
 
     assert aliases.get('local') == 'mysql://local/db'
@@ -119,7 +119,7 @@ def test_from_config_warns_and_continues_for_missing_shared_file(
     config = DummyConfig({'alias_dsn': {'local': 'mysql://local/db'}})
     missing_file = tmp_path / 'missing-myclirc'
 
-    with caplog.at_level(logging.WARNING, logger='mycli.packages.special.dsn_aliases'):
+    with caplog.at_level(logging.WARNING, logger='mycli.packages.special_commands.dsn_aliases'):
         aliases = DsnAliases.from_config(config, shared_dsns_file=str(missing_file))
 
     assert aliases.get('local') == 'mysql://local/db'

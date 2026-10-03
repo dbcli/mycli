@@ -7,8 +7,8 @@ from unittest.mock import patch
 import click
 import pytest
 
-from mycli.packages.special import llm as llm_module
-from mycli.packages.special.llm import (
+from mycli.packages.special_commands import llm as llm_module
+from mycli.packages.special_commands.llm import (
     NEED_DEPENDENCIES,
     USAGE,
     _build_command_tree,
@@ -24,7 +24,7 @@ from mycli.packages.special.llm import (
     truncate_list_elements,
     truncate_table_lines,
 )
-from mycli.packages.special.main import COMMANDS
+from mycli.packages.special_commands.main import COMMANDS
 from mycli.packages.sql_result.sql_result import SQLResult
 
 
@@ -227,7 +227,7 @@ def test_ensure_mycli_template_returns_early_or_replaces(monkeypatch) -> None:
     ]
 
 
-@patch("mycli.packages.special.llm.llm")
+@patch("mycli.packages.special_commands.llm.llm")
 def test_llm_command_without_args(mock_llm, executor):
     r"""
     Invoking /llm without any arguments should print the usage and raise FinishIteration.
@@ -240,7 +240,7 @@ def test_llm_command_without_args(mock_llm, executor):
     assert exc_info.value.results == [SQLResult(preamble=USAGE)]
 
 
-@patch("mycli.packages.special.llm.llm")
+@patch("mycli.packages.special_commands.llm.llm")
 def test_llm_command_with_help_subcommand(mock_llm, executor):
     r"""
     Invoking /llm with "help" should print the usage and raise FinishIteration.
@@ -253,8 +253,8 @@ def test_llm_command_with_help_subcommand(mock_llm, executor):
     assert exc_info.value.results == [SQLResult(preamble=USAGE)]
 
 
-@patch("mycli.packages.special.llm.llm")
-@patch("mycli.packages.special.llm.run_external_cmd")
+@patch("mycli.packages.special_commands.llm.llm")
+@patch("mycli.packages.special_commands.llm.run_external_cmd")
 def test_llm_command_with_c_flag(mock_run_cmd, mock_llm, executor):
     string = "Hello, no SQL today."
     # Suppose the LLM returns some text without fenced SQL
@@ -266,8 +266,8 @@ def test_llm_command_with_c_flag(mock_run_cmd, mock_llm, executor):
     assert exc_info.value.results == [SQLResult(preamble=string)]
 
 
-@patch("mycli.packages.special.llm.llm")
-@patch("mycli.packages.special.llm.run_external_cmd")
+@patch("mycli.packages.special_commands.llm.llm")
+@patch("mycli.packages.special_commands.llm.run_external_cmd")
 def test_llm_command_with_c_flag_and_fenced_sql(mock_run_cmd, mock_llm, executor):
     # Return text containing a fenced SQL block
     sql_text = "SELECT * FROM users;"
@@ -281,8 +281,8 @@ def test_llm_command_with_c_flag_and_fenced_sql(mock_run_cmd, mock_llm, executor
     assert isinstance(duration, float)
 
 
-@patch("mycli.packages.special.llm.llm")
-@patch("mycli.packages.special.llm.run_external_cmd")
+@patch("mycli.packages.special_commands.llm.llm")
+@patch("mycli.packages.special_commands.llm.run_external_cmd")
 def test_llm_command_known_subcommand(mock_run_cmd, mock_llm, executor):
     # 'models' is a known subcommand
     test_text = r"/llm models"
@@ -292,8 +292,8 @@ def test_llm_command_known_subcommand(mock_run_cmd, mock_llm, executor):
     assert exc_info.value.results is None
 
 
-@patch("mycli.packages.special.llm.llm")
-@patch("mycli.packages.special.llm.run_external_cmd")
+@patch("mycli.packages.special_commands.llm.llm")
+@patch("mycli.packages.special_commands.llm.run_external_cmd")
 def test_llm_command_with_help_flag(mock_run_cmd, mock_llm, executor):
     test_text = r"/llm --help"
     with pytest.raises(llm_module.FinishIteration) as exc_info:
@@ -302,8 +302,8 @@ def test_llm_command_with_help_flag(mock_run_cmd, mock_llm, executor):
     assert exc_info.value.results is None
 
 
-@patch("mycli.packages.special.llm.llm")
-@patch("mycli.packages.special.llm.run_external_cmd")
+@patch("mycli.packages.special_commands.llm.llm")
+@patch("mycli.packages.special_commands.llm.run_external_cmd")
 def test_llm_command_with_install_flag(mock_run_cmd, mock_llm, executor):
     test_text = r"/llm install openai"
     with pytest.raises(llm_module.FinishIteration) as exc_info:
@@ -312,9 +312,9 @@ def test_llm_command_with_install_flag(mock_run_cmd, mock_llm, executor):
     assert exc_info.value.results is None
 
 
-@patch("mycli.packages.special.llm.llm")
-@patch("mycli.packages.special.llm.ensure_mycli_template")
-@patch("mycli.packages.special.llm.sql_using_llm")
+@patch("mycli.packages.special_commands.llm.llm")
+@patch("mycli.packages.special_commands.llm.ensure_mycli_template")
+@patch("mycli.packages.special_commands.llm.sql_using_llm")
 def test_llm_command_with_prompt(mock_sql_using_llm, mock_ensure_template, mock_llm, executor):
     r"""
     /llm prompt 'question' should use template and call sql_using_llm
@@ -329,9 +329,9 @@ def test_llm_command_with_prompt(mock_sql_using_llm, mock_ensure_template, mock_
     assert isinstance(duration, float)
 
 
-@patch("mycli.packages.special.llm.llm")
-@patch("mycli.packages.special.llm.ensure_mycli_template")
-@patch("mycli.packages.special.llm.sql_using_llm")
+@patch("mycli.packages.special_commands.llm.llm")
+@patch("mycli.packages.special_commands.llm.ensure_mycli_template")
+@patch("mycli.packages.special_commands.llm.sql_using_llm")
 def test_llm_command_question_with_context(mock_sql_using_llm, mock_ensure_template, mock_llm, executor):
     r"""
     /llm 'question' treats as prompt and returns SQL
@@ -346,9 +346,9 @@ def test_llm_command_question_with_context(mock_sql_using_llm, mock_ensure_templ
     assert isinstance(duration, float)
 
 
-@patch("mycli.packages.special.llm.llm")
-@patch("mycli.packages.special.llm.ensure_mycli_template")
-@patch("mycli.packages.special.llm.sql_using_llm")
+@patch("mycli.packages.special_commands.llm.llm")
+@patch("mycli.packages.special_commands.llm.ensure_mycli_template")
+@patch("mycli.packages.special_commands.llm.sql_using_llm")
 def test_llm_command_question_verbose(mock_sql_using_llm, mock_ensure_template, mock_llm, executor):
     r"""
     /llm+ returns verbose context and SQL
@@ -370,7 +370,7 @@ def test_handle_llm_without_dependencies(executor, monkeypatch) -> None:
     assert exc_info.value.results == [SQLResult(preamble=NEED_DEPENDENCIES)]
 
 
-@patch("mycli.packages.special.llm.llm")
+@patch("mycli.packages.special_commands.llm.llm")
 def test_handle_llm_wraps_context_errors(mock_llm, executor, monkeypatch) -> None:
     assert mock_llm is not None
     monkeypatch.setattr(llm_module, "ensure_mycli_template", lambda: (_ for _ in ()).throw(ValueError("bad template")))
@@ -461,7 +461,7 @@ def test_get_schema_and_sample_data_use_cache_and_skip_bad_rows(monkeypatch) -> 
 
 
 # Test sql_using_llm with dummy cursor and fenced SQL output
-@patch("mycli.packages.special.llm.run_external_cmd")
+@patch("mycli.packages.special_commands.llm.run_external_cmd")
 def test_sql_using_llm_success(mock_run_cmd):
     llm_module.SCHEMA_DATA_CACHE.clear()
     llm_module.SAMPLE_DATA_CACHE.clear()

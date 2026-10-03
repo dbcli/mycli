@@ -7,7 +7,7 @@ import sqlparse
 from sqlparse import tokens
 from sqlparse.sql import Statement, Token
 
-from mycli.packages import special
+from mycli.packages import special_commands
 from mycli.packages.completion import completion_engine
 from mycli.packages.completion.completion_engine import (
     DSN_SUBCOMMANDS,
@@ -2082,12 +2082,12 @@ def test_after_as(expression):
 )
 def test_source_is_file(expression):
     # "source" has to be registered by hand because that usually happens inside MyCLI in mycli/main.py
-    special.register_special_command(
+    special_commands.register_special_command(
         ...,
         'source',
         '/. <file>',
         'Execute commands from file.',
-        aliases=[special.SpecialCommandAlias('/.', case_sensitive=False)],
+        aliases=[special_commands.SpecialCommandAlias('/.', case_sensitive=False)],
     )
     suggestions = suggest_type(expression, expression)
     assert suggestions == [

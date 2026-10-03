@@ -11,10 +11,10 @@ import click
 
 from mycli.config import write_default_config
 from mycli.main_modes.repl import set_all_external_titles
-from mycli.packages import special
+from mycli.packages import special_commands
 from mycli.packages.ptoolkit.history import FileHistoryWithTimestamp
-from mycli.packages.special.main import ArgType, SpecialCommandAlias
-from mycli.packages.special.source import (
+from mycli.packages.special_commands.main import ArgType, SpecialCommandAlias
+from mycli.packages.special_commands.source import (
     SOURCE_HELP_ROWS,
     parse_source_arguments,
     source_special_command_is_safe,
@@ -109,7 +109,7 @@ class ClientCommandsMixin:
         def echo(self, *args: Any, **kwargs: Any) -> None: ...
 
     def register_special_commands(self) -> None:
-        special.register_special_command(
+        special_commands.register_special_command(
             self.change_db,
             "use",
             "/use <database>",
@@ -117,7 +117,7 @@ class ClientCommandsMixin:
             aliases=[SpecialCommandAlias("\\u", case_sensitive=False)],
             completion_snippet='change databases',
         )
-        special.register_special_command(
+        special_commands.register_special_command(
             self.manual_reconnect,
             "connect",
             "/connect [database]",
@@ -126,7 +126,7 @@ class ClientCommandsMixin:
             aliases=[SpecialCommandAlias("\\r", case_sensitive=True)],
             completion_snippet='reconnect to server',
         )
-        special.register_special_command(
+        special_commands.register_special_command(
             self.rehash,
             "rehash",
             "/rehash",
@@ -135,7 +135,7 @@ class ClientCommandsMixin:
             aliases=[SpecialCommandAlias("\\#", case_sensitive=False)],
             completion_snippet='refresh completions',
         )
-        special.register_special_command(
+        special_commands.register_special_command(
             self.change_table_format,
             "tableformat",
             "/tableformat <format>",
@@ -144,7 +144,7 @@ class ClientCommandsMixin:
             aliases=[SpecialCommandAlias("\\T", case_sensitive=True)],
             completion_snippet='set interactive output format',
         )
-        special.register_special_command(
+        special_commands.register_special_command(
             self.change_redirect_format,
             "redirectformat",
             "/redirectformat <format>",
@@ -153,7 +153,7 @@ class ClientCommandsMixin:
             aliases=[SpecialCommandAlias("\\Tr", case_sensitive=True)],
             completion_snippet='set redirected output format',
         )
-        special.register_special_command(
+        special_commands.register_special_command(
             self.execute_from_file,
             "source",
             "/source [options] <file>",
@@ -161,7 +161,7 @@ class ClientCommandsMixin:
             aliases=[SpecialCommandAlias("\\.", case_sensitive=False)],
             completion_snippet='execute queries from file',
         )
-        special.register_special_command(
+        special_commands.register_special_command(
             self.change_prompt_format,
             "prompt",
             "/prompt [string]",
@@ -170,7 +170,7 @@ class ClientCommandsMixin:
             aliases=[SpecialCommandAlias("\\R", case_sensitive=True)],
             completion_snippet='set prompt format',
         )
-        special.register_special_command(
+        special_commands.register_special_command(
             self.config_command,
             r'\config',
             '/config <command> [key]',
@@ -324,7 +324,7 @@ class ClientCommandsMixin:
                     return
 
                 special_query = query.rstrip(';')
-                if special.is_special_command(special_query):
+                if special_commands.is_special_command(special_query):
                     if not source_arguments.allow_special:
                         yield SQLResult(
                             status='Special commands are not supported without /source --special.',
@@ -332,7 +332,7 @@ class ClientCommandsMixin:
                         )
                         return
                     if not source_special_command_is_safe(special_query):
-                        command, _verbosity, _arg = special.parse_special_command(special_query)
+                        command, _verbosity, _arg = special_commands.parse_special_command(special_query)
                         yield SQLResult(
                             status=f'Special command is never permitted in source files: {command}.',
                             is_error=True,

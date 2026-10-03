@@ -9,7 +9,7 @@ from typing import Any, cast
 import pytest
 
 from mycli.constants import DOCS_URL, ISSUES_URL
-from mycli.packages.special import main as special_main
+from mycli.packages.special_commands import main as special_main
 from mycli.packages.sql_result.sql_result import SQLResult
 
 

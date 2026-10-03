@@ -53,7 +53,7 @@ A command line client for MySQL with auto-completion and syntax highlighting.
     ├── mycli/packages/polars/completion.py               # completions for `.|` transforms
     ├── mycli/packages/polars/transform.py                # implements `.|` transforms
     ├── mycli/packages/ptoolkit/                          # extends prompt_toolkit
-    ├── mycli/packages/special/                           # implementation of mycli special commands
+    ├── mycli/packages/special_commands/                  # implementation of mycli special commands
     ├── mycli/packages/sql_result/sql_result.py           # the `SQLResult` dataclass for holding responses
     ├── mycli/packages/tabular_output/                    # extends cli_helper with additional output formats
     ├── mycli/packages/utils/batch_utils.py               # utilities for `--batch` mode

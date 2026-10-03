@@ -36,12 +36,12 @@ from mycli.constants import DEFAULT_PROMPT
 from mycli.kubectl_tunnel import KubectlTunnel
 from mycli.main_modes import repl as repl_package
 from mycli.output import OutputMixin
-from mycli.packages import special
+from mycli.packages import special_commands
 from mycli.packages.completion.completion_refresher import CompletionRefresher
 from mycli.packages.completion.schema_prefetcher import SchemaPrefetcher
 from mycli.packages.completion.sql_completer import SQLCompleter
-from mycli.packages.special.dsn_aliases import DsnAliases
-from mycli.packages.special.favoritequeries import FavoriteQueries
+from mycli.packages.special_commands.dsn_aliases import DsnAliases
+from mycli.packages.special_commands.favorite_queries import FavoriteQueries
 from mycli.packages.tabular_output import sql_format
 from mycli.sqlexecute import SQLExecute
 from mycli.ssh_tunnel import SshTunnel
@@ -111,12 +111,12 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
         self.key_bindings = c["main"]["key_bindings"]
         self.emacs_ttimeoutlen = c['keys'].as_float('emacs_ttimeoutlen')
         self.vi_ttimeoutlen = c['keys'].as_float('vi_ttimeoutlen')
-        special.set_timing_enabled(c["main"].as_bool("timing"))
-        special.set_show_favorite_query(c["main"].as_bool("show_favorite_query"))
+        special_commands.set_timing_enabled(c["main"].as_bool("timing"))
+        special_commands.set_show_favorite_query(c["main"].as_bool("show_favorite_query"))
         if show_warnings is not None:
-            special.set_show_warnings_enabled(show_warnings)
+            special_commands.set_show_warnings_enabled(show_warnings)
         else:
-            special.set_show_warnings_enabled(c['main'].as_bool('show_warnings'))
+            special_commands.set_show_warnings_enabled(c['main'].as_bool('show_warnings'))
         self.beep_after_seconds = float(c["main"]["beep_after_seconds"] or 0)
         self.default_keepalive_ticks = c['connection'].as_int('default_keepalive_ticks')
 
@@ -247,7 +247,7 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
         configure_prompt_state(self, c, prompt, toolbar_format)
         self.prompt_session = None
         self.destructive_keywords = destructive_keywords_from_config(c)
-        special.set_destructive_keywords(self.destructive_keywords)
+        special_commands.set_destructive_keywords(self.destructive_keywords)
 
     def _invalidate_prompt_session(self) -> None:
         if self.prompt_session:

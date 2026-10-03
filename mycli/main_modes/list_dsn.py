@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import click
 
-from mycli.packages.special.dsn_aliases import is_valid_dsn_alias
+from mycli.packages.special_commands.dsn_aliases import is_valid_dsn_alias
 
 if TYPE_CHECKING:
     from mycli.client import MyCli

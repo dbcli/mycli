@@ -36,7 +36,7 @@ except ImportError:
     LLM_CLI_IMPORTED = False
 from pymysql.cursors import Cursor
 
-from mycli.packages.special.main import CommandVerbosity, parse_special_command
+from mycli.packages.special_commands.main import CommandVerbosity, parse_special_command
 from mycli.packages.sql_result.sql_result import SQLResult
 
 log = logging.getLogger(__name__)

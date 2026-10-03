@@ -12,7 +12,7 @@ import pytest
 
 from mycli import sqlexecute
 from mycli.constants import TEST_DATABASE
-from mycli.packages.special import iocommands
+from mycli.packages.special_commands import io_commands as iocommands
 from mycli.packages.sql_result.sql_result import SQLResult
 from mycli.query_runner import BackgroundSSCursor
 from mycli.sqlexecute import ServerInfo, ServerSpecies, SQLExecute

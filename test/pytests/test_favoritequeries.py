@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-import mycli.packages.special.favoritequeries as favoritequeries_module
-from mycli.packages.special.favoritequeries import FavoriteQueries, FavoriteQueryReloadError
+from mycli.packages.special_commands import favorite_queries as favoritequeries_module
+from mycli.packages.special_commands.favorite_queries import FavoriteQueries, FavoriteQueryReloadError
 
 
 class DummyConfig(dict):
@@ -65,7 +65,7 @@ def test_from_config_rejects_relative_shared_file(
 ) -> None:
     config = DummyConfig({'favorite_queries': {'local': 'select 1'}})
 
-    with caplog.at_level(logging.WARNING, logger='mycli.packages.special.favoritequeries'):
+    with caplog.at_level(logging.WARNING, logger='mycli.packages.special_commands.favorite_queries'):
         favorites = FavoriteQueries.from_config(config, shared_favorites_file='shared-myclirc')
 
     assert favorites.get('local') == 'select 1'
@@ -97,7 +97,7 @@ def test_from_config_warns_and_continues_for_missing_shared_file(
     config = DummyConfig({'favorite_queries': {'local': 'select 1'}})
     missing_file = tmp_path / 'missing-myclirc'
 
-    with caplog.at_level(logging.WARNING, logger='mycli.packages.special.favoritequeries'):
+    with caplog.at_level(logging.WARNING, logger='mycli.packages.special_commands.favorite_queries'):
         favorites = FavoriteQueries.from_config(config, shared_favorites_file=str(missing_file))
 
     assert favorites.get('local') == 'select 1'
@@ -248,7 +248,7 @@ def test_reload_shared_failure_warns_and_uses_user_favorites(
     favorites = FavoriteQueries.from_config(config, str(user_file), str(shared_file))
     shared_file.write_text('[favorite_queries\ninvalid = select 4\n', encoding='utf-8')
 
-    with caplog.at_level(logging.WARNING, logger='mycli.packages.special.favoritequeries'):
+    with caplog.at_level(logging.WARNING, logger='mycli.packages.special_commands.favorite_queries'):
         favorites.reload()
 
     assert 'unable to read shared favorites' in caplog.text
@@ -307,7 +307,7 @@ def test_reload_missing_shared_file_warns_and_uses_user_favorites(
     favorites = FavoriteQueries.from_config(config, str(user_file), str(shared_file))
     shared_file.unlink()
 
-    with caplog.at_level(logging.WARNING, logger='mycli.packages.special.favoritequeries'):
+    with caplog.at_level(logging.WARNING, logger='mycli.packages.special_commands.favorite_queries'):
         favorites.reload()
 
     assert 'unable to read shared favorites' in caplog.text

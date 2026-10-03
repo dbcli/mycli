@@ -1,12 +1,12 @@
 import os
 
-from mycli.packages.special.dbcommands import (
+from mycli.packages.special_commands.db_commands import (
     list_databases,
     list_tables,
     ping,
     status,
 )
-from mycli.packages.special.iocommands import (
+from mycli.packages.special_commands.io_commands import (
     clip_command,
     close_tee,
     copy_query_to_clipboard,
@@ -47,10 +47,10 @@ from mycli.packages.special.iocommands import (
     write_pipe_once,
     write_tee,
 )
-from mycli.packages.special.source import parse_source_arguments
+from mycli.packages.special_commands.source import parse_source_arguments
 
 if not os.environ.get('MYCLI_LLM_OFF'):
-    from mycli.packages.special.llm import (
+    from mycli.packages.special_commands.llm import (
         FinishIteration,
         handle_llm,
         is_llm_command,
@@ -72,7 +72,7 @@ else:
         raise FinishIteration(results=None)
 
 
-from mycli.packages.special.main import (
+from mycli.packages.special_commands.main import (
     CommandNotFound,
     SpecialCommandAlias,
     execute,
