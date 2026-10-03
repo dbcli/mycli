@@ -10,7 +10,7 @@ import pytest
 
 from mycli.packages.completion import sql_completer
 from mycli.packages.completion.sql_completer import Fuzziness, SQLCompleter
-from mycli.packages.datafrane.completion import PolarsCompletion
+from mycli.packages.dataframes.completion import PolarsCompletion
 
 
 def collect_matches(
