@@ -9,7 +9,7 @@ from mycli.packages.special_commands.main import (
 )
 
 
-def cli_is_multiline(mycli) -> Filter:
+def repl_is_multiline(mycli) -> Filter:
     @Condition
     def cond():
         if not mycli.multi_line:

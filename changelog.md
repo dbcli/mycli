@@ -20,6 +20,7 @@ Internal
 * Add `.txt` to text files without file extensions.
 * Move `test` directory to `mycli_test`.
 * Ignore recent refactoring move commits in `git-blame`.
+* Recast `cli_is_multiline()` as `repl_is_multiline()`.
 
 
 v2.28.0 (2026/10/02)
