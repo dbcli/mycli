@@ -3,7 +3,7 @@ from typing import Any, cast
 
 import pytest
 
-from mycli.packages import fzf as fzf_wrapper
+from mycli.packages.fzf import fzf as fzf_wrapper
 from mycli.packages.ptoolkit import fzf_history as fzf_module
 from mycli.packages.ptoolkit.history import FileHistoryWithTimestamp
 
