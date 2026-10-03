@@ -18,6 +18,7 @@ Internal
 * Create an `execution` package directory for `sql_execute.py` and `background_runner.py`.
 * Add `.txt` to text files without file extensions.
 * Move `test` directory to `mycli_test`.
+* Ignore recent refactoring move commits in `git-blame`.
 
 
 v2.28.0 (2026/10/02)
