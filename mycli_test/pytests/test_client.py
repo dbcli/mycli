@@ -490,7 +490,7 @@ def test_close_stops_refreshers_before_closing_connection_and_tunnels() -> None:
     calls: list[str] = []
     cli.completion_refresher = SimpleNamespace(stop=lambda: calls.append('completion'))
     cli.schema_prefetcher = SimpleNamespace(stop=lambda: calls.append('prefetch'))
-    cli.sqlexecute = SimpleNamespace(close=lambda: calls.append('connection'))  # type: ignore[assignment]
+    cli.sql_execute = SimpleNamespace(close=lambda: calls.append('connection'))  # type: ignore[assignment]
     cast(Any, cli).ssh_tunnel = SimpleNamespace(close=lambda: calls.append('ssh'))
     cast(Any, cli).kubectl_tunnel = SimpleNamespace(close=lambda: calls.append('kubectl'))
 
@@ -512,7 +512,7 @@ def test_close_swallows_cleanup_errors() -> None:
 
     cli.completion_refresher = SimpleNamespace(stop=fail)
     cli.schema_prefetcher = SimpleNamespace(stop=fail)
-    cli.sqlexecute = SimpleNamespace(close=fail)  # type: ignore[assignment]
+    cli.sql_execute = SimpleNamespace(close=fail)  # type: ignore[assignment]
     cast(Any, cli).ssh_tunnel = SimpleNamespace(close=fail)
     cast(Any, cli).kubectl_tunnel = SimpleNamespace(close=fail)
     cli.boundary_tunnel = SimpleNamespace(close=lambda **kwargs: fail())  # type: ignore[assignment]
@@ -523,7 +523,7 @@ def test_close_swallows_boundary_tunnel_close_error() -> None:
     cli = MyCli.__new__(MyCli)
     cli.completion_refresher = SimpleNamespace(stop=lambda: None)
     cli.schema_prefetcher = SimpleNamespace(stop=lambda: None)
-    cli.sqlexecute = None
+    cli.sql_execute = None
     tunnel_closed: list[bool] = []
     cast(Any, cli).ssh_tunnel = SimpleNamespace(close=lambda: tunnel_closed.append(True))
     cast(Any, cli).kubectl_tunnel = None

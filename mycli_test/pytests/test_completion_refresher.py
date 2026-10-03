@@ -37,7 +37,7 @@ class FakeThread:
         return self.alive
 
 
-def make_sqlexecute() -> SimpleNamespace:
+def make_sql_execute() -> SimpleNamespace:
     return SimpleNamespace(
         dbname='db',
         user='user',
@@ -78,16 +78,16 @@ def test_refresh_called_once(refresher):
     :return:
     """
     callbacks = Mock()
-    sqlexecute = Mock()
+    sql_execute = Mock()
 
     with patch.object(refresher, "_bg_refresh") as bg_refresh:
-        actual = refresher.refresh(sqlexecute, callbacks)
+        actual = refresher.refresh(sql_execute, callbacks)
         time.sleep(1)  # Wait for the thread to work.
         assert actual[0].preamble is None
         assert actual[0].header is None
         assert actual[0].rows is None
         assert actual[0].status == "Auto-completion refresh started in the background."
-        bg_refresh.assert_called_with(sqlexecute, callbacks, {})
+        bg_refresh.assert_called_with(sql_execute, callbacks, {})
 
 
 def test_refresh_called_twice(refresher):
@@ -99,21 +99,21 @@ def test_refresh_called_twice(refresher):
     """
     callbacks = Mock()
 
-    sqlexecute = Mock()
+    sql_execute = Mock()
 
     def dummy_bg_refresh(*args):
         time.sleep(3)  # seconds
 
     refresher._bg_refresh = dummy_bg_refresh
 
-    actual1 = refresher.refresh(sqlexecute, callbacks)
+    actual1 = refresher.refresh(sql_execute, callbacks)
     time.sleep(1)  # Wait for the thread to work.
     assert actual1[0].preamble is None
     assert actual1[0].header is None
     assert actual1[0].rows is None
     assert actual1[0].status == "Auto-completion refresh started in the background."
 
-    actual2 = refresher.refresh(sqlexecute, callbacks)
+    actual2 = refresher.refresh(sql_execute, callbacks)
     time.sleep(1)  # Wait for the thread to work.
     assert actual2[0].preamble is None
     assert actual2[0].header is None
@@ -130,13 +130,13 @@ def test_refresh_with_callbacks(refresher):
 
     """
     callbacks = [Mock()]
-    sqlexecute_class = Mock()
-    sqlexecute = Mock()
+    sql_execute_class = Mock()
+    sql_execute = Mock()
 
-    with patch("mycli.packages.completion.completion_refresher.SQLExecute", sqlexecute_class):
+    with patch("mycli.packages.completion.completion_refresher.SQLExecute", sql_execute_class):
         # Set refreshers to 0: we're not testing refresh logic here
         refresher.refreshers = {}
-        refresher.refresh(sqlexecute, callbacks)
+        refresher.refresh(sql_execute, callbacks)
         time.sleep(1)  # Wait for the thread to work.
         assert callbacks[0].call_count == 1
 
@@ -150,10 +150,10 @@ def test_refresh_starts_background_thread(monkeypatch, refresher) -> None:
     monkeypatch.setattr(completion_refresher.threading, 'Thread', FakeThread)
     monkeypatch.setattr(refresher, '_bg_refresh', fake_bg_refresh)
 
-    sqlexecute = Mock()
+    sql_execute = Mock()
     callbacks = Mock()
 
-    actual = refresher.refresh(sqlexecute, callbacks)
+    actual = refresher.refresh(sql_execute, callbacks)
 
     assert actual[0].status == "Auto-completion refresh started in the background."
     assert refresher._completer_thread is not None
@@ -164,7 +164,7 @@ def test_refresh_starts_background_thread(monkeypatch, refresher) -> None:
     assert calls == []
 
     refresher._completer_thread.run_target()
-    assert calls == [(sqlexecute, callbacks, {})]
+    assert calls == [(sql_execute, callbacks, {})]
     assert refresher._thread_is_alive() is False
     assert refresher.is_refreshing() is True
 
@@ -178,14 +178,14 @@ def test_refresh_passes_explicit_completer_options(monkeypatch, refresher) -> No
     monkeypatch.setattr(completion_refresher.threading, 'Thread', FakeThread)
     monkeypatch.setattr(refresher, '_bg_refresh', fake_bg_refresh)
 
-    sqlexecute = Mock()
+    sql_execute = Mock()
     callbacks = Mock()
     options = {'smart_completion': True}
 
-    refresher.refresh(sqlexecute, callbacks, options)
+    refresher.refresh(sql_execute, callbacks, options)
     refresher._completer_thread.run_target()
 
-    assert calls == [(sqlexecute, callbacks, options)]
+    assert calls == [(sql_execute, callbacks, options)]
 
 
 def test_refresh_while_refreshing_restarts(monkeypatch, refresher) -> None:
@@ -282,7 +282,7 @@ def test_stop_interrupts_and_joins_active_refresh(monkeypatch, refresher) -> Non
     monkeypatch.setattr(completion_refresher, 'SQLExecute', FakeExecutor)
     refresher.refreshers = {'blocking': blocking_refresh}
 
-    refresher.refresh(make_sqlexecute(), callback)
+    refresher.refresh(make_sql_execute(), callback)
     assert refresh_started.wait(timeout=1)
     refresher._visibility_timer = timer
 
@@ -320,7 +320,7 @@ def test_stop_before_executor_is_ready_prevents_refresh_and_callback(monkeypatch
     monkeypatch.setattr(completion_refresher, 'SQLExecute', FakeExecutor)
     refresher.refreshers = {'refresh': refresh}
 
-    refresher.refresh(make_sqlexecute(), callback)
+    refresher.refresh(make_sql_execute(), callback)
     assert constructor_started.wait(timeout=1)
     stop_thread = completion_refresher.threading.Thread(target=lambda: (refresher.stop(), stop_finished.set()))
     stop_thread.start()
@@ -491,8 +491,8 @@ def test_bg_refresh_restarts_wraps_callbacks_and_closes(monkeypatch, refresher) 
         'second': second_refresher,
     }
 
-    sqlexecute = make_sqlexecute()
-    refresher._bg_refresh(sqlexecute, [first_callback, second_callback], {'smart_completion': True})
+    sql_execute = make_sql_execute()
+    refresher._bg_refresh(sql_execute, [first_callback, second_callback], {'smart_completion': True})
 
     assert len(completers) == 1
     assert completers[0].options == {'smart_completion': True}
@@ -547,7 +547,7 @@ def test_bg_refresh_wraps_single_callback_callable(monkeypatch, refresher) -> No
     monkeypatch.setattr(completion_refresher, 'SQLExecute', FakeExecutor)
     refresher.refreshers = {}
 
-    refresher._bg_refresh(make_sqlexecute(), callback, {})
+    refresher._bg_refresh(make_sql_execute(), callback, {})
 
     callback.assert_called_once_with(completers[0])
 
@@ -569,7 +569,7 @@ def test_bg_refresh_returns_when_executor_connection_fails(monkeypatch, refreshe
     monkeypatch.setattr(completion_refresher, 'SQLExecute', FailingExecutor)
     refresher.refreshers = {'refresh': refresh}
 
-    refresher._bg_refresh(make_sqlexecute(), callback, {})
+    refresher._bg_refresh(make_sql_execute(), callback, {})
 
     assert len(completers) == 1
     refresh.assert_not_called()
@@ -587,7 +587,7 @@ def test_bg_refresh_stops_after_current_refresher(monkeypatch, refresher) -> Non
     monkeypatch.setattr(completion_refresher, 'SQLExecute', Mock(return_value=executor))
     refresher.refreshers = {'stop': stop_refresh}
 
-    refresher._bg_refresh(make_sqlexecute(), callback, {})
+    refresher._bg_refresh(make_sql_execute(), callback, {})
 
     callback.assert_not_called()
     executor.close.assert_called_once_with()
@@ -604,7 +604,7 @@ def test_bg_refresh_suppresses_non_operational_error_during_stop(monkeypatch, re
     monkeypatch.setattr(completion_refresher, 'SQLExecute', Mock(return_value=executor))
     refresher.refreshers = {'stop': stop_with_error}
 
-    refresher._bg_refresh(make_sqlexecute(), Mock(), {})
+    refresher._bg_refresh(make_sql_execute(), Mock(), {})
 
     executor.close.assert_called_once_with()
 
@@ -618,7 +618,7 @@ def test_bg_refresh_skips_callbacks_when_stopped_after_refresh(monkeypatch, refr
     monkeypatch.setattr(completion_refresher, 'SQLExecute', Mock(return_value=executor))
     refresher.refreshers = {}
 
-    refresher._bg_refresh(make_sqlexecute(), callback, {})
+    refresher._bg_refresh(make_sql_execute(), callback, {})
 
     callback.assert_not_called()
     assert is_stopped.call_count == 2
@@ -636,7 +636,7 @@ def test_bg_refresh_propagates_unexpected_refresher_error(monkeypatch, refresher
     refresher.refreshers = {'fail': fail_refresh}
 
     with pytest.raises(RuntimeError, match='refresh failed'):
-        refresher._bg_refresh(make_sqlexecute(), Mock(), {})
+        refresher._bg_refresh(make_sql_execute(), Mock(), {})
 
     executor.close.assert_called_once_with()
 
@@ -654,10 +654,10 @@ def test_bg_refresh_only_suppresses_stale_database_error(monkeypatch, refresher,
     refresher.refreshers = {'fail': fail_refresh}
 
     if error_code == completion_refresher.BAD_DB_ERROR:
-        refresher._bg_refresh(make_sqlexecute(), callback, {})
+        refresher._bg_refresh(make_sql_execute(), callback, {})
     else:
         with pytest.raises(completion_refresher.pymysql.err.OperationalError, match='metadata failed'):
-            refresher._bg_refresh(make_sqlexecute(), callback, {})
+            refresher._bg_refresh(make_sql_execute(), callback, {})
 
     callback.assert_not_called()
     executor.close.assert_called_once_with()
@@ -674,10 +674,10 @@ def test_bg_refresh_only_suppresses_executor_close_error_when_stopping(monkeypat
         refresher._stop_refresh.set()
 
     if stopping:
-        refresher._bg_refresh(make_sqlexecute(), Mock(), {})
+        refresher._bg_refresh(make_sql_execute(), Mock(), {})
     else:
         with pytest.raises(RuntimeError, match='close failed'):
-            refresher._bg_refresh(make_sqlexecute(), Mock(), {})
+            refresher._bg_refresh(make_sql_execute(), Mock(), {})
 
 
 def test_refresher_decorator_registers_function() -> None:

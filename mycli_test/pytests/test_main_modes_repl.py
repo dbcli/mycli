@@ -140,7 +140,7 @@ class FakeResourceTree:
         return StringIO(self.files[self.path])
 
 
-def make_repl_cli(sqlexecute: Any | None = None) -> Any:
+def make_repl_cli(sql_execute: Any | None = None) -> Any:
     cli: Any = HashableNamespace()
     cli.logger = DummyLogger()
     cli.query_history = []
@@ -214,7 +214,7 @@ def make_repl_cli(sqlexecute: Any | None = None) -> Any:
     cli.log_queries = log_queries
     cli.logged_output = []
     cli.title_calls = 0
-    cli.sqlexecute = sqlexecute
+    cli.sql_execute = sql_execute
     cli.get_reserved_space = lambda: 3
     cli.get_last_query = lambda: cli.query_history[-1].query if cli.query_history else None
     cli.configure_pager = lambda: setattr(cli, 'pager_configured', cli.pager_configured + 1)
@@ -483,11 +483,11 @@ def test_repl_show_startup_banner_and_prompt_helpers(monkeypatch: pytest.MonkeyP
     monkeypatch.setattr(repl_mode, '_tips_picker', lambda: 'Tip')
 
     cli.verbosity = 0
-    repl_mode._show_startup_banner(cli, cli.sqlexecute)
+    repl_mode._show_startup_banner(cli, cli.sql_execute)
     monkeypatch.setattr(repl_mode.random, 'random', lambda: 0.6)
-    repl_mode._show_startup_banner(cli, cli.sqlexecute)
+    repl_mode._show_startup_banner(cli, cli.sql_execute)
     cli.verbosity = -1
-    repl_mode._show_startup_banner(cli, cli.sqlexecute)
+    repl_mode._show_startup_banner(cli, cli.sql_execute)
     assert any('Thanks to the contributor' in line for line in printed)
     assert any('Tip — Tip' in line for line in printed)
 
@@ -525,7 +525,7 @@ def test_repl_show_startup_banner_thanks_sponsor(monkeypatch: pytest.MonkeyPatch
     monkeypatch.setattr(repl_mode.random, 'random', lambda: 0.25)
     monkeypatch.setattr(repl_mode, '_sponsors_picker', lambda: 'Carol')
 
-    repl_mode._show_startup_banner(cli, cli.sqlexecute)
+    repl_mode._show_startup_banner(cli, cli.sql_execute)
 
     assert any('Thanks to the sponsor' in line and 'Carol' in line for line in printed)
 
@@ -542,7 +542,7 @@ def test_prompt_toolbar_and_title_helpers(monkeypatch: pytest.MonkeyPatch) -> No
         def cursor(self) -> PromptCursor:
             return PromptCursor()
 
-    sqlexecute = SimpleNamespace(
+    sql_execute = SimpleNamespace(
         user='alice',
         host='127.0.0.1',
         dbname='db',
@@ -551,7 +551,7 @@ def test_prompt_toolbar_and_title_helpers(monkeypatch: pytest.MonkeyPatch) -> No
         server_info=SimpleNamespace(species=SimpleNamespace(name='TiDB')),
         conn=None,
     )
-    cli = make_repl_cli(sqlexecute)
+    cli = make_repl_cli(sql_execute)
     cli.login_path = 'prod'
     cli.login_path_as_host = True
     cli.dsn_alias = 'dsn'
@@ -559,7 +559,7 @@ def test_prompt_toolbar_and_title_helpers(monkeypatch: pytest.MonkeyPatch) -> No
     prompt_plain = to_plain_text(prompt)
     assert prompt_plain == 'prod|prod|dsn|(none)|(none)|(none)|(none)|'
 
-    sqlexecute.conn = PromptConnection()
+    sql_execute.conn = PromptConnection()
     cli.login_path_as_host = False
     monkeypatch.setattr(repl_mode, 'get_uptime', lambda cur: 123)
     monkeypatch.setattr(repl_mode, 'format_uptime', lambda uptime: f'uptime:{uptime}')
@@ -734,7 +734,7 @@ def test_transaction_prompt_handles_unavailable_connection_status(connection: An
 
 def test_transaction_prompt_handles_missing_connection_attribute() -> None:
     cli = make_transaction_prompt_cli(None)
-    del cli.sqlexecute.conn
+    del cli.sql_execute.conn
 
     assert to_plain_text(repl_mode.render_prompt_string(cli, r'\b', 0)) == ''
 
@@ -1498,7 +1498,7 @@ def test_keepalive_hook_covers_threshold_and_errors() -> None:
     repl_mode._keepalive_hook(cli, None)
     assert cli._keepalive_counter == 0
 
-    cli.sqlexecute.conn = FakeConnection(ping_exc=RuntimeError('boom'))
+    cli.sql_execute.conn = FakeConnection(ping_exc=RuntimeError('boom'))
     repl_mode._keepalive_hook(cli, None)
     repl_mode._keepalive_hook(cli, None)
     assert any('keepalive ping error' in call[0][0] for call in cli.logger.debug_calls)
@@ -1750,15 +1750,15 @@ def test_one_iteration_allows_alter_user_in_sandbox_mode(monkeypatch: pytest.Mon
         def run(self, text: str) -> Iterator[SQLResult]:
             return iter([SQLResult(status='OK')])
 
-    sqlexecute = FakeSQLExecute()
-    cli = make_repl_cli(sqlexecute)
+    sql_execute = FakeSQLExecute()
+    cli = make_repl_cli(sql_execute)
     cli.sandbox_mode = True
     monkeypatch.setattr(repl_mode, 'is_mutating', lambda status: False)
 
     repl_mode._one_iteration(cli, repl_mode.ReplState(), "ALTER USER 'root'@'localhost' IDENTIFIED BY 'newpass'")
     assert cli.sandbox_mode is False
-    assert sqlexecute.password == 'newpass'
-    assert sqlexecute.connect_calls == [True]
+    assert sql_execute.password == 'newpass'
+    assert sql_execute.connect_calls == [True]
     assert any('Reconnected' in msg for msg in cli.echo_calls)
 
 
@@ -1777,8 +1777,8 @@ def test_one_iteration_sandbox_reconnect_failure(monkeypatch: pytest.MonkeyPatch
         def run(self, text: str) -> Iterator[SQLResult]:
             return iter([SQLResult(status='OK')])
 
-    sqlexecute = FakeSQLExecute()
-    cli = make_repl_cli(sqlexecute)
+    sql_execute = FakeSQLExecute()
+    cli = make_repl_cli(sql_execute)
     cli.sandbox_mode = True
     monkeypatch.setattr(repl_mode, 'is_mutating', lambda status: False)
 
@@ -1823,9 +1823,9 @@ def test_one_iteration_covers_redirect_destructive_success_refresh_and_logfile(m
             self.calls.append(text)
             return iter([SQLResult(status='DROP 1')])
 
-    sqlexecute = FakeSQLExecute()
-    cli = make_repl_cli(sqlexecute)
-    cli.completion_refresher = SimpleNamespace(stop=lambda: sqlexecute.calls.append('stop'))
+    sql_execute = FakeSQLExecute()
+    cli = make_repl_cli(sql_execute)
+    cli.completion_refresher = SimpleNamespace(stop=lambda: sql_execute.calls.append('stop'))
     cli.logfile = False
     cli.destructive_warning = True
     monkeypatch.setattr(repl_mode, 'is_redirect_command', lambda text: text == 'redirect')
@@ -1848,8 +1848,8 @@ def test_one_iteration_covers_redirect_destructive_success_refresh_and_logfile(m
     assert cli.query_history[-1].query == 'dropdb'
     assert cli.query_history[-1].successful is True
     assert cli.query_history[-1].mutating is True
-    assert sqlexecute.dbname is None
-    assert sqlexecute.calls == ['stop', 'dropdb', 'connect']
+    assert sql_execute.dbname is None
+    assert sql_execute.calls == ['stop', 'dropdb', 'connect']
     assert 'Warning: This query was not logged.' in cli.echo_calls
 
     repl_mode._one_iteration(cli, repl_mode.ReplState(), 'approved')
@@ -1876,7 +1876,7 @@ def test_one_iteration_restarts_completions_when_active_database_drop_fails(monk
 
     assert cli.completion_stop_calls == [True]
     assert cli.refresh_calls == [False]
-    assert cli.sqlexecute.dbname == 'db'
+    assert cli.sql_execute.dbname == 'db'
 
 
 @pytest.mark.parametrize(
@@ -1901,8 +1901,8 @@ def test_one_iteration_runs_polars_transform_and_preserves_full_command(
             self.calls.append(text)
             return iter([SQLResult(header=['id'], rows=[(1,)])])
 
-    sqlexecute = FakeSQLExecute()
-    cli = make_repl_cli(sqlexecute)
+    sql_execute = FakeSQLExecute()
+    cli = make_repl_cli(sql_execute)
     transform = object()
     prepare_calls: list[tuple[str, str]] = []
     run_calls: list[tuple[object, str, float, int, str]] = []
@@ -1946,7 +1946,7 @@ def test_one_iteration_runs_polars_transform_and_preserves_full_command(
     command = f'SELECT * FROM orders .| df.group_by(\'customer_id\').len() {terminator}'
     repl_mode._one_iteration(cli, repl_mode.ReplState(), command)
 
-    assert sqlexecute.calls == ['SELECT * FROM orders']
+    assert sql_execute.calls == ['SELECT * FROM orders']
     assert prepare_calls == [('SELECT * FROM orders', "df.group_by('customer_id').len()")]
     assert run_calls == [(transform, 'iterm2', 1.5, 144, 'dark')]
     assert output_flags == [True]
@@ -2120,8 +2120,8 @@ def test_one_iteration_writes_polars_parquet_without_rendering_rows(monkeypatch:
             self.calls.append(text)
             return iter([SQLResult(header=['id'], rows=[(1,)])])
 
-    sqlexecute = FakeSQLExecute()
-    cli = make_repl_cli(sqlexecute)
+    sql_execute = FakeSQLExecute()
+    cli = make_repl_cli(sql_execute)
     cli.post_redirect_command = 'post {}'
     transform = object()
     prepare_calls: list[tuple[str, str | None]] = []
@@ -2163,7 +2163,7 @@ def test_one_iteration_writes_polars_parquet_without_rendering_rows(monkeypatch:
     command = 'SELECT * FROM orders .> orders.parquet'
     repl_mode._one_iteration(cli, repl_mode.ReplState(), command)
 
-    assert sqlexecute.calls == ['SELECT * FROM orders']
+    assert sql_execute.calls == ['SELECT * FROM orders']
     assert prepare_calls == [('SELECT * FROM orders', None)]
     assert run_calls == [(transform, 'orders.parquet', command)]
     assert cli.output_calls[-1][1] == SQLResult(status='Wrote 1 rows to orders.parquet.')
@@ -2655,7 +2655,7 @@ def test_main_repl_covers_setup_loop_and_goodbye(monkeypatch: pytest.MonkeyPatch
     cli.completer = SimpleNamespace(frecency_provider=None)
     monkeypatch.setattr(repl_mode, '_create_history', lambda mycli: history)
     monkeypatch.setattr(repl_mode, 'mycli_bindings', lambda mycli: 'bindings')
-    monkeypatch.setattr(repl_mode, '_show_startup_banner', lambda mycli, sqlexecute: None)
+    monkeypatch.setattr(repl_mode, '_show_startup_banner', lambda mycli, sql_execute: None)
     monkeypatch.setattr(
         repl_mode,
         '_build_prompt_session',
@@ -2691,7 +2691,7 @@ def test_main_repl_covers_no_refresh_and_quiet_exit(monkeypatch: pytest.MonkeyPa
     cli.completer = SimpleNamespace(frecency_provider=None)
     monkeypatch.setattr(repl_mode, '_create_history', lambda mycli: history)
     monkeypatch.setattr(repl_mode, 'mycli_bindings', lambda mycli: 'bindings')
-    monkeypatch.setattr(repl_mode, '_show_startup_banner', lambda mycli, sqlexecute: None)
+    monkeypatch.setattr(repl_mode, '_show_startup_banner', lambda mycli, sql_execute: None)
     monkeypatch.setattr(
         repl_mode,
         '_build_prompt_session',

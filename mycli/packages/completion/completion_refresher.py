@@ -93,14 +93,14 @@ class CompletionRefresher:
 
     def _bg_refresh(
         self,
-        sqlexecute: SQLExecute,
+        sql_execute: SQLExecute,
         callbacks: Callable | list[Callable],
         completer_options: dict,
     ) -> None:
         completer = SQLCompleter(**completer_options)
 
-        # Create a new sqlexecute method to populate the completions.
-        e = sqlexecute
+        # Create a new sql_execute method to populate the completions.
+        e = sql_execute
         try:
             executor = SQLExecute(
                 e.dbname,

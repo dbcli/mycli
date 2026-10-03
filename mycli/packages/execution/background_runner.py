@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 def runner_for(client: Any) -> QueryRunner | None:
-    runner = getattr(getattr(client, 'sqlexecute', None), 'query_runner', None)
+    runner = getattr(getattr(client, 'sql_execute', None), 'query_runner', None)
     return runner if isinstance(runner, QueryRunner) else None
 
 

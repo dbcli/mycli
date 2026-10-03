@@ -44,7 +44,7 @@ class ClientConnectionMixin:
         keepalive_ticks: int | None
         sandbox_mode: bool
         verbosity: int
-        sqlexecute: Any
+        sql_execute: Any
         logger: Any
         boundary_tunnel: BoundaryTunnel | None
         kubectl_tunnel: KubectlTunnel | None
@@ -404,7 +404,7 @@ class ClientConnectionMixin:
                         self.selected_password.source if self.selected_password else None,
                         keyring_retrieved_cleanly=keyring_retrieved_cleanly,
                     )
-                self.sqlexecute = SQLExecute(**connection_info)
+                self.sql_execute = SQLExecute(**connection_info)
             except pymysql.OperationalError as e1:
                 if e1.args[0] == HANDSHAKE_ERROR and ssl is not None and ssl.get("mode", None) == "auto":
                     # if we already tried and failed to connect without SSL, raise the error
@@ -497,7 +497,7 @@ class ClientConnectionMixin:
                 _connect(keyring_retrieved_cleanly=keyring_retrieved_cleanly)
 
             # Check if SQLExecute detected sandbox mode during connection
-            if self.sqlexecute and self.sqlexecute.sandbox_mode:
+            if self.sql_execute and self.sql_execute.sandbox_mode:
                 self.sandbox_mode = True
                 self.echo(
                     "Your password has expired. Use ALTER USER or SET PASSWSORD to set a new password, or quit.",
@@ -517,27 +517,27 @@ class ClientConnectionMixin:
 
         The "database" argument is used only to improve messages.
         """
-        assert self.sqlexecute is not None
-        assert self.sqlexecute.conn is not None
+        assert self.sql_execute is not None
+        assert self.sql_execute.conn is not None
 
         # First pass with ping() and minimal feedback levels.  This definitely works as
         # expected, and is a good idea especially when "connect" was used as a synonym
         # for "use".  Note that the default behavior of ping() changed in PyMySQL 1.2.x:
         # it no longer reconnects.
         try:
-            self.sqlexecute.conn.ping()
+            self.sql_execute.conn.ping()
             if not database:
                 self.echo("Already connected.", fg="yellow")
             return True
         except pymysql.err.Error:
             pass
 
-        # Second pass with sqlexecute.connect() should always work, and always resets
+        # Second pass with sql_execute.connect() should always work, and always resets
         # session state.
         try:
             self.logger.debug("Creating new connection")
             self.echo("Creating new connection...", fg="yellow")
-            self.sqlexecute.connect()
+            self.sql_execute.connect()
             self.logger.debug("New connection created successfully.")
             self.echo("New connection created successfully.", fg="yellow")
             self.echo("Any session state was reset.", fg="red")

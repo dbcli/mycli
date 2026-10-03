@@ -107,7 +107,7 @@ class SchemaPrefetcher:
 
         ``schemas=None`` defers resolution to the worker, which lists
         every database via its own dedicated connection — the main
-        thread's ``sqlexecute`` must not be used here since the worker
+        thread's ``sql_execute`` must not be used here since the worker
         would race with the REPL.
         """
         self.stop()
@@ -240,22 +240,22 @@ class SchemaPrefetcher:
         self._invalidate_app()
 
     def _current_schema(self) -> str | None:
-        sqlexecute = self.mycli.sqlexecute
-        return sqlexecute.dbname if sqlexecute is not None else None
+        sql_execute = self.mycli.sql_execute
+        return sql_execute.dbname if sql_execute is not None else None
 
     def _make_executor(self) -> SQLExecute:
-        sqlexecute = self.mycli.sqlexecute
-        assert sqlexecute is not None
+        sql_execute = self.mycli.sql_execute
+        assert sql_execute is not None
         return SQLExecute(
-            sqlexecute.dbname,
-            sqlexecute.user,
-            sqlexecute.password,
-            sqlexecute.host,
-            sqlexecute.port,
-            sqlexecute.socket,
-            sqlexecute.character_set,
-            sqlexecute.local_infile,
-            sqlexecute.ssl,
+            sql_execute.dbname,
+            sql_execute.user,
+            sql_execute.password,
+            sql_execute.host,
+            sql_execute.port,
+            sql_execute.socket,
+            sql_execute.character_set,
+            sql_execute.local_infile,
+            sql_execute.ssl,
         )
 
     def _invalidate_app(self) -> None:

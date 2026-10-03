@@ -24,7 +24,7 @@ def mycli():
     pc.add_value('literal', PASSWORD)
     cli.connect(None, USER, pc, HOST, PORT, None, init_command=None)
     yield cli
-    cli.sqlexecute.conn.close()
+    cli.sql_execute.conn.close()
 
 
 @dbtest

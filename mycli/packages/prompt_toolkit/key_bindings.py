@@ -240,7 +240,7 @@ def mycli_bindings(mycli) -> KeyBindings:
         """
         _logger.debug("Detected <C-o d> key.")
 
-        event.app.current_buffer.insert_text(key_binding_utils.server_date(mycli.sqlexecute))
+        event.app.current_buffer.insert_text(key_binding_utils.server_date(mycli.sql_execute))
 
     @kb.add("c-o", "c-d", filter=emacs_mode)
     def _(event: KeyPressEvent) -> None:
@@ -249,7 +249,7 @@ def mycli_bindings(mycli) -> KeyBindings:
         """
         _logger.debug("Detected <C-o C-d> key.")
 
-        event.app.current_buffer.insert_text(key_binding_utils.server_date(mycli.sqlexecute, quoted=True))
+        event.app.current_buffer.insert_text(key_binding_utils.server_date(mycli.sql_execute, quoted=True))
 
     @kb.add("c-o", "t", filter=emacs_mode)
     def _(event: KeyPressEvent) -> None:
@@ -258,7 +258,7 @@ def mycli_bindings(mycli) -> KeyBindings:
         """
         _logger.debug("Detected <C-o t> key.")
 
-        event.app.current_buffer.insert_text(key_binding_utils.server_datetime(mycli.sqlexecute))
+        event.app.current_buffer.insert_text(key_binding_utils.server_datetime(mycli.sql_execute))
 
     @kb.add("c-o", "c-t", filter=emacs_mode)
     def _(event: KeyPressEvent) -> None:
@@ -267,7 +267,7 @@ def mycli_bindings(mycli) -> KeyBindings:
         """
         _logger.debug("Detected <C-o C-t> key.")
 
-        event.app.current_buffer.insert_text(key_binding_utils.server_datetime(mycli.sqlexecute, quoted=True))
+        event.app.current_buffer.insert_text(key_binding_utils.server_datetime(mycli.sql_execute, quoted=True))
 
     @kb.add('c-o', 'u', filter=emacs_mode)
     def _(event: KeyPressEvent) -> None:

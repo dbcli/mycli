@@ -56,7 +56,7 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
     default_prompt_splitln = r'\u@\h\n(\t):\d>\_'
     max_len_prompt = 45
     prompt_lines: int
-    sqlexecute: SQLExecute | None
+    sql_execute: SQLExecute | None
     numeric_alignment: str
 
     # check XDG_CONFIG_HOME exists and not an empty string
@@ -68,7 +68,7 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
 
     def __init__(
         self,
-        sqlexecute: SQLExecute | None = None,
+        sql_execute: SQLExecute | None = None,
         prompt: str | None = None,
         toolbar_format: str | None = None,
         logfile: TextIOWrapper | Literal[False] | None = None,
@@ -79,7 +79,7 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
         show_warnings: bool | None = None,
         cli_verbosity: int = 0,
     ) -> None:
-        self.sqlexecute = sqlexecute
+        self.sql_execute = sql_execute
         self.ssh_tunnel: SshTunnel | None = None
         self.kubectl_tunnel: KubectlTunnel | None = None
         self.boundary_tunnel: BoundaryTunnel | None = None
@@ -262,9 +262,9 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
             self.schema_prefetcher.stop()
         except Exception:
             pass
-        if self.sqlexecute is not None:
+        if self.sql_execute is not None:
             try:
-                self.sqlexecute.close()
+                self.sql_execute.close()
             except Exception:
                 pass
         if self.ssh_tunnel is not None:

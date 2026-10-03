@@ -109,7 +109,7 @@ def resolve_connect_password(connect_args: dict[str, Any]) -> tuple[str, str | i
 @pytest.mark.skipif(os.name == 'nt', reason='todo: unknown; try running the test suite under winpty')
 def test_binary_display_hex(executor):
     m = MyCli()
-    m.sqlexecute = SQLExecute(
+    m.sql_execute = SQLExecute(
         None,
         USER,
         PASSWORD,
@@ -122,7 +122,7 @@ def test_binary_display_hex(executor):
         None,
     )
     m.explicit_pager = False
-    sqlresult = next(m.sqlexecute.run("select b'01101010' AS binary_test"))
+    sqlresult = next(m.sql_execute.run("select b'01101010' AS binary_test"))
     formatted = m.format_sqlresult(
         sqlresult,
         is_expanded=False,
@@ -144,7 +144,7 @@ def test_binary_display_hex(executor):
 @pytest.mark.skipif(os.name == 'nt', reason='todo: unknown')
 def test_binary_display_utf8(executor):
     m = MyCli()
-    m.sqlexecute = SQLExecute(
+    m.sql_execute = SQLExecute(
         None,
         USER,
         PASSWORD,
@@ -157,7 +157,7 @@ def test_binary_display_utf8(executor):
         None,
     )
     m.explicit_pager = False
-    sqlresult = next(m.sqlexecute.run("select b'01101010' AS binary_test"))
+    sqlresult = next(m.sql_execute.run("select b'01101010' AS binary_test"))
     formatted = m.format_sqlresult(
         sqlresult,
         is_expanded=False,
@@ -345,7 +345,7 @@ def test_ssl_mode_off(executor, capsys):
 def test_reconnect_database_is_selected(executor, capsys):
     m = MyCli()
     m.register_special_commands()
-    m.sqlexecute = SQLExecute(
+    m.sql_execute = SQLExecute(
         None,
         USER,
         PASSWORD,
@@ -358,15 +358,15 @@ def test_reconnect_database_is_selected(executor, capsys):
         None,
     )
     try:
-        next(m.sqlexecute.run(f"use {DATABASE}"))
-        next(m.sqlexecute.run(f"kill {m.sqlexecute.connection_id}"))
+        next(m.sql_execute.run(f"use {DATABASE}"))
+        next(m.sql_execute.run(f"kill {m.sql_execute.connection_id}"))
     except OperationalError:
         pass  # expected as the connection was killed
     except Exception as e:
         raise e
     m.reconnect()
     try:
-        next(m.sqlexecute.run("show tables")).rows.fetchall()
+        next(m.sql_execute.run("show tables")).rows.fetchall()
     except Exception as e:
         raise e
 
@@ -375,7 +375,7 @@ def test_reconnect_database_is_selected(executor, capsys):
 def test_reconnect_no_database(executor, capsys):
     m = MyCli()
     m.register_special_commands()
-    m.sqlexecute = SQLExecute(
+    m.sql_execute = SQLExecute(
         None,
         USER,
         PASSWORD,
@@ -398,7 +398,7 @@ def test_reconnect_no_database(executor, capsys):
 def test_reconnect_with_different_database(executor):
     m = MyCli()
     m.register_special_commands()
-    m.sqlexecute = SQLExecute(
+    m.sql_execute = SQLExecute(
         None,
         USER,
         PASSWORD,
@@ -424,7 +424,7 @@ def test_reconnect_with_different_database(executor):
 def test_reconnect_with_same_database(executor):
     m = MyCli()
     m.register_special_commands()
-    m.sqlexecute = SQLExecute(
+    m.sql_execute = SQLExecute(
         None,
         USER,
         PASSWORD,
@@ -449,13 +449,13 @@ def test_reconnect_with_same_database(executor):
 def test_prompt_no_host_only_socket(executor):
     mycli = MyCli()
     mycli.prompt_format = "\\t \\u@\\h:\\d> "
-    mycli.sqlexecute = SQLExecute
-    mycli.sqlexecute.server_info = ServerInfo.from_version_string("8.0.44-0ubuntu0.24.04.1")
-    mycli.sqlexecute.host = None
-    mycli.sqlexecute.socket = "/var/run/mysqld/mysqld.sock"
-    mycli.sqlexecute.user = DEFAULT_USER
-    mycli.sqlexecute.dbname = DEFAULT_DATABASE
-    mycli.sqlexecute.port = DEFAULT_PORT
+    mycli.sql_execute = SQLExecute
+    mycli.sql_execute.server_info = ServerInfo.from_version_string("8.0.44-0ubuntu0.24.04.1")
+    mycli.sql_execute.host = None
+    mycli.sql_execute.socket = "/var/run/mysqld/mysqld.sock"
+    mycli.sql_execute.user = DEFAULT_USER
+    mycli.sql_execute.dbname = DEFAULT_DATABASE
+    mycli.sql_execute.port = DEFAULT_PORT
     prompt = repl_mode.render_prompt_string(mycli, mycli.prompt_format, 0)
     prompt_plain = to_plain_text(prompt)
     assert prompt_plain == f"MySQL {DEFAULT_USER}@{DEFAULT_HOST}:{DEFAULT_DATABASE}> "
@@ -465,13 +465,13 @@ def test_prompt_no_host_only_socket(executor):
 def test_prompt_socket_overrides_port(executor):
     mycli = MyCli()
     mycli.prompt_format = "\\t \\u@\\h:\\k \\d> "
-    mycli.sqlexecute = SQLExecute
-    mycli.sqlexecute.server_info = ServerInfo.from_version_string("8.0.44-0ubuntu0.24.04.1")
-    mycli.sqlexecute.host = None
-    mycli.sqlexecute.socket = "/var/run/mysqld/mysqld.sock"
-    mycli.sqlexecute.user = DEFAULT_USER
-    mycli.sqlexecute.dbname = DEFAULT_DATABASE
-    mycli.sqlexecute.port = DEFAULT_PORT
+    mycli.sql_execute = SQLExecute
+    mycli.sql_execute.server_info = ServerInfo.from_version_string("8.0.44-0ubuntu0.24.04.1")
+    mycli.sql_execute.host = None
+    mycli.sql_execute.socket = "/var/run/mysqld/mysqld.sock"
+    mycli.sql_execute.user = DEFAULT_USER
+    mycli.sql_execute.dbname = DEFAULT_DATABASE
+    mycli.sql_execute.port = DEFAULT_PORT
     prompt = repl_mode.render_prompt_string(mycli, mycli.prompt_format, 0)
     prompt_plain = to_plain_text(prompt)
     assert prompt_plain == f"MySQL {DEFAULT_USER}@{DEFAULT_HOST}:mysqld.sock {DEFAULT_DATABASE}> "
@@ -481,13 +481,13 @@ def test_prompt_socket_overrides_port(executor):
 def test_prompt_socket_short_host(executor):
     mycli = MyCli()
     mycli.prompt_format = "\\t \\u@\\H:\\k \\d> "
-    mycli.sqlexecute = SQLExecute
-    mycli.sqlexecute.server_info = ServerInfo.from_version_string("8.0.44-0ubuntu0.24.04.1")
-    mycli.sqlexecute.host = f'{DEFAULT_HOST}.localdomain'
-    mycli.sqlexecute.socket = None
-    mycli.sqlexecute.user = DEFAULT_USER
-    mycli.sqlexecute.dbname = DEFAULT_DATABASE
-    mycli.sqlexecute.port = DEFAULT_PORT
+    mycli.sql_execute = SQLExecute
+    mycli.sql_execute.server_info = ServerInfo.from_version_string("8.0.44-0ubuntu0.24.04.1")
+    mycli.sql_execute.host = f'{DEFAULT_HOST}.localdomain'
+    mycli.sql_execute.socket = None
+    mycli.sql_execute.user = DEFAULT_USER
+    mycli.sql_execute.dbname = DEFAULT_DATABASE
+    mycli.sql_execute.port = DEFAULT_PORT
     prompt = repl_mode.render_prompt_string(mycli, mycli.prompt_format, 0)
     prompt_plain = to_plain_text(prompt)
     assert prompt_plain == f"MySQL {DEFAULT_USER}@{DEFAULT_HOST}:{DEFAULT_PORT} {DEFAULT_DATABASE}> "
@@ -840,7 +840,7 @@ def output(monkeypatch, terminal_size, testdata, explicit_pager, expect_pager):
         app = None
 
     m.prompt_session = TestPromptSession()
-    m.sqlexecute = TestExecute()
+    m.sql_execute = TestExecute()
     m.explicit_pager = explicit_pager
 
     def echo_via_pager(s):
@@ -2394,7 +2394,7 @@ def test_connect_reports_expired_password_login_error(monkeypatch: pytest.Monkey
     assert any('password has expired' in message for message in echo_calls)
 
 
-def test_connect_sets_cli_sandbox_mode_when_sqlexecute_enters_sandbox(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_connect_sets_cli_sandbox_mode_when_sql_execute_enters_sandbox(monkeypatch: pytest.MonkeyPatch) -> None:
     cli = make_bare_mycli()
     cli.config_without_package_defaults = {'connection': {}}
     cli.config = {'connection': {}, 'main': {}}

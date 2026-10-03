@@ -56,7 +56,7 @@ def list_tables(
         if one := cur.fetchone():
             postamble = one[1]
 
-    # todo missing a status line because sqlexecute.get_result was not used
+    # todo missing a status line because sql_execute.get_result was not used
     return [SQLResult(header=header, rows=results, postamble=postamble)]
 
 
@@ -74,7 +74,7 @@ def list_databases(cur: Cursor, **_) -> list[SQLResult]:
     cur.execute(query)
     if cur.description:
         header = [x[0] for x in cur.description]
-        # todo missing a status line because sqlexecute.get_result was not used
+        # todo missing a status line because sql_execute.get_result was not used
         return [SQLResult(header=header, rows=cur)]
     else:
         return [SQLResult()]

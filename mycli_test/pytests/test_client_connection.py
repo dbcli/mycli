@@ -50,7 +50,7 @@ class DummyClient(ClientConnectionMixin):
         self.keepalive_ticks: int | None = None
         self.sandbox_mode = False
         self.verbosity = verbosity
-        self.sqlexecute: Any = None
+        self.sql_execute: Any = None
         self.logger = DummyLogger()
         self.echo_calls: list[tuple[tuple[Any, ...], dict[str, Any]]] = []
 
@@ -1313,7 +1313,7 @@ def test_connect_reports_expired_password_login_error() -> None:
     assert any('password has expired' in call[0][0] for call in client.echo_calls)
 
 
-def test_connect_sets_sandbox_mode_when_sqlexecute_enters_sandbox() -> None:
+def test_connect_sets_sandbox_mode_when_sql_execute_enters_sandbox() -> None:
     client = DummyClient()
     FakeSQLExecute.sandbox_mode_value = True
 
@@ -1465,7 +1465,7 @@ class FakeReconnectSQLExecute:
 
 def test_reconnect_returns_true_when_ping_succeeds() -> None:
     client = DummyClient()
-    client.sqlexecute = FakeReconnectSQLExecute(FakeConn([None]))
+    client.sql_execute = FakeReconnectSQLExecute(FakeConn([None]))
 
     assert client.reconnect() is True
     assert client.echo_calls == [(('Already connected.',), {'fg': 'yellow'})]
@@ -1474,7 +1474,7 @@ def test_reconnect_returns_true_when_ping_succeeds() -> None:
 def test_reconnect_reports_session_reset_when_connection_id_changes() -> None:
     client = DummyClient()
     conn = FakeConn([pymysql.err.Error('stale'), None])
-    client.sqlexecute = FakeReconnectSQLExecute(conn, connection_id=10, dbname='')
+    client.sql_execute = FakeReconnectSQLExecute(conn, connection_id=10, dbname='')
 
     assert client.reconnect(database='newdb') is True
     assert any(call[0] == ('Any session state was reset.',) for call in client.echo_calls)
@@ -1483,23 +1483,23 @@ def test_reconnect_reports_session_reset_when_connection_id_changes() -> None:
 def test_reconnect_creates_new_connection_after_ping_reconnect_fails() -> None:
     client = DummyClient()
     conn = FakeConn([pymysql.err.Error('stale'), pymysql.err.Error('still stale')])
-    client.sqlexecute = FakeReconnectSQLExecute(conn)
+    client.sql_execute = FakeReconnectSQLExecute(conn)
 
     assert client.reconnect() is True
-    assert client.sqlexecute.connect_calls == 1
+    assert client.sql_execute.connect_calls == 1
     assert any(call[0] == ('New connection created successfully.',) for call in client.echo_calls)
 
 
 def test_reconnect_returns_false_when_new_connection_fails() -> None:
     client = DummyClient()
     conn = FakeConn([pymysql.err.Error('stale'), pymysql.err.Error('still stale')])
-    sqlexecute = FakeReconnectSQLExecute(conn)
+    sql_execute = FakeReconnectSQLExecute(conn)
 
     def fail_connect() -> None:
         raise pymysql.OperationalError(2003, 'no route')
 
-    sqlexecute.connect = fail_connect  # type: ignore[method-assign]
-    client.sqlexecute = sqlexecute
+    sql_execute.connect = fail_connect  # type: ignore[method-assign]
+    client.sql_execute = sql_execute
 
     assert client.reconnect() is False
     assert any('no route' in call[0][0] for call in client.echo_calls)

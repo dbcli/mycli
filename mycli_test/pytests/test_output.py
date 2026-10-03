@@ -265,7 +265,7 @@ def test_rendering_stops_before_terminal_output(monkeypatch: pytest.MonkeyPatch,
     runner = QueryRunner(0)
     runner.show_state = True
     runner.started = monotonic() - 1
-    cli.sqlexecute = cast(Any, SimpleNamespace(query_runner=runner))
+    cli.sql_execute = cast(Any, SimpleNamespace(query_runner=runner))
     cli.prompt_session = None
     cli.explicit_pager = paged
     cli.get_output_margin = lambda status=None: 1  # type: ignore[assignment]
