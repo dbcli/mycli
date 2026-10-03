@@ -2,8 +2,8 @@ from unittest.mock import Mock, call
 
 import pytest
 
-from mycli.packages import fzf as fzf_module
-from mycli.packages.fzf import Fzf
+from mycli.packages.fzf import fzf as fzf_module
+from mycli.packages.fzf.fzf import Fzf
 
 
 @pytest.fixture
