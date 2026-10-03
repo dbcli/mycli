@@ -6,8 +6,8 @@ from typing import Any, cast
 
 import pytest
 
-from mycli import ssh_tunnel
-from mycli.ssh_tunnel import SshTunnel, SshTunnelError, SshTunnelTarget
+from mycli.packages.integrations.openssh import ssh_tunnel
+from mycli.packages.integrations.openssh.ssh_tunnel import SshTunnel, SshTunnelError, SshTunnelTarget
 
 
 def test_find_free_local_port_binds_default_host(monkeypatch: pytest.MonkeyPatch) -> None:

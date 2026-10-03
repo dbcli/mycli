@@ -12,8 +12,8 @@ from unittest.mock import Mock
 
 import pytest
 
-from mycli import boundary_tunnel
-from mycli.boundary_tunnel import (
+from mycli.packages.integrations.boundary import boundary_tunnel
+from mycli.packages.integrations.boundary.boundary_tunnel import (
     TUNNEL_STABILIZATION_PAUSE,
     BoundaryTunnel,
     BoundaryTunnelError,

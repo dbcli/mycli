@@ -6,7 +6,7 @@ from typing import Any
 
 import pytest
 
-from mycli import vault
+from mycli.packages.integrations.vault import vault_credentials as vault
 
 
 @pytest.fixture(autouse=True)
