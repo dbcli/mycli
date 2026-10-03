@@ -14,7 +14,7 @@ from typing import Any, Union, cast, get_args, get_origin
 
 import sqlglot
 
-from mycli.packages.hybrid_redirection import find_token_indices
+from mycli.packages.hybrid_redirection.hybrid_redirection import find_token_indices
 from mycli.packages.polars.transform import _pipeline_operator_indexes
 
 _ATTRIBUTE_PATTERN = re.compile(r'(?s)(.*)\.([A-Za-z_][A-Za-z0-9_]*)?\s*$')

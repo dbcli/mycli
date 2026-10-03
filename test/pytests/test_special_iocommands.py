@@ -19,7 +19,7 @@ from jinja2 import TemplateError
 from pymysql import ProgrammingError
 import pytest
 
-from mycli.packages.hybrid_redirection import parse_shell_redirect
+from mycli.packages.hybrid_redirection.hybrid_redirection import parse_shell_redirect
 import mycli.packages.special
 from mycli.packages.special import iocommands
 from mycli.packages.special.favoritequeries import (

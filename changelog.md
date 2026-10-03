@@ -8,6 +8,7 @@ Internal
 * Move various utility files to a `utils` directory.
 * Move various completion files to a `completion` directory.
 * Move `fzf.py` inside a package directory.
+* Move `hybrid_redirection.py` inside a package directory.
 
 
 v2.28.0 (2026/10/02)

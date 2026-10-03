@@ -63,7 +63,7 @@ from mycli.constants import (
 from mycli.key_bindings import mycli_bindings
 from mycli.lexer import MyCliLexer
 from mycli.packages import special
-from mycli.packages.hybrid_redirection import get_redirect_components, is_redirect_command
+from mycli.packages.hybrid_redirection.hybrid_redirection import get_redirect_components, is_redirect_command
 from mycli.packages.polars.transform import (
     PolarsTransform,
     PolarsTransformError,
