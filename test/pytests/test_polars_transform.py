@@ -6,8 +6,8 @@ from typing import Any, Iterator, Sequence
 import pytest
 
 from mycli.packages.hybrid_redirection import ShellRedirect
-import mycli.packages.polars_transform as polars_transform
-from mycli.packages.polars_transform import (
+from mycli.packages.polars import transform as polars_transform
+from mycli.packages.polars.transform import (
     PolarsPipeline,
     PolarsTransform,
     PolarsTransformError,
@@ -390,7 +390,7 @@ def test_parse_output_path_rejects_mismatched_quotes() -> None:
 
 
 def test_prepare_polars_transform_compiles_expression_and_loads_polars(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr('mycli.packages.polars_transform._load_polars', lambda: FakePolars)
+    monkeypatch.setattr('mycli.packages.polars.transform._load_polars', lambda: FakePolars)
 
     transform = prepare_polars_transform('SELECT id FROM orders', 'df')
 
@@ -408,7 +408,7 @@ def test_prepare_polars_transform_reports_missing_dependency(monkeypatch: pytest
     def missing_polars() -> Any:
         raise PolarsTransformError('Polars transforms require Polars.')
 
-    monkeypatch.setattr('mycli.packages.polars_transform._load_polars', missing_polars)
+    monkeypatch.setattr('mycli.packages.polars.transform._load_polars', missing_polars)
 
     with pytest.raises(PolarsTransformError, match='require Polars'):
         prepare_polars_transform('SELECT 1', 'df')
@@ -956,7 +956,7 @@ def test_run_polars_transform_rejects_dataframe_and_series_plot_output(
 
 
 def test_prepare_polars_transform_supports_direct_parquet_output(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr('mycli.packages.polars_transform._load_polars', lambda: FakePolars)
+    monkeypatch.setattr('mycli.packages.polars.transform._load_polars', lambda: FakePolars)
 
     transform = prepare_polars_transform('SELECT id FROM orders', None)
 

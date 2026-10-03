@@ -70,7 +70,7 @@ from mycli.packages.key_binding_utils import (
     handle_clip_command,
     handle_editor_command,
 )
-from mycli.packages.polars_transform import (
+from mycli.packages.polars.transform import (
     PolarsTransform,
     PolarsTransformError,
     parse_polars_transform,

@@ -9,8 +9,8 @@ from prompt_toolkit.document import Document
 import pytest
 import sqlglot
 
-from mycli.packages import polars_completion
-from mycli.packages.polars_completion import PolarsCompletion, complete_polars_transform
+from mycli.packages.polars import completion as polars_completion
+from mycli.packages.polars.completion import PolarsCompletion, complete_polars_transform
 from mycli.sqlcompleter import SQLCompleter
 
 
