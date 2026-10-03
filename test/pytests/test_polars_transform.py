@@ -5,7 +5,7 @@ from typing import Any, Iterator, Sequence
 
 import pytest
 
-from mycli.packages.hybrid_redirection import ShellRedirect
+from mycli.packages.hybrid_redirection.hybrid_redirection import ShellRedirect
 from mycli.packages.polars import transform as polars_transform
 from mycli.packages.polars.transform import (
     PolarsPipeline,

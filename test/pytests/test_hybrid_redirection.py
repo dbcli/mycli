@@ -3,7 +3,7 @@ from typing import Generator
 import pytest
 import sqlglot
 
-from mycli.packages import hybrid_redirection
+from mycli.packages.hybrid_redirection import hybrid_redirection
 
 
 def tokenize(command: str) -> list[sqlglot.Token]:
