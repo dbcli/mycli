@@ -18,7 +18,7 @@ from pymysql.cursors import Cursor, SSCursor
 from mycli.constants import ER_MUST_CHANGE_PASSWORD
 from mycli.packages.special import iocommands
 from mycli.packages.special.main import CommandNotFound, execute
-from mycli.packages.sqlresult import SQLResult
+from mycli.packages.sql_result.sql_result import SQLResult
 from mycli.query_runner import QueryRunner
 
 _logger = logging.getLogger(__name__)

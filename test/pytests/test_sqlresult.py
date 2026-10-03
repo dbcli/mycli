@@ -1,6 +1,6 @@
 from prompt_toolkit.formatted_text import FormattedText
 
-from mycli.packages.sqlresult import SQLResult
+from mycli.packages.sql_result.sql_result import SQLResult
 
 
 def test_sqlresult_str_includes_all_fields() -> None:

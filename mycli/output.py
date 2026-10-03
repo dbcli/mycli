@@ -33,7 +33,7 @@ from mycli.compat import WIN, is_windows_console
 from mycli.constants import DEFAULT_HEIGHT, DEFAULT_WIDTH
 import mycli.main_modes.repl as repl_mode
 from mycli.packages import special
-from mycli.packages.sqlresult import SQLResult
+from mycli.packages.sql_result.sql_result import SQLResult
 from mycli.packages.tabular_output import sql_format
 from mycli.query_runner import rendering_output, runner_for
 from mycli.sqlexecute import FIELD_TYPES

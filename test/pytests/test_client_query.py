@@ -4,7 +4,7 @@ from typing import Any, cast
 import pytest
 
 from mycli import client_query, main
-from mycli.packages.sqlresult import SQLResult
+from mycli.packages.sql_result.sql_result import SQLResult
 from mycli.types import Query
 from test.utils import (  # type: ignore[attr-defined]
     FakeCursorBase,

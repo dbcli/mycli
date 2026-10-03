@@ -74,7 +74,7 @@ from mycli.packages.polars.transform import (
 from mycli.packages.ptoolkit.history import FRECENCY_HISTORY_ENTRIES, FRECENCY_REFRESH_INTERVAL, FileHistoryWithTimestamp
 from mycli.packages.special.iocommands import temporary_redirect
 from mycli.packages.special.utils import format_uptime, get_ssl_version, get_uptime, get_warning_count
-from mycli.packages.sqlresult import SQLResult
+from mycli.packages.sql_result.sql_result import SQLResult
 from mycli.packages.utils.interactive_utils import confirm, confirm_destructive_query
 from mycli.packages.utils.key_binding_utils import (
     handle_clip_command,

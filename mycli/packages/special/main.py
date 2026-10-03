@@ -6,7 +6,7 @@ from typing import Callable
 import webbrowser
 
 from mycli.constants import DOCS_URL, ISSUES_URL
-from mycli.packages.sqlresult import SQLResult
+from mycli.packages.sql_result.sql_result import SQLResult
 
 try:
     if not os.environ.get('MYCLI_LLM_OFF'):

@@ -10,7 +10,7 @@ import pytest
 
 from mycli.constants import DOCS_URL, ISSUES_URL
 from mycli.packages.special import main as special_main
-from mycli.packages.sqlresult import SQLResult
+from mycli.packages.sql_result.sql_result import SQLResult
 
 
 @pytest.fixture

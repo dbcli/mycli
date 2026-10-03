@@ -25,7 +25,7 @@ from mycli.constants import (
 )
 import mycli.output
 from mycli.packages import special
-from mycli.packages.sqlresult import SQLResult
+from mycli.packages.sql_result.sql_result import SQLResult
 
 DATABASE = TEST_DATABASE
 PASSWORD = os.getenv("PYTEST_PASSWORD")

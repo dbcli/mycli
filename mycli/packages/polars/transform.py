@@ -18,7 +18,7 @@ from mycli.packages.hybrid_redirection.hybrid_redirection import (
     tokenize_shell_suffix,
 )
 from mycli.packages.special.delimitercommand import DelimiterCommand
-from mycli.packages.sqlresult import SQLResult
+from mycli.packages.sql_result.sql_result import SQLResult
 from mycli.types import ImageProtocol, OutputMode
 
 delimiter_command = DelimiterCommand()

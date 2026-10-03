@@ -7,7 +7,7 @@ from pymysql.constants.ER import BAD_DB_ERROR
 
 from mycli.packages.completion.sql_completer import SQLCompleter
 from mycli.packages.special.main import COMMANDS
-from mycli.packages.sqlresult import SQLResult
+from mycli.packages.sql_result.sql_result import SQLResult
 from mycli.sqlexecute import ServerSpecies, SQLExecute
 
 MIN_COMPLETION_REFRESH_MESSAGE_SECONDS = 1.0

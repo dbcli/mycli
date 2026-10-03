@@ -10,7 +10,7 @@ from pymysql.constants import FIELD_TYPE
 import pytest
 
 from mycli.main import MyCli
-from mycli.packages.sqlresult import SQLResult
+from mycli.packages.sql_result.sql_result import SQLResult
 from mycli.password_sources import PasswordCandidates
 from test.utils import HOST, PASSWORD, PORT, USER, dbtest
 
