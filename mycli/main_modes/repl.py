@@ -65,7 +65,7 @@ from mycli.packages.datafrane.transform import (
     prepare_polars_transform,
     run_polars_transform,
 )
-from mycli.packages.execution.background_runner import QueryCancelled, QueryRunner, runner_for
+from mycli.packages.execution.background_runner import BackgroundRunner, QueryCancelled, runner_for
 from mycli.packages.execution.sql_execute import SQLExecute
 from mycli.packages.prompt_toolkit.history import FRECENCY_HISTORY_ENTRIES, FRECENCY_REFRESH_INTERVAL, FileHistoryWithTimestamp
 from mycli.packages.prompt_toolkit.key_bindings import mycli_bindings
@@ -1179,9 +1179,9 @@ def main_repl(mycli: 'MyCli') -> None:
 
     config = mycli.config['main']
     show_state_interval = config.as_float('show_query_state_interval')
-    runner = QueryRunner(show_state_interval)
+    runner = BackgroundRunner(show_state_interval)
     if isinstance(sql_execute, SQLExecute):
-        sql_execute.set_query_runner(runner)
+        sql_execute.set_background_runner(runner)
     try:
         while True:
             _one_iteration(mycli, state)
@@ -1192,5 +1192,5 @@ def main_repl(mycli: 'MyCli') -> None:
             mycli.echo('Goodbye!')
     finally:
         if isinstance(sql_execute, SQLExecute):
-            sql_execute.set_query_runner(None)
+            sql_execute.set_background_runner(None)
         runner.close()

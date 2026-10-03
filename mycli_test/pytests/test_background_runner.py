@@ -15,15 +15,15 @@ import pytest
 from mycli.constants import DEFAULT_WIDTH, TTY_ERASE_LINE, QueryState
 from mycli.packages.execution import background_runner
 from mycli.packages.execution import sql_execute as sql_execute_module
-from mycli.packages.execution.background_runner import BackgroundCursor, BackgroundSSCursor, QueryCancelled, QueryRunner
+from mycli.packages.execution.background_runner import BackgroundCursor, BackgroundRunner, BackgroundSSCursor, QueryCancelled
 from mycli.packages.execution.sql_execute import SQLExecute
 from mycli.packages.sql_result.sql_result import SQLResult
 from mycli_test.utils import dbtest  # type: ignore[attr-defined]
 
 
 @pytest.fixture
-def runner() -> Iterator[QueryRunner]:
-    instance = QueryRunner(show_state_interval=0.5)
+def runner() -> Iterator[BackgroundRunner]:
+    instance = BackgroundRunner(show_state_interval=0.5)
     yield instance
     instance.close()
 
@@ -36,15 +36,15 @@ def test_runner_for_returns_none_without_valid_runner(client: Any) -> None:
     assert background_runner.runner_for(client) is None
 
 
-def test_runner_for_returns_attached_runner(runner: QueryRunner) -> None:
-    client = SimpleNamespace(sql_execute=SimpleNamespace(query_runner=runner))
+def test_runner_for_returns_attached_runner(runner: BackgroundRunner) -> None:
+    client = SimpleNamespace(sql_execute=SimpleNamespace(background_runner=runner))
     assert background_runner.runner_for(client) is runner
 
 
 @pytest.mark.parametrize('attached', [False, True])
-def test_rendering_output_preserves_arguments_and_result(runner: QueryRunner, attached: bool) -> None:
+def test_rendering_output_preserves_arguments_and_result(runner: BackgroundRunner, attached: bool) -> None:
     runner.show_state = False
-    client = SimpleNamespace(sql_execute=SimpleNamespace(query_runner=runner if attached else None))
+    client = SimpleNamespace(sql_execute=SimpleNamespace(background_runner=runner if attached else None))
 
     @background_runner.rendering_output
     def render(owner: Any, value: str, *, suffix: str) -> str:
@@ -57,9 +57,9 @@ def test_rendering_output_preserves_arguments_and_result(runner: QueryRunner, at
     assert render.__name__ == 'render'
 
 
-def test_rendering_output_cleans_up_after_failure(runner: QueryRunner) -> None:
+def test_rendering_output_cleans_up_after_failure(runner: BackgroundRunner) -> None:
     runner.show_state = False
-    client = SimpleNamespace(sql_execute=SimpleNamespace(query_runner=runner))
+    client = SimpleNamespace(sql_execute=SimpleNamespace(background_runner=runner))
     error = ValueError('format failed')
 
     @background_runner.rendering_output
@@ -77,7 +77,7 @@ def test_rendering_output_cleans_up_after_failure(runner: QueryRunner) -> None:
 
 @pytest.mark.parametrize('error', [OSError('unavailable'), ValueError('closed')])
 def test_render_ticks_stops_after_display_failure(
-    runner: QueryRunner,
+    runner: BackgroundRunner,
     monkeypatch: pytest.MonkeyPatch,
     caplog: pytest.LogCaptureFixture,
     error: Exception,
@@ -98,7 +98,7 @@ def test_render_ticks_stops_after_display_failure(
 
 
 def test_close_control_discards_connection_even_when_close_fails(
-    runner: QueryRunner,
+    runner: BackgroundRunner,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     control = Mock()
@@ -114,7 +114,7 @@ def test_close_control_discards_connection_even_when_close_fails(
 
 
 @pytest.mark.parametrize('cancel', [False, True])
-def test_monitor_skips_query_completed_during_connection(runner: QueryRunner, cancel: bool) -> None:
+def test_monitor_skips_query_completed_during_connection(runner: BackgroundRunner, cancel: bool) -> None:
     done = Event()
     control = Mock()
 
@@ -132,7 +132,7 @@ def test_monitor_skips_query_completed_during_connection(runner: QueryRunner, ca
 @pytest.mark.parametrize('method', ['write', 'flush'])
 @pytest.mark.parametrize('error', [OSError('unavailable'), ValueError('closed')])
 def test_clear_resets_visibility_when_terminal_fails(
-    runner: QueryRunner,
+    runner: BackgroundRunner,
     monkeypatch: pytest.MonkeyPatch,
     caplog: pytest.LogCaptureFixture,
     method: str,
@@ -151,7 +151,7 @@ def test_clear_resets_visibility_when_terminal_fails(
     output.write.assert_called_once_with(TTY_ERASE_LINE)
 
 
-def test_forced_cancel_tolerates_socket_shutdown_failure(runner: QueryRunner, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_forced_cancel_tolerates_socket_shutdown_failure(runner: BackgroundRunner, monkeypatch: pytest.MonkeyPatch) -> None:
     started, released = Event(), Event()
     connection = Connection(defer_connect=True)
     connection.server_thread_id = (42,)
@@ -191,17 +191,17 @@ def test_forced_cancel_tolerates_socket_shutdown_failure(runner: QueryRunner, mo
     assert runner.call(lambda: 'next query') == 'next query'
 
 
-def test_work_runs_on_single_background_thread(runner: QueryRunner) -> None:
+def test_work_runs_on_single_background_thread(runner: BackgroundRunner) -> None:
     first = runner.call(get_ident)
     assert first != get_ident()
     assert runner.call(get_ident) == first
 
 
-def test_nested_work_does_not_deadlock(runner: QueryRunner) -> None:
+def test_nested_work_does_not_deadlock(runner: BackgroundRunner) -> None:
     assert runner.call(lambda: runner.call(get_ident)) == runner.worker_id
 
 
-def test_sigint_handler_is_restored_after_failure(runner: QueryRunner) -> None:
+def test_sigint_handler_is_restored_after_failure(runner: BackgroundRunner) -> None:
     previous = signal.getsignal(signal.SIGINT)
 
     def fail() -> None:
@@ -212,7 +212,7 @@ def test_sigint_handler_is_restored_after_failure(runner: QueryRunner) -> None:
     assert signal.getsignal(signal.SIGINT) == previous
 
 
-def test_worker_exception_propagates(runner: QueryRunner) -> None:
+def test_worker_exception_propagates(runner: BackgroundRunner) -> None:
     error = ValueError('query failed')
 
     def fail() -> None:
@@ -224,7 +224,7 @@ def test_worker_exception_propagates(runner: QueryRunner) -> None:
     assert runner.call(lambda: 42) == 42
 
 
-def test_interrupt_at_query_completion_is_not_swallowed(runner: QueryRunner, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_interrupt_at_query_completion_is_not_swallowed(runner: BackgroundRunner, monkeypatch: pytest.MonkeyPatch) -> None:
     class InterruptOnCompletion(Event):
         def wait(self, timeout: float | None = None) -> bool:
             completed = super().wait(timeout)
@@ -242,7 +242,7 @@ def test_interrupt_at_query_completion_is_not_swallowed(runner: QueryRunner, mon
     control.assert_not_called()
 
 
-def test_interrupt_while_finishing_monitor_is_not_swallowed(runner: QueryRunner, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_interrupt_while_finishing_monitor_is_not_swallowed(runner: BackgroundRunner, monkeypatch: pytest.MonkeyPatch) -> None:
     class CompleteAfterPoll(Event):
         first_wait = True
 
@@ -268,7 +268,7 @@ def test_interrupt_while_finishing_monitor_is_not_swallowed(runner: QueryRunner,
 
 
 @pytest.mark.parametrize('cursorclass, expected', [(Cursor, BackgroundCursor), (SSCursor, BackgroundSSCursor)])
-def test_attach_selects_background_cursor(runner: QueryRunner, cursorclass: type[Cursor], expected: type[Cursor]) -> None:
+def test_attach_selects_background_cursor(runner: BackgroundRunner, cursorclass: type[Cursor], expected: type[Cursor]) -> None:
     connection = Connection(defer_connect=True, cursorclass=cursorclass)
     runner.attach(connection, Mock())
     assert connection.cursorclass is expected
@@ -278,7 +278,7 @@ def test_attach_selects_background_cursor(runner: QueryRunner, cursorclass: type
 @pytest.mark.parametrize('state', [QueryState.RENDERING, QueryState.TRANSFORMING])
 @pytest.mark.parametrize('periodic', [False, True])
 def test_local_state_label_matches_cursor_mode(
-    runner: QueryRunner,
+    runner: BackgroundRunner,
     monkeypatch: pytest.MonkeyPatch,
     cursorclass: type[Cursor],
     state: QueryState,
@@ -303,20 +303,20 @@ def test_local_state_label_matches_cursor_mode(
 
 
 @pytest.mark.parametrize('first, second', [(Cursor, SSCursor), (SSCursor, Cursor)])
-def test_local_state_tracks_replacement_connection(runner: QueryRunner, first: type[Cursor], second: type[Cursor]) -> None:
+def test_local_state_tracks_replacement_connection(runner: BackgroundRunner, first: type[Cursor], second: type[Cursor]) -> None:
     runner.attach(Connection(defer_connect=True, cursorclass=first), Mock())
     runner.attach(Connection(defer_connect=True, cursorclass=second), Mock())
     expected = QueryState.STREAMING if second is SSCursor else QueryState.RENDERING
     assert runner._local_state() == expected
 
 
-def test_detaching_unbuffered_connection_restores_rendering_label(runner: QueryRunner) -> None:
+def test_detaching_unbuffered_connection_restores_rendering_label(runner: BackgroundRunner) -> None:
     runner.attach(Connection(defer_connect=True, cursorclass=SSCursor), Mock())
     runner.detach()
     assert runner._local_state() == QueryState.RENDERING
 
 
-def test_unbuffered_connection_preserves_server_state_label(runner: QueryRunner, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_unbuffered_connection_preserves_server_state_label(runner: BackgroundRunner, monkeypatch: pytest.MonkeyPatch) -> None:
     runner.attach(Connection(defer_connect=True, cursorclass=SSCursor), Mock())
     runner.started = 0.0
     display = Mock()
@@ -328,7 +328,7 @@ def test_unbuffered_connection_preserves_server_state_label(runner: QueryRunner,
 
 
 @pytest.mark.parametrize('cursorclass', [Cursor, SSCursor])
-def test_detach_restores_original_cursor(runner: QueryRunner, cursorclass: type[Cursor]) -> None:
+def test_detach_restores_original_cursor(runner: BackgroundRunner, cursorclass: type[Cursor]) -> None:
     connection = Connection(defer_connect=True, cursorclass=cursorclass)
     runner.attach(connection, Mock())
     runner.detach()
@@ -336,7 +336,7 @@ def test_detach_restores_original_cursor(runner: QueryRunner, cursorclass: type[
     assert not hasattr(connection, '_mycli_background_runner')
 
 
-def test_cursor_execution_uses_worker(runner: QueryRunner) -> None:
+def test_cursor_execution_uses_worker(runner: BackgroundRunner) -> None:
     connection = Connection(defer_connect=True)
     connection.server_thread_id = (42,)
     runner.attach(connection, Mock())
@@ -352,7 +352,7 @@ def test_cursor_execution_uses_worker(runner: QueryRunner) -> None:
     assert thread_ids == [runner.worker_id]
 
 
-def test_monitor_queries_separate_connection(runner: QueryRunner) -> None:
+def test_monitor_queries_separate_connection(runner: BackgroundRunner) -> None:
     cursor = Mock()
     cursor.__enter__ = Mock(return_value=cursor)
     cursor.__exit__ = Mock(return_value=False)
@@ -364,7 +364,7 @@ def test_monitor_queries_separate_connection(runner: QueryRunner) -> None:
     cursor.execute.assert_called_once_with('SHOW PROCESSLIST')
 
 
-def test_finished_query_is_not_killed(runner: QueryRunner) -> None:
+def test_finished_query_is_not_killed(runner: BackgroundRunner) -> None:
     done = Event()
     done.set()
     factory = Mock()
@@ -373,7 +373,7 @@ def test_finished_query_is_not_killed(runner: QueryRunner) -> None:
     factory.assert_not_called()
 
 
-def test_empty_server_state_reuses_last_polled_state(runner: QueryRunner) -> None:
+def test_empty_server_state_reuses_last_polled_state(runner: BackgroundRunner) -> None:
     cursor = Mock()
     cursor.__enter__ = Mock(return_value=cursor)
     cursor.__exit__ = Mock(return_value=False)
@@ -390,7 +390,7 @@ def test_empty_server_state_reuses_last_polled_state(runner: QueryRunner) -> Non
 
 
 @pytest.mark.parametrize('state', [QueryState.RENDERING.value, 'Cancelling', QueryState.UNKNOWN.value])
-def test_display_does_not_replace_server_state(runner: QueryRunner, monkeypatch: pytest.MonkeyPatch, state: str) -> None:
+def test_display_does_not_replace_server_state(runner: BackgroundRunner, monkeypatch: pytest.MonkeyPatch, state: str) -> None:
     monkeypatch.setattr(background_runner.sys, 'stderr', StringIO())
     runner.previous_state = 'Sending data'
     runner._display(2, state)
@@ -398,25 +398,25 @@ def test_display_does_not_replace_server_state(runner: QueryRunner, monkeypatch:
 
 
 @pytest.mark.parametrize('new_statement', [False, True])
-def test_only_new_statements_reset_server_state(runner: QueryRunner, new_statement: bool) -> None:
+def test_only_new_statements_reset_server_state(runner: BackgroundRunner, new_statement: bool) -> None:
     runner.started = monotonic()
     runner.previous_state = 'Sending data'
     runner.call(lambda: None, new_statement=new_statement)
     assert runner.previous_state == (QueryState.INITIAL.value if new_statement else 'Sending data')
 
 
-def test_reset_progress_resets_server_state(runner: QueryRunner) -> None:
+def test_reset_progress_resets_server_state(runner: BackgroundRunner) -> None:
     runner.previous_state = 'Sending data'
     runner.reset_progress()
     assert runner.previous_state == QueryState.INITIAL.value
 
 
-def test_monitor_failure_is_nonfatal(runner: QueryRunner) -> None:
+def test_monitor_failure_is_nonfatal(runner: BackgroundRunner) -> None:
     runner.connect_control = Mock(side_effect=OSError('unavailable'))
     assert runner._control(42, Event()) == QueryState.UNKNOWN
 
 
-def test_cancel_sends_kill_query(runner: QueryRunner) -> None:
+def test_cancel_sends_kill_query(runner: BackgroundRunner) -> None:
     cursor = Mock()
     cursor.__enter__ = Mock(return_value=cursor)
     cursor.__exit__ = Mock(return_value=False)
@@ -428,7 +428,7 @@ def test_cancel_sends_kill_query(runner: QueryRunner) -> None:
 
 @pytest.mark.parametrize('forced', [False, True])
 def test_interrupt_waits_for_worker_before_returning(
-    runner: QueryRunner,
+    runner: BackgroundRunner,
     monkeypatch: pytest.MonkeyPatch,
     forced: bool,
 ) -> None:
@@ -467,7 +467,7 @@ def test_interrupt_waits_for_worker_before_returning(
     assert runner.call(lambda: 'next query') == 'next query'
 
 
-def test_status_is_transient(runner: QueryRunner, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_status_is_transient(runner: BackgroundRunner, monkeypatch: pytest.MonkeyPatch) -> None:
     output = StringIO()
     monkeypatch.setattr(background_runner.sys, 'stderr', output)
     runner._display(2, 'Waiting')
@@ -477,7 +477,7 @@ def test_status_is_transient(runner: QueryRunner, monkeypatch: pytest.MonkeyPatc
     assert not runner.visible
 
 
-def test_status_uses_stderr_width_with_redirected_stdout(runner: QueryRunner, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_status_uses_stderr_width_with_redirected_stdout(runner: BackgroundRunner, monkeypatch: pytest.MonkeyPatch) -> None:
     output = StringIO()
     monkeypatch.setattr(output, 'fileno', lambda: 42)
     monkeypatch.setattr(background_runner.sys, 'stderr', output)
@@ -499,7 +499,7 @@ def test_status_uses_stderr_width_with_redirected_stdout(runner: QueryRunner, mo
 
 @pytest.mark.parametrize('error', [OSError('not a terminal'), ValueError('closed descriptor')])
 def test_status_width_falls_back_when_stderr_size_is_unavailable(
-    runner: QueryRunner,
+    runner: BackgroundRunner,
     monkeypatch: pytest.MonkeyPatch,
     error: Exception,
 ) -> None:
@@ -517,7 +517,7 @@ def test_status_width_falls_back_when_stderr_size_is_unavailable(
 
 @pytest.mark.parametrize('interval', [float('nan'), float('inf')])
 def test_invalid_interval_defaults_to_half_second(interval: float) -> None:
-    instance = QueryRunner(interval)
+    instance = BackgroundRunner(interval)
     try:
         assert instance.interval == 0.5
     finally:
@@ -526,7 +526,7 @@ def test_invalid_interval_defaults_to_half_second(interval: float) -> None:
 
 def test_non_tty_suppresses_monitor(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(background_runner.sys, 'stderr', StringIO())
-    instance = QueryRunner(True)
+    instance = BackgroundRunner(True)
     try:
         assert not instance.show_state
     finally:
@@ -535,7 +535,7 @@ def test_non_tty_suppresses_monitor(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.mark.parametrize('state', [QueryState.RENDERING, QueryState.TRANSFORMING])
 def test_rendering_keeps_elapsed_time_advancing(
-    runner: QueryRunner,
+    runner: BackgroundRunner,
     monkeypatch: pytest.MonkeyPatch,
     state: QueryState,
 ) -> None:
@@ -560,7 +560,7 @@ def test_rendering_keeps_elapsed_time_advancing(
     monitor.assert_not_called()
 
 
-def test_fetch_does_not_reset_statement_start(runner: QueryRunner, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_fetch_does_not_reset_statement_start(runner: BackgroundRunner, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(background_runner, 'monotonic', lambda: 10.0)
     runner.call(lambda: None)
     monkeypatch.setattr(background_runner, 'monotonic', lambda: 20.0)
@@ -570,7 +570,7 @@ def test_fetch_does_not_reset_statement_start(runner: QueryRunner, monkeypatch: 
     assert runner.started == 20.0
 
 
-def test_fetch_handoffs_share_query_update_deadline(runner: QueryRunner, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_fetch_handoffs_share_query_update_deadline(runner: BackgroundRunner, monkeypatch: pytest.MonkeyPatch) -> None:
     runner.show_state = runner.visible = True
     runner.started = 0.0
     runner._next_update = 0.5
@@ -584,7 +584,7 @@ def test_fetch_handoffs_share_query_update_deadline(runner: QueryRunner, monkeyp
     assert [call.args[0] for call in display.call_args_list] == [0.5, 1.0, 1.5]
 
 
-def test_fetch_polling_shares_query_update_deadline(runner: QueryRunner, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_fetch_polling_shares_query_update_deadline(runner: BackgroundRunner, monkeypatch: pytest.MonkeyPatch) -> None:
     class PollOnceEvent(Event):
         def __init__(self) -> None:
             super().__init__()
@@ -618,7 +618,7 @@ def test_fetch_polling_shares_query_update_deadline(runner: QueryRunner, monkeyp
     control.assert_called_once()
 
 
-def test_render_ticks_share_handoff_deadline(runner: QueryRunner, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_render_ticks_share_handoff_deadline(runner: BackgroundRunner, monkeypatch: pytest.MonkeyPatch) -> None:
     runner.started = 0.0
     display = Mock()
     monkeypatch.setattr(runner, '_display', display)
@@ -631,7 +631,7 @@ def test_render_ticks_share_handoff_deadline(runner: QueryRunner, monkeypatch: p
     display.assert_called_once_with(1.0, QueryState.RENDERING.value)
 
 
-def test_new_statement_resets_update_deadline(runner: QueryRunner, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_new_statement_resets_update_deadline(runner: BackgroundRunner, monkeypatch: pytest.MonkeyPatch) -> None:
     runner._next_update = 999.0
     runner._state_requested = True
     monkeypatch.setattr(background_runner, 'monotonic', lambda: 10.0)
@@ -642,7 +642,7 @@ def test_new_statement_resets_update_deadline(runner: QueryRunner, monkeypatch: 
 
 @pytest.mark.parametrize('error', [ValueError('formatting'), KeyboardInterrupt()])
 @pytest.mark.parametrize('state', [QueryState.RENDERING, QueryState.TRANSFORMING])
-def test_rendering_error_stops_ticker(runner: QueryRunner, error: BaseException, state: QueryState) -> None:
+def test_rendering_error_stops_ticker(runner: BackgroundRunner, error: BaseException, state: QueryState) -> None:
     runner.show_state = True
     with pytest.raises(type(error)):
         with runner.rendering(state):
@@ -655,7 +655,7 @@ def test_rendering_error_stops_ticker(runner: QueryRunner, error: BaseException,
     assert runner._render_state == QueryState.RENDERING
 
 
-def test_fetch_after_output_does_not_redisplay_rendering(runner: QueryRunner, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_fetch_after_output_does_not_redisplay_rendering(runner: BackgroundRunner, monkeypatch: pytest.MonkeyPatch) -> None:
     output = StringIO()
     monkeypatch.setattr(background_runner.sys, 'stderr', output)
     runner.show_state = True
@@ -669,14 +669,14 @@ def test_fetch_after_output_does_not_redisplay_rendering(runner: QueryRunner, mo
     assert not runner.visible
 
 
-def test_disabled_query_display_has_no_handoff(runner: QueryRunner, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_disabled_query_display_has_no_handoff(runner: BackgroundRunner, monkeypatch: pytest.MonkeyPatch) -> None:
     output = StringIO()
     monkeypatch.setattr(background_runner.sys, 'stderr', output)
     runner.call(lambda: None)
     assert output.getvalue() == ''
 
 
-def test_pager_suppresses_query_handoff(runner: QueryRunner, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_pager_suppresses_query_handoff(runner: BackgroundRunner, monkeypatch: pytest.MonkeyPatch) -> None:
     output = StringIO()
     monkeypatch.setattr(background_runner.sys, 'stderr', output)
     runner.show_state = True
@@ -685,7 +685,7 @@ def test_pager_suppresses_query_handoff(runner: QueryRunner, monkeypatch: pytest
     assert output.getvalue() == ''
 
 
-def test_failed_query_clears_status_without_rendering(runner: QueryRunner, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_failed_query_clears_status_without_rendering(runner: BackgroundRunner, monkeypatch: pytest.MonkeyPatch) -> None:
     output = StringIO()
     monkeypatch.setattr(background_runner.sys, 'stderr', output)
     runner.show_state = True
@@ -701,7 +701,7 @@ def test_failed_query_clears_status_without_rendering(runner: QueryRunner, monke
     assert not runner.visible
 
 
-def test_successful_visible_query_hands_off_to_rendering(runner: QueryRunner, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_successful_visible_query_hands_off_to_rendering(runner: BackgroundRunner, monkeypatch: pytest.MonkeyPatch) -> None:
     output = StringIO()
     monkeypatch.setattr(background_runner.sys, 'stderr', output)
     runner.show_state = True
@@ -714,12 +714,12 @@ def test_successful_visible_query_hands_off_to_rendering(runner: QueryRunner, mo
 
 
 @pytest.mark.parametrize('state', [QueryState.RENDERING, QueryState.TRANSFORMING])
-def test_disabled_rendering_starts_no_thread(runner: QueryRunner, state: QueryState) -> None:
+def test_disabled_rendering_starts_no_thread(runner: BackgroundRunner, state: QueryState) -> None:
     with runner.rendering(state):
         assert runner._render_thread is None
 
 
-def test_nested_rendering_uses_one_ticker(runner: QueryRunner) -> None:
+def test_nested_rendering_uses_one_ticker(runner: BackgroundRunner) -> None:
     runner.show_state = True
     with runner.rendering():
         thread = runner._render_thread
@@ -730,7 +730,7 @@ def test_nested_rendering_uses_one_ticker(runner: QueryRunner) -> None:
 
 
 @pytest.mark.parametrize('state', [QueryState.RENDERING, QueryState.TRANSFORMING])
-def test_pager_suppresses_rendering(runner: QueryRunner, state: QueryState) -> None:
+def test_pager_suppresses_rendering(runner: BackgroundRunner, state: QueryState) -> None:
     runner.show_state = True
     with runner.suspend_display():
         with runner.rendering(state):
@@ -738,7 +738,7 @@ def test_pager_suppresses_rendering(runner: QueryRunner, state: QueryState) -> N
     assert runner._suppressed == 0
 
 
-def test_nested_processing_restores_outer_state_after_error(runner: QueryRunner) -> None:
+def test_nested_processing_restores_outer_state_after_error(runner: BackgroundRunner) -> None:
     runner.show_state = True
     with runner.rendering(QueryState.TRANSFORMING):
         thread = runner._render_thread
@@ -754,7 +754,7 @@ def test_nested_processing_restores_outer_state_after_error(runner: QueryRunner)
     assert not thread.is_alive()
 
 
-def test_database_handoff_uses_active_transform_state(runner: QueryRunner, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_database_handoff_uses_active_transform_state(runner: BackgroundRunner, monkeypatch: pytest.MonkeyPatch) -> None:
     output = StringIO()
     monkeypatch.setattr(background_runner.sys, 'stderr', output)
     runner.show_state = True
@@ -768,7 +768,7 @@ def test_database_handoff_uses_active_transform_state(runner: QueryRunner, monke
     assert not runner.visible
 
 
-def test_transform_to_rendering_preserves_elapsed_time(runner: QueryRunner, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_transform_to_rendering_preserves_elapsed_time(runner: BackgroundRunner, monkeypatch: pytest.MonkeyPatch) -> None:
     runner.started = 10.0
     runner.show_state = False
     times = iter([12.0, 12.5])
@@ -786,7 +786,7 @@ def test_transform_to_rendering_preserves_elapsed_time(runner: QueryRunner, monk
     assert display.call_count == 2
 
 
-def test_worker_pauses_rendering_ticks(runner: QueryRunner, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_worker_pauses_rendering_ticks(runner: BackgroundRunner, monkeypatch: pytest.MonkeyPatch) -> None:
     runner.show_state = True
     runner.interval = 0.01
     released, rendered = Event(), Event()
@@ -808,7 +808,7 @@ def test_worker_pauses_rendering_ticks(runner: QueryRunner, monkeypatch: pytest.
     assert updates[-1] == QueryState.RENDERING
 
 
-def test_status_is_delayed_and_refreshed(runner: QueryRunner, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_status_is_delayed_and_refreshed(runner: BackgroundRunner, monkeypatch: pytest.MonkeyPatch) -> None:
     released = Event()
     first_displayed = Event()
     updates: list[tuple[float, str]] = []
@@ -834,7 +834,7 @@ def test_status_is_delayed_and_refreshed(runner: QueryRunner, monkeypatch: pytes
     assert updates == [(0.5, 'finding state'), (1.0, 'waiting for lock'), (1.5, QueryState.RENDERING.value)]
 
 
-def test_replacing_connection_discards_monitor(runner: QueryRunner) -> None:
+def test_replacing_connection_discards_monitor(runner: BackgroundRunner) -> None:
     first = Connection(defer_connect=True)
     second = Connection(defer_connect=True)
     runner.attach(first, Mock())
@@ -846,7 +846,7 @@ def test_replacing_connection_discards_monitor(runner: QueryRunner) -> None:
     assert not hasattr(first, '_mycli_background_runner')
 
 
-def test_monitor_completion_precedes_next_query(runner: QueryRunner, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_monitor_completion_precedes_next_query(runner: BackgroundRunner, monkeypatch: pytest.MonkeyPatch) -> None:
     released, monitor_finished = Event(), Event()
     runner.show_state = True
     ticks = iter([0.0, 2.0, 3.0, 4.0])
@@ -866,9 +866,9 @@ def test_monitor_completion_precedes_next_query(runner: QueryRunner, monkeypatch
 
 @dbtest
 @pytest.mark.parametrize('unbuffered', [False, True])
-def test_real_cursor_streams_results_in_worker(executor: SQLExecute, runner: QueryRunner, unbuffered: bool) -> None:
+def test_real_cursor_streams_results_in_worker(executor: SQLExecute, runner: BackgroundRunner, unbuffered: bool) -> None:
     executor.connect(unbuffered=unbuffered)
-    executor.set_query_runner(runner)
+    executor.set_background_runner(runner)
     try:
         results = executor.run('SELECT 1 UNION ALL SELECT 2; SELECT 3')
         first = next(results)
@@ -880,13 +880,13 @@ def test_real_cursor_streams_results_in_worker(executor: SQLExecute, runner: Que
         with pytest.raises(StopIteration):
             next(results)
     finally:
-        executor.set_query_runner(None)
+        executor.set_background_runner(None)
 
 
 @dbtest
 def test_special_dispatch_stays_on_main_thread(
     executor: SQLExecute,
-    runner: QueryRunner,
+    runner: BackgroundRunner,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     main_thread = get_ident()
@@ -898,13 +898,13 @@ def test_special_dispatch_stays_on_main_thread(
         yield executor.get_result(cursor)
 
     monkeypatch.setattr(sql_execute_module, 'execute', special)
-    executor.set_query_runner(runner)
+    executor.set_background_runner(runner)
     try:
         rows = next(executor.run('/example')).rows
         assert rows is not None
         assert list(rows) == [(42,)]
     finally:
-        executor.set_query_runner(None)
+        executor.set_background_runner(None)
 
 
 @dbtest
@@ -920,7 +920,7 @@ def test_monitor_does_not_inherit_database_or_init_command(executor: SQLExecute)
 
 
 @dbtest
-def test_lock_wait_state_is_displayed(executor: SQLExecute, runner: QueryRunner, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_lock_wait_state_is_displayed(executor: SQLExecute, runner: BackgroundRunner, monkeypatch: pytest.MonkeyPatch) -> None:
     states: list[str] = []
     name = f'mycli_background_runner_{executor.connection_id}'
     runner.show_state = True
@@ -935,18 +935,18 @@ def test_lock_wait_state_is_displayed(executor: SQLExecute, runner: QueryRunner,
                     cursor.execute('SELECT RELEASE_LOCK(%s)', (name,))
 
             monkeypatch.setattr(runner, '_display', display)
-            executor.set_query_runner(runner)
+            executor.set_background_runner(runner)
             try:
                 list(executor.run(f"SELECT GET_LOCK('{name}', 5)"))
                 assert any('lock' in state.lower() for state in states)
             finally:
                 list(executor.run(f"SELECT RELEASE_LOCK('{name}')"))
-                executor.set_query_runner(None)
+                executor.set_background_runner(None)
 
 
 @dbtest
-def test_database_reconnect_retains_runner(executor: SQLExecute, runner: QueryRunner) -> None:
-    executor.set_query_runner(runner)
+def test_database_reconnect_retains_runner(executor: SQLExecute, runner: BackgroundRunner) -> None:
+    executor.set_background_runner(runner)
     previous = executor.conn
     try:
         executor.connect()
@@ -954,12 +954,12 @@ def test_database_reconnect_retains_runner(executor: SQLExecute, runner: QueryRu
         assert runner.connection is executor.conn
         assert isinstance(next(executor.run('SELECT 1')).rows, BackgroundCursor)
     finally:
-        executor.set_query_runner(None)
+        executor.set_background_runner(None)
 
 
 @dbtest
-def test_database_session_survives_kill_query(executor: SQLExecute, runner: QueryRunner, monkeypatch: pytest.MonkeyPatch) -> None:
-    executor.set_query_runner(runner)
+def test_database_session_survives_kill_query(executor: SQLExecute, runner: BackgroundRunner, monkeypatch: pytest.MonkeyPatch) -> None:
+    executor.set_background_runner(runner)
     waits = 0
 
     class InterruptEvent(Event):
@@ -980,4 +980,4 @@ def test_database_session_survives_kill_query(executor: SQLExecute, runner: Quer
         assert result.rows is not None
         assert list(result.rows) == [(42,)]
     finally:
-        executor.set_query_runner(None)
+        executor.set_background_runner(None)

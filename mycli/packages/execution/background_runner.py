@@ -26,9 +26,9 @@ T = TypeVar('T')
 logger = logging.getLogger(__name__)
 
 
-def runner_for(client: Any) -> QueryRunner | None:
-    runner = getattr(getattr(client, 'sql_execute', None), 'query_runner', None)
-    return runner if isinstance(runner, QueryRunner) else None
+def runner_for(client: Any) -> BackgroundRunner | None:
+    runner = getattr(getattr(client, 'sql_execute', None), 'background_runner', None)
+    return runner if isinstance(runner, BackgroundRunner) else None
 
 
 def rendering_output(method: Callable[..., T]) -> Callable[..., T]:
@@ -50,7 +50,7 @@ class QueryCancelled(Exception):
 def background(method: Callable[..., Any]) -> Callable[..., Any]:
     @wraps(method)
     def call(cursor: Cursor, *args: Any, **kwargs: Any) -> Any:
-        runner = getattr(cursor.connection, '_mycli_query_runner', None)
+        runner = getattr(cursor.connection, '_mycli_background_runner', None)
         if runner is None:
             return method(cursor, *args, **kwargs)
         return runner.call(lambda: method(cursor, *args, **kwargs), new_statement=method.__name__ == 'execute')
@@ -74,7 +74,7 @@ class BackgroundSSCursor(SSCursor):
     __del__ = close
 
 
-class QueryRunner:
+class BackgroundRunner:
     def __init__(self, show_state_interval: float = 0.5) -> None:
         self.show_state = math.isfinite(show_state_interval) and show_state_interval > 0 and sys.stderr.isatty()
         self.interval = show_state_interval if self.show_state else 0.5
@@ -168,13 +168,13 @@ class QueryRunner:
         self.connect_control = connect_control
         self.cursorclass = connection.cursorclass
         connection.cursorclass = BackgroundSSCursor if issubclass(self.cursorclass, SSCursor) else BackgroundCursor
-        connection._mycli_query_runner = self  # type: ignore[attr-defined]
+        connection._mycli_background_runner = self  # type: ignore[attr-defined]
 
     def detach(self) -> None:
         self.reset_progress()
         if self.connection is not None:
             self.connection.cursorclass = self.cursorclass
-            del self.connection._mycli_query_runner  # type: ignore[attr-defined]
+            del self.connection._mycli_background_runner  # type: ignore[attr-defined]
             self.connection = None
         self.monitor.submit(self._close_control).result()
 

@@ -660,10 +660,10 @@ def make_executor_for_run_tests(conn: object | None = None) -> SQLExecute:
     return executor
 
 
-def test_connect_reattaches_existing_query_runner(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_connect_reattaches_existing_background_runner(monkeypatch: pytest.MonkeyPatch) -> None:
     executor = make_executor_for_connect_tests()
     executor.ssl = None
-    executor.query_runner = Mock()
+    executor.background_runner = Mock()
     executor.conn = DummyConnection('5.7.0')
     conn = DummyConnection('5.7.0')
     monkeypatch.setattr(sql_execute.pymysql, 'connect', Mock(return_value=conn))
@@ -672,7 +672,7 @@ def test_connect_reattaches_existing_query_runner(monkeypatch: pytest.MonkeyPatc
 
     executor.connect()
 
-    executor.query_runner.attach.assert_called_once_with(conn, executor.connect_query_monitor)
+    executor.background_runner.attach.assert_called_once_with(conn, executor.connect_query_monitor)
 
 
 def test_connect_query_monitor_uses_isolated_connection_options(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -708,22 +708,22 @@ def test_connect_query_monitor_uses_isolated_connection_options(monkeypatch: pyt
     assert executor.conn is conn
 
 
-def test_set_query_runner_attaches_to_connection() -> None:
+def test_set_background_runner_attaches_to_connection() -> None:
     conn = DummyConnection('5.7.0')
     executor = make_executor_for_run_tests(conn)
     runner = Mock()
 
-    executor.set_query_runner(runner)
+    executor.set_background_runner(runner)
 
-    assert executor.query_runner is runner
+    assert executor.background_runner is runner
     runner.attach.assert_called_once_with(conn, executor.connect_query_monitor)
 
 
-def test_set_query_runner_detaches_previous_before_attaching_replacement() -> None:
+def test_set_background_runner_detaches_previous_before_attaching_replacement() -> None:
     conn = DummyConnection('5.7.0')
     executor = make_executor_for_run_tests(conn)
     previous = Mock()
-    executor.query_runner = previous
+    executor.background_runner = previous
     runner = Mock()
 
     def attach(connection: object, factory: Callable[[], object]) -> None:
@@ -733,30 +733,30 @@ def test_set_query_runner_detaches_previous_before_attaching_replacement() -> No
 
     runner.attach.side_effect = attach
 
-    executor.set_query_runner(runner)
+    executor.set_background_runner(runner)
 
-    assert executor.query_runner is runner
+    assert executor.background_runner is runner
     runner.attach.assert_called_once_with(conn, executor.connect_query_monitor)
 
 
-def test_set_query_runner_none_detaches_previous() -> None:
+def test_set_background_runner_none_detaches_previous() -> None:
     executor = make_executor_for_run_tests(DummyConnection('5.7.0'))
     previous = Mock()
-    executor.query_runner = previous
+    executor.background_runner = previous
 
-    executor.set_query_runner(None)
+    executor.set_background_runner(None)
 
     previous.detach.assert_called_once_with()
-    assert executor.query_runner is None
+    assert executor.background_runner is None
 
 
-def test_set_query_runner_without_connection_defers_attachment() -> None:
+def test_set_background_runner_without_connection_defers_attachment() -> None:
     executor = make_executor_for_run_tests()
     runner = Mock()
 
-    executor.set_query_runner(runner)
+    executor.set_background_runner(runner)
 
-    assert executor.query_runner is runner
+    assert executor.background_runner is runner
     runner.attach.assert_not_called()
 
 
@@ -1828,7 +1828,7 @@ def test_change_db_selects_database_and_updates_dbname(monkeypatch) -> None:
     assert executor.dbname == 'new_db'
 
 
-def test_change_db_runs_selection_through_query_runner(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_change_db_runs_selection_through_background_runner(monkeypatch: pytest.MonkeyPatch) -> None:
     conn = FakeSelectableConnection()
     executor = make_executor_for_run_tests(conn)
     executor.dbname = 'old_db'
@@ -1840,11 +1840,11 @@ def test_change_db_runs_selection_through_query_runner(monkeypatch: pytest.Monke
         operation()
         assert executor.dbname == 'old_db'
 
-    executor.query_runner = Mock(call=Mock(side_effect=call))
+    executor.background_runner = Mock(call=Mock(side_effect=call))
 
     executor.change_db('new_db')
 
-    executor.query_runner.call.assert_called_once()
+    executor.background_runner.call.assert_called_once()
     assert conn.selected_databases == ['new_db']
     assert executor.dbname == 'new_db'
 
@@ -1860,7 +1860,7 @@ def test_change_db_preserves_database_on_selection_error(background: bool) -> No
     def call(operation: Callable[[], None]) -> None:
         operation()
 
-    executor.query_runner = Mock(call=Mock(side_effect=call)) if background else None
+    executor.background_runner = Mock(call=Mock(side_effect=call)) if background else None
 
     with pytest.raises(pymysql.err.OperationalError) as exc_info:
         executor.change_db('missing_db')
