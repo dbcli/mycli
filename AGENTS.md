@@ -41,13 +41,13 @@ A command line client for MySQL with auto-completion and syntax highlighting.
     ├── mycli/packages/completion/schema_prefetcher.py    # background prefetcher for multi-schema auto-completion
     ├── mycli/packages/completion/sql_completer.py        # finds SQL completion candidates
     ├── mycli/packages/credentials/password_sources.py    # password sources and precedence
+    ├── mycli/packages/datafrane/completion.py            # completions for `.|` transforms
+    ├── mycli/packages/datafrane/transform.py             # implements `.|` transforms
     ├── mycli/packages/execution/background_runner.py     # run queries in the background, with query state and timing updates
     ├── mycli/packages/execution/sql_execute.py           # `SQLExecute` class and friends
     ├── mycli/packages/fzf/fzf.py                         # general interface to fzf chooser
     ├── mycli/packages/hybrid_redirection/                # implementation of shell-style redirects
     ├── mycli/packages/integrations/                      # integrations with Boundary, Kubernetes, macOS, OpenSSH, and Vault
-    ├── mycli/packages/polars/completion.py               # completions for `.|` transforms
-    ├── mycli/packages/polars/transform.py                # implements `.|` transforms
     ├── mycli/packages/ptoolkit/key_bindings.py           # prompt_toolkit key bindings
     ├── mycli/packages/ptoolkit/multiline.py              # prompt_toolkit multiline input
     ├── mycli/packages/ptoolkit/style.py                  # prompt_toolkit (and Pygments) styles

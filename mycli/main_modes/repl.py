@@ -58,16 +58,16 @@ from mycli.constants import (
     QueryState,
 )
 from mycli.packages import special_commands
-from mycli.packages.execution.background_runner import QueryCancelled, QueryRunner, runner_for
-from mycli.packages.execution.sql_execute import SQLExecute
-from mycli.packages.hybrid_redirection.hybrid_redirection import get_redirect_components, is_redirect_command
-from mycli.packages.polars.transform import (
+from mycli.packages.datafrane.transform import (
     PolarsTransform,
     PolarsTransformError,
     parse_polars_transform,
     prepare_polars_transform,
     run_polars_transform,
 )
+from mycli.packages.execution.background_runner import QueryCancelled, QueryRunner, runner_for
+from mycli.packages.execution.sql_execute import SQLExecute
+from mycli.packages.hybrid_redirection.hybrid_redirection import get_redirect_components, is_redirect_command
 from mycli.packages.ptoolkit.history import FRECENCY_HISTORY_ENTRIES, FRECENCY_REFRESH_INTERVAL, FileHistoryWithTimestamp
 from mycli.packages.ptoolkit.key_bindings import mycli_bindings
 from mycli.packages.ptoolkit.multiline import cli_is_multiline
