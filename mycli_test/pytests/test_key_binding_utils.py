@@ -47,17 +47,17 @@ class FakeMyCli:
 
 
 def test_server_date_returns_quoted_and_unquoted_values() -> None:
-    sqlexecute = FakeSQLExecute(datetime.datetime(2026, 4, 3, 14, 5, 6))
+    sql_execute = FakeSQLExecute(datetime.datetime(2026, 4, 3, 14, 5, 6))
 
-    assert key_binding_utils.server_date(cast(Any, sqlexecute)) == '2026-04-03'
-    assert key_binding_utils.server_date(cast(Any, sqlexecute), quoted=True) == "'2026-04-03'"
+    assert key_binding_utils.server_date(cast(Any, sql_execute)) == '2026-04-03'
+    assert key_binding_utils.server_date(cast(Any, sql_execute), quoted=True) == "'2026-04-03'"
 
 
 def test_server_datetime_returns_quoted_and_unquoted_values() -> None:
-    sqlexecute = FakeSQLExecute(datetime.datetime(2026, 4, 3, 14, 5, 6))
+    sql_execute = FakeSQLExecute(datetime.datetime(2026, 4, 3, 14, 5, 6))
 
-    assert key_binding_utils.server_datetime(cast(Any, sqlexecute)) == '2026-04-03 14:05:06'
-    assert key_binding_utils.server_datetime(cast(Any, sqlexecute), quoted=True) == "'2026-04-03 14:05:06'"
+    assert key_binding_utils.server_datetime(cast(Any, sql_execute)) == '2026-04-03 14:05:06'
+    assert key_binding_utils.server_datetime(cast(Any, sql_execute), quoted=True) == "'2026-04-03 14:05:06'"
 
 
 @pytest.mark.parametrize(

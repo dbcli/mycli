@@ -24,7 +24,7 @@ def escape_for_sql_statement(value: Union[bytes, str]) -> str:
     if isinstance(value, bytes):
         return f"0x{value.hex()}"
     else:
-        return formatter.mycli.sqlexecute.conn.escape(value)
+        return formatter.mycli.sql_execute.conn.escape(value)
 
 
 def adapter(data: list[str], headers: list[str], table_format: Union[str, None] = None, **kwargs) -> Generator[str, None, None]:

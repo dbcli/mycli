@@ -520,7 +520,7 @@ def test_dsn_more_adds_non_default_runtime_parameters_in_sorted_order() -> None:
         keepalive_ticks=45,
         prompt_format='runtime> ',
         ssl_mode='auto',
-        sqlexecute=SimpleNamespace(
+        sql_execute=SimpleNamespace(
             character_set='utf8',
             ssl={
                 'mode': 'on',
@@ -593,7 +593,7 @@ def test_dsn_more_omits_empty_false_and_active_default_parameters() -> None:
         keepalive_ticks=30,
         prompt_format='configured> ',
         ssl_mode='on',
-        sqlexecute=SimpleNamespace(
+        sql_execute=SimpleNamespace(
             character_set='latin1',
             ssl={'mode': 'on', 'ca': '/default-ca.pem', 'check_hostname': True},
         ),
@@ -614,7 +614,7 @@ def test_dsn_more_without_runtime_returns_original_dsn() -> None:
 
 
 def test_dsn_more_without_sql_executor_returns_original_dsn() -> None:
-    mycli = SimpleNamespace(sqlexecute=None)
+    mycli = SimpleNamespace(sql_execute=None)
     aliases = DsnAliases(DummyConfig(), mycli)  # type: ignore[arg-type]
     dsn = 'mysql://user@host/db?socket=%2Ftmp%2Fmysql.sock'
 

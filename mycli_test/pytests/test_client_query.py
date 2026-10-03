@@ -23,7 +23,7 @@ def make_refresh_cli() -> tuple[Any, dict[str, Any]]:
     }
     callback = object()
     cli.schema_prefetcher = SimpleNamespace(stop=lambda: state['stopped'].append(True))
-    cli.sqlexecute = SimpleNamespace(dbname='current')
+    cli.sql_execute = SimpleNamespace(dbname='current')
     cli._on_completions_refreshed = callback
     cli.completer = SimpleNamespace(
         config_property_names=('main.show_warnings',),
@@ -71,7 +71,7 @@ def test_refresh_completions_passes_options_to_refresher() -> None:
 
     assert state['refresh_calls'] == [
         (
-            cli.sqlexecute,
+            cli.sql_execute,
             state['callback'],
             {
                 'smart_completion': True,
@@ -112,7 +112,7 @@ def test_refresh_completions_updates_dbname_when_reset() -> None:
     cli = make_bare_mycli()
     set_dbname_calls: list[str] = []
     cli.schema_prefetcher = SimpleNamespace(stop=lambda: None)
-    cli.sqlexecute = SimpleNamespace(dbname='next_db')
+    cli.sql_execute = SimpleNamespace(dbname='next_db')
     cli.completer = SimpleNamespace(
         config_property_names=(),
         frecency_provider=None,
@@ -138,7 +138,7 @@ def test_refresh_completions_uses_lock_when_reset() -> None:
     cli = make_bare_mycli()
     entered_lock = {'count': 0}
     cli.schema_prefetcher = SimpleNamespace(stop=lambda: None)
-    cli.sqlexecute = SimpleNamespace(dbname='next_db')
+    cli.sql_execute = SimpleNamespace(dbname='next_db')
     cli._completer_lock = cast(Any, ReusableLock(lambda: entered_lock.__setitem__('count', entered_lock['count'] + 1)))
     cli.completer = SimpleNamespace(
         config_property_names=(),
@@ -253,7 +253,7 @@ def run_query_with_state(monkeypatch, tmp_path, *, warnings_enabled: bool = True
     monkeypatch.setattr(client_query.special_commands, 'is_show_warnings_enabled', lambda: warnings_enabled)
     monkeypatch.setattr(client_query.click, 'echo', lambda line, nl=True: state['echoed'].append((line, nl)))
 
-    cli.sqlexecute = SimpleNamespace(run=run)
+    cli.sql_execute = SimpleNamespace(run=run)
     cli.log_query = lambda query: state['logged_queries'].append(query)
     cli.log_output = lambda line: state['logged_output'].append(line)
     cli.format_sqlresult = format_sqlresult
@@ -339,7 +339,7 @@ def test_run_query_raises_for_error_result_when_requested(tmp_path) -> None:
     cli = make_bare_mycli()
     logged_output: list[str] = []
     checkpoint_path = tmp_path / 'checkpoint.sql'
-    cli.sqlexecute = SimpleNamespace(run=lambda query: [SQLResult(status='source failed', is_error=True)])
+    cli.sql_execute = SimpleNamespace(run=lambda query: [SQLResult(status='source failed', is_error=True)])
     cli.log_query = lambda query: None
     cli.log_output = logged_output.append
 
@@ -360,7 +360,7 @@ def test_run_query_displays_error_result_by_default(monkeypatch) -> None:
     cli = make_bare_mycli()
     result = SQLResult(status='source failed', is_error=True)
     echoed: list[str] = []
-    cli.sqlexecute = SimpleNamespace(run=lambda query: [result])
+    cli.sql_execute = SimpleNamespace(run=lambda query: [result])
     cli.log_query = lambda query: None
     cli.log_output = lambda line: None
     cli.format_sqlresult = lambda result, **kwargs: [result.status_plain]
@@ -379,7 +379,7 @@ def test_run_query_displays_set_buffer_fallback_outside_repl(monkeypatch) -> Non
     status = 'Error: /favorite eval is only available in the interactive REPL.'
     result = SQLResult(status=status, command={'name': 'set_buffer', 'text': 'select 1'})
     echoed: list[str] = []
-    cli.sqlexecute = SimpleNamespace(run=lambda query: [result])
+    cli.sql_execute = SimpleNamespace(run=lambda query: [result])
     cli.log_query = lambda query: None
     cli.log_output = lambda line: None
     cli.format_sqlresult = lambda result, **kwargs: [result.status_plain]

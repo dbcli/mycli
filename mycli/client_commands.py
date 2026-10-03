@@ -96,7 +96,7 @@ class ClientCommandsMixin:
     if TYPE_CHECKING:
         main_formatter: Any
         redirect_formatter: Any
-        sqlexecute: Any
+        sql_execute: Any
         destructive_warning: bool
         destructive_keywords: Any
         config: Any
@@ -274,13 +274,13 @@ class ClientCommandsMixin:
             click.secho("No database selected", err=True, fg="red")
             return
 
-        assert isinstance(self.sqlexecute, SQLExecute)
+        assert isinstance(self.sql_execute, SQLExecute)
 
-        if self.sqlexecute.dbname == arg:
-            msg = f'You are already connected to database "{self.sqlexecute.dbname}" as user "{self.sqlexecute.user}"'
+        if self.sql_execute.dbname == arg:
+            msg = f'You are already connected to database "{self.sql_execute.dbname}" as user "{self.sql_execute.user}"'
         else:
-            self.sqlexecute.change_db(arg)
-            msg = f'You are now connected to database "{self.sqlexecute.dbname}" as user "{self.sqlexecute.user}"'
+            self.sql_execute.change_db(arg)
+            msg = f'You are now connected to database "{self.sql_execute.dbname}" as user "{self.sql_execute.user}"'
 
         # todo: this jump back to repl.py is a sign that separation is incomplete.
         # also: it should not be needed.  Don't titles update on every new prompt?
@@ -310,7 +310,7 @@ class ClientCommandsMixin:
             yield SQLResult(status=str(error))
             return
 
-        assert isinstance(self.sqlexecute, SQLExecute)
+        assert isinstance(self.sql_execute, SQLExecute)
         executed_statement = False
         with file_h:
             statements = statements_from_filehandle(file_h)
@@ -345,7 +345,7 @@ class ClientCommandsMixin:
                             yield SQLResult(command={'name': 'source_show', 'text': special_query})
                         else:
                             click.secho(f'> {special_query}')
-                    yield from self.sqlexecute.run(special_query)
+                    yield from self.sql_execute.run(special_query)
                     executed_statement = True
                     continue
 
@@ -358,7 +358,7 @@ class ClientCommandsMixin:
                         yield SQLResult(command={'name': 'source_show', 'text': query})
                     else:
                         click.secho(f'> {query}')
-                yield from self.sqlexecute.run(query)
+                yield from self.sql_execute.run(query)
                 executed_statement = True
 
     def change_prompt_format(self, arg: str, **_) -> list[SQLResult]:

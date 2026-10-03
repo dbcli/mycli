@@ -179,20 +179,20 @@ Examples:
         }
 
     def dsn_more(self, dsn: str) -> str:
-        if self.mycli is None or self.mycli.sqlexecute is None:
+        if self.mycli is None or self.mycli.sql_execute is None:
             return dsn
 
         parsed = urlsplit(dsn)
         query_params: dict[str, Any] = {
             key: value for key, value in parse_qsl(parsed.query, keep_blank_values=True) if key in KNOWN_DSN_QUERY_PARAMS
         }
-        sqlexecute = self.mycli.sqlexecute
+        sql_execute = self.mycli.sql_execute
         query_params.update({
-            'character_set': sqlexecute.character_set,
+            'character_set': sql_execute.character_set,
             'keepalive_ticks': self.mycli.keepalive_ticks,
             'prompt': self.mycli.prompt_format,
         })
-        ssl = sqlexecute.ssl or {}
+        ssl = sql_execute.ssl or {}
         query_params.update({query_param: ssl.get(ssl_key) for query_param, ssl_key in SSL_QUERY_PARAMS.items()})
 
         defaults = self._query_param_defaults()

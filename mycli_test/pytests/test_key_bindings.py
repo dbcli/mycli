@@ -108,7 +108,7 @@ class DummyMyCli:
     syntax_style: str = 'native'
     emacs_ttimeoutlen: float = 1.5
     vi_ttimeoutlen: float = 0.5
-    sqlexecute: object = field(default_factory=object)
+    sql_execute: object = field(default_factory=object)
     prettify_calls: list[str] = field(default_factory=list)
     unprettify_calls: list[str] = field(default_factory=list)
 
@@ -502,12 +502,12 @@ def test_date_and_datetime_bindings_insert_shortcuts(
     monkeypatch.setattr(
         key_bindings.key_binding_utils,
         'server_date',
-        lambda _sqlexecute, quoted=False: "'DATE'" if quoted else 'DATE',
+        lambda _sql_execute, quoted=False: "'DATE'" if quoted else 'DATE',
     )
     monkeypatch.setattr(
         key_bindings.key_binding_utils,
         'server_datetime',
-        lambda _sqlexecute, quoted=False: "'DATETIME'" if quoted else 'DATETIME',
+        lambda _sql_execute, quoted=False: "'DATETIME'" if quoted else 'DATETIME',
     )
 
     assert binding_filter(kb, *keys)() is True

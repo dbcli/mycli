@@ -30,21 +30,21 @@ def runner() -> Iterator[QueryRunner]:
 
 @pytest.mark.parametrize(
     'client',
-    [None, SimpleNamespace(), SimpleNamespace(sqlexecute=None), SimpleNamespace(sqlexecute=SimpleNamespace(background_runner=object()))],
+    [None, SimpleNamespace(), SimpleNamespace(sql_execute=None), SimpleNamespace(sql_execute=SimpleNamespace(background_runner=object()))],
 )
 def test_runner_for_returns_none_without_valid_runner(client: Any) -> None:
     assert background_runner.runner_for(client) is None
 
 
 def test_runner_for_returns_attached_runner(runner: QueryRunner) -> None:
-    client = SimpleNamespace(sqlexecute=SimpleNamespace(query_runner=runner))
+    client = SimpleNamespace(sql_execute=SimpleNamespace(query_runner=runner))
     assert background_runner.runner_for(client) is runner
 
 
 @pytest.mark.parametrize('attached', [False, True])
 def test_rendering_output_preserves_arguments_and_result(runner: QueryRunner, attached: bool) -> None:
     runner.show_state = False
-    client = SimpleNamespace(sqlexecute=SimpleNamespace(query_runner=runner if attached else None))
+    client = SimpleNamespace(sql_execute=SimpleNamespace(query_runner=runner if attached else None))
 
     @background_runner.rendering_output
     def render(owner: Any, value: str, *, suffix: str) -> str:
@@ -59,7 +59,7 @@ def test_rendering_output_preserves_arguments_and_result(runner: QueryRunner, at
 
 def test_rendering_output_cleans_up_after_failure(runner: QueryRunner) -> None:
     runner.show_state = False
-    client = SimpleNamespace(sqlexecute=SimpleNamespace(query_runner=runner))
+    client = SimpleNamespace(sql_execute=SimpleNamespace(query_runner=runner))
     error = ValueError('format failed')
 
     @background_runner.rendering_output

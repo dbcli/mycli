@@ -43,7 +43,7 @@ def make_mycli(
         databases = ['current', 'other1', 'other2']
     completer = SQLCompleter(smart_completion=True)
     completer.set_dbname(dbname)
-    sqlexecute = SimpleNamespace(
+    sql_execute = SimpleNamespace(
         dbname=dbname,
         user='u',
         password='p',
@@ -57,7 +57,7 @@ def make_mycli(
     )
     return SimpleNamespace(
         completer=completer,
-        sqlexecute=sqlexecute,
+        sql_execute=sql_execute,
         prefetch_schemas_mode=prefetch_mode,
         prefetch_schemas_list=prefetch_list,
         _completer_lock=threading.Lock(),

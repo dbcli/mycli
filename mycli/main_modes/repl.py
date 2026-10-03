@@ -169,13 +169,13 @@ def _create_history(mycli: 'MyCli') -> FileHistoryWithTimestamp | None:
 
 def _show_startup_banner(
     mycli: 'MyCli',
-    sqlexecute: SQLExecute,
+    sql_execute: SQLExecute,
 ) -> None:
     if mycli.verbosity < 0:
         return
 
-    if sqlexecute.server_info is not None:
-        print(sqlexecute.server_info)
+    if sql_execute.server_info is not None:
+        print(sql_execute.server_info)
     print('mycli', mycli_package.__version__)
     print(SUPPORT_INFO)
     if random.random() <= 0.25:
@@ -305,25 +305,25 @@ def render_prompt_string(
     string: str,
     _render_counter: int,
 ) -> FormattedText:
-    sqlexecute = mycli.sqlexecute
-    assert sqlexecute is not None
+    sql_execute = mycli.sql_execute
+    assert sql_execute is not None
     if mycli.login_path and mycli.login_path_as_host:
         prompt_host = mycli.login_path
-    elif sqlexecute.host is not None:
-        prompt_host = sqlexecute.host
+    elif sql_execute.host is not None:
+        prompt_host = sql_execute.host
     else:
         prompt_host = DEFAULT_HOST
     short_prompt_host, _, _ = prompt_host.partition('.')
     if re.match(r'^[\d\.]+$', short_prompt_host):
         short_prompt_host = prompt_host
     now = datetime.now()
-    species_name = sqlexecute.server_info.species.name if sqlexecute.server_info and sqlexecute.server_info.species else 'MySQL'
+    species_name = sql_execute.server_info.species.name if sql_execute.server_info and sql_execute.server_info.species else 'MySQL'
     strings = string.split('\\\\')
     is_html = strings[0].startswith('\\<html>')
-    strings = [x.replace('\\u', maybe_html_escape(sqlexecute.user or '(none)', is_html)) for x in strings]
+    strings = [x.replace('\\u', maybe_html_escape(sql_execute.user or '(none)', is_html)) for x in strings]
     strings = [x.replace('\\h', maybe_html_escape(prompt_host or '(none)', is_html)) for x in strings]
     strings = [x.replace('\\H', maybe_html_escape(short_prompt_host or '(none)', is_html)) for x in strings]
-    strings = [x.replace('\\d', maybe_html_escape(sqlexecute.dbname or '(none)', is_html)) for x in strings]
+    strings = [x.replace('\\d', maybe_html_escape(sql_execute.dbname or '(none)', is_html)) for x in strings]
     strings = [x.replace('\\t', maybe_html_escape(species_name, is_html)) for x in strings]
     strings = [x.replace('\\n', '\n') for x in strings]
     strings = [x.replace('\\D', maybe_html_escape(now.strftime('%a %b %d %H:%M:%S %Y'), is_html)) for x in strings]
@@ -332,24 +332,24 @@ def render_prompt_string(
     strings = [x.replace('\\R', maybe_html_escape(now.strftime('%H'), is_html)) for x in strings]
     strings = [x.replace('\\r', maybe_html_escape(now.strftime('%I'), is_html)) for x in strings]
     strings = [x.replace('\\s', maybe_html_escape(now.strftime('%S'), is_html)) for x in strings]
-    strings = [x.replace('\\p', maybe_html_escape(str(sqlexecute.port), is_html)) for x in strings]
+    strings = [x.replace('\\p', maybe_html_escape(str(sql_execute.port), is_html)) for x in strings]
     strings = [
-        x.replace('\\j', maybe_html_escape(os.path.basename(sqlexecute.socket or '(none)').replace('\\', '/'), is_html)) for x in strings
+        x.replace('\\j', maybe_html_escape(os.path.basename(sql_execute.socket or '(none)').replace('\\', '/'), is_html)) for x in strings
     ]
-    strings = [x.replace('\\J', maybe_html_escape((sqlexecute.socket or '(none)').replace('\\', '/'), is_html)) for x in strings]
+    strings = [x.replace('\\J', maybe_html_escape((sql_execute.socket or '(none)').replace('\\', '/'), is_html)) for x in strings]
     strings = [
-        x.replace('\\k', maybe_html_escape(os.path.basename(sqlexecute.socket or str(sqlexecute.port)).replace('\\', '/'), is_html))
+        x.replace('\\k', maybe_html_escape(os.path.basename(sql_execute.socket or str(sql_execute.port)).replace('\\', '/'), is_html))
         for x in strings
     ]
     strings = [
-        x.replace('\\K', maybe_html_escape((sqlexecute.socket or str(sqlexecute.port)).replace('\\', '/'), is_html)) for x in strings
+        x.replace('\\K', maybe_html_escape((sql_execute.socket or str(sql_execute.port)).replace('\\', '/'), is_html)) for x in strings
     ]
     strings = [x.replace('\\A', maybe_html_escape(mycli.dsn_alias or '(none)', is_html)) for x in strings]
     strings = [x.replace('\\_', ' ') for x in strings]
 
     checker_string = ' '.join(strings)
     if r'\b' in checker_string:
-        connection = getattr(sqlexecute, 'conn', None)
+        connection = getattr(sql_execute, 'conn', None)
         if connection:
             connection.ping()
         server_status = getattr(connection, 'server_status', 0) or 0
@@ -363,33 +363,33 @@ def render_prompt_string(
         else:
             edit_mode = mycli.key_bindings.lower()
         strings = [x.replace(r'\e', maybe_html_escape(edit_mode, is_html)) for x in strings]
-    if hasattr(sqlexecute, 'conn') and sqlexecute.conn is not None:
+    if hasattr(sql_execute, 'conn') and sql_execute.conn is not None:
         if '\\y' in checker_string:
-            with sqlexecute.conn.cursor() as cur:
+            with sql_execute.conn.cursor() as cur:
                 strings = [x.replace('\\y', maybe_html_escape(str(get_uptime(cur)) or '(none)', is_html)) for x in strings]
         if '\\Y' in checker_string:
-            with sqlexecute.conn.cursor() as cur:
+            with sql_execute.conn.cursor() as cur:
                 strings = [x.replace('\\Y', maybe_html_escape(format_uptime(str(get_uptime(cur))) or '(none)', is_html)) for x in strings]
     else:
         strings = [x.replace('\\y', '(none)') for x in strings]
         strings = [x.replace('\\Y', '(none)') for x in strings]
 
-    if hasattr(sqlexecute, 'conn') and sqlexecute.conn is not None:
+    if hasattr(sql_execute, 'conn') and sql_execute.conn is not None:
         if '\\T' in checker_string:
-            with sqlexecute.conn.cursor() as cur:
+            with sql_execute.conn.cursor() as cur:
                 strings = [x.replace('\\T', maybe_html_escape(get_ssl_version(cur) or '(none)', is_html)) for x in strings]
     else:
         strings = [x.replace('\\T', '(none)') for x in strings]
 
-    if hasattr(sqlexecute, 'conn') and sqlexecute.conn is not None:
+    if hasattr(sql_execute, 'conn') and sql_execute.conn is not None:
         if '\\w' in checker_string:
-            with sqlexecute.conn.cursor() as cur:
+            with sql_execute.conn.cursor() as cur:
                 strings = [x.replace('\\w', maybe_html_escape(str(get_warning_count(cur) or '(none)'), is_html)) for x in strings]
     else:
         strings = [x.replace('\\w', '(none)') for x in strings]
-    if hasattr(sqlexecute, 'conn') and sqlexecute.conn is not None:
+    if hasattr(sql_execute, 'conn') and sql_execute.conn is not None:
         if '\\W' in checker_string:
-            with sqlexecute.conn.cursor() as cur:
+            with sql_execute.conn.cursor() as cur:
                 strings = [x.replace('\\W', maybe_html_escape(str(get_warning_count(cur) or ''), is_html)) for x in strings]
     else:
         strings = [x.replace('\\W', '') for x in strings]
@@ -459,8 +459,8 @@ def _output_results(
     *,
     raise_interrupts: bool = False,
 ) -> None:
-    sqlexecute = mycli.sqlexecute
-    assert sqlexecute is not None
+    sql_execute = mycli.sql_execute
+    assert sql_execute is not None
 
     result_iterator = iter(results)
     try:
@@ -570,7 +570,7 @@ def _output_results(
         state.mutating = state.mutating or is_mutating(result.status_plain)
 
         if special_commands.is_show_warnings_enabled() and isinstance(result.rows, Cursor) and result.rows.warning_count > 0:
-            warnings = sqlexecute.run('SHOW WARNINGS')
+            warnings = sql_execute.run('SHOW WARNINGS')
             warnings_duration = time.time() - start
             saw_warning = False
             for warning in warnings:
@@ -599,8 +599,8 @@ def _single_paged_output_results(
     start: float,
 ) -> Generator[str, None, None]:
     """Render results lazily through one pager session."""
-    sqlexecute = mycli.sqlexecute
-    assert sqlexecute is not None
+    sql_execute = mycli.sql_execute
+    assert sql_execute is not None
     result_iterator = iter(results)
     result_count = 0
     watch_count = 0
@@ -675,7 +675,7 @@ def _single_paged_output_results(
             state.mutating = state.mutating or is_mutating(result.status_plain)
 
             if special_commands.is_show_warnings_enabled() and isinstance(result.rows, Cursor) and result.rows.warning_count > 0:
-                warnings = sqlexecute.run('SHOW WARNINGS')
+                warnings = sql_execute.run('SHOW WARNINGS')
                 warnings_duration = time.time() - start
                 saw_warning = False
                 for warning in warnings:
@@ -726,9 +726,9 @@ def _keepalive_hook(
         mycli._keepalive_counter = 0
         mycli.logger.debug('keepalive ping')
         try:
-            assert mycli.sqlexecute is not None
-            assert mycli.sqlexecute.conn is not None
-            mycli.sqlexecute.conn.ping()
+            assert mycli.sql_execute is not None
+            assert mycli.sql_execute.conn is not None
+            mycli.sql_execute.conn.ping()
         except Exception as e:
             mycli.logger.debug('keepalive ping error %r', e)
 
@@ -803,8 +803,8 @@ def _one_iteration(
     state: ReplState,
     text: str | None = None,
 ) -> None:
-    sqlexecute = mycli.sqlexecute
-    assert sqlexecute is not None
+    sql_execute = mycli.sql_execute
+    assert sql_execute is not None
 
     inputhook = partial(_keepalive_hook, mycli) if mycli.keepalive_ticks and mycli.keepalive_ticks >= 1 else None
 
@@ -857,12 +857,12 @@ def _one_iteration(
         while special_commands.is_llm_command(text):
             start = time.time()
             try:
-                assert sqlexecute.conn is not None
-                cur = sqlexecute.conn.cursor()
+                assert sql_execute.conn is not None
+                cur = sql_execute.conn.cursor()
                 context, sql, duration = special_commands.handle_llm(
                     text,
                     cur,
-                    sqlexecute.dbname or '',
+                    sql_execute.dbname or '',
                     mycli.llm_prompt_field_truncate,
                     mycli.llm_prompt_section_truncate,
                 )
@@ -931,7 +931,7 @@ def _one_iteration(
             mycli.echo('Wise choice!')
             return
 
-    dropping_active_database = is_dropping_database(text, sqlexecute.dbname)
+    dropping_active_database = is_dropping_database(text, sql_execute.dbname)
     if dropping_active_database:
         mycli.completion_refresher.stop()
 
@@ -949,7 +949,7 @@ def _one_iteration(
         start = time.time()
         if runner := runner_for(mycli):
             runner.reset_progress()
-        results = sqlexecute.run(text)
+        results = sql_execute.run(text)
         mycli.main_formatter.query = text
         mycli.redirect_formatter.query = text
         mycli.explorer_formatter.query = text
@@ -1016,12 +1016,12 @@ def _one_iteration(
     except EOFError as e:
         raise e
     except KeyboardInterrupt:
-        connection_id_to_kill = sqlexecute.connection_id or 0
+        connection_id_to_kill = sql_execute.connection_id or 0
         if connection_id_to_kill > 0:
             mycli.logger.debug('connection id to kill: %r', connection_id_to_kill)
             try:
-                sqlexecute.connect()
-                for kill_result in sqlexecute.run(f'kill {connection_id_to_kill}'):
+                sql_execute.connect()
+                for kill_result in sql_execute.run(f'kill {connection_id_to_kill}'):
                     status_str = str(kill_result.status_plain).lower()
                     if status_str.find('ok') > -1:
                         mycli.logger.debug('cancelled query, connection id: %r, sql: %r', connection_id_to_kill, text)
@@ -1069,9 +1069,9 @@ def _one_iteration(
         if mycli.sandbox_mode and is_password_change(text):
             new_password = extract_new_password(text)
             if new_password is not None:
-                sqlexecute.password = new_password
+                sql_execute.password = new_password
             try:
-                sqlexecute.connect()
+                sql_execute.connect()
                 mycli.sandbox_mode = False
                 mycli.echo("Password changed successfully. Reconnected.", err=True, fg='green')
                 mycli.refresh_completions()
@@ -1084,8 +1084,8 @@ def _one_iteration(
                 )
 
         if dropping_active_database:
-            sqlexecute.dbname = None
-            sqlexecute.connect()
+            sql_execute.dbname = None
+            sql_execute.connect()
 
         if need_completion_refresh(text):
             mycli.refresh_completions(reset=dropping_active_database or need_completion_reset(text))
@@ -1160,8 +1160,8 @@ def _configure_editor(mycli: 'MyCli') -> None:
 
 
 def main_repl(mycli: 'MyCli') -> None:
-    sqlexecute = mycli.sqlexecute
-    assert sqlexecute is not None
+    sql_execute = mycli.sql_execute
+    assert sql_execute is not None
     state = ReplState()
 
     mycli.configure_pager()
@@ -1173,15 +1173,15 @@ def main_repl(mycli: 'MyCli') -> None:
         mycli.refresh_completions()
 
     key_bindings = mycli_bindings(mycli)
-    _show_startup_banner(mycli, sqlexecute)
+    _show_startup_banner(mycli, sql_execute)
     _build_prompt_session(mycli, state, history, key_bindings)
     set_all_external_titles(mycli)
 
     config = mycli.config['main']
     show_state_interval = config.as_float('show_query_state_interval')
     runner = QueryRunner(show_state_interval)
-    if isinstance(sqlexecute, SQLExecute):
-        sqlexecute.set_query_runner(runner)
+    if isinstance(sql_execute, SQLExecute):
+        sql_execute.set_query_runner(runner)
     try:
         while True:
             _one_iteration(mycli, state)
@@ -1191,6 +1191,6 @@ def main_repl(mycli: 'MyCli') -> None:
         if mycli.verbosity >= 0:
             mycli.echo('Goodbye!')
     finally:
-        if isinstance(sqlexecute, SQLExecute):
-            sqlexecute.set_query_runner(None)
+        if isinstance(sql_execute, SQLExecute):
+            sql_execute.set_query_runner(None)
         runner.close()

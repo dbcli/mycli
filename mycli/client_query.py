@@ -17,7 +17,7 @@ class QueryError(Exception):
 class ClientQueryMixin:
     if TYPE_CHECKING:
         schema_prefetcher: Any
-        sqlexecute: Any
+        sql_execute: Any
         _completer_lock: Any
         completer: Any
         completion_refresher: Any
@@ -42,16 +42,16 @@ class ClientQueryMixin:
         # so switching between already-loaded schemas does not re-fetch.
         self.schema_prefetcher.stop()
 
-        assert self.sqlexecute is not None
+        assert self.sql_execute is not None
         if reset:
             self.completion_refresher.stop()
             # Update the active completer's current-schema pointer right
             # away so unqualified completions reflect a schema switch
             # even before the background refresh finishes.
             with self._completer_lock:
-                self.completer.set_dbname(self.sqlexecute.dbname)
+                self.completer.set_dbname(self.sql_execute.dbname)
         self.completion_refresher.refresh(
-            self.sqlexecute,
+            self.sql_execute,
             self._on_completions_refreshed,
             {
                 "smart_completion": self.smart_completion,
@@ -94,11 +94,11 @@ class ClientQueryMixin:
         raise_on_error: bool = False,
     ) -> None:
         """Runs *query*."""
-        assert self.sqlexecute is not None
+        assert self.sql_execute is not None
         self.log_query(query)
         if checkpoint and not self.checkpoint:
             self.checkpoint = click.open_file(checkpoint, mode='a')
-        results = self.sqlexecute.run(query)
+        results = self.sql_execute.run(query)
         for result in results:
             self.main_formatter.query = query
             self.redirect_formatter.query = query
@@ -121,7 +121,7 @@ class ClientQueryMixin:
 
             # get and display warnings if enabled
             if special_commands.is_show_warnings_enabled() and isinstance(result.rows, Cursor) and result.rows.warning_count > 0:
-                warnings = self.sqlexecute.run("SHOW WARNINGS")
+                warnings = self.sql_execute.run("SHOW WARNINGS")
                 for warning in warnings:
                     output = self.format_sqlresult(
                         warning,
