@@ -90,7 +90,7 @@ dev = [
 mycli = "mycli.main:main"
 
 [tool.setuptools.package-data]
-mycli = ["myclirc", "AUTHORS", "SPONSORS", "TIPS"]
+mycli = ["myclirc", "AUTHORS.txt", "SPONSORS.txt", "TIPS.txt"]
 
 [tool.setuptools.packages.find]
 include = ["mycli*"]

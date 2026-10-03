@@ -135,7 +135,7 @@ from existing code.
 
 When generating a PR, follow the instructions in `.github/PULL_REQUEST_TEMPLATE.md`:
 
- * Add new author names to `mycli/AUTHORS`.
+ * Add new author names to `mycli/AUTHORS.txt`.
  * Add a new entry to `changelog.md`.
 
 ### Code Comments
