@@ -37,6 +37,7 @@ from mycli.packages import special_commands
 from mycli.packages.completion.completion_refresher import CompletionRefresher
 from mycli.packages.completion.schema_prefetcher import SchemaPrefetcher
 from mycli.packages.completion.sql_completer import SQLCompleter
+from mycli.packages.execution.sql_execute import SQLExecute
 from mycli.packages.integrations.boundary.boundary_tunnel import BoundaryTunnel
 from mycli.packages.integrations.kubernetes.kubectl_tunnel import KubectlTunnel
 from mycli.packages.integrations.openssh.ssh_tunnel import SshTunnel
@@ -44,7 +45,6 @@ from mycli.packages.ptoolkit.style import style_factory_helpers, style_factory_p
 from mycli.packages.special_commands.dsn_aliases import DsnAliases
 from mycli.packages.special_commands.favorite_queries import FavoriteQueries
 from mycli.packages.tabular_output import sql_format
-from mycli.sqlexecute import SQLExecute
 from mycli.types import Query
 
 sqlparse.engine.grouping.MAX_GROUPING_DEPTH = None  # type: ignore[assignment]

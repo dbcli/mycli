@@ -8,7 +8,7 @@ from prompt_toolkit.shortcuts import PromptSession
 import sqlglot
 
 from mycli.packages import special_commands
-from mycli.sqlexecute import SQLExecute
+from mycli.packages.execution.sql_execute import SQLExecute
 
 if TYPE_CHECKING:
     from mycli.client import MyCli

@@ -10,12 +10,12 @@ from prompt_toolkit.formatted_text import FormattedText
 import pymysql
 import pytest
 
-from mycli import sqlexecute
 from mycli.constants import TEST_DATABASE
+from mycli.packages.execution import sql_execute as sqlexecute
+from mycli.packages.execution.background_runner import BackgroundSSCursor
+from mycli.packages.execution.sql_execute import ServerInfo, ServerSpecies, SQLExecute
 from mycli.packages.special_commands import io_commands as iocommands
 from mycli.packages.sql_result.sql_result import SQLResult
-from mycli.query_runner import BackgroundSSCursor
-from mycli.sqlexecute import ServerInfo, ServerSpecies, SQLExecute
 from test.utils import dbtest, is_expanded_output, make_streaming_cursor, run, set_expanded_output
 
 
@@ -1430,7 +1430,7 @@ def test_indexed_columns_returns_empty_generator_and_logs_execute_errors(monkeyp
     executor.dbname = 'app_db'
     monkeypatch.setattr(sqlexecute, 'Connection', FakeMetadataConnection)
 
-    with caplog.at_level('ERROR', logger='mycli.sqlexecute'):
+    with caplog.at_level('ERROR', logger='mycli.packages.execution.sql_execute'):
         result = list(executor.indexed_columns())
 
     assert result == []
@@ -1495,7 +1495,7 @@ def test_foreign_keys_returns_empty_generator_and_logs_execute_errors(monkeypatc
     executor.dbname = 'app_db'
     monkeypatch.setattr(sqlexecute, 'Connection', FakeMetadataConnection)
 
-    with caplog.at_level('ERROR', logger='mycli.sqlexecute'):
+    with caplog.at_level('ERROR', logger='mycli.packages.execution.sql_execute'):
         result = list(executor.foreign_keys())
 
     assert result == []
@@ -1575,7 +1575,7 @@ def test_procedures_yields_empty_tuple_and_logs_database_errors(monkeypatch, cap
     executor.dbname = 'app_db'
     monkeypatch.setattr(sqlexecute, 'Connection', FakeMetadataConnection)
 
-    with caplog.at_level('ERROR', logger='mycli.sqlexecute'):
+    with caplog.at_level('ERROR', logger='mycli.packages.execution.sql_execute'):
         result = list(executor.procedures())
 
     assert result == [()]
@@ -1603,7 +1603,7 @@ def test_character_sets_yields_empty_tuple_and_logs_database_errors(monkeypatch,
     executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
     monkeypatch.setattr(sqlexecute, 'Connection', FakeMetadataConnection)
 
-    with caplog.at_level('ERROR', logger='mycli.sqlexecute'):
+    with caplog.at_level('ERROR', logger='mycli.packages.execution.sql_execute'):
         result = list(executor.character_sets())
 
     assert result == [()]
@@ -1631,7 +1631,7 @@ def test_collations_yields_empty_tuple_and_logs_database_errors(monkeypatch, cap
     executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
     monkeypatch.setattr(sqlexecute, 'Connection', FakeMetadataConnection)
 
-    with caplog.at_level('ERROR', logger='mycli.sqlexecute'):
+    with caplog.at_level('ERROR', logger='mycli.packages.execution.sql_execute'):
         result = list(executor.collations())
 
     assert result == [()]
@@ -1659,7 +1659,7 @@ def test_show_candidates_yields_empty_tuple_and_logs_database_errors(monkeypatch
     executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
     monkeypatch.setattr(sqlexecute, 'Connection', FakeMetadataConnection)
 
-    with caplog.at_level('ERROR', logger='mycli.sqlexecute'):
+    with caplog.at_level('ERROR', logger='mycli.packages.execution.sql_execute'):
         result = list(executor.show_candidates())
 
     assert result == [()]
@@ -1687,7 +1687,7 @@ def test_users_yields_empty_tuple_and_logs_database_errors(monkeypatch, caplog) 
     executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
     monkeypatch.setattr(sqlexecute, 'Connection', FakeMetadataConnection)
 
-    with caplog.at_level('ERROR', logger='mycli.sqlexecute'):
+    with caplog.at_level('ERROR', logger='mycli.packages.execution.sql_execute'):
         result = list(executor.users())
 
     assert result == [()]
@@ -1809,7 +1809,7 @@ def test_reset_connection_id_sets_minus_one_and_logs_errors_for_invalid_results(
     monkeypatch.setattr(sqlexecute, 'Cursor', FakeConnectionIdCursor)
     monkeypatch.setattr(executor, 'run', lambda _sql: [SimpleNamespace(rows=object())])
 
-    with caplog.at_level('ERROR', logger='mycli.sqlexecute'):
+    with caplog.at_level('ERROR', logger='mycli.packages.execution.sql_execute'):
         executor.reset_connection_id()
 
     assert executor.connection_id == -1
@@ -1954,7 +1954,7 @@ def test_create_ssl_ctx_logs_invalid_tls_version_and_keeps_default_minimum(monke
 
     monkeypatch.setattr(sqlexecute.ssllib, 'create_default_context', lambda **_kwargs: ctx)
 
-    with caplog.at_level('ERROR', logger='mycli.sqlexecute'):
+    with caplog.at_level('ERROR', logger='mycli.packages.execution.sql_execute'):
         result = executor._create_ssl_ctx({'tls_version': 'SSLv3'})
 
     assert result is ctx

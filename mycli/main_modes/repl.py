@@ -58,6 +58,8 @@ from mycli.constants import (
     QueryState,
 )
 from mycli.packages import special_commands
+from mycli.packages.execution.background_runner import QueryCancelled, QueryRunner, runner_for
+from mycli.packages.execution.sql_execute import SQLExecute
 from mycli.packages.hybrid_redirection.hybrid_redirection import get_redirect_components, is_redirect_command
 from mycli.packages.polars.transform import (
     PolarsTransform,
@@ -92,8 +94,6 @@ from mycli.packages.utils.sql_utils import (
     need_completion_reset,
 )
 from mycli.packages.utils.string_utils import sanitize_terminal_title
-from mycli.query_runner import QueryCancelled, QueryRunner, runner_for
-from mycli.sqlexecute import SQLExecute
 from mycli.types import Query
 
 if TYPE_CHECKING:
