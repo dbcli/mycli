@@ -248,9 +248,9 @@ def run_query_with_state(monkeypatch, tmp_path, *, warnings_enabled: bool = True
         return [str(result.status)]
 
     monkeypatch.setattr(client_query, 'Cursor', FakeCursorBase)
-    monkeypatch.setattr(client_query.special, 'is_expanded_output', lambda: True)
-    monkeypatch.setattr(client_query.special, 'is_redirected', lambda: False)
-    monkeypatch.setattr(client_query.special, 'is_show_warnings_enabled', lambda: warnings_enabled)
+    monkeypatch.setattr(client_query.special_commands, 'is_expanded_output', lambda: True)
+    monkeypatch.setattr(client_query.special_commands, 'is_redirected', lambda: False)
+    monkeypatch.setattr(client_query.special_commands, 'is_show_warnings_enabled', lambda: warnings_enabled)
     monkeypatch.setattr(client_query.click, 'echo', lambda line, nl=True: state['echoed'].append((line, nl)))
 
     cli.sqlexecute = SimpleNamespace(run=run)
@@ -364,9 +364,9 @@ def test_run_query_displays_error_result_by_default(monkeypatch) -> None:
     cli.log_query = lambda query: None
     cli.log_output = lambda line: None
     cli.format_sqlresult = lambda result, **kwargs: [result.status_plain]
-    monkeypatch.setattr(client_query.special, 'is_expanded_output', lambda: False)
-    monkeypatch.setattr(client_query.special, 'is_redirected', lambda: False)
-    monkeypatch.setattr(client_query.special, 'is_show_warnings_enabled', lambda: False)
+    monkeypatch.setattr(client_query.special_commands, 'is_expanded_output', lambda: False)
+    monkeypatch.setattr(client_query.special_commands, 'is_redirected', lambda: False)
+    monkeypatch.setattr(client_query.special_commands, 'is_show_warnings_enabled', lambda: False)
     monkeypatch.setattr(client_query.click, 'echo', lambda line, nl=True: echoed.append(line))
 
     main.MyCli.run_query(cli, '/source test.sql')
@@ -383,9 +383,9 @@ def test_run_query_displays_set_buffer_fallback_outside_repl(monkeypatch) -> Non
     cli.log_query = lambda query: None
     cli.log_output = lambda line: None
     cli.format_sqlresult = lambda result, **kwargs: [result.status_plain]
-    monkeypatch.setattr(client_query.special, 'is_expanded_output', lambda: False)
-    monkeypatch.setattr(client_query.special, 'is_redirected', lambda: False)
-    monkeypatch.setattr(client_query.special, 'is_show_warnings_enabled', lambda: False)
+    monkeypatch.setattr(client_query.special_commands, 'is_expanded_output', lambda: False)
+    monkeypatch.setattr(client_query.special_commands, 'is_redirected', lambda: False)
+    monkeypatch.setattr(client_query.special_commands, 'is_show_warnings_enabled', lambda: False)
     monkeypatch.setattr(client_query.click, 'echo', lambda line, nl=True: echoed.append(line))
 
     main.MyCli.run_query(cli, '/favorite eval report')

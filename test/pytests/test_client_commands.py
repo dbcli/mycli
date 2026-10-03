@@ -12,9 +12,9 @@ import pytest
 
 from mycli import client_commands
 from mycli.client_commands import ClientCommandsMixin
-from mycli.packages import special
-from mycli.packages.special import main as special_main
-from mycli.packages.special import source as source_commands
+from mycli.packages import special_commands
+from mycli.packages.special_commands import main as special_main
+from mycli.packages.special_commands import source as source_commands
 from mycli.packages.sql_result.sql_result import SQLResult
 
 
@@ -100,7 +100,7 @@ def result_statuses(results: Any) -> list[str | None]:
 def test_register_special_commands_registers_expected_commands(monkeypatch: pytest.MonkeyPatch) -> None:
     client = DummyClient()
     calls: list[tuple[Any, ...]] = []
-    monkeypatch.setattr(client_commands.special, 'register_special_command', lambda *args, **kwargs: calls.append((*args, kwargs)))
+    monkeypatch.setattr(client_commands.special_commands, 'register_special_command', lambda *args, **kwargs: calls.append((*args, kwargs)))
 
     client.register_special_commands()
 
@@ -232,12 +232,12 @@ def test_config_command_returns_unquoted_configobj_value(monkeypatch: pytest.Mon
     client.register_special_commands()
 
     config_result = [SQLResult(header=['Key', 'Value'], rows=[('main.show_warnings', 'False')])]
-    assert special.execute(None, '/config get main.show_warnings') == config_result
-    assert special.execute(None, r'\config get main.show_warnings') == config_result
-    assert special.execute(None, '/config search SHOW_WARNINGS') == config_result
-    assert special.execute(None, r'\config search SHOW_WARNINGS') == config_result
-    with pytest.raises(special.CommandNotFound, match='Command not found: select'):
-        special.execute(None, r'select 1 /config get main.show_warnings')
+    assert special_commands.execute(None, '/config get main.show_warnings') == config_result
+    assert special_commands.execute(None, r'\config get main.show_warnings') == config_result
+    assert special_commands.execute(None, '/config search SHOW_WARNINGS') == config_result
+    assert special_commands.execute(None, r'\config search SHOW_WARNINGS') == config_result
+    with pytest.raises(special_commands.CommandNotFound, match='Command not found: select'):
+        special_commands.execute(None, r'select 1 /config get main.show_warnings')
 
 
 def test_config_edit_opens_user_config_for_slash_and_backslash_commands(
@@ -260,8 +260,8 @@ def test_config_edit_opens_user_config_for_slash_and_backslash_commands(
     client.register_special_commands()
 
     result = [SQLResult(status=f'Config file edited: {client.myclirc_path}. Restart mycli to apply changes.')]
-    assert special.execute(None, '/config edit') == result
-    assert special.execute(None, r'\config edit') == result
+    assert special_commands.execute(None, '/config edit') == result
+    assert special_commands.execute(None, r'\config edit') == result
     assert write_calls == [(client.myclirc_path, False), (client.myclirc_path, False)]
     assert edit_calls == [client.myclirc_path, client.myclirc_path]
 
@@ -974,7 +974,7 @@ def test_change_prompt_format_accepts_quoted_value(
     client.prompt_format = 'old> '
     client.register_special_commands()
 
-    result = special.execute(None, f'{command} {quote} \\u> {quote}')
+    result = special_commands.execute(None, f'{command} {quote} \\u> {quote}')
 
     assert result == [SQLResult(status='Changed prompt format to: " \\u> "')]
     assert client.prompt_format == ' \\u> '

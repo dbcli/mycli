@@ -24,7 +24,7 @@ from mycli.constants import (
     TEST_DATABASE,
 )
 import mycli.output
-from mycli.packages import special
+from mycli.packages import special_commands
 from mycli.packages.sql_result.sql_result import SQLResult
 
 DATABASE = TEST_DATABASE
@@ -300,9 +300,9 @@ def run(executor, sql, rows_as_list=True):
 
 def set_expanded_output(is_expanded):
     """Pass-through for the tests."""
-    return special.set_expanded_output(is_expanded)
+    return special_commands.set_expanded_output(is_expanded)
 
 
 def is_expanded_output():
     """Pass-through for the tests."""
-    return special.is_expanded_output()
+    return special_commands.is_expanded_output()

@@ -62,7 +62,7 @@ from mycli.constants import (
 )
 from mycli.key_bindings import mycli_bindings
 from mycli.lexer import MyCliLexer
-from mycli.packages import special
+from mycli.packages import special_commands
 from mycli.packages.hybrid_redirection.hybrid_redirection import get_redirect_components, is_redirect_command
 from mycli.packages.polars.transform import (
     PolarsTransform,
@@ -72,8 +72,8 @@ from mycli.packages.polars.transform import (
     run_polars_transform,
 )
 from mycli.packages.ptoolkit.history import FRECENCY_HISTORY_ENTRIES, FRECENCY_REFRESH_INTERVAL, FileHistoryWithTimestamp
-from mycli.packages.special.iocommands import temporary_redirect
-from mycli.packages.special.utils import format_uptime, get_ssl_version, get_uptime, get_warning_count
+from mycli.packages.special_commands.io_commands import temporary_redirect
+from mycli.packages.special_commands.special_command_utils import format_uptime, get_ssl_version, get_uptime, get_warning_count
 from mycli.packages.sql_result.sql_result import SQLResult
 from mycli.packages.utils.interactive_utils import confirm, confirm_destructive_query
 from mycli.packages.utils.key_binding_utils import (
@@ -469,7 +469,7 @@ def _output_results(
         return
 
     if first_result.command is not None and first_result.command['name'] == 'source_page':
-        if special.is_redirected():
+        if special_commands.is_redirected():
             _output_results(mycli, state, result_iterator, start)
             return
         paged_output = _single_paged_output_results(mycli, state, result_iterator, start)
@@ -534,8 +534,8 @@ def _output_results(
         with runner.rendering() if runner else nullcontext():
             formatted = mycli.format_sqlresult(
                 result,
-                is_expanded=special.is_expanded_output(),
-                is_redirected=special.is_redirected(),
+                is_expanded=special_commands.is_expanded_output(),
+                is_redirected=special_commands.is_redirected(),
                 null_string=mycli.null_string,
                 numeric_alignment=mycli.numeric_alignment,
                 binary_display=mycli.binary_display,
@@ -559,7 +559,7 @@ def _output_results(
                 if mycli.beep_after_seconds > 0 and duration >= mycli.beep_after_seconds:
                     assert mycli.prompt_session is not None
                     mycli.prompt_session.output.bell()
-                if special.is_timing_enabled():
+                if special_commands.is_timing_enabled():
                     mycli.output_timing(f'Time: {duration:0.03f}s')
             except KeyboardInterrupt:
                 if raise_interrupts:
@@ -569,7 +569,7 @@ def _output_results(
         result_count += 1
         state.mutating = state.mutating or is_mutating(result.status_plain)
 
-        if special.is_show_warnings_enabled() and isinstance(result.rows, Cursor) and result.rows.warning_count > 0:
+        if special_commands.is_show_warnings_enabled() and isinstance(result.rows, Cursor) and result.rows.warning_count > 0:
             warnings = sqlexecute.run('SHOW WARNINGS')
             warnings_duration = time.time() - start
             saw_warning = False
@@ -577,8 +577,8 @@ def _output_results(
                 saw_warning = True
                 formatted = mycli.format_sqlresult(
                     warning,
-                    is_expanded=special.is_expanded_output(),
-                    is_redirected=special.is_redirected(),
+                    is_expanded=special_commands.is_expanded_output(),
+                    is_redirected=special_commands.is_redirected(),
                     null_string=mycli.null_string,
                     numeric_alignment=mycli.numeric_alignment,
                     binary_display=mycli.binary_display,
@@ -588,7 +588,7 @@ def _output_results(
                 mycli.echo('')
                 mycli.output(formatted, warning, is_warnings_style=True)
 
-            if saw_warning and special.is_timing_enabled():
+            if saw_warning and special_commands.is_timing_enabled():
                 mycli.output_timing(f'Time: {warnings_duration:0.03f}s', is_warnings_style=True)
 
 
@@ -640,7 +640,7 @@ def _single_paged_output_results(
 
             formatted = mycli.format_sqlresult(
                 result,
-                is_expanded=special.is_expanded_output(),
+                is_expanded=special_commands.is_expanded_output(),
                 is_redirected=False,
                 null_string=mycli.null_string,
                 numeric_alignment=mycli.numeric_alignment,
@@ -654,9 +654,9 @@ def _single_paged_output_results(
                 yield '\n'
             for line in formatted:
                 mycli.log_output(line)
-                special.write_tee(line)
-                special.write_once(line)
-                special.write_pipe_once(line)
+                special_commands.write_tee(line)
+                special_commands.write_once(line)
+                special_commands.write_pipe_once(line)
                 yield f'{line}\n'
             if result.status:
                 mycli.log_output(result.status_plain)
@@ -665,7 +665,7 @@ def _single_paged_output_results(
             if mycli.beep_after_seconds > 0 and duration >= mycli.beep_after_seconds:
                 assert mycli.prompt_session is not None
                 mycli.prompt_session.output.bell()
-            if special.is_timing_enabled():
+            if special_commands.is_timing_enabled():
                 timing = f'Time: {duration:0.03f}s'
                 mycli.log_output(timing)
                 yield f'{timing}\n'
@@ -674,7 +674,7 @@ def _single_paged_output_results(
             result_count += 1
             state.mutating = state.mutating or is_mutating(result.status_plain)
 
-            if special.is_show_warnings_enabled() and isinstance(result.rows, Cursor) and result.rows.warning_count > 0:
+            if special_commands.is_show_warnings_enabled() and isinstance(result.rows, Cursor) and result.rows.warning_count > 0:
                 warnings = sqlexecute.run('SHOW WARNINGS')
                 warnings_duration = time.time() - start
                 saw_warning = False
@@ -682,7 +682,7 @@ def _single_paged_output_results(
                     saw_warning = True
                     warning_output = mycli.format_sqlresult(
                         warning,
-                        is_expanded=special.is_expanded_output(),
+                        is_expanded=special_commands.is_expanded_output(),
                         is_redirected=False,
                         null_string=mycli.null_string,
                         numeric_alignment=mycli.numeric_alignment,
@@ -694,15 +694,15 @@ def _single_paged_output_results(
                     yield '\n'
                     for line in warning_output:
                         mycli.log_output(line)
-                        special.write_tee(line)
-                        special.write_once(line)
-                        special.write_pipe_once(line)
+                        special_commands.write_tee(line)
+                        special_commands.write_once(line)
+                        special_commands.write_pipe_once(line)
                         yield f'{line}\n'
                     if warning.status:
                         mycli.log_output(warning.status_plain)
                         yield f'{warning.status_plain}\n'
 
-                if saw_warning and special.is_timing_enabled():
+                if saw_warning and special_commands.is_timing_enabled():
                     timing = f'Time: {warnings_duration:0.03f}s'
                     mycli.log_output(timing)
                     yield f'{timing}\n'
@@ -828,9 +828,9 @@ def _one_iteration(
         except KeyboardInterrupt:
             return
 
-        special.set_expanded_output(False)
-        special.set_forced_horizontal_output(False)
-        special.set_explorer_output(False)
+        special_commands.set_expanded_output(False)
+        special_commands.set_forced_horizontal_output(False)
+        special_commands.set_explorer_output(False)
 
         try:
             text = handle_editor_command(
@@ -854,12 +854,12 @@ def _one_iteration(
             mycli.echo(str(e), err=True, fg='red')
             return
 
-        while special.is_llm_command(text):
+        while special_commands.is_llm_command(text):
             start = time.time()
             try:
                 assert sqlexecute.conn is not None
                 cur = sqlexecute.conn.cursor()
-                context, sql, duration = special.handle_llm(
+                context, sql, duration = special_commands.handle_llm(
                     text,
                     cur,
                     sqlexecute.dbname or '',
@@ -870,7 +870,7 @@ def _one_iteration(
                     click.echo('LLM Response:')
                     click.echo(context)
                     click.echo('---')
-                if special.is_timing_enabled():
+                if special_commands.is_timing_enabled():
                     mycli.output_timing(f'Time: {duration:0.03f}s')
                 assert mycli.prompt_session is not None
                 text = mycli.prompt_session.prompt(
@@ -880,7 +880,7 @@ def _one_iteration(
                 )
             except KeyboardInterrupt:
                 return
-            except special.FinishIteration as e:
+            except special_commands.FinishIteration as e:
                 if e.results:
                     _output_results(mycli, state, e.results, start)
                 return
@@ -906,7 +906,7 @@ def _one_iteration(
         sql_part, command_part, file_operator_part, file_part = get_redirect_components(text)
         text = sql_part or ''
         try:
-            special.set_redirect(command_part, file_operator_part, file_part)
+            special_commands.set_redirect(command_part, file_operator_part, file_part)
         except (FileNotFoundError, OSError, RuntimeError) as e:
             mycli.logger.error('sql: %r, error: %r', text, e)
             mycli.logger.error('traceback: %r', traceback.format_exc())
@@ -942,8 +942,8 @@ def _one_iteration(
             prepare_polars_transform(text, polars_pipeline.expression) if polars_pipeline is not None else None
         )
         query_history_text = original_text if polars_transform is not None else text
-        special.write_tee(mycli.last_prompt_message, nl=False)
-        special.write_tee(query_history_text)
+        special_commands.write_tee(mycli.last_prompt_message, nl=False)
+        special_commands.write_tee(query_history_text)
         mycli.log_query(query_history_text)
 
         start = time.time()
@@ -980,9 +980,9 @@ def _one_iteration(
                     )
             if polars_pipeline.output_path is None:
                 if polars_pipeline.output_mode == 'explorer':
-                    special.set_explorer_output(True)
+                    special_commands.set_explorer_output(True)
                 elif polars_pipeline.output_mode == 'expanded':
-                    special.set_expanded_output(True)
+                    special_commands.set_expanded_output(True)
             redirect = polars_pipeline.shell_redirect
             try:
                 with (
@@ -994,14 +994,14 @@ def _one_iteration(
             except KeyboardInterrupt:
                 raise QueryCancelled(False) from None
             if polars_pipeline.output_path is not None:
-                special.run_post_redirect_hook(
+                special_commands.run_post_redirect_hook(
                     mycli.post_redirect_command,
                     polars_pipeline.output_path,
                 )
         else:
             _output_results(mycli, state, results, start)
-            special.unset_once_if_written(mycli.post_redirect_command)
-            special.flush_pipe_once_if_written(mycli.post_redirect_command)
+            special_commands.unset_once_if_written(mycli.post_redirect_command)
+            special_commands.flush_pipe_once_if_written(mycli.post_redirect_command)
         successful = True
     except QueryCancelled as exc:
         mycli.echo('Query cancelled.', err=True, fg='blue')
@@ -1187,7 +1187,7 @@ def main_repl(mycli: 'MyCli') -> None:
             _one_iteration(mycli, state)
             state.iterations += 1
     except EOFError:
-        special.close_tee()
+        special_commands.close_tee()
         if mycli.verbosity >= 0:
             mycli.echo('Goodbye!')
     finally:

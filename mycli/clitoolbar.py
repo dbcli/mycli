@@ -5,7 +5,7 @@ from prompt_toolkit.enums import EditingMode
 from prompt_toolkit.formatted_text import AnyFormattedText, to_formatted_text
 from prompt_toolkit.key_binding.vi_state import InputMode
 
-from mycli.packages import special
+from mycli.packages import special_commands
 
 
 def get_vi_mode() -> str:
@@ -65,7 +65,7 @@ def create_toolbar_tokens_func(
             mycli.toolbar_error_message = None
 
         if mycli.multi_line:
-            delimiter = special.get_current_delimiter()
+            delimiter = special_commands.get_current_delimiter()
             if delimiter != ';' or show_initial_toolbar_help():
                 dynamic.append(divider)
                 dynamic.append(('class:bottom-toolbar', '"'))

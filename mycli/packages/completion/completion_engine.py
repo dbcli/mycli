@@ -8,11 +8,11 @@ import sqlparse
 from sqlparse.sql import Comparison, Having, Identifier, Token, Where
 
 from mycli.constants import MYSQL_ESCAPES
-from mycli.packages.special.dsn_aliases import DSN_SUBCOMMANDS
-from mycli.packages.special.favoritequeries import FAVORITE_SUBCOMMANDS
-from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
-from mycli.packages.special.main import parse_special_command
-from mycli.packages.special.source import SOURCE_BOOLEAN_OPTIONS, SOURCE_OPTIONS
+from mycli.packages.special_commands.dsn_aliases import DSN_SUBCOMMANDS
+from mycli.packages.special_commands.favorite_queries import FAVORITE_SUBCOMMANDS
+from mycli.packages.special_commands.main import COMMANDS as SPECIAL_COMMANDS
+from mycli.packages.special_commands.main import parse_special_command
+from mycli.packages.special_commands.source import SOURCE_BOOLEAN_OPTIONS, SOURCE_OPTIONS
 from mycli.packages.utils.sql_utils import extract_tables, find_prev_keyword, last_word
 
 sqlparse.engine.grouping.MAX_GROUPING_DEPTH = None  # type: ignore[assignment]

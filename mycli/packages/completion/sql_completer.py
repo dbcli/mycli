@@ -20,14 +20,14 @@ from mycli.compat import WIN
 from mycli.packages.completion.completion_engine import is_inside_quotes, suggest_type
 from mycli.packages.polars.completion import complete_polars_transform
 from mycli.packages.ptoolkit.history import frecency_score
-from mycli.packages.special import llm
-from mycli.packages.special.dsn_aliases import DsnAliases
-from mycli.packages.special.favoritequeries import (
+from mycli.packages.special_commands import llm
+from mycli.packages.special_commands.dsn_aliases import DsnAliases
+from mycli.packages.special_commands.favorite_queries import (
     FavoriteQueries,
     favorite_query_variable_pattern,
     find_favorite_query_template_keys,
 )
-from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
+from mycli.packages.special_commands.main import COMMANDS as SPECIAL_COMMANDS
 from mycli.packages.utils.path_utils import complete_path, parse_path, suggest_path, suggest_path_by_prefix
 from mycli.packages.utils.sql_utils import extract_columns_from_select, extract_tables, last_word
 

@@ -20,9 +20,9 @@ from pymysql import ProgrammingError
 import pytest
 
 from mycli.packages.hybrid_redirection.hybrid_redirection import parse_shell_redirect
-import mycli.packages.special
-from mycli.packages.special import iocommands
-from mycli.packages.special.favoritequeries import (
+import mycli.packages.special_commands
+from mycli.packages.special_commands import io_commands as iocommands
+from mycli.packages.special_commands.favorite_queries import (
     FavoriteQueryReloadError,
     analyze_favorite_query_template,
     find_favorite_query_template_keys,
@@ -185,80 +185,80 @@ def favorite_queries_instance(monkeypatch) -> None:
 
 def test_set_get_pager(monkeypatch):
     monkeypatch.setenv('PAGER', '')
-    mycli.packages.special.set_pager_enabled(True)
-    assert mycli.packages.special.is_pager_enabled()
-    mycli.packages.special.set_pager_enabled(False)
-    assert not mycli.packages.special.is_pager_enabled()
-    mycli.packages.special.set_pager("less")
+    mycli.packages.special_commands.set_pager_enabled(True)
+    assert mycli.packages.special_commands.is_pager_enabled()
+    mycli.packages.special_commands.set_pager_enabled(False)
+    assert not mycli.packages.special_commands.is_pager_enabled()
+    mycli.packages.special_commands.set_pager("less")
     assert os.environ["PAGER"] == "less"
-    mycli.packages.special.set_pager(False)
+    mycli.packages.special_commands.set_pager(False)
     assert os.environ["PAGER"] == "less"
     del os.environ["PAGER"]
-    mycli.packages.special.set_pager(False)
-    mycli.packages.special.disable_pager()
-    assert not mycli.packages.special.is_pager_enabled()
+    mycli.packages.special_commands.set_pager(False)
+    mycli.packages.special_commands.disable_pager()
+    assert not mycli.packages.special_commands.is_pager_enabled()
 
 
 def test_set_get_timing():
-    mycli.packages.special.set_timing_enabled(True)
-    assert mycli.packages.special.is_timing_enabled()
-    mycli.packages.special.set_timing_enabled(False)
-    assert not mycli.packages.special.is_timing_enabled()
+    mycli.packages.special_commands.set_timing_enabled(True)
+    assert mycli.packages.special_commands.is_timing_enabled()
+    mycli.packages.special_commands.set_timing_enabled(False)
+    assert not mycli.packages.special_commands.is_timing_enabled()
 
 
 def test_set_get_expanded_output():
-    mycli.packages.special.set_expanded_output(True)
-    assert mycli.packages.special.is_expanded_output()
-    mycli.packages.special.set_expanded_output(False)
-    assert not mycli.packages.special.is_expanded_output()
+    mycli.packages.special_commands.set_expanded_output(True)
+    assert mycli.packages.special_commands.is_expanded_output()
+    mycli.packages.special_commands.set_expanded_output(False)
+    assert not mycli.packages.special_commands.is_expanded_output()
 
 
 def test_editor_command(monkeypatch):
     monkeypatch.setenv('EDITOR', 'true')
     monkeypatch.setenv('VISUAL', 'true')
 
-    assert mycli.packages.special.editor_command(r"hello\e")
-    assert mycli.packages.special.editor_command(r"hello\edit")
-    assert mycli.packages.special.editor_command(r"/e hello")
-    assert mycli.packages.special.editor_command(r"/edit hello")
-    assert mycli.packages.special.editor_command('/edit')
+    assert mycli.packages.special_commands.editor_command(r"hello\e")
+    assert mycli.packages.special_commands.editor_command(r"hello\edit")
+    assert mycli.packages.special_commands.editor_command(r"/e hello")
+    assert mycli.packages.special_commands.editor_command(r"/edit hello")
+    assert mycli.packages.special_commands.editor_command('/edit')
 
-    assert not mycli.packages.special.editor_command(r"HELP \e")
-    assert not mycli.packages.special.editor_command(r"help \edit\g")
-    assert not mycli.packages.special.editor_command(r"hello")
-    assert not mycli.packages.special.editor_command(r"/ehello")
-    assert not mycli.packages.special.editor_command(r"/edithello")
+    assert not mycli.packages.special_commands.editor_command(r"HELP \e")
+    assert not mycli.packages.special_commands.editor_command(r"help \edit\g")
+    assert not mycli.packages.special_commands.editor_command(r"hello")
+    assert not mycli.packages.special_commands.editor_command(r"/ehello")
+    assert not mycli.packages.special_commands.editor_command(r"/edithello")
 
-    assert mycli.packages.special.get_filename(r"/e filename") == "filename"
-    assert mycli.packages.special.get_editor_query('/edit') == ''
+    assert mycli.packages.special_commands.get_filename(r"/e filename") == "filename"
+    assert mycli.packages.special_commands.get_editor_query('/edit') == ''
 
     if os.name != "nt":
-        assert mycli.packages.special.open_external_editor(sql=r"select 1") == ('select 1', None)
+        assert mycli.packages.special_commands.open_external_editor(sql=r"select 1") == ('select 1', None)
     else:
         pytest.skip("Skipping on Windows platform.")
 
 
 def test_tee_command():
-    mycli.packages.special.write_tee("hello world")  # write without file set
+    mycli.packages.special_commands.write_tee("hello world")  # write without file set
     # keep Windows from locking the file with delete=False
     with tempfile.NamedTemporaryFile(prefix=TEMPFILE_PREFIX, delete=False) as f:
-        mycli.packages.special.execute(None, "tee " + f.name)
-        mycli.packages.special.write_tee("hello world")
+        mycli.packages.special_commands.execute(None, "tee " + f.name)
+        mycli.packages.special_commands.write_tee("hello world")
         if os.name == "nt":
             assert f.read() == b"hello world\r\n"
         else:
             assert f.read() == b"hello world\n"
 
-        mycli.packages.special.execute(None, "tee -o " + f.name)
-        mycli.packages.special.write_tee("hello world")
+        mycli.packages.special_commands.execute(None, "tee -o " + f.name)
+        mycli.packages.special_commands.write_tee("hello world")
         f.seek(0)
         if os.name == "nt":
             assert f.read() == b"hello world\r\n"
         else:
             assert f.read() == b"hello world\n"
 
-        mycli.packages.special.execute(None, "notee")
-        mycli.packages.special.write_tee("hello world")
+        mycli.packages.special_commands.execute(None, "notee")
+        mycli.packages.special_commands.write_tee("hello world")
         f.seek(0)
         if os.name == "nt":
             assert f.read() == b"hello world\r\n"
@@ -277,12 +277,12 @@ def test_tee_command():
 @pytest.mark.skipif('wsl2' in platform.uname().release.lower(), reason='todo: unknown')
 def test_tee_command_error():
     with pytest.raises(TypeError):
-        mycli.packages.special.execute(None, "tee")
+        mycli.packages.special_commands.execute(None, "tee")
 
     with pytest.raises(OSError):
         with tempfile.NamedTemporaryFile(prefix=TEMPFILE_PREFIX) as f:
             os.chmod(f.name, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
-            mycli.packages.special.execute(None, f"tee {f.name}")
+            mycli.packages.special_commands.execute(None, f"tee {f.name}")
 
 
 @dbtest
@@ -290,8 +290,8 @@ def test_tee_command_error():
 def test_favorite_query(favorite_queries_instance) -> None:
     with db_connection().cursor() as cur:
         query = 'select "✔"'
-        mycli.packages.special.execute(cur, f"/fs check {query}")
-        assert next(mycli.packages.special.execute(cur, "/f check")).preamble == "> " + query
+        mycli.packages.special_commands.execute(cur, f"/fs check {query}")
+        assert next(mycli.packages.special_commands.execute(cur, "/f check")).preamble == "> " + query
 
 
 @dbtest
@@ -299,30 +299,32 @@ def test_favorite_query(favorite_queries_instance) -> None:
 def test_special_favorite_query(favorite_queries_instance) -> None:
     with db_connection().cursor() as cur:
         query = '/help'
-        mycli.packages.special.execute(cur, f"/fs special {query}")
-        assert (r'\G', None, r'<query>\G', 'Display results vertically.') in next(mycli.packages.special.execute(cur, r'/f special')).rows
+        mycli.packages.special_commands.execute(cur, f"/fs special {query}")
+        assert (r'\G', None, r'<query>\G', 'Display results vertically.') in next(
+            mycli.packages.special_commands.execute(cur, r'/f special')
+        ).rows
 
 
 def test_once_command():
     with pytest.raises(TypeError):
-        mycli.packages.special.execute(None, "/once")
+        mycli.packages.special_commands.execute(None, "/once")
 
     with pytest.raises(OSError):
-        mycli.packages.special.execute(None, "/once /proc/access-denied")
+        mycli.packages.special_commands.execute(None, "/once /proc/access-denied")
 
-    mycli.packages.special.write_once("hello world")  # write without file set
+    mycli.packages.special_commands.write_once("hello world")  # write without file set
     # keep Windows from locking the file with delete=False
     with tempfile.NamedTemporaryFile(prefix=TEMPFILE_PREFIX, delete=False) as f:
-        mycli.packages.special.execute(None, "/once " + f.name)
-        mycli.packages.special.write_once("hello world")
+        mycli.packages.special_commands.execute(None, "/once " + f.name)
+        mycli.packages.special_commands.write_once("hello world")
         if os.name == "nt":
             assert f.read() == b"hello world\r\n"
         else:
             assert f.read() == b"hello world\n"
 
-        mycli.packages.special.execute(None, "/once -o " + f.name)
-        mycli.packages.special.write_once("hello world line 1")
-        mycli.packages.special.write_once("hello world line 2")
+        mycli.packages.special_commands.execute(None, "/once -o " + f.name)
+        mycli.packages.special_commands.write_once("hello world line 1")
+        mycli.packages.special_commands.write_once("hello world line 2")
         f.seek(0)
         if os.name == "nt":
             assert f.read() == b"hello world line 1\r\nhello world line 2\r\n"
@@ -338,22 +340,22 @@ def test_once_command():
 
 def test_pipe_once_command():
     with pytest.raises(IOError):
-        mycli.packages.special.execute(None, "/pipe_once")
+        mycli.packages.special_commands.execute(None, "/pipe_once")
 
     with pytest.raises(OSError):
-        mycli.packages.special.execute(None, "/pipe_once /proc/access-denied")
-        mycli.packages.special.write_pipe_once("select 1")
-        mycli.packages.special.flush_pipe_once_if_written(None)
+        mycli.packages.special_commands.execute(None, "/pipe_once /proc/access-denied")
+        mycli.packages.special_commands.write_pipe_once("select 1")
+        mycli.packages.special_commands.flush_pipe_once_if_written(None)
 
     if os.name == "nt":
-        mycli.packages.special.execute(None, '/pipe_once python -c "import sys; print(len(sys.stdin.read().strip()))"')
-        mycli.packages.special.write_once("hello world")
-        mycli.packages.special.flush_pipe_once_if_written(None)
+        mycli.packages.special_commands.execute(None, '/pipe_once python -c "import sys; print(len(sys.stdin.read().strip()))"')
+        mycli.packages.special_commands.write_once("hello world")
+        mycli.packages.special_commands.flush_pipe_once_if_written(None)
     else:
         with tempfile.NamedTemporaryFile(prefix=TEMPFILE_PREFIX) as f:
-            mycli.packages.special.execute(None, "/pipe_once tee " + f.name)
-            mycli.packages.special.write_pipe_once("hello world")
-            mycli.packages.special.flush_pipe_once_if_written(None)
+            mycli.packages.special_commands.execute(None, "/pipe_once tee " + f.name)
+            mycli.packages.special_commands.write_pipe_once("hello world")
+            mycli.packages.special_commands.flush_pipe_once_if_written(None)
             f.seek(0)
             assert f.read() == b"hello world\n"
 
@@ -363,24 +365,24 @@ def test_parseargfile():
     expected = (os.path.join(os.path.expanduser("~"), "filename"), "a")
 
     if os.name == "nt":
-        assert expected == mycli.packages.special.iocommands.parseargfile("~\\filename")
+        assert expected == mycli.packages.special_commands.io_commands.parseargfile("~\\filename")
     else:
-        assert expected == mycli.packages.special.iocommands.parseargfile("~/filename")
+        assert expected == mycli.packages.special_commands.io_commands.parseargfile("~/filename")
 
     expected = (os.path.join(os.path.expanduser("~"), "filename"), "w")
     if os.name == "nt":
-        assert expected == mycli.packages.special.iocommands.parseargfile("-o ~\\filename")
+        assert expected == mycli.packages.special_commands.io_commands.parseargfile("-o ~\\filename")
     else:
-        assert expected == mycli.packages.special.iocommands.parseargfile("-o ~/filename")
+        assert expected == mycli.packages.special_commands.io_commands.parseargfile("-o ~/filename")
 
 
 def test_parseargfile_no_file():
     """Test that parseargfile raises a TypeError if there is no filename."""
     with pytest.raises(TypeError):
-        mycli.packages.special.iocommands.parseargfile("")
+        mycli.packages.special_commands.io_commands.parseargfile("")
 
     with pytest.raises(TypeError):
-        mycli.packages.special.iocommands.parseargfile("-o ")
+        mycli.packages.special_commands.io_commands.parseargfile("-o ")
 
 
 @dbtest
@@ -391,7 +393,7 @@ def test_watch_query_iteration():
     query = f"SELECT {expected_value}"
     expected_preamble = f"> {query}"
     with db_connection().cursor() as cur:
-        result = next(mycli.packages.special.iocommands.watch_query(arg=query, cur=cur))
+        result = next(mycli.packages.special_commands.io_commands.watch_query(arg=query, cur=cur))
     assert result.preamble == expected_preamble
     assert result.header[0] == expected_value
 
@@ -419,7 +421,7 @@ def test_watch_query_full(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(iocommands, 'sleep', interrupt_after_four_calls)
 
     with db_connection().cursor() as cur:
-        results = list(mycli.packages.special.iocommands.watch_query(arg=f"{watch_seconds} {query}", cur=cur))
+        results = list(mycli.packages.special_commands.io_commands.watch_query(arg=f"{watch_seconds} {query}", cur=cur))
 
     assert sleep_calls == [watch_seconds] * 4
     assert len(results) == 4
@@ -434,7 +436,7 @@ def test_watch_query_clear(clear_mock):
     """Test that the screen is cleared with the -c flag of `watch` command
     before execute the query."""
     with db_connection().cursor() as cur:
-        watch_gen = mycli.packages.special.iocommands.watch_query(arg="0.1 -c select 1;", cur=cur)
+        watch_gen = mycli.packages.special_commands.io_commands.watch_query(arg="0.1 -c select 1;", cur=cur)
         assert not clear_mock.called
         next(watch_gen)
         assert clear_mock.called
@@ -448,7 +450,7 @@ def test_watch_query_clear(clear_mock):
 def test_watch_query_bad_arguments():
     """Test different incorrect combinations of arguments for `watch`
     command."""
-    watch_query = mycli.packages.special.iocommands.watch_query
+    watch_query = mycli.packages.special_commands.io_commands.watch_query
     with db_connection().cursor() as cur:
         with pytest.raises(ProgrammingError):
             next(watch_query("a select 1;", cur=cur))
@@ -475,7 +477,7 @@ def test_watch_query_interval_clear(clear_mock):
         assert exec_time > seconds and exec_time < (seconds + seconds)
 
     seconds = 1.0
-    watch_query = mycli.packages.special.iocommands.watch_query
+    watch_query = mycli.packages.special_commands.io_commands.watch_query
     with db_connection().cursor() as cur:
         test_asserts(watch_query(f"{seconds} -c select 1;", cur=cur))
         test_asserts(watch_query(f"-c {seconds} select 1;", cur=cur))
@@ -483,29 +485,29 @@ def test_watch_query_interval_clear(clear_mock):
 
 def test_split_sql_by_delimiter():
     for delimiter_str in (";", "$", "😀"):
-        mycli.packages.special.set_delimiter(delimiter_str)
+        mycli.packages.special_commands.set_delimiter(delimiter_str)
         sql_input = f"select 1{delimiter_str} select \ufffc2"
         queries = ("select 1", "select \ufffc2")
-        for query, parsed_query in zip(queries, mycli.packages.special.split_queries(sql_input), strict=True):
+        for query, parsed_query in zip(queries, mycli.packages.special_commands.split_queries(sql_input), strict=True):
             assert query == parsed_query
 
 
 def test_switch_delimiter_within_query():
-    mycli.packages.special.set_delimiter(";")
+    mycli.packages.special_commands.set_delimiter(";")
     sql_input = "select 1; delimiter $$ select 2 $$ select 3 $$"
     queries = ("select 1", "delimiter $$ select 2 $$ select 3 $$")
-    for query, parsed_query in zip(queries, mycli.packages.special.split_queries(sql_input), strict=True):
+    for query, parsed_query in zip(queries, mycli.packages.special_commands.split_queries(sql_input), strict=True):
         assert query == parsed_query
 
 
 def test_set_delimiter():
     for delim in ("foo", "bar"):
-        mycli.packages.special.set_delimiter(delim)
-        assert mycli.packages.special.get_current_delimiter() == delim
+        mycli.packages.special_commands.set_delimiter(delim)
+        assert mycli.packages.special_commands.get_current_delimiter() == delim
 
 
 def teardown_function():
-    mycli.packages.special.set_delimiter(";")
+    mycli.packages.special_commands.set_delimiter(";")
 
 
 def test_simple_setters_and_toggle_timing() -> None:
@@ -978,7 +980,7 @@ def test_favorite_reload_command(monkeypatch, command: str) -> None:
     favorite_queries = FakeFavoriteQueries()
     monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
 
-    assert mycli.packages.special.execute(FakeCursor(), command) == [SQLResult(status='Favorite queries reloaded.')]
+    assert mycli.packages.special_commands.execute(FakeCursor(), command) == [SQLResult(status='Favorite queries reloaded.')]
     assert favorite_queries.reload_calls == 1
 
 
@@ -1016,7 +1018,7 @@ def test_favorite_run_command_executes_with_arguments(monkeypatch, command: str)
     monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
     cursor = FakeCursor()
 
-    results = list(mycli.packages.special.execute(cursor, command))
+    results = list(mycli.packages.special_commands.execute(cursor, command))
 
     assert [result.preamble for result in results] == ['> select value', '> select henry']
     assert cursor.executed == ['select value', 'select henry']
@@ -1055,7 +1057,7 @@ def test_favorite_eval_command_expands_without_execution(monkeypatch, command: s
     monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
     cursor = FakeCursor()
 
-    assert mycli.packages.special.execute(cursor, command) == [
+    assert mycli.packages.special_commands.execute(cursor, command) == [
         SQLResult(
             status='Error: /favorite eval is only available in the interactive REPL.',
             command={'name': 'set_buffer', 'text': 'select value; select henry;'},
@@ -1114,7 +1116,7 @@ def test_favorite_save_command_is_registered(monkeypatch, command: str) -> None:
     favorite_queries = FakeFavoriteQueries()
     monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
 
-    assert mycli.packages.special.execute(None, command) == [SQLResult(status='Saved.')]
+    assert mycli.packages.special_commands.execute(None, command) == [SQLResult(status='Saved.')]
     assert favorite_queries.saved == [('report', 'select 1')]
 
 
@@ -1144,7 +1146,7 @@ def test_favorite_edit_command_edits_and_saves_query(monkeypatch, command: str) 
 
     monkeypatch.setattr(iocommands.click, 'edit', edit)
 
-    assert mycli.packages.special.execute(None, command) == [SQLResult(status='report: Edited.')]
+    assert mycli.packages.special_commands.execute(None, command) == [SQLResult(status='report: Edited.')]
     assert edit_calls == [('select 1', '.sql')]
     assert favorite_queries.saved == [('report', 'select 2\n')]
 
@@ -1249,7 +1251,7 @@ def test_favorite_delete_command_is_registered(monkeypatch, command: str) -> Non
     favorite_queries = FakeFavoriteQueries({'report': 'select 1'})
     monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', favorite_queries, raising=False)
 
-    assert mycli.packages.special.execute(None, command) == [SQLResult(status='report: Deleted.')]
+    assert mycli.packages.special_commands.execute(None, command) == [SQLResult(status='report: Deleted.')]
     assert favorite_queries.deleted == ['report']
 
 

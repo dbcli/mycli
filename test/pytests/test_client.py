@@ -10,8 +10,8 @@ import pytest
 
 import mycli.client as client_module
 from mycli.client import MyCli
-from mycli.packages.special.dsn_aliases import DsnAliases
-from mycli.packages.special.favoritequeries import FavoriteQueries
+from mycli.packages.special_commands.dsn_aliases import DsnAliases
+from mycli.packages.special_commands.favorite_queries import FavoriteQueries
 
 
 def write_myclirc(tmp_path: Path, content: str) -> str:
@@ -266,7 +266,7 @@ def test_init_reports_invalid_image_protocol(monkeypatch: pytest.MonkeyPatch, tm
 def test_init_honors_explicit_show_warnings(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     patch_constructor_side_effects(monkeypatch)
     show_warnings_calls: list[bool] = []
-    monkeypatch.setattr(client_module.special, 'set_show_warnings_enabled', lambda value: show_warnings_calls.append(value))
+    monkeypatch.setattr(client_module.special_commands, 'set_show_warnings_enabled', lambda value: show_warnings_calls.append(value))
     myclirc = write_myclirc(tmp_path, '')
 
     MyCli(myclirc=myclirc, show_warnings=True)

@@ -51,8 +51,8 @@ from mycli.main import (
 import mycli.main_modes.batch
 import mycli.main_modes.repl as repl_mode
 import mycli.output as output_module
-import mycli.packages.special
-from mycli.packages.special.main import COMMANDS as SPECIAL_COMMANDS
+import mycli.packages.special_commands
+from mycli.packages.special_commands.main import COMMANDS as SPECIAL_COMMANDS
 from mycli.packages.sql_result.sql_result import SQLResult
 from mycli.packages.utils import cli_utils
 from mycli.password_sources import KNOWN_PASSWORD_SOURCES
@@ -388,7 +388,7 @@ def test_reconnect_no_database(executor, capsys):
         None,
     )
     sql = "/connect"
-    result = next(mycli.packages.special.execute(executor, sql))
+    result = next(mycli.packages.special_commands.execute(executor, sql))
     stdout, _stderr = capsys.readouterr()
     assert result.status is None
     assert "Already connected" in stdout
@@ -414,8 +414,8 @@ def test_reconnect_with_different_database(executor):
     database_2 = DEFAULT_DATABASE
     sql_1 = f"use {database_1}"
     sql_2 = f"/connect {database_2}"
-    _result_1 = next(mycli.packages.special.execute(executor, sql_1))
-    result_2 = next(mycli.packages.special.execute(executor, sql_2))
+    _result_1 = next(mycli.packages.special_commands.execute(executor, sql_1))
+    result_2 = next(mycli.packages.special_commands.execute(executor, sql_2))
     expected = f'You are now connected to database "{database_2}" as user "{USER}"'
     assert expected in result_2.status
 
@@ -438,9 +438,9 @@ def test_reconnect_with_same_database(executor):
     )
     database = DEFAULT_DATABASE
     sql = f"/use {database}"
-    result = next(mycli.packages.special.execute(executor, sql))
+    result = next(mycli.packages.special_commands.execute(executor, sql))
     sql = f"/connect {database}"
-    result = next(mycli.packages.special.execute(executor, sql))
+    result = next(mycli.packages.special_commands.execute(executor, sql))
     expected = f'You are already connected to database "{database}" as user "{USER}"'
     assert expected in result.status
 
@@ -2240,7 +2240,7 @@ def test_get_output_margin_uses_prompt_session_render_counter(monkeypatch: pytes
         return to_formatted_text('line1\nline2')
 
     monkeypatch.setattr(repl_mode, 'render_prompt_string', fake_render_prompt_string)
-    monkeypatch.setattr(mycli.packages.special, 'is_timing_enabled', lambda: False)
+    monkeypatch.setattr(mycli.packages.special_commands, 'is_timing_enabled', lambda: False)
     assert main.MyCli.get_output_margin(cli, 'ok') == 5
     assert render_counters == [7]
 

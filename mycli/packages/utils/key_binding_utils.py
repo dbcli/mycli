@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Callable
 from prompt_toolkit.shortcuts import PromptSession
 import sqlglot
 
-from mycli.packages import special
+from mycli.packages import special_commands
 from mycli.sqlexecute import SQLExecute
 
 if TYPE_CHECKING:
@@ -48,9 +48,9 @@ def handle_clip_command(mycli: 'MyCli', text: str) -> bool:
 
     """
 
-    if special.clip_command(text):
-        query = special.get_clip_query(text) or mycli.get_last_query()
-        message = special.copy_query_to_clipboard(sql=query)
+    if special_commands.clip_command(text):
+        query = special_commands.get_clip_query(text) or mycli.get_last_query()
+        message = special_commands.copy_query_to_clipboard(sql=query)
         if message:
             raise RuntimeError(message)
         return True
@@ -75,10 +75,10 @@ def handle_editor_command(
 
     """
 
-    while special.editor_command(text):
-        filename = special.get_filename(text)
-        query = special.get_editor_query(text) or mycli.get_last_query()
-        sql, message = special.open_external_editor(filename=filename, sql=query)
+    while special_commands.editor_command(text):
+        filename = special_commands.get_filename(text)
+        query = special_commands.get_editor_query(text) or mycli.get_last_query()
+        sql, message = special_commands.open_external_editor(filename=filename, sql=query)
         if message:
             # Something went wrong. Raise an exception and bail.
             raise RuntimeError(message)

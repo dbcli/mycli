@@ -1,7 +1,7 @@
 import pytest
 
-from mycli.packages.special import main as special_main
-from mycli.packages.special import source
+from mycli.packages.special_commands import main as special_main
+from mycli.packages.special_commands import source
 
 
 @pytest.mark.parametrize(

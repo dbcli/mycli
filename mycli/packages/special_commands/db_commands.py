@@ -6,9 +6,9 @@ from pymysql import Error, ProgrammingError
 from pymysql.cursors import Cursor
 
 from mycli import __version__
-from mycli.packages.special import iocommands
-from mycli.packages.special.main import ArgType, SpecialCommandAlias, special_command
-from mycli.packages.special.utils import (
+from mycli.packages.special_commands import io_commands as iocommands
+from mycli.packages.special_commands.main import ArgType, SpecialCommandAlias, special_command
+from mycli.packages.special_commands.special_command_utils import (
     format_uptime,
     get_local_timezone,
     get_server_timezone,

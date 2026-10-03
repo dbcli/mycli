@@ -7,8 +7,8 @@ import shlex
 import sqlglot
 
 from mycli.compat import WIN
-from mycli.packages.special.delimitercommand import DelimiterCommand
-from mycli.packages.special.source import (
+from mycli.packages.special_commands.delimiter_command import DelimiterCommand
+from mycli.packages.special_commands.source import (
     parse_source_arguments,
 )
 

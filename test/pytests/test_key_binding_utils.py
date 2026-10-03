@@ -108,7 +108,7 @@ def test_unprettify_statement():
 
 
 def test_handle_editor_command_returns_text_unchanged_when_not_editor_command(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(key_binding_utils.special, 'editor_command', lambda text: False)
+    monkeypatch.setattr(key_binding_utils.special_commands, 'editor_command', lambda text: False)
 
     mycli = FakeMyCli()
 
@@ -131,11 +131,11 @@ def test_handle_editor_command_opens_editor_reprompts_after_keyboard_interrupt_a
         return 'SELECT 1', None
 
     monkeypatch.setattr(key_binding_utils, 'PromptSession', FakePromptSession)
-    monkeypatch.setattr(key_binding_utils.special, 'editor_command', lambda text: text in {'\\e', ''})
-    monkeypatch.setattr(key_binding_utils.special, 'get_filename', lambda text: 'query.sql')
-    monkeypatch.setattr(key_binding_utils.special, 'get_editor_query', lambda text: '' if text == '\\e' else None)
+    monkeypatch.setattr(key_binding_utils.special_commands, 'editor_command', lambda text: text in {'\\e', ''})
+    monkeypatch.setattr(key_binding_utils.special_commands, 'get_filename', lambda text: 'query.sql')
+    monkeypatch.setattr(key_binding_utils.special_commands, 'get_editor_query', lambda text: '' if text == '\\e' else None)
     monkeypatch.setattr(
-        key_binding_utils.special,
+        key_binding_utils.special_commands,
         'open_external_editor',
         open_external_editor,
     )
@@ -153,11 +153,11 @@ def test_handle_editor_command_opens_editor_reprompts_after_keyboard_interrupt_a
 def test_handle_editor_command_uses_explicit_editor_query_and_raises_on_editor_error(monkeypatch: pytest.MonkeyPatch) -> None:
     mycli = FakeMyCli(prompt_session=FakePromptSession([]))
 
-    monkeypatch.setattr(key_binding_utils.special, 'editor_command', lambda text: True)
-    monkeypatch.setattr(key_binding_utils.special, 'get_filename', lambda text: 'query.sql')
-    monkeypatch.setattr(key_binding_utils.special, 'get_editor_query', lambda text: 'select from text')
+    monkeypatch.setattr(key_binding_utils.special_commands, 'editor_command', lambda text: True)
+    monkeypatch.setattr(key_binding_utils.special_commands, 'get_filename', lambda text: 'query.sql')
+    monkeypatch.setattr(key_binding_utils.special_commands, 'get_editor_query', lambda text: 'select from text')
     monkeypatch.setattr(
-        key_binding_utils.special,
+        key_binding_utils.special_commands,
         'open_external_editor',
         lambda *, filename, sql: ('', 'editor failed'),
     )
@@ -167,7 +167,7 @@ def test_handle_editor_command_uses_explicit_editor_query_and_raises_on_editor_e
 
 
 def test_handle_clip_command_returns_false_when_not_clip_command(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(key_binding_utils.special, 'clip_command', lambda text: False)
+    monkeypatch.setattr(key_binding_utils.special_commands, 'clip_command', lambda text: False)
 
     mycli = FakeMyCli()
 
@@ -180,10 +180,10 @@ def test_handle_clip_command_copies_explicit_query(monkeypatch: pytest.MonkeyPat
     def copy_query_to_clipboard(*, sql: str) -> None:
         clipboard_calls.append(sql)
 
-    monkeypatch.setattr(key_binding_utils.special, 'clip_command', lambda text: True)
-    monkeypatch.setattr(key_binding_utils.special, 'get_clip_query', lambda text: 'select 1')
+    monkeypatch.setattr(key_binding_utils.special_commands, 'clip_command', lambda text: True)
+    monkeypatch.setattr(key_binding_utils.special_commands, 'get_clip_query', lambda text: 'select 1')
     monkeypatch.setattr(
-        key_binding_utils.special,
+        key_binding_utils.special_commands,
         'copy_query_to_clipboard',
         copy_query_to_clipboard,
     )
@@ -195,10 +195,10 @@ def test_handle_clip_command_copies_explicit_query(monkeypatch: pytest.MonkeyPat
 
 
 def test_handle_clip_command_uses_last_query_and_raises_on_clipboard_error(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(key_binding_utils.special, 'clip_command', lambda text: True)
-    monkeypatch.setattr(key_binding_utils.special, 'get_clip_query', lambda text: '')
+    monkeypatch.setattr(key_binding_utils.special_commands, 'clip_command', lambda text: True)
+    monkeypatch.setattr(key_binding_utils.special_commands, 'get_clip_query', lambda text: '')
     monkeypatch.setattr(
-        key_binding_utils.special,
+        key_binding_utils.special_commands,
         'copy_query_to_clipboard',
         lambda *, sql: 'clipboard failed',
     )

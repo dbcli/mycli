@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from mycli.packages.special.delimitercommand import DelimiterCommand
+from mycli.packages.special_commands.delimiter_command import DelimiterCommand
 
 
 def test_delimiter_command_defaults_to_semicolon() -> None:
