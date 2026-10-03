@@ -15,7 +15,7 @@ from typing import Any, Union, cast, get_args, get_origin
 import sqlglot
 
 from mycli.packages.datafrane.transform import _pipeline_operator_indexes
-from mycli.packages.hybrid_redirection.hybrid_redirection import find_token_indices
+from mycli.packages.redirection.hybrid_redirection import find_token_indices
 
 _ATTRIBUTE_PATTERN = re.compile(r'(?s)(.*)\.([A-Za-z_][A-Za-z0-9_]*)?\s*$')
 _ANNOTATION_NAME_PATTERN = re.compile(r'[A-Za-z_][A-Za-z0-9_]*')

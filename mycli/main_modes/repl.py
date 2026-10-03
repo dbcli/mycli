@@ -67,13 +67,13 @@ from mycli.packages.datafrane.transform import (
 )
 from mycli.packages.execution.background_runner import QueryCancelled, QueryRunner, runner_for
 from mycli.packages.execution.sql_execute import SQLExecute
-from mycli.packages.hybrid_redirection.hybrid_redirection import get_redirect_components, is_redirect_command
 from mycli.packages.prompt_toolkit.history import FRECENCY_HISTORY_ENTRIES, FRECENCY_REFRESH_INTERVAL, FileHistoryWithTimestamp
 from mycli.packages.prompt_toolkit.key_bindings import mycli_bindings
 from mycli.packages.prompt_toolkit.multiline import cli_is_multiline
 from mycli.packages.prompt_toolkit.style import style_factory_ptoolkit
 from mycli.packages.prompt_toolkit.toolbar import create_toolbar_tokens_func, get_vi_mode
 from mycli.packages.pygments.mycli_lexer import MyCliLexer
+from mycli.packages.redirection.hybrid_redirection import get_redirect_components, is_redirect_command
 from mycli.packages.special_commands.io_commands import temporary_redirect
 from mycli.packages.special_commands.special_command_utils import format_uptime, get_ssl_version, get_uptime, get_warning_count
 from mycli.packages.sql_result.sql_result import SQLResult

@@ -14,7 +14,7 @@ from mycli.packages.datafrane.transform import (
     prepare_polars_transform,
     run_polars_transform,
 )
-from mycli.packages.hybrid_redirection.hybrid_redirection import ShellRedirect
+from mycli.packages.redirection.hybrid_redirection import ShellRedirect
 from mycli.packages.sql_result.sql_result import SQLResult
 from mycli.types import ImageProtocol, OutputMode
 
