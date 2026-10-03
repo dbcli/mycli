@@ -2,7 +2,7 @@ from prompt_toolkit.application import get_app
 from prompt_toolkit.enums import DEFAULT_BUFFER
 from prompt_toolkit.filters import Condition, Filter
 
-from mycli.packages.special_commands import io_commands as iocommands
+from mycli.packages.special_commands import io_commands
 from mycli.packages.special_commands.main import (
     CASE_INSENSITIVE_COMMANDS,
     CASE_SENSITIVE_COMMANDS,
@@ -29,7 +29,7 @@ def _multiline_exception(text: str) -> bool:
     # Multi-statement favorite query is a special case. Because there will
     # be a semicolon separating statements, we can't consider semicolon an
     # EOL. Let's consider an empty line an EOL instead.
-    if iocommands.is_favorite_save_command(text):
+    if io_commands.is_favorite_save_command(text):
         return orig.endswith("\n")
 
     return (
@@ -38,7 +38,7 @@ def _multiline_exception(text: str) -> bool:
         or (first_word.startswith('/') and not first_word.startswith('/*'))
         or text.endswith((
             # Ended with the current delimiter (usually a semi-column)
-            iocommands.get_current_delimiter(),
+            io_commands.get_current_delimiter(),
             # or ended with certain commands
             "\\g",
             "\\G",

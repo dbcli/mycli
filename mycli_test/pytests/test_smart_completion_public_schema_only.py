@@ -8,7 +8,7 @@ from prompt_toolkit.completion import Completion
 from prompt_toolkit.document import Document
 import pytest
 
-from mycli.packages.special_commands import main as special
+from mycli.packages.special_commands import main as special_commands_main
 from mycli_test.utils import pygments_below
 
 metadata = {
@@ -25,14 +25,14 @@ metadata = {
 
 
 def special_command_snippets() -> dict[str, str]:
-    return {name: command.completion_snippet or command.description for name, command in special.COMMANDS.items()}
+    return {name: command.completion_snippet or command.description for name, command in special_commands_main.COMMANDS.items()}
 
 
 @pytest.fixture
 def completer():
-    from mycli.packages.completion import sql_completer as sqlcompleter
+    from mycli.packages.completion import sql_completer
 
-    comp = sqlcompleter.SQLCompleter(smart_completion=True)
+    comp = sql_completer.SQLCompleter(smart_completion=True)
 
     tables, columns = [], []
 
@@ -56,9 +56,9 @@ def completer():
 
 @pytest.fixture
 def empty_completer():
-    from mycli.packages.completion import sql_completer as sqlcompleter
+    from mycli.packages.completion import sql_completer
 
-    comp = sqlcompleter.SQLCompleter(smart_completion=True)
+    comp = sql_completer.SQLCompleter(smart_completion=True)
 
     tables, columns = [], []
 
@@ -86,12 +86,12 @@ def complete_event():
 def test_use_database_completion(completer, complete_event):
     text = "USE "
     position = len(text)
-    special.register_special_command(
+    special_commands_main.register_special_command(
         ...,
         'use',
         '/use [database]',
         'Change to a new database.',
-        aliases=[special.SpecialCommandAlias('/use', case_sensitive=False)],
+        aliases=[special_commands_main.SpecialCommandAlias('/use', case_sensitive=False)],
     )
     result = completer.get_completions(Document(text=text, cursor_position=position), complete_event)
     assert list(result) == [
@@ -100,7 +100,7 @@ def test_use_database_completion(completer, complete_event):
     ]
 
 
-def test_special_name_completion(completer, complete_event):
+def test_special_commands_main_name_completion(completer, complete_event):
     text = "/d"
     position = len("/d")
     result = completer.get_completions(Document(text=text, cursor_position=position), complete_event)
@@ -120,10 +120,10 @@ def test_dsn_subcommand_completion(completer, complete_event):
 
 @pytest.mark.parametrize('command', ['edit', 'delete'])
 def test_dsn_alias_completion(completer, complete_event, monkeypatch, command):
-    from mycli.packages.completion import sql_completer as sqlcompleter
+    from mycli.packages.completion import sql_completer
 
     monkeypatch.setattr(
-        sqlcompleter.DsnAliases,
+        sql_completer.DsnAliases,
         'instance',
         SimpleNamespace(list=lambda: ['prod', 'staging']),
         raising=False,
@@ -877,12 +877,12 @@ def dummy_list_path(dir_name, *, sql_only=True):
 @pytest.mark.skipif(os.name == 'nt', reason='todo: unknown')
 def test_file_name_completion(completer, complete_event, text, expected):
     position = len(text)
-    special.register_special_command(
+    special_commands_main.register_special_command(
         ...,
         'source',
         '/. <file>',
         'Execute commands from file.',
-        aliases=[special.SpecialCommandAlias('/.', case_sensitive=False)],
+        aliases=[special_commands_main.SpecialCommandAlias('/.', case_sensitive=False)],
     )
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
     expected = [Completion(txt, pos) for txt, pos in expected]
@@ -920,12 +920,12 @@ def test_source_eager_completion(completer, complete_event, tmp_path, monkeypatc
     script_filename = 'do_these_statements.sql'
     f = open(script_filename, 'w')
     f.close()
-    special.register_special_command(
+    special_commands_main.register_special_command(
         ...,
         'source',
         '/. <file>',
         'Execute commands from file.',
-        aliases=[special.SpecialCommandAlias('/.', case_sensitive=False)],
+        aliases=[special_commands_main.SpecialCommandAlias('/.', case_sensitive=False)],
     )
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
     success = True
@@ -949,12 +949,12 @@ def test_source_completion_advances_into_nested_directories(completer, complete_
     nested = tmp_path / 'doc' / 'nested'
     nested.mkdir(parents=True)
     (nested / 'query.sql').touch()
-    special.register_special_command(
+    special_commands_main.register_special_command(
         ...,
         'source',
         '/. <file>',
         'Execute commands from file.',
-        aliases=[special.SpecialCommandAlias('/.', case_sensitive=False)],
+        aliases=[special_commands_main.SpecialCommandAlias('/.', case_sensitive=False)],
     )
 
     text = 'source doc/'
@@ -990,12 +990,12 @@ def test_file_commands_complete_slash_separated_prefixes(
     (nested / 'example.sql').touch()
     (nested / 'example.csv').touch()
     if command == 'source':
-        special.register_special_command(
+        special_commands_main.register_special_command(
             ...,
             'source',
             '/. <file>',
             'Execute commands from file.',
-            aliases=[special.SpecialCommandAlias('/.', case_sensitive=False)],
+            aliases=[special_commands_main.SpecialCommandAlias('/.', case_sensitive=False)],
         )
 
     path_prefix = './dir/sub/exa'
@@ -1011,12 +1011,12 @@ def test_source_completion_quotes_paths_with_spaces(completer, complete_event, t
     (tmp_path / 'spaced query.sql').touch()
     (tmp_path / 'spaced dir').mkdir()
     (tmp_path / 'spaced dir' / 'file.sql').touch()
-    special.register_special_command(
+    special_commands_main.register_special_command(
         ...,
         'source',
         '/. <file>',
         'Execute commands from file.',
-        aliases=[special.SpecialCommandAlias('/.', case_sensitive=False)],
+        aliases=[special_commands_main.SpecialCommandAlias('/.', case_sensitive=False)],
     )
 
     text = 'source spaced'
@@ -1043,9 +1043,9 @@ def test_source_completion_quotes_paths_with_spaces(completer, complete_event, t
 
 
 def test_non_source_file_completion_uses_current_path_token(completer, complete_event, monkeypatch):
-    from mycli.packages.completion import sql_completer as sqlcompleter
+    from mycli.packages.completion import sql_completer
 
-    monkeypatch.setattr(sqlcompleter, 'suggest_type', lambda *_args: [{'type': 'file_name'}])
+    monkeypatch.setattr(sql_completer, 'suggest_type', lambda *_args: [{'type': 'file_name'}])
     monkeypatch.setattr(completer, 'find_files', lambda _path: [('file.sql', 0)])
 
     result = list(completer.get_completions(Document('fi'), complete_event))
@@ -1054,12 +1054,12 @@ def test_non_source_file_completion_uses_current_path_token(completer, complete_
 
 
 def test_source_path_completion_uses_windows_quotes(monkeypatch: pytest.MonkeyPatch) -> None:
-    from mycli.packages.completion import sql_completer as sqlcompleter
+    from mycli.packages.completion import sql_completer
 
-    monkeypatch.setattr(sqlcompleter, 'WIN', True)
+    monkeypatch.setattr(sql_completer, 'WIN', True)
 
-    assert sqlcompleter.SQLCompleter._quote_source_path(r'C:\my queries\query.sql', None) == r'"C:\my queries\query.sql"'
-    assert sqlcompleter.SQLCompleter._quote_source_path('my directory/', None) == '"./my directory/'
+    assert sql_completer.SQLCompleter._quote_source_path(r'C:\my queries\query.sql', None) == r'"C:\my queries\query.sql"'
+    assert sql_completer.SQLCompleter._quote_source_path('my directory/', None) == '"./my directory/'
 
 
 def test_source_leading_dot_suggestions_completion(completer, complete_event, tmp_path, monkeypatch):
@@ -1070,12 +1070,12 @@ def test_source_leading_dot_suggestions_completion(completer, complete_event, tm
     script_filename = 'do_these_statements.sql'
     f = open(script_filename, 'w')
     f.close()
-    special.register_special_command(
+    special_commands_main.register_special_command(
         ...,
         'source',
         '/. <file>',
         'Execute commands from file.',
-        aliases=[special.SpecialCommandAlias('/.', case_sensitive=False)],
+        aliases=[special_commands_main.SpecialCommandAlias('/.', case_sensitive=False)],
     )
     result = list(completer.get_completions(Document(text=text, cursor_position=position), complete_event))
     success = True
@@ -1494,9 +1494,9 @@ def fk_completer():
         users  (id, email, first_name)
         tags   (id, name)                           no FK
     """
-    from mycli.packages.completion import sql_completer as sqlcompleter
+    from mycli.packages.completion import sql_completer
 
-    comp = sqlcompleter.SQLCompleter(smart_completion=True)
+    comp = sql_completer.SQLCompleter(smart_completion=True)
 
     tables = [("orders",), ("users",), ("tags",)]
     columns = [
@@ -1616,9 +1616,9 @@ def test_on_partial_text_filters_fk_condition(fk_completer, complete_event):
 
 def test_fk_reserved_column_names_are_escaped():
     """FK columns that are reserved words or need quoting must be backtick-escaped."""
-    from mycli.packages.completion import sql_completer as sqlcompleter
+    from mycli.packages.completion import sql_completer
 
-    comp = sqlcompleter.SQLCompleter(smart_completion=True)
+    comp = sql_completer.SQLCompleter(smart_completion=True)
     comp.extend_schemata("test")
     comp.set_dbname("test")
     comp.extend_foreign_keys([("orders", "order", "users", "select")])

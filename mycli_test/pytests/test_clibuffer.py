@@ -63,7 +63,7 @@ def test_multiline_exception_detects_commands_terminators_and_plain_sql(
     text: str,
     expected: bool,
 ) -> None:
-    monkeypatch.setattr(multiline.iocommands, 'get_current_delimiter', lambda: '//')
+    monkeypatch.setattr(multiline.io_commands, 'get_current_delimiter', lambda: '//')
     monkeypatch.setattr(multiline, 'CASE_SENSITIVE_COMMANDS', {'Camel'})
     monkeypatch.setattr(multiline, 'CASE_INSENSITIVE_COMMANDS', {'help', 'exit'})
 
@@ -88,7 +88,7 @@ def test_multiline_exception_recognizes_non_backslashed_special_commands_with_ge
     monkeypatch,
     text: str,
 ) -> None:
-    monkeypatch.setattr(multiline.iocommands, 'get_current_delimiter', lambda: ';')
+    monkeypatch.setattr(multiline.io_commands, 'get_current_delimiter', lambda: ';')
     monkeypatch.setattr(multiline, 'CASE_SENSITIVE_COMMANDS', {'Camel'})
     monkeypatch.setattr(multiline, 'CASE_INSENSITIVE_COMMANDS', {'help', 'exit'})
 
@@ -111,7 +111,7 @@ def test_repl_is_multiline_uses_buffer_text_when_multiline_mode_is_enabled(
     mycli = SimpleNamespace(multi_line=True)
 
     monkeypatch.setattr(multiline, 'get_app', lambda: app)
-    monkeypatch.setattr(multiline.iocommands, 'get_current_delimiter', lambda: ';')
+    monkeypatch.setattr(multiline.io_commands, 'get_current_delimiter', lambda: ';')
     monkeypatch.setattr(multiline, 'CASE_SENSITIVE_COMMANDS', {'Camel'})
     monkeypatch.setattr(multiline, 'CASE_INSENSITIVE_COMMANDS', {'help'})
 

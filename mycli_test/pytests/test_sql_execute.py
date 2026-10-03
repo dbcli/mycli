@@ -11,10 +11,10 @@ import pymysql
 import pytest
 
 from mycli.constants import TEST_DATABASE
-from mycli.packages.execution import sql_execute as sqlexecute
+from mycli.packages.execution import sql_execute
 from mycli.packages.execution.background_runner import BackgroundSSCursor
 from mycli.packages.execution.sql_execute import ServerInfo, ServerSpecies, SQLExecute
-from mycli.packages.special_commands import io_commands as iocommands
+from mycli.packages.special_commands import io_commands
 from mycli.packages.sql_result.sql_result import SQLResult
 from mycli_test.utils import dbtest, is_expanded_output, make_streaming_cursor, run, set_expanded_output
 
@@ -30,7 +30,7 @@ def assert_result_equal(
     auto_status=True,
     assert_contains=False,
 ):
-    """Assert that an sqlexecute.run() result matches the expected values."""
+    """Assert that an sql_execute.run() result matches the expected values."""
     if status_plain is None and auto_status and rows:
         status_plain = f"{len(rows)} row{'s' if len(rows) > 1 else ''} in set"
         status = FormattedText([('', status_plain)])
@@ -195,7 +195,7 @@ def test_multiple_queries_same_line_syntaxerror(executor):
 @dbtest
 @pytest.mark.skipif(os.name == "nt", reason="Bug: fails on Windows, needs fixing, singleton of FQ not working right")
 def test_favorite_query(executor, monkeypatch):
-    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', iocommands.favoritequeries, raising=False)
+    monkeypatch.setattr(io_commands.FavoriteQueries, 'instance', io_commands.favorite_queries, raising=False)
     set_expanded_output(False)
     run(executor, "create table test(a text)")
     run(executor, "insert into test values('abc')")
@@ -214,7 +214,7 @@ def test_favorite_query(executor, monkeypatch):
 @dbtest
 @pytest.mark.skipif(os.name == "nt", reason="Bug: fails on Windows, needs fixing, singleton of FQ not working right")
 def test_favorite_query_multiple_statement(executor, monkeypatch):
-    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', iocommands.favoritequeries, raising=False)
+    monkeypatch.setattr(io_commands.FavoriteQueries, 'instance', io_commands.favorite_queries, raising=False)
     set_expanded_output(False)
     run(executor, "create table test(a text)")
     run(executor, "insert into test values('abc')")
@@ -251,7 +251,7 @@ def test_favorite_query_multiple_statement(executor, monkeypatch):
 @dbtest
 @pytest.mark.skipif(os.name == "nt", reason="Bug: fails on Windows, needs fixing, singleton of FQ not working right")
 def test_favorite_query_expanded_output(executor, monkeypatch):
-    monkeypatch.setattr(iocommands.FavoriteQueries, 'instance', iocommands.favoritequeries, raising=False)
+    monkeypatch.setattr(io_commands.FavoriteQueries, 'instance', io_commands.favorite_queries, raising=False)
     set_expanded_output(False)
     run(executor, """create table test(a text)""")
     run(executor, """insert into test values('abc')""")
@@ -666,7 +666,7 @@ def test_connect_reattaches_existing_query_runner(monkeypatch: pytest.MonkeyPatc
     executor.query_runner = Mock()
     executor.conn = DummyConnection('5.7.0')
     conn = DummyConnection('5.7.0')
-    monkeypatch.setattr(sqlexecute.pymysql, 'connect', Mock(return_value=conn))
+    monkeypatch.setattr(sql_execute.pymysql, 'connect', Mock(return_value=conn))
     monkeypatch.setattr(executor, 'reset_connection_id', Mock())
     monkeypatch.setattr(executor, '_probe_doris_version', Mock(return_value=None))
 
@@ -682,7 +682,7 @@ def test_connect_query_monitor_uses_isolated_connection_options(monkeypatch: pyt
     conn = DummyConnection('5.7.0')
     monitor = DummyConnection('5.7.0')
     connect = Mock(side_effect=[conn, monitor])
-    monkeypatch.setattr(sqlexecute.pymysql, 'connect', connect)
+    monkeypatch.setattr(sql_execute.pymysql, 'connect', connect)
     monkeypatch.setattr(executor, 'reset_connection_id', Mock())
     monkeypatch.setattr(executor, '_probe_doris_version', Mock(return_value=None))
     executor.connect()
@@ -694,7 +694,7 @@ def test_connect_query_monitor_uses_isolated_connection_options(monkeypatch: pyt
     expected.update(
         database=None,
         init_command=None,
-        cursorclass=sqlexecute.Cursor,
+        cursorclass=sql_execute.Cursor,
         defer_connect=False,
         autocommit=True,
         connect_timeout=2,
@@ -789,7 +789,7 @@ def test_connect_updates_connection_state_and_merges_overrides(monkeypatch) -> N
         reset_calls.append(True)
         self.connection_id = 42
 
-    monkeypatch.setattr(sqlexecute.pymysql, 'connect', fake_connect)
+    monkeypatch.setattr(sql_execute.pymysql, 'connect', fake_connect)
     monkeypatch.setattr(SQLExecute, '_create_ssl_ctx', fake_create_ssl_ctx)
     monkeypatch.setattr(SQLExecute, 'reset_connection_id', fake_reset_connection_id)
 
@@ -817,9 +817,9 @@ def test_connect_updates_connection_state_and_merges_overrides(monkeypatch) -> N
     assert connect_kwargs['ssl'] is ssl_context
     assert connect_kwargs['defer_connect'] is False
     assert connect_kwargs['init_command'] == 'select 1; select 2'
-    assert connect_kwargs['cursorclass'] is sqlexecute.pymysql.cursors.SSCursor
-    assert connect_kwargs['client_flag'] & sqlexecute.pymysql.constants.CLIENT.INTERACTIVE
-    assert connect_kwargs['client_flag'] & sqlexecute.pymysql.constants.CLIENT.MULTI_STATEMENTS
+    assert connect_kwargs['cursorclass'] is sql_execute.pymysql.cursors.SSCursor
+    assert connect_kwargs['client_flag'] & sql_execute.pymysql.constants.CLIENT.INTERACTIVE
+    assert connect_kwargs['client_flag'] & sql_execute.pymysql.constants.CLIENT.MULTI_STATEMENTS
     assert connect_kwargs['program_name'] == 'mycli'
     assert previous_conn.close_calls == 1
     assert executor.conn is new_conn
@@ -852,12 +852,12 @@ def test_connect_sets_expired_password_flag(monkeypatch) -> None:
         connect_kwargs.update(kwargs)
         return new_conn
 
-    monkeypatch.setattr(sqlexecute.pymysql, 'connect', fake_connect)
+    monkeypatch.setattr(sql_execute.pymysql, 'connect', fake_connect)
     monkeypatch.setattr(SQLExecute, 'reset_connection_id', lambda self: None)
 
     executor.connect()
 
-    assert connect_kwargs['client_flag'] & sqlexecute.pymysql.constants.CLIENT.HANDLE_EXPIRED_PASSWORDS
+    assert connect_kwargs['client_flag'] & sql_execute.pymysql.constants.CLIENT.HANDLE_EXPIRED_PASSWORDS
     assert executor.sandbox_mode is False
 
 
@@ -866,7 +866,7 @@ def test_connect_replaces_mysql_server_info_when_doris_probe_succeeds(monkeypatc
     executor.ssl = None
     new_conn = DummyConnection(server_version='8.0.36')
 
-    monkeypatch.setattr(sqlexecute.pymysql, 'connect', lambda **_kwargs: new_conn)
+    monkeypatch.setattr(sql_execute.pymysql, 'connect', lambda **_kwargs: new_conn)
     monkeypatch.setattr(SQLExecute, 'reset_connection_id', lambda self: None)
     monkeypatch.setattr(SQLExecute, '_probe_doris_version', lambda self: '2.1.7')
 
@@ -895,7 +895,7 @@ def test_connect_falls_back_to_sandbox_on_1820(monkeypatch) -> None:
     def fake_connect_sandbox(self, conn):
         sandbox_calls.append(conn)
 
-    monkeypatch.setattr(sqlexecute.pymysql, 'connect', fake_connect)
+    monkeypatch.setattr(sql_execute.pymysql, 'connect', fake_connect)
     monkeypatch.setattr(SQLExecute, '_connect_sandbox', fake_connect_sandbox)
 
     executor.connect()
@@ -913,13 +913,13 @@ def test_connect_enters_sandbox_after_ssl_fallback(monkeypatch: pytest.MonkeyPat
     new_conn = DummyConnection(server_version='8.0.36')
     connect = Mock(
         side_effect=[
-            pymysql.OperationalError(sqlexecute.CR_SSL_CONNECTION_ERROR, 'SSL unsupported'),
-            pymysql.OperationalError(sqlexecute.ER_MUST_CHANGE_PASSWORD, 'must change password'),
+            pymysql.OperationalError(sql_execute.CR_SSL_CONNECTION_ERROR, 'SSL unsupported'),
+            pymysql.OperationalError(sql_execute.ER_MUST_CHANGE_PASSWORD, 'must change password'),
             new_conn,
         ]
     )
     sandbox = Mock()
-    monkeypatch.setattr(sqlexecute.pymysql, 'connect', connect)
+    monkeypatch.setattr(sql_execute.pymysql, 'connect', connect)
     monkeypatch.setattr(executor, '_connect_sandbox', sandbox)
 
     executor.connect()
@@ -947,11 +947,11 @@ def test_connect_ssl_fallback_succeeds_without_sandbox(monkeypatch: pytest.Monke
     new_conn = DummyConnection(server_version='8.0.36')
     connect = Mock(
         side_effect=[
-            pymysql.OperationalError(sqlexecute.CR_SSL_CONNECTION_ERROR, 'SSL unsupported'),
+            pymysql.OperationalError(sql_execute.CR_SSL_CONNECTION_ERROR, 'SSL unsupported'),
             new_conn,
         ]
     )
-    monkeypatch.setattr(sqlexecute.pymysql, 'connect', connect)
+    monkeypatch.setattr(sql_execute.pymysql, 'connect', connect)
     monkeypatch.setattr(executor, 'reset_connection_id', lambda: None)
     monkeypatch.setattr(executor, '_probe_doris_version', lambda: None)
 
@@ -964,18 +964,18 @@ def test_connect_ssl_fallback_succeeds_without_sandbox(monkeypatch: pytest.Monke
     assert executor.sandbox_mode is False
 
 
-@pytest.mark.parametrize('error_code', [1045, sqlexecute.CR_SSL_CONNECTION_ERROR])
+@pytest.mark.parametrize('error_code', [1045, sql_execute.CR_SSL_CONNECTION_ERROR])
 def test_connect_ssl_fallback_propagates_other_errors(monkeypatch: pytest.MonkeyPatch, error_code: int) -> None:
     executor = make_executor_for_connect_tests()
     executor.ssl = {'mode': 'auto'}
     retry_error = pymysql.OperationalError(error_code, 'retry failed')
     connect = Mock(
         side_effect=[
-            pymysql.OperationalError(sqlexecute.CR_SSL_CONNECTION_ERROR, 'SSL unsupported'),
+            pymysql.OperationalError(sql_execute.CR_SSL_CONNECTION_ERROR, 'SSL unsupported'),
             retry_error,
         ]
     )
-    monkeypatch.setattr(sqlexecute.pymysql, 'connect', connect)
+    monkeypatch.setattr(sql_execute.pymysql, 'connect', connect)
 
     with pytest.raises(pymysql.OperationalError) as exc_info:
         executor.connect()
@@ -988,9 +988,9 @@ def test_connect_ssl_fallback_propagates_other_errors(monkeypatch: pytest.Monkey
 def test_connect_required_ssl_does_not_fall_back(monkeypatch: pytest.MonkeyPatch) -> None:
     executor = make_executor_for_connect_tests()
     executor.ssl = {'mode': 'on'}
-    error = pymysql.OperationalError(sqlexecute.CR_SSL_CONNECTION_ERROR, 'SSL unsupported')
+    error = pymysql.OperationalError(sql_execute.CR_SSL_CONNECTION_ERROR, 'SSL unsupported')
     connect = Mock(side_effect=error)
-    monkeypatch.setattr(sqlexecute.pymysql, 'connect', connect)
+    monkeypatch.setattr(sql_execute.pymysql, 'connect', connect)
 
     with pytest.raises(pymysql.OperationalError) as exc_info:
         executor.connect()
@@ -1006,7 +1006,7 @@ def test_connect_reraises_non_sandbox_operational_error(monkeypatch) -> None:
     def fake_connect(**_kwargs):
         raise pymysql.OperationalError(1045, 'access denied')
 
-    monkeypatch.setattr(sqlexecute.pymysql, 'connect', fake_connect)
+    monkeypatch.setattr(sql_execute.pymysql, 'connect', fake_connect)
 
     with pytest.raises(pymysql.OperationalError) as exc_info:
         executor.connect()
@@ -1098,7 +1098,7 @@ def test_run_returns_empty_result_for_blank_statement(monkeypatch) -> None:
         split_inputs.append(statement)
         return iter(())
 
-    monkeypatch.setattr(sqlexecute.iocommands, 'split_queries', fake_split_queries)
+    monkeypatch.setattr(sql_execute.io_commands, 'split_queries', fake_split_queries)
 
     executor = make_executor_for_run_tests()
 
@@ -1128,9 +1128,9 @@ def test_run_does_not_split_favorite_query(monkeypatch, favorite_sql: str) -> No
     def fail_split_queries(_statement: str):
         raise AssertionError('split_queries() should not be called for favorite queries')
 
-    monkeypatch.setattr(sqlexecute, 'Connection', FakeQueryConnection)
-    monkeypatch.setattr(sqlexecute, 'execute', fake_execute)
-    monkeypatch.setattr(sqlexecute.iocommands, 'split_queries', fail_split_queries)
+    monkeypatch.setattr(sql_execute, 'Connection', FakeQueryConnection)
+    monkeypatch.setattr(sql_execute, 'execute', fake_execute)
+    monkeypatch.setattr(sql_execute.io_commands, 'split_queries', fail_split_queries)
 
     executor = make_executor_for_run_tests(FakeQueryConnection([cursor]))
 
@@ -1151,9 +1151,9 @@ def test_run_uses_special_command_results_without_regular_execution(monkeypatch)
     def fail_get_result(_self: SQLExecute, _cursor: object) -> SQLResult:
         raise AssertionError('get_result() should not be called for handled special commands')
 
-    monkeypatch.setattr(sqlexecute, 'Connection', FakeQueryConnection)
-    monkeypatch.setattr(sqlexecute, 'execute', fake_execute)
-    monkeypatch.setattr(sqlexecute.iocommands, 'split_queries', lambda statement: iter([statement]))
+    monkeypatch.setattr(sql_execute, 'Connection', FakeQueryConnection)
+    monkeypatch.setattr(sql_execute, 'execute', fake_execute)
+    monkeypatch.setattr(sql_execute.io_commands, 'split_queries', lambda statement: iter([statement]))
     monkeypatch.setattr(SQLExecute, 'get_result', fail_get_result)
 
     executor = make_executor_for_run_tests(FakeQueryConnection([cursor]))
@@ -1170,31 +1170,31 @@ def test_run_falls_back_to_regular_sql_and_handles_output_flags(monkeypatch) -> 
     get_result_calls: list[list[str]] = []
 
     def fake_execute(_cur: FakeQueryCursor, _sql: str) -> list[SQLResult]:
-        raise sqlexecute.CommandNotFound('not a special command')
+        raise sql_execute.CommandNotFound('not a special command')
 
     def fake_get_result(_self: SQLExecute, cursor: FakeQueryCursor) -> SQLResult:
         get_result_calls.append(list(cursor.executed))
         return SQLResult(status=f'ran {cursor.executed[-1]}')
 
-    monkeypatch.setattr(sqlexecute, 'Connection', FakeQueryConnection)
-    monkeypatch.setattr(sqlexecute, 'execute', fake_execute)
+    monkeypatch.setattr(sql_execute, 'Connection', FakeQueryConnection)
+    monkeypatch.setattr(sql_execute, 'execute', fake_execute)
     monkeypatch.setattr(
-        sqlexecute.iocommands,
+        sql_execute.io_commands,
         'split_queries',
         lambda _statement: iter(['select 1\\G', 'select 2\\g', 'select 3\\x']),
     )
     monkeypatch.setattr(
-        sqlexecute.iocommands,
+        sql_execute.io_commands,
         'set_expanded_output',
         lambda value: expanded_values.append(value),
     )
     monkeypatch.setattr(
-        sqlexecute.iocommands,
+        sql_execute.io_commands,
         'set_forced_horizontal_output',
         lambda value: forced_horizontal_values.append(value),
     )
     monkeypatch.setattr(
-        sqlexecute.iocommands,
+        sql_execute.io_commands,
         'set_explorer_output',
         lambda value: explorer_values.append(value),
     )
@@ -1222,15 +1222,15 @@ def test_run_yields_each_non_empty_result_set_until_nextset_is_false(monkeypatch
     get_result_calls: list[int] = []
 
     def fake_execute(_cur: FakeQueryCursor, _sql: str) -> list[SQLResult]:
-        raise sqlexecute.CommandNotFound('not a special command')
+        raise sql_execute.CommandNotFound('not a special command')
 
     def fake_get_result(_self: SQLExecute, _cursor: FakeQueryCursor) -> SQLResult:
         get_result_calls.append(len(get_result_calls) + 1)
         return SQLResult(status=f'result {len(get_result_calls)}')
 
-    monkeypatch.setattr(sqlexecute, 'Connection', FakeQueryConnection)
-    monkeypatch.setattr(sqlexecute, 'execute', fake_execute)
-    monkeypatch.setattr(sqlexecute.iocommands, 'split_queries', lambda statement: iter([statement]))
+    monkeypatch.setattr(sql_execute, 'Connection', FakeQueryConnection)
+    monkeypatch.setattr(sql_execute, 'execute', fake_execute)
+    monkeypatch.setattr(sql_execute.io_commands, 'split_queries', lambda statement: iter([statement]))
     monkeypatch.setattr(SQLExecute, 'get_result', fake_get_result)
 
     executor = make_executor_for_run_tests(FakeQueryConnection([cursor]))
@@ -1247,15 +1247,15 @@ def test_run_skips_trailing_empty_result_set_from_nextset(monkeypatch) -> None:
     get_result_calls: list[int] = []
 
     def fake_execute(_cur: FakeQueryCursor, _sql: str) -> list[SQLResult]:
-        raise sqlexecute.CommandNotFound('not a special command')
+        raise sql_execute.CommandNotFound('not a special command')
 
     def fake_get_result(_self: SQLExecute, _cursor: FakeQueryCursor) -> SQLResult:
         get_result_calls.append(1)
         return SQLResult(status='result 1')
 
-    monkeypatch.setattr(sqlexecute, 'Connection', FakeQueryConnection)
-    monkeypatch.setattr(sqlexecute, 'execute', fake_execute)
-    monkeypatch.setattr(sqlexecute.iocommands, 'split_queries', lambda statement: iter([statement]))
+    monkeypatch.setattr(sql_execute, 'Connection', FakeQueryConnection)
+    monkeypatch.setattr(sql_execute, 'execute', fake_execute)
+    monkeypatch.setattr(sql_execute.io_commands, 'split_queries', lambda statement: iter([statement]))
     monkeypatch.setattr(SQLExecute, 'get_result', fake_get_result)
 
     executor = make_executor_for_run_tests(FakeQueryConnection([cursor]))
@@ -1354,7 +1354,7 @@ def test_streaming_statement_without_result_set_retains_affected_row_count() -> 
 def test_tables_executes_show_tables_query_and_yields_rows(monkeypatch) -> None:
     cursor = FakeMetadataCursor([('users',), ('orders',)])
     executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
-    monkeypatch.setattr(sqlexecute, 'Connection', FakeMetadataConnection)
+    monkeypatch.setattr(sql_execute, 'Connection', FakeMetadataConnection)
 
     result = list(executor.tables())
 
@@ -1367,7 +1367,7 @@ def test_tables_executes_show_tables_query_and_yields_rows(monkeypatch) -> None:
 def test_tables_returns_empty_generator_when_no_tables_exist(monkeypatch) -> None:
     cursor = FakeMetadataCursor([])
     executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
-    monkeypatch.setattr(sqlexecute, 'Connection', FakeMetadataConnection)
+    monkeypatch.setattr(sql_execute, 'Connection', FakeMetadataConnection)
 
     result = list(executor.tables())
 
@@ -1379,7 +1379,7 @@ def test_table_columns_executes_query_with_dbname_and_yields_rows(monkeypatch) -
     cursor = FakeMetadataCursor([('users', 'id'), ('users', 'email'), ('orders', 'id')])
     executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
     executor.dbname = 'app_db'
-    monkeypatch.setattr(sqlexecute, 'Connection', FakeMetadataConnection)
+    monkeypatch.setattr(sql_execute, 'Connection', FakeMetadataConnection)
 
     result = list(executor.table_columns())
 
@@ -1393,7 +1393,7 @@ def test_table_columns_returns_empty_generator_when_schema_has_no_tables(monkeyp
     cursor = FakeMetadataCursor([])
     executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
     executor.dbname = 'empty_db'
-    monkeypatch.setattr(sqlexecute, 'Connection', FakeMetadataConnection)
+    monkeypatch.setattr(sql_execute, 'Connection', FakeMetadataConnection)
 
     result = list(executor.table_columns())
 
@@ -1412,7 +1412,7 @@ def test_indexed_columns_executes_query_and_yields_rows(monkeypatch, schema, exp
     cursor = FakeMetadataCursor([('users', 'id'), ('orders', 'customer_id')])
     executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
     executor.dbname = 'app_db'
-    monkeypatch.setattr(sqlexecute, 'Connection', FakeMetadataConnection)
+    monkeypatch.setattr(sql_execute, 'Connection', FakeMetadataConnection)
 
     result = list(executor.indexed_columns(schema=schema))
 
@@ -1428,7 +1428,7 @@ def test_indexed_columns_returns_empty_generator_and_logs_execute_errors(monkeyp
     cursor = FakeMetadataCursor([], execute_error=RuntimeError('boom'))
     executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
     executor.dbname = 'app_db'
-    monkeypatch.setattr(sqlexecute, 'Connection', FakeMetadataConnection)
+    monkeypatch.setattr(sql_execute, 'Connection', FakeMetadataConnection)
 
     with caplog.at_level('ERROR', logger='mycli.packages.execution.sql_execute'):
         result = list(executor.indexed_columns())
@@ -1447,7 +1447,7 @@ def test_enum_values_executes_query_and_skips_non_enum_columns(monkeypatch) -> N
     ])
     executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
     executor.dbname = 'app_db'
-    monkeypatch.setattr(sqlexecute, 'Connection', FakeMetadataConnection)
+    monkeypatch.setattr(sql_execute, 'Connection', FakeMetadataConnection)
 
     result = list(executor.enum_values())
 
@@ -1461,7 +1461,7 @@ def test_enum_values_returns_empty_generator_when_no_enum_values_are_found(monke
     cursor = FakeMetadataCursor([('orders', 'notes', 'varchar(255)')])
     executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
     executor.dbname = 'empty_db'
-    monkeypatch.setattr(sqlexecute, 'Connection', FakeMetadataConnection)
+    monkeypatch.setattr(sql_execute, 'Connection', FakeMetadataConnection)
 
     result = list(executor.enum_values())
 
@@ -1476,7 +1476,7 @@ def test_foreign_keys_executes_query_with_dbname_and_yields_rows(monkeypatch) ->
     ])
     executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
     executor.dbname = 'app_db'
-    monkeypatch.setattr(sqlexecute, 'Connection', FakeMetadataConnection)
+    monkeypatch.setattr(sql_execute, 'Connection', FakeMetadataConnection)
 
     result = list(executor.foreign_keys())
 
@@ -1493,7 +1493,7 @@ def test_foreign_keys_returns_empty_generator_and_logs_execute_errors(monkeypatc
     cursor = FakeMetadataCursor([], execute_error=RuntimeError('boom'))
     executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
     executor.dbname = 'app_db'
-    monkeypatch.setattr(sqlexecute, 'Connection', FakeMetadataConnection)
+    monkeypatch.setattr(sql_execute, 'Connection', FakeMetadataConnection)
 
     with caplog.at_level('ERROR', logger='mycli.packages.execution.sql_execute'):
         result = list(executor.foreign_keys())
@@ -1508,7 +1508,7 @@ def test_foreign_keys_returns_empty_generator_and_logs_execute_errors(monkeypatc
 def test_databases_executes_show_databases_and_flattens_names(monkeypatch) -> None:
     cursor = FakeMetadataCursor([('mysql',), ('information_schema',), ('app_db',)])
     executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
-    monkeypatch.setattr(sqlexecute, 'Connection', FakeMetadataConnection)
+    monkeypatch.setattr(sql_execute, 'Connection', FakeMetadataConnection)
 
     result = executor.databases()
 
@@ -1521,7 +1521,7 @@ def test_databases_executes_show_databases_and_flattens_names(monkeypatch) -> No
 def test_databases_returns_empty_list_when_no_databases_are_found(monkeypatch) -> None:
     cursor = FakeMetadataCursor([])
     executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
-    monkeypatch.setattr(sqlexecute, 'Connection', FakeMetadataConnection)
+    monkeypatch.setattr(sql_execute, 'Connection', FakeMetadataConnection)
 
     result = executor.databases()
 
@@ -1533,7 +1533,7 @@ def test_functions_executes_query_with_dbname_and_yields_rows(monkeypatch) -> No
     cursor = FakeMetadataCursor([('calculate_total',), ('format_order',)])
     executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
     executor.dbname = 'app_db'
-    monkeypatch.setattr(sqlexecute, 'Connection', FakeMetadataConnection)
+    monkeypatch.setattr(sql_execute, 'Connection', FakeMetadataConnection)
 
     result = list(executor.functions())
 
@@ -1547,7 +1547,7 @@ def test_functions_returns_empty_generator_when_schema_has_no_functions(monkeypa
     cursor = FakeMetadataCursor([])
     executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
     executor.dbname = 'empty_db'
-    monkeypatch.setattr(sqlexecute, 'Connection', FakeMetadataConnection)
+    monkeypatch.setattr(sql_execute, 'Connection', FakeMetadataConnection)
 
     result = list(executor.functions())
 
@@ -1559,7 +1559,7 @@ def test_procedures_executes_query_with_dbname_and_yields_rows(monkeypatch) -> N
     cursor = FakeMetadataCursor([('refresh_orders',), ('archive_orders',)])
     executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
     executor.dbname = 'app_db'
-    monkeypatch.setattr(sqlexecute, 'Connection', FakeMetadataConnection)
+    monkeypatch.setattr(sql_execute, 'Connection', FakeMetadataConnection)
 
     result = list(executor.procedures())
 
@@ -1573,7 +1573,7 @@ def test_procedures_yields_empty_tuple_and_logs_database_errors(monkeypatch, cap
     cursor = FakeMetadataCursor([], execute_error=pymysql.DatabaseError('boom'))
     executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
     executor.dbname = 'app_db'
-    monkeypatch.setattr(sqlexecute, 'Connection', FakeMetadataConnection)
+    monkeypatch.setattr(sql_execute, 'Connection', FakeMetadataConnection)
 
     with caplog.at_level('ERROR', logger='mycli.packages.execution.sql_execute'):
         result = list(executor.procedures())
@@ -1588,7 +1588,7 @@ def test_procedures_yields_empty_tuple_and_logs_database_errors(monkeypatch, cap
 def test_character_sets_executes_query_and_yields_rows(monkeypatch) -> None:
     cursor = FakeMetadataCursor([('utf8mb4',), ('latin1',)])
     executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
-    monkeypatch.setattr(sqlexecute, 'Connection', FakeMetadataConnection)
+    monkeypatch.setattr(sql_execute, 'Connection', FakeMetadataConnection)
 
     result = list(executor.character_sets())
 
@@ -1601,7 +1601,7 @@ def test_character_sets_executes_query_and_yields_rows(monkeypatch) -> None:
 def test_character_sets_yields_empty_tuple_and_logs_database_errors(monkeypatch, caplog) -> None:
     cursor = FakeMetadataCursor([], execute_error=pymysql.DatabaseError('boom'))
     executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
-    monkeypatch.setattr(sqlexecute, 'Connection', FakeMetadataConnection)
+    monkeypatch.setattr(sql_execute, 'Connection', FakeMetadataConnection)
 
     with caplog.at_level('ERROR', logger='mycli.packages.execution.sql_execute'):
         result = list(executor.character_sets())
@@ -1616,7 +1616,7 @@ def test_character_sets_yields_empty_tuple_and_logs_database_errors(monkeypatch,
 def test_collations_executes_query_and_yields_rows(monkeypatch) -> None:
     cursor = FakeMetadataCursor([('utf8mb4_general_ci',), ('latin1_swedish_ci',)])
     executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
-    monkeypatch.setattr(sqlexecute, 'Connection', FakeMetadataConnection)
+    monkeypatch.setattr(sql_execute, 'Connection', FakeMetadataConnection)
 
     result = list(executor.collations())
 
@@ -1629,7 +1629,7 @@ def test_collations_executes_query_and_yields_rows(monkeypatch) -> None:
 def test_collations_yields_empty_tuple_and_logs_database_errors(monkeypatch, caplog) -> None:
     cursor = FakeMetadataCursor([], execute_error=pymysql.DatabaseError('boom'))
     executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
-    monkeypatch.setattr(sqlexecute, 'Connection', FakeMetadataConnection)
+    monkeypatch.setattr(sql_execute, 'Connection', FakeMetadataConnection)
 
     with caplog.at_level('ERROR', logger='mycli.packages.execution.sql_execute'):
         result = list(executor.collations())
@@ -1644,7 +1644,7 @@ def test_collations_yields_empty_tuple_and_logs_database_errors(monkeypatch, cap
 def test_show_candidates_executes_query_and_strips_show_prefix(monkeypatch) -> None:
     cursor = FakeMetadataCursor([('SHOW DATABASES',), ('SHOW FULL TABLES',)])
     executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
-    monkeypatch.setattr(sqlexecute, 'Connection', FakeMetadataConnection)
+    monkeypatch.setattr(sql_execute, 'Connection', FakeMetadataConnection)
 
     result = list(executor.show_candidates())
 
@@ -1657,7 +1657,7 @@ def test_show_candidates_executes_query_and_strips_show_prefix(monkeypatch) -> N
 def test_show_candidates_yields_empty_tuple_and_logs_database_errors(monkeypatch, caplog) -> None:
     cursor = FakeMetadataCursor([], execute_error=pymysql.DatabaseError('boom'))
     executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
-    monkeypatch.setattr(sqlexecute, 'Connection', FakeMetadataConnection)
+    monkeypatch.setattr(sql_execute, 'Connection', FakeMetadataConnection)
 
     with caplog.at_level('ERROR', logger='mycli.packages.execution.sql_execute'):
         result = list(executor.show_candidates())
@@ -1672,7 +1672,7 @@ def test_show_candidates_yields_empty_tuple_and_logs_database_errors(monkeypatch
 def test_users_executes_query_and_yields_rows(monkeypatch) -> None:
     cursor = FakeMetadataCursor([("'alice'@'localhost'",), ("'bob'@'%'",)])
     executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
-    monkeypatch.setattr(sqlexecute, 'Connection', FakeMetadataConnection)
+    monkeypatch.setattr(sql_execute, 'Connection', FakeMetadataConnection)
 
     result = list(executor.users())
 
@@ -1685,7 +1685,7 @@ def test_users_executes_query_and_yields_rows(monkeypatch) -> None:
 def test_users_yields_empty_tuple_and_logs_database_errors(monkeypatch, caplog) -> None:
     cursor = FakeMetadataCursor([], execute_error=pymysql.DatabaseError('boom'))
     executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
-    monkeypatch.setattr(sqlexecute, 'Connection', FakeMetadataConnection)
+    monkeypatch.setattr(sql_execute, 'Connection', FakeMetadataConnection)
 
     with caplog.at_level('ERROR', logger='mycli.packages.execution.sql_execute'):
         result = list(executor.users())
@@ -1698,10 +1698,10 @@ def test_users_yields_empty_tuple_and_logs_database_errors(monkeypatch, caplog) 
 
 
 def test_now_returns_database_timestamp_from_first_row(monkeypatch) -> None:
-    timestamp = sqlexecute.datetime.datetime(2024, 1, 2, 3, 4, 5)
+    timestamp = sql_execute.datetime.datetime(2024, 1, 2, 3, 4, 5)
     cursor = FakeMetadataCursor([(timestamp,)])
     executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
-    monkeypatch.setattr(sqlexecute, 'Connection', FakeMetadataConnection)
+    monkeypatch.setattr(sql_execute, 'Connection', FakeMetadataConnection)
 
     result = executor.now()
 
@@ -1712,17 +1712,17 @@ def test_now_returns_database_timestamp_from_first_row(monkeypatch) -> None:
 
 
 def test_now_falls_back_to_local_datetime_when_query_returns_no_rows(monkeypatch) -> None:
-    fallback = sqlexecute.datetime.datetime(2024, 6, 7, 8, 9, 10)
+    fallback = sql_execute.datetime.datetime(2024, 6, 7, 8, 9, 10)
     cursor = FakeMetadataCursor([])
     executor = make_executor_for_run_tests(FakeMetadataConnection(cursor))
 
     class FakeDateTime:
         @classmethod
-        def now(cls) -> sqlexecute.datetime.datetime:
+        def now(cls) -> sql_execute.datetime.datetime:
             return fallback
 
-    monkeypatch.setattr(sqlexecute, 'Connection', FakeMetadataConnection)
-    monkeypatch.setattr(sqlexecute.datetime, 'datetime', FakeDateTime)
+    monkeypatch.setattr(sql_execute, 'Connection', FakeMetadataConnection)
+    monkeypatch.setattr(sql_execute.datetime, 'datetime', FakeDateTime)
 
     result = executor.now()
 
@@ -1766,7 +1766,7 @@ def test_reset_connection_id_sets_connection_id_from_query_result(monkeypatch) -
         run_calls.append(sql)
         return [SimpleNamespace(rows=FakeConnectionIdCursor((789,)))]
 
-    monkeypatch.setattr(sqlexecute, 'Cursor', FakeConnectionIdCursor)
+    monkeypatch.setattr(sql_execute, 'Cursor', FakeConnectionIdCursor)
     monkeypatch.setattr(executor, 'run', fake_run)
 
     executor.reset_connection_id()
@@ -1779,7 +1779,7 @@ def test_reset_connection_id_sets_minus_one_when_query_returns_no_row(monkeypatc
     executor = make_executor_for_run_tests()
     executor.connection_id = None
 
-    monkeypatch.setattr(sqlexecute, 'Cursor', FakeConnectionIdCursor)
+    monkeypatch.setattr(sql_execute, 'Cursor', FakeConnectionIdCursor)
     monkeypatch.setattr(
         executor,
         'run',
@@ -1806,7 +1806,7 @@ def test_reset_connection_id_sets_minus_one_and_logs_errors_for_invalid_results(
     executor = make_executor_for_run_tests()
     executor.connection_id = None
 
-    monkeypatch.setattr(sqlexecute, 'Cursor', FakeConnectionIdCursor)
+    monkeypatch.setattr(sql_execute, 'Cursor', FakeConnectionIdCursor)
     monkeypatch.setattr(executor, 'run', lambda _sql: [SimpleNamespace(rows=object())])
 
     with caplog.at_level('ERROR', logger='mycli.packages.execution.sql_execute'):
@@ -1820,7 +1820,7 @@ def test_change_db_selects_database_and_updates_dbname(monkeypatch) -> None:
     conn = FakeSelectableConnection()
     executor = make_executor_for_run_tests(conn)
     executor.dbname = 'old_db'
-    monkeypatch.setattr(sqlexecute, 'Connection', FakeSelectableConnection)
+    monkeypatch.setattr(sql_execute, 'Connection', FakeSelectableConnection)
 
     executor.change_db('new_db')
 
@@ -1832,7 +1832,7 @@ def test_change_db_runs_selection_through_query_runner(monkeypatch: pytest.Monke
     conn = FakeSelectableConnection()
     executor = make_executor_for_run_tests(conn)
     executor.dbname = 'old_db'
-    monkeypatch.setattr(sqlexecute, 'Connection', FakeSelectableConnection)
+    monkeypatch.setattr(sql_execute, 'Connection', FakeSelectableConnection)
 
     def call(operation: Callable[[], None]) -> None:
         assert conn.selected_databases == []
@@ -1851,7 +1851,7 @@ def test_change_db_runs_selection_through_query_runner(monkeypatch: pytest.Monke
 
 @pytest.mark.parametrize('background', [False, True])
 def test_change_db_preserves_database_on_selection_error(background: bool) -> None:
-    conn = Mock(spec=sqlexecute.Connection)
+    conn = Mock(spec=sql_execute.Connection)
     error = pymysql.err.OperationalError(1049, 'Unknown database')
     conn.select_db.side_effect = error
     executor = make_executor_for_run_tests(conn)
@@ -1879,15 +1879,15 @@ def test_create_ssl_ctx_without_ca_disables_hostname_check_and_verification(monk
         create_default_context_calls.append((cafile, capath))
         return ctx
 
-    monkeypatch.setattr(sqlexecute.ssllib, 'create_default_context', fake_create_default_context)
+    monkeypatch.setattr(sql_execute.ssllib, 'create_default_context', fake_create_default_context)
 
     result = executor._create_ssl_ctx({})
 
     assert result is ctx
     assert create_default_context_calls == [(None, None)]
     assert ctx.check_hostname is False
-    assert ctx.verify_mode == sqlexecute.ssllib.CERT_NONE
-    assert ctx.minimum_version == sqlexecute.ssllib.TLSVersion.TLSv1_2
+    assert ctx.verify_mode == sql_execute.ssllib.CERT_NONE
+    assert ctx.minimum_version == sql_execute.ssllib.TLSVersion.TLSv1_2
     assert ctx.maximum_version is None
     assert ctx.loaded_cert_chain is None
     assert ctx.cipher_string is None
@@ -1903,7 +1903,7 @@ def test_create_ssl_ctx_applies_cert_cipher_and_tls_version(monkeypatch) -> None
         return ctx
 
     monkeypatch.setattr(
-        sqlexecute.ssllib,
+        sql_execute.ssllib,
         'create_default_context',
         fake_create_default_context,
     )
@@ -1920,26 +1920,26 @@ def test_create_ssl_ctx_applies_cert_cipher_and_tls_version(monkeypatch) -> None
     assert result is ctx
     assert create_default_context_calls == [('/tmp/ca.pem', None)]
     assert ctx.check_hostname is False
-    assert ctx.verify_mode == sqlexecute.ssllib.CERT_REQUIRED
+    assert ctx.verify_mode == sql_execute.ssllib.CERT_REQUIRED
     assert ctx.loaded_cert_chain == ('/tmp/client-cert.pem', '/tmp/client-key.pem')
     assert ctx.cipher_string == 'ECDHE-RSA-AES256-GCM-SHA384'
-    assert ctx.minimum_version == sqlexecute.ssllib.TLSVersion.TLSv1_3
-    assert ctx.maximum_version == sqlexecute.ssllib.TLSVersion.TLSv1_3
+    assert ctx.minimum_version == sql_execute.ssllib.TLSVersion.TLSv1_3
+    assert ctx.maximum_version == sql_execute.ssllib.TLSVersion.TLSv1_3
 
 
 @pytest.mark.parametrize(
     ('tls_version', 'expected_version'),
     (
-        ('TLSv1', sqlexecute.ssllib.TLSVersion.TLSv1),
-        ('TLSv1.1', sqlexecute.ssllib.TLSVersion.TLSv1_1),
-        ('TLSv1.2', sqlexecute.ssllib.TLSVersion.TLSv1_2),
+        ('TLSv1', sql_execute.ssllib.TLSVersion.TLSv1),
+        ('TLSv1.1', sql_execute.ssllib.TLSVersion.TLSv1_1),
+        ('TLSv1.2', sql_execute.ssllib.TLSVersion.TLSv1_2),
     ),
 )
 def test_create_ssl_ctx_supports_legacy_tls_version_overrides(monkeypatch, tls_version: str, expected_version) -> None:
     executor = make_executor_for_run_tests()
     ctx = FakeSSLContext()
 
-    monkeypatch.setattr(sqlexecute.ssllib, 'create_default_context', lambda **_kwargs: ctx)
+    monkeypatch.setattr(sql_execute.ssllib, 'create_default_context', lambda **_kwargs: ctx)
 
     result = executor._create_ssl_ctx({'tls_version': tls_version})
 
@@ -1952,13 +1952,13 @@ def test_create_ssl_ctx_logs_invalid_tls_version_and_keeps_default_minimum(monke
     executor = make_executor_for_run_tests()
     ctx = FakeSSLContext()
 
-    monkeypatch.setattr(sqlexecute.ssllib, 'create_default_context', lambda **_kwargs: ctx)
+    monkeypatch.setattr(sql_execute.ssllib, 'create_default_context', lambda **_kwargs: ctx)
 
     with caplog.at_level('ERROR', logger='mycli.packages.execution.sql_execute'):
         result = executor._create_ssl_ctx({'tls_version': 'SSLv3'})
 
     assert result is ctx
-    assert ctx.minimum_version == sqlexecute.ssllib.TLSVersion.TLSv1_2
+    assert ctx.minimum_version == sql_execute.ssllib.TLSVersion.TLSv1_2
     assert ctx.maximum_version is None
     assert 'Invalid tls version: SSLv3' in caplog.text
 

@@ -62,7 +62,7 @@ def test_special_commands_init_reexports_io_state_api(load_special_commands: Cal
     assert special_commands.write_tee is io_commands.write_tee
 
 
-def test_special_commands_init_reexports_dbcommands(load_special_commands: Callable[[bool], ModuleType]) -> None:
+def test_special_commands_init_reexports_db_commands(load_special_commands: Callable[[bool], ModuleType]) -> None:
     special_commands = load_special_commands(False)
     db_commands = importlib.import_module('mycli.packages.special_commands.db_commands')
 

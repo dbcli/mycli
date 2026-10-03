@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from mycli.packages.special_commands import favorite_queries as favoritequeries_module
+from mycli.packages.special_commands import favorite_queries as favorite_queries_module
 from mycli.packages.special_commands.favorite_queries import FavoriteQueries, FavoriteQueryReloadError
 
 
@@ -75,14 +75,14 @@ def test_from_config_rejects_relative_shared_file(
 
 def test_from_config_expands_user_in_shared_file_path(monkeypatch: pytest.MonkeyPatch) -> None:
     read_paths: list[str] = []
-    monkeypatch.setattr(favoritequeries_module.os.path, 'expanduser', lambda path: '/expanded/shared-myclirc')
-    monkeypatch.setattr(favoritequeries_module.os.path, 'isfile', lambda path: True)
+    monkeypatch.setattr(favorite_queries_module.os.path, 'expanduser', lambda path: '/expanded/shared-myclirc')
+    monkeypatch.setattr(favorite_queries_module.os.path, 'isfile', lambda path: True)
 
     def read_config_file(path: str) -> DummyConfig:
         read_paths.append(path)
         return DummyConfig({'favorite_queries': {'shared': 'select 1'}})
 
-    monkeypatch.setattr(favoritequeries_module, 'read_config_file', read_config_file)
+    monkeypatch.setattr(favorite_queries_module, 'read_config_file', read_config_file)
 
     favorites = FavoriteQueries.from_config(DummyConfig(), shared_favorites_file='~/shared-myclirc')
 
@@ -108,8 +108,8 @@ def test_from_config_continues_when_shared_file_cannot_be_read(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     config = DummyConfig({'favorite_queries': {'local': 'select 1'}})
-    monkeypatch.setattr(favoritequeries_module.os.path, 'isfile', lambda path: True)
-    monkeypatch.setattr(favoritequeries_module, 'read_config_file', lambda path: None)
+    monkeypatch.setattr(favorite_queries_module.os.path, 'isfile', lambda path: True)
+    monkeypatch.setattr(favorite_queries_module, 'read_config_file', lambda path: None)
 
     favorites = FavoriteQueries.from_config(config, shared_favorites_file='/shared-myclirc')
 
@@ -326,7 +326,7 @@ def test_reload_unreadable_file_preserves_runtime_favorites(
     def deny_read(_path: str, **_kwargs: object) -> None:
         raise OSError(13, 'Permission denied', str(user_file))
 
-    monkeypatch.setattr(favoritequeries_module, 'read_config_file', deny_read)
+    monkeypatch.setattr(favorite_queries_module, 'read_config_file', deny_read)
 
     with pytest.raises(FavoriteQueryReloadError, match='Permission denied'):
         favorites.reload()
@@ -573,7 +573,7 @@ def test_save_does_not_update_runtime_config_when_user_config_cannot_be_read(
 ) -> None:
     merged_config = DummyConfig({'favorite_queries': {'existing': 'select 1'}})
     favorites = FavoriteQueries(merged_config, '~/.myclirc')
-    monkeypatch.setattr(favoritequeries_module, 'read_config_file', lambda _path, **_kwargs: None)
+    monkeypatch.setattr(favorite_queries_module, 'read_config_file', lambda _path, **_kwargs: None)
 
     with pytest.raises(OSError, match=r"Unable to read config file '.*/\.myclirc'\."):
         favorites.save('new', 'select 2')

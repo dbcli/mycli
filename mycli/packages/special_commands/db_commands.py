@@ -6,7 +6,7 @@ from pymysql import Error, ProgrammingError
 from pymysql.cursors import Cursor
 
 from mycli import __version__
-from mycli.packages.special_commands import io_commands as iocommands
+from mycli.packages.special_commands import io_commands
 from mycli.packages.special_commands.main import ArgType, SpecialCommandAlias, special_command
 from mycli.packages.special_commands.special_command_utils import (
     format_uptime,
@@ -167,7 +167,7 @@ def status(cur: Cursor, **_) -> list[SQLResult]:
     output.append(("Current database:", db))
     output.append(("Current user:", user))
 
-    if iocommands.is_pager_enabled():
+    if io_commands.is_pager_enabled():
         if "PAGER" in os.environ:
             pager = os.environ["PAGER"]
         else:
@@ -176,8 +176,8 @@ def status(cur: Cursor, **_) -> list[SQLResult]:
         pager = "stdout"
     output.append(("Current pager:", pager))
 
-    output.append(("Using delimiter:", iocommands.get_current_delimiter()))
-    output.append(("Using outfile:", iocommands.tee_file.name if iocommands.tee_file else ''))
+    output.append(("Using delimiter:", io_commands.get_current_delimiter()))
+    output.append(("Using outfile:", io_commands.tee_file.name if io_commands.tee_file else ''))
 
     output.append(("Server version:", f'{global_variables["version"]} {global_variables["version_comment"]}'))
     output.append(("Protocol version:", global_variables["protocol_version"]))

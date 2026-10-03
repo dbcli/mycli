@@ -3,8 +3,8 @@ from typing import Any, cast
 
 import pytest
 
-from mycli.packages.integrations.fzf import fzf as fzf_wrapper
-from mycli.packages.prompt_toolkit import fzf_history as fzf_module
+from mycli.packages.integrations.fzf import fzf as fzf_module
+from mycli.packages.prompt_toolkit import fzf_history as fzf_history_module
 from mycli.packages.prompt_toolkit.history import FileHistoryWithTimestamp
 
 
@@ -26,9 +26,9 @@ def make_event(history: Any) -> SimpleNamespace:
 
 @pytest.mark.parametrize('available', [True, False])
 def test_fzf_init_and_is_available(monkeypatch: pytest.MonkeyPatch, available: bool) -> None:
-    monkeypatch.setattr(fzf_wrapper, 'which', lambda executable: '/usr/bin/fzf' if available and executable == 'fzf' else None)
+    monkeypatch.setattr(fzf_module, 'which', lambda executable: '/usr/bin/fzf' if available and executable == 'fzf' else None)
 
-    fzf = fzf_module.Fzf()
+    fzf = fzf_history_module.Fzf()
 
     assert fzf.executable == ('fzf' if available else None)
     assert fzf.is_available() is available
@@ -39,14 +39,14 @@ def test_search_history_falls_back_to_prompt_toolkit_search(monkeypatch: pytest.
     event = make_event(history=object())
 
     monkeypatch.setattr(
-        fzf_module.search,
+        fzf_history_module.search,
         'start_search',
         lambda **kwargs: calls.append(kwargs),
     )
 
-    fzf_module.search_history(cast(Any, event), incremental=True)
+    fzf_history_module.search_history(cast(Any, event), incremental=True)
 
-    assert calls == [{'direction': fzf_module.search.SearchDirection.BACKWARD}]
+    assert calls == [{'direction': fzf_history_module.search.SearchDirection.BACKWARD}]
 
 
 def test_search_history_falls_back_when_fzf_unavailable_or_history_type_is_wrong(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -59,24 +59,24 @@ def test_search_history_falls_back_when_fzf_unavailable_or_history_type_is_wrong
             return False
 
     monkeypatch.setattr(
-        fzf_module.search,
+        fzf_history_module.search,
         'start_search',
         lambda **kwargs: calls.append(kwargs),
     )
 
-    monkeypatch.setattr(fzf_module, 'Fzf', UnavailableFzf)
-    fzf_module.search_history(cast(Any, unavailable_event))
+    monkeypatch.setattr(fzf_history_module, 'Fzf', UnavailableFzf)
+    fzf_history_module.search_history(cast(Any, unavailable_event))
 
     class AvailableFzf:
         def is_available(self) -> bool:
             return True
 
-    monkeypatch.setattr(fzf_module, 'Fzf', AvailableFzf)
-    fzf_module.search_history(cast(Any, wrong_history_event))
+    monkeypatch.setattr(fzf_history_module, 'Fzf', AvailableFzf)
+    fzf_history_module.search_history(cast(Any, wrong_history_event))
 
     assert calls == [
-        {'direction': fzf_module.search.SearchDirection.BACKWARD},
-        {'direction': fzf_module.search.SearchDirection.BACKWARD},
+        {'direction': fzf_history_module.search.SearchDirection.BACKWARD},
+        {'direction': fzf_history_module.search.SearchDirection.BACKWARD},
     ]
 
 
@@ -99,15 +99,15 @@ def test_search_history_formats_preview_updates_buffer_and_deduplicates(monkeypa
             prompt_calls.append({'items': items, 'options': options})
             return items[0]
 
-    monkeypatch.setattr(fzf_module, 'Fzf', PromptingFzf)
+    monkeypatch.setattr(fzf_history_module, 'Fzf', PromptingFzf)
     monkeypatch.setattr(
-        fzf_module,
+        fzf_history_module,
         'which',
         lambda executable: '/usr/bin/pygmentize' if executable == 'pygmentize' else None,
     )
-    monkeypatch.setattr(fzf_module, 'safe_invalidate_display', lambda app: invalidated_apps.append(app))
+    monkeypatch.setattr(fzf_history_module, 'safe_invalidate_display', lambda app: invalidated_apps.append(app))
 
-    fzf_module.search_history(
+    fzf_history_module.search_history(
         cast(Any, event),
         highlight_preview=True,
         highlight_style='monokai style',
@@ -161,15 +161,15 @@ def test_search_history_without_result_keeps_buffer_and_uses_plain_preview(
             prompt_calls.append({'items': items, 'options': options})
             return None
 
-    monkeypatch.setattr(fzf_module, 'Fzf', PromptingFzf)
+    monkeypatch.setattr(fzf_history_module, 'Fzf', PromptingFzf)
     monkeypatch.setattr(
-        fzf_module,
+        fzf_history_module,
         'which',
         lambda executable: '/usr/bin/pygmentize' if pygmentize_available and executable == 'pygmentize' else None,
     )
-    monkeypatch.setattr(fzf_module, 'safe_invalidate_display', lambda app: invalidated_apps.append(app))
+    monkeypatch.setattr(fzf_history_module, 'safe_invalidate_display', lambda app: invalidated_apps.append(app))
 
-    fzf_module.search_history(cast(Any, event), highlight_preview=highlight_preview)
+    fzf_history_module.search_history(cast(Any, event), highlight_preview=highlight_preview)
 
     assert prompt_calls == [
         {
