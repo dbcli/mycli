@@ -18,7 +18,7 @@ import rapidfuzz
 
 from mycli.compat import WIN
 from mycli.packages.completion.completion_engine import is_inside_quotes, suggest_type
-from mycli.packages.polars.completion import complete_polars_transform
+from mycli.packages.datafrane.completion import complete_polars_transform
 from mycli.packages.ptoolkit.history import frecency_score
 from mycli.packages.special_commands import llm
 from mycli.packages.special_commands.dsn_aliases import DsnAliases
