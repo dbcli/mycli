@@ -25,7 +25,6 @@ A command line client for MySQL with auto-completion and syntax highlighting.
     ├── mycli/compat.py                                   # OS compatibility helpers
     ├── mycli/config.py                                   # configuration file readers and utilities
     ├── mycli/constants.py                                # shared constants
-    ├── mycli/lexer.py                                    # extends `MySqlLexer` from Pygments
     ├── mycli/main.py                                     # processes CLI arguments
     ├── mycli/main_modes/                                 # main execution paths
     ├── mycli/main_modes/batch.py                         # `--batch` mode
@@ -50,6 +49,7 @@ A command line client for MySQL with auto-completion and syntax highlighting.
     ├── mycli/packages/ptoolkit/multiline.py              # prompt_toolkit multiline input
     ├── mycli/packages/ptoolkit/style.py                  # prompt_toolkit (and Pygments) styles
     ├── mycli/packages/ptoolkit/toolbar.py                # prompt_toolkit toolbars
+    ├── mycli/packages/pygments/mycli_lexer.py            # extends `MySqlLexer` from Pygments
     ├── mycli/packages/special_commands/                  # implementation of mycli special commands
     ├── mycli/packages/sql_result/sql_result.py           # the `SQLResult` dataclass for holding responses
     ├── mycli/packages/tabular_output/                    # extends cli_helper with additional output formats

@@ -57,7 +57,6 @@ from mycli.constants import (
     ISSUES_URL,
     QueryState,
 )
-from mycli.lexer import MyCliLexer
 from mycli.packages import special_commands
 from mycli.packages.hybrid_redirection.hybrid_redirection import get_redirect_components, is_redirect_command
 from mycli.packages.polars.transform import (
@@ -72,6 +71,7 @@ from mycli.packages.ptoolkit.key_bindings import mycli_bindings
 from mycli.packages.ptoolkit.multiline import cli_is_multiline
 from mycli.packages.ptoolkit.style import style_factory_ptoolkit
 from mycli.packages.ptoolkit.toolbar import create_toolbar_tokens_func, get_vi_mode
+from mycli.packages.pygments.mycli_lexer import MyCliLexer
 from mycli.packages.special_commands.io_commands import temporary_redirect
 from mycli.packages.special_commands.special_command_utils import format_uptime, get_ssl_version, get_uptime, get_warning_count
 from mycli.packages.sql_result.sql_result import SQLResult
