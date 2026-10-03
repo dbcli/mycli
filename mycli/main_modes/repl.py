@@ -70,7 +70,7 @@ from mycli.packages.execution.sql_execute import SQLExecute
 from mycli.packages.prompt_toolkit.history import FRECENCY_HISTORY_ENTRIES, FRECENCY_REFRESH_INTERVAL, FileHistoryWithTimestamp
 from mycli.packages.prompt_toolkit.key_bindings import mycli_bindings
 from mycli.packages.prompt_toolkit.multiline import repl_is_multiline
-from mycli.packages.prompt_toolkit.style import style_factory_ptoolkit
+from mycli.packages.prompt_toolkit.style import style_factory_prompt_toolkit
 from mycli.packages.prompt_toolkit.toolbar import create_toolbar_tokens_func, get_vi_mode
 from mycli.packages.pygments.mycli_lexer import MyCliLexer
 from mycli.packages.redirection.hybrid_redirection import get_redirect_components, is_redirect_command
@@ -782,7 +782,7 @@ def _build_prompt_session(
             auto_suggest=ThreadedAutoSuggest(AutoSuggestFromHistory()),
             complete_while_typing=complete_while_typing_filter,
             multiline=repl_is_multiline(mycli),
-            style=style_factory_ptoolkit(mycli.syntax_style, mycli.cli_style),
+            style=style_factory_prompt_toolkit(mycli.syntax_style, mycli.cli_style),
             include_default_pygments_style=False,
             key_bindings=key_bindings,
             enable_open_in_editor=True,

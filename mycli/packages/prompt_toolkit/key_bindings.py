@@ -13,7 +13,7 @@ from prompt_toolkit.filters import (
     vi_mode,
 )
 from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.key_binding.bindings.named_commands import register as ptoolkit_register
+from prompt_toolkit.key_binding.bindings.named_commands import register as prompt_toolkit_register
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from prompt_toolkit.selection import SelectionType
 
@@ -56,7 +56,7 @@ def print_f1_help():
     app.print_text('\n')
 
 
-@ptoolkit_register("edit-and-execute-command")
+@prompt_toolkit_register("edit-and-execute-command")
 def edit_and_execute(event: KeyPressEvent) -> None:
     """Different from the prompt-toolkit default, we want to have a choice not
     to execute a query after editing, hence validate_and_handle=False."""

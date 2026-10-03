@@ -146,7 +146,7 @@ def make_bare_mycli() -> Any:
     cli.explorer_formatter = DummyFormatter()
     cli.helpers_style = 'helpers-style'
     cli.helpers_warnings_style = 'helpers-warnings-style'
-    cli.ptoolkit_style = cast(Any, 'pt-style')
+    cli.prompt_toolkit_style = cast(Any, 'pt-style')
     cli.syntax_style = 'native'
     cli.cli_style = {}
     cli.null_string = '<null>'

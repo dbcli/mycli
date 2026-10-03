@@ -2222,7 +2222,7 @@ def test_output_timing_logs_and_prints_with_warning_style(monkeypatch: pytest.Mo
     monkeypatch.setattr(prompt_toolkit, 'print_formatted_text', lambda text, style=None: printed.append((text, style)))
     main.MyCli.output_timing(cli, 'Time: 1.000s', is_warnings_style=True)
     assert timings_logged == ['Time: 1.000s']
-    assert printed[-1][1] == cli.ptoolkit_style
+    assert printed[-1][1] == cli.prompt_toolkit_style
 
 
 def test_get_output_margin_uses_prompt_session_render_counter(monkeypatch: pytest.MonkeyPatch) -> None:
