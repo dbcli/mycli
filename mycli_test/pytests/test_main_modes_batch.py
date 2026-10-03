@@ -14,8 +14,8 @@ import pytest
 
 import mycli.cli_runner as cli_runner
 import mycli.main_modes.batch as batch_mode
-import test.pytests.test_main as test_main_module
-import test.utils as test_utils
+import mycli_test.pytests.test_main as test_main_module
+import mycli_test.utils as test_utils
 
 noninteractive_mock_mycli = cast(Any, test_main_module).noninteractive_mock_mycli
 TEMPFILE_PREFIX = cast(str, cast(Any, test_utils).TEMPFILE_PREFIX)

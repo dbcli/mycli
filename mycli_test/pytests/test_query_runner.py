@@ -18,7 +18,7 @@ from mycli.packages.execution import sql_execute as sqlexecute_module
 from mycli.packages.execution.background_runner import BackgroundCursor, BackgroundSSCursor, QueryCancelled, QueryRunner
 from mycli.packages.execution.sql_execute import SQLExecute
 from mycli.packages.sql_result.sql_result import SQLResult
-from test.utils import dbtest  # type: ignore[attr-defined]
+from mycli_test.utils import dbtest  # type: ignore[attr-defined]
 
 
 @pytest.fixture

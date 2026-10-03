@@ -28,7 +28,7 @@ from mycli.packages.special_commands.favorite_queries import (
     find_favorite_query_template_keys,
 )
 from mycli.packages.sql_result.sql_result import SQLResult
-from test.utils import TEMPFILE_PREFIX, db_connection, dbtest
+from mycli_test.utils import TEMPFILE_PREFIX, db_connection, dbtest
 
 
 class FakeFavoriteQueries:

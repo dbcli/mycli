@@ -16,7 +16,7 @@ from mycli.packages.execution.background_runner import BackgroundSSCursor
 from mycli.packages.execution.sql_execute import ServerInfo, ServerSpecies, SQLExecute
 from mycli.packages.special_commands import io_commands as iocommands
 from mycli.packages.sql_result.sql_result import SQLResult
-from test.utils import dbtest, is_expanded_output, make_streaming_cursor, run, set_expanded_output
+from mycli_test.utils import dbtest, is_expanded_output, make_streaming_cursor, run, set_expanded_output
 
 
 def assert_result_equal(

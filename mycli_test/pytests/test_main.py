@@ -58,7 +58,7 @@ from mycli.packages.special_commands.main import COMMANDS as SPECIAL_COMMANDS
 from mycli.packages.sql_result.sql_result import SQLResult
 from mycli.packages.utils import cli_utils
 from mycli.types import Query
-from test.utils import (
+from mycli_test.utils import (
     DATABASE,
     HOST,
     PASSWORD,
@@ -79,8 +79,8 @@ from test.utils import (
 
 pytests_dir = os.path.abspath(os.path.dirname(__file__))
 project_root_dir = os.path.abspath(os.path.join(pytests_dir, '..', '..'))
-default_config_file = os.path.join(project_root_dir, 'test', 'myclirc')
-login_path_file = os.path.join(project_root_dir, 'test', 'mylogin.cnf')
+default_config_file = os.path.join(project_root_dir, 'mycli_test', 'myclirc')
+login_path_file = os.path.join(project_root_dir, 'mycli_test', 'mylogin.cnf')
 
 os.environ["MYSQL_TEST_LOGIN_FILE"] = login_path_file
 CLI_ARGS_WITHOUT_DB = [
@@ -1994,7 +1994,7 @@ def test_init_command_multiple_arg(executor):
 @dbtest
 def test_global_init_commands(executor):
     """Tests that global init-commands from config are executed by default."""
-    # The global init-commands section in test/myclirc sets sql_select_limit=9999
+    # The global init-commands section in mycli_test/myclirc sets sql_select_limit=9999
     sql = 'show variables like "sql_select_limit";'
     runner = CliRunner()
     result = runner.invoke(click_entrypoint, args=CLI_ARGS, input=sql)

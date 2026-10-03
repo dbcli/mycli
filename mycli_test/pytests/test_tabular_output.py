@@ -12,7 +12,7 @@ import pytest
 from mycli.main import MyCli
 from mycli.packages.credentials.password_sources import PasswordCandidates
 from mycli.packages.sql_result.sql_result import SQLResult
-from test.utils import HOST, PASSWORD, PORT, USER, dbtest
+from mycli_test.utils import HOST, PASSWORD, PORT, USER, dbtest
 
 default_config_file = os.path.join(os.path.dirname(__file__), "../myclirc")
 

@@ -119,7 +119,7 @@ ignore = [
 
 [tool.ruff.lint.isort]
 force-sort-within-sections = true
-known-first-party = ['mycli', 'test', 'steps']
+known-first-party = ['mycli', 'mycli_test', 'steps']
 
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = 'all'
@@ -153,9 +153,9 @@ passenv = ['PYTEST_HOST',
            'PYTEST_CHARSET',
            'GITHUB_ACTION']
 commands = [['uv', 'pip', 'install', '-e', '.[dev,llm,dataframe]'],
-            ['coverage', 'run', '-m', 'pytest', '-v', 'test'],
+            ['coverage', 'run', '-m', 'pytest', '-v', 'mycli_test'],
             ['coverage', 'report', '-m', '--sort=Miss'],
-            ['behave', 'test/features']]
+            ['behave', 'mycli_test/features']]
 commands_post = [['rm', '-f', '--', './.myclirc']]
 allowlist_externals = ['rm', 'uv']
 

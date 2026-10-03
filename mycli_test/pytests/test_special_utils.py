@@ -23,7 +23,7 @@ from mycli.packages.special_commands.special_command_utils import (
     get_warning_count,
     handle_cd_command,
 )
-from test.utils import TEMPFILE_PREFIX
+from mycli_test.utils import TEMPFILE_PREFIX
 
 
 @pytest.fixture(autouse=True)

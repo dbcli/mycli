@@ -3,8 +3,8 @@
 from behave import then, when
 import wrappers
 
-from test.features.environment import get_db_name_from_context
-from test.features.steps.utils import parse_cli_args_to_dict
+from mycli_test.features.environment import get_db_name_from_context
+from mycli_test.features.steps.utils import parse_cli_args_to_dict
 
 TEST_LOGIN_PATH = "test_login_path"
 

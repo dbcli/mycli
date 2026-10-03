@@ -28,7 +28,7 @@ from mycli.config import (
     strip_matching_quotes,
     write_default_config,
 )
-from test.utils import TEMPFILE_PREFIX
+from mycli_test.utils import TEMPFILE_PREFIX
 
 LOGIN_PATH_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "../mylogin.cnf"))
 

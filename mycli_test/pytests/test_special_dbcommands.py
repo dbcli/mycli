@@ -10,7 +10,7 @@ from mycli.packages.special_commands import db_commands as dbcommands
 from mycli.packages.special_commands import main as special_main
 from mycli.packages.special_commands.db_commands import list_databases, list_tables, ping, status
 from mycli.packages.sql_result.sql_result import SQLResult
-from test.pytests.test_completion_engine import sorted_dicts
+from mycli_test.pytests.test_completion_engine import sorted_dicts
 
 
 class FakeConnection:

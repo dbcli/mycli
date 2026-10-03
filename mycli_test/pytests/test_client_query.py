@@ -6,7 +6,7 @@ import pytest
 from mycli import client_query, main
 from mycli.packages.sql_result.sql_result import SQLResult
 from mycli.types import Query
-from test.utils import (  # type: ignore[attr-defined]
+from mycli_test.utils import (  # type: ignore[attr-defined]
     FakeCursorBase,
     ReusableLock,
     make_bare_mycli,
