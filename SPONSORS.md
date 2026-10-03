@@ -1,1 +1,1 @@
-See [SPONSORS](mycli/SPONSORS)
+See [SPONSORS.txt](mycli/SPONSORS.txt)

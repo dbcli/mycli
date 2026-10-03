@@ -412,9 +412,9 @@ def test_repl_create_history_can_disable_frecency(
 
 def test_repl_picker_helpers_cover_present_and_missing_resources(monkeypatch: pytest.MonkeyPatch) -> None:
     files = {
-        'AUTHORS': '* Alice\n* Bob\n',
-        'SPONSORS': '* Carol\n',
-        'TIPS': '# comment\nTip 1\n\nTip 2\n',
+        'AUTHORS.txt': '* Alice\n* Bob\n',
+        'SPONSORS.txt': '* Carol\n',
+        'TIPS.txt': '# comment\nTip 1\n\nTip 2\n',
     }
     monkeypatch.setattr(repl_mode.resources, 'files', lambda package: FakeResourceTree(files))
     monkeypatch.setattr(repl_mode.random, 'choice', lambda seq: seq[0])

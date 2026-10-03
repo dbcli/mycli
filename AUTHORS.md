@@ -1,1 +1,1 @@
-See [AUTHORS](mycli/AUTHORS)
+See [AUTHORS.txt](mycli/AUTHORS.txt)

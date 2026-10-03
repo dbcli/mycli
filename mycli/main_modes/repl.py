@@ -1103,7 +1103,7 @@ def _contributors_picker() -> str:
     lines: str = ""
 
     try:
-        with resources.files(mycli_package).joinpath("AUTHORS").open('r') as f:
+        with resources.files(mycli_package).joinpath("AUTHORS.txt").open('r') as f:
             lines += f.read()
     except FileNotFoundError:
         pass
@@ -1119,7 +1119,7 @@ def _sponsors_picker() -> str:
     lines: str = ""
 
     try:
-        with resources.files(mycli_package).joinpath("SPONSORS").open('r') as f:
+        with resources.files(mycli_package).joinpath("SPONSORS.txt").open('r') as f:
             lines += f.read()
     except FileNotFoundError:
         pass
@@ -1135,7 +1135,7 @@ def _tips_picker() -> str:
     tips = []
 
     try:
-        with resources.files(mycli_package).joinpath('TIPS').open('r') as f:
+        with resources.files(mycli_package).joinpath('TIPS.txt').open('r') as f:
             for line in f:
                 if line.startswith("#"):
                     continue

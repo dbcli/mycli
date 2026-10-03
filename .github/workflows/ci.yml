@@ -7,9 +7,9 @@ on:
       - '**.rst'
       - 'LICENSE.txt'
       - 'doc/**/*.txt'
-      - '**/AUTHORS'
-      - '**/SPONSORS'
-      - '**/TIPS'
+      - '**/AUTHORS.txt'
+      - '**/SPONSORS.txt'
+      - '**/TIPS.txt'
 
 jobs:
   tests:
