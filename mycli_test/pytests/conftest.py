@@ -3,7 +3,7 @@
 import pytest
 
 from mycli.packages.execution import sql_execute
-from test.utils import CHARACTER_SET, DATABASE, HOST, PASSWORD, PORT, USER, create_db, db_connection
+from mycli_test.utils import CHARACTER_SET, DATABASE, HOST, PASSWORD, PORT, USER, create_db, db_connection
 
 
 @pytest.fixture(scope="function")

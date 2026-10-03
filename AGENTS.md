@@ -66,12 +66,12 @@ A command line client for MySQL with auto-completion and syntax highlighting.
     ├── mycli/packages/utils/string_utils.py              # generic string utilities
     ├── mycli/resources/completions/                      # shell completions for CLI interface
     ├── mycli/types.py                                    # shared types
-    ├── test/features/                                    # behave tests
-    ├── test/myclirc                                      # mycli configuration used for tests
-    ├── test/mylogin.cnf                                  # `mylogin.cnf` example used for tests
-    ├── test/pytests/                                     # pytest tests
-    ├── test/pytests/conftest.py                          # pytest configuration
-    └── test/utils.py                                     # shared utilities for tests
+    ├── mycli_test/features/                              # behave tests
+    ├── mycli_test/myclirc                                # mycli configuration used for tests
+    ├── mycli_test/mylogin.cnf                            # `mylogin.cnf` example used for tests
+    ├── mycli_test/pytests/                               # pytest tests
+    ├── mycli_test/pytests/conftest.py                    # pytest configuration
+    └── mycli_test/utils.py                               # shared utilities for tests
 
 ## Development
 

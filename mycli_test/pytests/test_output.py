@@ -22,7 +22,7 @@ from mycli.packages.execution.background_runner import QueryRunner
 from mycli.packages.execution.sql_execute import SQLExecute
 from mycli.packages.sql_result.sql_result import SQLResult
 from mycli.types import ImageProtocol
-from test.utils import DummyFormatter, FakeCursorBase, make_bare_mycli, make_streaming_cursor  # type: ignore[attr-defined]
+from mycli_test.utils import DummyFormatter, FakeCursorBase, make_bare_mycli, make_streaming_cursor  # type: ignore[attr-defined]
 
 
 def test_output_timing_logs_and_prints_with_default_style(monkeypatch: pytest.MonkeyPatch) -> None:

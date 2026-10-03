@@ -57,11 +57,11 @@ def before_all(context):
         "pager_boundary": "---boundary---",
     }
 
-    # todo: this line has no effect, and the pager is controlled from test/myclirc
+    # todo: this line has no effect, and the pager is controlled from mycli_test/myclirc
     os.environ['PAGER'] = (
         f'{sys.executable} {os.path.join(context.package_root, "test/features/wrappager.py")} {context.conf["pager_boundary"]}'
     )
-    source_myclirc = os.path.join(context.package_root, 'test', 'myclirc')
+    source_myclirc = os.path.join(context.package_root, 'mycli_test', 'myclirc')
     fd, context.myclirc_copy = tempfile.mkstemp(prefix='mycli-behave-', suffix='.myclirc')
     os.close(fd)
     shutil.copyfile(source_myclirc, context.myclirc_copy)

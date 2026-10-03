@@ -14,7 +14,7 @@ from textwrap import dedent
 from behave import then, when
 import wrappers
 
-from test.utils import TEMPFILE_PREFIX
+from mycli_test.utils import TEMPFILE_PREFIX
 
 
 @when("we run dbcli")

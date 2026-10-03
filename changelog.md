@@ -17,6 +17,7 @@ Internal
 * Move `password_sources.py` to a `credentials` package directory.
 * Create an `execution` package directory for `sql_execute.py` and `background_runner.py`.
 * Add `.txt` to text files without file extensions.
+* Move `test` directory to `mycli_test`.
 
 
 v2.28.0 (2026/10/02)

@@ -4,7 +4,7 @@ from prompt_toolkit.completion import Completion
 from prompt_toolkit.document import Document
 import pytest
 
-from test.utils import pygments_below
+from mycli_test.utils import pygments_below
 
 
 @pytest.fixture
