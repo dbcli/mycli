@@ -45,9 +45,8 @@ A command line client for MySQL with auto-completion and syntax highlighting.
     ├── mycli/packages/datafrane/transform.py             # implements `.|` transforms
     ├── mycli/packages/execution/background_runner.py     # run queries in the background, with query state and timing updates
     ├── mycli/packages/execution/sql_execute.py           # `SQLExecute` class and friends
-    ├── mycli/packages/fzf/fzf.py                         # general interface to fzf chooser
     ├── mycli/packages/hybrid_redirection/                # implementation of shell-style redirects
-    ├── mycli/packages/integrations/                      # integrations with Boundary, Kubernetes, macOS, OpenSSH, and Vault
+    ├── mycli/packages/integrations/                      # integrations with fzf, Boundary, Kubernetes, macOS, OpenSSH, and Vault
     ├── mycli/packages/prompt_toolkit/fzf_history.py      # uses fzf integration to serach the prompt_toolkit history
     ├── mycli/packages/prompt_toolkit/history.py          # extends the prompt_toolkit history class
     ├── mycli/packages/prompt_toolkit/key_bindings.py     # prompt_toolkit key bindings
