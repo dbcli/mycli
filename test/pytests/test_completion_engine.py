@@ -7,8 +7,9 @@ import sqlparse
 from sqlparse import tokens
 from sqlparse.sql import Statement, Token
 
-from mycli.packages import completion_engine, special
-from mycli.packages.completion_engine import (
+from mycli.packages import special
+from mycli.packages.completion import completion_engine
+from mycli.packages.completion.completion_engine import (
     DSN_SUBCOMMANDS,
     FAVORITE_SUBCOMMANDS,
     _aliases,

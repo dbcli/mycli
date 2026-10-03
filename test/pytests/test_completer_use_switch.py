@@ -18,7 +18,7 @@ import traceback
 
 from prompt_toolkit.document import Document
 
-from mycli.sqlcompleter import SQLCompleter
+from mycli.packages.completion.sql_completer import SQLCompleter
 
 
 def _make_completer() -> SQLCompleter:

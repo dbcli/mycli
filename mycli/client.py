@@ -25,7 +25,6 @@ from mycli.client_commands import ClientCommandsMixin, get_config_property_names
 from mycli.client_connection import ClientConnectionMixin
 from mycli.client_query import ClientQueryMixin
 from mycli.clistyle import style_factory_helpers, style_factory_ptoolkit
-from mycli.completion_refresher import CompletionRefresher
 from mycli.config import (
     get_mylogin_cnf_path,
     open_mylogin_cnf,
@@ -38,11 +37,12 @@ from mycli.kubectl_tunnel import KubectlTunnel
 from mycli.main_modes import repl as repl_package
 from mycli.output import OutputMixin
 from mycli.packages import special
+from mycli.packages.completion.completion_refresher import CompletionRefresher
+from mycli.packages.completion.schema_prefetcher import SchemaPrefetcher
+from mycli.packages.completion.sql_completer import SQLCompleter
 from mycli.packages.special.dsn_aliases import DsnAliases
 from mycli.packages.special.favoritequeries import FavoriteQueries
 from mycli.packages.tabular_output import sql_format
-from mycli.schema_prefetcher import SchemaPrefetcher
-from mycli.sqlcompleter import SQLCompleter
 from mycli.sqlexecute import SQLExecute
 from mycli.ssh_tunnel import SshTunnel
 from mycli.types import Query

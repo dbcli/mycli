@@ -17,7 +17,7 @@ from pygments.lexers._mysql_builtins import MYSQL_DATATYPES, MYSQL_FUNCTIONS, MY
 import rapidfuzz
 
 from mycli.compat import WIN
-from mycli.packages.completion_engine import is_inside_quotes, suggest_type
+from mycli.packages.completion.completion_engine import is_inside_quotes, suggest_type
 from mycli.packages.polars.completion import complete_polars_transform
 from mycli.packages.ptoolkit.history import frecency_score
 from mycli.packages.special import llm

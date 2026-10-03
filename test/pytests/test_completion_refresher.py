@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-import mycli.completion_refresher as completion_refresher
+from mycli.packages.completion import completion_refresher
 
 
 @pytest.fixture
@@ -133,7 +133,7 @@ def test_refresh_with_callbacks(refresher):
     sqlexecute_class = Mock()
     sqlexecute = Mock()
 
-    with patch("mycli.completion_refresher.SQLExecute", sqlexecute_class):
+    with patch("mycli.packages.completion.completion_refresher.SQLExecute", sqlexecute_class):
         # Set refreshers to 0: we're not testing refresh logic here
         refresher.refreshers = {}
         refresher.refresh(sqlexecute, callbacks)

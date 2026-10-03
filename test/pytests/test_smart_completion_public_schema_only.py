@@ -30,7 +30,7 @@ def special_command_snippets() -> dict[str, str]:
 
 @pytest.fixture
 def completer():
-    import mycli.sqlcompleter as sqlcompleter
+    from mycli.packages.completion import sql_completer as sqlcompleter
 
     comp = sqlcompleter.SQLCompleter(smart_completion=True)
 
@@ -56,7 +56,7 @@ def completer():
 
 @pytest.fixture
 def empty_completer():
-    import mycli.sqlcompleter as sqlcompleter
+    from mycli.packages.completion import sql_completer as sqlcompleter
 
     comp = sqlcompleter.SQLCompleter(smart_completion=True)
 
@@ -120,7 +120,7 @@ def test_dsn_subcommand_completion(completer, complete_event):
 
 @pytest.mark.parametrize('command', ['edit', 'delete'])
 def test_dsn_alias_completion(completer, complete_event, monkeypatch, command):
-    import mycli.sqlcompleter as sqlcompleter
+    from mycli.packages.completion import sql_completer as sqlcompleter
 
     monkeypatch.setattr(
         sqlcompleter.DsnAliases,
@@ -1043,7 +1043,7 @@ def test_source_completion_quotes_paths_with_spaces(completer, complete_event, t
 
 
 def test_non_source_file_completion_uses_current_path_token(completer, complete_event, monkeypatch):
-    import mycli.sqlcompleter as sqlcompleter
+    from mycli.packages.completion import sql_completer as sqlcompleter
 
     monkeypatch.setattr(sqlcompleter, 'suggest_type', lambda *_args: [{'type': 'file_name'}])
     monkeypatch.setattr(completer, 'find_files', lambda _path: [('file.sql', 0)])
@@ -1054,7 +1054,7 @@ def test_non_source_file_completion_uses_current_path_token(completer, complete_
 
 
 def test_source_path_completion_uses_windows_quotes(monkeypatch: pytest.MonkeyPatch) -> None:
-    import mycli.sqlcompleter as sqlcompleter
+    from mycli.packages.completion import sql_completer as sqlcompleter
 
     monkeypatch.setattr(sqlcompleter, 'WIN', True)
 
@@ -1494,7 +1494,7 @@ def fk_completer():
         users  (id, email, first_name)
         tags   (id, name)                           no FK
     """
-    import mycli.sqlcompleter as sqlcompleter
+    from mycli.packages.completion import sql_completer as sqlcompleter
 
     comp = sqlcompleter.SQLCompleter(smart_completion=True)
 
@@ -1616,7 +1616,7 @@ def test_on_partial_text_filters_fk_condition(fk_completer, complete_event):
 
 def test_fk_reserved_column_names_are_escaped():
     """FK columns that are reserved words or need quoting must be backtick-escaped."""
-    import mycli.sqlcompleter as sqlcompleter
+    from mycli.packages.completion import sql_completer as sqlcompleter
 
     comp = sqlcompleter.SQLCompleter(smart_completion=True)
     comp.extend_schemata("test")
