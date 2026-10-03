@@ -11,7 +11,7 @@ from typing import Any, Iterable, Sequence
 
 import sqlglot
 
-from mycli.packages.hybrid_redirection.hybrid_redirection import (
+from mycli.packages.redirection.hybrid_redirection import (
     ShellRedirect,
     find_token_indices,
     parse_shell_redirect,
