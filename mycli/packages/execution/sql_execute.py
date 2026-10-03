@@ -16,7 +16,7 @@ from pymysql.converters import conversions, convert_date, convert_datetime, conv
 from pymysql.cursors import Cursor, SSCursor
 
 from mycli.constants import ER_MUST_CHANGE_PASSWORD
-from mycli.packages.execution.background_runner import QueryRunner
+from mycli.packages.execution.background_runner import BackgroundRunner
 from mycli.packages.special_commands import io_commands
 from mycli.packages.special_commands.main import CommandNotFound, execute
 from mycli.packages.sql_result.sql_result import SQLResult
@@ -193,7 +193,7 @@ class SQLExecute:
         self.init_command = init_command
         self.unbuffered = unbuffered
         self.conn: Connection | None = None
-        self.query_runner: QueryRunner | None = None
+        self.background_runner: BackgroundRunner | None = None
         self.connect()
 
     def connect(
@@ -351,16 +351,16 @@ class SQLExecute:
             write_timeout=2,
         )
         self._control_kwargs = control_kwargs
-        if runner := getattr(self, 'query_runner', None):
+        if runner := getattr(self, 'background_runner', None):
             runner.attach(conn, self.connect_query_monitor)
 
     def connect_query_monitor(self) -> Connection:
         return pymysql.connect(**self._control_kwargs)  # type: ignore[misc]
 
-    def set_query_runner(self, runner: QueryRunner | None) -> None:
-        if previous := getattr(self, 'query_runner', None):
+    def set_background_runner(self, runner: BackgroundRunner | None) -> None:
+        if previous := getattr(self, 'background_runner', None):
             previous.detach()
-        self.query_runner = runner
+        self.background_runner = runner
         if runner is not None and self.conn is not None:
             runner.attach(self.conn, self.connect_query_monitor)
 
@@ -648,7 +648,7 @@ class SQLExecute:
 
     def change_db(self, db: str) -> None:
         assert isinstance(self.conn, Connection)
-        if runner := getattr(self, 'query_runner', None):
+        if runner := getattr(self, 'background_runner', None):
             runner.call(lambda: self.conn.select_db(db))
         else:
             self.conn.select_db(db)

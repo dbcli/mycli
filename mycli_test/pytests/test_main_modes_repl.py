@@ -19,7 +19,7 @@ import pytest
 
 import mycli.main_modes.repl as repl_mode
 from mycli.output import OutputMixin
-from mycli.packages.execution.background_runner import QueryRunner
+from mycli.packages.execution.background_runner import BackgroundRunner
 from mycli.packages.execution.sql_execute import SQLExecute
 from mycli.packages.special_commands import io_commands
 from mycli.packages.sql_result.sql_result import SQLResult
@@ -859,12 +859,12 @@ def test_render_prompt_string_ansi() -> None:
 @pytest.mark.parametrize('paged', [False, True])
 def test_output_results_keeps_state_visible_between_formatting_and_output(monkeypatch: pytest.MonkeyPatch, paged: bool) -> None:
     patch_repl_runtime_defaults(monkeypatch)
-    runner = QueryRunner(0)
+    runner = BackgroundRunner(0)
     runner.show_state = True
     runner.interval = 60
     runner.started = 0.0
     runner.visible = True
-    cli = make_repl_cli(SimpleNamespace(query_runner=runner))
+    cli = make_repl_cli(SimpleNamespace(background_runner=runner))
     cli.main_formatter = TabularOutputFormatter(format_name='csv')
     cli.helpers_style = cli.helpers_warnings_style = None
     cli.explicit_pager = paged
@@ -911,11 +911,11 @@ def test_output_results_cleans_up_shared_rendering_scope_on_error(
     monkeypatch: pytest.MonkeyPatch, phase: str, error: BaseException
 ) -> None:
     patch_repl_runtime_defaults(monkeypatch)
-    runner = QueryRunner(0)
+    runner = BackgroundRunner(0)
     runner.show_state = True
     runner.interval = 60
     runner.visible = True
-    cli = make_repl_cli(SimpleNamespace(query_runner=runner))
+    cli = make_repl_cli(SimpleNamespace(background_runner=runner))
     setattr(cli, phase, Mock(side_effect=error))
     try:
         with pytest.raises(type(error)):
@@ -929,10 +929,10 @@ def test_output_results_cleans_up_shared_rendering_scope_on_error(
 
 def test_output_results_stops_rendering_before_result_separator(monkeypatch: pytest.MonkeyPatch) -> None:
     patch_repl_runtime_defaults(monkeypatch)
-    runner = QueryRunner(0)
+    runner = BackgroundRunner(0)
     runner.show_state = True
     runner.interval = 60
-    cli = make_repl_cli(SimpleNamespace(query_runner=runner))
+    cli = make_repl_cli(SimpleNamespace(background_runner=runner))
     separators: list[str] = []
 
     def format_result(result: SQLResult, **kwargs: Any) -> Iterator[str]:
@@ -958,9 +958,9 @@ def test_output_results_stops_rendering_before_result_separator(monkeypatch: pyt
 def test_output_results_stops_rendering_before_timing(monkeypatch: pytest.MonkeyPatch) -> None:
     patch_repl_runtime_defaults(monkeypatch)
     monkeypatch.setattr(repl_mode.special_commands, 'is_timing_enabled', lambda: True)
-    runner = QueryRunner(0)
+    runner = BackgroundRunner(0)
     runner.visible = True
-    cli = make_repl_cli(SimpleNamespace(query_runner=runner))
+    cli = make_repl_cli(SimpleNamespace(background_runner=runner))
 
     def timing(message: str) -> None:
         assert not runner.visible
@@ -1170,9 +1170,9 @@ def test_output_results_stops_source_when_pager_exits_early(monkeypatch: pytest.
 
 
 def test_source_pager_suppresses_query_progress(monkeypatch: pytest.MonkeyPatch) -> None:
-    runner = QueryRunner(0)
+    runner = BackgroundRunner(0)
     runner.show_state = True
-    cli = make_repl_cli(SimpleNamespace(query_runner=runner))
+    cli = make_repl_cli(SimpleNamespace(background_runner=runner))
     monkeypatch.setattr(repl_mode.special_commands, 'is_redirected', lambda: False)
 
     def pager(output: Any) -> None:
@@ -1960,7 +1960,7 @@ def test_one_iteration_runs_polars_transform_and_preserves_full_command(
 @pytest.mark.parametrize('command', ['SELECT 1 .| df', 'SELECT 1 .| df .> result.parquet', 'SELECT 1 .> result.parquet'])
 def test_polars_pipeline_shows_transforming_state(monkeypatch: pytest.MonkeyPatch, command: str) -> None:
     patch_repl_runtime_defaults(monkeypatch)
-    runner = QueryRunner(0)
+    runner = BackgroundRunner(0)
     runner.show_state = True
     rendered = Event()
     states: list[str] = []
@@ -1971,7 +1971,7 @@ def test_polars_pipeline_shows_transforming_state(monkeypatch: pytest.MonkeyPatc
 
     monkeypatch.setattr(runner, '_display', display)
     monkeypatch.setattr(repl_mode.special_commands, 'run_post_redirect_hook', lambda *args: None)
-    sql = SimpleNamespace(dbname='db', connection_id=0, query_runner=runner, run=lambda text: iter(()))
+    sql = SimpleNamespace(dbname='db', connection_id=0, background_runner=runner, run=lambda text: iter(()))
     cli = make_repl_cli(sql)
     monkeypatch.setattr(repl_mode, 'prepare_polars_transform', lambda *args: object())
 
@@ -2589,16 +2589,16 @@ def test_one_iteration_covers_cancel_paths_and_redirect_error(monkeypatch: pytes
 
 
 @pytest.mark.parametrize('exit_error', [EOFError(), RuntimeError('iteration failed')], ids=['eof', 'error'])
-def test_main_repl_manages_query_runner_lifecycle(monkeypatch: pytest.MonkeyPatch, exit_error: Exception) -> None:
+def test_main_repl_manages_background_runner_lifecycle(monkeypatch: pytest.MonkeyPatch, exit_error: Exception) -> None:
     sql = Mock(spec=repl_mode.SQLExecute)
     cli = make_repl_cli(sql)
     cli.config['main']['show_query_state_interval'] = '0.25'
-    runner = Mock(spec=QueryRunner)
+    runner = Mock(spec=BackgroundRunner)
     create_runner = Mock(return_value=runner)
     lifecycle = Mock()
-    lifecycle.attach_mock(sql.set_query_runner, 'set_query_runner')
+    lifecycle.attach_mock(sql.set_background_runner, 'set_background_runner')
     lifecycle.attach_mock(runner.close, 'close')
-    monkeypatch.setattr(repl_mode, 'QueryRunner', create_runner)
+    monkeypatch.setattr(repl_mode, 'BackgroundRunner', create_runner)
     monkeypatch.setattr(repl_mode, '_configure_editor', Mock())
     monkeypatch.setattr(repl_mode, '_create_history', Mock(return_value=None))
     monkeypatch.setattr(repl_mode, 'mycli_bindings', Mock())
@@ -2608,7 +2608,7 @@ def test_main_repl_manages_query_runner_lifecycle(monkeypatch: pytest.MonkeyPatc
     monkeypatch.setattr(repl_mode.special_commands, 'close_tee', Mock())
 
     def iteration(mycli: Any, state: repl_mode.ReplState) -> None:
-        sql.set_query_runner.assert_called_once_with(runner)
+        sql.set_background_runner.assert_called_once_with(runner)
         runner.close.assert_not_called()
         raise exit_error
 
@@ -2622,12 +2622,12 @@ def test_main_repl_manages_query_runner_lifecycle(monkeypatch: pytest.MonkeyPatc
         assert exc_info.value is exit_error
 
     create_runner.assert_called_once_with(0.25)
-    assert lifecycle.mock_calls == [call.set_query_runner(runner), call.set_query_runner(None), call.close()]
+    assert lifecycle.mock_calls == [call.set_background_runner(runner), call.set_background_runner(None), call.close()]
 
 
 def test_output_results_resets_query_progress_before_large_result_confirmation(monkeypatch: pytest.MonkeyPatch) -> None:
-    runner = Mock(spec=QueryRunner)
-    cli = make_repl_cli(SimpleNamespace(query_runner=runner))
+    runner = Mock(spec=BackgroundRunner)
+    cli = make_repl_cli(SimpleNamespace(background_runner=runner))
     monkeypatch.setattr(repl_mode, 'Cursor', FakeCursorBase)
     monkeypatch.setattr(repl_mode.special_commands, 'is_redirected', lambda: False)
     result = SQLResult(status='select', rows=cast(Any, FakeCursorBase(rowcount=1001)))

@@ -18,7 +18,7 @@ import pytest
 from mycli import compat
 from mycli import output as output_module
 from mycli.output import OutputMixin
-from mycli.packages.execution.background_runner import QueryRunner
+from mycli.packages.execution.background_runner import BackgroundRunner
 from mycli.packages.execution.sql_execute import SQLExecute
 from mycli.packages.sql_result.sql_result import SQLResult
 from mycli.types import ImageProtocol
@@ -262,10 +262,10 @@ def test_output_uses_prompt_session_size(monkeypatch: pytest.MonkeyPatch) -> Non
 @pytest.mark.parametrize('paged', [False, True])
 def test_rendering_stops_before_terminal_output(monkeypatch: pytest.MonkeyPatch, paged: bool) -> None:
     cli = make_bare_mycli()
-    runner = QueryRunner(0)
+    runner = BackgroundRunner(0)
     runner.show_state = True
     runner.started = monotonic() - 1
-    cli.sql_execute = cast(Any, SimpleNamespace(query_runner=runner))
+    cli.sql_execute = cast(Any, SimpleNamespace(background_runner=runner))
     cli.prompt_session = None
     cli.explicit_pager = paged
     cli.get_output_margin = lambda status=None: 1  # type: ignore[assignment]
