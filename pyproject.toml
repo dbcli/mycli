@@ -36,10 +36,10 @@ dependencies = [
     "sqlglotc ~= 30.17.0",
     "configobj ~= 5.0.9",
     "cli_helpers[styles] ~= 2.15.1",
-    "wcwidth ~= 0.8.3",
+    "wcwidth ~= 0.8.5",
     "pyperclip ~= 1.11.0",
     "pycryptodomex ~= 3.23.0",
-    "rapidfuzz ~= 3.14.5",
+    "rapidfuzz ~= 3.14.6",
     "keyring ~= 25.7.0",
     "jinja2 ~= 3.1.6",
     "yaspin ~= 3.4.0",
@@ -61,13 +61,13 @@ build-backend = "setuptools.build_meta"
 
 [project.optional-dependencies]
 llm = [
-    "llm ~= 0.33",
+    "llm ~= 0.36",
     "setuptools == 83.*",                   # Required by llm commands to install models
     "pip ~= 26.2.1",
     "httpx2 ~= 2.13.1",                     # transitive dependency forced for "uv audit"
 ]
 dataframe = [
-    "polars ~= 1.44.1",
+    "polars ~= 1.44.2",
     "altair ~= 6.2.2",
     "vl-convert-python ~= 1.9.0",
 ]
