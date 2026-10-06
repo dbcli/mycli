@@ -97,7 +97,9 @@ include = ["mycli*"]
 
 [tool.uv]
 exclude-newer = '1 week'
-exclude-newer-package = { cli_helpers = false }
+
+[tool.uv.exclude-newer-package]
+cli_helpers = false
 
 [tool.ruff]
 target-version = 'py311'
