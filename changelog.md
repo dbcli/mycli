@@ -1,3 +1,13 @@
+Upcoming (TBD)
+==============
+
+Internal
+--------
+* `pyproject.toml` readability tweak.
+* Force some transitive dependency updates, to pass `uv audit`.
+* No-op updates to pinned dependencies.
+
+
 v2.28.1 (2026/10/03)
 ==============
 
