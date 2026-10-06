@@ -64,6 +64,7 @@ llm = [
     "llm ~= 0.33",
     "setuptools == 83.*",                   # Required by llm commands to install models
     "pip ~= 26.2.1",
+    "httpx2 ~= 2.13.1",                     # transitive dependency forced for "uv audit"
 ]
 dataframe = [
     "polars ~= 1.44.1",
@@ -84,6 +85,7 @@ dev = [
     "tox ~= 4.35.0",
     "pdbpp ~= 0.11.7",
     "ruff ~= 0.16.5",
+    "virtualenv ~= 21.7.12",                # transitive dependency forced for "uv audit"
 ]
 
 [project.scripts]
