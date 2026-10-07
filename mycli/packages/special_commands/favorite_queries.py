@@ -10,7 +10,7 @@ from configobj import ConfigObjError
 from jinja2 import meta, nodes
 from jinja2.sandbox import SandboxedEnvironment
 
-from mycli.config import log, read_config_file, read_config_files
+from mycli.config import TripleQuotedConfigValue, log, read_config_file, read_config_files
 
 logger = logging.getLogger(__name__)
 
@@ -283,6 +283,7 @@ Examples:
     def _clean_query(self, query: str | None) -> str | None:
         if not query:
             return query
+
         query = query.lstrip(' \t\n\r')
         query = query.rstrip(' \t\n\r')
         query = query.removesuffix(';')
@@ -317,7 +318,7 @@ Examples:
         config.encoding = "utf-8"
         section_existed = self.section_name in config
         previous_query = config.get(self.section_name, {}).get(name, MISSING)
-        self._set_query(config, name, query)
+        self._set_query(config, name, TripleQuotedConfigValue(query))
         try:
             config.write()
         except Exception:

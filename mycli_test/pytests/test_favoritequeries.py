@@ -1,11 +1,169 @@
 from collections.abc import Mapping
+from io import StringIO
 import logging
 from pathlib import Path
 
 import pytest
 
+from mycli.config import read_config_file
 from mycli.packages.special_commands import favorite_queries as favorite_queries_module
+from mycli.packages.special_commands.dsn_aliases import DsnAliases
 from mycli.packages.special_commands.favorite_queries import FavoriteQueries, FavoriteQueryReloadError
+
+
+@pytest.mark.parametrize(
+    'query',
+    [
+        "SELECT 1, 'hello', 2",
+        "SELECT 'a, b', 2",
+        "SELECT 1, 'x,y', 2",
+        'SELECT 1, "x,y", 2',
+        'SELECT 1,  2',
+        "SELECT 1, 'hello' AS greeting",
+        "SELECT CONCAT('a', 'b')",
+    ],
+)
+def test_unquoted_comma_queries_preserve_sql(query: str) -> None:
+    config = read_config_file(StringIO(f'[favorite_queries]\nq = {query}\n'))
+    assert config is not None
+    assert FavoriteQueries(config).get('q') == query
+
+
+@pytest.mark.parametrize('header', ['[ favorite_queries ]', '[\tfavorite_queries\t]', '[ "favorite_queries" ]'])
+def test_spaced_favorite_section_preserves_sql(header: str) -> None:
+    query = "SELECT 1, 'hello' AS greeting"
+    config = read_config_file(StringIO(f'{header}\nq = {query}\n'), raise_errors=True)
+    assert config is not None
+    assert FavoriteQueries(config).get('q') == query
+
+
+def test_nested_spaced_favorite_section_keeps_list_parsing() -> None:
+    config = read_config_file(StringIO('[main]\n[[ favorite_queries ]]\nitems = a, b\n'), raise_errors=True)
+    assert config is not None
+    assert config['main']['favorite_queries']['items'] == ['a', 'b']
+
+
+@pytest.mark.parametrize(
+    'query',
+    [
+        'SELECT 1',
+        "SELECT 1, 'hello' AS greeting",
+        "SELECT CONCAT('a', 'b')",
+        "SELECT 1, '#tag', 2",
+        'SELECT "#tag"',
+        '''SELECT '#tag', "value"''',
+        "SELECT 1,\n'#tag'",
+        'SELECT \'"""\' AS quoted',
+    ],
+)
+def test_save_and_reload_quoted_query(tmp_path: Path, query: str) -> None:
+    user_file = tmp_path / 'myclirc'
+    user_file.write_text('', encoding='utf-8')
+    favorites = FavoriteQueries(DummyConfig(), str(user_file))
+    favorites.save('q', query)
+    assert favorites.get('q') == query
+    assert user_file.read_text(encoding='utf-8').split('q = ', 1)[1].startswith(('"', "'"))
+
+    favorites.reload()
+
+    assert favorites.get('q') == query
+
+
+@pytest.mark.parametrize('operation', ['save_favorite', 'delete_favorite', 'save_dsn', 'delete_dsn'])
+def test_config_updates_preserve_saved_favorite_quoting(tmp_path: Path, operation: str) -> None:
+    path = tmp_path / 'myclirc'
+    path.write_text('[favorite_queries]\nother = SELECT 3\n[alias_dsn]\nother = mysql://localhost\n', encoding='utf-8')
+    config = read_config_file(str(path))
+    assert config is not None
+    favorites = FavoriteQueries(config, str(path))
+    query = "SELECT 1, '#tag', 2"
+    favorites.save('tags', query)
+    aliases = DsnAliases(config, config_file=str(path))
+
+    if operation == 'save_favorite':
+        favorites.save('other', 'SELECT 4')
+    elif operation == 'delete_favorite':
+        favorites.delete('other')
+    elif operation == 'save_dsn':
+        aliases.save('other', 'mysql://localhost/mysql')
+    else:
+        aliases.delete('other')
+
+    favorites.reload()
+    assert favorites.get('tags') == query
+
+
+def test_unquoted_comma_query_with_terminator() -> None:
+    config = read_config_file(StringIO("[favorite_queries]\nq = SELECT 1, 'hello';\n"), raise_errors=True)
+    assert config is not None
+    assert config['favorite_queries']['q'] == "SELECT 1, 'hello';"
+
+
+def test_multiline_query_section_text_does_not_change_list_parsing() -> None:
+    config = read_config_file(
+        StringIO('[favorite_queries]\nq = """SELECT 1,\n[main]\n2"""\nother = SELECT CONCAT(\'a\', \'b\')\n[main]\nitems = a, b\n'),
+        raise_errors=True,
+    )
+    assert config is not None
+    assert config['favorite_queries']['q'] == 'SELECT 1,\n[main]\n2'
+    assert config['favorite_queries']['other'] == "SELECT CONCAT('a', 'b')"
+    assert config['main']['items'] == ['a', 'b']
+
+
+def test_comma_query_preserves_sql_with_config_comment() -> None:
+    config = read_config_file(StringIO("[favorite_queries]\nq = SELECT 1, 'hello', 2 # comment\n"))
+    assert config is not None
+    assert FavoriteQueries(config).get('q') == "SELECT 1, 'hello', 2"
+
+
+@pytest.mark.parametrize('quote', ['"""', "'''"])
+@pytest.mark.parametrize('indent', ['', '  ', '\t'])
+def test_commented_multiline_example_does_not_skip_favorites(quote: str, indent: str) -> None:
+    query = "SELECT 1, 'hello' AS greeting"
+    config = read_config_file(
+        StringIO(f'{indent}# example = {quote}\n\n[favorite_queries]\nq = {query}\n'),
+        raise_errors=True,
+    )
+    assert config is not None
+    assert FavoriteQueries(config).get('q') == query
+
+
+def test_favorite_query_comment_text_is_preserved() -> None:
+    comment = '  # example = SELECT 1, 2'
+    config = read_config_file(StringIO(f'[favorite_queries]\n{comment}\nq = SELECT 3\n'), raise_errors=True)
+    assert config is not None
+    assert config['favorite_queries'].comments['q'] == [comment]
+
+
+@pytest.mark.parametrize('wrapper', ['"', "'", '"""', "'''"])
+def test_quoted_comma_query_keeps_config_quote_semantics(wrapper: str) -> None:
+    config = read_config_file(StringIO(f'[favorite_queries]\nq = {wrapper}SELECT 1, 2{wrapper}\n'))
+    assert config is not None
+    assert FavoriteQueries(config).get('q') == 'SELECT 1, 2'
+
+
+def test_favorite_sql_preservation_does_not_change_other_lists() -> None:
+    config = read_config_file(StringIO('[main]\nitems = a, b\n[favorite_queries]\nq = SELECT 1, 2\n'))
+    assert config is not None
+    assert config['main']['items'] == ['a', 'b']
+    assert config['favorite_queries']['q'] == 'SELECT 1, 2'
+
+
+def test_reload_preserves_unquoted_comma_query(tmp_path: Path) -> None:
+    user_file = tmp_path / 'myclirc'
+    query = "SELECT 1, 'x,y', 2"
+    user_file.write_text(f'[favorite_queries]\nq = {query}\n', encoding='utf-8')
+    favorites = FavoriteQueries(DummyConfig(), str(user_file))
+
+    favorites.reload()
+
+    assert favorites.get('q') == query
+
+
+def test_partial_config_preserves_unquoted_comma_query() -> None:
+    config = read_config_file(StringIO("[broken\n[favorite_queries]\nq = SELECT 1, 'hello', 2\n"))
+    assert config is not None
+    assert FavoriteQueries(config).get('q') == "SELECT 1, 'hello', 2"
 
 
 class DummyConfig(dict):
@@ -260,7 +418,7 @@ def test_reload_shared_failure_warns_and_uses_user_favorites(
     [
         (b'[favorite_queries]\ninvalid = \xff\n', 'unable to read user configuration'),
         (b'favorite_queries = invalid\n', r'invalid \[favorite_queries\] section'),
-        (b'[favorite_queries]\ninvalid = select 1, select 2\n', r'invalid \[favorite_queries\] section'),
+        (b'[favorite_queries]\n[[invalid]]\nquery = select 1\n', r'invalid \[favorite_queries\] section'),
     ],
 )
 def test_reload_invalid_config_preserves_runtime_favorites(
@@ -452,7 +610,7 @@ prompt = custom# Inline comment.
 [favorite_queries]
 # Existing favorite.
 existing = select 1
-new = select 2
+new = '''select 2'''
 # User footer.
 """
     )
@@ -477,7 +635,7 @@ report = select 1
         config_file.read_text(encoding='utf-8')
         == """[favorite_queries]
 # Keep this explanation.
-report = select 2
+report = '''select 2'''
 """
     )
     assert merged_config['favorite_queries']['report'] == 'select 2'
@@ -543,7 +701,7 @@ def test_save_shared_favorite_override_writes_only_user_config(tmp_path: Path) -
     favorites.save('report', 'select 2')
 
     assert shared_file.read_text(encoding='utf-8') == shared_contents
-    assert config_file.read_text(encoding='utf-8') == '# User config.\n[favorite_queries]\nreport = select 2\n'
+    assert config_file.read_text(encoding='utf-8') == "# User config.\n[favorite_queries]\nreport = '''select 2'''\n"
     assert favorites.get('report') == 'select 2'
 
 
