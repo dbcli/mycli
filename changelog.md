@@ -4,6 +4,7 @@ Upcoming (TBD)
 Bug Fixes
 --------
 * Let the `beep_after_seconds` slow query alert happen before paged output.
+* Allow comma-containing favorite queries in `~/.myclirc`.
 
 
 Internal

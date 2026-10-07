@@ -14,24 +14,84 @@ from Cryptodome.Cipher import AES
 logger = logging.getLogger(__name__)
 
 
+class FavoriteQueryPreservingConfigObj(ConfigObj):
+    """When reading, quote SQL text on the fly which ConfigObj would otherwise interpret as a list."""
+
+    # Buglet: the use of _get_triple_quote() does not allow values which
+    # contain _both_ possible triple-quote delimiters to be read.
+    def _parse(self, infile: list[str]) -> None:
+        if not self.list_values or self.unrepr:
+            super()._parse(infile)
+            return
+
+        lines = infile.copy()
+        in_favorites = False
+        index = 0
+        while index < len(lines):
+            line = lines[index]
+            if not line.strip() or line.lstrip().startswith('#'):
+                index += 1
+                continue
+            section = self._sectionmarker.match(line)
+            if section is not None:
+                _, opening, name, closing, _ = section.groups()
+                in_favorites = opening.count('[') == closing.count(']') == 1 and self._unquote(name) == 'favorite_queries'
+            else:
+                entry = self._keyword.match(line)
+                if entry is not None:
+                    indent, key, value = entry.groups()
+                    if value.startswith(('"""', "'''")):
+                        # Skip complete multiline values, including section-like SQL.
+                        try:
+                            _, _, index = self._multiline(value, lines, index, len(lines) - 1)
+                        except SyntaxError:
+                            break
+                    elif in_favorites and not value.startswith(('"', "'")):
+                        match = self._nolistvalue.match(value)
+                        if match is not None:
+                            sql, comment = match.groups()
+                            lines[index] = f'{indent}{key} = {self._get_triple_quote(sql) % sql} {comment or ""}'
+            index += 1
+
+        super()._parse(lines)
+
+
+class TripleQuotedConfigValue(str):
+    """A value that must retain triple quoting when written."""
+
+    quote: str | None
+
+    def __new__(cls, value: str, quote: str | None = None) -> 'TripleQuotedConfigValue':
+        instance = super().__new__(cls, value)
+        instance.quote = quote
+        return instance
+
+
 class LimiitedQuotePreservingConfigObj(ConfigObj):
     """Useful for saving individual items without modifying the whole file.
 
-    Triplequotes must be manually added for multiline values, and despite the
-    name of the class, could change from double to single in style.  If we
-    don't do this, multiline triplequoted strings lose their quotes entirely,
-    resulting in unreadable files.
+    Preserve existing quoting and add triple quotes for new multiline values.
     """
 
+    # Buglet: the use of _get_triple_quote() does not allow values which
+    # contain _both_ possible triple-quote delimiters to be saved.
     def __init__(self, *args, **kwargs):
         ConfigObj.__init__(self, *args, **kwargs)
 
     def _unquote(self, value):
         return value
 
-    def _quote(self, value, multiline=True):
+    def _multiline(self, value: str, infile: list[str], cur_index: int, maxline: int) -> tuple[str, str | None, int]:
+        parsed, comment, end_index = super()._multiline(value, infile, cur_index, maxline)
+        return TripleQuotedConfigValue(parsed, value[:3]), comment, end_index
+
+    def _quote(self, value: str, multiline: bool = True) -> str:
+        if isinstance(value, TripleQuotedConfigValue):
+            if value.quote is not None:
+                return f'{value.quote}{value}{value.quote}'
+            return self._get_triple_quote(value) % value
         if '\n' in value:
-            return f"'''{value}'''"
+            return self._get_triple_quote(value) % value
         return value
 
 
@@ -70,7 +130,7 @@ def read_config_file(
         if preserve_quotes:
             config = LimiitedQuotePreservingConfigObj(f, interpolation=False, encoding="utf8", list_values=False)
         else:
-            config = ConfigObj(f, interpolation=False, encoding="utf8", list_values=list_values)
+            config = FavoriteQueryPreservingConfigObj(f, interpolation=False, encoding="utf8", list_values=list_values)
     except ConfigObjError as e:
         if raise_errors:
             raise

@@ -1233,7 +1233,7 @@ def test_favorite_edit_command_creates_local_override_for_shared_query(monkeypat
 
     assert io_commands.favorite(arg='edit report') == [SQLResult(status='report: Edited.')]
     assert shared_file.read_text(encoding='utf-8') == shared_contents
-    assert 'report = select 2' in config_file.read_text(encoding='utf-8')
+    assert "report = '''select 2'''" in config_file.read_text(encoding='utf-8')
     assert favorite_queries.get('report') == 'select 2'
 
 
