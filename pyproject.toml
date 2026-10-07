@@ -62,7 +62,7 @@ build-backend = "setuptools.build_meta"
 [project.optional-dependencies]
 llm = [
     "llm ~= 0.36",
-    "setuptools == 83.*",                   # Required by llm commands to install models
+    "setuptools == 84.*",                   # Required by llm commands to install models
     "pip ~= 26.2.1",
     "httpx2 ~= 2.13.1",                     # transitive dependency forced for "uv audit"
 ]
