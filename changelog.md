@@ -9,6 +9,7 @@ Internal
 * Upgrade `yaspin` dependency to v3.5.1.
 * Upgrade `wcwidth` dependency to v0.9.1, which includes a C11 core.
 * Upgrade `setuptools` optional dependency to v84.x.x.
+* Pin `prompt_toolkit` dependency to v3.0.53.
 
 
 v2.28.1 (2026/10/03)
