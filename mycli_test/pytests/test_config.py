@@ -15,7 +15,7 @@ import pytest
 
 from mycli import config as config_module
 from mycli.config import (
-    LimiitedQuotePreservingConfigObj,
+    LimitedQuotePreservingConfigObj,
     TripleQuotedConfigValue,
     _remove_pad,
     create_default_config,
@@ -248,7 +248,7 @@ def test_nested_init_command_section_keeps_list_parsing(section: str) -> None:
 def test_quote_preserving_config_retains_quotes_and_quotes_multiline_values() -> None:
     config = read_config_file(StringIO('[main]\nquoted = "value"\n'), preserve_quotes=True)
 
-    assert isinstance(config, LimiitedQuotePreservingConfigObj)
+    assert isinstance(config, LimitedQuotePreservingConfigObj)
     assert config['main']['quoted'] == '"value"'
     assert config._quote('one line') == 'one line'
     assert config._quote('first line\nsecond line') == "'''first line\nsecond line'''"
@@ -259,7 +259,7 @@ def test_quote_preserving_config_retains_quotes_and_quotes_multiline_values() ->
 def test_quote_preserving_config_retains_triple_quoted_values(quote: str, value: str) -> None:
     text = f'[favorite_queries]\nq = {quote}{value}{quote}\n'
     config = read_config_file(StringIO(text), preserve_quotes=True)
-    assert isinstance(config, LimiitedQuotePreservingConfigObj)
+    assert isinstance(config, LimitedQuotePreservingConfigObj)
     output = BytesIO()
     config.write(output)
     assert output.getvalue().decode('utf-8') == text
