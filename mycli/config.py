@@ -69,7 +69,7 @@ class TripleQuotedConfigValue(str):
         return instance
 
 
-class LimiitedQuotePreservingConfigObj(ConfigObj):
+class LimitedQuotePreservingConfigObj(ConfigObj):
     """Useful for saving individual items without modifying the whole file.
 
     Preserve existing quoting and add triple quotes for new multiline values.
@@ -111,7 +111,7 @@ def read_config_file(
     list_values: bool = True,
     preserve_quotes: bool = False,
     raise_errors: bool = False,
-) -> ConfigObj | LimiitedQuotePreservingConfigObj | None:
+) -> ConfigObj | LimitedQuotePreservingConfigObj | None:
     """Read a config file.
 
     *list_values* set to `True` is the default behavior of ConfigObj.
@@ -130,7 +130,7 @@ def read_config_file(
 
     try:
         if preserve_quotes:
-            config = LimiitedQuotePreservingConfigObj(f, interpolation=False, encoding="utf8", list_values=False)
+            config = LimitedQuotePreservingConfigObj(f, interpolation=False, encoding="utf8", list_values=False)
         else:
             config = SQLValuePreservingConfigObj(f, interpolation=False, encoding="utf8", list_values=list_values)
     except ConfigObjError as e:

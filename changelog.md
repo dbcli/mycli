@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Internal
+--------
+* Fix typo in class name `LimitedQuotePreservingConfigObj`.
+
+
 v2.28.2 (2026/10/07)
 ==============
 
