@@ -14,7 +14,7 @@ from Cryptodome.Cipher import AES
 logger = logging.getLogger(__name__)
 
 
-class FavoriteQueryPreservingConfigObj(ConfigObj):
+class SQLValuePreservingConfigObj(ConfigObj):
     """When reading, quote SQL text on the fly which ConfigObj would otherwise interpret as a list."""
 
     # Buglet: the use of _get_triple_quote() does not allow values which
@@ -25,7 +25,7 @@ class FavoriteQueryPreservingConfigObj(ConfigObj):
             return
 
         lines = infile.copy()
-        in_favorites = False
+        in_sql_stanza = False
         index = 0
         while index < len(lines):
             line = lines[index]
@@ -35,7 +35,9 @@ class FavoriteQueryPreservingConfigObj(ConfigObj):
             section = self._sectionmarker.match(line)
             if section is not None:
                 _, opening, name, closing, _ = section.groups()
-                in_favorites = opening.count('[') == closing.count(']') == 1 and self._unquote(name) == 'favorite_queries'
+                in_sql_stanza = opening.count('[') == closing.count(']') == 1 and (
+                    self._unquote(name) == 'favorite_queries' or 'init-commands' in name
+                )
             else:
                 entry = self._keyword.match(line)
                 if entry is not None:
@@ -46,7 +48,7 @@ class FavoriteQueryPreservingConfigObj(ConfigObj):
                             _, _, index = self._multiline(value, lines, index, len(lines) - 1)
                         except SyntaxError:
                             break
-                    elif in_favorites and not value.startswith(('"', "'")):
+                    elif in_sql_stanza and not value.startswith(('"', "'")):
                         match = self._nolistvalue.match(value)
                         if match is not None:
                             sql, comment = match.groups()
@@ -130,7 +132,7 @@ def read_config_file(
         if preserve_quotes:
             config = LimiitedQuotePreservingConfigObj(f, interpolation=False, encoding="utf8", list_values=False)
         else:
-            config = FavoriteQueryPreservingConfigObj(f, interpolation=False, encoding="utf8", list_values=list_values)
+            config = SQLValuePreservingConfigObj(f, interpolation=False, encoding="utf8", list_values=list_values)
     except ConfigObjError as e:
         if raise_errors:
             raise

@@ -59,3 +59,8 @@ The prompt and toolbar are updated more often than needed, even with caching.
 
 When syntax highlighting with `pygmentize` is enabled for history search previews,
 the colors do not match the user's preferences in `~/.myclirc`.
+
+## favorite queries
+
+Favorite queries are triple-quoted on save in `~/.myclirc`.  If the text of the SQL
+in the favorite query contains both possible triple-quote delimiters, this fails.
