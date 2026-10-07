@@ -173,6 +173,78 @@ def test_read_config_file_list_values_off():
     assert config["main"]["weather"] == "'cloudy with a chance of meatballs'"
 
 
+@pytest.mark.parametrize('section', ['init-commands', 'alias_dsn.init-commands'])
+@pytest.mark.parametrize(
+    'query',
+    [
+        'SET @first = 1,  @second = 2',
+        "SET @message = CONCAT('hello', ', world')",
+        '''SET @first = 'a,b', @second = "c,d"''',
+    ],
+)
+def test_init_commands_preserve_unquoted_sql(section: str, query: str) -> None:
+    config = read_config_file(StringIO(f'[{section}]\nstartup = {query}\n'), raise_errors=True)
+
+    assert config is not None
+    assert config[section]['startup'] == query
+
+
+@pytest.mark.parametrize('section', ['init-commands', 'alias_dsn.init-commands'])
+@pytest.mark.parametrize('quote', ['"', "'", '"""', "'''"])
+def test_init_commands_preserve_config_quote_semantics(section: str, quote: str) -> None:
+    query = 'SET @first = 1, @second = 2'
+    config = read_config_file(StringIO(f'[{section}]\nstartup = {quote}{query}{quote}\n'), raise_errors=True)
+
+    assert config is not None
+    assert config[section]['startup'] == query
+
+
+@pytest.mark.parametrize('section', ['init-commands', 'alias_dsn.init-commands'])
+def test_init_commands_preserve_multiline_sql(section: str) -> None:
+    query = "SET @first = 1,\n    @second = 'a,b'"
+    config = read_config_file(StringIO(f'[{section}]\nstartup = """{query}"""\n'), raise_errors=True)
+
+    assert config is not None
+    assert config[section]['startup'] == query
+
+
+@pytest.mark.parametrize('section', ['init-commands', 'alias_dsn.init-commands'])
+def test_init_commands_strip_trailing_config_comment(section: str) -> None:
+    query = 'SET @first = 1, @second = 2'
+    config = read_config_file(StringIO(f'[{section}]\nstartup = {query} # Startup settings.\n'), raise_errors=True)
+
+    assert config is not None
+    assert config[section]['startup'] == query
+
+
+@pytest.mark.parametrize('section', ['init-commands', 'alias_dsn.init-commands'])
+def test_init_commands_accept_spaced_quoted_section_name(section: str) -> None:
+    query = 'SET @first = 1, @second = 2'
+    config = read_config_file(StringIO(f'[ "{section}" ]\nstartup = {query}\n'), raise_errors=True)
+
+    assert config is not None
+    assert config[section]['startup'] == query
+
+
+@pytest.mark.parametrize('section', ['init-commands', 'alias_dsn.init-commands'])
+def test_init_commands_do_not_change_following_section_lists(section: str) -> None:
+    config = read_config_file(
+        StringIO(f'[{section}]\nstartup = SET @first = 1, @second = 2\n[main]\nitems = a, b\n'),
+        raise_errors=True,
+    )
+
+    assert config is not None
+    assert config['main']['items'] == ['a', 'b']
+
+
+@pytest.mark.parametrize('section', ['init-commands', 'alias_dsn.init-commands'])
+def test_nested_init_command_section_keeps_list_parsing(section: str) -> None:
+    config = read_config_file(StringIO(f'[main]\n[[{section}]]\nitems = a, b\n'), raise_errors=True)
+
+    assert config is not None
+    assert config['main'][section]['items'] == ['a', 'b']
+
+
 def test_quote_preserving_config_retains_quotes_and_quotes_multiline_values() -> None:
     config = read_config_file(StringIO('[main]\nquoted = "value"\n'), preserve_quotes=True)
 
@@ -294,7 +366,7 @@ def test_read_config_file_permission_error(monkeypatch, caplog) -> None:
     def raise_oserror(*_args, **_kwargs):
         raise OSError(13, 'denied', '/tmp/test.cnf')
 
-    monkeypatch.setattr(config_module, 'FavoriteQueryPreservingConfigObj', raise_oserror)
+    monkeypatch.setattr(config_module, 'SQLValuePreservingConfigObj', raise_oserror)
 
     with caplog.at_level(logging.WARNING, logger='mycli.config'):
         assert read_config_file('/tmp/test.cnf') is None
@@ -338,7 +410,7 @@ def test_read_config_file_can_raise_io_errors(monkeypatch) -> None:
     def raise_oserror(*_args, **_kwargs):
         raise error
 
-    monkeypatch.setattr(config_module, 'FavoriteQueryPreservingConfigObj', raise_oserror)
+    monkeypatch.setattr(config_module, 'SQLValuePreservingConfigObj', raise_oserror)
 
     with pytest.raises(OSError) as exc_info:
         read_config_file('/tmp/test.cnf', raise_errors=True)
