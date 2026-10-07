@@ -7,6 +7,7 @@ Internal
 * Force some transitive dependency updates, to pass `uv audit`.
 * No-op updates to pinned dependencies.
 * Upgrade `yaspin` dependency to v3.5.1.
+* Upgrade `wcwidth` dependency to v0.9.1, which includes a C11 core.
 
 
 v2.28.1 (2026/10/03)
