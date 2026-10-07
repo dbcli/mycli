@@ -6,6 +6,7 @@ Internal
 * `pyproject.toml` readability tweak.
 * Force some transitive dependency updates, to pass `uv audit`.
 * No-op updates to pinned dependencies.
+* Upgrade `yaspin` dependency to v3.5.1.
 
 
 v2.28.1 (2026/10/03)
