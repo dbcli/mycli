@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Bug Fixes
+--------
+* Let the `beep_after_seconds` slow query alert happen before paged output.
+
+
 Internal
 --------
 * `pyproject.toml` readability tweak.

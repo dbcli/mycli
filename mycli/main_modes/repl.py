@@ -543,6 +543,9 @@ def _output_results(
             )
 
             duration = time.time() - start
+            if mycli.beep_after_seconds > 0 and duration >= mycli.beep_after_seconds:
+                assert mycli.prompt_session is not None
+                mycli.prompt_session.output.bell()
             try:
                 if result_count > 0:
                     if runner:
@@ -556,9 +559,6 @@ def _output_results(
                 finally:
                     if runner:
                         runner.stop_rendering()
-                if mycli.beep_after_seconds > 0 and duration >= mycli.beep_after_seconds:
-                    assert mycli.prompt_session is not None
-                    mycli.prompt_session.output.bell()
                 if special_commands.is_timing_enabled():
                     mycli.output_timing(f'Time: {duration:0.03f}s')
             except KeyboardInterrupt:
@@ -648,6 +648,9 @@ def _single_paged_output_results(
                 max_width=max_width,
             )
             duration = time.time() - start
+            if mycli.beep_after_seconds > 0 and duration >= mycli.beep_after_seconds:
+                assert mycli.prompt_session is not None
+                mycli.prompt_session.output.bell()
 
             if result_count > 0:
                 mycli.log_output('')
@@ -662,9 +665,6 @@ def _single_paged_output_results(
                 mycli.log_output(result.status_plain)
                 yield f'{result.status_plain}\n'
 
-            if mycli.beep_after_seconds > 0 and duration >= mycli.beep_after_seconds:
-                assert mycli.prompt_session is not None
-                mycli.prompt_session.output.bell()
             if special_commands.is_timing_enabled():
                 timing = f'Time: {duration:0.03f}s'
                 mycli.log_output(timing)
