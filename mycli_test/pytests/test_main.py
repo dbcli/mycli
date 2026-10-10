@@ -786,7 +786,7 @@ def test_help_lists_kubectl_tunnel_options() -> None:
     result = CliRunner().invoke(click_entrypoint, args=['--help'])
 
     assert result.exit_code == 0
-    assert '--kubectl-resource TEXT' in result.output
+    assert '--kubectl-resource RESOURCE' in result.output
     assert '--kubectl-options TEXT' in result.output
 
 
