@@ -66,13 +66,13 @@ class CliArgs:
         'host',
         type=str,
         envvar='MYSQL_HOST',
-        help='Host address of the database.',
+        help='Host address of the MySQL server.',
     )
     port: int | None = clickdc.option(
         '-P',
         type=int,
         envvar='MYSQL_TCP_PORT',
-        help='Port number to use for connection. Honors $MYSQL_TCP_PORT.',
+        help='Port number on the MySQL server.',
     )
     user: str | None = clickdc.option(
         '-u',
@@ -81,13 +81,14 @@ class CliArgs:
         'user',
         type=str,
         envvar='MYSQL_USER',
-        help='User name to connect to the database.',
+        help='User name to connect to the MySQL server.',
     )
     socket: str | None = clickdc.option(
         '-S',
         type=str,
         envvar='MYSQL_UNIX_SOCKET',
-        help='The socket file to use for connection.',
+        metavar='PATH',
+        help='Socket path to connect to the MySQL server.',
     )
     password: int | str | None = clickdc.option(
         '-p',
@@ -96,14 +97,14 @@ class CliArgs:
         'password',
         type=INT_OR_STRING_CLICK_TYPE,
         help=dedent(
-            """Password to connect to the database.
+            """Password to connect to the MySQL server..
             Use with a value to set the password at the CLI, or alone in the last position to request a prompt.
             """
         ),
     )
     password_file: str | None = clickdc.option(
         type=click.Path(),
-        help='File or FIFO path containing the password to connect to the db if not specified otherwise.',
+        help='File or FIFO path containing the password to connect to the server.',
     )
     vault_address: str | None = clickdc.option(
         type=str,
@@ -139,7 +140,7 @@ class CliArgs:
     )
     ssl_cert: str | None = clickdc.option(
         type=click.Path(exists=True),
-        help='X509 cert in PEM format.',
+        help='X509 certificate in PEM format.',
     )
     ssl_key: str | None = clickdc.option(
         type=click.Path(exists=True),
@@ -155,7 +156,7 @@ class CliArgs:
     )
     ssl_verify_server_cert: bool = clickdc.option(
         is_flag=True,
-        help=("""Verify server's "Common Name" in its cert against hostname used when connecting. This option is disabled by default."""),
+        help=("""Verify server's "Common Name" in its cert against hostname used when connecting."""),
     )
     verbose: int = clickdc.option(
         '-v',
@@ -201,11 +202,12 @@ class CliArgs:
     logfile: TextIOWrapper | None = clickdc.option(
         '-l',
         type=click.File(mode='a', encoding='utf-8'),
+        metavar='PATH',
         help='Log every query and its results to a file.',
     )
     checkpoint: str | None = clickdc.option(
         type=str,
-        help='In batch or --execute mode, log successful queries to a file, and skip them with --resume.',
+        help='In batch or --execute mode, log successful queries to a file, and skip them on replay with --resume.',
     )
     resume: bool = clickdc.option(
         '--resume',
@@ -214,7 +216,7 @@ class CliArgs:
     )
     myclirc: str = clickdc.option(
         type=click.Path(),
-        help='Location of myclirc file.',
+        help='Location of the myclirc configuration file.',
     )
     auto_vertical_output: bool = clickdc.option(
         is_flag=True,
@@ -225,7 +227,7 @@ class CliArgs:
         is_flag=True,
         default=None,
         clickdc=None,
-        help='Automatically show warnings after executing a SQL statement.',
+        help='Whether to show warnings after executing a SQL statement.',
     )
     table: bool = clickdc.option(
         '-t',
@@ -240,7 +242,7 @@ class CliArgs:
         '--warn/--no-warn',
         default=None,
         clickdc=None,
-        help='Warn before running a destructive query.',
+        help='Whether to warn before running a destructive query.',
     )
     warn_batch: bool = clickdc.option(
         is_flag=True,
@@ -264,11 +266,11 @@ class CliArgs:
     )
     init_command: str | None = clickdc.option(
         type=str,
-        help='SQL statement to execute after connecting.',
+        help='Initial SQL statement to execute when connecting.',
     )
     unbuffered: bool | None = clickdc.option(
         is_flag=True,
-        help='Instead of copying every row of data into a buffer, fetch rows as needed, to save memory.',
+        help='Instead of copying every row of data into a buffer, fetch rows as needed, saving memory.',
     )
     character_set: str | None = clickdc.option(
         '--charset',
@@ -279,6 +281,7 @@ class CliArgs:
     )
     batch: str | None = clickdc.option(
         type=str,
+        metavar='PATH',
         help='SQL script to execute in batch mode.',
     )
     # deprecated 2026-06-20
@@ -319,10 +322,11 @@ class CliArgs:
     )
     ssh_options: str | None = clickdc.option(
         type=str,
-        help='Extra CLI arguments for SSH with --ssh-jump, placed after options from myclirc.',
+        help='Extra CLI arguments for SSH with --ssh-jump, placed after options from ~/.myclirc.',
     )
     kubectl_resource: str | None = clickdc.option(
         type=str,
+        metavar='RESOURCE',
         help='Open a kubectl port-forward tunnel to RESOURCE and connect through it.',
     )
     kubectl_options: str | None = clickdc.option(
@@ -331,6 +335,7 @@ class CliArgs:
     )
     boundary_id: str | None = clickdc.option(
         type=str,
+        metavar='TARGET_ID',
         help='Open a HashiCorp Boundary tunnel to TARGET_ID and connect through it.',
     )
     checkup: bool = clickdc.option(

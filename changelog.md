@@ -8,6 +8,11 @@ Bug Fixes
 * Don't try to kill a remote thread when a query is already in the "rendering" state.
 
 
+Documentation
+--------
+* Refine several items in the helpdoc.
+
+
 Internal
 --------
 * Fix typo in class name `LimitedQuotePreservingConfigObj`.
