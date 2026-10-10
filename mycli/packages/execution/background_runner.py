@@ -17,7 +17,9 @@ from types import FrameType
 from typing import Any, Callable, Iterator, TypeVar
 
 from prompt_toolkit.utils import get_cwidth
+from pymysql import OperationalError
 from pymysql.connections import Connection, MySQLResult
+from pymysql.constants import ER
 from pymysql.cursors import Cursor, SSCursor
 
 from mycli.constants import DEFAULT_WIDTH, TTY_ERASE_LINE, QueryState
@@ -53,7 +55,12 @@ def background(method: Callable[..., Any]) -> Callable[..., Any]:
         runner = getattr(cursor.connection, '_mycli_background_runner', None)
         if runner is None:
             return method(cursor, *args, **kwargs)
-        return runner.call(lambda: method(cursor, *args, **kwargs), new_statement=method.__name__ == 'execute')
+        try:
+            return runner.call(lambda: method(cursor, *args, **kwargs), new_statement=method.__name__ == 'execute')
+        except QueryCancelled:
+            if isinstance(cursor, BackgroundSSCursor):
+                cursor._cancelled_result = cursor._result
+            raise
 
     return call
 
@@ -67,6 +74,7 @@ class BackgroundCursor(Cursor):
 class BackgroundSSCursor(SSCursor):
     connection: Connection | None
     _result: MySQLResult | None
+    _cancelled_result: MySQLResult | None = None
 
     execute = background(SSCursor.execute)
     nextset = background(SSCursor.nextset)
@@ -82,14 +90,24 @@ class BackgroundSSCursor(SSCursor):
         try:
             if connection.open:
                 super().close()
+        except OperationalError as exc:
+            if exc.args[0] != ER.QUERY_INTERRUPTED or self._result is None or self._result is not self._cancelled_result:
+                raise
+            self._discard_result()
         finally:
             if not connection.open:
                 # A disconnected stream cannot be drained, even during destruction.
-                if self._result is not None:
-                    self._result.unbuffered_active = False
-                    self._result.connection = None
-                self._result = None
-                self.connection = None
+                self._discard_result()
+            if self.connection is None:
+                self._cancelled_result = None
+
+    def _discard_result(self) -> None:
+        if self._result is not None:
+            self._result.unbuffered_active = False
+            self._result.has_next = False
+            self._result.connection = None
+        self._result = None
+        self.connection = None
 
     __del__ = close
 
