@@ -914,7 +914,8 @@ def test_new_statement_resets_update_deadline(runner: BackgroundRunner, monkeypa
 @pytest.mark.parametrize('state', [QueryState.RENDERING, QueryState.TRANSFORMING])
 def test_rendering_error_stops_ticker(runner: BackgroundRunner, error: BaseException, state: QueryState) -> None:
     runner.show_state = True
-    with pytest.raises(type(error)):
+    expected = QueryCancelled if isinstance(error, KeyboardInterrupt) and state == QueryState.RENDERING else type(error)
+    with pytest.raises(expected):
         with runner.rendering(state):
             thread = runner._render_thread
             assert thread is not None
@@ -987,6 +988,31 @@ def test_successful_visible_query_hands_off_to_rendering(runner: BackgroundRunne
 def test_disabled_rendering_starts_no_thread(runner: BackgroundRunner, state: QueryState) -> None:
     with runner.rendering(state):
         assert runner._render_thread is None
+
+
+def test_nested_rendering_interrupt_is_local(runner: BackgroundRunner) -> None:
+    with runner.rendering(QueryState.TRANSFORMING):
+        with pytest.raises(QueryCancelled) as raised:
+            with runner.rendering():
+                raise KeyboardInterrupt
+        assert not raised.value.disconnected
+        assert runner._render_state == QueryState.TRANSFORMING
+        assert runner._render_depth == 1
+    assert runner._render_depth == 0
+
+
+@pytest.mark.parametrize('phase', ['streaming', 'transforming', 'database'])
+def test_non_rendering_interrupt_keeps_existing_handling(runner: BackgroundRunner, phase: str) -> None:
+    state = QueryState.TRANSFORMING if phase == 'transforming' else QueryState.RENDERING
+    if phase == 'streaming':
+        runner.attach(Connection(defer_connect=True, cursorclass=SSCursor), Mock())
+    runner._busy = phase == 'database'
+    try:
+        with pytest.raises(KeyboardInterrupt):
+            with runner.rendering(state):
+                raise KeyboardInterrupt
+    finally:
+        runner._busy = False
 
 
 def test_nested_rendering_uses_one_ticker(runner: BackgroundRunner) -> None:

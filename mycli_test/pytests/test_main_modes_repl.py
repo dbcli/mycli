@@ -19,7 +19,7 @@ import pytest
 
 import mycli.main_modes.repl as repl_mode
 from mycli.output import OutputMixin
-from mycli.packages.execution.background_runner import BackgroundRunner
+from mycli.packages.execution.background_runner import BackgroundRunner, rendering_output
 from mycli.packages.execution.sql_execute import SQLExecute
 from mycli.packages.special_commands import io_commands
 from mycli.packages.sql_result.sql_result import SQLResult
@@ -918,7 +918,8 @@ def test_output_results_cleans_up_shared_rendering_scope_on_error(
     cli = make_repl_cli(SimpleNamespace(background_runner=runner))
     setattr(cli, phase, Mock(side_effect=error))
     try:
-        with pytest.raises(type(error)):
+        expected = repl_mode.QueryCancelled if isinstance(error, KeyboardInterrupt) else type(error)
+        with pytest.raises(expected):
             repl_mode._output_results(cli, repl_mode.ReplState(), [SQLResult(header=['id'], rows=[(1,)])], 0.0, raise_interrupts=True)
         assert not runner.visible
         assert runner._render_thread is None
@@ -2406,6 +2407,77 @@ def test_one_iteration_reports_polars_expression_error_without_output(monkeypatc
     assert 'Polars expression failed' in cli.echo_calls
     assert cli.query_history[-1].query == command
     assert cli.query_history[-1].successful is False
+
+
+@pytest.mark.parametrize('show_state', [False, True])
+@pytest.mark.parametrize('lazy', [False, True])
+def test_rendering_interrupt_does_not_cancel_remote_query(
+    monkeypatch: pytest.MonkeyPatch,
+    show_state: bool,
+    lazy: bool,
+) -> None:
+    patch_repl_runtime_defaults(monkeypatch)
+    runner = BackgroundRunner(0)
+    runner.show_state = show_state
+    runner.interval = 60
+    connection = pymysql.Connection(defer_connect=True)
+    connection.server_thread_id = (42,)
+    connection._sock = Mock()
+    runner.attach(connection, Mock())
+    sql = SimpleNamespace(dbname='db', connection_id=42, conn=connection, background_runner=runner, connect=Mock())
+    cli = make_repl_cli(sql)
+    cli.reconnect = Mock()
+    remote_cancel = Mock()
+    monkeypatch.setattr(runner, '_control', remote_cancel)
+    statements: list[str] = []
+
+    def results(text: str) -> Iterator[SQLResult]:
+        statements.append(text)
+        yield SQLResult(header=['id'], rows=[(1,)])
+        statements.append('second statement')
+        yield SQLResult(header=['id'], rows=[(2,)])
+
+    sql.run = results
+
+    def interrupted_rows() -> Iterator[str]:
+        yield 'header'
+        raise KeyboardInterrupt
+
+    if lazy:
+        cli.format_sqlresult = lambda *args, **kwargs: interrupted_rows()
+        output = cli.output
+
+        @rendering_output
+        def consume(client: Any, formatted: Any, result: SQLResult) -> None:
+            output(formatted, result)
+
+        cli.output = lambda formatted, result: consume(cli, formatted, result)
+    else:
+        cli.format_sqlresult = Mock(side_effect=KeyboardInterrupt)
+
+    try:
+        repl_mode._one_iteration(cli, repl_mode.ReplState(), 'SELECT 1; SELECT 2')
+
+        assert statements == ['SELECT 1; SELECT 2']
+        remote_cancel.assert_not_called()
+        sql.connect.assert_not_called()
+        cli.reconnect.assert_not_called()
+        assert 'Query cancelled.' in cli.echo_calls
+        assert cli.query_history[-1].successful is False
+        assert not runner.visible
+        assert runner._render_thread is None
+        assert runner._render_depth == 0
+        assert sql.conn is connection
+        assert connection.open
+        cli.format_sqlresult = lambda *args, **kwargs: iter(['row'])
+        repl_mode._one_iteration(cli, repl_mode.ReplState(), 'SELECT 3')
+        assert bool(cli.query_history[-1].successful)
+        remote_cancel.assert_not_called()
+        sql.connect.assert_not_called()
+        cli.reconnect.assert_not_called()
+    finally:
+        runner.close()
+        connection._force_close()
 
 
 @pytest.mark.parametrize('disconnected', [False, True])

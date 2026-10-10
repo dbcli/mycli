@@ -5,6 +5,7 @@ Bug Fixes
 --------
 * Fix exceptions when interrupting "streaming" unbuffered queries.
 * Fix exceptions when interrupting "executing" unbuffered queries.
+* Don't try to kill a remote thread when a query is already in the "rendering" state.
 
 
 Internal
