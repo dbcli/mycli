@@ -167,7 +167,7 @@ allowlist_externals = ['rm', 'uv']
 
 [tool.tox.env.style]
 skip_install = true
-deps = ['ruff']
+deps = ['ruff~=0.16.5']
 commands = [['ruff', 'check'],
             ['ruff', 'format', '--diff']]
 

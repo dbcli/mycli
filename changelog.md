@@ -1,3 +1,11 @@
+v2.29.1 (2026/10/10)
+==============
+
+Internal
+--------
+* Pin tox's ruff version to match `dev` dependency group.
+
+
 v2.29.0 (2026/10/10)
 ==============
 
