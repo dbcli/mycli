@@ -67,8 +67,8 @@ llm = [
     "httpx2 ~= 2.13.1",                     # transitive dependency forced for "uv audit"
 ]
 dataframe = [
-    "polars ~= 1.44.2",
-    "altair ~= 6.2.2",
+    "polars ~= 2.0.0",
+    "altair ~= 6.3.0",
     "vl-convert-python ~= 1.9.0",
 ]
 all = [
@@ -102,6 +102,8 @@ exclude-newer = '1 week'
 
 [tool.uv.exclude-newer-package]
 cli_helpers = false
+polars = false                              # temporary to get Polars 2.x, remove 1 week after 2026-10-06T11:44:04.327Z
+polars-runtime-32 = false                   # temporary to get Polars 2.x, remove 1 week after 2026-10-06T11:44:04.327Z
 
 [tool.ruff]
 target-version = 'py311'
