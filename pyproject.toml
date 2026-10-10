@@ -104,6 +104,7 @@ exclude-newer = '1 week'
 cli_helpers = false
 polars = false                              # temporary to get Polars 2.x, remove 1 week after 2026-10-06T11:44:04.327Z
 polars-runtime-32 = false                   # temporary to get Polars 2.x, remove 1 week after 2026-10-06T11:44:04.327Z
+pydantic_core = false                       # temporary to allow v2.50.0, remove 1 week after 2026-10-08
 
 [tool.ruff]
 target-version = 'py311'

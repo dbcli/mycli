@@ -18,6 +18,7 @@ Internal
 * Fix typo in class name `LimitedQuotePreservingConfigObj`.
 * Update `polars` to v2.0.0.
 * Update `altair` to v6.3.0.
+* Add Python 3.15 to CI.
 
 
 v2.28.2 (2026/10/07)
