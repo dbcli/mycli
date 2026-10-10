@@ -138,13 +138,17 @@ class BackgroundRunner:
         self._render_thread: Thread | None = None
 
     @contextmanager
-    def rendering(self, state: QueryState = QueryState.RENDERING) -> Iterator[None]:
+    def rendering(self, state: QueryState | None = None) -> Iterator[None]:
         with self._display_lock:
             outer = self._render_depth == 0
             self._render_depth += 1
             previous_state = self._render_state
-            self._render_state = state
-        if outer:
+            self._render_state = state if state is not None else previous_state
+            if self._render_state == QueryState.REDIRECTING and self.started is None:
+                self.started = monotonic()
+                self._next_update = self.started + self.interval
+        # Explicit phases may resume progress after terminal output stopped it.
+        if outer or (state is not None and self._render_thread is None):
             with self._display_lock:
                 self._output_started = False
                 self._render_stop.clear()
@@ -154,7 +158,7 @@ class BackgroundRunner:
         try:
             yield
         except KeyboardInterrupt:
-            if self._local_state() in (QueryState.RENDERING, QueryState.TRANSFORMING) and not self._busy:
+            if self._local_state() in (QueryState.RENDERING, QueryState.TRANSFORMING, QueryState.REDIRECTING) and not self._busy:
                 raise QueryCancelled(False) from None
             raise
         finally:

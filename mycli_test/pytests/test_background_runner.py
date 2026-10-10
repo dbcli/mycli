@@ -281,7 +281,7 @@ def test_attach_selects_background_cursor(runner: BackgroundRunner, cursorclass:
 
 
 @pytest.mark.parametrize('cursorclass', [Cursor, SSCursor, BackgroundSSCursor])
-@pytest.mark.parametrize('state', [QueryState.RENDERING, QueryState.TRANSFORMING])
+@pytest.mark.parametrize('state', [QueryState.RENDERING, QueryState.TRANSFORMING, QueryState.REDIRECTING])
 @pytest.mark.parametrize('periodic', [False, True])
 def test_local_state_label_matches_cursor_mode(
     runner: BackgroundRunner,
@@ -803,7 +803,7 @@ def test_non_tty_suppresses_monitor(monkeypatch: pytest.MonkeyPatch) -> None:
         instance.close()
 
 
-@pytest.mark.parametrize('state', [QueryState.RENDERING, QueryState.TRANSFORMING])
+@pytest.mark.parametrize('state', [QueryState.RENDERING, QueryState.TRANSFORMING, QueryState.REDIRECTING])
 def test_rendering_keeps_elapsed_time_advancing(
     runner: BackgroundRunner,
     monkeypatch: pytest.MonkeyPatch,
@@ -828,6 +828,31 @@ def test_rendering_keeps_elapsed_time_advancing(
     assert updates[1][0] > updates[0][0] >= 2
     assert all(displayed == state for _, displayed in updates)
     monitor.assert_not_called()
+
+
+@pytest.mark.parametrize('show_state', [False, True])
+def test_redirecting_starts_clock_without_database_work(
+    runner: BackgroundRunner,
+    monkeypatch: pytest.MonkeyPatch,
+    show_state: bool,
+) -> None:
+    runner.show_state = show_state
+    runner.interval = 60
+    monkeypatch.setattr(background_runner, 'monotonic', lambda: 10.0)
+
+    with runner.rendering(QueryState.REDIRECTING):
+        assert runner.started == 10.0
+        assert runner._next_update == 70.0
+
+
+def test_redirecting_preserves_existing_clock_and_deadline(runner: BackgroundRunner, monkeypatch: pytest.MonkeyPatch) -> None:
+    runner.started = 10.0
+    runner._next_update = 11.0
+    monkeypatch.setattr(background_runner, 'monotonic', lambda: 20.0)
+
+    with runner.rendering(QueryState.REDIRECTING):
+        assert runner.started == 10.0
+        assert runner._next_update == 11.0
 
 
 def test_fetch_does_not_reset_statement_start(runner: BackgroundRunner, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -911,7 +936,7 @@ def test_new_statement_resets_update_deadline(runner: BackgroundRunner, monkeypa
 
 
 @pytest.mark.parametrize('error', [ValueError('formatting'), KeyboardInterrupt()])
-@pytest.mark.parametrize('state', [QueryState.RENDERING, QueryState.TRANSFORMING])
+@pytest.mark.parametrize('state', [QueryState.RENDERING, QueryState.TRANSFORMING, QueryState.REDIRECTING])
 def test_rendering_error_stops_ticker(runner: BackgroundRunner, error: BaseException, state: QueryState) -> None:
     runner.show_state = True
     expected = QueryCancelled if isinstance(error, KeyboardInterrupt) else type(error)
@@ -984,13 +1009,13 @@ def test_successful_visible_query_hands_off_to_rendering(runner: BackgroundRunne
     assert runner.visible
 
 
-@pytest.mark.parametrize('state', [QueryState.RENDERING, QueryState.TRANSFORMING])
+@pytest.mark.parametrize('state', [QueryState.RENDERING, QueryState.TRANSFORMING, QueryState.REDIRECTING])
 def test_disabled_rendering_starts_no_thread(runner: BackgroundRunner, state: QueryState) -> None:
     with runner.rendering(state):
         assert runner._render_thread is None
 
 
-@pytest.mark.parametrize('state', [QueryState.RENDERING, QueryState.TRANSFORMING])
+@pytest.mark.parametrize('state', [QueryState.RENDERING, QueryState.TRANSFORMING, QueryState.REDIRECTING])
 def test_nested_rendering_interrupt_is_local(runner: BackgroundRunner, state: QueryState) -> None:
     outer_state = QueryState.TRANSFORMING if state == QueryState.RENDERING else QueryState.RENDERING
     with runner.rendering(outer_state):
@@ -1003,9 +1028,11 @@ def test_nested_rendering_interrupt_is_local(runner: BackgroundRunner, state: Qu
     assert runner._render_depth == 0
 
 
-@pytest.mark.parametrize('phase', ['streaming', 'transforming_database', 'database'])
+@pytest.mark.parametrize('phase', ['streaming', 'transforming_database', 'redirecting_database', 'database'])
 def test_non_rendering_interrupt_keeps_existing_handling(runner: BackgroundRunner, phase: str) -> None:
     state = QueryState.TRANSFORMING if phase == 'transforming_database' else QueryState.RENDERING
+    if phase == 'redirecting_database':
+        state = QueryState.REDIRECTING
     if phase == 'streaming':
         runner.attach(Connection(defer_connect=True, cursorclass=SSCursor), Mock())
     runner._busy = phase != 'streaming'
@@ -1027,7 +1054,7 @@ def test_nested_rendering_uses_one_ticker(runner: BackgroundRunner) -> None:
     assert not thread.is_alive()
 
 
-@pytest.mark.parametrize('state', [QueryState.RENDERING, QueryState.TRANSFORMING])
+@pytest.mark.parametrize('state', [QueryState.RENDERING, QueryState.TRANSFORMING, QueryState.REDIRECTING])
 def test_pager_suppresses_rendering(runner: BackgroundRunner, state: QueryState) -> None:
     runner.show_state = True
     with runner.suspend_display():
@@ -1042,7 +1069,7 @@ def test_nested_processing_restores_outer_state_after_error(runner: BackgroundRu
         thread = runner._render_thread
         assert vars(runner)['_render_state'] == QueryState.TRANSFORMING
         with pytest.raises(ValueError, match='format failed'):
-            with runner.rendering():
+            with runner.rendering(QueryState.RENDERING):
                 assert runner._render_thread is thread
                 assert vars(runner)['_render_state'] == QueryState.RENDERING
                 raise ValueError('format failed')
@@ -1050,6 +1077,24 @@ def test_nested_processing_restores_outer_state_after_error(runner: BackgroundRu
         assert thread is not None and thread.is_alive()
     assert vars(runner)['_render_state'] == QueryState.RENDERING
     assert not thread.is_alive()
+
+
+def test_nested_rendering_inherits_redirecting(runner: BackgroundRunner) -> None:
+    runner.attach(Connection(defer_connect=True, cursorclass=SSCursor), Mock())
+    with runner.rendering(QueryState.REDIRECTING):
+        with runner.rendering():
+            assert runner._local_state() == QueryState.REDIRECTING
+    assert runner._local_state() == QueryState.STREAMING
+
+
+def test_explicit_redirecting_resumes_stopped_progress(runner: BackgroundRunner) -> None:
+    runner.show_state = True
+    with runner.rendering(QueryState.REDIRECTING):
+        runner.stop_rendering()
+        with runner.rendering(QueryState.REDIRECTING):
+            assert runner._render_thread is not None
+            assert not runner._output_started
+    assert runner._render_thread is None
 
 
 def test_database_handoff_uses_active_transform_state(runner: BackgroundRunner, monkeypatch: pytest.MonkeyPatch) -> None:

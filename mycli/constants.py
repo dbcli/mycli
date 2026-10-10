@@ -58,6 +58,7 @@ TTY_ERASE_LINE = '\r\x1b[2K'
 
 
 class QueryState(enum.StrEnum):
+    REDIRECTING = 'redirecting'
     RENDERING = 'rendering'
     STREAMING = 'streaming'
     TRANSFORMING = 'transforming'

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from contextlib import contextmanager
+from collections.abc import Callable
+from contextlib import AbstractContextManager, contextmanager, nullcontext
 import locale
 import logging
 import os
@@ -55,6 +56,7 @@ PIPE_ONCE: dict[str, Any] = {
     'stdin': [],
     'stdout_file': None,
     'stdout_mode': None,
+    'process_group': False,
 }
 delimiter_command = DelimiterCommand()
 favorite_queries = FavoriteQueries(ConfigObj())
@@ -368,37 +370,30 @@ def temporary_redirect(
     file_operator_part: str | None,
     file_part: str | None,
     post_redirect_command: str | None,
+    *,
+    progress: Callable[[], AbstractContextManager[None]] = nullcontext,
+    before_output: Callable[[], None] | None = None,
 ) -> Iterator[None]:
-    """Own a transform's redirection without leaking resources into the next query."""
+    """Own a hybrid redirection without leaking resources into the next query."""
     global once_file, written_to_once_file
     previous_once, previous_written = once_file, written_to_once_file
     previous_pipe = dict(PIPE_ONCE)
     process_group = not WIN
     _reset_one_time_redirects()
     try:
-        set_redirect(command_part, file_operator_part, file_part, start_new_session=process_group)
+        with progress():
+            set_redirect(command_part, file_operator_part, file_part, start_new_session=process_group)
         yield
-        if once_file is not None:
-            filename = once_file.name
-            once_file.close()
-            once_file = None
-            _run_post_redirect_hook(post_redirect_command, filename)
-        flush_pipe_once_if_written(post_redirect_command, force=True, process_group=process_group)
+        with progress():
+            if once_file is not None:
+                filename = once_file.name
+                once_file.close()
+                once_file = None
+                _run_post_redirect_hook(post_redirect_command, filename)
+            flush_pipe_once_if_written(post_redirect_command, force=True, process_group=process_group, before_output=before_output)
     finally:
         try:
-            if once_file is not None:
-                once_file.close()
-            if process := PIPE_ONCE['process']:
-                _kill_pipe_process(process, process_group=process_group)
-                try:
-                    process.communicate(timeout=2)
-                except subprocess.TimeoutExpired:
-                    for stream in (process.stdin, process.stdout, process.stderr):
-                        if stream is not None:
-                            stream.close()
-                    process.wait(timeout=2)
-        except Exception:
-            logging.getLogger(__name__).debug('Redirect cleanup failed', exc_info=True)
+            abort_redirect()
         finally:
             once_file, written_to_once_file = previous_once, previous_written
             PIPE_ONCE.clear()
@@ -408,7 +403,22 @@ def temporary_redirect(
 def _reset_one_time_redirects() -> None:
     global once_file, written_to_once_file
     once_file, written_to_once_file = None, False
-    PIPE_ONCE.update(process=None, stdin=[], stdout_file=None, stdout_mode=None)
+    PIPE_ONCE.update(process=None, stdin=[], stdout_file=None, stdout_mode=None, process_group=False)
+
+
+def abort_redirect() -> None:
+    """Discard active redirects without running success hooks."""
+    try:
+        try:
+            if once_file is not None:
+                once_file.close()
+        finally:
+            if process := PIPE_ONCE['process']:
+                _cleanup_pipe_process(process, process_group=PIPE_ONCE['process_group'])
+    except (Exception, KeyboardInterrupt):
+        logging.getLogger(__name__).debug('Redirect cleanup failed', exc_info=True)
+    finally:
+        _reset_one_time_redirects()
 
 
 @special_command(
@@ -980,14 +990,21 @@ def _run_post_redirect_hook(post_redirect_command: str | None, filename: str) ->
         return
     post_cmd = post_redirect_command.format(shlex.quote(filename))
     try:
-        subprocess.run(
+        process = subprocess.Popen(
             post_cmd,
             shell=True,
-            check=True,
             stdin=subprocess.DEVNULL,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
+            start_new_session=not WIN,
         )
+        try:
+            returncode = process.wait()
+            if returncode:
+                raise subprocess.CalledProcessError(returncode, post_cmd)
+        except BaseException:
+            _cleanup_pipe_process(process, process_group=not WIN)
+            raise
     except Exception as e:
         raise OSError(f"Redirect post hook failed: {e}") from e
 
@@ -999,9 +1016,11 @@ def _run_post_redirect_hook(post_redirect_command: str | None, filename: str) ->
     aliases=[SpecialCommandAlias("\\|", case_sensitive=False)],
     completion_snippet='next result to subprocess',
 )
-def set_pipe_once(arg: str, *, start_new_session: bool = False, **_) -> list[SQLResult]:
+def set_pipe_once(arg: str, *, start_new_session: bool | None = None, **_) -> list[SQLResult]:
     if not arg:
         raise OSError("pipe_once requires a command")
+    if start_new_session is None:
+        start_new_session = not WIN
     if WIN:
         # best effort, no chaining
         pipe_once_cmd = shlex.split(arg)
@@ -1009,6 +1028,7 @@ def set_pipe_once(arg: str, *, start_new_session: bool = False, **_) -> list[SQL
         # to support chaining
         pipe_once_cmd = ['sh', '-c', arg]
     PIPE_ONCE['stdin'] = []
+    PIPE_ONCE['process_group'] = start_new_session
     PIPE_ONCE['process'] = subprocess.Popen(
         pipe_once_cmd,
         stdin=subprocess.PIPE,
@@ -1037,17 +1057,34 @@ def _kill_pipe_process(process: subprocess.Popen[str], *, process_group: bool) -
         process.kill()
 
 
+def _cleanup_pipe_process(process: subprocess.Popen[Any], *, process_group: bool) -> None:
+    try:
+        _kill_pipe_process(process, process_group=process_group)
+        try:
+            process.communicate(timeout=2)
+        except subprocess.TimeoutExpired:
+            for stream in (process.stdin, process.stdout, process.stderr):
+                if stream is not None:
+                    stream.close()
+            process.wait(timeout=2)
+    except (Exception, KeyboardInterrupt):
+        logging.getLogger(__name__).debug('Redirect cleanup failed', exc_info=True)
+
+
 def flush_pipe_once_if_written(
     post_redirect_command: str | None,
     *,
     force: bool = False,
-    process_group: bool = False,
+    process_group: bool | None = None,
+    before_output: Callable[[], None] | None = None,
 ) -> None:
     """Flush the pipe_once cmd, if lines have been written."""
     if not PIPE_ONCE['process']:
         return
     if not PIPE_ONCE['stdin'] and not force:
         return
+    if process_group is None:
+        process_group = PIPE_ONCE['process_group']
     timed_out = False
     try:
         content = '\n'.join(PIPE_ONCE['stdin']) + '\n' if PIPE_ONCE['stdin'] else ''
@@ -1064,21 +1101,19 @@ def flush_pipe_once_if_written(
                     print(stdout_data, file=f)
             _run_post_redirect_hook(post_redirect_command, PIPE_ONCE['stdout_file'])
     elif stdout_data:
+        if before_output is not None:
+            before_output()
         click.secho(stdout_data.rstrip('\n'))
     if stderr_data:
+        if before_output is not None:
+            before_output()
         click.secho(stderr_data.rstrip('\n'), err=True, fg='red')
     if timed_out or returncode:
-        PIPE_ONCE['process'] = None
-        PIPE_ONCE['stdin'] = []
-        PIPE_ONCE['stdout_file'] = None
-        PIPE_ONCE['stdout_mode'] = None
+        PIPE_ONCE.update(process=None, stdin=[], stdout_file=None, stdout_mode=None, process_group=False)
         if timed_out:
             raise OSError('process timed out after 60 seconds')
         raise OSError(f'process exited with nonzero code {returncode}')
-    PIPE_ONCE['process'] = None
-    PIPE_ONCE['stdin'] = []
-    PIPE_ONCE['stdout_file'] = None
-    PIPE_ONCE['stdout_mode'] = None
+    PIPE_ONCE.update(process=None, stdin=[], stdout_file=None, stdout_mode=None, process_group=False)
 
 
 @special_command(
