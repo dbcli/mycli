@@ -4,6 +4,7 @@ Upcoming (TBD)
 Bug Fixes
 --------
 * Fix exceptions when interrupting "streaming" unbuffered queries.
+* Fix exceptions when interrupting "executing" unbuffered queries.
 
 
 Internal

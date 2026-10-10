@@ -1,8 +1,9 @@
 from collections.abc import Iterator
 from concurrent.futures import Future
 import gc
-from io import StringIO
+from io import BytesIO, StringIO
 import signal
+import struct
 import sys
 from threading import Event, get_ident
 from time import monotonic
@@ -13,6 +14,7 @@ import weakref
 
 from pymysql import OperationalError
 from pymysql.connections import Connection, MySQLResult
+from pymysql.constants import ER
 from pymysql.cursors import Cursor, SSCursor
 import pytest
 
@@ -491,6 +493,133 @@ def test_streaming_cursor_close_propagates_drain_error(
         assert not result.unbuffered_active
         assert result.connection is None
         assert streaming_cursor.connection is None
+
+
+def _cursor_with_pending_error(code: int = ER.QUERY_INTERRUPTED) -> BackgroundSSCursor:
+    connection = Connection(defer_connect=True, cursorclass=SSCursor)
+    connection.server_thread_id = (42,)
+    connection._sock = Mock()
+    connection._current_timeout = connection._read_timeout
+    connection._next_seq_id = 0
+    payload = b'\xff' + struct.pack('<H', code) + b'#70100Query execution was interrupted'
+    connection._rfile = BytesIO(struct.pack('<I', len(payload)) + payload)
+    result = MySQLResult(connection)
+    result.unbuffered_active = True
+    connection._result = result
+    cursor = BackgroundSSCursor(connection)
+    cursor._result = result
+    return cursor
+
+
+def test_cancelled_execute_defers_interruption_to_cleanup(
+    runner: BackgroundRunner,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cursor = _cursor_with_pending_error()
+    connection = cursor.connection
+    result = cursor._result
+    assert connection is not None and result is not None
+    runner.attach(connection, Mock())
+    original_call = runner._call
+    interrupts = iter([True])
+    try:
+        with monkeypatch.context() as patch:
+            patch.setattr(cursor, '_query', lambda sql: 1)
+            patch.setattr(runner, '_call', lambda operation, interrupted: original_call(operation, lambda: next(interrupts, False)))
+            with pytest.raises(QueryCancelled):
+                cursor.execute('SELECT 1')
+
+        assert cursor._cancelled_result is result
+        assert result is not None
+        cursor.close()
+        cursor.close()
+
+        assert not result.unbuffered_active
+        assert result.connection is None
+        assert not result.has_next
+        assert cursor.connection is None
+        assert cursor._cancelled_result is None
+        assert connection.open
+    finally:
+        result.unbuffered_active = False
+        cursor.connection = None
+        connection._force_close()
+
+
+def test_cancelled_streaming_cursor_destruction_consumes_interruption(
+    runner: BackgroundRunner,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cursor = _cursor_with_pending_error()
+    connection = cursor.connection
+    result = cursor._result
+    assert connection is not None and result is not None
+    cursor._cancelled_result = result
+    runner.attach(connection, Mock())
+    reference = weakref.ref(cursor)
+    unraisable = Mock()
+    monkeypatch.setattr(sys, 'unraisablehook', unraisable)
+    try:
+        del cursor
+        gc.collect()
+
+        assert reference() is None
+        unraisable.assert_not_called()
+        assert not result.unbuffered_active
+        assert connection.open
+    finally:
+        result.unbuffered_active = False
+        connection._force_close()
+
+
+@pytest.mark.parametrize('marked, code', [(False, ER.QUERY_INTERRUPTED), (True, 2013)])
+def test_streaming_cleanup_does_not_hide_unexpected_error(marked: bool, code: int) -> None:
+    cursor = _cursor_with_pending_error(code)
+    connection = cursor.connection
+    result = cursor._result
+    assert connection is not None and result is not None
+    if marked:
+        cursor._cancelled_result = result
+    try:
+        with pytest.raises(OperationalError) as raised:
+            cursor.close()
+        assert raised.value.args[0] == code
+    finally:
+        result.unbuffered_active = False
+        cursor.connection = None
+        connection._force_close()
+
+
+def test_cancelled_result_does_not_mark_successor(runner: BackgroundRunner) -> None:
+    cursor = _cursor_with_pending_error()
+    connection = cursor.connection
+    assert connection is not None
+    cursor._cancelled_result = cursor._result
+    runner.attach(connection, Mock())
+    try:
+        cursor.close()
+        # An OK packet proves a subsequent command can use the same connection.
+        payload = b'\x00\x00\x00\x02\x00\x00\x00'
+        connection._rfile = BytesIO(struct.pack('<I', len(payload))[:3] + b'\x01' + payload)
+        next_cursor = connection.cursor()
+        assert next_cursor.execute('SET @value = 1') == 0
+        assert next_cursor._cancelled_result is None
+        next_cursor.close()
+    finally:
+        connection._force_close()
+
+
+def test_marker_for_old_result_does_not_suppress_interruption() -> None:
+    cursor = _cursor_with_pending_error()
+    connection = cursor.connection
+    assert connection is not None
+    cursor._cancelled_result = MySQLResult(connection)
+    try:
+        with pytest.raises(OperationalError, match='Query execution was interrupted'):
+            cursor.close()
+    finally:
+        cursor.connection = None
+        connection._force_close()
 
 
 def test_monitor_queries_separate_connection(runner: BackgroundRunner) -> None:
