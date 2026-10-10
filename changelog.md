@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Bug Fixes
+--------
+* Fix exceptions when interrupting "streaming" unbuffered queries.
+
+
 Internal
 --------
 * Fix typo in class name `LimitedQuotePreservingConfigObj`.

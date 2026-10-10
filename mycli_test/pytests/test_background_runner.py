@@ -1,14 +1,18 @@
 from collections.abc import Iterator
 from concurrent.futures import Future
+import gc
 from io import StringIO
 import signal
+import sys
 from threading import Event, get_ident
 from time import monotonic
 from types import SimpleNamespace
 from typing import Any
 from unittest.mock import Mock
+import weakref
 
-from pymysql.connections import Connection
+from pymysql import OperationalError
+from pymysql.connections import Connection, MySQLResult
 from pymysql.cursors import Cursor, SSCursor
 import pytest
 
@@ -350,6 +354,143 @@ def test_cursor_execution_uses_worker(runner: BackgroundRunner) -> None:
     cursor._query = query
     cursor.execute('select 1')
     assert thread_ids == [runner.worker_id]
+
+
+@pytest.fixture
+def streaming_cursor() -> Iterator[BackgroundSSCursor]:
+    connection = Connection(defer_connect=True, cursorclass=SSCursor)
+    connection.server_thread_id = (42,)
+    connection._current_timeout = connection._read_timeout
+    result = MySQLResult(connection)
+    result.unbuffered_active = True
+    connection._result = result
+    cursor = BackgroundSSCursor(connection)
+    cursor._result = result
+    yield cursor
+    result.unbuffered_active = False
+    result.connection = None
+    cursor.connection = None
+    connection._force_close()
+
+
+@pytest.mark.parametrize('attached', [False, True])
+def test_closed_streaming_cursor_close_does_not_read(
+    streaming_cursor: BackgroundSSCursor,
+    runner: BackgroundRunner,
+    monkeypatch: pytest.MonkeyPatch,
+    attached: bool,
+) -> None:
+    connection = streaming_cursor.connection
+    result = streaming_cursor._result
+    assert connection is not None
+    assert result is not None
+    runner.attach(connection, Mock())
+    if not attached:
+        runner.detach()
+    read = Mock(side_effect=AssertionError('Closed connection must not be read'))
+    monkeypatch.setattr(connection, '_read_packet', read)
+
+    streaming_cursor.close()
+    streaming_cursor.close()
+
+    read.assert_not_called()
+    assert not result.unbuffered_active
+    assert result.connection is None
+    assert streaming_cursor.connection is None
+    assert streaming_cursor._result is None
+
+
+@pytest.mark.parametrize('attached', [False, True])
+def test_closed_streaming_cursor_destruction_is_quiet(
+    runner: BackgroundRunner,
+    monkeypatch: pytest.MonkeyPatch,
+    attached: bool,
+) -> None:
+    connection = Connection(defer_connect=True, cursorclass=SSCursor)
+    connection.server_thread_id = (42,)
+    connection._current_timeout = connection._read_timeout
+    result = MySQLResult(connection)
+    result.unbuffered_active = True
+    connection._result = result
+    cursor = BackgroundSSCursor(connection)
+    cursor._result = result
+    runner.attach(connection, Mock())
+    if not attached:
+        runner.detach()
+    reference = weakref.ref(cursor)
+    unraisable = Mock()
+    monkeypatch.setattr(sys, 'unraisablehook', unraisable)
+    try:
+        del cursor
+        gc.collect()
+
+        assert reference() is None
+        unraisable.assert_not_called()
+        assert not result.unbuffered_active
+        assert result.connection is None
+    finally:
+        result.unbuffered_active = False
+        result.connection = None
+
+
+def test_closed_streaming_cursor_without_result_can_close() -> None:
+    cursor = BackgroundSSCursor(Connection(defer_connect=True))
+    cursor.close()
+    assert cursor.connection is None
+
+
+def test_live_streaming_cursor_close_drains_in_worker(
+    streaming_cursor: BackgroundSSCursor,
+    runner: BackgroundRunner,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    connection = streaming_cursor.connection
+    result = streaming_cursor._result
+    assert connection is not None
+    assert result is not None
+    connection._sock = Mock()
+    runner.attach(connection, Mock())
+    thread_ids: list[int] = []
+
+    def drain() -> None:
+        thread_ids.append(get_ident())
+        result.unbuffered_active = False
+
+    monkeypatch.setattr(result, '_finish_unbuffered_query', drain)
+    streaming_cursor.close()
+
+    assert thread_ids == [runner.worker_id]
+    assert streaming_cursor.connection is None
+    assert connection.open
+
+
+@pytest.mark.parametrize('disconnect', [False, True])
+def test_streaming_cursor_close_propagates_drain_error(
+    streaming_cursor: BackgroundSSCursor,
+    monkeypatch: pytest.MonkeyPatch,
+    disconnect: bool,
+) -> None:
+    connection = streaming_cursor.connection
+    assert connection is not None
+    connection._sock = Mock()
+    result = streaming_cursor._result
+    assert result is not None
+    error = OperationalError(2013, 'Lost connection during query')
+
+    def drain() -> None:
+        if disconnect:
+            connection._force_close()
+        raise error
+
+    monkeypatch.setattr(result, '_finish_unbuffered_query', drain)
+    with pytest.raises(OperationalError) as raised:
+        streaming_cursor.close()
+
+    assert raised.value is error
+    if disconnect:
+        assert not result.unbuffered_active
+        assert result.connection is None
+        assert streaming_cursor.connection is None
 
 
 def test_monitor_queries_separate_connection(runner: BackgroundRunner) -> None:

@@ -17,7 +17,7 @@ from types import FrameType
 from typing import Any, Callable, Iterator, TypeVar
 
 from prompt_toolkit.utils import get_cwidth
-from pymysql.connections import Connection
+from pymysql.connections import Connection, MySQLResult
 from pymysql.cursors import Cursor, SSCursor
 
 from mycli.constants import DEFAULT_WIDTH, TTY_ERASE_LINE, QueryState
@@ -65,12 +65,32 @@ class BackgroundCursor(Cursor):
 
 
 class BackgroundSSCursor(SSCursor):
+    connection: Connection | None
+    _result: MySQLResult | None
+
     execute = background(SSCursor.execute)
     nextset = background(SSCursor.nextset)
     fetchone = background(SSCursor.fetchone)
     fetchmany = background(SSCursor.fetchmany)
     scroll = background(SSCursor.scroll)
-    close = background(SSCursor.close)
+
+    @background
+    def close(self) -> None:
+        connection = self.connection
+        if connection is None:
+            return
+        try:
+            if connection.open:
+                super().close()
+        finally:
+            if not connection.open:
+                # A disconnected stream cannot be drained, even during destruction.
+                if self._result is not None:
+                    self._result.unbuffered_active = False
+                    self._result.connection = None
+                self._result = None
+                self.connection = None
+
     __del__ = close
 
 
