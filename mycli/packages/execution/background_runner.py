@@ -154,7 +154,7 @@ class BackgroundRunner:
         try:
             yield
         except KeyboardInterrupt:
-            if self._local_state() == QueryState.RENDERING and not self._busy:
+            if self._local_state() in (QueryState.RENDERING, QueryState.TRANSFORMING) and not self._busy:
                 raise QueryCancelled(False) from None
             raise
         finally:
