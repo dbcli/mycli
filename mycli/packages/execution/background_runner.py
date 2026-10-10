@@ -153,6 +153,10 @@ class BackgroundRunner:
                 self._render_thread.start()
         try:
             yield
+        except KeyboardInterrupt:
+            if self._local_state() == QueryState.RENDERING and not self._busy:
+                raise QueryCancelled(False) from None
+            raise
         finally:
             if outer:
                 self.stop_rendering()
