@@ -914,7 +914,7 @@ def test_new_statement_resets_update_deadline(runner: BackgroundRunner, monkeypa
 @pytest.mark.parametrize('state', [QueryState.RENDERING, QueryState.TRANSFORMING])
 def test_rendering_error_stops_ticker(runner: BackgroundRunner, error: BaseException, state: QueryState) -> None:
     runner.show_state = True
-    expected = QueryCancelled if isinstance(error, KeyboardInterrupt) and state == QueryState.RENDERING else type(error)
+    expected = QueryCancelled if isinstance(error, KeyboardInterrupt) else type(error)
     with pytest.raises(expected):
         with runner.rendering(state):
             thread = runner._render_thread
@@ -990,23 +990,25 @@ def test_disabled_rendering_starts_no_thread(runner: BackgroundRunner, state: Qu
         assert runner._render_thread is None
 
 
-def test_nested_rendering_interrupt_is_local(runner: BackgroundRunner) -> None:
-    with runner.rendering(QueryState.TRANSFORMING):
+@pytest.mark.parametrize('state', [QueryState.RENDERING, QueryState.TRANSFORMING])
+def test_nested_rendering_interrupt_is_local(runner: BackgroundRunner, state: QueryState) -> None:
+    outer_state = QueryState.TRANSFORMING if state == QueryState.RENDERING else QueryState.RENDERING
+    with runner.rendering(outer_state):
         with pytest.raises(QueryCancelled) as raised:
-            with runner.rendering():
+            with runner.rendering(state):
                 raise KeyboardInterrupt
         assert not raised.value.disconnected
-        assert runner._render_state == QueryState.TRANSFORMING
+        assert runner._render_state == outer_state
         assert runner._render_depth == 1
     assert runner._render_depth == 0
 
 
-@pytest.mark.parametrize('phase', ['streaming', 'transforming', 'database'])
+@pytest.mark.parametrize('phase', ['streaming', 'transforming_database', 'database'])
 def test_non_rendering_interrupt_keeps_existing_handling(runner: BackgroundRunner, phase: str) -> None:
-    state = QueryState.TRANSFORMING if phase == 'transforming' else QueryState.RENDERING
+    state = QueryState.TRANSFORMING if phase == 'transforming_database' else QueryState.RENDERING
     if phase == 'streaming':
         runner.attach(Connection(defer_connect=True, cursorclass=SSCursor), Mock())
-    runner._busy = phase == 'database'
+    runner._busy = phase != 'streaming'
     try:
         with pytest.raises(KeyboardInterrupt):
             with runner.rendering(state):

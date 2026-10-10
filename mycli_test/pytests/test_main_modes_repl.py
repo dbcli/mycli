@@ -2410,6 +2410,69 @@ def test_one_iteration_reports_polars_expression_error_without_output(monkeypatc
 
 
 @pytest.mark.parametrize('show_state', [False, True])
+@pytest.mark.parametrize('unbuffered', [False, True])
+@pytest.mark.parametrize('save', [False, True])
+def test_transform_interrupt_does_not_cancel_remote_query(
+    monkeypatch: pytest.MonkeyPatch,
+    show_state: bool,
+    unbuffered: bool,
+    save: bool,
+) -> None:
+    patch_repl_runtime_defaults(monkeypatch)
+    runner = BackgroundRunner(0)
+    runner.show_state = show_state
+    runner.interval = 60
+    connection = pymysql.Connection(
+        defer_connect=True,
+        cursorclass=pymysql.cursors.SSCursor if unbuffered else pymysql.cursors.Cursor,
+    )
+    connection.server_thread_id = (42,)
+    connection._sock = Mock()
+    runner.attach(connection, Mock())
+    sql = SimpleNamespace(dbname='db', connection_id=42, conn=connection, background_runner=runner, connect=Mock())
+    cli = make_repl_cli(sql)
+    cli.reconnect = Mock()
+    sql.run = Mock(side_effect=lambda text: iter([SQLResult(header=['id'], rows=[(1,)])]))
+    remote_cancel = Mock()
+    hook = Mock()
+    monkeypatch.setattr(runner, '_control', remote_cancel)
+    monkeypatch.setattr(repl_mode.special_commands, 'run_post_redirect_hook', hook)
+    monkeypatch.setattr(repl_mode, 'prepare_polars_transform', lambda *args: object())
+
+    def interrupt_transform(transform: Any, results: Iterator[SQLResult], *args: Any, **kwargs: Any) -> SQLResult:
+        list(results)
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(repl_mode, 'run_polars_transform', interrupt_transform)
+    command = 'SELECT 1 .| df.head()' + (' .> result.parquet' if save else '')
+    try:
+        repl_mode._one_iteration(cli, repl_mode.ReplState(), command)
+
+        sql.run.assert_called_once_with('SELECT 1')
+        remote_cancel.assert_not_called()
+        sql.connect.assert_not_called()
+        cli.reconnect.assert_not_called()
+        hook.assert_not_called()
+        assert cli.output_calls == []
+        assert 'Query cancelled.' in cli.echo_calls
+        assert cli.query_history[-1].successful is False
+        assert cli.query_history[-1].query == command
+        assert runner._render_depth == 0
+        assert runner._render_thread is None
+        assert not runner.visible
+        assert sql.conn is connection and connection.open
+
+        repl_mode._one_iteration(cli, repl_mode.ReplState(), 'SELECT 2')
+        assert bool(cli.query_history[-1].successful)
+        remote_cancel.assert_not_called()
+        sql.connect.assert_not_called()
+        cli.reconnect.assert_not_called()
+    finally:
+        runner.close()
+        connection._force_close()
+
+
+@pytest.mark.parametrize('show_state', [False, True])
 @pytest.mark.parametrize('lazy', [False, True])
 def test_rendering_interrupt_does_not_cancel_remote_query(
     monkeypatch: pytest.MonkeyPatch,
