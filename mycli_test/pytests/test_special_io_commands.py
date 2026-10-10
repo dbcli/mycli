@@ -510,6 +510,33 @@ def teardown_function():
     mycli.packages.special_commands.set_delimiter(";")
 
 
+@pytest.mark.parametrize('enabled', [False, True])
+def test_explorer_output_setting(monkeypatch: pytest.MonkeyPatch, enabled: bool) -> None:
+    monkeypatch.setattr(io_commands, 'use_explorer_output', not enabled)
+
+    io_commands.set_explorer_output(enabled)
+
+    assert io_commands.is_explorer_output() is enabled
+
+
+@pytest.mark.parametrize(
+    ('statement', 'expected'),
+    [
+        ('', False),
+        ('   ', False),
+        (r'\fs sample SELECT 1', True),
+        ('  /fs sample SELECT 1; SELECT 2', True),
+        (r'\favorite save sample SELECT 1', True),
+        ('/FAVORITE SAVE sample SELECT 1', True),
+        ('/favorite run sample', False),
+        ('/favorite', False),
+        ('SELECT 1', False),
+    ],
+)
+def test_is_favorite_save_command(statement: str, expected: bool) -> None:
+    assert io_commands.is_favorite_save_command(statement) is expected
+
+
 def test_simple_setters_and_toggle_timing() -> None:
     config = {'favorite_queries': {'demo': 'select 1'}}
 
@@ -805,7 +832,7 @@ def test_timed_out_pipe_does_not_publish_output(
         assert not destination.exists()
     hook.assert_not_called()
     secho.assert_called_once_with('diagnostic', err=True, fg='red')
-    assert io_commands.PIPE_ONCE == {'process': None, 'stdin': [], 'stdout_file': None, 'stdout_mode': None}
+    assert io_commands.PIPE_ONCE == {'process': None, 'stdin': [], 'stdout_file': None, 'stdout_mode': None, 'process_group': False}
 
 
 def test_temporary_redirect_closes_streams_after_cleanup_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1890,9 +1917,9 @@ def test_unset_once_and_post_redirect_hook(monkeypatch, tmp_path: Path) -> None:
 
     def fake_run(*args, **kwargs) -> SimpleNamespace:
         run_calls.append((args, kwargs))
-        return SimpleNamespace(returncode=0)
+        return SimpleNamespace(wait=lambda: 0)
 
-    monkeypatch.setattr(io_commands.subprocess, 'run', fake_run)
+    monkeypatch.setattr(io_commands.subprocess, 'Popen', fake_run)
     io_commands._run_post_redirect_hook('', str(target))
     assert run_calls == []
 
@@ -1900,16 +1927,16 @@ def test_unset_once_and_post_redirect_hook(monkeypatch, tmp_path: Path) -> None:
     assert run_calls[0][0] == ('cat ' + io_commands.shlex.quote(str(target)),)
     assert run_calls[0][1] == {
         'shell': True,
-        'check': True,
         'stdin': io_commands.subprocess.DEVNULL,
         'stdout': io_commands.subprocess.DEVNULL,
         'stderr': io_commands.subprocess.DEVNULL,
+        'start_new_session': not io_commands.WIN,
     }
 
     def raise_run(*_args, **_kwargs):
         raise RuntimeError('hook failed')
 
-    monkeypatch.setattr(io_commands.subprocess, 'run', raise_run)
+    monkeypatch.setattr(io_commands.subprocess, 'Popen', raise_run)
     with pytest.raises(OSError, match='Redirect post hook failed: hook failed'):
         io_commands._run_post_redirect_hook('cat {}', str(target))
 
@@ -1925,6 +1952,115 @@ def test_run_post_redirect_hook_delegates_to_private_helper(monkeypatch) -> None
     io_commands.run_post_redirect_hook('post {}', 'output.parquet')
 
     assert hook_calls == [('post {}', 'output.parquet')]
+
+
+@pytest.mark.parametrize('windows', [False, True])
+def test_interrupted_post_redirect_hook_is_reaped(monkeypatch: pytest.MonkeyPatch, windows: bool) -> None:
+    monkeypatch.setattr(io_commands, 'WIN', windows)
+    process = Mock()
+    process.wait.side_effect = KeyboardInterrupt
+    popen = Mock(return_value=process)
+    kill = Mock()
+    monkeypatch.setattr(io_commands.subprocess, 'Popen', popen)
+    monkeypatch.setattr(io_commands, '_kill_pipe_process', kill)
+
+    with pytest.raises(KeyboardInterrupt):
+        io_commands._run_post_redirect_hook('post {}', 'some file.csv')
+
+    assert popen.call_args.kwargs['start_new_session'] is not windows
+    kill.assert_called_once_with(process, process_group=not windows)
+    process.communicate.assert_called_once_with(timeout=2)
+
+
+def test_nonzero_post_redirect_hook_reports_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    process = Mock()
+    process.wait.return_value = 7
+    monkeypatch.setattr(io_commands.subprocess, 'Popen', Mock(return_value=process))
+    monkeypatch.setattr(io_commands, '_kill_pipe_process', Mock())
+    with pytest.raises(OSError, match='Redirect post hook failed: .*exit status 7'):
+        io_commands._run_post_redirect_hook('post {}', 'file.csv')
+
+
+def test_pipe_output_clears_progress_before_printing(monkeypatch: pytest.MonkeyPatch) -> None:
+    process = FakeProcess(stdout='rows\n', stderr='diagnostic\n', returncode=0)
+    io_commands.PIPE_ONCE.update(process=process, stdin=['row'])
+    events: list[str] = []
+    monkeypatch.setattr(io_commands.click, 'secho', lambda message, **kwargs: events.append(message))
+
+    io_commands.flush_pipe_once_if_written(None, before_output=lambda: events.append('clear'))
+
+    assert events == ['clear', 'rows', 'clear', 'diagnostic']
+
+
+@pytest.mark.parametrize('error', [OSError('close failed'), KeyboardInterrupt()])
+def test_abort_redirect_recovers_from_file_close_failure(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+    error: BaseException,
+) -> None:
+    output_file = Mock()
+    output_file.close.side_effect = error
+    process = Mock()
+    monkeypatch.setattr(io_commands, 'once_file', output_file)
+    monkeypatch.setattr(io_commands, 'written_to_once_file', True)
+    monkeypatch.setattr(
+        io_commands,
+        'PIPE_ONCE',
+        {'process': process, 'stdin': ['row'], 'stdout_file': 'rows.csv', 'stdout_mode': 'w', 'process_group': False},
+    )
+    hook = Mock()
+    monkeypatch.setattr(io_commands, '_run_post_redirect_hook', hook)
+
+    with caplog.at_level('DEBUG', logger=io_commands.__name__):
+        io_commands.abort_redirect()
+
+    output_file.close.assert_called_once_with()
+    process.kill.assert_called_once_with()
+    process.communicate.assert_called_once_with(timeout=2)
+    hook.assert_not_called()
+    assert io_commands.once_file is None
+    assert io_commands.written_to_once_file is False
+    assert io_commands.PIPE_ONCE == {
+        'process': None,
+        'stdin': [],
+        'stdout_file': None,
+        'stdout_mode': None,
+        'process_group': False,
+    }
+    assert any(
+        record.message == 'Redirect cleanup failed' and record.exc_info is not None and record.exc_info[1] is error
+        for record in caplog.records
+    )
+
+
+def test_repeated_interrupt_during_redirect_cleanup_resets_state(monkeypatch: pytest.MonkeyPatch) -> None:
+    process = Mock()
+    process.communicate.side_effect = KeyboardInterrupt
+    io_commands.PIPE_ONCE.update(process=process, stdin=['row'])
+    monkeypatch.setattr(io_commands, '_kill_pipe_process', Mock())
+    io_commands.abort_redirect()
+    assert not io_commands.is_redirected()
+    assert io_commands.PIPE_ONCE['stdin'] == []
+
+
+@pytest.mark.skipif(os.name == 'nt', reason='POSIX shell process groups')
+def test_pipe_once_abort_stops_pipeline_children(tmp_path: Path) -> None:
+    started, finished = tmp_path / 'started', tmp_path / 'finished'
+    command = f'(printf ready > {shlex.quote(str(started))}; sleep 2; touch {shlex.quote(str(finished))}) | cat'
+    io_commands.set_pipe_once(command)
+    process = io_commands.PIPE_ONCE['process']
+    try:
+        deadline = monotonic() + 5
+        while not started.exists() and monotonic() < deadline:
+            sleep(0.01)
+        assert started.exists(), 'Child did not start'
+        io_commands.abort_redirect()
+        assert process.poll() is not None
+        sleep(2.1)
+        assert not finished.exists(), 'Child continued executing after abort'
+    finally:
+        io_commands.abort_redirect()
+        process.communicate(timeout=5)
 
 
 def test_set_pipe_once_and_flush_short_circuits(monkeypatch) -> None:
@@ -1988,6 +2124,7 @@ def test_flush_pipe_once_timeout_and_nonzero_exit(monkeypatch, tmp_path: Path) -
         'stdin': [],
         'stdout_file': None,
         'stdout_mode': None,
+        'process_group': False,
     }
 
 

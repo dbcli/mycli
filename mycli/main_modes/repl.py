@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Generator, Iterable
-from contextlib import nullcontext
+from collections.abc import Generator, Iterable, Iterator
+from contextlib import contextmanager, nullcontext
 from dataclasses import dataclass
 from datetime import datetime
 import functools
@@ -44,6 +44,11 @@ from prompt_toolkit.lexers import PygmentsLexer
 from prompt_toolkit.output import ColorDepth
 from prompt_toolkit.shortcuts import CompleteStyle, PromptSession
 import pymysql
+from pymysql.constants.CR import (
+    CR_CONN_HOST_ERROR,
+    CR_SERVER_GONE_ERROR,
+    CR_SERVER_LOST,
+)
 from pymysql.constants.SERVER_STATUS import SERVER_STATUS_IN_TRANS
 from pymysql.cursors import Cursor
 
@@ -73,8 +78,8 @@ from mycli.packages.prompt_toolkit.multiline import repl_is_multiline
 from mycli.packages.prompt_toolkit.style import style_factory_prompt_toolkit
 from mycli.packages.prompt_toolkit.toolbar import create_toolbar_tokens_func, get_vi_mode
 from mycli.packages.pygments.mycli_lexer import MyCliLexer
-from mycli.packages.redirection.hybrid_redirection import get_redirect_components, is_redirect_command
-from mycli.packages.special_commands.io_commands import temporary_redirect
+from mycli.packages.redirection.hybrid_redirection import ShellRedirect, get_redirect_components, is_redirect_command
+from mycli.packages.special_commands.io_commands import abort_redirect, temporary_redirect
 from mycli.packages.special_commands.special_command_utils import format_uptime, get_ssl_version, get_uptime, get_warning_count
 from mycli.packages.sql_result.sql_result import SQLResult
 from mycli.packages.utils.interactive_utils import confirm, confirm_destructive_query
@@ -451,6 +456,67 @@ def _get_continuation(
     return [('class:continuation', continuation)]
 
 
+@contextmanager
+def _redirecting(mycli: 'MyCli') -> Iterator[None]:
+    runner = runner_for(mycli)
+    try:
+        with runner.rendering(QueryState.REDIRECTING) if runner else nullcontext():
+            yield
+    except KeyboardInterrupt:
+        if runner is not None:
+            raise
+        raise QueryCancelled(False) from None
+
+
+@contextmanager
+def _output_pseudo_phase(mycli: 'MyCli') -> Iterator[None]:
+    runner = runner_for(mycli)
+    with _redirecting(mycli) if special_commands.is_redirected() else runner.rendering() if runner else nullcontext():
+        yield
+
+
+def _is_reconnectable_error(error: BaseException) -> bool:
+    return isinstance(error, pymysql.err.InterfaceError) or (
+        isinstance(error, pymysql.OperationalError)
+        and bool(error.args)
+        and error.args[0]
+        in (
+            CR_CONN_HOST_ERROR,
+            CR_SERVER_GONE_ERROR,
+            CR_SERVER_LOST,
+        )
+    )
+
+
+@contextmanager
+def _redirect_output(mycli: 'MyCli', redirect: ShellRedirect | None) -> Iterator[None]:
+    runner = runner_for(mycli)
+    before_output = runner.stop_rendering if runner else None
+    if redirect is not None:
+        with temporary_redirect(
+            redirect.command,
+            redirect.file_operator,
+            redirect.filename,
+            mycli.post_redirect_command,
+            progress=partial(_redirecting, mycli),
+            before_output=before_output,
+        ):
+            with runner.rendering(QueryState.REDIRECTING) if runner else nullcontext():
+                yield
+    else:
+        try:
+            with runner.rendering(QueryState.REDIRECTING) if runner and special_commands.is_redirected() else nullcontext():
+                yield
+            with _redirecting(mycli) if special_commands.is_redirected() else nullcontext():
+                special_commands.unset_once_if_written(mycli.post_redirect_command)
+                special_commands.flush_pipe_once_if_written(mycli.post_redirect_command, before_output=before_output)
+        except BaseException as error:
+            # The caller may reconnect and retry using these same output resources.
+            if not _is_reconnectable_error(error):
+                abort_redirect()
+            raise
+
+
 def _output_results(
     mycli: 'MyCli',
     state: ReplState,
@@ -470,7 +536,7 @@ def _output_results(
 
     if first_result.command is not None and first_result.command['name'] == 'source_page':
         if special_commands.is_redirected():
-            _output_results(mycli, state, result_iterator, start)
+            _output_results(mycli, state, result_iterator, start, raise_interrupts=raise_interrupts)
             return
         paged_output = _single_paged_output_results(mycli, state, result_iterator, start)
         try:
@@ -531,7 +597,17 @@ def _output_results(
             max_width = None
 
         runner = runner_for(mycli)
-        with runner.rendering() if runner else nullcontext():
+        if result_count > 0:
+            if runner:
+                runner.stop_rendering()
+            try:
+                mycli.echo('')
+            except KeyboardInterrupt:
+                if special_commands.is_redirected():
+                    raise QueryCancelled(False) from None
+                if raise_interrupts:
+                    raise
+        with _output_pseudo_phase(mycli):
             formatted = mycli.format_sqlresult(
                 result,
                 is_expanded=special_commands.is_expanded_output(),
@@ -547,14 +623,10 @@ def _output_results(
                 assert mycli.prompt_session is not None
                 mycli.prompt_session.output.bell()
             try:
-                if result_count > 0:
-                    if runner:
-                        runner.stop_rendering()
-                    mycli.echo('')
                 try:
                     mycli.output(formatted, result)
                 except KeyboardInterrupt:
-                    if raise_interrupts:
+                    if raise_interrupts or special_commands.is_redirected():
                         raise
                 finally:
                     if runner:
@@ -562,7 +634,7 @@ def _output_results(
                 if special_commands.is_timing_enabled():
                     mycli.output_timing(f'Time: {duration:0.03f}s')
             except KeyboardInterrupt:
-                if raise_interrupts:
+                if raise_interrupts or special_commands.is_redirected():
                     raise
 
         start = time.time()
@@ -575,18 +647,21 @@ def _output_results(
             saw_warning = False
             for warning in warnings:
                 saw_warning = True
-                formatted = mycli.format_sqlresult(
-                    warning,
-                    is_expanded=special_commands.is_expanded_output(),
-                    is_redirected=special_commands.is_redirected(),
-                    null_string=mycli.null_string,
-                    numeric_alignment=mycli.numeric_alignment,
-                    binary_display=mycli.binary_display,
-                    max_width=max_width,
-                    is_warnings_style=True,
-                )
+                if runner:
+                    runner.stop_rendering()
                 mycli.echo('')
-                mycli.output(formatted, warning, is_warnings_style=True)
+                with _output_pseudo_phase(mycli):
+                    formatted = mycli.format_sqlresult(
+                        warning,
+                        is_expanded=special_commands.is_expanded_output(),
+                        is_redirected=special_commands.is_redirected(),
+                        null_string=mycli.null_string,
+                        numeric_alignment=mycli.numeric_alignment,
+                        binary_display=mycli.binary_display,
+                        max_width=max_width,
+                        is_warnings_style=True,
+                    )
+                    mycli.output(formatted, warning, is_warnings_style=True)
 
             if saw_warning and special_commands.is_timing_enabled():
                 mycli.output_timing(f'Time: {warnings_duration:0.03f}s', is_warnings_style=True)
@@ -895,6 +970,7 @@ def _one_iteration(
         return
 
     original_text = text
+    redirect: ShellRedirect | None = None
     try:
         polars_pipeline = parse_polars_transform(text)
     except PolarsTransformError as exc:
@@ -905,13 +981,7 @@ def _one_iteration(
     elif is_redirect_command(text):
         sql_part, command_part, file_operator_part, file_part = get_redirect_components(text)
         text = sql_part or ''
-        try:
-            special_commands.set_redirect(command_part, file_operator_part, file_part)
-        except (FileNotFoundError, OSError, RuntimeError) as e:
-            mycli.logger.error('sql: %r, error: %r', text, e)
-            mycli.logger.error('traceback: %r', traceback.format_exc())
-            mycli.echo(str(e), err=True, fg='red')
-            return
+        redirect = ShellRedirect(command_part, file_operator_part, file_part)
 
     if mycli.sandbox_mode and not is_sandbox_allowed(text):
         mycli.echo(
@@ -985,11 +1055,7 @@ def _one_iteration(
                     special_commands.set_expanded_output(True)
             redirect = polars_pipeline.shell_redirect
             try:
-                with (
-                    temporary_redirect(redirect.command, redirect.file_operator, redirect.filename, mycli.post_redirect_command)
-                    if redirect is not None
-                    else nullcontext()
-                ):
+                with _redirect_output(mycli, redirect):
                     _output_results(mycli, state, iter([polars_result]), start, raise_interrupts=redirect is not None)
             except KeyboardInterrupt:
                 raise QueryCancelled(False) from None
@@ -999,9 +1065,8 @@ def _one_iteration(
                     polars_pipeline.output_path,
                 )
         else:
-            _output_results(mycli, state, results, start)
-            special_commands.unset_once_if_written(mycli.post_redirect_command)
-            special_commands.flush_pipe_once_if_written(mycli.post_redirect_command)
+            with _redirect_output(mycli, redirect):
+                _output_results(mycli, state, results, start, raise_interrupts=redirect is not None)
         successful = True
     except QueryCancelled as exc:
         mycli.echo('Query cancelled.', err=True, fg='blue')
@@ -1011,7 +1076,7 @@ def _one_iteration(
     except pymysql.err.InterfaceError:
         if not mycli.reconnect():
             return
-        _one_iteration(mycli, state, original_text if polars_pipeline is not None else text)
+        _one_iteration(mycli, state, original_text)
         return
     except EOFError as e:
         raise e
@@ -1052,10 +1117,10 @@ def _one_iteration(
                 err=True,
                 fg='red',
             )
-        elif e1.args[0] in (2003, 2006, 2013):
+        elif _is_reconnectable_error(e1):
             if not mycli.reconnect():
                 return
-            _one_iteration(mycli, state, original_text if polars_pipeline is not None else text)
+            _one_iteration(mycli, state, original_text)
             return
         else:
             mycli.logger.error('sql: %r, error: %r', text, e1)

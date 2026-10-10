@@ -21,6 +21,7 @@ import mycli.main_modes.repl as repl_mode
 from mycli.output import OutputMixin
 from mycli.packages.execution.background_runner import BackgroundRunner, rendering_output
 from mycli.packages.execution.sql_execute import SQLExecute
+from mycli.packages.redirection import hybrid_redirection
 from mycli.packages.special_commands import io_commands
 from mycli.packages.sql_result.sql_result import SQLResult
 from mycli_test.utils import make_streaming_cursor  # type: ignore[attr-defined]
@@ -274,6 +275,397 @@ def patch_repl_runtime_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(repl_mode, 'need_completion_reset', lambda text: False)
     monkeypatch.setattr(repl_mode, 'is_dropping_database', lambda text, dbname: False)
     monkeypatch.setattr(repl_mode, 'is_mutating', lambda status: False)
+
+
+@pytest.fixture
+def redirect_cli(monkeypatch: pytest.MonkeyPatch) -> Iterator[tuple[Any, BackgroundRunner, Mock]]:
+    patch_repl_runtime_defaults(monkeypatch)
+    monkeypatch.setattr(repl_mode, 'is_redirect_command', hybrid_redirection.is_redirect_command)
+    for name in ('is_redirected', 'unset_once_if_written', 'flush_pipe_once_if_written'):
+        monkeypatch.setattr(repl_mode.special_commands, name, getattr(io_commands, name))
+    monkeypatch.setattr(io_commands, 'once_file', None)
+    monkeypatch.setattr(io_commands, 'written_to_once_file', False)
+    monkeypatch.setattr(io_commands, 'PIPE_ONCE', {})
+    io_commands._reset_one_time_redirects()
+    runner = BackgroundRunner(0)
+    runner.show_state = True
+    runner.interval = 0.01
+    monkeypatch.setattr(runner, '_display', Mock())
+    process = Mock(returncode=0)
+    process.communicate.return_value = ('', '')
+    monkeypatch.setattr(io_commands.subprocess, 'Popen', Mock(return_value=process))
+    monkeypatch.setattr(io_commands, '_kill_pipe_process', Mock())
+
+    def run(text: str) -> Iterator[SQLResult]:
+        if text.startswith('/'):
+            yield from repl_mode.special_commands.execute(None, text)
+        else:
+            runner.call(lambda: None)
+            yield SQLResult(header=['id'], rows=[(1,)], status='1 row in set')
+
+    sql = SimpleNamespace(dbname='db', connection_id=42, run=Mock(side_effect=run), background_runner=runner, connect=Mock())
+    cli = make_repl_cli(sql)
+    cli.reconnect = Mock()
+    cli.redirect_formatter = TabularOutputFormatter(format_name='csv')
+    cli.main_formatter = TabularOutputFormatter(format_name='csv')
+    cli.helpers_style = cli.helpers_warnings_style = cli.prompt_toolkit_style = None
+    cli.explicit_pager = False
+    cli.get_output_margin = lambda status: 0
+    cli.format_sqlresult = lambda *args, **kwargs: OutputMixin.format_sqlresult(cli, *args, **kwargs)
+    cli.output = lambda *args, **kwargs: OutputMixin.output(cli, *args, **kwargs)
+    try:
+        yield cli, runner, process
+    finally:
+        io_commands.abort_redirect()
+        runner.close()
+
+
+def arm_test_redirect(cli: Any, mode: str, destination: Path, *, transform: bool = False) -> str:
+    query = 'SELECT 1' + (' .| df' if transform else '')
+    if mode in ('/once', '/pipe_once'):
+        argument = str(destination) if mode == '/once' else 'cat'
+        repl_mode._one_iteration(cli, repl_mode.ReplState(), f'{mode} {argument}')
+        assert cli.query_history[-1].successful, cli.echo_calls
+        assert io_commands.is_redirected()
+        return query
+    return f'{query} $| cat' if mode == '$|' else f'{query} {mode} "{destination}"'
+
+
+@pytest.mark.parametrize('mode', ['$>', '$>>', '$|', '/once', '/pipe_once'])
+@pytest.mark.parametrize('transform', [False, True])
+def test_redirect_output_uses_redirecting_state(
+    redirect_cli: tuple[Any, BackgroundRunner, Mock],
+    tmp_path: Path,
+    mode: str,
+    transform: bool,
+) -> None:
+    cli, runner, _ = redirect_cli
+    command = arm_test_redirect(cli, mode, tmp_path / 'rows.csv', transform=transform)
+    observed: list[repl_mode.QueryState] = []
+    original_format = cli.format_sqlresult
+
+    @rendering_output
+    def format_result(client: Any, *args: Any, **kwargs: Any) -> Any:
+        observed.append(runner._local_state())
+        return original_format(*args, **kwargs)
+
+    cli.format_sqlresult = lambda *args, **kwargs: format_result(cli, *args, **kwargs)
+    repl_mode._one_iteration(cli, repl_mode.ReplState(), command)
+
+    assert cli.query_history[-1].successful, cli.echo_calls
+    assert observed == [repl_mode.QueryState.REDIRECTING]
+    assert not io_commands.is_redirected()
+    assert runner._render_thread is None
+
+
+@pytest.mark.parametrize('mode', ['$|', '/pipe_once'])
+def test_redirect_pipeline_wait_has_live_progress(
+    redirect_cli: tuple[Any, BackgroundRunner, Mock],
+    tmp_path: Path,
+    mode: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cli, runner, process = redirect_cli
+    command = arm_test_redirect(cli, mode, tmp_path / 'rows.csv')
+    updated = Event()
+    monkeypatch.setattr(runner, '_display', lambda elapsed, state: updated.set() if state == 'redirecting' else None)
+
+    def communicate(**kwargs: Any) -> tuple[str, str]:
+        updated.clear()
+        assert updated.wait(2)
+        assert not runner._output_started
+        return '', ''
+
+    process.communicate.side_effect = communicate
+    repl_mode._one_iteration(cli, repl_mode.ReplState(), command)
+    assert cli.query_history[-1].successful, cli.echo_calls
+    assert runner._render_thread is None
+
+
+@pytest.mark.parametrize('mode', ['$|', '$>', '$>>', '/once', '/pipe_once'])
+def test_local_special_command_redirect_has_live_progress(
+    redirect_cli: tuple[Any, BackgroundRunner, Mock],
+    tmp_path: Path,
+    mode: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cli, runner, process = redirect_cli
+    command = arm_test_redirect(cli, mode, tmp_path / 'rows.csv')
+    if mode in ('/once', '/pipe_once'):
+        command = '/favorite list'
+    else:
+        command = '/source --special local.sql' + command.removeprefix('SELECT 1')
+        original_run = cli.sql_execute.run.side_effect
+
+        def run(text: str) -> Iterator[SQLResult]:
+            assert text == '/source --special local.sql'
+            yield from original_run('/favorite list')
+
+        cli.sql_execute.run.side_effect = run
+    cli.post_redirect_command = 'post {}'
+    monkeypatch.setattr(
+        io_commands.FavoriteQueries,
+        'instance',
+        io_commands.FavoriteQueries(ConfigObj({'favorite_queries': {'sample': 'SELECT 1'}})),
+        raising=False,
+    )
+    database_call = Mock(side_effect=AssertionError('Local command should not execute SQL'))
+    monkeypatch.setattr(runner, 'call', database_call)
+    updated = Event()
+    monkeypatch.setattr(runner, '_display', lambda elapsed, state: updated.set() if state == 'redirecting' else None)
+
+    def wait_for_progress(*args: Any, **kwargs: Any) -> tuple[str, str]:
+        updated.clear()
+        assert updated.wait(2), 'No progress while finalizing the local redirect'
+        return '', ''
+
+    wait = Mock(side_effect=wait_for_progress)
+    if mode in ('$|', '/pipe_once'):
+        process.communicate.side_effect = wait
+    else:
+        monkeypatch.setattr(io_commands, '_run_post_redirect_hook', wait)
+
+    repl_mode._one_iteration(cli, repl_mode.ReplState(), command)
+
+    assert cli.query_history[-1].successful, cli.echo_calls
+    wait.assert_called_once()
+    database_call.assert_not_called()
+    assert runner._render_thread is None
+
+
+@pytest.mark.parametrize('mode', ['$>', '$>>', '/once'])
+def test_redirect_hook_has_live_progress(
+    redirect_cli: tuple[Any, BackgroundRunner, Mock],
+    tmp_path: Path,
+    mode: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cli, runner, _ = redirect_cli
+    command = arm_test_redirect(cli, mode, tmp_path / 'rows.csv')
+    updated = Event()
+    monkeypatch.setattr(runner, '_display', lambda elapsed, state: updated.set() if state == 'redirecting' else None)
+
+    def hook(*args: Any) -> None:
+        updated.clear()
+        assert updated.wait(2)
+
+    hook_mock = Mock(side_effect=hook)
+    monkeypatch.setattr(io_commands, '_run_post_redirect_hook', hook_mock)
+    repl_mode._one_iteration(cli, repl_mode.ReplState(), command)
+    hook_mock.assert_called_once()
+    assert cli.query_history[-1].successful, cli.echo_calls
+    assert runner._render_thread is None
+
+
+@pytest.mark.parametrize('mode', ['$>', '$>>', '$|', '/once', '/pipe_once'])
+@pytest.mark.parametrize('show_state', [False, True])
+def test_redirect_output_interrupt_is_local(
+    redirect_cli: tuple[Any, BackgroundRunner, Mock],
+    tmp_path: Path,
+    mode: str,
+    show_state: bool,
+) -> None:
+    cli, runner, _ = redirect_cli
+    runner.show_state = show_state
+    command = arm_test_redirect(cli, mode, tmp_path / 'rows.csv')
+    cli.output = Mock(side_effect=KeyboardInterrupt)
+    repl_mode._one_iteration(cli, repl_mode.ReplState(), command)
+    assert 'Query cancelled.' in cli.echo_calls
+    assert not cli.query_history[-1].successful
+    cli.sql_execute.connect.assert_not_called()
+    cli.reconnect.assert_not_called()
+    assert runner.control is None
+    assert not io_commands.is_redirected()
+    assert runner._render_thread is None
+    cli.output = Mock()
+    repl_mode._one_iteration(cli, repl_mode.ReplState(), 'SELECT 2')
+    assert cli.query_history[-1].successful
+
+
+@pytest.mark.parametrize('mode', ['$|', '/pipe_once', '$>', '/once'])
+def test_redirect_finalization_interrupt_is_local(
+    redirect_cli: tuple[Any, BackgroundRunner, Mock],
+    tmp_path: Path,
+    mode: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cli, runner, process = redirect_cli
+    command = arm_test_redirect(cli, mode, tmp_path / 'rows.csv')
+    if mode in ('$|', '/pipe_once'):
+        process.communicate.side_effect = [KeyboardInterrupt(), ('', '')]
+    else:
+        monkeypatch.setattr(io_commands, '_run_post_redirect_hook', Mock(side_effect=KeyboardInterrupt))
+    repl_mode._one_iteration(cli, repl_mode.ReplState(), command)
+    assert 'Query cancelled.' in cli.echo_calls
+    assert not cli.query_history[-1].successful
+    cli.sql_execute.connect.assert_not_called()
+    cli.reconnect.assert_not_called()
+    assert not io_commands.is_redirected()
+    assert runner._render_thread is None
+
+
+@pytest.mark.parametrize('mode', ['/once', '/pipe_once'])
+def test_empty_command_leaves_one_time_redirect_armed(
+    redirect_cli: tuple[Any, BackgroundRunner, Mock],
+    tmp_path: Path,
+    mode: str,
+) -> None:
+    cli, runner, process = redirect_cli
+    arm_test_redirect(cli, mode, tmp_path / 'rows.csv')
+    cli.sql_execute.run.side_effect = lambda text: iter([SQLResult(status='OK')])
+    repl_mode._one_iteration(cli, repl_mode.ReplState(), 'SET @a = 1')
+    assert io_commands.is_redirected()
+    process.communicate.assert_not_called()
+    assert runner._render_thread is None
+
+
+@pytest.mark.parametrize('mode', ['/once', '/pipe_once'])
+@pytest.mark.parametrize(
+    'error',
+    [
+        pymysql.err.InterfaceError(0, ''),
+        pymysql.err.OperationalError(2003, 'cannot connect'),
+        pymysql.err.OperationalError(2006, 'server has gone away'),
+        pymysql.err.OperationalError(2013, 'lost connection'),
+    ],
+)
+def test_one_time_redirect_survives_database_retry(
+    redirect_cli: tuple[Any, BackgroundRunner, Mock],
+    tmp_path: Path,
+    mode: str,
+    error: Exception,
+) -> None:
+    cli, _, process = redirect_cli
+    destination = tmp_path / 'rows.csv'
+    command = arm_test_redirect(cli, mode, destination)
+    original_run = cli.sql_execute.run.side_effect
+    pending_file = io_commands.once_file
+    attempts = 0
+
+    def run(text: str) -> Iterator[SQLResult]:
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            raise error
+        if mode == '/once':
+            assert io_commands.once_file is pending_file
+            assert pending_file is not None and not pending_file.closed
+        else:
+            assert io_commands.PIPE_ONCE['process'] is process
+            process.communicate.assert_not_called()
+        yield from original_run(text)
+
+    cli.sql_execute.run.side_effect = run
+    cli.reconnect.return_value = True
+    repl_mode._one_iteration(cli, repl_mode.ReplState(), command)
+
+    assert cli.query_history[-1].successful, cli.echo_calls
+    assert attempts == 2
+    cli.reconnect.assert_called_once_with()
+    if mode == '/once':
+        assert destination.read_text().splitlines() == ['"id"', '"1"']
+    else:
+        process.communicate.assert_called_once_with(input='"id"\n"1"\n', timeout=60)
+    assert not io_commands.is_redirected()
+
+
+@pytest.mark.parametrize('mode', ['/once', '/pipe_once'])
+def test_failed_reconnect_leaves_one_time_redirect_pending(
+    redirect_cli: tuple[Any, BackgroundRunner, Mock],
+    tmp_path: Path,
+    mode: str,
+) -> None:
+    cli, _, process = redirect_cli
+    command = arm_test_redirect(cli, mode, tmp_path / 'rows.csv')
+    pending_file = io_commands.once_file
+
+    def run(text: str) -> Iterator[SQLResult]:
+        yield from ()
+        raise pymysql.err.OperationalError(2006, 'server has gone away')
+
+    cli.sql_execute.run.side_effect = run
+    cli.reconnect.return_value = False
+    repl_mode._one_iteration(cli, repl_mode.ReplState(), command)
+
+    cli.reconnect.assert_called_once_with()
+    assert io_commands.is_redirected()
+    if mode == '/once':
+        assert io_commands.once_file is pending_file
+        assert pending_file is not None and not pending_file.closed
+    else:
+        assert io_commands.PIPE_ONCE['process'] is process
+        process.communicate.assert_not_called()
+
+
+@pytest.mark.parametrize('mode', ['/once', '/pipe_once'])
+@pytest.mark.parametrize('error', [pymysql.err.OperationalError(1064, 'syntax error'), ValueError('failed')])
+def test_nonretryable_error_cleans_up_one_time_redirect(
+    redirect_cli: tuple[Any, BackgroundRunner, Mock],
+    tmp_path: Path,
+    mode: str,
+    error: Exception,
+) -> None:
+    cli, _, _ = redirect_cli
+    command = arm_test_redirect(cli, mode, tmp_path / 'rows.csv')
+
+    def run(text: str) -> Iterator[SQLResult]:
+        yield from ()
+        raise error
+
+    cli.sql_execute.run.side_effect = run
+    repl_mode._one_iteration(cli, repl_mode.ReplState(), command)
+
+    assert not cli.query_history[-1].successful
+    assert not io_commands.is_redirected()
+    cli.reconnect.assert_not_called()
+
+
+def test_redirecting_does_not_override_active_database_interrupt(
+    redirect_cli: tuple[Any, BackgroundRunner, Mock],
+) -> None:
+    cli, runner, _ = redirect_cli
+    runner._busy = True
+    try:
+        with pytest.raises(KeyboardInterrupt):
+            with repl_mode._redirecting(cli):
+                raise KeyboardInterrupt
+    finally:
+        runner._busy = False
+
+
+@pytest.mark.parametrize('reason', ['sandbox', 'declined'])
+def test_rejected_query_does_not_create_redirect(
+    redirect_cli: tuple[Any, BackgroundRunner, Mock],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    reason: str,
+) -> None:
+    cli, _, _ = redirect_cli
+    destination = tmp_path / 'rows.csv'
+    if reason == 'sandbox':
+        cli.sandbox_mode = True
+    else:
+        cli.destructive_warning = True
+        monkeypatch.setattr(repl_mode, 'confirm_destructive_query', lambda *args: False)
+    repl_mode._one_iteration(cli, repl_mode.ReplState(), f'SELECT 1 $> "{destination}"')
+    assert not destination.exists()
+    assert not io_commands.is_redirected()
+
+
+@pytest.mark.parametrize('error', [pymysql.err.InterfaceError(0, ''), pymysql.err.OperationalError(2006, 'lost')])
+def test_hybrid_redirect_retries_complete_command(
+    redirect_cli: tuple[Any, BackgroundRunner, Mock],
+    tmp_path: Path,
+    error: Exception,
+) -> None:
+    cli, _, _ = redirect_cli
+    cli.reconnect.return_value = True
+    cli.sql_execute.run.side_effect = [error, iter([SQLResult(header=['id'], rows=[(1,)])])]
+    destination = tmp_path / 'rows.csv'
+    repl_mode._one_iteration(cli, repl_mode.ReplState(), f'SELECT 1 $> "{destination}"')
+    assert cli.query_history[-1].successful, cli.echo_calls
+    assert destination.read_text().splitlines() == ['"id"', '"1"']
+    cli.reconnect.assert_called_once_with()
 
 
 def test_complete_while_typing_filter_covers_threshold_and_word_rules(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -970,6 +1362,56 @@ def test_output_results_stops_rendering_before_timing(monkeypatch: pytest.Monkey
     cli.output_timing = timing
     try:
         repl_mode._output_results(cli, repl_mode.ReplState(), [SQLResult()], 0.0)
+    finally:
+        runner.close()
+
+
+def test_redirecting_without_runner_converts_interrupt_to_local_cancellation() -> None:
+    cli = make_repl_cli(SimpleNamespace())
+
+    with pytest.raises(repl_mode.QueryCancelled) as raised:
+        with repl_mode._redirecting(cli):
+            raise KeyboardInterrupt
+
+    assert not raised.value.disconnected
+
+
+@pytest.mark.parametrize('redirected', [False, True])
+def test_output_results_propagates_interrupt_between_results(monkeypatch: pytest.MonkeyPatch, redirected: bool) -> None:
+    patch_repl_runtime_defaults(monkeypatch)
+    monkeypatch.setattr(repl_mode.special_commands, 'is_redirected', lambda: redirected)
+    monkeypatch.setattr(repl_mode.special_commands, 'is_show_warnings_enabled', lambda: False)
+    cli = make_repl_cli(SimpleNamespace())
+    cli.echo = Mock(side_effect=KeyboardInterrupt)
+    first = SQLResult(status='first result')
+    second = SQLResult(status='second result')
+    expected_error = repl_mode.QueryCancelled if redirected else KeyboardInterrupt
+
+    with pytest.raises(expected_error):
+        repl_mode._output_results(cli, repl_mode.ReplState(), [first, second], 0.0, raise_interrupts=not redirected)
+
+    cli.echo.assert_called_once_with('')
+    assert [result for _, result, _ in cli.output_calls] == [first]
+
+
+def test_output_results_clears_progress_before_warning_separator(monkeypatch: pytest.MonkeyPatch) -> None:
+    patch_repl_runtime_defaults(monkeypatch)
+    monkeypatch.setattr(repl_mode.special_commands, 'is_show_warnings_enabled', lambda: True)
+    monkeypatch.setattr(repl_mode, 'Cursor', FakeCursorBase)
+    runner = BackgroundRunner(0)
+
+    def run(text: str) -> Iterator[SQLResult]:
+        assert text == 'SHOW WARNINGS'
+        runner.visible = True
+        yield SQLResult(status='warning', rows=[('warning text',)])
+
+    cli = make_repl_cli(SimpleNamespace(background_runner=runner, run=run))
+    separator_states: list[tuple[str, bool]] = []
+    cli.echo = lambda message: separator_states.append((message, runner.visible))
+    rows = cast(Any, FakeCursorBase(rowcount=1, warning_count=1))
+    try:
+        repl_mode._output_results(cli, repl_mode.ReplState(), [SQLResult(rows=rows, status='Query OK')], 0.0)
+        assert separator_states == [('', False)]
     finally:
         runner.close()
 
@@ -1832,7 +2274,7 @@ def test_one_iteration_covers_redirect_destructive_success_refresh_and_logfile(m
     monkeypatch.setattr(repl_mode, 'is_redirect_command', lambda text: text == 'redirect')
     monkeypatch.setattr(repl_mode, 'get_redirect_components', lambda text: ('dropdb', 'tee', '>', 'out.txt'))
     redirects: list[tuple[Any, ...]] = []
-    monkeypatch.setattr(repl_mode.special_commands, 'set_redirect', lambda *args: redirects.append(args))
+    monkeypatch.setattr(io_commands, 'set_redirect', lambda *args, **kwargs: redirects.append(args))
     monkeypatch.setattr(
         repl_mode,
         'confirm_destructive_query',
@@ -2709,7 +3151,7 @@ def test_one_iteration_covers_cancel_paths_and_redirect_error(monkeypatch: pytes
     cli = make_repl_cli(FakeSQLExecute())
     monkeypatch.setattr(repl_mode, 'is_redirect_command', lambda text: text == 'redirect-bad')
     monkeypatch.setattr(repl_mode, 'get_redirect_components', lambda text: ('sql', 'tee', '>', 'out.txt'))
-    monkeypatch.setattr(repl_mode.special_commands, 'set_redirect', lambda *args: (_ for _ in ()).throw(RuntimeError('redirect boom')))
+    monkeypatch.setattr(io_commands, 'set_redirect', lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError('redirect boom')))
     repl_mode._one_iteration(cli, repl_mode.ReplState(), 'redirect-bad')
     assert 'redirect boom' in cli.echo_calls[-1]
 
