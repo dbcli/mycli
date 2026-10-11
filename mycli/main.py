@@ -1,17 +1,13 @@
 from __future__ import annotations
 
 __lazy_modules__ = [
-    'dataclasses',
     'io',
+    'os',
     'sys',
-    'textwrap',
     'typing',
-    'click',
-    'clickdc',
-    'mycli',
+    # 'mycli',  # todo: needed eagerly only for __version__
     'mycli.cli_runner',
     'mycli.client',
-    'mycli.constants',
     'mycli.packages.utils.cli_utils',
 ]
 
