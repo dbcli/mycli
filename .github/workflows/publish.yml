@@ -83,6 +83,7 @@ jobs:
   tests-macos:
     name: Tests macOS
     runs-on: macos-latest
+    needs: [typecheck]
 
     strategy:
       fail-fast: false
@@ -133,6 +134,7 @@ jobs:
   tests-windows:
     name: Tests Windows
     runs-on: windows-latest
+    needs: [typecheck]
 
     strategy:
       fail-fast: false
@@ -172,6 +174,7 @@ jobs:
   tests-wsl:
     name: Tests WSL
     runs-on: windows-latest
+    needs: [typecheck]
 
     steps:
     - uses: vampire/setup-wsl@d1da7f2c0322a5ee4f24975344f67fc0f5baf364 # v7.0.0
