@@ -14,7 +14,7 @@ on:
 jobs:
   tests:
     name: Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
 
     strategy:
       fail-fast: false
@@ -35,7 +35,7 @@ jobs:
 
       - name: Start MySQL
         run: |
-          sudo /etc/init.d/mysql start
+          sudo systemctl start mysql
 
       - name: Install dependencies
         run: uv sync --extra dev,llm,dataframe -p ${{ matrix.python-version }}
@@ -215,7 +215,7 @@ jobs:
 
   test-no-extras:
     name: Tests Without Extras (3.14)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -231,7 +231,7 @@ jobs:
 
       - name: Start MySQL
         run: |
-          sudo /etc/init.d/mysql start
+          sudo systemctl start mysql
 
       - name: Install dependencies
         run: uv sync --extra dev -p python3.14
@@ -252,7 +252,7 @@ jobs:
 
   docker-x86-build:
     name: Build x86 Docker Image
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
 
     permissions:
       contents: read
@@ -272,7 +272,7 @@ jobs:
 
   docker-arm-build:
     name: Build ARM Docker Image
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-26.04-arm
 
     permissions:
       contents: read
