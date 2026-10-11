@@ -2,9 +2,7 @@ from __future__ import annotations
 
 __lazy_modules__ = [
     'io',
-    're',
     'sys',
-    'typing',
     'urllib.parse',
     'click',
     'mycli.config',
@@ -14,10 +12,10 @@ __lazy_modules__ = [
     'mycli.main_modes.completions',
     'mycli.main_modes.execute',
     'mycli.main_modes.list_dsn',
-    'mycli.packages.special_commands.dsn_aliases',
-    'mycli.packages.utils.cli_utils',
     'mycli.packages.credentials.password_sources',
     'mycli.packages.integrations.vault.vault_credentials',
+    'mycli.packages.special_commands.dsn_aliases',
+    'mycli.packages.utils.cli_utils',
 ]
 
 import os
