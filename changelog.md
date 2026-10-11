@@ -1,3 +1,11 @@
+v2.29.3 (2026/10/11)
+==============
+
+Internal
+--------
+* Improve `publish.yml` workflow dependencies.
+
+
 v2.29.2 (2026/10/11)
 ==============
 
