@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Internal
+--------
+* Update `ubuntu-latest` to Ubuntu 26 in CI.
+
+
 v2.29.3 (2026/10/11)
 ==============
 
