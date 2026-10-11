@@ -17,22 +17,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check out Git repository
+      - name: Check out Git Repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: '3.14'
-
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
-        with:
-          version: 'latest'
-
-      - name: Install dependencies
-        run: uv sync --extra dev,llm,dataframe
-
-      - name: Run mypy
-        run: |
-          uv run --no-sync --frozen -- python -m ensurepip
-          uv run --no-sync --frozen -- python -m mypy --no-pretty --install-types --non-interactive .
+      - name: Typecheck Action
+        uses: ./.github/actions/typecheck

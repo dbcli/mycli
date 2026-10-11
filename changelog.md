@@ -1,3 +1,11 @@
+v2.29.2 (2026/10/11)
+==============
+
+Internal
+--------
+* Move typecheck and lint CI to composite GitHub Actions.
+
+
 v2.29.1 (2026/10/10)
 ==============
 

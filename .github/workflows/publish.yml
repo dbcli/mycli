@@ -22,10 +22,29 @@ jobs:
       run: |
         if grep -q TBD changelog.md; then false; fi
 
-  tests:
+  lint:
     runs-on: ubuntu-latest
     needs: [docs]
 
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+    - name: Lint Action
+      uses: ./.github/actions/lint
+
+  typecheck:
+    runs-on: ubuntu-latest
+    needs: [lint]
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+    - name: Typecheck Action
+      uses: ./.github/actions/typecheck
+
+  tests:
+    runs-on: ubuntu-latest
+    needs: [typecheck]
     strategy:
       matrix:
         python-version: ["3.11", "3.12", "3.13", "3.14"]
@@ -53,16 +72,6 @@ jobs:
         while ! mysqladmin ping --host=localhost --port=3306 --user=root --password=root --silent; do
           sleep 5
         done
-
-      # arguably this should be made identical to CI for PRs
-      # better would be a composite GH action
-    - name: Run Style Checks
-      run: ./.venv/bin/tox -e style
-
-      # arguably this should be made identical to CI for PRs
-      # better would be a composite GH action
-    - name: Run Typechecker
-      run: ./.venv/bin/tox -e typecheck
 
     - name: Pytest / behave
       env:
