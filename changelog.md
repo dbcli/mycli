@@ -7,6 +7,7 @@ Internal
 * Upgrade `pycryptodomex` to v3.24.0.
 * Upgrade `cryptography` to v50.0.2.
 * Pin `markupsafe` to v3.0.4.
+* Upgrade `wcwidth` to v0.9.2.
 
 
 v2.29.4 (2026/10/11)
