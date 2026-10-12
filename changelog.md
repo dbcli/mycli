@@ -4,6 +4,7 @@ Upcoming (TBD)
 Internal
 --------
 * Lazy import compatibility with `ruff` v0.17.0.
+* Upgrade `pycryptodomex` to v3.24.0.
 
 
 v2.29.4 (2026/10/11)
