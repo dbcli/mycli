@@ -65,7 +65,6 @@ llm = [
     "llm ~= 0.36",
     "setuptools == 84.*",                   # Required by llm commands to install models
     "pip ~= 26.2.1",
-    "httpx2 ~= 2.13.1",                     # removeme: transitive dependency forced for "uv audit"
 ]
 dataframe = [
     "polars ~= 2.0.0",
@@ -86,7 +85,6 @@ dev = [
     "tox ~= 4.35.0",
     "pdbpp ~= 0.11.7",
     "ruff ~= 0.16.5",                       # keep in sync with the tool.tox.env.style stanza below
-    "virtualenv ~= 21.7.12",                # removeme: transitive dependency forced for "uv audit"
 ]
 
 [project.scripts]
@@ -103,8 +101,6 @@ exclude-newer = '1 week'
 
 [tool.uv.exclude-newer-package]
 cli_helpers = false
-polars = false                              # temporary to get Polars 2.x, remove 1 week after 2026-10-06T11:44:04.327Z
-polars-runtime-32 = false                   # temporary to get Polars 2.x, remove 1 week after 2026-10-06T11:44:04.327Z
 
 [tool.ruff]
 target-version = 'py311'
