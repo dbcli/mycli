@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Bug Fixes
+--------
+* Add `less` to Docker image.
+
+
 v2.29.5 (2026/10/15)
 ==============
 
