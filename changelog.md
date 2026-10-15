@@ -13,6 +13,10 @@ Internal
 * Add Python 3.15 to CI.
 * Switch to Python 3.15 by default in CI.
 * Switch to Python 3.15 in Dockerfile.
+* Upgrade `mypy` to v2.4.0.
+* Upgrade `tox` to v4.64.9.
+* Upgrade `coverage` to v7.16.2.
+* Upgrade `pdbpp` to v0.12.1.
 
 
 v2.29.4 (2026/10/11)
