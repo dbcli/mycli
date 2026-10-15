@@ -24,4 +24,4 @@ RUN service mariadb restart && \
 
 RUN cd /app && pip install --root-user-action=ignore -e .[llm,dataframe]
 
-CMD ["sh", "-c", "service mariadb start && mycli --database employees"]
+CMD ["sh", "-c", "service mariadb start && mycli --user root --database employees"]

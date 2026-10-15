@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Bug Fixes
+--------
+* Show the username in the Docker prompt.
+
+
 v2.29.6 (2026/10/15)
 ==============
 
