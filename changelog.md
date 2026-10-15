@@ -9,6 +9,8 @@ Internal
 * Pin `markupsafe` to v3.0.4.
 * Upgrade `wcwidth` to v0.9.2.
 * Remove temporary dependency settings in `pyproject.toml`.
+* Upgrade `sqlglot` to v30.23.0.
+* Add Python 3.15 to CI.
 
 
 v2.29.4 (2026/10/11)
