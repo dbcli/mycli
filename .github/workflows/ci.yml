@@ -61,7 +61,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.14"]
+        python-version: ["3.15"]
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -111,7 +111,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.14']
+        python-version: ['3.15']
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -144,7 +144,7 @@ jobs:
           uv run -- coverage report -m --sort=Miss --skip-covered --skip-empty
 
   tests-wsl:
-    name: Tests WSL (3.14)
+    name: Tests WSL (3.15)
     runs-on: windows-latest
 
     steps:
@@ -175,14 +175,14 @@ jobs:
         shell: wsl-bash {0}
         run: |
           export PATH="$HOME/.local/bin:$PATH"
-          env PYTHONPATH=/usr/local/lib/python3.14/site-packages pip install --upgrade --break-system-packages --prefix=/usr uv
+          env PYTHONPATH=/usr/local/lib/python3.15/site-packages pip install --upgrade --break-system-packages --prefix=/usr uv
 
       - name: Install dependencies
         shell: wsl-bash {0}
         run: |
           export PATH="$HOME/.local/bin:$PATH"
           cd /root/mycli
-          uv sync --extra dev,llm,dataframe --python 3.14
+          uv sync --extra dev,llm,dataframe --python 3.15
 
       - name: Start MySQL in WSL
         shell: wsl-bash {0}
@@ -210,11 +210,11 @@ jobs:
         run: |
           export PATH="$HOME/.local/bin:$PATH"
           cd /root/mycli
-          uv run --python 3.14 -- coverage run -m pytest
-          uv run --python 3.14 -- coverage report -m --sort=Miss --skip-covered --skip-empty
+          uv run --python 3.15 -- coverage run -m pytest
+          uv run --python 3.15 -- coverage report -m --sort=Miss --skip-covered --skip-empty
 
   test-no-extras:
-    name: Tests Without Extras (3.14)
+    name: Tests Without Extras (3.15)
     runs-on: ubuntu-26.04
 
     steps:
@@ -227,14 +227,14 @@ jobs:
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: '3.14'
+          python-version: '3.15'
 
       - name: Start MySQL
         run: |
           sudo systemctl start mysql
 
       - name: Install dependencies
-        run: uv sync --extra dev -p python3.14
+        run: uv sync --extra dev --python python3.15
 
       - name: Wait for MySQL connection
         run: |
@@ -248,7 +248,7 @@ jobs:
           PYTEST_HOST: 127.0.0.1
           TERM: xterm
         run: |
-          ./.venv/bin/tox -e py3.14
+          ./.venv/bin/tox -e py3.15
 
   docker-x86-build:
     name: Build x86 Docker Image

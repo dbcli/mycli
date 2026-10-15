@@ -65,7 +65,7 @@ jobs:
         sudo systemctl start mysql
 
     - name: Install dependencies
-      run: uv sync --extra dev,llm,dataframe -p ${{ matrix.python-version }}
+      run: uv sync --extra dev,llm,dataframe --python ${{ matrix.python-version }}
 
     - name: Wait for MySQL connection
       run: |
@@ -88,7 +88,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.14"]
+        python-version: ["3.15"]
 
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -111,7 +111,7 @@ jobs:
         brew services start mysql
 
     - name: Install dependencies
-      run: uv sync --extra dev,llm,dataframe -p ${{ matrix.python-version }}
+      run: uv sync --extra dev,llm,dataframe --python ${{ matrix.python-version }}
 
     - name: Wait for MySQL connection
       run: |
@@ -139,7 +139,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.14']
+        python-version: ['3.15']
 
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -155,7 +155,7 @@ jobs:
 
     - name: Install dependencies
       shell: cmd
-      run: uv sync --extra dev,llm,dataframe -p ${{ matrix.python-version }}
+      run: uv sync --extra dev,llm,dataframe --python ${{ matrix.python-version }}
 
     - name: Set up MySQL
       uses: shogo82148/actions-setup-mysql@1d4ebc60ba1227dd13fc7e6ba845bd3997928d75 # v1.54.2
@@ -204,14 +204,14 @@ jobs:
       shell: wsl-bash {0}
       run: |
         export PATH="$HOME/.local/bin:$PATH"
-        env PYTHONPATH=/usr/local/lib/python3.14/site-packages pip install --upgrade --break-system-packages --prefix=/usr uv
+        env PYTHONPATH=/usr/local/lib/python3.15/site-packages pip install --upgrade --break-system-packages --prefix=/usr uv
 
     - name: Install dependencies
       shell: wsl-bash {0}
       run: |
         export PATH="$HOME/.local/bin:$PATH"
         cd /root/mycli
-        uv sync --extra dev,llm,dataframe --python 3.14
+        uv sync --extra dev,llm,dataframe --python 3.15
 
     - name: Start MySQL in WSL
       shell: wsl-bash {0}
@@ -239,8 +239,8 @@ jobs:
       run: |
         export PATH="$HOME/.local/bin:$PATH"
         cd /root/mycli
-        uv run --python 3.14 -- coverage run -m pytest
-        uv run --python 3.14 -- coverage report -m --sort=Miss --skip-covered --skip-empty
+        uv run --python 3.15 -- coverage run -m pytest
+        uv run --python 3.15 -- coverage report -m --sort=Miss --skip-covered --skip-empty
 
   build:
     runs-on: ubuntu-26.04
@@ -255,10 +255,10 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
       with:
-        python-version: '3.14'
+        python-version: '3.15'
 
     - name: Install dependencies
-      run: uv sync --extra llm,dataframe -p 3.14
+      run: uv sync --extra llm,dataframe --python 3.15
 
     - name: Build
       run: uv build

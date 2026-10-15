@@ -105,7 +105,7 @@ To run the full test suite, execute `env -u PYTHONPATH uv run -- tox`.
 
 #### Python Compatibility
 
-Use Python features available from Python 3.11 through Python 3.14.
+Use Python features available from Python 3.11 through Python 3.15.
 Compatibility with Python 3.9 is not needed.  Compatibility with Python
 3.10 is not needed.
 

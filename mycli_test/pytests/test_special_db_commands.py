@@ -228,7 +228,7 @@ def test_ping_command_registration() -> None:
 def test_status_uses_global_queries_decodes_bytes_and_formats_stats(monkeypatch) -> None:
     monkeypatch.setattr(db_commands, '__version__', '9.9.9')
     monkeypatch.setattr(db_commands.platform, 'python_implementation', lambda: 'CPython')
-    monkeypatch.setattr(db_commands.platform, 'python_version', lambda: '3.14.0')
+    monkeypatch.setattr(db_commands.platform, 'python_version', lambda: '3.15.0')
     monkeypatch.setattr(db_commands.io_commands, 'is_pager_enabled', lambda: True)
     monkeypatch.setattr(db_commands, 'get_ssl_cipher', lambda cur: 'TLS_AES_256_GCM_SHA384')
     monkeypatch.setattr(db_commands, 'get_ssl_version', lambda cur: 'TLSv1.3')
@@ -273,7 +273,7 @@ def test_status_uses_global_queries_decodes_bytes_and_formats_stats(monkeypatch)
 
     result = status(cursor)[0]
 
-    assert 'mycli 9.9.9 running on CPython 3.14.0' in result.preamble
+    assert 'mycli 9.9.9 running on CPython 3.15.0' in result.preamble
     assert ('Connection id:', 42) in result.rows
     assert ('Current database:', 'test_db') in result.rows
     assert ('Current user:', 'test_user') in result.rows
@@ -349,7 +349,7 @@ def test_status_uses_system_default_pager_when_enabled_without_env(monkeypatch) 
     monkeypatch.setattr(db_commands.io_commands, 'is_pager_enabled', lambda: True)
     monkeypatch.setattr(db_commands, 'get_ssl_version', lambda cur: 'TLS')
     monkeypatch.setattr(db_commands.platform, 'python_implementation', lambda: 'CPython')
-    monkeypatch.setattr(db_commands.platform, 'python_version', lambda: '3.14.0')
+    monkeypatch.setattr(db_commands.platform, 'python_version', lambda: '3.15.0')
     monkeypatch.delenv('PAGER', raising=False)
 
     cursor = FakeCursor(
