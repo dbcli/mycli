@@ -4,6 +4,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update -qq && \
     apt-get install -y --no-install-recommends --no-install-suggests -qq \
+    less \
     fzf \
     mariadb-server \
     && \
