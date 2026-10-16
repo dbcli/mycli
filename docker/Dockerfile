@@ -13,6 +13,7 @@ RUN apt-get update -qq && \
     rm -rf /var/lib/{apt,dpkg,cache,log}/
 
 COPY . /app
+COPY docker/resources/dot_mycli_history.txt /root/.mycli-history
 
 RUN service mariadb restart && \
     cd /app/docker/resources && \

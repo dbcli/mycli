@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Features
+--------
+* Populate history file in Docker with examples.
+
+
 Bug Fixes
 --------
 * Show the username in the Docker prompt.

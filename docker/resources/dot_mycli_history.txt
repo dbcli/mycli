@@ -1,0 +1,26 @@
+# 2026-10-08 07:35:11.242332
++SELECT MAX(salary) AS current_salary FROM salaries GROUP BY emp_no .| df['current_salary'].plot.hist();
+
+# 2026-10-09 07:35:11.242332
++SELECT * FROM salaries .| df.group_by('emp_no').len(name='num_raises').with_columns(pl.col('num_raises') - 1);
+
+# 2026-10-10 07:35:11.242332
++SELECT * FROM salaries LIMIT 10000 .| df.describe();
+
+# 2026-10-11 07:35:11.242332
++SELECT employees.first_name, employees.last_name, MAX(salary) AS current_salary FROM salaries JOIN employees ON salaries.emp_no = employees.emp_no GROUP BY salaries.emp_no;
+
+# 2026-10-12 07:35:11.242332
++SELECT salaries.emp_no, MAX(salary) AS current_salary FROM salaries JOIN employees ON salaries.emp_no = employees.emp_no GROUP BY salaries.emp_no;
+
+# 2026-10-13 07:35:11.242332
++DESCRIBE employees;
+
+# 2026-10-14 07:35:11.242332
++SELECT emp_no, MAX(salary) AS current_salary FROM salaries GROUP BY emp_no;
+
+# 2026-10-15 07:35:11.242332
++SELECT emp_no, salary FROM salaries LIMIT 1000;
+
+# 2026-10-16 07:35:11.242332
++DESCRIBE salaries;
