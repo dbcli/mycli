@@ -4,6 +4,7 @@ Upcoming (TBD)
 Bug Fixes
 --------
 * Show the username in the Docker prompt.
+* Show the username in the prompt if a default user was used.
 
 
 v2.29.6 (2026/10/15)

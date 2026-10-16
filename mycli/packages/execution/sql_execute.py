@@ -320,7 +320,7 @@ class SQLExecute:
         # Update them after the connection is made to ensure that it was a
         # successful connection.
         self.dbname = db
-        self.user = user
+        self.user = user or (conn.user.decode(conn.encoding) if isinstance(conn.user, bytes) else conn.user)
         self.password = password
         self.host = host
         self.port = port

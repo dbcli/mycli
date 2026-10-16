@@ -841,6 +841,22 @@ def test_connect_updates_connection_state_and_merges_overrides(monkeypatch) -> N
     assert executor.server_info.version == 80036
 
 
+@pytest.mark.parametrize('requested_user', [None, ''])
+@pytest.mark.parametrize('resolved_user', ['andr\u00e9', b'andr\xe9'])
+def test_connect_records_default_username(monkeypatch: pytest.MonkeyPatch, requested_user: str | None, resolved_user: str | bytes) -> None:
+    executor = make_executor_for_connect_tests()
+    executor.user = requested_user
+    executor.ssl = None
+    conn = Mock(user=resolved_user, encoding='latin1', server_version='5.7.0')
+    monkeypatch.setattr(sql_execute.pymysql, 'connect', Mock(return_value=conn))
+    monkeypatch.setattr(SQLExecute, 'reset_connection_id', Mock())
+    monkeypatch.setattr(SQLExecute, '_probe_doris_version', Mock(return_value=None))
+
+    executor.connect()
+
+    assert executor.user == 'andr\u00e9'
+
+
 def test_connect_sets_expired_password_flag(monkeypatch) -> None:
     executor = make_executor_for_connect_tests()
     executor.ssl = None
