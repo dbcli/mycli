@@ -12,6 +12,11 @@ Documentation
 * Dataframe transforms are no longer experimental.
 
 
+Internal
+--------
+* Update `cli_helpers` to v2.15.2, improving vertical output.
+
+
 v2.29.6 (2026/10/15)
 ==============
 
