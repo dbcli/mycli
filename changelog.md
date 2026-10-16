@@ -7,6 +7,11 @@ Bug Fixes
 * Show the username in the prompt if a default user was used.
 
 
+Documentation
+--------
+* Dataframe transforms are no longer experimental.
+
+
 v2.29.6 (2026/10/15)
 ==============
 

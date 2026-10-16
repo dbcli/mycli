@@ -2,6 +2,12 @@
 
 ## Installing
 
+### Homebrew
+
+No additional steps needed; Homebrew already comes with dataframe support.
+
+### pip
+
 Install mycli with dataframe support using:
 
 ```bash
@@ -14,18 +20,13 @@ or install these libraries separately:
  * [`altair`](https://pypi.org/project/altair/)
  * [`vl-convert-python`](https://pypi.org/project/vl-convert-python/)
 
-## BETA STATUS
+## Limitations
 
-Dataframe transforms and plots are new and experimental.  The interface and
-functionality may still change.
-
-Here are some known limitations:
-
- * composing multiple transform operations is not supported
- * results from `UNION`s may be unable to be transformed
-
-And there are inherent limitations to the post-processing model: the entire
-SQL result must be transferred from the server and loaded into local memory.
+ * composing multiple transform operations is not supported, though there is no
+   limitation on the code within one operation
+ * results from `UNION`s may not be able to be transformed
+ * the post-processing model means that the entire SQL result must be transferred
+   from the server and loaded into local memory
 
 ## Transforming
 
