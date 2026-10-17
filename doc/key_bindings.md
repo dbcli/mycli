@@ -39,7 +39,7 @@ Toggle Emacs/Vi editing modes.
 
 Summon completions + always advance in candidates (configurable).
 
-### <kbd>Control-space</kbd>
+### <kbd>Control-Space</kbd>
 
 Summon completions or advance in candidates if present (configurable).
 
