@@ -15,6 +15,7 @@ Bug Fixes
 Documentation
 --------
 * Dataframe transforms are no longer experimental.
+* Update key bindings doc.
 
 
 Internal
