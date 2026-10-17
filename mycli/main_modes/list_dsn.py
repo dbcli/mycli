@@ -1,18 +1,21 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import click
+from configobj import ConfigObj
 
-from mycli.packages.special_commands.dsn_aliases import is_valid_dsn_alias
-
-if TYPE_CHECKING:
-    from mycli.client import MyCli
+from mycli.config import read_user_config
+from mycli.packages.utils.dsn_utils import is_valid_dsn_alias, merge_shared_dsns
 
 
-def main_list_dsn(mycli: 'MyCli') -> int:
+def load_list_dsn_config(myclirc: str | None) -> ConfigObj:
+    config = read_user_config(myclirc)
+    merge_shared_dsns(config, config['main'].get('shared_dsns_file'))
+    return config
+
+
+def main_list_dsn(config: ConfigObj, verbosity: int) -> int:
     try:
-        alias_dsn = mycli.config['alias_dsn']
+        alias_dsn = config['alias_dsn']
     except KeyError:
         click.secho('Invalid DSNs found in the config file. Please check the "[alias_dsn]" section in myclirc.', err=True, fg='red')
         return 1
@@ -22,7 +25,7 @@ def main_list_dsn(mycli: 'MyCli') -> int:
     for alias, value in alias_dsn.items():
         if not is_valid_dsn_alias(alias):
             continue
-        if mycli.verbosity >= 1:
+        if verbosity >= 1:
             click.secho(f'{alias} : {value}')
         else:
             click.secho(alias)

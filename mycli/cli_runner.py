@@ -14,7 +14,7 @@ __lazy_modules__ = [
     'mycli.main_modes.list_dsn',
     'mycli.packages.credentials.password_sources',
     'mycli.packages.integrations.vault.vault_credentials',
-    'mycli.packages.special_commands.dsn_aliases',
+    'mycli.packages.utils.dsn_utils',
     'mycli.packages.utils.cli_utils',
 ]
 
@@ -32,7 +32,7 @@ from mycli.main_modes.batch import main_batch_from_stdin, main_batch_with_progre
 from mycli.main_modes.checkup import main_checkup
 from mycli.main_modes.completions import main_completions
 from mycli.main_modes.execute import main_execute_from_cli
-from mycli.main_modes.list_dsn import main_list_dsn
+from mycli.main_modes.list_dsn import load_list_dsn_config, main_list_dsn
 from mycli.packages.credentials.password_sources import PasswordCandidates
 from mycli.packages.integrations.vault.vault_credentials import (
     DEFAULT_VAULT_EXECUTABLE,
@@ -41,8 +41,8 @@ from mycli.packages.integrations.vault.vault_credentials import (
     VaultError,
     get_field_from_vault,
 )
-from mycli.packages.special_commands.dsn_aliases import INVALID_DSN_ALIAS_ERROR, is_valid_dsn_alias
 from mycli.packages.utils.cli_utils import is_valid_connection_scheme
+from mycli.packages.utils.dsn_utils import INVALID_DSN_ALIAS_ERROR, is_valid_dsn_alias
 
 if TYPE_CHECKING:
     from mycli.main import CliArgs
@@ -122,7 +122,7 @@ def expand_dsn_alias_env_vars(
     )
 
 
-def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> None:
+def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory | None = None) -> None:
     from mycli import main as main_module
 
     if cli_args.completions:
@@ -131,6 +131,29 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
 
     cli_verbosity = main_module.preprocess_cli_args(cli_args, is_valid_connection_scheme)
 
+    if not cli_args.checkup:
+        if cli_args.csv and cli_args.format not in [None, 'csv']:
+            click.secho("Conflicting --csv and --format arguments.", err=True, fg="red")
+            sys.exit(1)
+
+        if cli_args.table and cli_args.format not in [None, 'table']:
+            click.secho("Conflicting --table and --format arguments.", err=True, fg="red")
+            sys.exit(1)
+
+        if not cli_args.format:
+            cli_args.format = 'default'
+        if cli_args.csv:
+            cli_args.format = 'csv'
+        if cli_args.table:
+            cli_args.format = 'table'
+
+        if cli_args.list_dsn:
+            config = load_list_dsn_config(cli_args.myclirc)
+            verbosity = cli_verbosity or (-1 if config['main'].as_bool('less_chatty') else 0)
+            sys.exit(main_list_dsn(config, verbosity))
+
+    if client_factory is None:
+        client_factory = main_module.MyCli
     mycli = client_factory(
         prompt=cli_args.prompt,
         toolbar_format=cli_args.toolbar,
@@ -146,26 +169,6 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory) -> Non
     if cli_args.checkup:
         main_checkup(mycli)
         sys.exit(0)
-
-    if cli_args.csv and cli_args.format not in [None, 'csv']:
-        click.secho("Conflicting --csv and --format arguments.", err=True, fg="red")
-        sys.exit(1)
-
-    if cli_args.table and cli_args.format not in [None, 'table']:
-        click.secho("Conflicting --table and --format arguments.", err=True, fg="red")
-        sys.exit(1)
-
-    if not cli_args.format:
-        cli_args.format = 'default'
-
-    if cli_args.csv:
-        cli_args.format = 'csv'
-
-    if cli_args.table:
-        cli_args.format = 'table'
-
-    if cli_args.list_dsn:
-        sys.exit(main_list_dsn(mycli))
 
     dsn_uri = None
     dsn_password: str | None = None

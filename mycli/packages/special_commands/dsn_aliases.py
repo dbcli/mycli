@@ -1,20 +1,17 @@
 from __future__ import annotations
 
-import logging
 import os
 from typing import TYPE_CHECKING, Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
-from mycli.config import log, read_config_file, str_to_bool
+from mycli.config import read_config_file, str_to_bool
 from mycli.constants import DEFAULT_CHARSET, DEFAULT_PROMPT, KNOWN_DSN_QUERY_PARAMS
-
-logger = logging.getLogger(__name__)
+from mycli.packages.utils.dsn_utils import INVALID_DSN_ALIAS_ERROR, is_valid_dsn_alias, merge_shared_dsns
 
 if TYPE_CHECKING:
     from mycli.client import MyCli
 
 DSN_SUBCOMMANDS = {'help', 'list', 'show', 'save', 'edit', 'delete'}
-INVALID_DSN_ALIAS_ERROR = 'Error: DSN aliases cannot start with a dash.'
 MISSING = object()
 
 SSL_QUERY_PARAMS = {
@@ -27,10 +24,6 @@ SSL_QUERY_PARAMS = {
     'ssl_verify_server_cert': 'check_hostname',
     'tls_version': 'tls_version',
 }
-
-
-def is_valid_dsn_alias(alias: str) -> bool:
-    return not alias.startswith('-')
 
 
 def _config_bool(value: Any) -> bool:
@@ -108,35 +101,7 @@ Examples:
         shared_dsns_file: str | None = None,
     ) -> DsnAliases:
         aliases = cls(config, mycli, config_file)
-        if not shared_dsns_file:
-            return aliases
-
-        shared_dsns_file = os.path.expanduser(shared_dsns_file)
-        if not os.path.isabs(shared_dsns_file):
-            log(
-                logger,
-                logging.WARNING,
-                f"Shared DSNs file path must be absolute: '{shared_dsns_file}'.",
-            )
-            return aliases
-
-        if not os.path.isfile(shared_dsns_file):
-            log(
-                logger,
-                logging.WARNING,
-                f"Unable to read shared DSNs file '{shared_dsns_file}'.",
-            )
-            return aliases
-
-        shared_config = read_config_file(shared_dsns_file)
-        if shared_config is None:
-            return aliases
-
-        configured_aliases = config.get(cls.section_name, {})
-        shared_aliases = shared_config.get(cls.section_name, {})
-        config[cls.section_name] = {}
-        config[cls.section_name].update(shared_aliases)
-        config[cls.section_name].update(configured_aliases)
+        merge_shared_dsns(config, shared_dsns_file)
         return aliases
 
     def _config_for_write(self) -> Any:

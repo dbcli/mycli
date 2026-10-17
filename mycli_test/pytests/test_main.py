@@ -28,6 +28,7 @@ import pymysql
 from pymysql.err import OperationalError
 import pytest
 
+from mycli import config as config_module
 from mycli import main
 import mycli.cli_runner
 import mycli.client_connection
@@ -803,7 +804,7 @@ def test_click_entrypoint_parses_kubectl_tunnel_options(monkeypatch: pytest.Monk
     assert calls[0][0].kubectl_resource == 'service/mysql'
     assert calls[0][0].kubectl_options == '--context prod'
     assert calls[0][0].port == 3307
-    assert calls[0][1] is MyCli
+    assert calls[0][1] is None
 
 
 def test_command_descriptions_end_with_periods():
@@ -890,7 +891,7 @@ def test_reserved_space_is_integer(monkeypatch):
 
 
 def test_list_dsn(monkeypatch):
-    monkeypatch.setattr(MyCli, "system_config_files", [])
+    monkeypatch.setattr(config_module, 'SYSTEM_CONFIG_FILES', [])
     runner = CliRunner()
     # keep Windows from locking the file with delete=False
     with NamedTemporaryFile(prefix=TEMPFILE_PREFIX, mode="w", delete=False) as myclirc:
@@ -916,7 +917,7 @@ def test_list_dsn(monkeypatch):
 
 
 def test_list_dsn_includes_shared_aliases(monkeypatch, tmp_path):
-    monkeypatch.setattr(MyCli, 'system_config_files', [])
+    monkeypatch.setattr(config_module, 'SYSTEM_CONFIG_FILES', [])
     shared_file = tmp_path / 'shared-myclirc'
     shared_file.write_text(
         '[alias_dsn]\nshared = mysql://shared/db\noverridden = mysql://shared/override\n',

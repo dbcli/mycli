@@ -23,7 +23,7 @@ import clickdc
 
 import mycli as mycli_package
 from mycli.cli_runner import run_from_cli_args
-from mycli.client import MyCli
+from mycli.client import MyCli as MyCli
 from mycli.constants import (
     DEFAULT_PROMPT,
     EMPTY_PASSWORD_FLAG_SENTINEL,
@@ -482,7 +482,7 @@ def click_entrypoint(
 
     """
 
-    run_from_cli_args(cli_args, client_factory=MyCli)
+    run_from_cli_args(cli_args, client_factory=None)
 
 
 def main() -> int | None:

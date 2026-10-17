@@ -3,6 +3,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 from typing import Any
 
+from configobj import ConfigObj
 import pytest
 
 from mycli import cli_runner, main
@@ -1418,21 +1419,22 @@ def test_run_from_cli_args_sets_legacy_format_flags(
 def test_run_from_cli_args_list_dsn_exits_with_mode_result(monkeypatch: pytest.MonkeyPatch) -> None:
     cli_args = make_cli_args()
     cli_args.list_dsn = True
-    client = DummyMyCli()
-    list_dsn_calls: list[DummyMyCli] = []
+    config = ConfigObj({'main': {'less_chatty': False}, 'alias_dsn': {}})
+    list_dsn_calls: list[tuple[ConfigObj, int]] = []
     monkeypatch.setattr(main, 'preprocess_cli_args', lambda args, scheme_validator: 0)
+    monkeypatch.setattr(cli_runner, 'load_list_dsn_config', lambda path: config)
 
-    def fake_main_list_dsn(value: DummyMyCli) -> int:
-        list_dsn_calls.append(value)
+    def fake_main_list_dsn(value: ConfigObj, verbosity: int) -> int:
+        list_dsn_calls.append((value, verbosity))
         return 7
 
     monkeypatch.setattr(cli_runner, 'main_list_dsn', fake_main_list_dsn)
 
     with pytest.raises(SystemExit) as excinfo:
-        cli_runner.run_from_cli_args(cli_args, lambda **_kwargs: client)
+        cli_runner.run_from_cli_args(cli_args, lambda **_kwargs: pytest.fail('client factory called'))
 
     assert excinfo.value.code == 7
-    assert list_dsn_calls == [client]
+    assert list_dsn_calls == [(config, 0)]
 
 
 def test_run_from_cli_args_maps_dsn_socket_parameter(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -10,6 +10,7 @@ import pytest
 from mycli.constants import KNOWN_DSN_QUERY_PARAMS
 from mycli.packages.special_commands import dsn_aliases as dsn_aliases_module
 from mycli.packages.special_commands.dsn_aliases import INVALID_DSN_ALIAS_ERROR, DsnAliases, is_valid_dsn_alias
+from mycli.packages.utils import dsn_utils
 
 
 class DummyConfig(dict):
@@ -88,7 +89,7 @@ shared = set shared=1
 def test_from_config_rejects_relative_shared_file(caplog: pytest.LogCaptureFixture) -> None:
     config = DummyConfig({'alias_dsn': {'local': 'mysql://local/db'}})
 
-    with caplog.at_level(logging.WARNING, logger='mycli.packages.special_commands.dsn_aliases'):
+    with caplog.at_level(logging.WARNING, logger='mycli.packages.utils.dsn_utils'):
         aliases = DsnAliases.from_config(config, shared_dsns_file='shared-myclirc')
 
     assert aliases.get('local') == 'mysql://local/db'
@@ -97,14 +98,14 @@ def test_from_config_rejects_relative_shared_file(caplog: pytest.LogCaptureFixtu
 
 def test_from_config_expands_user_in_shared_file_path(monkeypatch: pytest.MonkeyPatch) -> None:
     read_paths: list[str] = []
-    monkeypatch.setattr(dsn_aliases_module.os.path, 'expanduser', lambda path: '/expanded/shared-myclirc')
-    monkeypatch.setattr(dsn_aliases_module.os.path, 'isfile', lambda path: True)
+    monkeypatch.setattr(dsn_utils.os.path, 'expanduser', lambda path: '/expanded/shared-myclirc')
+    monkeypatch.setattr(dsn_utils.os.path, 'isfile', lambda path: True)
 
     def read_config_file(path: str) -> DummyConfig:
         read_paths.append(path)
         return DummyConfig({'alias_dsn': {'shared': 'mysql://shared/db'}})
 
-    monkeypatch.setattr(dsn_aliases_module, 'read_config_file', read_config_file)
+    monkeypatch.setattr(dsn_utils, 'read_config_file', read_config_file)
 
     aliases = DsnAliases.from_config(DummyConfig(), shared_dsns_file='~/shared-myclirc')
 
@@ -119,7 +120,7 @@ def test_from_config_warns_and_continues_for_missing_shared_file(
     config = DummyConfig({'alias_dsn': {'local': 'mysql://local/db'}})
     missing_file = tmp_path / 'missing-myclirc'
 
-    with caplog.at_level(logging.WARNING, logger='mycli.packages.special_commands.dsn_aliases'):
+    with caplog.at_level(logging.WARNING, logger='mycli.packages.utils.dsn_utils'):
         aliases = DsnAliases.from_config(config, shared_dsns_file=str(missing_file))
 
     assert aliases.get('local') == 'mysql://local/db'
@@ -128,8 +129,8 @@ def test_from_config_warns_and_continues_for_missing_shared_file(
 
 def test_from_config_continues_when_shared_file_cannot_be_read(monkeypatch: pytest.MonkeyPatch) -> None:
     config = DummyConfig({'alias_dsn': {'local': 'mysql://local/db'}})
-    monkeypatch.setattr(dsn_aliases_module.os.path, 'isfile', lambda path: True)
-    monkeypatch.setattr(dsn_aliases_module, 'read_config_file', lambda path: None)
+    monkeypatch.setattr(dsn_utils.os.path, 'isfile', lambda path: True)
+    monkeypatch.setattr(dsn_utils, 'read_config_file', lambda path: None)
 
     aliases = DsnAliases.from_config(config, shared_dsns_file='/shared-myclirc')
 
