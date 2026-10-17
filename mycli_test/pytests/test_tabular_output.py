@@ -9,7 +9,7 @@ from cli_helpers.utils import strip_ansi
 from pymysql.constants import FIELD_TYPE
 import pytest
 
-from mycli.main import MyCli
+from mycli.client import MyCli
 from mycli.packages.credentials.password_sources import PasswordCandidates
 from mycli.packages.sql_result.sql_result import SQLResult
 from mycli_test.utils import HOST, PASSWORD, PORT, USER, dbtest

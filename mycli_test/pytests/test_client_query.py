@@ -3,7 +3,8 @@ from typing import Any, cast
 
 import pytest
 
-from mycli import client_query, main
+from mycli import client_query
+import mycli.client as mycli_client
 from mycli.packages.sql_result.sql_result import SQLResult
 from mycli.types import Query
 from mycli_test.utils import (  # type: ignore[attr-defined]
@@ -51,7 +52,7 @@ def make_refresh_cli() -> tuple[Any, dict[str, Any]]:
 def test_refresh_completions_stops_prefetch() -> None:
     cli, state = make_refresh_cli()
 
-    main.MyCli.refresh_completions(cli)
+    mycli_client.MyCli.refresh_completions(cli)
 
     assert state['stopped'] == [True]
 
@@ -59,7 +60,7 @@ def test_refresh_completions_stops_prefetch() -> None:
 def test_refresh_completions_returns_started_status() -> None:
     cli, _state = make_refresh_cli()
 
-    result: list[SQLResult] = main.MyCli.refresh_completions(cli)
+    result: list[SQLResult] = mycli_client.MyCli.refresh_completions(cli)
 
     assert result == [SQLResult(status='Auto-completion refresh started in the background.')]
 
@@ -67,7 +68,7 @@ def test_refresh_completions_returns_started_status() -> None:
 def test_refresh_completions_passes_options_to_refresher() -> None:
     cli, state = make_refresh_cli()
 
-    main.MyCli.refresh_completions(cli)
+    mycli_client.MyCli.refresh_completions(cli)
 
     assert state['refresh_calls'] == [
         (
@@ -94,7 +95,7 @@ def test_refresh_completions_passes_options_to_refresher() -> None:
 def test_refresh_completions_does_not_update_dbname_without_reset() -> None:
     cli, state = make_refresh_cli()
 
-    main.MyCli.refresh_completions(cli)
+    mycli_client.MyCli.refresh_completions(cli)
 
     assert state['set_dbname_calls'] == []
     assert state['completion_stopped'] == []
@@ -103,7 +104,7 @@ def test_refresh_completions_does_not_update_dbname_without_reset() -> None:
 def test_refresh_completions_stops_completion_worker_when_reset() -> None:
     cli, state = make_refresh_cli()
 
-    main.MyCli.refresh_completions(cli, reset=True)
+    mycli_client.MyCli.refresh_completions(cli, reset=True)
 
     assert state['completion_stopped'] == [True]
 
@@ -129,7 +130,7 @@ def test_refresh_completions_updates_dbname_when_reset() -> None:
     cli.main_formatter = SimpleNamespace(supported_formats=['table'])
     cli.completion_refresher = SimpleNamespace(stop=lambda: None, refresh=lambda executor, callbacks, options: None)
 
-    main.MyCli.refresh_completions(cli, reset=True)
+    mycli_client.MyCli.refresh_completions(cli, reset=True)
 
     assert set_dbname_calls == ['next_db']
 
@@ -156,7 +157,7 @@ def test_refresh_completions_uses_lock_when_reset() -> None:
     cli.main_formatter = SimpleNamespace(supported_formats=['table'])
     cli.completion_refresher = SimpleNamespace(stop=lambda: None, refresh=lambda executor, callbacks, options: None)
 
-    main.MyCli.refresh_completions(cli, reset=True)
+    mycli_client.MyCli.refresh_completions(cli, reset=True)
 
     assert entered_lock == {'count': 1}
 
@@ -187,7 +188,7 @@ def make_refreshed_cli() -> tuple[Any, Any, Any, dict[str, Any]]:
 def test_on_completions_refreshed_swaps_completer() -> None:
     cli, _old_completer, new_completer, _state = make_refreshed_cli()
 
-    main.MyCli._on_completions_refreshed(cli, new_completer)
+    mycli_client.MyCli._on_completions_refreshed(cli, new_completer)
 
     assert cli.completer is new_completer
 
@@ -195,7 +196,7 @@ def test_on_completions_refreshed_swaps_completer() -> None:
 def test_on_completions_refreshed_copies_other_schemas() -> None:
     cli, old_completer, new_completer, state = make_refreshed_cli()
 
-    main.MyCli._on_completions_refreshed(cli, new_completer)
+    mycli_client.MyCli._on_completions_refreshed(cli, new_completer)
 
     assert state['copy_calls'] == [(old_completer, 'current')]
 
@@ -203,7 +204,7 @@ def test_on_completions_refreshed_copies_other_schemas() -> None:
 def test_on_completions_refreshed_uses_lock() -> None:
     cli, _old_completer, new_completer, state = make_refreshed_cli()
 
-    main.MyCli._on_completions_refreshed(cli, new_completer)
+    mycli_client.MyCli._on_completions_refreshed(cli, new_completer)
 
     assert state['entered_lock'] == {'count': 1}
 
@@ -211,7 +212,7 @@ def test_on_completions_refreshed_uses_lock() -> None:
 def test_on_completions_refreshed_invalidates_prompt() -> None:
     cli, _old_completer, new_completer, state = make_refreshed_cli()
 
-    main.MyCli._on_completions_refreshed(cli, new_completer)
+    mycli_client.MyCli._on_completions_refreshed(cli, new_completer)
 
     assert state['invalidated'] == [True]
 
@@ -219,7 +220,7 @@ def test_on_completions_refreshed_invalidates_prompt() -> None:
 def test_on_completions_refreshed_starts_schema_prefetch() -> None:
     cli, _old_completer, new_completer, state = make_refreshed_cli()
 
-    main.MyCli._on_completions_refreshed(cli, new_completer)
+    mycli_client.MyCli._on_completions_refreshed(cli, new_completer)
 
     assert state['prefetch_started'] == [True]
 
@@ -257,7 +258,7 @@ def run_query_with_state(monkeypatch, tmp_path, *, warnings_enabled: bool = True
     cli.log_query = lambda query: state['logged_queries'].append(query)
     cli.log_output = lambda line: state['logged_output'].append(line)
     cli.format_sqlresult = format_sqlresult
-    main.MyCli.run_query(cli, 'select 1;\n', checkpoint=str(state['checkpoint_path']), new_line=False)
+    mycli_client.MyCli.run_query(cli, 'select 1;\n', checkpoint=str(state['checkpoint_path']), new_line=False)
     state['cli'] = cli
     return state
 
@@ -344,7 +345,7 @@ def test_run_query_raises_for_error_result_when_requested(tmp_path) -> None:
     cli.log_output = logged_output.append
 
     with pytest.raises(client_query.QueryError, match='source failed'):
-        main.MyCli.run_query(
+        mycli_client.MyCli.run_query(
             cli,
             '/source test.sql',
             checkpoint=str(checkpoint_path),
@@ -369,7 +370,7 @@ def test_run_query_displays_error_result_by_default(monkeypatch) -> None:
     monkeypatch.setattr(client_query.special_commands, 'is_show_warnings_enabled', lambda: False)
     monkeypatch.setattr(client_query.click, 'echo', lambda line, nl=True: echoed.append(line))
 
-    main.MyCli.run_query(cli, '/source test.sql')
+    mycli_client.MyCli.run_query(cli, '/source test.sql')
 
     assert echoed == ['source failed']
 
@@ -388,7 +389,7 @@ def test_run_query_displays_set_buffer_fallback_outside_repl(monkeypatch) -> Non
     monkeypatch.setattr(client_query.special_commands, 'is_show_warnings_enabled', lambda: False)
     monkeypatch.setattr(client_query.click, 'echo', lambda line, nl=True: echoed.append(line))
 
-    main.MyCli.run_query(cli, '/favorite eval report')
+    mycli_client.MyCli.run_query(cli, '/favorite eval report')
 
     assert echoed == [status]
 
@@ -396,11 +397,11 @@ def test_run_query_displays_set_buffer_fallback_outside_repl(monkeypatch) -> Non
 def test_get_last_query_returns_none() -> None:
     cli = make_bare_mycli()
 
-    assert main.MyCli.get_last_query(cli) is None
+    assert mycli_client.MyCli.get_last_query(cli) is None
 
 
 def test_get_last_query_returns_latest_query() -> None:
     cli = make_bare_mycli()
     cli.query_history = [Query('select 1', True, False), Query('select 2', True, False)]
 
-    assert main.MyCli.get_last_query(cli) == 'select 2'
+    assert mycli_client.MyCli.get_last_query(cli) == 'select 2'

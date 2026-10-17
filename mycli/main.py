@@ -23,7 +23,6 @@ import clickdc
 
 import mycli as mycli_package
 from mycli.cli_runner import run_from_cli_args
-from mycli.client import MyCli as MyCli
 from mycli.constants import (
     DEFAULT_PROMPT,
     EMPTY_PASSWORD_FLAG_SENTINEL,

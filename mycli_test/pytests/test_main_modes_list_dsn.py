@@ -11,6 +11,7 @@ from click.testing import CliRunner
 import pytest
 
 from mycli import cli_runner, main
+from mycli import client as client_module
 from mycli import config as config_module
 from mycli.main_modes import list_dsn as list_dsn_mode
 from mycli.packages.utils import dsn_utils
@@ -253,7 +254,7 @@ def test_completions_take_precedence_over_list_dsn(monkeypatch: pytest.MonkeyPat
 
 def test_checkup_takes_precedence_over_list_dsn(monkeypatch: pytest.MonkeyPatch) -> None:
     client = object()
-    monkeypatch.setattr(main, 'MyCli', lambda **kwargs: client)
+    monkeypatch.setattr(client_module, 'MyCli', lambda **kwargs: client)
     monkeypatch.setattr(cli_runner, 'load_list_dsn_config', lambda path: pytest.fail('config loaded'))
     calls: list[object] = []
     monkeypatch.setattr(cli_runner, 'main_checkup', calls.append)

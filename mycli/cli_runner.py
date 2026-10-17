@@ -153,7 +153,10 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory | None 
             sys.exit(main_list_dsn(config, verbosity))
 
     if client_factory is None:
-        client_factory = main_module.MyCli
+        import mycli.client as mycli_client
+
+        client_factory = mycli_client.MyCli
+
     mycli = client_factory(
         prompt=cli_args.prompt,
         toolbar_format=cli_args.toolbar,
