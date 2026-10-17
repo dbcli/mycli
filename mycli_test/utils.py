@@ -16,6 +16,7 @@ from pymysql.cursors import SSCursor
 import pytest
 
 from mycli import main
+import mycli.client as mycli_client
 from mycli.constants import (
     DEFAULT_CHARSET,
     DEFAULT_HOST,
@@ -139,7 +140,7 @@ class RecordingSQLExecute:
 
 
 def make_bare_mycli() -> Any:
-    cli = object.__new__(main.MyCli)
+    cli = object.__new__(mycli_client.MyCli)
     cli.logger = cast(Any, DummyLogger())
     cli.main_formatter = DummyFormatter()
     cli.redirect_formatter = DummyFormatter()
@@ -159,7 +160,7 @@ def make_bare_mycli() -> Any:
     cli.last_prompt_message = ANSI('')
     cli.last_custom_toolbar_message = ANSI('')
     cli.prompt_lines = 0
-    cli.prompt_format = main.MyCli.default_prompt
+    cli.prompt_format = mycli_client.MyCli.default_prompt
     cli.multiline_continuation_char = '>'
     cli.toolbar_format = 'default'
     cli.destructive_warning = False

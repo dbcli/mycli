@@ -23,6 +23,7 @@ Internal
 --------
 * Update `cli_helpers` to v2.15.2, improving vertical output.
 * Update `ruff` to v0.17.0.
+* Complete moving `MyCli` to `client.py`.
 
 
 v2.29.6 (2026/10/15)
