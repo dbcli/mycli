@@ -21,6 +21,7 @@ Documentation
 Internal
 --------
 * Update `cli_helpers` to v2.15.2, improving vertical output.
+* Update `ruff` to v0.17.0.
 
 
 v2.29.6 (2026/10/15)
