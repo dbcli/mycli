@@ -1,3 +1,5 @@
+__lazy_modules__ = ['Cryptodome.Cipher']
+
 from copy import copy
 from importlib import resources
 from io import BytesIO, TextIOWrapper
@@ -12,6 +14,22 @@ from configobj import ConfigObj, ConfigObjError
 from Cryptodome.Cipher import AES
 
 logger = logging.getLogger(__name__)
+SYSTEM_CONFIG_FILES: list[str | IO[str]] = ['/etc/myclirc']
+
+
+def get_xdg_config_file() -> str:
+    return os.path.join(os.path.expanduser(os.environ.get('XDG_CONFIG_HOME', '~/.config')), 'mycli', 'myclirc')
+
+
+def resolve_user_config_path(myclirc: str | None, *, xdg_config_file: str | None = None) -> str:
+    if myclirc is not None:
+        return myclirc
+    xdg_config_file = get_xdg_config_file() if xdg_config_file is None else xdg_config_file
+    return xdg_config_file if os.path.exists(xdg_config_file) else '~/.myclirc'
+
+
+def read_user_config(myclirc: str | None) -> ConfigObj:
+    return read_config_files(SYSTEM_CONFIG_FILES + [resolve_user_config_path(myclirc)])
 
 
 class SQLValuePreservingConfigObj(ConfigObj):

@@ -4,6 +4,7 @@ Upcoming (TBD)
 Features
 --------
 * Populate history file in Docker with examples.
+* Faster dynamic completions via faster `--list-dsn`.
 
 
 Bug Fixes

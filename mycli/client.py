@@ -24,10 +24,13 @@ from mycli.client_commands import ClientCommandsMixin, get_config_property_names
 from mycli.client_connection import ClientConnectionMixin
 from mycli.client_query import ClientQueryMixin
 from mycli.config import (
+    SYSTEM_CONFIG_FILES,
     get_mylogin_cnf_path,
+    get_xdg_config_file,
     open_mylogin_cnf,
     read_config_file,
     read_config_files,
+    resolve_user_config_path,
     write_default_config,
 )
 from mycli.constants import DEFAULT_PROMPT
@@ -61,10 +64,8 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
 
     # check XDG_CONFIG_HOME exists and not an empty string
     xdg_config_home = os.environ.get("XDG_CONFIG_HOME", "~/.config")
-    xdg_config_file = os.path.join(os.path.expanduser(xdg_config_home), "mycli", "myclirc")
-    system_config_files: list[str | IO[str]] = [
-        "/etc/myclirc",
-    ]
+    xdg_config_file = get_xdg_config_file()
+    system_config_files: list[str | IO[str]] = SYSTEM_CONFIG_FILES
 
     def __init__(
         self,
@@ -92,11 +93,7 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
         self.sandbox_mode: bool = False
         self.checkpoint: IO | None = None
 
-        if myclirc is None:
-            if os.path.exists(self.xdg_config_file):
-                myclirc = self.xdg_config_file
-            else:
-                myclirc = '~/.myclirc'
+        myclirc = resolve_user_config_path(myclirc, xdg_config_file=self.xdg_config_file)
         self.myclirc_path = os.path.abspath(os.path.expanduser(myclirc))
 
         # Load config.
