@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Internal
+--------
+* Update `pycryptodomex` to v3.24.1.
+
+
 v2.30.0 (2026/10/17)
 ==============
 
