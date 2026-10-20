@@ -177,7 +177,7 @@ jobs:
     needs: [typecheck]
 
     steps:
-    - uses: vampire/setup-wsl@d1da7f2c0322a5ee4f24975344f67fc0f5baf364 # v7.0.0
+    - uses: vampire/setup-wsl@614202866847d986a4f737ae6020b760283d3f5a # v7.1.1
       with:
         distribution: Ubuntu-24.04
         use-cache: 'true'
