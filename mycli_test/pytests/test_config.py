@@ -6,6 +6,7 @@ from io import BytesIO, StringIO, TextIOWrapper
 import logging
 import os
 import struct
+import subprocess
 import sys
 from tempfile import NamedTemporaryFile
 from types import SimpleNamespace
@@ -433,6 +434,34 @@ def test_create_and_write_default_config(tmp_path) -> None:
 
     write_default_config(str(destination), overwrite=True)
     assert '[main]' in destination.read_text(encoding='utf8')
+
+
+def test_default_config_does_not_use_locale_encoding(tmp_path) -> None:
+    # The packaged myclirc is UTF-8 with non-ASCII text, so opening it with the
+    # locale encoding fails on non-UTF-8 locales such as cp932 (Japanese Windows).
+    script = '\n'.join((
+        'import sys',
+        'from mycli.config import create_default_config, write_default_config',
+        'create_default_config()',
+        'write_default_config(sys.argv[1])',
+    ))
+    result = subprocess.run(
+        [
+            sys.executable,
+            '-X',
+            'warn_default_encoding',
+            '-W',
+            'error::EncodingWarning:mycli.config',
+            '-c',
+            script,
+            str(tmp_path / 'myclirc'),
+        ],
+        capture_output=True,
+        encoding='utf8',
+        errors='replace',
+    )
+    assert result.returncode == 0, result.stderr
+    assert '[main]' in (tmp_path / 'myclirc').read_text(encoding='utf8')
 
 
 def test_get_mylogin_cnf_path_returns_none_for_missing_file(monkeypatch, tmp_path) -> None:
