@@ -64,7 +64,7 @@ build-backend = "setuptools.build_meta"
 llm = [
     "llm ~= 0.36",
     "setuptools == 84.*",                   # Required by llm commands to install models
-    "pip ~= 26.2.1",
+    "pip ~= 26.2.2",
 ]
 dataframe = [
     "polars ~= 2.0.0",
@@ -101,8 +101,7 @@ exclude-newer = '1 week'
 
 [tool.uv.exclude-newer-package]
 cli_helpers = false
-sqlglot = false                             # removeme after 2026-10-22
-sqlglotc = false                            # removeme after 2026-10-22
+pip = false                                 # removeme after 2026-10-27
 
 [tool.ruff]
 target-version = 'py311'
