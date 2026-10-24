@@ -4,6 +4,7 @@ Upcoming (TBD)
 Internal
 --------
 * Update `pycryptodomex` to v3.24.1.
+* Update `pip` LLM dependency to v26.2.2.
 
 
 v2.30.0 (2026/10/17)
