@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Bug Fixes
+--------
+* Read and write the default `myclirc` as UTF-8, fixing a startup crash on non-UTF-8 locales such as Japanese Windows.
+
+
 v2.30.1 (2026/10/24)
 ==============
 
