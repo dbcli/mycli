@@ -4,6 +4,7 @@ Upcoming (TBD)
 Bug Fixes
 --------
 * Read and write the default `myclirc` as UTF-8, fixing a startup crash on non-UTF-8 locales such as Japanese Windows.
+* Keep checking later statements for the destructive warning after a single-table `UPDATE ... WHERE`.
 
 
 v2.30.1 (2026/10/24)

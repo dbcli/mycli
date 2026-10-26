@@ -391,9 +391,8 @@ def is_destructive(keywords: list[str], queries: str) -> bool:
         # subtle: if "UPDATE" is one of our keywords AND "query" starts with "UPDATE"
         if query_starts_with(query, keywords) and query_starts_with(query, ["update"]):
             if query_has_where_clause(query) and query_is_single_table_update(query):
-                return False
-            else:
-                return True
+                continue
+            return True
         if query_starts_with(query, keywords):
             return True
 
