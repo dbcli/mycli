@@ -7,6 +7,11 @@ Bug Fixes
 * Keep checking later statements for the destructive warning after a single-table `UPDATE ... WHERE`.
 
 
+Internal
+--------
+* Update `cli_helpers` to v2.15.3.
+
+
 v2.30.1 (2026/10/24)
 ==============
 
