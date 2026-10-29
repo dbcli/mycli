@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Internal
+--------
+* Update `wcwidth` dependency to v0.9.3.
+
+
 v2.30.2 (2026/10/28)
 ==============
 
