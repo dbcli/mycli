@@ -7,6 +7,7 @@ Internal
 * Update `sqlglot` dependency to v30.24.0.
 * Update `coverage` dev dependency to v7.17.0.
 * Update `tox` dev dependency to v4.67.1.
+* Update `ruff` dev dependency to v0.17.2.
 
 
 v2.30.2 (2026/10/28)
