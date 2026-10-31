@@ -6,6 +6,7 @@ Internal
 * Update `wcwidth` dependency to v0.9.3.
 * Update `sqlglot` dependency to v30.24.0.
 * Update `coverage` dev dependency to v7.17.0.
+* Update `tox` dev dependency to v4.67.1.
 
 
 v2.30.2 (2026/10/28)

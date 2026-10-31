@@ -82,7 +82,7 @@ dev = [
     "pytest ~= 9.1.1",
     "pytest-cov ~= 7.1.0",
     "pytest-random-order ~= 1.2.0",
-    "tox ~= 4.64.9",
+    "tox ~= 4.67.1",
     "pdbpp ~= 0.12.1",
     "ruff ~= 0.17.0",                       # keep in sync with the tool.tox.env.style stanza below
 ]
