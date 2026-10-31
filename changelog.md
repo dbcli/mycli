@@ -8,6 +8,7 @@ Internal
 * Update `coverage` dev dependency to v7.17.0.
 * Update `tox` dev dependency to v4.67.1.
 * Update `ruff` dev dependency to v0.17.2.
+* Update WSL Linux in CI to Ubuntu 26.04.
 
 
 v2.30.2 (2026/10/28)
