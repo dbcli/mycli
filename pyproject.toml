@@ -84,7 +84,7 @@ dev = [
     "pytest-random-order ~= 1.2.0",
     "tox ~= 4.67.1",
     "pdbpp ~= 0.12.1",
-    "ruff ~= 0.17.0",                       # keep in sync with the tool.tox.env.style stanza below
+    "ruff ~= 0.17.2",                       # keep in sync with the tool.tox.env.style stanza below
 ]
 
 [project.scripts]
@@ -164,7 +164,7 @@ allowlist_externals = ['rm', 'uv']
 
 [tool.tox.env.style]
 skip_install = true
-deps = ['ruff~=0.17.0']  # keep in sync with dev dependency group above
+deps = ['ruff~=0.17.2']  # keep in sync with dev dependency group above
 commands = [['ruff', 'check'],
             ['ruff', 'format', '--diff']]
 
