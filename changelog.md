@@ -10,6 +10,7 @@ Internal
 * Update `ruff` dev dependency to v0.17.2.
 * Update WSL Linux in CI to Ubuntu 26.04.
 * Update `polars` dependency to v2.1.0.
+* Update `pytest` dev dependency to v9.2.0.
 
 
 v2.30.2 (2026/10/28)
