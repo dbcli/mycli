@@ -7,7 +7,7 @@ Internal
 * Update `sqlglot` dependency to v30.24.0.
 * Update `coverage` dev dependency to v7.17.0.
 * Update `tox` dev dependency to v4.67.1.
-* Update `ruff` dev dependency to v0.17.2.
+* Update `ruff` dev dependency to v0.17.3.
 * Update WSL Linux in CI to Ubuntu 26.04.
 * Update `polars` dependency to v2.1.0.
 * Update `pytest` dev dependency to v9.2.0.
