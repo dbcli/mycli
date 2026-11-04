@@ -67,7 +67,7 @@ llm = [
     "pip ~= 26.2.2",
 ]
 dataframe = [
-    "polars ~= 2.0.0",
+    "polars ~= 2.1.0",
     "altair ~= 6.3.0",
     "vl-convert-python ~= 1.9.0",
 ]
