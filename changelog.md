@@ -1,4 +1,4 @@
-Upcoming (TBD)
+v2.30.3 (2026/11/05)
 ==============
 
 Internal
@@ -18,7 +18,7 @@ v2.30.2 (2026/10/28)
 
 Bug Fixes
 --------
-* Read and write the default `myclirc` as UTF-8, fixing a startup crash on non-UTF-8 locales such as Japanese Windows.
+* Read and write the package `myclirc` as UTF-8, fixing a startup crash on non-UTF-8 locales such as Japanese Windows.
 * Keep checking later statements for the destructive warning after a single-table `UPDATE ... WHERE`.
 
 
