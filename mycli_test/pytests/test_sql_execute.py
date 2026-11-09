@@ -499,6 +499,60 @@ def test_parse_enum_values(column_type: str, expected: list[str]) -> None:
     assert SQLExecute._parse_enum_values(column_type) == expected
 
 
+@pytest.mark.parametrize(
+    ('column_type', 'expected'),
+    [("enum(", []), ("enum('first','unfinished", ['first']), ("enum('first'", ['first'])],
+)
+def test_parse_enum_values_tolerates_missing_closing_parenthesis(column_type: str, expected: list[str]) -> None:
+    assert SQLExecute._parse_enum_values(column_type) == expected
+
+
+def test_constructor_initializes_state_before_connecting(monkeypatch: pytest.MonkeyPatch) -> None:
+    states: list[dict[str, object]] = []
+
+    def connect(executor: SQLExecute) -> None:
+        states.append(vars(executor).copy())
+
+    monkeypatch.setattr(SQLExecute, 'connect', connect)
+    ssl = {'ca': '/certs/ca.pem'}
+
+    SQLExecute(
+        database='database',
+        user='user',
+        password='password',
+        host='host',
+        port=3307,
+        socket='/tmp/mysql.sock',
+        character_set='utf8mb4',
+        local_infile=True,
+        ssl=ssl,
+        init_command='select 1',
+        unbuffered=True,
+        display_dsn='mysql://user@host/database',
+    )
+
+    assert states == [
+        {
+            'dbname': 'database',
+            'user': 'user',
+            'password': 'password',
+            'host': 'host',
+            'port': 3307,
+            'socket': '/tmp/mysql.sock',
+            'character_set': 'utf8mb4',
+            'local_infile': True,
+            'ssl': ssl,
+            'display_dsn': 'mysql://user@host/database',
+            'server_info': None,
+            'connection_id': None,
+            'init_command': 'select 1',
+            'unbuffered': True,
+            'conn': None,
+            'background_runner': None,
+        }
+    ]
+
+
 @pytest.mark.parametrize('column_type', ('', 'varchar(255)', "set('a','b')", None))
 def test_parse_enum_values_returns_empty_list_for_non_enum_input(column_type: str | None) -> None:
     assert SQLExecute._parse_enum_values(column_type) == []
@@ -658,6 +712,22 @@ def make_executor_for_run_tests(conn: object | None = None) -> SQLExecute:
     executor = SQLExecute.__new__(SQLExecute)
     executor.conn = conn
     return executor
+
+
+def test_connect_skips_doris_probe_for_mariadb(monkeypatch: pytest.MonkeyPatch) -> None:
+    executor = make_executor_for_connect_tests()
+    executor.ssl = None
+    conn = DummyConnection('10.11.6-MariaDB')
+    monkeypatch.setattr(sql_execute.pymysql, 'connect', Mock(return_value=conn))
+    monkeypatch.setattr(executor, 'reset_connection_id', Mock())
+    probe = Mock()
+    monkeypatch.setattr(executor, '_probe_doris_version', probe)
+
+    executor.connect()
+
+    probe.assert_not_called()
+    assert executor.server_info.species == ServerSpecies.MariaDB
+    assert executor.server_info.version_str == '10.11.6'
 
 
 def test_connect_reattaches_existing_background_runner(monkeypatch: pytest.MonkeyPatch) -> None:
