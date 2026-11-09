@@ -8,11 +8,12 @@ from typing import Any, Literal, cast
 
 from configobj import ConfigObj
 import pymysql
+from pymysql.constants.ER import MUST_CHANGE_PASSWORD_LOGIN
 import pytest
 
 from mycli import client_connection
 from mycli.client_connection import ClientConnectionMixin
-from mycli.constants import DEFAULT_CHARSET, EMPTY_PASSWORD_FLAG_SENTINEL, ER_MUST_CHANGE_PASSWORD_LOGIN
+from mycli.constants import DEFAULT_CHARSET, EMPTY_PASSWORD_FLAG_SENTINEL
 from mycli.packages.credentials.password_sources import KNOWN_PASSWORD_SOURCES, PasswordCandidates
 
 
@@ -1304,7 +1305,7 @@ def test_connect_exits_when_password_retry_still_has_no_password(monkeypatch: py
 
 def test_connect_reports_expired_password_login_error() -> None:
     client = DummyClient()
-    FakeSQLExecute.effects = [op_error(ER_MUST_CHANGE_PASSWORD_LOGIN, 'expired')]
+    FakeSQLExecute.effects = [op_error(MUST_CHANGE_PASSWORD_LOGIN, 'expired')]
 
     with pytest.raises(SystemExit) as excinfo:
         client.connect(host='db', port=3307)

@@ -10,7 +10,7 @@ import click
 import keyring
 import pymysql
 from pymysql.constants.CR import CR_SERVER_LOST
-from pymysql.constants.ER import ACCESS_DENIED_ERROR, HANDSHAKE_ERROR
+from pymysql.constants.ER import ACCESS_DENIED_ERROR, HANDSHAKE_ERROR, MUST_CHANGE_PASSWORD_LOGIN
 
 from mycli.compat import WIN
 from mycli.config import str_to_bool
@@ -19,7 +19,6 @@ from mycli.constants import (
     DEFAULT_HOST,
     DEFAULT_PORT,
     EMPTY_PASSWORD_FLAG_SENTINEL,
-    ER_MUST_CHANGE_PASSWORD_LOGIN,
 )
 from mycli.packages.credentials.password_sources import PasswordCandidates
 from mycli.packages.execution.sql_execute import SQLExecute
@@ -433,7 +432,7 @@ class ClientConnectionMixin:
                         keyring_retrieved_cleanly=keyring_retrieved_cleanly,
                         keyring_save_eligible=keyring_save_eligible,
                     )
-                elif e1.args[0] == ER_MUST_CHANGE_PASSWORD_LOGIN:
+                elif e1.args[0] == MUST_CHANGE_PASSWORD_LOGIN:
                     self.echo(
                         "Your password has expired and the server rejected the connection.",
                         err=True,

@@ -49,6 +49,7 @@ from pymysql.constants.CR import (
     CR_SERVER_GONE_ERROR,
     CR_SERVER_LOST,
 )
+from pymysql.constants.ER import MUST_CHANGE_PASSWORD
 from pymysql.constants.SERVER_STATUS import SERVER_STATUS_IN_TRANS
 from pymysql.cursors import Cursor
 
@@ -57,7 +58,6 @@ from mycli.compat import WIN
 from mycli.constants import (
     DEFAULT_HOST,
     DEFAULT_WIDTH,
-    ER_MUST_CHANGE_PASSWORD,
     HOME_URL,
     ISSUES_URL,
     QueryState,
@@ -1110,7 +1110,7 @@ def _one_iteration(
         mycli.echo(str(exc), err=True, fg='red')
     except pymysql.OperationalError as e1:
         mycli.logger.debug('Exception: %r', e1)
-        if e1.args[0] == ER_MUST_CHANGE_PASSWORD:
+        if e1.args[0] == MUST_CHANGE_PASSWORD:
             mycli.sandbox_mode = True
             mycli.echo(
                 "ERROR 1820: You must reset your password using ALTER USER or SET PASSWORD before executing this statement.",

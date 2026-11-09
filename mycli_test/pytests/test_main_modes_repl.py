@@ -2238,7 +2238,7 @@ def test_one_iteration_enters_sandbox_mode_on_must_change_password_error(monkeyp
         connection_id = 0
 
         def run(self, text: str) -> Iterator[SQLResult]:
-            raise pymysql.OperationalError(repl_mode.ER_MUST_CHANGE_PASSWORD, 'must change password')
+            raise pymysql.OperationalError(repl_mode.MUST_CHANGE_PASSWORD, 'must change password')
 
     cli = make_repl_cli(FakeSQLExecute())
 

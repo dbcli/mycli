@@ -30,7 +30,7 @@ dependencies = [
     "cryptography ~= 50.0.2",
     "Pygments ~= 2.21.0",
     "prompt_toolkit ~= 3.0.53",
-    "PyMySQL ~= 1.2.3",
+    "PyMySQL ~= 1.2.4",
     "sqlparse ~= 0.6.0",
     "sqlglot ~= 30.25.0",
     "sqlglotc ~= 30.25.0",
@@ -101,6 +101,7 @@ exclude-newer = '1 week'
 
 [tool.uv.exclude-newer-package]
 cli_helpers = false
+pymysql = false                             # removeme 2026-11-16
 
 [tool.ruff]
 target-version = 'py311'

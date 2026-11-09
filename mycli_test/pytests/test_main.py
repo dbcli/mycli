@@ -25,6 +25,7 @@ from prompt_toolkit.formatted_text import (
     to_plain_text,
 )
 import pymysql
+from pymysql.constants.ER import MUST_CHANGE_PASSWORD_LOGIN
 from pymysql.err import OperationalError
 import pytest
 
@@ -40,7 +41,6 @@ from mycli.constants import (
     DEFAULT_PORT,
     DEFAULT_USER,
     EMPTY_PASSWORD_FLAG_SENTINEL,
-    ER_MUST_CHANGE_PASSWORD_LOGIN,
     TEST_DATABASE,
 )
 from mycli.main import (
@@ -2386,7 +2386,7 @@ def test_connect_reports_expired_password_login_error(monkeypatch: pytest.Monkey
 
     class ExpiredPasswordSQLExecute(RecordingSQLExecute):
         calls: list[dict[str, Any]] = []
-        side_effects: list[Any] = [pymysql.OperationalError(ER_MUST_CHANGE_PASSWORD_LOGIN, 'must change password')]
+        side_effects: list[Any] = [pymysql.OperationalError(MUST_CHANGE_PASSWORD_LOGIN, 'must change password')]
 
     monkeypatch.setattr(mycli.client_connection, 'SQLExecute', ExpiredPasswordSQLExecute)
 
