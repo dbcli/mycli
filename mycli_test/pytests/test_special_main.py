@@ -360,6 +360,45 @@ def test_show_help_lists_only_visible_commands(restore_commands: None) -> None:
     assert f'Docs index — {DOCS_URL}' in result.postamble
 
 
+def test_register_backslash_only_alias_omits_slash_variant(restore_commands: None) -> None:
+    special_commands_main.COMMANDS.clear()
+    special_commands_main.register_special_command(
+        lambda: None,
+        r'\demo',
+        r'\demo',
+        'Demo command',
+        aliases=[special_commands_main.SpecialCommandAlias(r'\d', case_sensitive=True)],
+        backslash_only=True,
+    )
+
+    assert set(special_commands_main.COMMANDS) == {r'\demo', r'\d'}
+    alias = special_commands_main.COMMANDS[r'\d']
+    assert alias.backslash_only is True
+    assert alias.hidden is True
+    assert alias.case_sensitive is True
+
+
+def test_show_help_without_alias(restore_commands: None) -> None:
+    special_commands_main.COMMANDS.clear()
+    special_commands_main.register_special_command(lambda: None, 'demo', '/demo', 'Demo command')
+
+    assert special_commands_main.show_help()[0].rows == [('/demo', None, '/demo', 'Demo command')]
+
+
+def test_show_help_preserves_backslash_only_names(restore_commands: None) -> None:
+    special_commands_main.COMMANDS.clear()
+    special_commands_main.register_special_command(
+        lambda: None,
+        r'\demo',
+        r'\demo',
+        'Demo command',
+        aliases=[special_commands_main.SpecialCommandAlias(r'\d', case_sensitive=True)],
+        backslash_only=True,
+    )
+
+    assert special_commands_main.show_help()[0].rows == [(r'\demo', r'\d', r'\demo', 'Demo command')]
+
+
 def test_show_keyword_help_for_special_command(restore_commands: None) -> None:
     special_commands_main.COMMANDS.clear()
     special_commands_main.CASE_SENSITIVE_COMMANDS.clear()
