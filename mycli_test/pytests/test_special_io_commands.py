@@ -1895,6 +1895,71 @@ def test_execute_system_command_nonraw_paths(monkeypatch) -> None:
     assert io_commands.execute_system_command('echo nope')[0].status == 'OSError: bad command'
 
 
+def test_close_tee_without_active_file(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(io_commands, 'tee_file', None)
+
+    io_commands.close_tee()
+
+    assert io_commands.tee_file is None
+
+
+def test_write_tee_without_newline(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    target = tmp_path / 'tee.txt'
+    with target.open('w', encoding='utf-8') as stream:
+        monkeypatch.setattr(io_commands, 'tee_file', stream)
+
+        io_commands.write_tee('row', nl=False)
+
+        assert target.read_text(encoding='utf-8') == 'row'
+
+
+@pytest.mark.parametrize('written', [False, True])
+def test_unset_once_without_file_skips_hook(monkeypatch: pytest.MonkeyPatch, written: bool) -> None:
+    monkeypatch.setattr(io_commands, 'once_file', None)
+    monkeypatch.setattr(io_commands, 'written_to_once_file', written)
+    hook = Mock()
+    monkeypatch.setattr(io_commands, '_run_post_redirect_hook', hook)
+
+    io_commands.unset_once_if_written('post {}')
+
+    hook.assert_not_called()
+
+
+def test_unset_once_preserves_unwritten_file(monkeypatch: pytest.MonkeyPatch) -> None:
+    stream = Mock()
+    monkeypatch.setattr(io_commands, 'once_file', stream)
+    monkeypatch.setattr(io_commands, 'written_to_once_file', False)
+    hook = Mock()
+    monkeypatch.setattr(io_commands, '_run_post_redirect_hook', hook)
+
+    io_commands.unset_once_if_written('post {}')
+
+    assert io_commands.once_file is stream
+    stream.close.assert_not_called()
+    hook.assert_not_called()
+
+
+@pytest.mark.parametrize(('line', 'process'), [('', Mock()), ('row', None)])
+def test_write_pipe_once_ignores_inactive_output(monkeypatch: pytest.MonkeyPatch, line: str, process: Mock | None) -> None:
+    monkeypatch.setattr(io_commands, 'PIPE_ONCE', {'process': process, 'stdin': []})
+
+    io_commands.write_pipe_once(line)
+
+    assert io_commands.PIPE_ONCE['stdin'] == []
+
+
+def test_cleanup_pipe_process_handles_absent_streams() -> None:
+    process = Mock(stdin=None, stdout=Mock(), stderr=None)
+    process.communicate.side_effect = subprocess.TimeoutExpired('command', 2)
+
+    io_commands._cleanup_pipe_process(process, process_group=False)
+
+    process.kill.assert_called_once_with()
+    process.communicate.assert_called_once_with(timeout=2)
+    process.stdout.close.assert_called_once_with()
+    process.wait.assert_called_once_with(timeout=2)
+
+
 def test_unset_once_and_post_redirect_hook(monkeypatch, tmp_path: Path) -> None:
     target = tmp_path / 'once.txt'
     io_commands.once_file = target.open('w', encoding='utf-8')
@@ -2126,6 +2191,29 @@ def test_flush_pipe_once_timeout_and_nonzero_exit(monkeypatch, tmp_path: Path) -
         'stdout_mode': None,
         'process_group': False,
     }
+
+
+@pytest.mark.parametrize('clear_screen', [False, True])
+def test_watch_query_returns_rows_without_destructive_confirmation(monkeypatch: pytest.MonkeyPatch, clear_screen: bool) -> None:
+    cursor = SequenceCursor([[('value',)]])
+    monkeypatch.setattr(io_commands, 'confirm_destructive_query', Mock(return_value=None))
+    clear = Mock()
+    monkeypatch.setattr(io_commands.click, 'clear', clear)
+    message = Mock()
+    monkeypatch.setattr(io_commands.click, 'secho', message)
+    generator = io_commands.watch_query('-c select 1;' if clear_screen else 'select 1;', cur=cursor)
+    try:
+        result = next(generator)
+
+        assert cursor.executed == ['select 1']
+        assert result.header == ['value']
+        assert result.rows is cursor
+        assert result.preamble == '> select 1;'
+        assert result.command == {'name': 'watch', 'seconds': 5.0}
+        assert clear.call_count == int(clear_screen)
+        message.assert_not_called()
+    finally:
+        generator.close()
 
 
 def test_watch_query_usage_and_destructive_cancel(monkeypatch) -> None:
