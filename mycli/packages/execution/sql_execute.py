@@ -12,10 +12,10 @@ import pymysql
 from pymysql.connections import Connection
 from pymysql.constants import FIELD_TYPE
 from pymysql.constants.CR import CR_SSL_CONNECTION_ERROR
+from pymysql.constants.ER import MUST_CHANGE_PASSWORD
 from pymysql.converters import conversions, convert_date, convert_datetime, convert_time, decoders
 from pymysql.cursors import Cursor, SSCursor
 
-from mycli.constants import ER_MUST_CHANGE_PASSWORD
 from mycli.packages.execution.background_runner import BackgroundRunner
 from mycli.packages.special_commands import io_commands
 from mycli.packages.special_commands.main import CommandNotFound, execute
@@ -296,9 +296,9 @@ class SQLExecute:
                 connect_kwargs['ssl_disabled'] = True
                 conn = pymysql.connect(**connect_kwargs)  # type: ignore[misc]
         except pymysql.OperationalError as e:
-            if e.args[0] == ER_MUST_CHANGE_PASSWORD:
+            if e.args[0] == MUST_CHANGE_PASSWORD:
                 # Post-handshake queries (SET NAMES, SET AUTOCOMMIT, init_command)
-                # fail with ER_MUST_CHANGE_PASSWORD in sandbox mode.
+                # fail with MUST_CHANGE_PASSWORD in sandbox mode.
                 # Reconnect with only the raw handshake.
                 connect_kwargs['defer_connect'] = True
                 connect_kwargs['autocommit'] = None
@@ -659,7 +659,7 @@ class SQLExecute:
         """Connect in sandbox mode, performing only the handshake.
 
         pymysql's normal connect() runs post-handshake queries (SET NAMES,
-        SET AUTOCOMMIT, init_command) that all fail with ER_MUST_CHANGE_PASSWORD
+        SET AUTOCOMMIT, init_command) that all fail with MUST_CHANGE_PASSWORD
         in sandbox mode.  This method performs the raw socket connection and
         authentication handshake only.
         """

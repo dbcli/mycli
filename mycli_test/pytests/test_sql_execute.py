@@ -1000,7 +1000,7 @@ def test_connect_enters_sandbox_after_ssl_fallback(monkeypatch: pytest.MonkeyPat
     connect = Mock(
         side_effect=[
             pymysql.OperationalError(sql_execute.CR_SSL_CONNECTION_ERROR, 'SSL unsupported'),
-            pymysql.OperationalError(sql_execute.ER_MUST_CHANGE_PASSWORD, 'must change password'),
+            pymysql.OperationalError(sql_execute.MUST_CHANGE_PASSWORD, 'must change password'),
             new_conn,
         ]
     )
