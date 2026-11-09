@@ -6,6 +6,7 @@ Internal
 * Improve test coverage for `packages/special_commands/main.py`.
 * Improve test coverage for `packages/special_commands/io_commands.py`.
 * Improve test coverage for `packages/execution/sql_execute.py`.
+* Improve test coverage for `packages/tabular_output/sql_format.py`.
 
 
 v2.30.3 (2026/11/05)
