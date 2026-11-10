@@ -8,6 +8,7 @@ Internal
 * Improve test coverage for `packages/execution/sql_execute.py`.
 * Improve test coverage for `packages/tabular_output/sql_format.py`.
 * Update `pymysql` dependency to v1.2.4.
+* Update `sqlparse` dependency to v0.6.1.
 
 
 v2.30.3 (2026/11/05)
