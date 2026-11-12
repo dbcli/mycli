@@ -1,6 +1,10 @@
 Upcoming (TBD)
 ==============
 
+Bug Fixes
+--------
+* Decode percent-encoded database names in DSN URIs, including aliases with environment variable expansion enabled.
+
 Internal
 --------
 * Improve test coverage for `packages/special_commands/main.py`.

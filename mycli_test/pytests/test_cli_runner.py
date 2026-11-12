@@ -93,6 +93,46 @@ def test_expand_dsn_alias_env_var_returns_none() -> None:
     assert cli_runner.expand_dsn_alias_env_var(None, 'prod') is None
 
 
+@pytest.mark.parametrize('expand_env', (False, True))
+@pytest.mark.parametrize(
+    ('path', 'expected'),
+    (
+        ('sales%20data', 'sales data'),
+        ('caf%C3%A9', 'café'),
+        ('rate%25', 'rate%'),
+        ('rate%2520', 'rate%20'),
+        ('sales+data', 'sales+data'),
+    ),
+)
+def test_run_from_cli_args_decodes_dsn_database(monkeypatch: pytest.MonkeyPatch, expand_env: bool, path: str, expected: str) -> None:
+    cli_args = make_cli_args()
+    uri = f'mysql://user@host/{path}'
+    config = default_config()
+    cli_args.dsn = 'prod' if expand_env else uri
+    config['main']['expand_dsn_alias_env_vars'] = str(expand_env)
+    config['alias_dsn'] = {'prod': uri}
+    client = DummyMyCli(config=config)
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    assert client.connect_calls[-1]['database'] == expected
+
+
+@pytest.mark.parametrize('path', ('${MYCLI_TEST_DSN_DATABASE}', '%24%7BMYCLI_TEST_DSN_DATABASE%7D'))
+def test_run_from_cli_args_preserves_literal_database_env_value(monkeypatch: pytest.MonkeyPatch, path: str) -> None:
+    monkeypatch.setenv('MYCLI_TEST_DSN_DATABASE', 'sales%20data')
+    cli_args = make_cli_args()
+    cli_args.dsn = 'prod'
+    config = default_config()
+    config['main']['expand_dsn_alias_env_vars'] = 'true'
+    config['alias_dsn'] = {'prod': f'mysql://user@host/{path}'}
+    client = DummyMyCli(config=config)
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    assert client.connect_calls[-1]['database'] == 'sales%20data'
+
+
 def test_split_dsn_netloc_handles_user_without_password() -> None:
     assert cli_runner.split_dsn_netloc('user@host:3306') == ('user', None, 'host', '3306')
 
