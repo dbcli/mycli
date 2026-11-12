@@ -17,6 +17,7 @@ Internal
 * Update `llm` dependency to v0.37.1.
 * Update `pip` dependency to v26.3.
 * Update `coverage` dev dependency to v7.17.2.
+* Update `mypy` dev dependency to v2.4.1.
 
 
 v2.30.3 (2026/11/05)
