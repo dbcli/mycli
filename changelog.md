@@ -5,6 +5,7 @@ Bug Fixes
 --------
 * Decode percent-encoded database names in DSN URIs, including aliases with environment variable expansion enabled.
 
+
 Internal
 --------
 * Improve test coverage for `packages/special_commands/main.py`.
@@ -15,6 +16,7 @@ Internal
 * Update `sqlparse` dependency to v0.6.1.
 * Update `llm` dependency to v0.37.1.
 * Update `pip` dependency to v26.3.
+* Update `coverage` dev dependency to v7.17.2.
 
 
 v2.30.3 (2026/11/05)
