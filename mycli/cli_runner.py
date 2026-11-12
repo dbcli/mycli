@@ -117,7 +117,7 @@ def expand_dsn_alias_env_vars(
         expand_dsn_alias_env_var(unquote(password) if password is not None else None, alias_name),
         expand_dsn_alias_env_var(host, alias_name),
         port_number,
-        expand_dsn_alias_env_var(uri.path[1:], alias_name) or '',
+        expand_dsn_alias_env_var(unquote(uri.path[1:]), alias_name) or '',
         params,
     )
 
@@ -310,7 +310,7 @@ def run_from_cli_args(cli_args: 'CliArgs', client_factory: ClientFactory | None 
             dsn_password = unquote(uri.password) if uri.password is not None else None
             dsn_host = uri.hostname
             dsn_port = uri.port
-            dsn_database = uri.path[1:]
+            dsn_database = unquote(uri.path[1:])
             dsn_params = parse_qs(uri.query, keep_blank_values=True) if uri.query else {}
 
         if not database:
