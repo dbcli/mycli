@@ -423,6 +423,7 @@ def test_init_opens_audit_log_from_config(monkeypatch: pytest.MonkeyPatch, tmp_p
     try:
         assert isinstance(cli.logfile, TextIOWrapper)
         assert Path(cli.logfile.name) == audit_log
+        assert cli.logfile.encoding.lower().replace('_', '-') == 'utf-8'
     finally:
         if isinstance(cli.logfile, TextIOWrapper):
             cli.logfile.close()

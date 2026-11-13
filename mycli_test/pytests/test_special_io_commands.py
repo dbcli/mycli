@@ -274,6 +274,23 @@ def test_tee_command():
         print(f"An error occurred while attempting to delete the file: {e}")
 
 
+def test_tee_and_once_files_are_opened_as_utf8(tmp_path: Path) -> None:
+    tee_path = tmp_path / 'tee.out'
+    once_path = tmp_path / 'once.out'
+    try:
+        mycli.packages.special_commands.execute(None, f'tee {tee_path}')
+        assert io_commands.tee_file.encoding.lower().replace('_', '-') == 'utf-8'
+        io_commands.write_tee('日本語 🙂')
+        mycli.packages.special_commands.execute(None, 'notee')
+
+        io_commands._set_once_file(str(once_path), 'w')
+        assert io_commands.once_file.encoding.lower().replace('_', '-') == 'utf-8'
+    finally:
+        io_commands.unset_once_if_written('')
+        io_commands.close_tee()
+    assert '日本語 🙂' in tee_path.read_text(encoding='utf-8')
+
+
 @pytest.mark.skipif('wsl2' in platform.uname().release.lower(), reason='todo: unknown')
 def test_tee_command_error():
     with pytest.raises(TypeError):
