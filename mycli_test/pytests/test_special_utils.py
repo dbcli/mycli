@@ -5,6 +5,7 @@ import pathlib
 import tempfile
 from types import SimpleNamespace
 from unittest.mock import MagicMock
+from urllib.parse import urlparse
 
 import pymysql
 import pytest
@@ -325,6 +326,21 @@ def test_format_connection_dsn_includes_ssh_jump() -> None:
         )
         == 'mysql://alice@db.example.com:3307/prod?ssh_jump=bastion'
     )
+
+
+def test_format_connection_dsn_brackets_ipv6_host() -> None:
+    dsn = format_connection_dsn(
+        user='alice',
+        host='::1',
+        port=3307,
+        database='prod',
+        socket=None,
+        character_set=None,
+    )
+    assert dsn == 'mysql://alice@[::1]:3307/prod'
+    uri = urlparse(dsn)
+    assert uri.hostname == '::1'
+    assert uri.port == 3307
 
 
 def test_format_connection_dsn_includes_encoded_kubectl_resource() -> None:

@@ -4,6 +4,7 @@ Upcoming (TBD)
 Bug Fixes
 --------
 * Open the audit log and the `\T`/`\o` output files as UTF-8, so non-ASCII output no longer fails under non-UTF-8 locales.
+* Bracket IPv6 hosts in the DSN shown and saved by `\dsn`, so a saved alias for `::1` can be used to connect again.
 
 
 v2.30.4 (2026/11/12)

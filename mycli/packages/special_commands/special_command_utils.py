@@ -167,6 +167,9 @@ def format_connection_dsn(
     if user_part := urlquote(user or ''):
         user_part = f'{user_part}@'
     host_part = host or 'localhost'
+    if ':' in host_part and not host_part.startswith('['):
+        # IPv6 literals must be bracketed so the port can be told apart
+        host_part = f'[{host_part}]'
     port_part = f':{port}' if port is not None else ''
     if db_part := urlquote(database or ''):
         db_part = f'/{db_part}'
