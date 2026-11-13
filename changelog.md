@@ -8,6 +8,7 @@ Bug Fixes
 * Bracket IPv6 hosts in the DSN shown and saved by `\dsn`, so a saved alias for `::1` can be used to connect again.
 * Support `DELIMITER` in batch input (`mycli < file.sql`, `--batch`), so dumps with triggers or routines restore.
 * Read `--batch` files and read and write `--checkpoint` files as UTF-8, fixing `--resume` and non-ASCII batch files on Windows.
+* Terminate `use`, `source`, `\u` and `\.` at newline in batch input, as the vendor client does.
 
 
 v2.30.4 (2026/11/12)

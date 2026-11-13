@@ -7,6 +7,8 @@ import sqlparse
 MAX_MULTILINE_BATCH_STATEMENT = 5000
 
 DELIMITER_RE = re.compile(r'^\s*delimiter\s+(\S+)\s*$', re.IGNORECASE)
+# Client commands the vendor client ends at the newline, without a delimiter
+LINE_COMMAND_RE = re.compile(r'^\s*(/?use|/?source|[/\\]u|[/\\]\.)\s+\S', re.IGNORECASE)
 
 
 def _has_tokens(text: str) -> bool:
@@ -29,6 +31,12 @@ def statements_from_filehandle(file_h: IO) -> Generator[tuple[str, int], None, N
         delimiter_match = DELIMITER_RE.match(batch_text)
         if delimiter_match and not _has_tokens(statements):
             delimiter = delimiter_match.group(1)
+            statements = ''
+            line_counter = 0
+            continue
+        if LINE_COMMAND_RE.match(batch_text) and not _has_tokens(statements) and not batch_text.rstrip().endswith(delimiter):
+            yield (batch_text.strip(), batch_counter)
+            batch_counter += 1
             statements = ''
             line_counter = 0
             continue
