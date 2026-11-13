@@ -180,7 +180,7 @@ class MyCli(AppStateMixin, OutputMixin, ClientCommandsMixin, ClientConnectionMix
         # audit log
         if self.logfile is None and "audit_log" in c["main"]:
             try:
-                self.logfile = open(os.path.expanduser(c["main"]["audit_log"]), "a")
+                self.logfile = open(os.path.expanduser(c["main"]["audit_log"]), "a", encoding="utf-8")
             except (IOError, OSError):
                 self.echo("Error: Unable to open the audit log file. Your queries will not be logged.", err=True, fg="red")
                 self.logfile = False

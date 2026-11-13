@@ -899,7 +899,7 @@ def set_tee(arg: str, **_) -> list[SQLResult]:
     global tee_file
 
     try:
-        tee_file = open(*parseargfile(arg))
+        tee_file = open(*parseargfile(arg), encoding='utf-8')
     except (IOError, OSError) as e:
         raise OSError(f"Cannot write to file '{e.filename}': {e.strerror}") from e
 
@@ -949,7 +949,7 @@ def _set_once_file(filename: str, mode: str) -> list[SQLResult]:
     global once_file, written_to_once_file
 
     try:
-        once_file = open(os.path.expanduser(filename), mode)
+        once_file = open(os.path.expanduser(filename), mode, encoding='utf-8')
     except (IOError, OSError) as e:
         raise OSError(f"Cannot write to file '{e.filename}': {e.strerror}") from e
     written_to_once_file = False
@@ -1096,7 +1096,7 @@ def flush_pipe_once_if_written(
     returncode = PIPE_ONCE['process'].returncode
     if PIPE_ONCE['stdout_file']:
         if not timed_out and not returncode and (stdout_data or force):
-            with open(PIPE_ONCE['stdout_file'], PIPE_ONCE['stdout_mode']) as f:
+            with open(PIPE_ONCE['stdout_file'], PIPE_ONCE['stdout_mode'], encoding='utf-8') as f:
                 if stdout_data:
                     print(stdout_data, file=f)
             _run_post_redirect_hook(post_redirect_command, PIPE_ONCE['stdout_file'])

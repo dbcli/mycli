@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Bug Fixes
+--------
+* Open the audit log and the `\T`/`\o` output files as UTF-8, so non-ASCII output no longer fails under non-UTF-8 locales.
+
+
 v2.30.4 (2026/11/12)
 ==============
 
