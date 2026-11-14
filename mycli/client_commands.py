@@ -305,7 +305,7 @@ class ClientCommandsMixin:
             return
 
         try:
-            file_h = open(os.path.expanduser(filename))
+            file_h = open(os.path.expanduser(filename), encoding='utf-8')
         except OSError as error:
             yield SQLResult(status=str(error))
             return

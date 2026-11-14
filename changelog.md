@@ -3,6 +3,7 @@ Upcoming (TBD)
 
 Bug Fixes
 --------
+* Read `/source` files and the `\e` editor file as UTF-8 instead of the locale encoding, so non-ASCII SQL no longer fails or is mis-decoded under non-UTF-8 locales.
 * Open the audit log and the `\T`/`\o` output files as UTF-8, so non-ASCII output no longer fails under non-UTF-8 locales.
 * Support `DELIMITER` in batch input (`mycli < file.sql`, `--batch`), so dumps with triggers or routines restore.
 

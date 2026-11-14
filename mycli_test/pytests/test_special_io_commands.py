@@ -9,6 +9,7 @@ import shlex
 import signal
 import stat
 import subprocess
+import sys
 import tempfile
 from time import monotonic, sleep, time
 from types import SimpleNamespace
@@ -621,6 +622,28 @@ def test_open_external_editor_filename_paths(monkeypatch, tmp_path: Path) -> Non
 
     assert query == ''
     assert message == f'Error reading file: {filename}'
+
+
+def test_open_external_editor_filename_does_not_use_locale_encoding(tmp_path: Path) -> None:
+    # EncodingWarning is raised for any open() that falls back to the locale encoding.
+    filename = tmp_path / 'query.sql'
+    filename.write_text('select "caf\u00e9";\n', encoding='utf-8')
+    script = '\n'.join((
+        'import sys',
+        'import click',
+        'click.edit = lambda filename: None',
+        'from mycli.packages.special_commands import io_commands',
+        'query, message = io_commands.open_external_editor(filename=sys.argv[1])',
+        'assert message is None, message',
+        'assert query == \'select "caf\\u00e9";\', query',
+    ))
+    result = subprocess.run(
+        [sys.executable, '-X', 'warn_default_encoding', '-W', 'error::EncodingWarning', '-c', script, str(filename)],
+        capture_output=True,
+        encoding='utf8',
+        errors='replace',
+    )
+    assert result.returncode == 0, result.stderr
 
 
 def test_open_external_editor_without_filename(monkeypatch) -> None:
