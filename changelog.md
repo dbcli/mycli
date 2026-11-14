@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Features
+--------
+* Bracket IPv6 literals in prompt strings.
+
+
 Bug Fixes
 --------
 * Read `/source` files and the `\e` editor file as UTF-8 instead of the locale encoding, so non-ASCII SQL no longer fails or is mis-decoded under non-UTF-8 locales.

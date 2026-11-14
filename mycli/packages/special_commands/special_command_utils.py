@@ -9,6 +9,8 @@ import click
 import pymysql
 from pymysql.cursors import Cursor
 
+from mycli.packages.utils.string_utils import bracket_ipv6_literal
+
 logger = logging.getLogger(__name__)
 
 CACHED_SSL_VERSION: dict[tuple, str | None] = {}
@@ -166,10 +168,7 @@ def format_connection_dsn(
 ) -> str:
     if user_part := urlquote(user or ''):
         user_part = f'{user_part}@'
-    host_part = host or 'localhost'
-    if ':' in host_part and not host_part.startswith('['):
-        # IPv6 literals must be bracketed so the port can be told apart
-        host_part = f'[{host_part}]'
+    host_part = bracket_ipv6_literal(host or 'localhost')
     port_part = f':{port}' if port is not None else ''
     if db_part := urlquote(database or ''):
         db_part = f'/{db_part}'

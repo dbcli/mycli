@@ -1178,6 +1178,28 @@ def test_transaction_prompt_reuses_cached_render_without_ping() -> None:
     ping.assert_called_once_with()
 
 
+@pytest.mark.parametrize('escape', [r'\h', r'\H'])
+@pytest.mark.parametrize(
+    ('host', 'expected'),
+    [('::1', '[::1]:3306'), ('2001:db8::1', '[2001:db8::1]:3306'), ('fe80::1%en0', '[fe80::1%en0]:3306'), ('[::1]', '[::1]:3306')],
+)
+def test_render_prompt_string_brackets_ipv6_host(escape: str, host: str, expected: str) -> None:
+    cli = make_repl_cli(SimpleNamespace(user='alice', host=host, dbname='db', port=3306, socket=None, server_info=None, conn=None))
+
+    prompt = repl_mode.render_prompt_string(cli, escape + r':\p', 0)
+
+    assert to_plain_text(prompt) == expected
+
+
+@pytest.mark.parametrize('escape', [r'\h', r'\H'])
+def test_render_prompt_string_preserves_colon_in_login_path(escape: str) -> None:
+    cli = make_repl_cli(SimpleNamespace(user='alice', host='::1', dbname='db', port=3306, socket=None, server_info=None, conn=None))
+    cli.login_path = 'prod:readonly'
+    cli.login_path_as_host = True
+
+    assert to_plain_text(repl_mode.render_prompt_string(cli, escape, 0)) == 'prod:readonly'
+
+
 def test_render_prompt_string_includes_current_edit_mode() -> None:
     cli = make_repl_cli(
         SimpleNamespace(

@@ -1,6 +1,23 @@
 # type: ignore
 
-from mycli.packages.utils.string_utils import sanitize_terminal_title
+import pytest
+
+from mycli.packages.utils.string_utils import bracket_ipv6_literal, sanitize_terminal_title
+
+
+@pytest.mark.parametrize('host', ['::1', '2001:db8::1', 'fe80::1%en0', '::ffff:192.0.2.1'])
+def test_bracket_ipv6_literal_wraps_addresses(host: str) -> None:
+    assert bracket_ipv6_literal(host) == f'[{host}]'
+
+
+@pytest.mark.parametrize('host', ['', 'localhost', 'db.example.com', '192.0.2.1', 'prod:readonly', '2001:db8::invalid'])
+def test_bracket_ipv6_literal_preserves_non_ipv6_values(host: str) -> None:
+    assert bracket_ipv6_literal(host) == host
+
+
+@pytest.mark.parametrize('host', ['[::1]', '[2001:db8::1]', '[fe80::1%en0]'])
+def test_bracket_ipv6_literal_preserves_existing_brackets(host: str) -> None:
+    assert bracket_ipv6_literal(host) == host
 
 
 def test_sanitize_terminal_title_strips_ansi_sequences() -> None:
