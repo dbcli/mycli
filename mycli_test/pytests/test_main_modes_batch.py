@@ -513,7 +513,7 @@ def test_main_batch_with_progress_bar_handles_open_errors(monkeypatch) -> None:
     cli_args = DummyCliArgs(batch='missing.sql')
 
     monkeypatch.setattr(batch_mode.os.path, 'exists', lambda _path: False)
-    monkeypatch.setattr(batch_mode.click, 'open_file', lambda _path: (_ for _ in ()).throw(FileNotFoundError()))
+    monkeypatch.setattr(batch_mode.click, 'open_file', lambda _path, **_kwargs: (_ for _ in ()).throw(FileNotFoundError()))
     monkeypatch.setattr(batch_mode.click, 'secho', lambda message, err, fg: messages.append((message, err, fg)))
     monkeypatch.setattr(batch_mode, 'sys', make_fake_sys(stdin_tty=True))
 
@@ -529,7 +529,7 @@ def test_main_batch_with_progress_bar_handles_counting_value_errors(monkeypatch)
     cli_args = DummyCliArgs(batch='statements.sql')
 
     monkeypatch.setattr(batch_mode.os.path, 'exists', lambda _path: False)
-    monkeypatch.setattr(batch_mode.click, 'open_file', lambda _path: count_handle)
+    monkeypatch.setattr(batch_mode.click, 'open_file', lambda _path, **_kwargs: count_handle)
     monkeypatch.setattr(batch_mode, 'statements_from_filehandle', lambda _handle: (_ for _ in ()).throw(ValueError('bad sql')))
     monkeypatch.setattr(batch_mode.click, 'secho', lambda message, err, fg: messages.append((message, err, fg)))
     monkeypatch.setattr(batch_mode, 'sys', make_fake_sys(stdin_tty=True))
@@ -548,7 +548,7 @@ def test_main_batch_with_progress_bar_processes_all_statements(monkeypatch) -> N
     dispatch_calls: list[tuple[str, int]] = []
     cli_args = DummyCliArgs(batch='statements.sql')
 
-    def fake_open_file(path: str) -> DummyFile:
+    def fake_open_file(path: str, **_kwargs: Any) -> DummyFile:
         open_calls.append(path)
         return count_handle if len(open_calls) == 1 else run_handle
 
@@ -588,7 +588,7 @@ def test_main_batch_with_progress_bar_returns_error_when_dispatch_fails(monkeypa
     open_calls = 0
     cli_args = DummyCliArgs(batch='statements.sql')
 
-    def fake_open_file(_path: str) -> DummyFile:
+    def fake_open_file(_path: str, **_kwargs: Any) -> DummyFile:
         nonlocal open_calls
         open_calls += 1
         return count_handle if open_calls == 1 else run_handle
@@ -626,7 +626,7 @@ def test_main_batch_without_progress_bar_handles_open_errors(monkeypatch) -> Non
     messages: list[tuple[str, bool, str]] = []
     cli_args = DummyCliArgs(batch='missing.sql')
 
-    monkeypatch.setattr(batch_mode.click, 'open_file', lambda _path: (_ for _ in ()).throw(FileNotFoundError()))
+    monkeypatch.setattr(batch_mode.click, 'open_file', lambda _path, **_kwargs: (_ for _ in ()).throw(FileNotFoundError()))
     monkeypatch.setattr(batch_mode.click, 'secho', lambda message, err, fg: messages.append((message, err, fg)))
     monkeypatch.setattr(batch_mode, 'sys', make_fake_sys(stdin_tty=True))
 
@@ -642,7 +642,7 @@ def test_main_batch_without_progress_bar_processes_statements(monkeypatch) -> No
     dispatch_calls: list[tuple[str, int]] = []
     cli_args = DummyCliArgs(batch='statements.sql')
 
-    monkeypatch.setattr(batch_mode.click, 'open_file', lambda _path: batch_handle)
+    monkeypatch.setattr(batch_mode.click, 'open_file', lambda _path, **_kwargs: batch_handle)
     monkeypatch.setattr(batch_mode, 'statements_from_filehandle', lambda _handle: iter([('select 1;', 0), ('select 2;', 1)]))
     monkeypatch.setattr(
         batch_mode,
@@ -678,6 +678,26 @@ def test_main_batch_without_progress_bar_skips_checkpoint_prefix(monkeypatch, tm
 
     assert result == 0
     assert dispatch_calls == [('select 3;', 2)]
+
+
+def test_main_batch_without_progress_bar_reads_utf8_batch_and_checkpoint(monkeypatch, tmp_path: Path) -> None:
+    batch_path = write_batch_file(tmp_path, "select 'Łukasz ✨';\nselect 2;\n")
+    dispatch_calls: list[tuple[str, int]] = []
+
+    monkeypatch.setattr(
+        batch_mode,
+        'dispatch_batch_statements',
+        lambda _mycli, _cli_args, statement, counter: dispatch_calls.append((statement, counter)),
+    )
+    monkeypatch.setattr(batch_mode, 'sys', make_fake_sys(stdin_tty=True))
+
+    checkpoint = write_checkpoint_file(tmp_path, "select 'Łukasz ✨';\n")
+
+    cli_args = DummyCliArgs(batch=batch_path, checkpoint=checkpoint, resume=True)
+    result = main_batch_without_progress_bar(DummyMyCli(), cli_args)
+
+    assert result == 0
+    assert dispatch_calls == [('select 2;', 1)]
 
 
 def test_main_batch_without_progress_bar_skips_only_matching_duplicate_prefix(monkeypatch, tmp_path: Path) -> None:
@@ -764,6 +784,26 @@ def test_main_batch_with_progress_bar_skips_checkpoint_prefix_and_counts_all_sta
     assert DummyProgressBar.calls == [[0, 1, 2]]
 
 
+def test_main_batch_with_progress_bar_reads_utf8_batch(monkeypatch, tmp_path: Path) -> None:
+    batch_path = write_batch_file(tmp_path, "select 'Łukasz ✨';\nselect 2;\n")
+    dispatch_calls: list[tuple[str, int]] = []
+
+    DummyProgressBar.calls.clear()
+    monkeypatch.setattr(batch_mode, 'ProgressBar', DummyProgressBar)
+    monkeypatch.setattr(batch_mode.prompt_toolkit.output, 'create_output', lambda **_kwargs: object())
+    monkeypatch.setattr(
+        batch_mode,
+        'dispatch_batch_statements',
+        lambda _mycli, _cli_args, statement, counter: dispatch_calls.append((statement, counter)),
+    )
+    monkeypatch.setattr(batch_mode, 'sys', make_fake_sys(stdin_tty=True))
+
+    result = main_batch_with_progress_bar(DummyMyCli(), DummyCliArgs(batch=batch_path))
+
+    assert result == 0
+    assert dispatch_calls == [("select 'Łukasz ✨';", 0), ('select 2;', 1)]
+
+
 def test_main_batch_with_progress_bar_returns_error_when_checkpoint_replay_fails(monkeypatch, tmp_path: Path) -> None:
     batch_path = write_batch_file(tmp_path, 'select 1;\n')
     messages: list[tuple[str, bool, str]] = []
@@ -785,7 +825,7 @@ def test_main_batch_without_progress_bar_returns_error_when_iteration_fails(monk
     batch_handle = DummyFile('run')
     cli_args = DummyCliArgs(batch='statements.sql')
 
-    monkeypatch.setattr(batch_mode.click, 'open_file', lambda _path: batch_handle)
+    monkeypatch.setattr(batch_mode.click, 'open_file', lambda _path, **_kwargs: batch_handle)
     monkeypatch.setattr(batch_mode, 'statements_from_filehandle', lambda _handle: (_ for _ in ()).throw(ValueError('bad sql')))
     monkeypatch.setattr(batch_mode.click, 'secho', lambda message, err, fg: messages.append((message, err, fg)))
     monkeypatch.setattr(batch_mode, 'sys', make_fake_sys(stdin_tty=True))

@@ -225,7 +225,7 @@ def test_on_completions_refreshed_starts_schema_prefetch() -> None:
     assert state['prefetch_started'] == [True]
 
 
-def run_query_with_state(monkeypatch, tmp_path, *, warnings_enabled: bool = True) -> dict[str, Any]:
+def run_query_with_state(monkeypatch, tmp_path, *, warnings_enabled: bool = True, query: str = 'select 1;\n') -> dict[str, Any]:
     cli = make_bare_mycli()
     normal_rows = FakeCursorBase(rows=[('one',)], warning_count=1)
     warning_rows = FakeCursorBase(rows=[('warning',)], warning_count=0)
@@ -258,7 +258,7 @@ def run_query_with_state(monkeypatch, tmp_path, *, warnings_enabled: bool = True
     cli.log_query = lambda query: state['logged_queries'].append(query)
     cli.log_output = lambda line: state['logged_output'].append(line)
     cli.format_sqlresult = format_sqlresult
-    mycli_client.MyCli.run_query(cli, 'select 1;\n', checkpoint=str(state['checkpoint_path']), new_line=False)
+    mycli_client.MyCli.run_query(cli, query, checkpoint=str(state['checkpoint_path']), new_line=False)
     state['cli'] = cli
     return state
 
@@ -334,6 +334,12 @@ def test_run_query_writes_checkpoint(monkeypatch, tmp_path) -> None:
     state = run_query_with_state(monkeypatch, tmp_path, warnings_enabled=False)
 
     assert state['checkpoint_path'].read_text(encoding='utf-8') == 'select 1;\n'
+
+
+def test_run_query_writes_checkpoint_as_utf8(monkeypatch, tmp_path) -> None:
+    state = run_query_with_state(monkeypatch, tmp_path, warnings_enabled=False, query="select 'Łukasz ✨';\n")
+
+    assert state['checkpoint_path'].read_text(encoding='utf-8') == "select 'Łukasz ✨';\n"
 
 
 def test_run_query_raises_for_error_result_when_requested(tmp_path) -> None:

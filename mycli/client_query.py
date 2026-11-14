@@ -97,7 +97,7 @@ class ClientQueryMixin:
         assert self.sql_execute is not None
         self.log_query(query)
         if checkpoint and not self.checkpoint:
-            self.checkpoint = click.open_file(checkpoint, mode='a')
+            self.checkpoint = click.open_file(checkpoint, mode='a', encoding='utf-8')
         results = self.sql_execute.run(query)
         for result in results:
             self.main_formatter.query = query
