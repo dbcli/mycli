@@ -4,6 +4,8 @@ from collections.abc import Generator
 from io import StringIO
 import logging
 from pathlib import Path
+import subprocess
+import sys
 from types import SimpleNamespace
 from typing import Any
 
@@ -574,7 +576,7 @@ def test_execute_from_file_iterates_statements_without_reading_entire_file(monke
     file_h = IteratedFile('select 1;\nselect\n 2;\nselect 3; select 4;\nselect 5')
     opened_paths: list[str] = []
 
-    def open_file(path: str) -> IteratedFile:
+    def open_file(path: str, **_: Any) -> IteratedFile:
         opened_paths.append(path)
         return file_h
 
@@ -596,7 +598,7 @@ def test_execute_from_file_reports_read_errors(monkeypatch: pytest.MonkeyPatch) 
     client = DummyClient()
     client.sql_execute = FakeSQLExecute()
     file_h = FailingFile()
-    monkeypatch.setattr(client_commands, 'open', lambda path: file_h, raising=False)
+    monkeypatch.setattr(client_commands, 'open', lambda path, **_: file_h, raising=False)
 
     assert list(client.execute_from_file('query.sql')) == [SQLResult(status='read failed')]
     assert file_h.closed is True
@@ -655,7 +657,7 @@ def test_execute_from_file_help_is_terminal(monkeypatch: pytest.MonkeyPatch) -> 
     client.sql_execute = FakeSQLExecute()
     opened_paths: list[str] = []
     sleep_calls: list[float] = []
-    monkeypatch.setattr(client_commands, 'open', lambda path: opened_paths.append(path), raising=False)
+    monkeypatch.setattr(client_commands, 'open', lambda path, **_: opened_paths.append(path), raising=False)
     monkeypatch.setattr(client_commands.time, 'sleep', lambda seconds: sleep_calls.append(seconds))
 
     assert list(client.execute_from_file('--page --help ignored.sql')) == [
@@ -716,7 +718,7 @@ def test_execute_from_file_does_not_throttle_after_declined_statement(monkeypatc
 def test_execute_from_file_reports_invalid_throttle_without_opening_file(monkeypatch: pytest.MonkeyPatch) -> None:
     client = DummyClient()
     opened_paths: list[str] = []
-    monkeypatch.setattr(client_commands, 'open', lambda path: opened_paths.append(path), raising=False)
+    monkeypatch.setattr(client_commands, 'open', lambda path, **_: opened_paths.append(path), raising=False)
 
     assert list(client.execute_from_file('--throttle nope query.sql')) == [
         SQLResult(
@@ -782,6 +784,31 @@ def test_execute_from_file_shows_each_query(capsys: pytest.CaptureFixture[str], 
     assert capsys.readouterr().out == '> select 1;\n> select 2;\n'
 
 
+def test_execute_from_file_does_not_use_locale_encoding(tmp_path: Path) -> None:
+    # SQL files are commonly UTF-8; the locale encoding (cp1252, cp932, ...) would
+    # mis-decode or reject them.  EncodingWarning is raised for any open() that
+    # falls back to the locale encoding.
+    sql_file = tmp_path / 'query.sql'
+    sql_file.write_text('-- caf\u00e9\nselect 1;', encoding='utf-8')
+    script = '\n'.join((
+        'import sys',
+        'from mycli.client_commands import ClientCommandsMixin',
+        'class C(ClientCommandsMixin):',
+        '    pass',
+        'try:',
+        '    list(C().execute_from_file(sys.argv[1]))',
+        'except AttributeError:',
+        '    pass',
+    ))
+    result = subprocess.run(
+        [sys.executable, '-X', 'warn_default_encoding', '-W', 'error::EncodingWarning', '-c', script, str(sql_file)],
+        capture_output=True,
+        encoding='utf8',
+        errors='replace',
+    )
+    assert 'EncodingWarning' not in result.stderr, result.stderr
+
+
 def test_execute_from_file_parses_special_option_and_preserves_filename(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -791,7 +818,7 @@ def test_execute_from_file_parses_special_option_and_preserves_filename(
     file_h = IteratedFile('select 1;')
     opened_paths: list[str] = []
 
-    def open_file(path: str) -> IteratedFile:
+    def open_file(path: str, **_: Any) -> IteratedFile:
         opened_paths.append(path)
         return file_h
 
@@ -815,7 +842,7 @@ def test_execute_from_file_reports_missing_filename_after_options(options: str) 
 def test_execute_from_file_rejects_unquoted_filename_with_spaces(monkeypatch: pytest.MonkeyPatch) -> None:
     client = DummyClient()
     opened_paths: list[str] = []
-    monkeypatch.setattr(client_commands, 'open', lambda path: opened_paths.append(path), raising=False)
+    monkeypatch.setattr(client_commands, 'open', lambda path, **_: opened_paths.append(path), raising=False)
 
     assert list(client.execute_from_file('query file.sql')) == [SQLResult(status=source_command.INVALID_SOURCE_FILENAME, is_error=True)]
     assert opened_paths == []

@@ -289,7 +289,7 @@ def open_external_editor(filename: str | None = None, sql: str | None = None) ->
         message = None
         click.edit(filename=filename)
         try:
-            with open(filename, 'r') as f:
+            with open(filename, 'r', encoding='utf-8') as f:
                 query = f.read()
         except IOError:
             message = f'Error reading file: {filename}'
