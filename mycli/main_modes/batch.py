@@ -25,6 +25,11 @@ class CheckpointReplayError(Exception):
     pass
 
 
+def batch_file_encoding(batch_path: str) -> str | None:
+    # Leave standard input to click, which picks the console encoding.
+    return None if batch_path == '-' else 'utf-8'
+
+
 def replay_checkpoint_file(
     batch_path: str,
     checkpoint_path: str | None,
@@ -48,7 +53,10 @@ def replay_checkpoint_file(
         spinner = yaspin(text='replaying checkpoint', side='right', stream=sys.stderr)
         spinner.start()
     try:
-        with click.open_file(batch_path) as batch_h, click.open_file(checkpoint_path, mode='r', encoding='utf-8') as checkpoint_h:
+        with (
+            click.open_file(batch_path, encoding=batch_file_encoding(batch_path)) as batch_h,
+            click.open_file(checkpoint_path, mode='r', encoding='utf-8') as checkpoint_h,
+        ):
             try:
                 batch_gen = statements_from_filehandle(batch_h)
             except ValueError as e:
@@ -140,13 +148,13 @@ def main_batch_with_progress_bar(mycli: 'MyCli', cli_args: 'CliArgs') -> int:
         return 1
     try:
         completed_statement_count = replay_checkpoint_file(cli_args.batch, cli_args.checkpoint, cli_args.resume, progress=True)
-        batch_count_h = click.open_file(cli_args.batch)
+        batch_count_h = click.open_file(cli_args.batch, encoding=batch_file_encoding(cli_args.batch))
         with yaspin(text='validating batch    ', side='right', stream=sys.stderr) as spinner:
             for _statement, _counter in statements_from_filehandle(batch_count_h):
                 goal_statements += 1
             spinner.ok('✔')
         batch_count_h.close()
-        batch_h = click.open_file(cli_args.batch)
+        batch_h = click.open_file(cli_args.batch, encoding=batch_file_encoding(cli_args.batch))
         batch_gen = statements_from_filehandle(batch_h)
     except (OSError, FileNotFoundError):
         click.secho(f'Failed to open --batch file: {cli_args.batch}', err=True, fg='red')
@@ -192,7 +200,7 @@ def main_batch_without_progress_bar(mycli: 'MyCli', cli_args: 'CliArgs') -> int:
         click.secho('Ignoring STDIN since --batch was also given.', err=True, fg='red')
     try:
         completed_statement_count = replay_checkpoint_file(cli_args.batch, cli_args.checkpoint, cli_args.resume)
-        batch_h = click.open_file(cli_args.batch)
+        batch_h = click.open_file(cli_args.batch, encoding=batch_file_encoding(cli_args.batch))
     except (OSError, FileNotFoundError):
         click.secho(f'Failed to open --batch file: {cli_args.batch}', err=True, fg='red')
         return 1

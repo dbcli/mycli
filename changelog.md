@@ -5,6 +5,7 @@ Bug Fixes
 --------
 * Open the audit log and the `\T`/`\o` output files as UTF-8, so non-ASCII output no longer fails under non-UTF-8 locales.
 * Support `DELIMITER` in batch input (`mycli < file.sql`, `--batch`), so dumps with triggers or routines restore.
+* Read `--batch` files and read and write `--checkpoint` files as UTF-8, fixing `--resume` and non-ASCII batch files on Windows.
 
 
 v2.30.4 (2026/11/12)
