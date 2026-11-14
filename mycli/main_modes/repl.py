@@ -98,7 +98,7 @@ from mycli.packages.utils.sql_utils import (
     need_completion_refresh,
     need_completion_reset,
 )
-from mycli.packages.utils.string_utils import sanitize_terminal_title
+from mycli.packages.utils.string_utils import bracket_ipv6_literal, sanitize_terminal_title
 from mycli.types import Query
 
 if TYPE_CHECKING:
@@ -321,6 +321,8 @@ def render_prompt_string(
     short_prompt_host, _, _ = prompt_host.partition('.')
     if re.match(r'^[\d\.]+$', short_prompt_host):
         short_prompt_host = prompt_host
+    prompt_host = bracket_ipv6_literal(prompt_host)
+    short_prompt_host = bracket_ipv6_literal(short_prompt_host)
     now = datetime.now()
     species_name = sql_execute.server_info.species.name if sql_execute.server_info and sql_execute.server_info.species else 'MySQL'
     strings = string.split('\\\\')

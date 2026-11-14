@@ -328,18 +328,20 @@ def test_format_connection_dsn_includes_ssh_jump() -> None:
     )
 
 
-def test_format_connection_dsn_brackets_ipv6_host() -> None:
+@pytest.mark.parametrize('host', ['::1', '2001:db8::1', 'fe80::1%en0', '::ffff:192.0.2.1'])
+@pytest.mark.parametrize('already_bracketed', [False, True])
+def test_format_connection_dsn_brackets_ipv6_host(host: str, already_bracketed: bool) -> None:
     dsn = format_connection_dsn(
         user='alice',
-        host='::1',
+        host=f'[{host}]' if already_bracketed else host,
         port=3307,
         database='prod',
         socket=None,
         character_set=None,
     )
-    assert dsn == 'mysql://alice@[::1]:3307/prod'
+    assert dsn == f'mysql://alice@[{host}]:3307/prod'
     uri = urlparse(dsn)
-    assert uri.hostname == '::1'
+    assert uri.hostname == host
     assert uri.port == 3307
 
 
