@@ -5,6 +5,7 @@ Bug Fixes
 --------
 * Read `/source` files and the `\e` editor file as UTF-8 instead of the locale encoding, so non-ASCII SQL no longer fails or is mis-decoded under non-UTF-8 locales.
 * Open the audit log and the `\T`/`\o` output files as UTF-8, so non-ASCII output no longer fails under non-UTF-8 locales.
+* Bracket IPv6 hosts in the DSN shown and saved by `\dsn`, so a saved alias for `::1` can be used to connect again.
 * Support `DELIMITER` in batch input (`mycli < file.sql`, `--batch`), so dumps with triggers or routines restore.
 * Read `--batch` files and read and write `--checkpoint` files as UTF-8, fixing `--resume` and non-ASCII batch files on Windows.
 
