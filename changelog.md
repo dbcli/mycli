@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Internal
+--------
+* Improve test coverage for `batch_utils.py`.
+
+
 v2.31.0 (2026/11/14)
 ==============
 
