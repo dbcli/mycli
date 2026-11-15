@@ -128,3 +128,13 @@ def test_statements_from_filehandle_ends_slash_use_at_newline() -> None:
         ('/use mysql', 1),
         ('select database();', 2),
     ]
+
+
+@pytest.mark.parametrize('command', ['DELIMITER //', 'use mysql'])
+def test_statements_from_filehandle_preserves_commands_inside_multiline_string(command: str) -> None:
+    query = f"select 'first\n{command}\nlast';"
+
+    assert collect_statements(query + '\nselect 2;\n') == [
+        (query, 0),
+        ('select 2;', 1),
+    ]
