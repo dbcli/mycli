@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Bug Fixes
+--------
+* Refresh completions after `CREATE`, `ALTER`, `DROP` or `RENAME` statements that start with a SQL comment.
+
+
 Internal
 --------
 * Improve test coverage for `batch_utils.py`.

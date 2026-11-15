@@ -533,6 +533,12 @@ def test_is_dropping_database_skips_statements_without_enough_keywords():
         ('connect foo localhost root', True),
         ('drop table foo;', True),
         ('rename table foo to bar;', True),
+        ('/* note */ create table foo (id int);', True),
+        ('-- note\nalter table foo add column bar int;', True),
+        ('# note\ndrop table foo;', True),
+        ('select 1; /* note */ rename table foo to bar;', True),
+        ('/* note */ select 1;', False),
+        ('-- create table foo (id int)', False),
     ],
 )
 def test_need_completion_refresh(queries, expected):

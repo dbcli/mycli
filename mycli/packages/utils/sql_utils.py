@@ -430,6 +430,9 @@ def need_completion_refresh(queries: str) -> bool:
     for query in sqlparse.split(queries):
         try:
             first_token = query.split()[0]
+            if first_token.startswith(("/*", "--", "#")):
+                # skip leading comments, such as "/* note */ create table ..."
+                first_token = sqlparse.format(query, strip_comments=True).split()[0]
             if first_token.lower() in (
                 "alter",
                 "create",
