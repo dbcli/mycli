@@ -571,6 +571,12 @@ def test_need_completion_refresh_ignores_queries_that_fail_to_split(monkeypatch)
         ('/connect foo localhost root', True),
         ('connect', False),
         ('connect foo localhost root', True),
+        ('/* note */ use foo;', True),
+        ('-- note\nuse foo;', True),
+        ('# note\n\\u foo;', True),
+        ('/* note */ \\r foo', True),
+        ('/* note */ connect', False),
+        ('/* note */ select 1;', False),
     ],
 )
 def test_need_completion_reset(queries, expected):
