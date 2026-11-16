@@ -362,7 +362,7 @@ def query_has_where_clause(query: str) -> bool:
 def query_is_single_table_update(query: str) -> bool:
     """Check if a query is a simple single-table UPDATE."""
     cleaned_query_for_parsing_only = sqlparse.format(query, strip_comments=True)
-    cleaned_query_for_parsing_only = re.sub(r'\s+', ' ', cleaned_query_for_parsing_only)
+    cleaned_query_for_parsing_only = re.sub(r'\s+', ' ', cleaned_query_for_parsing_only).strip()
     if not cleaned_query_for_parsing_only:
         return False
     parsed = sqlparse.parse(cleaned_query_for_parsing_only)

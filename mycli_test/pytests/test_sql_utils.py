@@ -354,6 +354,7 @@ def test_find_prev_keyword(sql, expected_keyword, expected_text):
         ('update test set x = 1', True),
         ('update test t set x = 1', True),
         ('update /* inline comment */ test set x = 1', True),
+        ('/* leading comment */ update test set x = 1', True),
         ('select 1', False),
         ('', False),
         ('update', False),
@@ -453,6 +454,11 @@ def test_is_destructive_update_with_where_clause():
 
 def test_is_destructive_update_with_where_clause_and_comment():
     sql = "use test;\nshow databases;\nUPDATE /* inline comment */ test SET x = 1 WHERE id = 1;"
+    assert is_destructive(["update"], sql) is False
+
+
+def test_is_destructive_update_with_where_clause_and_leading_comment():
+    sql = "/* leading comment */ UPDATE test SET x = 1 WHERE id = 1;"
     assert is_destructive(["update"], sql) is False
 
 
