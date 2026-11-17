@@ -461,6 +461,9 @@ def need_completion_reset(queries: str) -> bool:
     for query in sqlparse.split(queries):
         try:
             tokens = query.split()
+            if tokens[0].startswith(("/*", "--", "#")):
+                # skip leading comments, such as "/* note */ use db"
+                tokens = sqlparse.format(query, strip_comments=True).split()
             first_token = tokens[0]
             if first_token.lower() in ("use", "/use", "\\u", "/u"):
                 return True
