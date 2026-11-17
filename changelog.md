@@ -11,6 +11,7 @@ Bug Fixes
 Internal
 --------
 * Improve test coverage for `batch_utils.py`.
+* Update `setuptools` llm dependency to v84.2.1.
 
 
 v2.31.0 (2026/11/14)
