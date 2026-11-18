@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 import runpy
 import shutil
+import subprocess
 import sys
 from tempfile import NamedTemporaryFile
 from textwrap import dedent
@@ -1403,6 +1404,24 @@ def test_password_option_uses_cleartext_value(monkeypatch):
     )
     assert result.exit_code == 0, result.output + ' ' + str(result.exception)
     assert resolve_connect_password(MockMyCli.connect_args) == ('literal', 'cleartext_password')
+
+
+def test_get_password_from_file_does_not_use_locale_encoding(tmp_path: Path) -> None:
+    # EncodingWarning is raised for any open() that falls back to the locale encoding.
+    password_file = tmp_path / 'password.txt'
+    password_file.write_text('p\u00e4ssw\u00f6rd\n', encoding='utf-8')
+    script = '\n'.join((
+        'import sys',
+        'from mycli.main import get_password_from_file',
+        'assert get_password_from_file(sys.argv[1]) == "p\u00e4ssw\u00f6rd"',
+    ))
+    result = subprocess.run(
+        [sys.executable, '-X', 'warn_default_encoding', '-W', 'error::EncodingWarning', '-c', script, str(password_file)],
+        capture_output=True,
+        encoding='utf8',
+        errors='replace',
+    )
+    assert result.returncode == 0, result.stderr
 
 
 def test_password_option_overrides_password_file_and_mysql_pwd(monkeypatch):

@@ -397,7 +397,7 @@ def get_password_from_file(password_file: str | None) -> str | None:
     if not password_file:
         return None
     try:
-        with open(password_file) as fp:
+        with open(password_file, encoding='utf-8') as fp:
             return fp.readline().removesuffix('\n')
     except FileNotFoundError:
         click.secho(f"Password file '{password_file}' not found", err=True, fg='red')
