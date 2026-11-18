@@ -1,13 +1,13 @@
-Upcoming (TBD)
+v2.31.1 (2026/11/18)
 ==============
 
 Bug Fixes
 --------
-* Percent-encode slashes in DSN usernames so aliases shown and saved by `/dsn` preserve the user and connection details when reused.
 * Refresh completions after `CREATE`, `ALTER`, `DROP` or `RENAME` statements that start with a SQL comment.
 * Reset completions after `USE`, `\u`, `\r` or `connect` statements that start with a SQL comment.
 * Don't flag a single-table `UPDATE` with a `WHERE` clause as destructive when it starts with a `/* ... */` comment.
 * Read the password file and the contributors, sponsors and tips files as UTF-8 instead of the locale encoding.
+* Percent-encode slashes in DSN usernames so aliases shown and saved by `/dsn` preserve the user and connection details when reused.
 
 
 Internal
