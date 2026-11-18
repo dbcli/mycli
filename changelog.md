@@ -6,6 +6,7 @@ Bug Fixes
 * Refresh completions after `CREATE`, `ALTER`, `DROP` or `RENAME` statements that start with a SQL comment.
 * Reset completions after `USE`, `\u`, `\r` or `connect` statements that start with a SQL comment.
 * Don't flag a single-table `UPDATE` with a `WHERE` clause as destructive when it starts with a `/* ... */` comment.
+* Read the password file and the contributors, sponsors and tips files as UTF-8 instead of the locale encoding.
 
 
 Internal

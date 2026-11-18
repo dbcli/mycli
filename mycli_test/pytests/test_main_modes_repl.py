@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from io import StringIO
 import os
 from pathlib import Path
+import subprocess
+import sys
 from threading import Event
 from types import SimpleNamespace
 from typing import Any, Literal, cast
@@ -134,7 +136,7 @@ class FakeResourceTree:
     def joinpath(self, path: str) -> 'FakeResourceTree':
         return FakeResourceTree(self.files, path)
 
-    def open(self, mode: str) -> StringIO:
+    def open(self, mode: str, encoding: str | None = None) -> StringIO:
         assert self.path is not None
         if self.path not in self.files:
             raise FileNotFoundError(self.path)
@@ -818,6 +820,23 @@ def test_repl_picker_helpers_cover_present_and_missing_resources(monkeypatch: py
     assert repl_mode._contributors_picker() == 'our contributors'
     assert repl_mode._sponsors_picker() == 'our sponsors'
     assert repl_mode._tips_picker() == r'/? or /help for help!'
+
+
+def test_repl_picker_helpers_do_not_use_locale_encoding() -> None:
+    # EncodingWarning is raised for any open() that falls back to the locale encoding.
+    script = '\n'.join((
+        'from mycli.main_modes import repl',
+        'repl._contributors_picker()',
+        'repl._sponsors_picker()',
+        'repl._tips_picker()',
+    ))
+    result = subprocess.run(
+        [sys.executable, '-X', 'warn_default_encoding', '-W', 'error::EncodingWarning', '-c', script],
+        capture_output=True,
+        encoding='utf8',
+        errors='replace',
+    )
+    assert result.returncode == 0, result.stderr
 
 
 def test_configure_editor_uses_configured_editor(monkeypatch: pytest.MonkeyPatch) -> None:
