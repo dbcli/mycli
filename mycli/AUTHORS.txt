@@ -25,6 +25,7 @@ Contributors:
   * Andy Teijelo Pérez
   * Angelo Lupo
   * Artem Bezsmertnyi
+  * Arvin Wang
   * bitkeen
   * bjarnagin
   * BuonOmo
