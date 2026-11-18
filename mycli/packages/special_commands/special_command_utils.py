@@ -166,7 +166,7 @@ def format_connection_dsn(
     vault_password_field: str | None = None,
     vault_username_field: str | None = None,
 ) -> str:
-    if user_part := urlquote(user or ''):
+    if user_part := urlquote(user or '', safe=''):
         user_part = f'{user_part}@'
     host_part = bracket_ipv6_literal(host or 'localhost')
     port_part = f':{port}' if port is not None else ''

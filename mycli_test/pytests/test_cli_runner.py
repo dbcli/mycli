@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
@@ -10,6 +11,8 @@ from mycli import cli_runner, main
 from mycli.packages.credentials.password_sources import (
     KNOWN_PASSWORD_SOURCES,
 )
+from mycli.packages.special_commands.dsn_aliases import DsnAliases
+from mycli.packages.special_commands.special_command_utils import format_connection_dsn
 
 
 class DummyLogger:
@@ -91,6 +94,44 @@ def resolve_connect_password(connect_call: dict[str, Any]) -> tuple[str, str | i
 
 def test_expand_dsn_alias_env_var_returns_none() -> None:
     assert cli_runner.expand_dsn_alias_env_var(None, 'prod') is None
+
+
+@pytest.mark.parametrize('username', ('team/alice', 'team%2Falice', 'name@example.com', '团队/用户'))
+@pytest.mark.parametrize('expand_env', (False, True))
+@pytest.mark.parametrize('socket', (None, '/tmp/mysql.sock'))
+def test_run_from_cli_args_preserves_saved_dsn_username(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, username: str, expand_env: bool, socket: str | None
+) -> None:
+    dsn = format_connection_dsn(
+        user=username,
+        host='db.example.com',
+        port=3307,
+        database='prod',
+        socket=socket,
+        character_set='utf8mb4',
+    )
+    config_file = tmp_path / 'myclirc'
+    config_file.write_text('[alias_dsn]\n', encoding='utf-8')
+    aliases = DsnAliases(ConfigObj(str(config_file), encoding='utf-8', list_values=False))
+    aliases.save('prod', dsn)
+    saved_config = ConfigObj(str(config_file), encoding='utf-8', list_values=False)
+    config = default_config()
+    config['main']['expand_dsn_alias_env_vars'] = str(expand_env)
+    config['alias_dsn'] = dict(saved_config['alias_dsn'])
+    client = DummyMyCli(config=config)
+    cli_args = make_cli_args()
+    cli_args.dsn = 'prod'
+
+    run_with_client(monkeypatch, cli_args, client)
+
+    connection = client.connect_calls[-1]
+    assert (connection['user'], connection['host'], connection['port'], connection['database'], connection['socket']) == (
+        username,
+        'db.example.com',
+        None if socket else 3307,
+        'prod',
+        socket,
+    )
 
 
 @pytest.mark.parametrize('expand_env', (False, True))
