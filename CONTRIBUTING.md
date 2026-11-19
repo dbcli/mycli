@@ -125,7 +125,7 @@ readlink -f $(which ex)
 
 # GitHub PR checklist
 
- * add the contribution to `changelog.md`
+ * add the contribution to `changelog.md`, keeping the entry under 100 characters
  * add your name to the `mycli/AUTHORS.txt` file (or make sure it is already there)
  * run
 
