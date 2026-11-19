@@ -624,13 +624,15 @@ def prepare_favorite_query_args(query: str, args: list[str]) -> tuple[str | None
     positional_values: dict[str, str] = {}
     for idx, val in enumerate(args):
         subst_var = "$" + str(idx + 1)
-        if subst_var not in query:
+        # Don't match the start of a longer parameter, such as $1 in $10.
+        subst_pattern = re.compile(re.escape(subst_var) + r'(?!\d)')
+        if not subst_pattern.search(query):
             display_query = restore_favorite_query_args(query, positional_values)
             error = "query does not have substitution parameter " + subst_var + ":\n  " + display_query
             return (None, {}, error)
 
         marker = f'{marker_prefix}{idx + 1}__'
-        query = query.replace(subst_var, marker)
+        query = subst_pattern.sub(marker, query)
         positional_values[marker] = val
 
     match = re.search(r"\$\d+", query)

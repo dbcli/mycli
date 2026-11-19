@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Bug Fixes
+--------
+* Substitute favorite query parameters `$10` and above instead of replacing them as `$1` followed by a digit.
+
+
 v2.31.1 (2026/11/18)
 ==============
 
