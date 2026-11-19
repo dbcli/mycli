@@ -4,6 +4,7 @@ Upcoming (TBD)
 Bug Fixes
 --------
 * Substitute favorite query parameters `$10` and above instead of replacing them as `$1` followed by a digit.
+* Write the mycli log file as UTF-8 instead of the locale encoding, so non-ASCII queries and data no longer raise `UnicodeEncodeError`.
 
 
 v2.31.1 (2026/11/18)

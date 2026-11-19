@@ -1071,6 +1071,27 @@ def test_initialize_logging_uses_file_handler(monkeypatch: pytest.MonkeyPatch, t
                 handler.close()
 
 
+def test_initialize_logging_file_handler_uses_utf8(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    log_file = tmp_path / 'mycli.log'
+    client = DummyClient()
+    client.config = {'main': {'log_file': str(log_file), 'log_level': 'DEBUG'}}
+    monkeypatch.setattr(client_commands.logging, 'captureWarnings', lambda value: None)
+    logger = logging.getLogger('mycli')
+    original_handlers = list(logger.handlers)
+    try:
+        client.initialize_logging()
+
+        added_handlers = [handler for handler in logger.handlers if handler not in original_handlers]
+        assert len(added_handlers) == 1
+        assert isinstance(added_handlers[0], logging.FileHandler)
+        assert added_handlers[0].encoding == 'utf-8'
+    finally:
+        for handler in logger.handlers:
+            if handler not in original_handlers:
+                logger.removeHandler(handler)
+                handler.close()
+
+
 def test_initialize_logging_reports_invalid_log_path() -> None:
     client = DummyClient()
     client.config = {'main': {'log_file': '/does/not/exist/mycli.log', 'log_level': 'INFO'}}
