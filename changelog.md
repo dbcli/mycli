@@ -3,6 +3,7 @@ Upcoming (TBD)
 
 Bug Fixes
 --------
+* Don't crash `/system` and `\!` on command output that isn't valid in the locale encoding; undecodable bytes are replaced.
 * Substitute favorite query parameters `$10` and above instead of replacing them as `$1` followed by a digit.
 * Write the mycli log file as UTF-8 instead of the locale encoding, so non-ASCII queries and data no longer raise `UnicodeEncodeError`.
 

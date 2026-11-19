@@ -1893,6 +1893,17 @@ def test_execute_system_clear_returns_no_result(monkeypatch, command: str) -> No
     assert calls == [[part for part in command.split() if part != '-r']]
 
 
+def test_execute_system_command_undecodable_output(monkeypatch) -> None:
+    monkeypatch.setattr(io_commands.locale, 'getpreferredencoding', lambda do_setlocale: 'utf-8')
+    process = FakeProcess(stdout=b'caf\xe9 ok', stderr=b'', returncode=0)
+    monkeypatch.setattr(io_commands.subprocess, 'Popen', lambda command, stdout, stderr: process)
+
+    result = io_commands.execute_system_command('echo x')[0]
+
+    assert result.preamble == 'caf\ufffd ok'
+    assert result.status is None
+
+
 def test_execute_system_command_nonraw_paths(monkeypatch) -> None:
     monkeypatch.setattr(io_commands.locale, 'getpreferredencoding', lambda do_setlocale: 'utf-8')
 
