@@ -392,7 +392,7 @@ class ClientCommandsMixin:
             handler: logging.Handler = logging.NullHandler()
             log_level = "CRITICAL"
         elif dir_path_exists(log_file):
-            handler = logging.FileHandler(log_file)
+            handler = logging.FileHandler(log_file, encoding='utf-8')
         else:
             self.echo(f'Error: Unable to open the log file "{log_file}".', err=True, fg="red")
             return
