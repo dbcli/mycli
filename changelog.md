@@ -8,6 +8,11 @@ Bug Fixes
 * Write the mycli log file as UTF-8 instead of the locale encoding, so non-ASCII queries and data no longer raise `UnicodeEncodeError`.
 
 
+Documentation
+--------
+* Add guidance on changelog entry length.
+
+
 v2.31.1 (2026/11/18)
 ==============
 
