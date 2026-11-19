@@ -867,7 +867,7 @@ def execute_system_command(arg: str, **_) -> list[SQLResult]:
                 output, error = process.communicate()
             response = output if not error else error
             encoding = locale.getpreferredencoding(False)
-            response_str = response.decode(encoding)
+            response_str = response.decode(encoding, errors='replace')
             if process.returncode:
                 status = f'Command exited with return code {process.returncode}'
             else:
