@@ -1253,6 +1253,67 @@ def test_strip_backticks(name: str | None, expected: str) -> None:
 
 
 @pytest.mark.parametrize(
+    ('name', 'expected'),
+    [
+        ('a`b', '`a``b`'),
+        ('a``b', '`a````b`'),
+        ('`leading', '```leading`'),
+        ('trailing`', '`trailing```'),
+        ('`wrapped`', '```wrapped```'),
+        ('`', '````'),
+    ],
+)
+def test_escape_name_doubles_literal_backticks(name: str, expected: str) -> None:
+    assert SQLCompleter().escape_name(name) == expected
+
+
+@pytest.mark.parametrize(
+    ('name', 'expected'),
+    [
+        ('`a``b`', 'a`b'),
+        ('`a````b`', 'a``b'),
+        ('```leading`', '`leading'),
+        ('`trailing```', 'trailing`'),
+        ('```wrapped```', '`wrapped`'),
+        ('````', '`'),
+        ('a``b', 'a``b'),
+        ('`a``b', '`a``b'),
+    ],
+)
+def test_strip_backticks_unescapes_only_quoted_names(name: str, expected: str) -> None:
+    assert SQLCompleter._strip_backticks(name) == expected
+
+
+@pytest.mark.parametrize('name', ['a`b', 'a``b', '`leading', 'trailing`', '`wrapped`', '`'])
+def test_identifier_escaping_round_trip(name: str) -> None:
+    completer = SQLCompleter()
+    escaped = completer.escape_name(name)
+
+    assert completer._strip_backticks(escaped) == name
+    assert completer._escape_identifier(escaped) == escaped
+
+
+def test_enum_lookup_with_escaped_backtick_column() -> None:
+    completer = SQLCompleter()
+    completer.extend_schemata('test')
+    completer.set_dbname('test')
+    completer.extend_enum_values([('orders', 'order`status', ['pending', 'shipped'])])
+
+    assert completer.populate_enum_values([(None, 'orders', None)], '`order``status`') == ['pending', 'shipped']
+
+
+def test_table_completion_escapes_embedded_backtick() -> None:
+    completer = SQLCompleter(completion_match_order=('perfect',))
+    completer.extend_schemata('test')
+    completer.set_dbname('test')
+    completer.extend_relations([('order`items',)], kind='tables')
+
+    matches = list(completer.get_completions(Document('SELECT * FROM ord'), None))
+
+    assert [(candidate.text, candidate.start_position) for candidate in matches] == [('`order``items`', -3)]
+
+
+@pytest.mark.parametrize(
     ('parent', 'schema', 'relname', 'alias', 'expected'),
     [
         ('o', None, 'orders', 'o', True),
