@@ -176,27 +176,125 @@ def test_quote_collection_if_needed_leaves_collection_unchanged_when_not_quoted(
 @pytest.mark.parametrize(
     ('text_parts', 'item_parts', 'expected'),
     [
-        (['us', 'de', 'fu'], ['user', 'defined', 'function'], True),
-        (['us', 'fu'], ['user', 'defined', 'function'], True),
-        (['us', 'zz'], ['user', 'defined', 'function'], False),
-        ([], ['user', 'defined', 'function'], True),
-        (['us'], [], False),
+        pytest.param([], ['user', 'defined'], False, id='empty-input'),
+        pytest.param(['u'], ['user', 'defined'], False, id='one-input-initial'),
+        pytest.param(['u', 'd'], [], False, id='empty-candidate'),
+        pytest.param(['u', 'd'], ['user'], False, id='one-candidate-word'),
+        pytest.param(['u', 'd'], ['user', 'defined'], True, id='equal-initials'),
+        pytest.param(['u', 'd'], ['user', 'defined', 'function'], True, id='input-prefix'),
+        pytest.param(['u', 'd', 'f'], ['user', 'defined'], True, id='candidate-prefix'),
+        pytest.param(['u', 'x'], ['user', 'defined'], False, id='different-initials'),
+        pytest.param(['d', 'u'], ['user', 'defined'], False, id='reversed-initials'),
+        pytest.param(['d', 'f'], ['user', 'defined', 'function'], False, id='suffix-not-prefix'),
+        pytest.param(['`', 'u', 'd', '`'], ['user', 'defined'], True, id='ignore-backticks'),
+        pytest.param(['`', 'u'], ['user', 'defined'], False, id='backtick-does-not-count-as-initial'),
     ],
 )
-def test_word_parts_match(
-    text_parts: list[str],
-    item_parts: list[str],
-    expected: bool,
-) -> None:
+def test_under_word_parts_match(text_parts: list[str], item_parts: list[str], expected: bool) -> None:
     completer = SQLCompleter()
-    assert completer.word_parts_match(text_parts, item_parts) is expected
+
+    assert completer.under_word_parts_match(text_parts, item_parts) is expected
+
+
+@pytest.mark.parametrize('text', ['`us_de_fu', '`us_de_fu`', 'us_de_fu'])
+@pytest.mark.parametrize('candidate', ['user_defined_function', '`user_defined_function`'])
+def test_under_word_completion_matches_quoted_identifiers(text: str, candidate: str) -> None:
+    completer = SQLCompleter(completion_match_order=('under_words',))
+    expected = '`user_defined_function`' if text.startswith('`') else candidate
+
+    assert list(completer.find_matches(text, [candidate, 'other_table'])) == [(expected, Fuzziness.UNDER_WORDS)]
+
+
+@pytest.mark.parametrize(
+    ('text', 'expected'),
+    [
+        ('unrelated_different', True),
+        ('u_d', True),
+        ('u_d_f_extra', True),
+        ('u_f', False),
+        ('d_u', False),
+        ('user', False),
+    ],
+)
+def test_under_word_completion_uses_ordered_initial_prefixes(text: str, expected: bool) -> None:
+    completer = SQLCompleter(completion_match_order=('under_words',))
+
+    matches = list(completer.find_matches(text, ['user_defined_function']))
+
+    assert matches == ([('user_defined_function', Fuzziness.UNDER_WORDS)] if expected else [])
+
+
+@pytest.mark.parametrize('other_method', ['regex', 'perfect'])
+@pytest.mark.parametrize('under_words_first', [False, True])
+def test_under_word_overlapping_match_respects_priority(other_method: str, under_words_first: bool) -> None:
+    order = ('under_words', other_method) if under_words_first else (other_method, 'under_words')
+    completer = SQLCompleter(completion_match_order=order)
+
+    assert list(completer.find_matches('user_d', ['user_defined_function'])) == [
+        ('user_defined_function', Fuzziness[order[0].upper()]),
+    ]
+
+
+@pytest.mark.parametrize('quote', ['', '`'])
+def test_under_word_table_completion_replaces_entire_token(quote: str) -> None:
+    completer = SQLCompleter(completion_match_order=('under_words',))
+    completer.extend_schemata('test')
+    completer.set_dbname('test')
+    completer.extend_relations([('user_defined_function',), ('other_table',)], kind='tables')
+    token = quote + 'US_DE_FU'
+
+    matches = list(completer.get_completions(Document(f'SELECT * FROM {token}'), None))
+
+    expected = '`user_defined_function`' if quote else 'user_defined_function'
+    assert [(candidate.text, candidate.start_position) for candidate in matches] == [(expected, -len(token))]
+
+
+def test_under_word_completion_normalizes_case_and_ignores_empty_parts() -> None:
+    completer = SQLCompleter(completion_match_order=('under_words',))
+
+    assert completer.find_fuzzy_matches('us__de', 'us__de', ['_User__Defined_', 'Other_Name']) == [
+        ('_User__Defined_', Fuzziness.UNDER_WORDS),
+    ]
+
+
+@pytest.mark.parametrize(
+    ('text_parts', 'item_parts', 'expected'),
+    [
+        pytest.param([], [], True, id='both-empty'),
+        pytest.param([], ['Time'], True, id='empty-input'),
+        pytest.param(['Ti'], [], False, id='empty-candidate'),
+        pytest.param(['Time'], ['Time'], True, id='exact-word'),
+        pytest.param(['Ti', 'Zo'], ['Time', 'Zone'], True, id='word-prefixes'),
+        pytest.param(['Zo'], ['Time', 'Zone'], True, id='match-later-word'),
+        pytest.param(['Zo', 'Ti'], ['Time', 'Zone'], True, id='order-independent'),
+        pytest.param(['Ti', 'Ti'], ['Time'], True, id='candidate-word-can-be-reused'),
+        pytest.param(['ti'], ['Time'], False, id='case-sensitive'),
+        pytest.param(['ime'], ['Time'], False, id='substring-is-not-prefix'),
+        pytest.param(['Timer'], ['Time'], False, id='input-longer-than-word'),
+        pytest.param(['Ti', 'Zo'], ['Time', 'Timer'], False, id='multiple-matches-do-not-cover-missing-part'),
+        pytest.param(['Missing', 'Ti'], ['Time'], False, id='unmatched-first-part'),
+    ],
+)
+def test_camel_word_parts_match(text_parts: list[str], item_parts: list[str], expected: bool) -> None:
+    completer = SQLCompleter()
+
+    assert completer.camel_word_parts_match(text_parts, item_parts) is expected
+
+
+def test_camel_word_completion_splits_case_boundaries() -> None:
+    completer = SQLCompleter(completion_match_order=('camel_case',))
+
+    assert completer.find_fuzzy_matches('TiZo', 'tizo', ['TimeZone', 'TimeStamp']) == [
+        ('TimeZone', Fuzziness.CAMEL_CASE),
+    ]
 
 
 @pytest.mark.parametrize(
     ('item', 'pattern', 'under_words_text', 'case_words_text', 'expected'),
     [
         ('foo_select_bar', re.compile('(s.{0,3}?e.{0,3}?l)'), ['sel'], ['sel'], Fuzziness.REGEX),
-        ('user_defined_function', re.compile('(z.{0,3}?z)'), ['us', 'de', 'fu'], ['us_de_fu'], Fuzziness.UNDER_WORDS),
+        ('user_defined_function', re.compile('(u.{0,3}?d.{0,3}?f)'), ['u', 'd', 'f'], ['udf'], Fuzziness.UNDER_WORDS),
+        ('Account_List_Group', re.compile('(a.{0,3}?l.{0,3}?g)'), ['a', 'l', 'g'], ['alg'], Fuzziness.UNDER_WORDS),
         ('TimeZoneTransitionType', re.compile('(Ti.{0,3}?Zx)'), ['TiZoTrTy'], ['Ti', 'Zo', 'Tr', 'Ty'], Fuzziness.CAMEL_CASE),
         ('orders', re.compile('(z.{0,3}?z)'), ['zz'], ['zz'], None),
     ],
@@ -617,7 +715,8 @@ def test_perfect_only_does_not_run_fuzzy_matchers(monkeypatch: pytest.MonkeyPatc
     completer = SQLCompleter(completion_match_order=('perfect',))
     monkeypatch.setattr(sql_completer.re, 'compile', pytest.fail)
     monkeypatch.setattr(sql_completer.re, 'split', pytest.fail)
-    monkeypatch.setattr(completer, 'word_parts_match', pytest.fail)
+    monkeypatch.setattr(completer, 'camel_word_parts_match', pytest.fail)
+    monkeypatch.setattr(completer, 'under_word_parts_match', pytest.fail)
     monkeypatch.setattr(sql_completer.rapidfuzz.process, 'extract', pytest.fail)
 
     assert completer.find_fuzzy_matches('sele', 'sele', ['select', 'user_select']) == [('select', Fuzziness.PERFECT)]
@@ -700,15 +799,6 @@ def test_enabled_file_method_completes_paths(monkeypatch: pytest.MonkeyPatch, tm
     completer = SQLCompleter(completion_match_order=(method,))
 
     assert list(completer.find_files(word)) == [('./file.sql' if '/' in word else 'file.sql', Fuzziness[method.upper()])]
-
-
-@pytest.mark.parametrize('preferred', ['regex', 'under_words', 'camel_case'])
-def test_overlapping_matches_use_configured_priority(preferred: str) -> None:
-    completer = SQLCompleter(completion_match_order=(preferred, 'perfect'))
-
-    matches = list(completer.find_matches('al', ['alphabet']))
-
-    assert matches == [('alphabet', Fuzziness[preferred.upper()])]
 
 
 def test_rapidfuzz_can_replace_an_overlapping_category(monkeypatch: pytest.MonkeyPatch) -> None:

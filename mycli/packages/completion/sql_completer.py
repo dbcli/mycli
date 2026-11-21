@@ -1321,7 +1321,20 @@ class SQLCompleter(Completer):
             return [self.maybe_quote_identifier(x) if isinstance(x, str) else x for x in collection]
         return collection
 
-    def word_parts_match(
+    def under_word_parts_match(
+        self,
+        text_parts: list[str],
+        item_parts: list[str],
+    ) -> bool:
+        text_str = ''.join(x for x in text_parts if x != '`')
+        item_str = ''.join(x[0] for x in item_parts)
+        if len(text_str) < 2:
+            return False
+        if len(item_str) < 2:
+            return False
+        return item_str.startswith(text_str) or text_str.startswith(item_str)
+
+    def camel_word_parts_match(
         self,
         text_parts: list[str],
         item_parts: list[str],
@@ -1345,12 +1358,12 @@ class SQLCompleter(Completer):
             if name == 'regex' and pattern is not None and pattern.search(item.lower()):
                 return Fuzziness.REGEX
             if name == 'under_words':
-                under_words_item = [x for x in item.lower().split('_') if x]
-                if self.word_parts_match(under_words_text, under_words_item):
+                under_words_item = [x for x in self._strip_backticks(item).lower().split('_') if x]
+                if self.under_word_parts_match(under_words_text, under_words_item):
                     return Fuzziness.UNDER_WORDS
             if name == 'camel_case':
                 case_words_item = re.split(_CASE_CHANGE_PAT, item)
-                if self.word_parts_match(case_words_text, case_words_item):
+                if self.camel_word_parts_match(case_words_text, case_words_item):
                     return Fuzziness.CAMEL_CASE
 
         return None
@@ -1366,7 +1379,9 @@ class SQLCompleter(Completer):
         if 'regex' in self.completion_match_order:
             regex = f'.{{0,{self.regex_match_distance}}}?'.join(map(re.escape, text))
             pattern = re.compile(f'({regex})')
-        under_words_text = [x for x in text.split('_') if x] if 'under_words' in self.completion_match_order else []
+        under_words_text = (
+            [x[0] for x in text.removeprefix('`').removesuffix('`').split('_') if x] if 'under_words' in self.completion_match_order else []
+        )
         case_words_text = re.split(_CASE_CHANGE_PAT, last) if 'camel_case' in self.completion_match_order else []
 
         for item in collection:
