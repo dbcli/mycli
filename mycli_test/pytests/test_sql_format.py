@@ -29,9 +29,12 @@ def test_escape_sql_value(formatter: Mock, value: object, expected: str) -> None
     ('query', 'table'),
     [
         ('select 1', '`DUAL`'),
-        ('select * from `records`', 'records'),
-        ('select * from `app`.`records`', 'app.records'),
-        ('select * from records join others on records.id = others.id', 'records'),
+        ('select * from `records`', '`records`'),
+        ('select * from `app`.`records`', '`app`.`records`'),
+        ('select * from records join others on records.id = others.id', '`records`'),
+        ('select * from `order`', '`order`'),
+        ('select * from `my-app`.`order items`', '`my-app`.`order items`'),
+        ('select * from `odd``name`', '`odd``name`'),
     ],
 )
 def test_insert_uses_first_query_table(formatter: Mock, query: str, table: str) -> None:
@@ -48,7 +51,7 @@ def test_insert_separates_multiple_rows(formatter: Mock) -> None:
     rows = [[1, 'first', b'\xab'], [2, None, b'\xcd']]
 
     assert list(sql_format.adapter(cast(Any, rows), ['id', 'name', 'data'], table_format='sql-insert')) == [
-        'INSERT INTO records (`id`, `name`, `data`) VALUES',
+        'INSERT INTO `records` (`id`, `name`, `data`) VALUES',
         "  (1, 'first', 0xab)",
         ', (2, NULL, 0xcd)',
         ';',
@@ -60,11 +63,11 @@ def test_update_uses_first_column_as_key(formatter: Mock, table_format: str) -> 
     rows = [[1, 'first', None], [2, 'second', 'value']]
 
     assert list(sql_format.adapter(cast(Any, rows), ['id', 'name', 'optional'], table_format=table_format)) == [
-        'UPDATE records SET',
+        'UPDATE `records` SET',
         "  `name` = 'first'",
         ', `optional` = NULL',
         'WHERE `id` = 1;',
-        'UPDATE records SET',
+        'UPDATE `records` SET',
         "  `name` = 'second'",
         ", `optional` = 'value'",
         'WHERE `id` = 2;',
@@ -75,9 +78,25 @@ def test_update_uses_composite_key(formatter: Mock) -> None:
     rows = [[1, 'group', 'value']]
 
     assert list(sql_format.adapter(cast(Any, rows), ['id', 'group', 'name'], table_format='sql-update-2')) == [
-        'UPDATE records SET',
+        'UPDATE `records` SET',
         "  `name` = 'value'",
         "WHERE `id` = 1 AND `group` = 'group';",
+    ]
+
+
+def test_insert_escapes_backticks_in_column_names(formatter: Mock) -> None:
+    assert list(sql_format.adapter(cast(Any, [[1, 2]]), ['id', 'a`b'], table_format='sql-insert')) == [
+        'INSERT INTO `records` (`id`, `a``b`) VALUES',
+        '  (1, 2)',
+        ';',
+    ]
+
+
+def test_update_escapes_backticks_in_column_names(formatter: Mock) -> None:
+    assert list(sql_format.adapter(cast(Any, [[1, 2]]), ['k`ey', 'a`b'], table_format='sql-update')) == [
+        'UPDATE `records` SET',
+        '  `a``b` = 2',
+        'WHERE `k``ey` = 1;',
     ]
 
 
