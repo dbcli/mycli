@@ -1004,6 +1004,7 @@ class SQLCompleter(Completer):
 
     def escape_name(self, name: str) -> str:
         if name and ((not self.name_pattern.match(name)) or (name.upper() in self.reserved_words) or (name.upper() in self.functions)):
+            name = name.replace('`', '``')
             name = f'`{name}`'
 
         return name
@@ -2108,9 +2109,9 @@ class SQLCompleter(Completer):
 
     @staticmethod
     def _strip_backticks(name: str | None) -> str:
-        if name and name[0] == "`" and name[-1] == "`":
-            return name[1:-1]
-        return name or ""
+        if name and name[0] == '`' and name[-1] == '`':
+            return name[1:-1].replace('``', '`')
+        return name or ''
 
     @staticmethod
     def _matches_parent(parent: str, schema: str | None, relname: str, alias: str | None) -> bool:

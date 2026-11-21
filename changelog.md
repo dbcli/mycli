@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Bug Fixes
+--------
+* Improve methods for escaping names.
+
+
 v2.32.0 (2026/11/21)
 ==============
 
