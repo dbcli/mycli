@@ -34,6 +34,7 @@ def _ensure_vault_user_logged_in(
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
+            encoding='utf-8',
         )
     except FileNotFoundError as exc:
         raise VaultError(f'Vault executable not found: {executable}') from exc
@@ -80,6 +81,7 @@ def get_field_from_vault(
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
+            encoding='utf-8',
         )
     except FileNotFoundError as exc:
         raise VaultError(f'Vault executable not found: {executable}') from exc

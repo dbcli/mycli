@@ -48,6 +48,7 @@ def test_get_field_from_vault_runs_kv_get_with_field_mount_and_address(
             'stdout': -1,
             'stderr': -1,
             'text': True,
+            'encoding': 'utf-8',
         },
         {
             'command': [
@@ -64,6 +65,7 @@ def test_get_field_from_vault_runs_kv_get_with_field_mount_and_address(
             'stdout': subprocess.PIPE,
             'stderr': subprocess.PIPE,
             'text': True,
+            'encoding': 'utf-8',
         },
     ]
 
