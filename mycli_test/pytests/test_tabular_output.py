@@ -110,7 +110,7 @@ def test_sql_output(mycli):
     mycli.explorer_formatter.query = "SELECT * FROM `table`"
     output = mycli.format_sqlresult(SQLResult(header=header, rows=FakeCursor()))
     assert "\n".join(output) == dedent("""\
-            INSERT INTO table (`letters`, `number`, `optional`, `float`, `binary`) VALUES
+            INSERT INTO `table` (`letters`, `number`, `optional`, `float`, `binary`) VALUES
               ('abc', 1, NULL, 10.0e0, 0xaa)
             , ('d', 456, '1', 0.5e0, 0xaabb)
             ;""")
@@ -121,7 +121,7 @@ def test_sql_output(mycli):
     mycli.explorer_formatter.query = "SELECT * FROM `database`.`table`"
     output = mycli.format_sqlresult(SQLResult(header=header, rows=FakeCursor()))
     assert "\n".join(output) == dedent("""\
-            INSERT INTO database.table (`letters`, `number`, `optional`, `float`, `binary`) VALUES
+            INSERT INTO `database`.`table` (`letters`, `number`, `optional`, `float`, `binary`) VALUES
               ('abc', 1, NULL, 10.0e0, 0xaa)
             , ('d', 456, '1', 0.5e0, 0xaabb)
             ;""")

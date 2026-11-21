@@ -27,19 +27,23 @@ def escape_for_sql_statement(value: Union[bytes, str]) -> str:
         return formatter.mycli.sql_execute.conn.escape(value)
 
 
+def quote_identifier(name: str) -> str:
+    return "`" + name.replace("`", "``") + "`"
+
+
 def adapter(data: list[str], headers: list[str], table_format: Union[str, None] = None, **kwargs) -> Generator[str, None, None]:
     tables = extract_tables_from_complete_statements(formatter.query)
     if len(tables) > 0:
         table = tables[0]
         if table[0]:
-            table_name = f'{table[0]}.{table[1]}'
+            table_name = f'{quote_identifier(table[0])}.{quote_identifier(table[1])}'
         else:
-            table_name = table[1]
+            table_name = quote_identifier(table[1])
     else:
         table_name = "`DUAL`"
     if table_format == "sql-insert":
-        h = "`, `".join(headers)
-        yield f'INSERT INTO {table_name} (`{h}`) VALUES'
+        h = ", ".join(quote_identifier(header) for header in headers)
+        yield f'INSERT INTO {table_name} ({h}) VALUES'
         prefix = "  "
         for d in data:
             values = ", ".join(escape_for_sql_statement(v) for i, v in enumerate(d))
@@ -56,11 +60,10 @@ def adapter(data: list[str], headers: list[str], table_format: Union[str, None] 
             yield f'UPDATE {table_name} SET'
             prefix = "  "
             for i, v in enumerate(d[keys:], keys):
-                yield f'{prefix}`{headers[i]}` = {escape_for_sql_statement(v)}'
+                yield f'{prefix}{quote_identifier(headers[i])} = {escape_for_sql_statement(v)}'
                 if prefix == "  ":
                     prefix = ", "
-            f = "`{}` = {}"
-            where = (f.format(headers[i], escape_for_sql_statement(d[i])) for i in range(keys))
+            where = (f'{quote_identifier(headers[i])} = {escape_for_sql_statement(d[i])}' for i in range(keys))
             yield f'WHERE {" AND ".join(where)};'
 
 
