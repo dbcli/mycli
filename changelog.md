@@ -1,6 +1,11 @@
 Upcoming (TBD)
 ==============
 
+Features
+--------
+* Make `under_words` completions method more lenient.
+
+
 Bug Fixes
 --------
 * Don't crash `/system` and `\!` on command output that isn't valid in the locale encoding; undecodable bytes are replaced.
