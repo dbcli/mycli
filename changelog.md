@@ -4,6 +4,7 @@ Upcoming (TBD)
 Bug Fixes
 --------
 * Improve methods for escaping names.
+* Don't treat a backticked name with an escaped backtick at either end as unclosed.
 
 
 v2.32.0 (2026/11/21)
