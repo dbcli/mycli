@@ -4,6 +4,7 @@ Upcoming (TBD)
 Bug Fixes
 --------
 * Improve methods for escaping names.
+* Read the output of the Vault executable as UTF-8.
 
 
 v2.32.0 (2026/11/21)
