@@ -691,7 +691,8 @@ def _find_doubled_backticks(text: str) -> list[int]:
     if two_backticks not in text:
         return doubled_backtick_positions
 
-    for index in range(0, length):
+    index = 0
+    while index < length:
         ch = text[index]
         if ch != backtick:
             index += 1

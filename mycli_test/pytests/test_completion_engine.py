@@ -130,6 +130,17 @@ def test_where_suggests_columns_functions(expression):
     ])
 
 
+def test_where_after_table_name_ending_in_escaped_backtick():
+    expression = "SELECT * FROM `a``` WHERE "
+    suggestions = suggest_type(expression, expression)
+    assert sorted_dicts(suggestions) == sorted_dicts([
+        {"type": "alias", "aliases": ["a``"]},
+        {"type": "column", "tables": [(None, "a``", None)]},
+        {"type": "function", "schema": []},
+        {"type": "introducer"},
+    ])
+
+
 def test_where_equals_suggests_enum_values_first():
     expression = "SELECT * FROM tabl WHERE foo = "
     suggestions = suggest_type(expression, expression)
@@ -2175,6 +2186,12 @@ def test_inside_quotes_06():
         ('select `a``b` ', -5,  'backtick'),
         ('select `a``b` ', -6,  'backtick'),
         ('select `a``b` ', -7,  False),
+        ('select `a``` ',  -1,  False),
+        ('select `a``` ',  -2,  'backtick'),
+        ('select `a``` ',  -3,  'backtick'),
+        ('select `a``` ',  -4,  'backtick'),
+        ('select ```b` ',  -1,  False),
+        ('select ```b` ',  -2,  'backtick'),
     ]
 )  # fmt: skip
 def test_inside_quotes_backtick_01(text, position, expected):
