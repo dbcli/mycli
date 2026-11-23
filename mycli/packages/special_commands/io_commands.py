@@ -808,6 +808,13 @@ def _edit_dsn_alias(alias: str) -> list[SQLResult]:
     return [SQLResult(status=f'{alias}: Edited.')]
 
 
+def _strip_matching_quotes(token: str) -> str:
+    """Drop one pair of surrounding quotes, which shlex keeps outside POSIX mode."""
+    if len(token) >= 2 and token[0] == token[-1] and token[0] in ('"', "'"):
+        return token[1:-1]
+    return token
+
+
 @special_command(
     "system",
     "/system [-r] <command>",
@@ -833,6 +840,9 @@ def execute_system_command(arg: str, **_) -> list[SQLResult]:
         command = shlex.split(arg.strip(), posix=not WIN)
     except ValueError as e:
         return [SQLResult(status=f"Cannot parse system command: {e}")]
+
+    if WIN:
+        command = [_strip_matching_quotes(token) for token in command]
 
     raw = False
     if command[0] == '-r':

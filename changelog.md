@@ -9,6 +9,7 @@ Bug Fixes
 * Keep a zero `keepalive_ticks` in `/dsn show --more` and `/dsn save --more` output.
 * Read statements inside `/*! ... */` executable comments as code, not as plain comments.
 * Accept a custom delimiter containing a semicolon, such as `DELIMITER ;;`, and strip quotes from a quoted delimiter.
+* On Windows, drop the quotes around `/system` arguments, so `/system cd "my dir"` works.
 
 
 Internal
