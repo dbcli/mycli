@@ -10,7 +10,7 @@ from mycli.packages.sql_result.sql_result import SQLResult
 sqlparse.engine.grouping.MAX_GROUPING_DEPTH = None  # type: ignore[assignment]
 sqlparse.engine.grouping.MAX_GROUPING_TOKENS = None  # type: ignore[assignment]
 
-DELIMITER_COMMAND_RE = re.compile(r'\s*/?delimiter\s+(\S+)', re.IGNORECASE)
+DELIMITER_COMMAND_RE = re.compile(r'''\s*/?delimiter\s+((['"`]).*?\2|\S+)''', re.IGNORECASE)
 
 
 class DelimiterCommand:
@@ -85,12 +85,13 @@ class DelimiterCommand:
         word of it.
 
         """
-        match = arg and re.search(r"[^\s]+", arg)
-        if not match:
+        # A quoted delimiter, such as ";;", is taken without its quotes.
+        match = arg and re.match(r"""\s*(?:(['"`])(.*?)\1|(\S+))""", arg)
+        delimiter = match and (match.group(2) if match.group(1) else match.group(3))
+        if not delimiter:
             message = "Missing required argument, delimiter"
             return [SQLResult(status=message)]
 
-        delimiter = match.group()
         if delimiter.lower() == "delimiter":
             return [SQLResult(status='Invalid delimiter "delimiter"')]
 

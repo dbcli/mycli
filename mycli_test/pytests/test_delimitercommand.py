@@ -126,3 +126,25 @@ def test_queries_iter_yields_lone_delimiter_command_containing_current_delimiter
     command = DelimiterCommand()
 
     assert list(command.queries_iter('/DELIMITER ;;')) == ['/DELIMITER ;;']
+
+
+def test_set_strips_quotes_from_delimiter() -> None:
+    command = DelimiterCommand()
+
+    for quoted in ('";;"', "';;'", '`;;`', '"; ;" select 1'):
+        result = command.set(quoted)
+        assert result[0].status == f'Changed delimiter to {quoted.split(quoted[0])[1]}'
+        assert command.current == quoted.split(quoted[0])[1]
+
+    assert command.set('""')[0].status == 'Missing required argument, delimiter'
+
+
+def test_queries_iter_with_quoted_delimiter_containing_semicolon() -> None:
+    command = DelimiterCommand()
+    queries = command.queries_iter('delimiter "; ;"\nselect 1; select 2; ;\nselect 3; ;')
+
+    assert next(queries) == 'delimiter "; ;"'
+
+    command.set('"; ;"')
+
+    assert list(queries) == ['select 1; select 2', 'select 3']
