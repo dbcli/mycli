@@ -9,6 +9,11 @@ Bug Fixes
 * Keep a zero `keepalive_ticks` in `/dsn show --more` and `/dsn save --more` output.
 
 
+Internal
+--------
+* Upgrade `cli_helpers` dependency to v2.15.4.
+
+
 v2.32.0 (2026/11/21)
 ==============
 
