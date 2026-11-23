@@ -10,6 +10,11 @@ Bug Fixes
 * Read statements inside `/*! ... */` executable comments as code, not as plain comments.
 
 
+Internal
+--------
+* Upgrade `cli_helpers` dependency to v2.15.4.
+
+
 v2.32.0 (2026/11/21)
 ==============
 
