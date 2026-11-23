@@ -462,6 +462,26 @@ def test_is_destructive_update_with_where_clause_and_leading_comment():
     assert is_destructive(["update"], sql) is False
 
 
+@pytest.mark.parametrize(
+    ('sql', 'expected'),
+    [
+        ('/*!40000 DROP DATABASE IF EXISTS `foo`*/;', True),
+        ('/*!50000 TRUNCATE TABLE foo */;', True),
+        ('/*M!100000 DELETE FROM foo */;', True),
+        ('/*! drop table foo */;', True),
+        ('/* note */ /*!40000 DROP TABLE foo*/;', True),
+        ('/*!40101 SET NAMES utf8mb4 */;', False),
+        ('/*!*/ select 1;', False),
+        ('/* drop table foo */ select 1;', False),
+        ('/*+ drop table foo */ select 1;', False),
+        ("select '/*!drop table foo*/';", False),
+        ('/*!40000 drop table foo', False),
+    ],
+)
+def test_is_destructive_executable_comment(sql, expected):
+    assert is_destructive(['drop', 'truncate', 'delete'], sql) is expected
+
+
 def test_is_destructive_checks_queries_after_safe_update():
     sql = "UPDATE test SET x = 1 WHERE id = 1;\ndrop database foo;"
     assert is_destructive(["update", "drop"], sql) is True
@@ -517,6 +537,12 @@ def test_query_has_where_clause(sql, has_where_clause):
         ("select bar from foo; drop database bazz", "foo", False),
         ("select bar from foo; drop database bazz", "bazz", True),
         ("-- dropping database \n drop -- really dropping \n schema abc -- now it is dropped", "abc", True),
+        ("/*!40000 DROP DATABASE IF EXISTS `foo`*/;", "foo", True),
+        ("/*M!100000 DROP SCHEMA foo */;", "foo", True),
+        ("/*!40000 DROP DATABASE IF EXISTS `foo`*/; CREATE DATABASE /*!32312 IF NOT EXISTS*/ `foo`;", "foo", False),
+        ("/*!40000 DROP DATABASE IF EXISTS `bar`*/;", "foo", False),
+        ("/*!40101 SET NAMES utf8mb4 */;", "foo", False),
+        ("select '/*!drop database foo*/';", "foo", False),
     ],
 )
 def test_is_dropping_database(sql, dbname, is_dropping):
@@ -545,6 +571,8 @@ def test_is_dropping_database_skips_statements_without_enough_keywords():
         ('select 1; /* note */ rename table foo to bar;', True),
         ('/* note */ select 1;', False),
         ('-- create table foo (id int)', False),
+        ('/*!40000 DROP TABLE foo*/;', True),
+        ('/*!40101 SET NAMES utf8mb4 */;', False),
     ],
 )
 def test_need_completion_refresh(queries, expected):
@@ -576,6 +604,7 @@ def test_need_completion_refresh_ignores_queries_that_fail_to_split(monkeypatch)
         ('# note\n\\u foo;', True),
         ('/* note */ \\r foo', True),
         ('/* note */ connect', False),
+        ('/*!50000 USE foo */;', True),
         ('/* note */ select 1;', False),
     ],
 )
