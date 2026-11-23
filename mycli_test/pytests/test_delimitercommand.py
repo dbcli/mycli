@@ -98,3 +98,31 @@ def test_queries_iter_reappends_old_trailing_delimiter_before_resplitting(monkey
 
     assert list(queries) == ['select 2']
     assert split_calls == ['ignored', 'delimiter $$ select 2$$;;']
+
+
+def test_queries_iter_with_delimiter_containing_semicolon_splits_on_it() -> None:
+    command = DelimiterCommand()
+    command.set(';;')
+
+    assert list(command.queries_iter('select 1;; select 2;;')) == ['select 1', 'select 2']
+    assert list(command.queries_iter('begin set @a = 1; end;;\nselect 2;;')) == [
+        'begin set @a = 1; end',
+        'select 2',
+    ]
+
+
+def test_queries_iter_yields_leading_delimiter_command_containing_current_delimiter_whole() -> None:
+    command = DelimiterCommand()
+    queries = command.queries_iter('delimiter ;;\nselect 1; select 2;;\nselect 3;;')
+
+    assert next(queries) == 'delimiter ;;'
+
+    command.set(';;')
+
+    assert list(queries) == ['select 1; select 2', 'select 3']
+
+
+def test_queries_iter_yields_lone_delimiter_command_containing_current_delimiter() -> None:
+    command = DelimiterCommand()
+
+    assert list(command.queries_iter('/DELIMITER ;;')) == ['/DELIMITER ;;']

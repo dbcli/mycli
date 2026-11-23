@@ -6,6 +6,7 @@ Bug Fixes
 * Improve methods for escaping names.
 * Read the output of the Vault executable as UTF-8.
 * Don't treat a backticked name with an escaped backtick at either end as unclosed.
+* Accept a custom delimiter containing a semicolon, such as `DELIMITER ;;`.
 
 
 v2.32.0 (2026/11/21)
