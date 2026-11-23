@@ -98,3 +98,60 @@ def test_queries_iter_reappends_old_trailing_delimiter_before_resplitting(monkey
 
     assert list(queries) == ['select 2']
     assert split_calls == ['ignored', 'delimiter $$ select 2$$;;']
+
+
+def test_queries_iter_with_delimiter_containing_semicolon_splits_on_it() -> None:
+    command = DelimiterCommand()
+    command.set(';;')
+
+    assert list(command.queries_iter('select 1;; select 2;;')) == ['select 1', 'select 2']
+    assert list(command.queries_iter('begin set @a = 1; end;;\nselect 2;;')) == [
+        'begin set @a = 1; end',
+        'select 2',
+    ]
+
+
+def test_queries_iter_yields_leading_delimiter_command_containing_current_delimiter_whole() -> None:
+    command = DelimiterCommand()
+    queries = command.queries_iter('delimiter ;;\nselect 1; select 2;;\nselect 3;;')
+
+    assert next(queries) == 'delimiter ;;'
+
+    command.set(';;')
+
+    assert list(queries) == ['select 1; select 2', 'select 3']
+
+
+def test_queries_iter_yields_lone_delimiter_command_containing_current_delimiter() -> None:
+    command = DelimiterCommand()
+
+    assert list(command.queries_iter('/DELIMITER ;;')) == ['/DELIMITER ;;']
+
+
+def test_set_strips_quotes_from_delimiter() -> None:
+    command = DelimiterCommand()
+
+    for quoted in ('";;"', "';;'", '"; ;" select 1'):
+        result = command.set(quoted)
+        assert result[0].status == f'Changed delimiter to {quoted.split(quoted[0])[1]}'
+        assert command.current == quoted.split(quoted[0])[1]
+
+    assert command.set('""')[0].status == 'Missing required argument, delimiter'
+
+
+def test_set_keeps_backticks_in_delimiter() -> None:
+    command = DelimiterCommand()
+
+    assert command.set('`;;`')[0].status == 'Changed delimiter to `;;`'
+    assert command.current == '`;;`'
+
+
+def test_queries_iter_with_quoted_delimiter_containing_semicolon() -> None:
+    command = DelimiterCommand()
+    queries = command.queries_iter('delimiter "; ;"\nselect 1; select 2; ;\nselect 3; ;')
+
+    assert next(queries) == 'delimiter "; ;"'
+
+    command.set('"; ;"')
+
+    assert list(queries) == ['select 1; select 2', 'select 3']

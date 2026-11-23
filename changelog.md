@@ -8,6 +8,7 @@ Bug Fixes
 * Don't treat a backticked name with an escaped backtick at either end as unclosed.
 * Keep a zero `keepalive_ticks` in `/dsn show --more` and `/dsn save --more` output.
 * Read statements inside `/*! ... */` executable comments as code, not as plain comments.
+* Accept a custom delimiter containing a semicolon, such as `DELIMITER ;;`, and strip quotes from a quoted delimiter.
 
 
 Internal
