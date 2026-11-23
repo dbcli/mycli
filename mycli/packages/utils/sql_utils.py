@@ -7,7 +7,7 @@ import sqlglot
 import sqlglot.tokens
 import sqlparse
 from sqlparse.sql import Function, Identifier, IdentifierList, Token, TokenList
-from sqlparse.tokens import DML, Keyword, Punctuation
+from sqlparse.tokens import DML, Comment, Keyword, Punctuation
 
 sqlparse.engine.grouping.MAX_GROUPING_DEPTH = None  # type: ignore[assignment]
 sqlparse.engine.grouping.MAX_GROUPING_TOKENS = None  # type: ignore[assignment]
@@ -338,10 +338,32 @@ def find_prev_keyword(sql: str) -> tuple[Token | None, str]:
     return None, ""
 
 
+EXECUTABLE_COMMENT_PATTERN = re.compile(r'/\*M?!(?:\d{5,6})?(.*)\*/', re.DOTALL | re.IGNORECASE)
+
+
+def unwrap_executable_comments(sql: str) -> str:
+    """Replace each /*! ... */ and /*M! ... */ comment with its body.
+
+    The server runs the body of these comments, as in
+    "/*!40000 DROP DATABASE IF EXISTS `db`*/", which is what mysqldump writes.
+    Only real comment tokens are unwrapped, so string literals are left alone.
+    """
+    parts = []
+    for ttype, value in sqlparse.lexer.tokenize(sql):
+        match = EXECUTABLE_COMMENT_PATTERN.fullmatch(value) if ttype in Comment.Multiline else None
+        parts.append(f' {match.group(1)} ' if match else value)
+    return ''.join(parts)
+
+
+def strip_comments(sql: str) -> str:
+    """Strip SQL comments, but keep the text of executable comments."""
+    return sqlparse.format(unwrap_executable_comments(sql), strip_comments=True)
+
+
 def query_starts_with(query: str, prefixes: list[str]) -> bool:
     """Check if the query starts with any item from *prefixes*."""
     prefixes = [prefix.lower() for prefix in prefixes]
-    formatted_sql = sqlparse.format(query.lower(), strip_comments=True)
+    formatted_sql = strip_comments(query.lower())
     return bool(formatted_sql) and formatted_sql.split()[0] in prefixes
 
 
@@ -410,7 +432,7 @@ def is_dropping_database(queries: str, dbname: str | None) -> bool:
 
     dbname = normalize_db_name(dbname)
 
-    for query in sqlparse.parse(queries):
+    for query in sqlparse.parse(unwrap_executable_comments(queries)):
         keywords = [t for t in query.tokens if t.is_keyword]
         if len(keywords) < 2:
             continue
@@ -432,7 +454,7 @@ def need_completion_refresh(queries: str) -> bool:
             first_token = query.split()[0]
             if first_token.startswith(("/*", "--", "#")):
                 # skip leading comments, such as "/* note */ create table ..."
-                first_token = sqlparse.format(query, strip_comments=True).split()[0]
+                first_token = strip_comments(query).split()[0]
             if first_token.lower() in (
                 "alter",
                 "create",
@@ -463,7 +485,7 @@ def need_completion_reset(queries: str) -> bool:
             tokens = query.split()
             if tokens[0].startswith(("/*", "--", "#")):
                 # skip leading comments, such as "/* note */ use db"
-                tokens = sqlparse.format(query, strip_comments=True).split()
+                tokens = strip_comments(query).split()
             first_token = tokens[0]
             if first_token.lower() in ("use", "/use", "\\u", "/u"):
                 return True
