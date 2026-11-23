@@ -39,6 +39,11 @@ def _query_value(value: Any) -> str:
     return str(value)
 
 
+def _is_unset_query_value(value: Any) -> bool:
+    # Compare False by identity: 0 == False, but keepalive_ticks=0 is a real setting.
+    return value is None or value == '' or value is False
+
+
 class DsnAliases:
     section_name: str = 'alias_dsn'
 
@@ -164,7 +169,7 @@ Examples:
         more_params = [
             (key, _query_value(query_params[key]))
             for key in sorted(KNOWN_DSN_QUERY_PARAMS)
-            if query_params.get(key) not in (None, '', False) and _query_value(query_params[key]) != _query_value(defaults.get(key, ''))
+            if not _is_unset_query_value(query_params.get(key)) and _query_value(query_params[key]) != _query_value(defaults.get(key, ''))
         ]
         return urlunsplit(parsed._replace(query=urlencode(more_params)))
 

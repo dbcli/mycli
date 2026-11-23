@@ -7,7 +7,7 @@ from urllib.parse import parse_qsl, urlsplit
 
 import pytest
 
-from mycli.constants import KNOWN_DSN_QUERY_PARAMS
+from mycli.constants import DEFAULT_CHARSET, DEFAULT_PROMPT, KNOWN_DSN_QUERY_PARAMS
 from mycli.packages.special_commands import dsn_aliases as dsn_aliases_module
 from mycli.packages.special_commands.dsn_aliases import INVALID_DSN_ALIAS_ERROR, DsnAliases, is_valid_dsn_alias
 from mycli.packages.utils import dsn_utils
@@ -570,6 +570,20 @@ def test_dsn_more_adds_non_default_runtime_parameters_in_sorted_order() -> None:
         ('vault_secret', 'database/prod'),
         ('vault_username_field', 'login'),
     ]
+
+
+def test_dsn_more_keeps_zero_keepalive_ticks_when_default_is_nonzero() -> None:
+    config = DummyConfig({'main': {}, 'connection': {}, 'vault': {}})
+    mycli = SimpleNamespace(
+        default_keepalive_ticks=10,
+        keepalive_ticks=0,
+        prompt_format=DEFAULT_PROMPT,
+        ssl_mode='auto',
+        sql_execute=SimpleNamespace(character_set=DEFAULT_CHARSET, ssl=None),
+    )
+    aliases = DsnAliases(config, mycli)  # type: ignore[arg-type]
+
+    assert parse_qsl(urlsplit(aliases.dsn_more('mysql://user@host/db')).query) == [('keepalive_ticks', '0')]
 
 
 def test_dsn_more_omits_empty_false_and_active_default_parameters() -> None:
