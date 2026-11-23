@@ -2321,3 +2321,40 @@ def test_watch_query_confirmed_without_description_and_keyboard_interrupt(monkey
 
     assert secho_calls == ['Your call!', '']
     assert io_commands.is_pager_enabled() is True
+
+
+@pytest.mark.parametrize(
+    ('command', 'expected'),
+    [
+        ('cd "my dir"', ['cd', 'my dir']),
+        ("cd 'my dir'", ['cd', 'my dir']),
+        (r'cd "C:\Program Files"', ['cd', r'C:\Program Files']),
+        ('cd plain', ['cd', 'plain']),
+    ],
+)
+def test_execute_system_command_strips_quotes_on_windows(monkeypatch, command: str, expected: list[str]) -> None:
+    calls: list[list[str]] = []
+
+    def fake_cd(parts: list[str]) -> tuple[bool, str | None]:
+        calls.append(parts)
+        return True, None
+
+    monkeypatch.setattr(io_commands, 'WIN', True)
+    monkeypatch.setattr(io_commands, 'handle_cd_command', fake_cd)
+    io_commands.execute_system_command(command)
+
+    assert calls == [expected]
+
+
+def test_execute_system_command_passes_quoted_arguments_on_windows(monkeypatch) -> None:
+    calls: list[list[str]] = []
+
+    def fake_run(cmd: list[str], check: bool = False) -> SimpleNamespace:
+        calls.append(cmd)
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(io_commands, 'WIN', True)
+    monkeypatch.setattr(io_commands.subprocess, 'run', fake_run)
+    io_commands.execute_system_command(r'-r "C:\Program Files\tool.exe" -c "print(1)"')
+
+    assert calls == [[r'C:\Program Files\tool.exe', '-c', 'print(1)']]
