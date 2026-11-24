@@ -15,6 +15,7 @@ Bug Fixes
 Internal
 --------
 * Upgrade `cli_helpers` dependency to v2.15.4.
+* Upgrade `pyyaml` dependency to v6.0.4.
 
 
 v2.32.0 (2026/11/21)
