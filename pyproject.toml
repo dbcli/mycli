@@ -43,6 +43,7 @@ dependencies = [
     "keyring ~= 25.7.0",
     "jinja2 ~= 3.1.6",
     "markupsafe ~= 3.0.4",                  # removeme: transitive dependency forced for binary 3.15 wheel
+    "pyyaml ~= 6.0.4",                      # removeme: transitive dependency forced for binary 3.15 wheel
     "yaspin ~= 3.5.1",
 ]
 
@@ -103,7 +104,7 @@ exclude-newer = '1 week'
 
 [tool.uv.exclude-newer-package]
 cli_helpers = false
-pymysql = false
+pyyaml = false                              # removeme after 2026-11-27
 
 [tool.ruff]
 target-version = 'py311'
