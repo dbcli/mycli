@@ -360,6 +360,24 @@ def strip_comments(sql: str) -> str:
     return sqlparse.format(unwrap_executable_comments(sql), strip_comments=True)
 
 
+def skip_with_clause(query: str) -> str:
+    """Return the main statement of a query that starts with a WITH clause.
+
+    "WITH x AS (SELECT 1) DELETE FROM t" gives "DELETE FROM t".  Other
+    queries are returned unchanged.
+    """
+    parsed = sqlparse.parse(strip_comments(query))
+    if not parsed:
+        return query
+    tokens = [token for token in parsed[0].tokens if not token.is_whitespace]
+    if not tokens or tokens[0].ttype is not Keyword.CTE:
+        return query
+    for index, token in enumerate(parsed[0].tokens):
+        if token.ttype is DML:
+            return ''.join(str(t) for t in parsed[0].tokens[index:])
+    return query
+
+
 def query_starts_with(query: str, prefixes: list[str]) -> bool:
     """Check if the query starts with any item from *prefixes*."""
     prefixes = [prefix.lower() for prefix in prefixes]
@@ -410,6 +428,7 @@ def is_destructive(keywords: list[str], queries: str) -> bool:
     for query in sqlparse.split(queries):
         if not query:
             continue
+        query = skip_with_clause(query)
         # subtle: if "UPDATE" is one of our keywords AND "query" starts with "UPDATE"
         if query_starts_with(query, keywords) and query_starts_with(query, ["update"]):
             if query_has_where_clause(query) and query_is_single_table_update(query):

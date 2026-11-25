@@ -4,6 +4,7 @@ Upcoming (TBD)
 Bug Fixes
 --------
 * Respect the LLM sample size limit when truncating short fields.
+* Give the destructive warning for a `DELETE` or `UPDATE` that starts with a `WITH` clause.
 
 
 v2.32.1 (2026/11/25)
