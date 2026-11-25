@@ -298,6 +298,10 @@ def truncate_list_elements(row: list, prompt_field_truncate: int, prompt_section
         return row
 
     width = prompt_field_truncate
+    if not width:
+        # Only the section limit is set: start from the longest value, but no wider than the
+        # section limit, since a single value wider than that can never fit.
+        width = min(max((len(x) for x in row if isinstance(x, (str, bytes))), default=0), prompt_section_truncate)
     while width >= 0:
         truncated_row = [x[:width] if isinstance(x, (str, bytes)) else x for x in row]
         if prompt_section_truncate:

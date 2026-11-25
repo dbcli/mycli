@@ -402,6 +402,10 @@ def test_truncate_list_elements_and_table_lines(monkeypatch) -> None:
     assert truncated == ["a" * 50, b"b" * 50, 1]
     assert truncate_list_elements(row, prompt_field_truncate=0, prompt_section_truncate=0) is row
     assert truncate_list_elements(["abcdef"], prompt_field_truncate=3, prompt_section_truncate=0) == ["abc"]
+    # only the section limit set: keep short values whole and still cap long ones
+    assert truncate_list_elements(["ab", "c"], prompt_field_truncate=0, prompt_section_truncate=300) == ["ab", "c"]
+    assert truncate_list_elements(row, prompt_field_truncate=0, prompt_section_truncate=300) == ["a" * 50, b"b" * 50, 1]
+    assert len(truncate_list_elements(["x" * 5_000_000], prompt_field_truncate=0, prompt_section_truncate=1_000_000)[0]) == 1_000_000
 
     table = ["a" * 100, "b" * 100, "c" * 100]
     assert truncate_table_lines(table.copy(), prompt_section_truncate=0) == table
