@@ -10,6 +10,7 @@ Bug Fixes
 * Read statements inside `/*! ... */` executable comments as code, not as plain comments.
 * Accept a custom delimiter containing a semicolon, such as `DELIMITER ;;`, and strip quotes from a quoted delimiter.
 * On Windows, drop the quotes around `/system` arguments, so `/system cd "my dir"` works.
+* Keep text in LLM sample data when only `prompt_section_truncate` is set, and still cap it.
 
 
 Internal
