@@ -28,6 +28,7 @@ from mycli.packages.utils.sql_utils import (
     query_has_where_clause,
     query_is_single_table_update,
     query_starts_with,
+    skip_with_clause,
 )
 
 
@@ -480,6 +481,37 @@ def test_is_destructive_update_with_where_clause_and_leading_comment():
 )
 def test_is_destructive_executable_comment(sql, expected):
     assert is_destructive(['drop', 'truncate', 'delete'], sql) is expected
+
+
+@pytest.mark.parametrize(
+    ('sql', 'expected'),
+    [
+        ('WITH x AS (SELECT 1) DELETE FROM t;', True),
+        ('with recursive x as (select 1), y as (select 2) delete t from t join x;', True),
+        ('/* note */ WITH x AS (SELECT 1) DELETE FROM t;', True),
+        ('WITH x AS (SELECT 1) UPDATE t SET a = 1;', True),
+        ('WITH x AS (SELECT id FROM u WHERE id = 1) UPDATE t SET a = 1;', True),
+        ('WITH x AS (SELECT 1) UPDATE t, x SET t.a = 1 WHERE t.id = 1;', True),
+        ('WITH x AS (SELECT 1) UPDATE t SET a = 1 WHERE id = 1;', False),
+        ('WITH x AS (SELECT 1) SELECT * FROM x;', False),
+    ],
+)
+def test_is_destructive_with_clause(sql, expected):
+    assert is_destructive(['delete', 'update'], sql) is expected
+
+
+@pytest.mark.parametrize(
+    ('sql', 'expected'),
+    [
+        ('WITH x AS (SELECT 1) DELETE FROM t', 'DELETE FROM t'),
+        ('/* note */ with x as (select 1) update t set a = 1', 'update t set a = 1'),
+        ('DELETE FROM t', 'DELETE FROM t'),
+        ('WITH x AS (SELECT 1)', 'WITH x AS (SELECT 1)'),
+        ('', ''),
+    ],
+)
+def test_skip_with_clause(sql, expected):
+    assert skip_with_clause(sql) == expected
 
 
 def test_is_destructive_checks_queries_after_safe_update():
