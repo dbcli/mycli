@@ -302,15 +302,14 @@ def truncate_list_elements(row: list, prompt_field_truncate: int, prompt_section
         # Only the section limit is set: start from the longest value, but no wider than the
         # section limit, since a single value wider than that can never fit.
         width = min(max((len(x) for x in row if isinstance(x, (str, bytes))), default=0), prompt_section_truncate)
-    while width >= 0:
+    while True:
         truncated_row = [x[:width] if isinstance(x, (str, bytes)) else x for x in row]
-        if prompt_section_truncate:
-            if sum(sys.getsizeof(x) for x in truncated_row) <= prompt_section_truncate:
-                break
-            width -= 100
-        else:
-            break
-    return truncated_row
+        if not prompt_section_truncate or width <= 0:
+            return truncated_row
+        if sum(sys.getsizeof(x) for x in truncated_row) <= prompt_section_truncate:
+            return truncated_row
+        # Use smaller steps near zero so short fields can retain text.
+        width -= 100 if width > 100 else 1
 
 
 def truncate_table_lines(table: list[str], prompt_section_truncate: int) -> list[str]:

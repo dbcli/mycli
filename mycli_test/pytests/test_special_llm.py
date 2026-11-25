@@ -414,6 +414,15 @@ def test_truncate_list_elements_and_table_lines(monkeypatch) -> None:
     assert truncate_table_lines(["a" * 100], prompt_section_truncate=50) == []
 
 
+@pytest.mark.parametrize('field_limit', [0, 80, 180])
+def test_truncate_list_elements_reduces_width_below_100(field_limit: int) -> None:
+    row = ['a' * 80] * 4
+    expected = ['a' * 25] * 4
+    section_limit = sum(llm_module.sys.getsizeof(value) for value in expected)
+
+    assert truncate_list_elements(row, field_limit, section_limit) == expected
+
+
 def test_get_schema_and_sample_data_use_cache_and_skip_bad_rows(monkeypatch) -> None:
     llm_module.SCHEMA_DATA_CACHE.clear()
     llm_module.SAMPLE_DATA_CACHE.clear()
