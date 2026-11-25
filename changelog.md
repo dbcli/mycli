@@ -1,3 +1,11 @@
+Upcoming (TBD)
+==============
+
+Bug Fixes
+--------
+* Respect the LLM sample size limit when truncating short fields.
+
+
 v2.32.1 (2026/11/25)
 ==============
 
