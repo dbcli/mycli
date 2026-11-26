@@ -5,6 +5,7 @@ Bug Fixes
 --------
 * Respect the LLM sample size limit when truncating short fields.
 * Give the destructive warning for a `DELETE` or `UPDATE` that starts with a `WITH` clause.
+* Ignore a UTF-8 byte order mark at the start of a --batch or /source file.
 
 
 v2.32.1 (2026/11/25)
