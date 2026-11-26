@@ -700,6 +700,25 @@ def test_main_batch_without_progress_bar_reads_utf8_batch_and_checkpoint(monkeyp
     assert dispatch_calls == [('select 2;', 1)]
 
 
+def test_main_batch_without_progress_bar_ignores_leading_byte_order_mark(monkeypatch, tmp_path: Path) -> None:
+    batch_path = tmp_path / 'batch.sql'
+    batch_path.write_bytes(b'\xef\xbb\xbfselect 1;\nselect 2;\n')
+    dispatch_calls: list[tuple[str, int]] = []
+
+    monkeypatch.setattr(
+        batch_mode,
+        'dispatch_batch_statements',
+        lambda _mycli, _cli_args, statement, counter: dispatch_calls.append((statement, counter)),
+    )
+    monkeypatch.setattr(batch_mode, 'sys', make_fake_sys(stdin_tty=True))
+
+    cli_args = DummyCliArgs(batch=str(batch_path))
+    result = main_batch_without_progress_bar(DummyMyCli(), cli_args)
+
+    assert result == 0
+    assert dispatch_calls == [('select 1;', 0), ('select 2;', 1)]
+
+
 def test_main_batch_without_progress_bar_skips_only_matching_duplicate_prefix(monkeypatch, tmp_path: Path) -> None:
     batch_path = write_batch_file(tmp_path, 'select 1;\nselect 1;\nselect 2;\n')
     dispatch_calls: list[tuple[str, int]] = []

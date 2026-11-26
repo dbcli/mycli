@@ -27,7 +27,8 @@ class CheckpointReplayError(Exception):
 
 def batch_file_encoding(batch_path: str) -> str | None:
     # Leave standard input to click, which picks the console encoding.
-    return None if batch_path == '-' else 'utf-8'
+    # utf-8-sig drops a leading byte order mark, as the vendor client does.
+    return None if batch_path == '-' else 'utf-8-sig'
 
 
 def replay_checkpoint_file(
@@ -55,7 +56,7 @@ def replay_checkpoint_file(
     try:
         with (
             click.open_file(batch_path, encoding=batch_file_encoding(batch_path)) as batch_h,
-            click.open_file(checkpoint_path, mode='r', encoding='utf-8') as checkpoint_h,
+            click.open_file(checkpoint_path, mode='r', encoding='utf-8-sig') as checkpoint_h,
         ):
             try:
                 batch_gen = statements_from_filehandle(batch_h)

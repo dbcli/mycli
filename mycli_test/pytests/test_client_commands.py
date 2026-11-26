@@ -652,6 +652,19 @@ def test_execute_from_file_runs_file_query(tmp_path: Path) -> None:
     assert client.sql_execute.runs == ['select 1;']
 
 
+def test_execute_from_file_ignores_leading_byte_order_mark(tmp_path: Path) -> None:
+    client = DummyClient()
+    sql_file = tmp_path / 'query.sql'
+    sql_file.write_bytes(b'\xef\xbb\xbfselect 1;\nselect 2;\n')
+    client.destructive_warning = False
+    client.destructive_keywords = set()
+    client.sql_execute = FakeSQLExecute()
+
+    list(client.execute_from_file(str(sql_file)))
+
+    assert client.sql_execute.runs == ['select 1;', 'select 2;']
+
+
 def test_execute_from_file_help_is_terminal(monkeypatch: pytest.MonkeyPatch) -> None:
     client = DummyClient()
     client.sql_execute = FakeSQLExecute()
