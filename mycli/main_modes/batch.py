@@ -27,7 +27,7 @@ class CheckpointReplayError(Exception):
 
 def batch_file_encoding(batch_path: str) -> str | None:
     # Leave standard input to click, which picks the console encoding.
-    # utf-8-sig drops a leading byte order mark, as the mysql client does.
+    # utf-8-sig drops a leading byte order mark, as the vendor client does.
     return None if batch_path == '-' else 'utf-8-sig'
 
 
