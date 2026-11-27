@@ -2196,6 +2196,18 @@ def test_pipe_once_abort_stops_pipeline_children(tmp_path: Path) -> None:
         process.communicate(timeout=5)
 
 
+@pytest.mark.skipif(os.name == 'nt', reason='Requires a POSIX shell.')
+def test_pipe_once_undecodable_output(monkeypatch: pytest.MonkeyPatch) -> None:
+    secho = Mock()
+    monkeypatch.setattr(io_commands.click, 'secho', secho)
+    io_commands.set_pipe_once(r"printf 'caf\351 ok'; printf 'na\357ve' >&2")
+
+    io_commands.flush_pipe_once_if_written(None, force=True)
+
+    assert [call.args[0] for call in secho.call_args_list] == ['caf\ufffd ok', 'na\ufffdve']
+    assert io_commands.PIPE_ONCE['process'] is None
+
+
 def test_set_pipe_once_and_flush_short_circuits(monkeypatch) -> None:
     popen_calls: list[tuple[tuple[Any, ...], dict[str, Any]]] = []
     monkeypatch.setattr(io_commands, 'WIN', True)
@@ -2216,6 +2228,7 @@ def test_set_pipe_once_and_flush_short_circuits(monkeypatch) -> None:
                 'stdout': io_commands.subprocess.PIPE,
                 'stderr': io_commands.subprocess.PIPE,
                 'encoding': 'UTF-8',
+                'errors': 'replace',
                 'universal_newlines': True,
                 'start_new_session': False,
             },

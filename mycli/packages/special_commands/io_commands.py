@@ -1047,6 +1047,7 @@ def set_pipe_once(arg: str, *, start_new_session: bool | None = None, **_) -> li
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         encoding="UTF-8",
+        errors='replace',
         universal_newlines=True,
         start_new_session=start_new_session,
     )
