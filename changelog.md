@@ -7,6 +7,7 @@ Bug Fixes
 * Give the destructive warning for a `DELETE` or `UPDATE` that starts with a `WITH` clause.
 * Ignore a UTF-8 byte order mark at the start of a --batch or /source file.
 * Replace undecodable bytes in /pipe_once command output.
+* Allow `quit;`, `exit;` and `\q;` in expired-password sandbox mode.
 
 
 Internal

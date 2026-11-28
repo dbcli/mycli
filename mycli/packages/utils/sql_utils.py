@@ -552,9 +552,13 @@ def classify_sandbox_statement(text: str) -> tuple[str | None, str | None]:
     if not tokens:
         return ('quit', None)
 
+    tt = sqlglot.tokens.TokenType
+    # Ignore a trailing semicolon, as in "quit;".
+    while len(tokens) > 1 and tokens[-1].token_type == tt.SEMICOLON:
+        tokens.pop()
+
     types = [t.token_type for t in tokens]
     texts = [t.text.upper() for t in tokens]
-    tt = sqlglot.tokens.TokenType
 
     # quit, exit
     if len(tokens) == 1 and types[0] == tt.VAR and texts[0] in ('QUIT', 'EXIT'):
