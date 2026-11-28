@@ -9,6 +9,11 @@ Bug Fixes
 * Replace undecodable bytes in /pipe_once command output.
 
 
+Internal
+--------
+* Remove temporary `pyyaml` dependency pin.
+
+
 v2.32.1 (2026/11/25)
 ==============
 
